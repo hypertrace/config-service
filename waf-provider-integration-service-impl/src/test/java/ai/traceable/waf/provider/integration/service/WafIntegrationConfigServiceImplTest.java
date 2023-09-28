@@ -8,6 +8,11 @@ import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
+import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureResourceGroupDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
@@ -357,6 +362,31 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void getWafIntegrationsAzureTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.AZURE_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_AZURE))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(
+        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+  }
+
+  @Test
   void updateWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -572,6 +602,66 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void updateWafIntegrationAzureTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.AZURE_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des1")
+            .setUpdatedAzureIntegrationParams(
+                AzureIntegrationUpdateParams.newBuilder()
+                    .addAzureIntegrationDetails(
+                        AzureIntegrationDetails.newBuilder()
+                            .setAzureTenantId("new-tenant-id")
+                            .setSubscriptionId("new-subscription-id")
+                            .setAzureEnvironment("new-azure-env")
+                            .addAzureResourceGroupDetails(
+                                AzureResourceGroupDetails.newBuilder()
+                                    .setName("new-name")
+                                    .setRegion("new-region"))
+                            .setAuthCredentials(
+                                AzureAuthCredentials.newBuilder()
+                                    .setClientId("new-client-id")
+                                    .setEncryptedClientSecret("new-secret")
+                                    .setAccessKeyId("new-key-id"))))
+            .build();
+
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    AzureIntegrationDetails azureIntegrationDetails =
+        updateResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAzureIntegrationParams()
+            .getAzureIntegrationDetails(0);
+    assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals(
+        "des1", updateResponse.getWafIntegration().getWafIntegrationDetails().getDescription());
+    assertEquals("new-tenant-id", azureIntegrationDetails.getAzureTenantId());
+    assertEquals("new-subscription-id", azureIntegrationDetails.getSubscriptionId());
+    assertEquals("new-azure-env", azureIntegrationDetails.getAzureEnvironment());
+    assertEquals("new-name", azureIntegrationDetails.getAzureResourceGroupDetails(0).getName());
+    assertEquals("new-region", azureIntegrationDetails.getAzureResourceGroupDetails(0).getRegion());
+    assertEquals("new-client-id", azureIntegrationDetails.getAuthCredentials().getClientId());
+    assertEquals(
+        "new-secret", azureIntegrationDetails.getAuthCredentials().getEncryptedClientSecret());
+    assertEquals("new-key-id", azureIntegrationDetails.getAuthCredentials().getAccessKeyId());
+  }
+
+  @Test
   void deleteWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -702,6 +792,28 @@ class WafIntegrationConfigServiceImplTest {
                             .setKeyId("secret-id")
                             .setValue("secret-value")
                             .build())
+                    .build())
+            .build();
+      case AZURE_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setAzureIntegrationParams(
+                AzureIntegrationParams.newBuilder()
+                    .addAzureIntegrationDetails(
+                        AzureIntegrationDetails.newBuilder()
+                            .setAzureTenantId("tenant-id")
+                            .setSubscriptionId("subscription-id")
+                            .setAzureEnvironment("azure-env")
+                            .addAzureResourceGroupDetails(
+                                AzureResourceGroupDetails.newBuilder()
+                                    .setName("name")
+                                    .setRegion("region"))
+                            .setAuthCredentials(
+                                AzureAuthCredentials.newBuilder()
+                                    .setClientId("client-id")
+                                    .setEncryptedClientSecret("secret")
+                                    .setAccessKeyId("key-id")))
                     .build())
             .build();
       default:

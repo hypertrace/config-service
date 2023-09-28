@@ -8,6 +8,11 @@ import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
+import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureResourceGroupDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -81,6 +86,7 @@ public class WafIntegrationConfigRequestValidator {
       case WAF_PROVIDER_TYPE_CLOUDFLARE:
       case WAF_PROVIDER_TYPE_AWS:
       case WAF_PROVIDER_TYPE_IMPERVA:
+      case WAF_PROVIDER_TYPE_AZURE:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -106,6 +112,10 @@ public class WafIntegrationConfigRequestValidator {
         validateUpdatedImpervaIntegrationParam(
             updatedWafIntegrationDetails.getUpdatedImpervaIntegrationParams());
         break;
+      case UPDATED_AZURE_INTEGRATION_PARAMS:
+        validateUpdatedAzureIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedAzureIntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -125,6 +135,9 @@ public class WafIntegrationConfigRequestValidator {
         break;
       case IMPERVA_INTEGRATION_PARAMS:
         validateImpervaIntegrationParam(wafIntegrationDetails.getImpervaIntegrationParams());
+        break;
+      case AZURE_INTEGRATION_PARAMS:
+        validateAzureIntegrationParam(wafIntegrationDetails.getAzureIntegrationParams());
         break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
@@ -147,6 +160,16 @@ public class WafIntegrationConfigRequestValidator {
           .withDescription("Api token is empty! " + printMessage(cloudflareIntegrationParams))
           .asRuntimeException();
     }
+  }
+
+  private void validateUpdatedAzureIntegrationParams(
+      AzureIntegrationUpdateParams azureIntegrationUpdateParams) {
+    validateNonDefaultPresenceOrThrow(
+        azureIntegrationUpdateParams,
+        AzureIntegrationUpdateParams.AZURE_INTEGRATION_DETAILS_FIELD_NUMBER);
+    azureIntegrationUpdateParams
+        .getAzureIntegrationDetailsList()
+        .forEach(this::validateAzureIntegrationDetails);
   }
 
   private void validateUpdatedImpervaIntegrationParam(
@@ -176,6 +199,46 @@ public class WafIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(
         impervaIntegrationParams, ImpervaIntegrationParams.API_ID_FIELD_NUMBER);
     validateImpervaApiKey(impervaIntegrationParams.getApiKey());
+  }
+
+  private void validateAzureIntegrationParam(AzureIntegrationParams azureIntegrationParams) {
+    validateNonDefaultPresenceOrThrow(
+        azureIntegrationParams, AzureIntegrationParams.AZURE_INTEGRATION_DETAILS_FIELD_NUMBER);
+    azureIntegrationParams
+        .getAzureIntegrationDetailsList()
+        .forEach(this::validateAzureIntegrationDetails);
+  }
+
+  private void validateAzureIntegrationDetails(AzureIntegrationDetails azureIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        azureIntegrationDetails, AzureIntegrationDetails.AZURE_TENANT_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureIntegrationDetails, AzureIntegrationDetails.SUBSCRIPTION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureIntegrationDetails, AzureIntegrationDetails.AZURE_ENVIRONMENT_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureIntegrationDetails, AzureIntegrationDetails.AZURE_RESOURCE_GROUP_DETAILS_FIELD_NUMBER);
+    azureIntegrationDetails
+        .getAzureResourceGroupDetailsList()
+        .forEach(this::validateAzureResourceGroupDetails);
+    validateAzureAuthCredentials(azureIntegrationDetails.getAuthCredentials());
+  }
+
+  private void validateAzureResourceGroupDetails(
+      AzureResourceGroupDetails azureResourceGroupDetails) {
+    validateNonDefaultPresenceOrThrow(
+        azureResourceGroupDetails, AzureResourceGroupDetails.NAME_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureResourceGroupDetails, AzureResourceGroupDetails.REGION_FIELD_NUMBER);
+  }
+
+  private void validateAzureAuthCredentials(AzureAuthCredentials azureAuthCredentials) {
+    validateNonDefaultPresenceOrThrow(
+        azureAuthCredentials, AzureAuthCredentials.CLIENT_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureAuthCredentials, AzureAuthCredentials.ENCRYPTED_CLIENT_SECRET_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureAuthCredentials, AzureAuthCredentials.ACCESS_KEY_ID_FIELD_NUMBER);
   }
 
   private void validateCloudFlareIntegrationParams(

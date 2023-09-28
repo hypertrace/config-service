@@ -175,6 +175,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
         return WafProviderType.WAF_PROVIDER_TYPE_AWS;
       case IMPERVA_INTEGRATION_PARAMS:
         return WafProviderType.WAF_PROVIDER_TYPE_IMPERVA;
+      case AZURE_INTEGRATION_PARAMS:
+        return WafProviderType.WAF_PROVIDER_TYPE_AZURE;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         return WafProviderType.WAF_PROVIDER_TYPE_UNSPECIFIED;

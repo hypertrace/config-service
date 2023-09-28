@@ -3,6 +3,8 @@ package ai.traceable.waf.provider.integration.service;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
@@ -25,6 +27,9 @@ public class WafIntegrationBuilderUtils {
         break;
       case UPDATED_IMPERVA_INTEGRATION_PARAMS:
         updatedWafIntegration = getUpdatedImpervaWafIntegration(request, existingWafIntegration);
+        break;
+      case UPDATED_AZURE_INTEGRATION_PARAMS:
+        updatedWafIntegration = getUpdatedAzureWafIntegration(request, existingWafIntegration);
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -127,6 +132,23 @@ public class WafIntegrationBuilderUtils {
                                     .getWafIntegrationDetails()
                                     .getImpervaIntegrationParams()
                                     .getApiKey())))
+        .build();
+  }
+
+  private static WafIntegration getUpdatedAzureWafIntegration(
+      UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
+    AzureIntegrationUpdateParams updatedAzureIntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedAzureIntegrationParams();
+    return WafIntegration.newBuilder()
+        .setId(existingWafIntegration.getId())
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
+                .setName(request.getUpdatedWafIntegrationDetails().getName())
+                .setAzureIntegrationParams(
+                    AzureIntegrationParams.newBuilder()
+                        .addAllAzureIntegrationDetails(
+                            updatedAzureIntegrationParams.getAzureIntegrationDetailsList())))
         .build();
   }
 

@@ -7,6 +7,11 @@ import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
+import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureResourceGroupDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -68,7 +73,8 @@ class WafIntegrationConfigRequestValidatorTest {
                         List.of(
                             WafProviderType.WAF_PROVIDER_TYPE_AWS,
                             WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE,
-                            WafProviderType.WAF_PROVIDER_TYPE_IMPERVA)))
+                            WafProviderType.WAF_PROVIDER_TYPE_IMPERVA,
+                            WafProviderType.WAF_PROVIDER_TYPE_AZURE)))
             .build();
 
     assertDoesNotThrow(
@@ -586,6 +592,320 @@ class WafIntegrationConfigRequestValidatorTest {
         () -> {
           wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT);
         });
+  }
+
+  @Test
+  void invalidCreateAzureRequestTest() {
+    // empty azure integration params list
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(AzureIntegrationParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT));
+
+    // missing azure tenant-id
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT));
+
+    // missing azure subscription-id
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT));
+
+    // missing azure env
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request4, REQUEST_CONTEXT));
+
+    // empty resource group list
+    CreateWafIntegrationRequest request5 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT));
+
+    // missing resource group name
+    CreateWafIntegrationRequest request6 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder().setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request6, REQUEST_CONTEXT));
+
+    // missing resource group region
+    CreateWafIntegrationRequest request7 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder().setName("name"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request7, REQUEST_CONTEXT));
+
+    // missing azure client-id
+    CreateWafIntegrationRequest request8 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request8, REQUEST_CONTEXT));
+
+    // missing azure client secret
+    CreateWafIntegrationRequest request9 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request9, REQUEST_CONTEXT));
+
+    // missing azure access key id
+    CreateWafIntegrationRequest request10 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request10, REQUEST_CONTEXT));
+
+    // valid request
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertDoesNotThrow(
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));
+  }
+
+  @Test
+  void invalidUpdateAzureRequestTest() {
+    // empty azure integration params list
+    UpdateWafIntegrationRequest request1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedAzureIntegrationParams(
+                        AzureIntegrationUpdateParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT));
+
+    // valid request
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedAzureIntegrationParams(
+                        AzureIntegrationUpdateParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertDoesNotThrow(
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));
   }
 
   private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {

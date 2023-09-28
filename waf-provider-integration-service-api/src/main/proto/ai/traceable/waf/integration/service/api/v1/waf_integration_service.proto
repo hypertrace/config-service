@@ -62,5 +62,6 @@ message GetWafIntegrationsFilter {
     WAF_PROVIDER_TYPE_CLOUDFLARE = 1;
     WAF_PROVIDER_TYPE_AWS = 2;
     WAF_PROVIDER_TYPE_IMPERVA = 3;
+    WAF_PROVIDER_TYPE_AZURE = 4;
   }
 }
