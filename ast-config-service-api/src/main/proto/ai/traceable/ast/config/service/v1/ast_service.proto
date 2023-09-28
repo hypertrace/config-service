@@ -22,6 +22,9 @@ service AstConfigService {
 
   rpc GetAllVulnerabilityMetadataOverrides(GetAllVulnerabilityMetadataOverridesRequest) returns (GetAllVulnerabilityMetadataOverridesResponse) {}
 
+  rpc GetAstFeatureConfigs(GetAstFeatureConfigsRequest) returns (GetAstFeatureConfigsResponse);
+
+  rpc UpdateAstFeatureConfig(UpdateAstFeatureConfigRequest) returns (UpdateAstFeatureConfigResponse);
 }
 
 message UpdateScanPurgeConfigRequest {
@@ -64,4 +67,34 @@ message GetAllVulnerabilityMetadataOverridesRequest {}
 
 message GetAllVulnerabilityMetadataOverridesResponse {
   repeated VulnerabilityMetadataOverrides vulnerability_metadata_overrides = 1;
+}
+
+message UpdateAstFeatureConfigRequest {
+  string environment_id = 1;
+  oneof update_status {
+    AstDisabledConfig disabled_config = 2;
+    AstEnabledConfig enabled_config = 3;
+  }
+}
+
+message UpdateAstFeatureConfigResponse {
+  AstFeatureConfig updated_config = 1;
+}
+
+message GetAstFeatureConfigsRequest {
+  AstFeatureConfigFilter filter = 1;
+}
+
+message AstFeatureConfigFilter {
+  oneof filter {
+    EnvironmentIdFilter environment_id_filter = 1;
+  }
+
+  message EnvironmentIdFilter {
+    repeated string environment_ids = 1;
+  }
+}
+
+message GetAstFeatureConfigsResponse {
+  repeated AstFeatureConfig configs = 1;
 }
