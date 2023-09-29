@@ -84,6 +84,9 @@ public class ModsecBlobConverterUtils {
         validateRegex(keyValueCondition.getKeyCondition().getValue());
         validateRegex(keyValueCondition.getValueCondition().getValue());
 
+        // TODO remove this validation once we handle OR(|) code
+        validateForNoOROperatorInKeyRegex(keyValueCondition.getKeyCondition().getValue());
+
         return Clause.newBuilder()
             .setKeyValueExpression(
                 KeyValueExpression.newBuilder()
@@ -133,6 +136,14 @@ public class ModsecBlobConverterUtils {
     Status validationStatus = RegexValidator.validate(combinedRegex);
     if (!validationStatus.isOk()) {
       throw validationStatus.asRuntimeException();
+    }
+  }
+
+  static void validateForNoOROperatorInKeyRegex(String keyRegex) {
+    if (keyRegex.indexOf('|') != -1) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot handle OR(|) in key regex pattern")
+          .asRuntimeException();
     }
   }
 
