@@ -4,6 +4,7 @@ import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
@@ -22,12 +23,20 @@ import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImplBase {
+  private static final Map<Category, SecurityConfigurationType>
+      CATEGORY_TO_SECURITY_CONFIGURATION_TYPE_MAP =
+          Map.of(
+              Category.CATEGORY_RATE_LIMITING, SecurityConfigurationType.RATE_LIMITING_RULE,
+              Category.CATEGORY_ENUMERATION, SecurityConfigurationType.ENUMERATION_RULE,
+              Category.CATEGORY_DATA_EXFILTRATION,
+                  SecurityConfigurationType.DATA_LOSS_PREVENTION_RULE);
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
   private final ActivityEventProducer activityEventProducer;
@@ -179,7 +188,8 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
     return SecurityConfigurationChange.newBuilder()
         .setRuleId(rule.getId())
         .setRuleName(rule.getData().getName())
-        .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
+        .setSecurityConfigurationType(
+            CATEGORY_TO_SECURITY_CONFIGURATION_TYPE_MAP.get(rule.getData().getCategory()))
         .setSecurityConfigurationAction(securityConfigurationAction)
         .build();
   }
