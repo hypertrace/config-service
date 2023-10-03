@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
@@ -42,6 +41,7 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
   public List<BlockingConfigResponseElement> generateBlockingElements(
       List<BlockingConfigRequestElement> requestElements,
       BlockingRulesSupplier blockingRulesSupplier) {
+
     requestElements =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
@@ -62,13 +62,12 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
             .min(semanticVersioningComparator)
             .orElse("");
 
-    // Getting all the service-names explicitly mentioned
+    // Getting all the service-names
     List<String> serviceNames =
         requestElements.stream()
             .filter(BlockingConfigRequestElement::hasBlockingPolicyConfigurationRequest)
             .flatMap(requestElement -> requestElement.getSupportedAgentCapabilitiesList().stream())
             .map(this::getServiceName)
-            .filter(Predicate.not(String::isBlank))
             .distinct()
             .collect(Collectors.toUnmodifiableList());
 
