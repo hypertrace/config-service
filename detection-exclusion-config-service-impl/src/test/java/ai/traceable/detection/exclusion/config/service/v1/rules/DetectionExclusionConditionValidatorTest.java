@@ -4,6 +4,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueT
 import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueType.ATTRIBUTE_VALUE_TYPE_DATE;
 import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueType.ATTRIBUTE_VALUE_TYPE_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,12 +15,16 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCond
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EntityType;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAbuseVelocity;
+import ai.traceable.detection.exclusion.config.service.v1.IpAbuseVelocityCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressConditionType;
+import ai.traceable.detection.exclusion.config.service.v1.IpAsnCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpOrganisationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadata;
@@ -34,6 +39,7 @@ import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFami
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -830,6 +836,79 @@ class DetectionExclusionConditionValidatorTest {
                 IpConnectionTypeCondition.newBuilder()
                     .addIpConnectionTypes(IpConnectionType.IP_CONNECTION_TYPE_MOBILE)
                     .build())
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+  }
+
+  @Test
+  void testIpOrganisationCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setIpOrganisationCondition(
+                IpOrganisationCondition.newBuilder()
+                    .setExclude(true)
+                    .addAllIpOrganisationRegexes(List.of("][")))
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition));
+    assertTrue(throwable.getMessage().contains("Invalid Regex Value : ]["));
+
+    // valid condition
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setIpOrganisationCondition(
+                IpOrganisationCondition.newBuilder()
+                    .setExclude(true)
+                    .addAllIpOrganisationRegexes(List.of(".*reg")))
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+  }
+
+  @Test
+  void testIpAsnCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setIpAsnCondition(
+                IpAsnCondition.newBuilder().setExclude(true).addAllIpAsnRegexes(List.of("][")))
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition));
+    assertTrue(throwable.getMessage().contains("Invalid Regex Value : ]["));
+
+    // valid condition
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setIpAsnCondition(
+                IpAsnCondition.newBuilder().setExclude(true).addAllIpAsnRegexes(List.of(".*reg")))
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+  }
+
+  @Test
+  void testIpAbuseVelocityCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setIpAbuseVelocityCondition(
+                IpAbuseVelocityCondition.newBuilder()
+                    .setMaxIpAbuseVelocity(IpAbuseVelocity.IP_ABUSE_VELOCITY_UNSPECIFIED))
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // valid condition
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setIpAbuseVelocityCondition(
+                IpAbuseVelocityCondition.newBuilder()
+                    .setMaxIpAbuseVelocity(IpAbuseVelocity.IP_ABUSE_VELOCITY_LOW))
             .build();
     assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
   }

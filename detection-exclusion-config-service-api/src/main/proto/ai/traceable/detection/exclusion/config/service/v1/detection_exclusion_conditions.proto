@@ -23,6 +23,7 @@ message SpanAttributeMatchCondition {
 
 message IpLocationTypeCondition {
   repeated IpLocationType ip_location_types = 1;
+  bool exclude = 2;
 }
 
 enum IpLocationType {
@@ -45,6 +46,7 @@ message UserIdCondition {
   repeated string user_id_regexes = 1;
   repeated string actor_entity_ids = 2; // not supported currently
   repeated string user_ids = 3;
+  bool exclude = 4;
 }
 
 enum IpReputationSeverity {
@@ -72,11 +74,34 @@ message IpAddressCondition {
   repeated string ip_addresses = 2;
   repeated string raw_input_ip_data = 3;
   IpAddressConditionType ip_address_condition_type = 4;
+  bool exclude = 5;
 }
 
 
 message IpConnectionTypeCondition {
   repeated IpConnectionType ip_connection_types = 1;
+  bool exclude = 2;
+}
+
+message IpOrganisationCondition {
+  repeated string ip_organisation_regexes = 1;
+  bool exclude = 2;
+}
+
+message IpAsnCondition {
+  repeated string ip_asn_regexes = 1;
+  bool exclude = 2;
+}
+
+message IpAbuseVelocityCondition {
+  IpAbuseVelocity max_ip_abuse_velocity = 1;
+}
+
+enum IpAbuseVelocity {
+  IP_ABUSE_VELOCITY_UNSPECIFIED = 0;
+  IP_ABUSE_VELOCITY_LOW = 1;
+  IP_ABUSE_VELOCITY_MEDIUM = 2;
+  IP_ABUSE_VELOCITY_HIGH = 3;
 }
 
 enum IpConnectionType {

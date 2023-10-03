@@ -3,6 +3,7 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.AttributeValueType;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
@@ -10,11 +11,14 @@ import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAbuseVelocityCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAsnCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpOrganisationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondition;
@@ -29,8 +33,6 @@ import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
-import com.google.re2j.Pattern;
-import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
@@ -74,11 +76,33 @@ public class DetectionExclusionConditionValidator {
       case IP_CONNECTION_TYPE_CONDITION:
         validateIpConnectionTypeCondition(condition.getIpConnectionTypeCondition());
         break;
+      case IP_ORGANISATION_CONDITION:
+        validateIpOrganisationCondition(condition.getIpOrganisationCondition());
+        break;
+      case IP_ASN_CONDITION:
+        validateIpAsnCondition(condition.getIpAsnCondition());
+        break;
+      case IP_ABUSE_VELOCITY_CONDITION:
+        validateIpAbuseVelocityCondition(condition.getIpAbuseVelocityCondition());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
                 "Invalid detection exclusion condition type : %s", condition.getConditionCase()));
     }
+  }
+
+  private void validateIpOrganisationCondition(IpOrganisationCondition ipOrganisationCondition) {
+    validateRegexes(ipOrganisationCondition.getIpOrganisationRegexesList());
+  }
+
+  private void validateIpAsnCondition(IpAsnCondition ipAsnCondition) {
+    validateRegexes(ipAsnCondition.getIpAsnRegexesList());
+  }
+
+  private void validateIpAbuseVelocityCondition(IpAbuseVelocityCondition ipAbuseVelocityCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipAbuseVelocityCondition, IpAbuseVelocityCondition.MAX_IP_ABUSE_VELOCITY_FIELD_NUMBER);
   }
 
   private void validateIpConnectionTypeCondition(
@@ -354,11 +378,13 @@ public class DetectionExclusionConditionValidator {
     return listValue.getValuesList().stream().allMatch(Value::hasStringValue);
   }
 
+  private void validateRegexes(List<String> regexes) {
+    regexes.forEach(this::validateRegex);
+  }
+
   private void validateRegex(String regexPattern) {
-    // compiling an invalid regex throws PatternSyntaxException
-    try {
-      Pattern.compile(regexPattern);
-    } catch (PatternSyntaxException e) {
+    Status status = RegexValidator.validate(regexPattern);
+    if (!status.isOk()) {
       throwInvalidArgumentException(String.format("Invalid Regex Value : %s", regexPattern));
     }
   }

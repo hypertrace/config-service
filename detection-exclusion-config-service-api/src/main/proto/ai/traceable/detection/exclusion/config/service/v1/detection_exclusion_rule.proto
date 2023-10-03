@@ -44,6 +44,9 @@ message DetectionExclusionCondition {
     AnomalousAttributeCondition source_anomalous_attribute_match_condition = 9;
     IpAddressCondition ip_address_condition = 10;
     IpConnectionTypeCondition ip_connection_type_condition = 11;
+    IpOrganisationCondition ip_organisation_condition = 12;
+    IpAsnCondition ip_asn_condition = 13;
+    IpAbuseVelocityCondition ip_abuse_velocity_condition = 14;
   }
 }
 
