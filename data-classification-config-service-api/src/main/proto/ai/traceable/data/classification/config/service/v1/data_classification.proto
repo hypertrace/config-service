@@ -117,6 +117,7 @@ message DataClassificationOverrideRule {
   string name = 1;
   optional string description = 2;
   DataClassificationOverrideScope scope = 3;
+  SpanFilter span_filter = 5;
 
   oneof override {
     DataSuppressionOverride data_suppression_override = 4;
@@ -138,10 +139,10 @@ message DataClassificationOverrideRule {
 }
 
 message DataClassificationOverrideFilter {
-   oneof filter {
-     IdFilter id_filter = 1;
-     ScopeFilter scope_filter = 2;
-   }
+  oneof filter {
+    IdFilter id_filter = 1;
+    ScopeFilter scope_filter = 2;
+  }
 }
 
 message IdFilter {
@@ -150,4 +151,27 @@ message IdFilter {
 
 message ScopeFilter {
   repeated DataClassificationOverrideRule.DataClassificationOverrideScope scopes = 1;
+}
+
+message SpanFilter {
+  oneof filter {
+    SpanLogicalFilter logical_filter = 1;
+    SpanKeyValueFilter key_value_filter = 2;
+    SpanFilter negation_filter = 3;
+  }
+}
+
+message SpanLogicalFilter {
+  LogicalOperator operator = 1;
+  repeated SpanFilter children = 2;
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1; // No OR support currently
+}
+
+message SpanKeyValueFilter {
+  DataTypeRule.StringPattern key_pattern = 1;
+  DataTypeRule.StringPattern value_pattern = 2;
 }
