@@ -10,6 +10,7 @@ service WafProviderService {
   rpc CreateWafIntegration (CreateWafIntegrationRequest) returns (CreateWafIntegrationResponse) {}
   rpc GetWafIntegration (GetWafIntegrationRequest) returns (GetWafIntegrationResponse) {}
   rpc GetWafIntegrations (GetWafIntegrationsRequest) returns (GetWafIntegrationsResponse) {}
+  rpc GetWafIntegrationsDetails (GetWafIntegrationsDetailsRequest) returns (GetWafIntegrationsDetailsResponse) {}
   rpc UpdateWafIntegration (UpdateWafIntegrationRequest) returns (UpdateWafIntegrationResponse) {}
   rpc DeleteWafIntegration (DeleteWafIntegrationRequest) returns (DeleteWafIntegrationResponse) {}
 }
@@ -37,6 +38,15 @@ message GetWafIntegrationsRequest {
 message GetWafIntegrationsResponse {
   repeated WafIntegration waf_integration = 1;
 }
+
+message GetWafIntegrationsDetailsRequest {
+  GetWafIntegrationsFilter filter = 1;
+}
+
+message GetWafIntegrationsDetailsResponse {
+  repeated WafIntegration waf_integration = 1;
+}
+
 
 message UpdateWafIntegrationRequest {
   string id = 1;

@@ -1,16 +1,22 @@
 package ai.traceable.waf.provider.integration.service;
 
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
-import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class WafIntegrationStore extends IdentifiedObjectStore<WafIntegration> {
+public class WafIntegrationStore
+    extends IdentifiedObjectStoreWithFilter<WafIntegration, GetWafIntegrationsFilter> {
   private static final String WAF_INTEGRATION_CONFIG_RESOURCE_NAME = "waf-integration-config";
   private static final String WAF_INTEGRATION_CONFIG_RESOURCE_NAMESPACE =
       "waf-provider-integration";
@@ -27,11 +33,21 @@ public class WafIntegrationStore extends IdentifiedObjectStore<WafIntegration> {
   }
 
   @Override
+  public List<WafIntegration> getAllConfigData(
+      RequestContext context, GetWafIntegrationsFilter filter) {
+    List<WafIntegration> wafIntegrations = super.getAllConfigData(context, filter);
+    return wafIntegrations.stream()
+        .filter(rule -> filterConfigData(rule, filter).isPresent())
+        .collect(Collectors.toList());
+  }
+
+  @Override
   protected Optional<WafIntegration> buildDataFromValue(Value value) {
     try {
       WafIntegration.Builder builder = WafIntegration.newBuilder();
       ConfigProtoConverter.mergeFromValue(value, builder);
-      return Optional.of(builder.build());
+      return Optional.of(
+          WafIntegrationBuilderUtils.getBackwardCompatibleWafIntegration(builder.build()));
     } catch (Exception e) {
       return Optional.empty();
     }
@@ -46,5 +62,53 @@ public class WafIntegrationStore extends IdentifiedObjectStore<WafIntegration> {
   @Override
   protected String getContextFromData(WafIntegration object) {
     return object.getId();
+  }
+
+  @Override
+  protected Optional<WafIntegration> filterConfigData(
+      WafIntegration data, GetWafIntegrationsFilter filter) {
+    List<GetWafIntegrationsFilter.WafProviderType> requiredTypes = filter.getWafProviderTypesList();
+    List<String> requiredIds = filter.getIdsList();
+    return Optional.of(data)
+        .filter(wafIntegration -> checkWafIdPresence(wafIntegration.getId(), requiredIds))
+        .filter(
+            wafIntegration ->
+                checkWafTypePresence(
+                    getWafProviderTypeFromDetails(wafIntegration.getWafIntegrationDetails()),
+                    requiredTypes));
+  }
+
+  private boolean checkWafIdPresence(String id, List<String> requiredIds) {
+    // empty list is treated as no filter
+    if (requiredIds.isEmpty()) {
+      return true;
+    }
+    return requiredIds.contains(id);
+  }
+
+  private boolean checkWafTypePresence(
+      GetWafIntegrationsFilter.WafProviderType type,
+      List<GetWafIntegrationsFilter.WafProviderType> requiredTypes) {
+    if (requiredTypes.isEmpty()) {
+      return true;
+    }
+    return requiredTypes.contains(type);
+  }
+
+  private GetWafIntegrationsFilter.WafProviderType getWafProviderTypeFromDetails(
+      WafIntegrationDetails details) {
+    switch (details.getIntegrationParamsCase()) {
+      case CLOUDFLARE_INTEGRATION_PARAMS:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE;
+      case AWS_INTEGRATION_PARAMS:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_AWS;
+      case IMPERVA_INTEGRATION_PARAMS:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_IMPERVA;
+      case AZURE_INTEGRATION_PARAMS:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_AZURE;
+      case INTEGRATIONPARAMS_NOT_SET:
+      default:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_UNSPECIFIED;
+    }
   }
 }

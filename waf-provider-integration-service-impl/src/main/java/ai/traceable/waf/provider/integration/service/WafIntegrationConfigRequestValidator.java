@@ -18,6 +18,7 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
@@ -44,6 +45,12 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   public void validateOrThrow(GetWafIntegrationsRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateWafIntegrationsFilter(request.getFilter());
+  }
+
+  public void validateOrThrow(
+      GetWafIntegrationsDetailsRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateWafIntegrationsFilter(request.getFilter());
   }

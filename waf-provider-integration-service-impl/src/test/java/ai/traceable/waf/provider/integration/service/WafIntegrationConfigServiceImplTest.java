@@ -20,6 +20,8 @@ import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
+import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
@@ -78,7 +80,6 @@ class WafIntegrationConfigServiceImplTest {
 
   @Test
   void createWafIntegrationCloudflareTest() {
-
     WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails(
             "name", "email", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
@@ -91,13 +92,33 @@ class WafIntegrationConfigServiceImplTest {
 
   @Test
   void createWafIntegrationAwsWithAwsAuthTest() {
-    WafIntegrationDetails expectedDetails =
+    WafIntegrationDetails wafIntegrationDetails =
         createWafIntegrationDetails("name", "email", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
     CreateWafIntegrationRequest request =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(wafIntegrationDetails)
+            .build();
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
-    assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
+    WafIntegrationDetails expectedWafIntegrationDetails =
+        createAWSWAFIntegrationDetailsWithStripSecrets("name");
+    assertEquals(
+        expectedWafIntegrationDetails, response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  private WafIntegrationDetails createAWSWAFIntegrationDetailsWithStripSecrets(String name) {
+    return WafIntegrationDetails.newBuilder()
+        .setName(name)
+        .setDescription("des")
+        .setAwsIntegrationParams(
+            AwsIntegrationParams.newBuilder()
+                .setAuthCredentials(AuthCredentials.newBuilder().setAccessKeyId("id"))
+                .setAccessKeyId("id")
+                .setRuleGroupCapacity(300)
+                .setSyncExistingBlockingData(true)
+                .addResources(AwsResource.newBuilder().setArn("arn").setRegion("region").build())
+                .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT))
+        .build();
   }
 
   @Test
@@ -121,48 +142,6 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
-  }
-
-  @Test
-  void createWafIntegrationsAlreadyExistsExceptionTest() {
-    WafIntegrationDetails expectedDetails1 =
-        createWafIntegrationDetails(
-            "name1", "email1", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest request1 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails1).build();
-    WafIntegrationDetails expectedDetails2 =
-        createWafIntegrationDetails(
-            "name2", "email2", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest request2 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails2).build();
-    WafIntegrationDetails expectedDetails3 =
-        createWafIntegrationDetails(
-            "name3", "email3", IntegrationParamsCase.AWS_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest request3 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails3).build();
-    WafIntegrationDetails expectedDetails4 =
-        createWafIntegrationDetails(
-            "name4", "email4", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
-    CreateWafIntegrationRequest request4 =
-        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails3).build();
-    wafProviderServiceBlockingStub.createWafIntegration(request1);
-    Throwable exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> wafProviderServiceBlockingStub.createWafIntegration(request2));
-    assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
-
-    exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> wafProviderServiceBlockingStub.createWafIntegration(request3));
-    assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
-
-    exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> wafProviderServiceBlockingStub.createWafIntegration(request4));
-    assertEquals(Status.ALREADY_EXISTS.getCode(), Status.fromThrowable(exception).getCode());
   }
 
   @Test
@@ -311,11 +290,40 @@ class WafIntegrationConfigServiceImplTest {
                             .getAwsIntegrationParams()
                             .getAuthCredentials()
                             .getAccessKeyId())
-                    .setEncryptedSecretAccessKey(
+                    .setAuthCredentials(
+                        AuthCredentials.newBuilder()
+                            .setAccessKeyId(
+                                expectedDetails
+                                    .getAwsIntegrationParams()
+                                    .getAuthCredentials()
+                                    .getAccessKeyId()))
+                    .setRuleGroupCapacity(300)
+                    .setSyncExistingBlockingData(true)
+                    .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT)
+                    .addResources(AwsResource.newBuilder().setArn("arn").setRegion("region")))
+            .build(),
+        response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+
+    GetWafIntegrationsDetailsRequest request2 =
+        GetWafIntegrationsDetailsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_AWS))
+            .build();
+    GetWafIntegrationsDetailsResponse response2 =
+        wafProviderServiceBlockingStub.getWafIntegrationsDetails(request2);
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(
+        WafIntegrationDetails.newBuilder()
+            .setName("name3")
+            .setDescription("des")
+            .setAwsIntegrationParams(
+                AwsIntegrationParams.newBuilder()
+                    .setAccessKeyId(
                         expectedDetails
                             .getAwsIntegrationParams()
                             .getAuthCredentials()
-                            .getEncryptedSecretAccessKey())
+                            .getAccessKeyId())
                     .setAuthCredentials(
                         AuthCredentials.newBuilder()
                             .setAccessKeyId(
@@ -328,12 +336,17 @@ class WafIntegrationConfigServiceImplTest {
                                     .getAwsIntegrationParams()
                                     .getAuthCredentials()
                                     .getEncryptedSecretAccessKey()))
+                    .setEncryptedSecretAccessKey(
+                        expectedDetails
+                            .getAwsIntegrationParams()
+                            .getAuthCredentials()
+                            .getEncryptedSecretAccessKey())
                     .setRuleGroupCapacity(300)
                     .setSyncExistingBlockingData(true)
                     .setIntegrationActionType(IntegrationActionType.INTEGRATION_ACTION_TYPE_COUNT)
                     .addResources(AwsResource.newBuilder().setArn("arn").setRegion("region")))
             .build(),
-        response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+        response2.getWafIntegrationList().get(0).getWafIntegrationDetails());
   }
 
   @Test
@@ -462,14 +475,6 @@ class WafIntegrationConfigServiceImplTest {
             .getAwsIntegrationParams()
             .getAuthCredentials()
             .getAccessKeyId());
-    assertEquals(
-        "key-1",
-        updateResponse
-            .getWafIntegration()
-            .getWafIntegrationDetails()
-            .getAwsIntegrationParams()
-            .getAuthCredentials()
-            .getEncryptedSecretAccessKey());
     assertEquals(
         List.of(AwsResource.newBuilder().setArn("arn-1").setRegion("region-1").build()),
         updateResponse
@@ -774,6 +779,8 @@ class WafIntegrationConfigServiceImplTest {
                         AuthCredentials.newBuilder()
                             .setAccessKeyId("id")
                             .setEncryptedSecretAccessKey("secret"))
+                    .setEncryptedSecretAccessKey("secret")
+                    .setAccessKeyId("id")
                     .setRuleGroupCapacity(300)
                     .setSyncExistingBlockingData(true)
                     .addResources(
