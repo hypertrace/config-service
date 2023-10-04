@@ -11,16 +11,16 @@ traceable-platform-apiAnomalyDetection = "0.9.50"
 kafka-streams-framework = "0.3.7"
 actorService = "0.2.118"
 
-junit = "5.8.2"
+junit = "5.10.0"
 mockito = "4.4.0"
 
 [libraries]
 traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version.ref = "actorService" }
-traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.45" }
+traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.47" }
 traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.49.69" }
 traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.5.100" }
 traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.40" }
-traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.108"}
+traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.111"}
 traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.13.1" }
 traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
 traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
