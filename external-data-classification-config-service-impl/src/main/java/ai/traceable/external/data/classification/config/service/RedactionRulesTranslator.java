@@ -1,6 +1,7 @@
 package ai.traceable.external.data.classification.config.service;
 
-import static ai.traceable.external.data.classification.config.service.v1.Operator.*;
+import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS;
+import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_MATCHES_REGEX;
 
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
 import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
@@ -15,9 +16,11 @@ import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import ai.traceable.sensitivedata.config.service.v1.Condition;
 import ai.traceable.sensitivedata.config.service.v1.Condition.AttributeRegexMatch;
+import ai.traceable.sensitivedata.config.service.v1.MatchType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -36,6 +39,11 @@ class RedactionRulesTranslator {
           "http.response.header",
           "rpc.request.metadata",
           "http.request.header");
+  private static final String HTTP_REQUEST_COOKIE_PREFIX = "http.request.header.cookie";
+  private static final List<String> RESPONSE_BODY_PREFIXES =
+      List.of("http.response.body", "rpc.response.body");
+  private static final List<String> REQUEST_HEADER_PREFIXES =
+      List.of("http.request.header", "rpc.request.metadata");
 
   public List<DataType> translateRedactionRules(List<RedactionRule> redactionRules) {
     return redactionRules.stream()
@@ -139,10 +147,29 @@ class RedactionRulesTranslator {
               .setValuePredicate(
                   buildStringPredicate(OPERATOR_MATCHES_REGEX, attributeRegexMatch.getRegex())));
     }
+    attributeFilterBuilder.addAllPrefixes(this.getLocationPrefixes(redactionRule));
     return dataTypeMatchRuleBuilder
         .setSpanFilter(spanFilterBuilder)
         .setAttributeFilter(attributeFilterBuilder)
         .build();
+  }
+
+  private List<String> getLocationPrefixes(RedactionRule redactionRule) {
+    if (!redactionRule.getSessionIdentifier()) {
+      // The historical behavior of legacy redaction rules had no location scoping. Since session
+      // rules display a location scope in the UI, we're enforcing it for those rules only.
+      return Collections.emptyList();
+    }
+    if (this.isRequestCookieRule(redactionRule)) {
+      return List.of(HTTP_REQUEST_COOKIE_PREFIX);
+    }
+    if (this.isResponseBodyRule(redactionRule)) {
+      return RESPONSE_BODY_PREFIXES;
+    }
+    if (this.isRequestHeaderRule(redactionRule)) {
+      return REQUEST_HEADER_PREFIXES;
+    }
+    return Collections.emptyList();
   }
 
   private Optional<DataTransformation> translateRedactionStrategy(RedactionStrategy strategy) {
@@ -161,5 +188,17 @@ class RedactionRulesTranslator {
 
   private StringPredicate buildStringPredicate(Operator operator, String value) {
     return StringPredicate.newBuilder().setValue(value).setOperator(operator).build();
+  }
+
+  private boolean isRequestCookieRule(RedactionRule redactionRule) {
+    return redactionRule.getComplexData().getKey().startsWith(HTTP_REQUEST_COOKIE_PREFIX);
+  }
+
+  private boolean isResponseBodyRule(RedactionRule redactionRule) {
+    return RESPONSE_BODY_PREFIXES.contains(redactionRule.getComplexData().getKey());
+  }
+
+  private boolean isRequestHeaderRule(RedactionRule redactionRule) {
+    return redactionRule.getMatchType().equals(MatchType.MATCH_TYPE_HEADER);
   }
 }
