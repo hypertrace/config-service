@@ -125,8 +125,9 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
   public void getSpanProcessingRules(
       GetSpanProcessingRulesRequest request,
       StreamObserver<GetSpanProcessingRulesResponse> responseObserver) {
+    RequestContext requestContext = null;
     try {
-      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestContext = RequestContext.CURRENT.get();
       localProcessingConfigRequestValidator.validateOrThrow(requestContext, request);
 
       // TODO: handle priorities
@@ -134,7 +135,11 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
           spanProcessingRulesManager.getSpanProcessingRulesResponse(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Get Span processing rules RPC failed for request:{}", request, e);
+      log.error(
+          "Get Span processing rules RPC failed for requestContext:{} and environment:{}",
+          requestContext,
+          request.getEnvironment(),
+          e);
       responseObserver.onError(e);
     }
   }
