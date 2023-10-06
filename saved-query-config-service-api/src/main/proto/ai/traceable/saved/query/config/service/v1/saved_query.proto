@@ -38,4 +38,6 @@ message QueryClauses {
   repeated string order_by = 6;
   // Time interval across which metrics are calculated
   optional string interval = 7;
+  // Time range to query
+  optional string time_range = 8;
 }

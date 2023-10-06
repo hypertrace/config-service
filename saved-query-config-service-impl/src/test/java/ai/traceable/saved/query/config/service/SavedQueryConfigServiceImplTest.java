@@ -88,6 +88,7 @@ class SavedQueryConfigServiceImplTest {
             .setGroupLimit("5")
             .setInterval("1m")
             .setIncludeOthersGroups("true")
+            .setTimeRange("1w")
             .build();
     RequestContext requestContext = buildRequestContext();
     SavedQuery createdSavedQuery =
