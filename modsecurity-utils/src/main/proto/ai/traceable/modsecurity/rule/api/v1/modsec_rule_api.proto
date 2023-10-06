@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package ai.traceable.modsecurity.rule.api.v1;
+
+option java_multiple_files = true;
+
+message CustomModsecRule {
+  int64 rule_id = 1;
+  string rule_uuid = 2;
+  string rule_msg = 3;
+  repeated CustomModsecRuleClause and_clauses = 4; // implicit AND operator
+  optional string log_message = 5;
+}
+
+message CustomModsecRuleClause {
+  oneof clause {
+    CustomModsecValueMatchClause value_match_clause = 1;
+    CustomModsecKeyValueMatchClause key_value_match_clause = 2;
+  }
+}
+
+message CustomModsecValueMatchClause {
+  oneof match_metadata {
+    RequestValueMatchMetadata request_value_metadata = 1;
+    ResponseValueMatchMetadata response_value_metadata = 2;
+  }
+  CustomModsecMatchExpression value_match_expression = 3;
+}
+
+message CustomModsecKeyValueMatchClause {
+  oneof match_metadata {
+    RequestKeyValueMatchMetadata request_metadata = 1;
+    ResponseKeyValueMatchMetadata response_metadata = 2;
+  }
+  CustomModsecMatchExpression key_match_expression = 3;
+  CustomModsecMatchExpression value_match_expression = 4;
+}
+
+message CustomModsecMatchExpression {
+  MatchOperator value_match_operator = 1;
+  string match_value = 2;
+
+  enum MatchOperator {
+    MATCH_OPERATOR_UNSPECIFIED = 0;
+    MATCH_OPERATOR_EQUALS = 1;
+    MATCH_OPERATOR_NOT_EQUAL = 2;
+    MATCH_OPERATOR_MATCHES_REGEX = 3;
+    MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+    MATCH_OPERATOR_CONTAINS = 5;
+    MATCH_OPERATOR_NOT_CONTAIN = 6;
+    MATCH_OPERATOR_GREATER_THAN = 7;
+    MATCH_OPERATOR_LESS_THAN = 8;
+  }
+}
+
+enum RequestValueMatchMetadata {
+  REQUEST_VALUE_MATCH_METADATA_UNSPECIFIED = 0;
+  REQUEST_VALUE_MATCH_METADATA_URL = 1;
+  REQUEST_VALUE_MATCH_METADATA_HOST = 2;
+  REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD = 3;
+  REQUEST_VALUE_MATCH_METADATA_USER_AGENT = 4;
+  REQUEST_VALUE_MATCH_METADATA_BODY = 5;
+}
+
+enum ResponseValueMatchMetadata {
+  RESPONSE_VALUE_MATCH_METADATA_UNSPECIFIED = 0;
+  RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE = 1;
+  RESPONSE_VALUE_MATCH_METADATA_BODY = 2;
+}
+
+enum RequestKeyValueMatchMetadata {
+  REQUEST_KEY_VALUE_MATCH_METADATA_UNSPECIFIED = 0;
+  REQUEST_KEY_VALUE_MATCH_METADATA_HEADER = 1;
+  REQUEST_KEY_VALUE_MATCH_METADATA_PARAMETER = 2;
+  REQUEST_KEY_VALUE_MATCH_METADATA_QUERY_PARAMETER = 3;
+  REQUEST_KEY_VALUE_MATCH_METADATA_BODY_PARAMETER = 4;
+  REQUEST_KEY_VALUE_MATCH_METADATA_COOKIE = 5;
+}
+
+enum ResponseKeyValueMatchMetadata {
+  RESPONSE_KEY_VALUE_MATCH_METADATA_UNSPECIFIED = 0;
+  RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER = 1;
+}
