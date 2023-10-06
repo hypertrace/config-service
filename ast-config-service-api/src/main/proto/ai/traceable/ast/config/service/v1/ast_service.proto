@@ -82,7 +82,7 @@ message UpdateAstFeatureConfigResponse {
 }
 
 message GetAstFeatureConfigsRequest {
-  AstFeatureConfigFilter filter = 1;
+  repeated AstFeatureConfigFilter filters = 1;
 }
 
 message AstFeatureConfigFilter {
