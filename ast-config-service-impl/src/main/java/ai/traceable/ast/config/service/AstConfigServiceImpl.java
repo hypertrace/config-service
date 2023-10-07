@@ -1,19 +1,25 @@
 package ai.traceable.ast.config.service;
 
+import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.rules.RulesValidator;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc.AstConfigServiceImplBase;
+import ai.traceable.ast.config.service.v1.AstFeatureConfig;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
+import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
+import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
+import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigResponse;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
@@ -167,6 +173,52 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
     } catch (Exception exception) {
       log.error(
           "Unable to fetch all vulnerability metadata overrides for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getAstFeatureConfigs(
+      GetAstFeatureConfigsRequest request,
+      StreamObserver<GetAstFeatureConfigsResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          GetAstFeatureConfigsResponse.newBuilder()
+              .addAllConfigs(rulesManager.getAstFeatureConfigs(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to fetch ast feature configs for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateAstFeatureConfig(
+      UpdateAstFeatureConfigRequest request,
+      StreamObserver<UpdateAstFeatureConfigResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      rulesValidator.validateOrThrow(requestContext, request);
+      AstFeatureConfig updatedAstFeatureConfig =
+          rulesManager.updateAstFeatureConfig(requestContext, request);
+      responseObserver.onNext(
+          UpdateAstFeatureConfigResponse.newBuilder()
+              .setUpdatedConfig(updatedAstFeatureConfig)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(
+          "Unable to update ast feature configs for request {} with context {}",
           request,
           requestContext,
           exception);

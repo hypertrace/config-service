@@ -1,13 +1,16 @@
 package ai.traceable.ast.config.service.rules;
 
+import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.TagValue;
+import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import ai.traceable.ast.config.service.v1.VulnerabilitySeverity;
@@ -156,7 +159,46 @@ class AstRulesValidator implements RulesValidator {
     validateOrThrow(requestContext);
   }
 
+  @Override
+  public void validateOrThrow(RequestContext requestContext, GetAstFeatureConfigsRequest request) {
+    validateOrThrow(requestContext);
+    if (request.hasFilter()
+        && request
+            .getFilter()
+            .getFilterCase()
+            .equals(AstFeatureConfigFilter.FilterCase.ENVIRONMENT_ID_FILTER)
+        && request.getFilter().getEnvironmentIdFilter().getEnvironmentIdsList().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "The environment filter in  AstFeatureConfigFilter has no environment ids : "
+                  + request.getFilter())
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, UpdateAstFeatureConfigRequest request) {
+    validateOrThrow(requestContext);
+    validateEnvironmentId(requestContext, request.getEnvironmentId());
+    if (request
+        .getUpdateStatusCase()
+        .equals(UpdateAstFeatureConfigRequest.UpdateStatusCase.UPDATESTATUS_NOT_SET)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Update Ast feature config status not set.")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
   private void validateOrThrow(RequestContext requestContext) {
     GrpcValidatorUtils.validateRequestContextOrThrow(requestContext);
+  }
+
+  private void validateEnvironmentId(RequestContext requestContext, String environmentId) {
+    if (environmentId.isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have an environment_id to update the Ast Feature Config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
   }
 }

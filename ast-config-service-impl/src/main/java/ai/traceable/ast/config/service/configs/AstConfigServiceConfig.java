@@ -1,4 +1,4 @@
-package ai.traceable.ast.config.service;
+package ai.traceable.ast.config.service.configs;
 
 import com.google.protobuf.Duration;
 import com.typesafe.config.Config;
@@ -8,7 +8,7 @@ public class AstConfigServiceConfig {
   private static final String AST_CONFIG_SERVICE = "ast.config.service";
   private static final String DEFAULT_PURGE_DURATION_KEY = "defaultPurgeDuration";
 
-  AstConfigServiceConfig(Config config) {
+  public AstConfigServiceConfig(Config config) {
     this.config = config.getConfig(AST_CONFIG_SERVICE);
   }
 

@@ -1,11 +1,17 @@
 package ai.traceable.ast.config.service.rules;
 
+import ai.traceable.ast.config.service.v1.AstEnabledConfig;
+import ai.traceable.ast.config.service.v1.AstFeatureConfig;
+import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
+import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
+import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.inject.Inject;
@@ -21,6 +27,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class AstRulesManager implements RulesManager {
   private final ScanPurgeConfigStore scanPurgeConfigStore;
   private final VulnerabilityMetadataOverridesStore vulnerabilityMetadataOverridesStore;
+  private final AstFeatureConfigStore astFeatureConfigStore;
 
   @Override
   public ScanPurgeConfig updateScanPurgeConfig(
@@ -70,6 +77,41 @@ class AstRulesManager implements RulesManager {
   }
 
   @Override
+  public List<AstFeatureConfig> getAstFeatureConfigs(
+      RequestContext requestContext, GetAstFeatureConfigsRequest request) {
+    if (request
+        .getFilter()
+        .getFilterCase()
+        .equals(AstFeatureConfigFilter.FilterCase.FILTER_NOT_SET)) {
+      return astFeatureConfigStore.getAllConfigData(requestContext);
+    } else {
+      return astFeatureConfigStore.getAllConfigData(requestContext, request.getFilter());
+    }
+  }
+
+  @Override
+  public AstFeatureConfig updateAstFeatureConfig(
+      RequestContext requestContext, UpdateAstFeatureConfigRequest request) {
+    AstFeatureConfig.Builder astFeatureConfigBuilder =
+        AstFeatureConfig.newBuilder().setEnvironmentId(request.getEnvironmentId());
+    switch (request.getUpdateStatusCase()) {
+      case ENABLED_CONFIG:
+        if (request.getEnabledConfig().hasReplayConfig()) {
+          astFeatureConfigBuilder.setEnabledConfig(request.getEnabledConfig());
+        } else {
+          astFeatureConfigBuilder.setEnabledConfig(
+              AstEnabledConfig.newBuilder().setReplayConfig(getDefaultAstReplayConfig()).build());
+        }
+        break;
+      case DISABLED_CONFIG:
+        astFeatureConfigBuilder.setDisabledConfig(request.getDisabledConfig());
+        break;
+    }
+    astFeatureConfigStore.upsertObject(requestContext, astFeatureConfigBuilder.build());
+    return astFeatureConfigBuilder.build();
+  }
+
+  @Override
   public Optional<VulnerabilityMetadataOverrides> deleteVulnerabilityMetadataOverridesConfig(
       RequestContext requestContext, DeleteVulnerabilityMetadataOverridesConfigRequest request) {
     log.info("Resetting plugin to default with metadata Id: {}", request.getMetadataId());
@@ -77,6 +119,14 @@ class AstRulesManager implements RulesManager {
         .deleteObject(requestContext, request.getMetadataId())
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()))
         .getDeletedData();
+  }
+
+  private AstEnabledConfig getDefaultAstEnabledConfig() {
+    return AstEnabledConfig.newBuilder().setReplayConfig(getDefaultAstReplayConfig()).build();
+  }
+
+  private AstReplayConfig getDefaultAstReplayConfig() {
+    return AstReplayConfig.newBuilder().setReplayEnabled(false).build();
   }
 
   public void updateVulnerabilityMetadataOverrides(

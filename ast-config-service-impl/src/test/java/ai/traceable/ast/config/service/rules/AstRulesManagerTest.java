@@ -43,10 +43,14 @@ class AstRulesManagerTest {
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
 
     ScanPurgeConfigStore scanPurgeConfigStore = new ScanPurgeConfigStore(configServiceBlockingStub);
+    AstFeatureConfigStore astFeatureConfigStore =
+        new AstFeatureConfigStore(configServiceBlockingStub, mockConfigChangeEventGenerator);
     VulnerabilityMetadataOverridesStore vulnerabilityMetadataOverridesStore =
         new VulnerabilityMetadataOverridesStore(
             configServiceBlockingStub, mockConfigChangeEventGenerator);
-    rulesManager = new AstRulesManager(scanPurgeConfigStore, vulnerabilityMetadataOverridesStore);
+    rulesManager =
+        new AstRulesManager(
+            scanPurgeConfigStore, vulnerabilityMetadataOverridesStore, astFeatureConfigStore);
     requestContext = RequestContext.forTenantId("default-tenant");
   }
 
