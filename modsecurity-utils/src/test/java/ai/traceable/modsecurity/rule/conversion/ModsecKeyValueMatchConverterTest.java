@@ -35,10 +35,10 @@ public class ModsecKeyValueMatchConverterTest {
   static List<CustomModsecRule> getSampleCustomModsecRules() {
     List<CustomModsecRule> customModsecRules = new ArrayList<>();
 
-    String key = "food";
-    String keyRegex = "(fruit|vegetable)";
-    String value = "ca";
-    String valueRegex = "(p|r)[a-z]+";
+    String key1 = "food";
+    String key2 = "fruit|vegetable";
+    String value1 = "ca";
+    String value2 = "p|r";
 
     List<CustomModsecMatchExpression.MatchOperator> operators =
         List.of(
@@ -49,9 +49,6 @@ public class ModsecKeyValueMatchConverterTest {
             MATCH_OPERATOR_CONTAINS,
             MATCH_OPERATOR_NOT_CONTAIN);
 
-    List<CustomModsecMatchExpression.MatchOperator> regexOperators =
-        List.of(MATCH_OPERATOR_MATCHES_REGEX, MATCH_OPERATOR_NOT_MATCH_REGEX);
-
     List<RequestKeyValueMatchMetadata> requestMetadata =
         List.of(
             REQUEST_KEY_VALUE_MATCH_METADATA_HEADER,
@@ -61,19 +58,15 @@ public class ModsecKeyValueMatchConverterTest {
             REQUEST_KEY_VALUE_MATCH_METADATA_COOKIE);
 
     customModsecRules.addAll(
-        createCustomModsecRequestKeyValueMatchRules(requestMetadata, key, value, operators));
+        createCustomModsecRequestKeyValueMatchRules(requestMetadata, key1, value1, operators));
     customModsecRules.addAll(
-        createCustomModsecRequestKeyValueMatchRules(
-            requestMetadata, keyRegex, valueRegex, regexOperators));
-    customModsecRules.addAll(
-        createCustomModsecResponseKeyValueMatchRules(
-            List.of(RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER), key, value, operators));
+        createCustomModsecRequestKeyValueMatchRules(requestMetadata, key2, value2, operators));
     customModsecRules.addAll(
         createCustomModsecResponseKeyValueMatchRules(
-            List.of(RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER),
-            keyRegex,
-            valueRegex,
-            regexOperators));
+            List.of(RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER), key1, value1, operators));
+    customModsecRules.addAll(
+        createCustomModsecResponseKeyValueMatchRules(
+            List.of(RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER), key2, value2, operators));
 
     customModsecRules.sort(Comparator.comparing(CustomModsecRule::toString));
     AtomicLong ruleId = new AtomicLong(RULE_ID_SEED);

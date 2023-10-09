@@ -1,6 +1,7 @@
 package ai.traceable.modsecurity.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.condition.OS.LINUX;
 
@@ -19,6 +20,16 @@ public class ModsecRuleEngineTest {
   public void test_emptyConfig() {
     // test no crash
     assertEquals(Status.OK, ModsecRuleEngineUtils.validate(null));
+  }
+
+  @Test
+  @EnabledOnOs(LINUX)
+  public void test_invalidConfig() {
+    // test no crash
+    assertNotEquals(
+        Status.OK,
+        ModsecRuleEngineUtils.validate(
+            "SecRule ARGS:a|b \"@streq c\" \"id:10000001,phase:2,t:none,msg:'invalid',logdata:'something',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1'\""));
   }
 
   @Test

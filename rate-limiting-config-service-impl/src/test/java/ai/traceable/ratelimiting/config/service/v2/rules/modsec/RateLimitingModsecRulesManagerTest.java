@@ -11,8 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.customsignature.config.service.modsec.ModsecRuleConversion;
-import ai.traceable.customsignature.config.service.modsec.registry.ModsecRuleMappings;
+import ai.traceable.customsignature.config.service.modsec.CustomModsecRuleConverter;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValuePattern;
@@ -22,6 +21,11 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPat
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
+import ai.traceable.modsecurity.rule.conversion.ModsecRuleConverterImpl;
+import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatchClauseConverter;
+import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
+import ai.traceable.modsecurity.rule.conversion.clause.ModsecOperatorConverter;
+import ai.traceable.modsecurity.rule.conversion.clause.ModsecVariableConverter;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.Allow;
 import ai.traceable.ratelimiting.config.service.v2.Action.Block;
@@ -127,8 +131,16 @@ class RateLimitingModsecRulesManagerTest {
         .when(cachedServiceMappingProvider)
         .getServiceIdentifierEntity(REQUEST_CONTEXT, "serviceId1");
 
+    ModsecVariableConverter modsecVariableConverter = new ModsecVariableConverter();
+    ModsecOperatorConverter modsecOperatorConverter = new ModsecOperatorConverter();
     ModsecBlobConverterUtils blobConverterUtils =
-        new ModsecBlobConverterUtils(new ModsecRuleConversion(new ModsecRuleMappings()));
+        new ModsecBlobConverterUtils(
+            new CustomModsecRuleConverter(
+                new ModsecRuleConverterImpl(
+                    new CustomModsecValueMatchClauseConverter(
+                        modsecVariableConverter, modsecOperatorConverter),
+                    new CustomModsecKeyValueMatchClauseConverter(
+                        modsecVariableConverter, modsecOperatorConverter))));
     ModsecBlobValidator modsecBlobValidator = mock(ModsecBlobValidator.class);
     doReturn(true).when(modsecBlobValidator).validate(any(), any(), any(), any(), any());
 

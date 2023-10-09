@@ -1,8 +1,7 @@
 package ai.traceable.ratelimiting.service.v2.rules.modsec.converters;
 
 import ai.traceable.config.utils.RegexValidator;
-import ai.traceable.customsignature.config.service.modsec.ModsecRuleConversion;
-import ai.traceable.customsignature.config.service.modsec.registry.ModsecActions;
+import ai.traceable.customsignature.config.service.modsec.CustomModsecRuleConverter;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
@@ -29,12 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ModsecBlobConverterUtils {
   private static final String OR_REGEX_DELIMITER = "|";
-  private final ModsecRuleConversion modsecRuleConversion;
+  private final CustomModsecRuleConverter customModsecRuleConverter;
   static final String EMPTY_STRING = "";
 
   @Inject
-  public ModsecBlobConverterUtils(ModsecRuleConversion modsecRuleConversion) {
-    this.modsecRuleConversion = modsecRuleConversion;
+  public ModsecBlobConverterUtils(CustomModsecRuleConverter customModsecRuleConverter) {
+    this.customModsecRuleConverter = customModsecRuleConverter;
   }
 
   String convertToModsecRule(
@@ -50,11 +49,8 @@ public class ModsecBlobConverterUtils {
       clauses.add(urlRegexesClauseWrapper);
       clauses.addAll(ANDClausesList);
 
-      ModsecActions modsecActions =
-          new ModsecActions(
-              modsecIdAssignment.getAndIncrement(), ruleIdentifier, message, logMessage);
-
-      return modsecRuleConversion.getModsecRuleForANDClauses(clauses, modsecActions);
+      return customModsecRuleConverter.getValidatedModsecRuleWithCustomLogMsg(
+          modsecIdAssignment.getAndIncrement(), ruleIdentifier, message, clauses, logMessage);
     } catch (Exception e) {
       log.warn("Cannot convert rateLimitingRule with id {} into modsec rule", ruleIdentifier, e);
       return EMPTY_STRING;

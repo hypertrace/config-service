@@ -34,13 +34,13 @@ public class ModsecRuleEngineUtils {
     try {
       RuleEngine ruleEngine = RuleEngine.create(modsecRuleBlob);
       if (ruleEngine == null) {
-        Status.UNKNOWN.withDescription(
+        return Status.UNKNOWN.withDescription(
             String.format(
                 "Null Rule Engine is getting returned for the Modsec Rule: %s", modsecRuleBlob));
       }
       RuleEngine.destroy(ruleEngine);
     } catch (Exception e) {
-      Status.INVALID_ARGUMENT
+      return Status.INVALID_ARGUMENT
           .withCause(e)
           .withDescription(
               String.format(

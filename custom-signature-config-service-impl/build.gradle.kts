@@ -11,6 +11,7 @@ dependencies {
 
   implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.customSignatureConfigServiceApi)
+  implementation(projects.modsecurityUtils)
   implementation(libs.hypertrace.configservice.api)
   implementation(libs.guice)
   implementation(libs.guava)

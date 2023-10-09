@@ -2,7 +2,9 @@ package ai.traceable.customsignature.config.service.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,7 +12,6 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
-import ai.traceable.customsignature.config.service.modsec.registry.ModsecRuleMappings;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -29,6 +30,12 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.modsecurity.rule.conversion.ModsecRuleConverterImpl;
+import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatchClauseConverter;
+import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
+import ai.traceable.modsecurity.rule.conversion.clause.ModsecOperatorConverter;
+import ai.traceable.modsecurity.rule.conversion.clause.ModsecVariableConverter;
+import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
 import com.github.f4b6a3.uuid.UuidCreator;
 import com.google.common.io.Resources;
 import io.grpc.Status;
@@ -45,13 +52,13 @@ public class CustomSignatureModsecRulesManagerTest {
   private static final String EXPIRY_DURATION = "P3M";
 
   @Test
-  public void testConvertRulesException() {
+  public void testConvertRulesException() throws Exception {
     ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
     when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
         .thenReturn("");
-    ModsecRuleConversion modsecRuleConversion = mock(ModsecRuleConversion.class);
+    CustomModsecRuleConverter customModsecRuleConverter = mock(CustomModsecRuleConverter.class);
     CustomSignatureModsecRulesManager modsecRulesManager =
-        new CustomSignatureModsecRulesManager(modsecRuleConversion, mockDirectivesManager);
+        new CustomSignatureModsecRulesManager(customModsecRuleConverter, mockDirectivesManager);
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
@@ -74,7 +81,8 @@ public class CustomSignatureModsecRulesManagerTest {
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getRulesList().isEmpty());
 
-    when(modsecRuleConversion.getModsecRuleForANDClauses(any(), any()))
+    when(customModsecRuleConverter.getValidatedModsecRule(
+            anyLong(), anyString(), anyString(), anyList()))
         .thenThrow(new UnsupportedOperationException());
     response =
         modsecRulesManager.getModsecRules(
@@ -90,43 +98,13 @@ public class CustomSignatureModsecRulesManagerTest {
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getRulesList().isEmpty());
-    verify(modsecRuleConversion, times(1)).getModsecRuleForANDClauses(any(), any());
+    verify(customModsecRuleConverter, times(3))
+        .getValidatedModsecRule(anyLong(), anyString(), anyString(), anyList());
   }
 
   @Test
   public void testConvertRules() throws IOException {
-    ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
-    when(mockDirectivesManager.getModsecHeader(
-            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS))
-        .thenReturn(
-            "SecRuleEngine On\n"
-                + "SecRequestBodyAccess On\n"
-                + "SecRequestBodyLimit 13107200\n"
-                + "SecRequestBodyNoFilesLimit 131072\n"
-                + "SecRequestBodyLimitAction Reject\n"
-                + "SecPcreMatchLimit 1000\n"
-                + "SecPcreMatchLimitRecursion 1000\n"
-                + "SecResponseBodyAccess On\n"
-                + "SecResponseBodyLimit 524288\n"
-                + "SecTmpDir /tmp/\n"
-                + "SecDataDir /tmp/\n"
-                + "SecAuditEngine Off\n"
-                + "SecAuditLogRelevantStatus \"^(?:5|404|403|401)\"\n"
-                + "SecAuditLogParts ABIJDEFHZ\n"
-                + "SecAuditLogType Serial\n"
-                + "SecAuditLog /var/log/modsec_audit.log\n"
-                + "SecArgumentSeparator &\n"
-                + "SecCookieFormat 0\n"
-                + "SecStatusEngine Off\n"
-                + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
-                + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
-                + "SecCollectionTimeout 600\n"
-                + "SecArgumentsLimit 1000"
-                + "\n\n");
-
-    CustomSignatureModsecRulesManager modsecRulesManager =
-        new CustomSignatureModsecRulesManager(
-            new ModsecRuleConversion(new ModsecRuleMappings()), mockDirectivesManager);
+    CustomSignatureModsecRulesManager modsecRulesManager = getCustomSignatureModsecRulesManager();
 
     List<CustomSignatureRule> rules = new ArrayList<>();
 
@@ -225,17 +203,32 @@ public class CustomSignatureModsecRulesManagerTest {
             MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
         List.of(MatchOperator.MATCH_OPERATOR_GREATER_THAN, MatchOperator.MATCH_OPERATOR_LESS_THAN));
 
+    createRules(
+        rules,
+        List.of(
+            new KeyValueCombination(
+                KeyValueTag.KEY_VALUE_TAG_HEADER, "^x\\-(real|forward)", "128.0.0.1"),
+            new KeyValueCombination(
+                KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param|parameter)[a-s1-9_-]{3,16}$", "5")),
+        List.of(
+            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+        List.of(MatchOperator.MATCH_OPERATOR_EQUALS));
+
     createChainedRule(rules, 0, 10, 80, 100);
     createChainedRule(rules, 15, 95);
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
             rules, CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
-    // subtracting 4 unsupported NOT_CONTAIN rules
     assertEquals(
-        rules.size() - 4 + 4 + 23, /* 3+1 extra chained rules and 23 lines of modsec directives */
+        rules.size()
+            + 4
+            + 4
+            + 4
+            + 23, /* 4 extra chained rules for NOT_CONTAIN rules, 4 extra chained rules for REGEX with PIPE KeyValue rules, 3+1 extra chained rules and 23 lines of modsec directives */
         response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
-    assertEquals(rules.size() - 4, response.getRulesCount());
+    assertEquals(rules.size(), response.getRulesCount());
     assertEquals(
         EXPIRY_TIMESTAMP_MILLIS,
         response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
@@ -251,9 +244,50 @@ public class CustomSignatureModsecRulesManagerTest {
     assertEquals(fileRules, response.getModsecRulesBlob());
 
     if (SystemUtils.IS_OS_LINUX) {
-      assertTrue(modsecRulesManager.loadNativeLibrarySuccess);
-      assertEquals(Status.OK, modsecRulesManager.validateModsecRule(fileRules, "test"));
+      assertEquals(Status.OK, ModsecRuleEngineUtils.validate(fileRules));
     }
+  }
+
+  private CustomSignatureModsecRulesManager getCustomSignatureModsecRulesManager() {
+    ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
+    when(mockDirectivesManager.getModsecHeader(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS))
+        .thenReturn(
+            "SecRuleEngine On\n"
+                + "SecRequestBodyAccess On\n"
+                + "SecRequestBodyLimit 13107200\n"
+                + "SecRequestBodyNoFilesLimit 131072\n"
+                + "SecRequestBodyLimitAction Reject\n"
+                + "SecPcreMatchLimit 1000\n"
+                + "SecPcreMatchLimitRecursion 1000\n"
+                + "SecResponseBodyAccess On\n"
+                + "SecResponseBodyLimit 524288\n"
+                + "SecTmpDir /tmp/\n"
+                + "SecDataDir /tmp/\n"
+                + "SecAuditEngine Off\n"
+                + "SecAuditLogRelevantStatus \"^(?:5|404|403|401)\"\n"
+                + "SecAuditLogParts ABIJDEFHZ\n"
+                + "SecAuditLogType Serial\n"
+                + "SecAuditLog /var/log/modsec_audit.log\n"
+                + "SecArgumentSeparator &\n"
+                + "SecCookieFormat 0\n"
+                + "SecStatusEngine Off\n"
+                + "SecDefaultAction \"phase:1,log,auditlog,deny,status:403\"\n"
+                + "SecDefaultAction \"phase:2,log,auditlog,deny,status:403\"\n"
+                + "SecCollectionTimeout 600\n"
+                + "SecArgumentsLimit 1000"
+                + "\n\n");
+
+    ModsecVariableConverter modsecVariableConverter = new ModsecVariableConverter();
+    ModsecOperatorConverter modsecOperatorConverter = new ModsecOperatorConverter();
+    return new CustomSignatureModsecRulesManager(
+        new CustomModsecRuleConverter(
+            new ModsecRuleConverterImpl(
+                new CustomModsecValueMatchClauseConverter(
+                    modsecVariableConverter, modsecOperatorConverter),
+                new CustomModsecKeyValueMatchClauseConverter(
+                    modsecVariableConverter, modsecOperatorConverter))),
+        mockDirectivesManager);
   }
 
   private void createRules(

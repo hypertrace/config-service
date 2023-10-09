@@ -94,13 +94,16 @@ public class ModsecOperatorConverter {
 
   Optional<ModsecVariableMetadataKey.ModsecVariableKeyOperator> getVariableMetadataOperator(
       CustomModsecMatchExpression expression) {
+    if (expression.getMatchValue().contains(PIPE)) {
+      // PIPE in Variable Regex is not supported, need to go the chained-rule route for that
+      // ref: https://github.com/SpiderLabs/ModSecurity/issues/1591#issuecomment-337262698
+      return Optional.empty();
+    }
     switch (expression.getValueMatchOperator()) {
       case MATCH_OPERATOR_EQUALS:
         return Optional.of(ModsecVariableMetadataKey.ModsecVariableKeyOperator.EQUALS);
       case MATCH_OPERATOR_MATCHES_REGEX:
-        if (!expression.getMatchValue().contains(PIPE)) {
-          return Optional.of(ModsecVariableMetadataKey.ModsecVariableKeyOperator.MATCHES_REGEX);
-        }
+        return Optional.of(ModsecVariableMetadataKey.ModsecVariableKeyOperator.MATCHES_REGEX);
       default:
         return Optional.empty();
     }
@@ -108,15 +111,17 @@ public class ModsecOperatorConverter {
 
   Optional<ModsecVariableMetadataKey.ModsecVariableKeyOperator>
       getOppositePositiveVariableMetadataOperator(CustomModsecMatchExpression expression) {
+    if (expression.getMatchValue().contains(PIPE)) {
+      // PIPE in Variable Regex is not supported, need to go the chained-rule route for that
+      // ref: https://github.com/SpiderLabs/ModSecurity/issues/1591#issuecomment-337262698
+      return Optional.empty();
+    }
+
     switch (expression.getValueMatchOperator()) {
       case MATCH_OPERATOR_NOT_EQUAL:
         return Optional.of(ModsecVariableMetadataKey.ModsecVariableKeyOperator.EQUALS);
       case MATCH_OPERATOR_NOT_MATCH_REGEX:
-        if (!expression.getMatchValue().contains(PIPE)) {
-          // PIPE in Variable Regex is not supported, need to go the chained-rule route for that
-          // ref: https://github.com/SpiderLabs/ModSecurity/issues/1591#issuecomment-337262698
-          return Optional.of(ModsecVariableMetadataKey.ModsecVariableKeyOperator.MATCHES_REGEX);
-        }
+        return Optional.of(ModsecVariableMetadataKey.ModsecVariableKeyOperator.MATCHES_REGEX);
       default:
         return Optional.empty();
     }

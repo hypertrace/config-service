@@ -11,6 +11,7 @@ dependencies {
   api(projects.dataClassificationConfigServiceApi)
 
   implementation(projects.customSignatureConfigServiceImpl)
+  implementation(projects.modsecurityUtils)
   implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.activityEventProducer)
   implementation(projects.entityFetcherCache)
