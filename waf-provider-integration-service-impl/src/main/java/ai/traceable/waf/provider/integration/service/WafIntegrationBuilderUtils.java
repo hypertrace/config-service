@@ -3,6 +3,8 @@ package ai.traceable.waf.provider.integration.service;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
@@ -13,6 +15,12 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class WafIntegrationBuilderUtils {
   public static WafIntegration getUpdatedIntegration(
@@ -146,9 +154,51 @@ public class WafIntegrationBuilderUtils {
                 .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
                 .setName(request.getUpdatedWafIntegrationDetails().getName())
                 .setAzureIntegrationParams(
-                    AzureIntegrationParams.newBuilder()
-                        .addAllAzureIntegrationDetails(
-                            updatedAzureIntegrationParams.getAzureIntegrationDetailsList())))
+                    getUpdatedAzureIntegrationParams(
+                        updatedAzureIntegrationParams,
+                        existingWafIntegration
+                            .getWafIntegrationDetails()
+                            .getAzureIntegrationParams())))
+        .build();
+  }
+
+  private static AzureIntegrationParams getUpdatedAzureIntegrationParams(
+      AzureIntegrationUpdateParams updatedAzureIntegrationParams,
+      AzureIntegrationParams existingAzureIntegrationParams) {
+    Map<String, AzureIntegrationDetails> existingAzureIntegrationDetailsMap =
+        existingAzureIntegrationParams.getAzureIntegrationDetailsList().stream()
+            .collect(
+                Collectors.toUnmodifiableMap(AzureIntegrationDetails::getId, Function.identity()));
+
+    List<AzureIntegrationDetails> updatedAzureIntegrationDetails =
+        updatedAzureIntegrationParams.getAzureIntegrationDetailsList().stream()
+            .map(
+                azureIntegrationDetails -> {
+                  if (azureIntegrationDetails
+                      .getAuthCredentials()
+                      .getEncryptedClientSecret()
+                      .isEmpty()) {
+                    String existingEncryptedClientSecret =
+                        Optional.ofNullable(
+                                existingAzureIntegrationDetailsMap.get(
+                                    azureIntegrationDetails.getId()))
+                            .orElseThrow()
+                            .getAuthCredentials()
+                            .getEncryptedClientSecret();
+                    AzureAuthCredentials updatedAzureAuthCredentials =
+                        azureIntegrationDetails.getAuthCredentials().toBuilder()
+                            .setEncryptedClientSecret(existingEncryptedClientSecret)
+                            .build();
+                    return azureIntegrationDetails.toBuilder()
+                        .setAuthCredentials(updatedAzureAuthCredentials)
+                        .build();
+                  }
+                  return azureIntegrationDetails;
+                })
+            .collect(Collectors.toUnmodifiableList());
+
+    return AzureIntegrationParams.newBuilder()
+        .addAllAzureIntegrationDetails(updatedAzureIntegrationDetails)
         .build();
   }
 
@@ -251,6 +301,32 @@ public class WafIntegrationBuilderUtils {
               wafIntegration.getWafIntegrationDetails().toBuilder()
                   .setAwsIntegrationParams(awsIntegrationParamsBuilder.build()))
           .build();
+    } else if (wafIntegration.getWafIntegrationDetails().hasAzureIntegrationParams()) {
+      List<AzureIntegrationDetails> azureIntegrationDetailsList =
+          wafIntegration
+              .getWafIntegrationDetails()
+              .getAzureIntegrationParams()
+              .getAzureIntegrationDetailsList()
+              .stream()
+              .map(
+                  azureIntegrationDetails -> {
+                    AzureAuthCredentials azureAuthCredentials =
+                        azureIntegrationDetails.getAuthCredentials();
+                    return azureIntegrationDetails.toBuilder()
+                        .setAuthCredentials(
+                            azureAuthCredentials.toBuilder().clearEncryptedClientSecret())
+                        .build();
+                  })
+              .collect(Collectors.toUnmodifiableList());
+
+      return WafIntegration.newBuilder()
+          .setId(wafIntegration.getId())
+          .setWafIntegrationDetails(
+              wafIntegration.getWafIntegrationDetails().toBuilder()
+                  .setAzureIntegrationParams(
+                      AzureIntegrationParams.newBuilder()
+                          .addAllAzureIntegrationDetails(azureIntegrationDetailsList)))
+          .build();
     }
     return wafIntegration;
   }
@@ -286,8 +362,32 @@ public class WafIntegrationBuilderUtils {
                 wafIntegration.getWafIntegrationDetails().toBuilder()
                     .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build()))
             .build();
+      case AZURE_INTEGRATION_PARAMS:
+        AzureIntegrationParams convertedAzureIntegrationParams =
+            populateAzureIntegrationDetailsId(
+                wafIntegration.getWafIntegrationDetails().getAzureIntegrationParams());
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(
+                wafIntegration.getWafIntegrationDetails().toBuilder()
+                    .setAzureIntegrationParams(convertedAzureIntegrationParams))
+            .build();
       default:
         return wafIntegration;
     }
+  }
+
+  private static AzureIntegrationParams populateAzureIntegrationDetailsId(
+      AzureIntegrationParams azureIntegrationParams) {
+    List<AzureIntegrationDetails> azureIntegrationDetailsList =
+        azureIntegrationParams.getAzureIntegrationDetailsList().stream()
+            .map(
+                azureIntegrationDetails ->
+                    azureIntegrationDetails.toBuilder().setId(UUID.randomUUID().toString()).build())
+            .collect(Collectors.toUnmodifiableList());
+
+    return AzureIntegrationParams.newBuilder()
+        .addAllAzureIntegrationDetails(azureIntegrationDetailsList)
+        .build();
   }
 }

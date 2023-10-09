@@ -2,6 +2,7 @@ package ai.traceable.waf.provider.integration.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
@@ -394,9 +395,9 @@ class WafIntegrationConfigServiceImplTest {
             .build();
     GetWafIntegrationsResponse response =
         wafProviderServiceBlockingStub.getWafIntegrations(request);
+    WafIntegration expectedWafIntegration = createResponse.getWafIntegration();
     assertEquals(1, response.getWafIntegrationCount());
-    assertEquals(
-        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+    assertEquals(expectedWafIntegration, response.getWafIntegrationList().get(0));
   }
 
   @Test
@@ -616,6 +617,13 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse createResponse =
         wafProviderServiceBlockingStub.createWafIntegration(createRequest);
     String id = createResponse.getWafIntegration().getId();
+    String azureIntegrationDetailsId =
+        createResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getAzureIntegrationParams()
+            .getAzureIntegrationDetails(0)
+            .getId();
 
     UpdatedWafIntegrationDetails updatedDetails =
         UpdatedWafIntegrationDetails.newBuilder()
@@ -625,6 +633,7 @@ class WafIntegrationConfigServiceImplTest {
                 AzureIntegrationUpdateParams.newBuilder()
                     .addAzureIntegrationDetails(
                         AzureIntegrationDetails.newBuilder()
+                            .setId(azureIntegrationDetailsId)
                             .setAzureTenantId("new-tenant-id")
                             .setSubscriptionId("new-subscription-id")
                             .setAzureEnvironment("new-azure-env")
@@ -635,7 +644,6 @@ class WafIntegrationConfigServiceImplTest {
                             .setAuthCredentials(
                                 AzureAuthCredentials.newBuilder()
                                     .setClientId("new-client-id")
-                                    .setEncryptedClientSecret("new-secret")
                                     .setAccessKeyId("new-key-id"))))
             .build();
 
@@ -661,8 +669,7 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals("new-name", azureIntegrationDetails.getAzureResourceGroupDetails(0).getName());
     assertEquals("new-region", azureIntegrationDetails.getAzureResourceGroupDetails(0).getRegion());
     assertEquals("new-client-id", azureIntegrationDetails.getAuthCredentials().getClientId());
-    assertEquals(
-        "new-secret", azureIntegrationDetails.getAuthCredentials().getEncryptedClientSecret());
+    assertTrue(azureIntegrationDetails.getAuthCredentials().getEncryptedClientSecret().isEmpty());
     assertEquals("new-key-id", azureIntegrationDetails.getAuthCredentials().getAccessKeyId());
   }
 

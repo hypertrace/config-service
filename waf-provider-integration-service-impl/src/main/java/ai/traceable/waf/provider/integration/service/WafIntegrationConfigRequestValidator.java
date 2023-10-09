@@ -177,6 +177,9 @@ public class WafIntegrationConfigRequestValidator {
     azureIntegrationUpdateParams
         .getAzureIntegrationDetailsList()
         .forEach(this::validateAzureIntegrationDetails);
+    azureIntegrationUpdateParams.getAzureIntegrationDetailsList().stream()
+        .map(AzureIntegrationDetails::getAuthCredentials)
+        .forEach(this::validateUpdatedAzureAuthCredentials);
   }
 
   private void validateUpdatedImpervaIntegrationParam(
@@ -214,6 +217,9 @@ public class WafIntegrationConfigRequestValidator {
     azureIntegrationParams
         .getAzureIntegrationDetailsList()
         .forEach(this::validateAzureIntegrationDetails);
+    azureIntegrationParams.getAzureIntegrationDetailsList().stream()
+        .map(AzureIntegrationDetails::getAuthCredentials)
+        .forEach(this::validateAzureAuthCredentials);
   }
 
   private void validateAzureIntegrationDetails(AzureIntegrationDetails azureIntegrationDetails) {
@@ -228,7 +234,6 @@ public class WafIntegrationConfigRequestValidator {
     azureIntegrationDetails
         .getAzureResourceGroupDetailsList()
         .forEach(this::validateAzureResourceGroupDetails);
-    validateAzureAuthCredentials(azureIntegrationDetails.getAuthCredentials());
   }
 
   private void validateAzureResourceGroupDetails(
@@ -244,6 +249,13 @@ public class WafIntegrationConfigRequestValidator {
         azureAuthCredentials, AzureAuthCredentials.CLIENT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         azureAuthCredentials, AzureAuthCredentials.ENCRYPTED_CLIENT_SECRET_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        azureAuthCredentials, AzureAuthCredentials.ACCESS_KEY_ID_FIELD_NUMBER);
+  }
+
+  private void validateUpdatedAzureAuthCredentials(AzureAuthCredentials azureAuthCredentials) {
+    validateNonDefaultPresenceOrThrow(
+        azureAuthCredentials, AzureAuthCredentials.CLIENT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         azureAuthCredentials, AzureAuthCredentials.ACCESS_KEY_ID_FIELD_NUMBER);
   }

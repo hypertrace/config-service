@@ -901,7 +901,6 @@ class WafIntegrationConfigRequestValidatorTest {
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
                                             .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
                                             .setAccessKeyId("key-id")))))
             .build();
     assertDoesNotThrow(
