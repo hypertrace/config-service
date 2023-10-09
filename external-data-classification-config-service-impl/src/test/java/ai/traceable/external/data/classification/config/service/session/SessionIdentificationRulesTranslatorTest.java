@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(reader("session_identification/body/complete_input_rule.json"), rule);
 
     List<DataType> attributeRules =
-        translator.translateSessionIdentificationRules(List.of(rule.build()));
+        translator.translateSessionIdentificationRules(List.of(rule.build()), Optional.of("env"));
     Assertions.assertEquals(2, attributeRules.size());
     DataType.Builder extractedValueBuilder = DataType.newBuilder();
     PARSER.merge(
@@ -42,7 +43,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(reader("session_identification/header/complete_input_rule.json"), rule);
 
     List<DataType> attributeRules =
-        translator.translateSessionIdentificationRules(List.of(rule.build()));
+        translator.translateSessionIdentificationRules(List.of(rule.build()), Optional.of("env"));
     Assertions.assertEquals(2, attributeRules.size());
     DataType.Builder extractedValueBuilder = DataType.newBuilder();
     PARSER.merge(
@@ -62,7 +63,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(reader("session_identification/cookie/complete_input_rule.json"), rule);
 
     List<DataType> attributeRules =
-        translator.translateSessionIdentificationRules(List.of(rule.build()));
+        translator.translateSessionIdentificationRules(List.of(rule.build()), Optional.of("env"));
     Assertions.assertEquals(2, attributeRules.size());
     DataType.Builder extractedValueBuilder = DataType.newBuilder();
     PARSER.merge(
@@ -82,7 +83,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(reader("session_identification/query_param/complete_input_rule.json"), rule);
 
     List<DataType> attributeRules =
-        translator.translateSessionIdentificationRules(List.of(rule.build()));
+        translator.translateSessionIdentificationRules(List.of(rule.build()), Optional.of("env"));
     Assertions.assertEquals(2, attributeRules.size());
     DataType.Builder extractedValueBuilder = DataType.newBuilder();
     PARSER.merge(

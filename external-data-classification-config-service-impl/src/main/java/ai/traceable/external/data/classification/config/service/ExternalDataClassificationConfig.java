@@ -4,7 +4,6 @@ import ai.traceable.external.data.classification.config.service.v1.DataParsingRu
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
-import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -18,16 +17,9 @@ class ExternalDataClassificationConfig {
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".data.parsing.rules";
   private static final String DEFAULT_EXTERNAL_DATA_TYPES =
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".default.external.data.types";
-  private static final String CACHE_THREAD_POOL_SIZE =
-      EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".cache.thread.pool.size";
-  private static final String CACHE_REFRESH =
-      EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".cache.refresh";
 
   @Getter List<DataParsingRule> defaultDataParsingRules;
   @Getter List<DataType> defaultExternalDataTypes;
-  @Getter int cacheThreadPoolSize;
-  @Getter Duration cacheRefreshDuration;
-  @Getter int cacheMaxSize = 10_000;
 
   ExternalDataClassificationConfig(Config config) {
     this.defaultDataParsingRules =
@@ -38,8 +30,6 @@ class ExternalDataClassificationConfig {
         config.getObjectList(DEFAULT_EXTERNAL_DATA_TYPES).stream()
             .map(this::buildDataTypeFromConfig)
             .collect(Collectors.toUnmodifiableList());
-    this.cacheThreadPoolSize = config.getInt(CACHE_THREAD_POOL_SIZE);
-    this.cacheRefreshDuration = config.getDuration(CACHE_REFRESH);
   }
 
   @SneakyThrows
@@ -54,10 +44,5 @@ class ExternalDataClassificationConfig {
     DataType.Builder builder = DataType.newBuilder();
     ConfigProtoConverter.mergeFromJsonString(configObject.render(), builder);
     return builder.build();
-  }
-
-  Duration getCacheExpirationDuration() {
-    // By default, allow one refresh duration grace before evicting.
-    return this.getCacheRefreshDuration().multipliedBy(2);
   }
 }

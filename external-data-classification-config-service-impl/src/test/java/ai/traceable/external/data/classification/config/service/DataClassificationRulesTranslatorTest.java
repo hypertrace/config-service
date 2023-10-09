@@ -21,7 +21,9 @@ import ai.traceable.external.data.classification.config.service.v1.DataType.Resu
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -31,119 +33,115 @@ public class DataClassificationRulesTranslatorTest {
 
   @Test
   void translateDataTypesTest() {
-    ResolvedPlatformDataType dataType1 =
-        new ResolvedPlatformDataType(
-            DataType.newBuilder()
-                .setId("id-1")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatype-1")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setEnvironmentScope(
-                                    EnvironmentScope.newBuilder()
-                                        .addAllEnvironmentIds(List.of("env-1", "env-2")))
-                                .addAllLocations(
-                                    List.of(
-                                        Location.LOCATION_REQUEST_HEADER, Location.LOCATION_QUERY))
-                                .setKeyPattern(
-                                    StringPattern.newBuilder()
-                                        .setValue("value-1")
-                                        .setOperator(Operator.OPERATOR_EQUALS))
-                                .setAction(Action.ACTION_MATCH)))
-                .build(),
-            DataSuppression.DATA_SUPPRESSION_REDACT);
+    DataType dataType1 =
+        DataType.newBuilder()
+            .setId("id-1")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-1")
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder()
+                                    .addAllEnvironmentIds(List.of("env-1", "env-2")))
+                            .addAllLocations(
+                                List.of(Location.LOCATION_REQUEST_HEADER, Location.LOCATION_QUERY))
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue("value-1")
+                                    .setOperator(Operator.OPERATOR_EQUALS))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
 
-    ResolvedPlatformDataType dataType2 =
-        new ResolvedPlatformDataType(
-            DataType.newBuilder()
-                .setId("id-2")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatype-2")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
-                                .addLocations(Location.LOCATION_ANY)
-                                .setKeyPattern(
-                                    StringPattern.newBuilder()
-                                        .setValue("value-2")
-                                        .setOperator(Operator.OPERATOR_EQUALS))
-                                .setAction(Action.ACTION_MATCH)))
-                .build(),
-            DataSuppression.DATA_SUPPRESSION_REDACT);
+    DataType dataType2 =
+        DataType.newBuilder()
+            .setId("id-2")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-2")
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
+                            .addLocations(Location.LOCATION_ANY)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue("value-2")
+                                    .setOperator(Operator.OPERATOR_EQUALS))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
 
-    ResolvedPlatformDataType dataType3 =
-        new ResolvedPlatformDataType(
-            DataType.newBuilder()
-                .setId("id-3")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatype-3")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setEnvironmentScope(
-                                    EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
-                                .addLocations(Location.LOCATION_REQUEST_HEADER)
-                                .setKeyValuePattern(
-                                    KeyValuePattern.newBuilder()
-                                        .setKeyPattern(
-                                            StringPattern.newBuilder()
-                                                .setValue("key-3")
-                                                .setOperator(Operator.OPERATOR_EQUALS))
-                                        .setValuePattern(
-                                            StringPattern.newBuilder()
-                                                .setValue("value-3")
-                                                .setOperator(Operator.OPERATOR_EQUALS)))
-                                .setAction(Action.ACTION_MATCH)))
-                .build(),
-            DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
+    DataType dataType3 =
+        DataType.newBuilder()
+            .setId("id-3")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-3")
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .addLocations(Location.LOCATION_REQUEST_HEADER)
+                            .setKeyValuePattern(
+                                KeyValuePattern.newBuilder()
+                                    .setKeyPattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("key-3")
+                                            .setOperator(Operator.OPERATOR_EQUALS))
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("value-3")
+                                            .setOperator(Operator.OPERATOR_EQUALS)))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
 
-    ResolvedPlatformDataType dataType4 =
-        new ResolvedPlatformDataType(
-            DataType.newBuilder()
-                .setId("id-4")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatype-4")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setEnvironmentScope(
-                                    EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
-                                .addLocations(Location.LOCATION_REQUEST_HEADER)
-                                .addLocations(Location.LOCATION_ANY)
-                                .setKeyPattern(
-                                    StringPattern.newBuilder()
-                                        .setValue("value-4")
-                                        .setOperator(Operator.OPERATOR_MATCHES_REGEX))
-                                .setAction(Action.ACTION_MATCH)))
-                .build(),
-            DataSuppression.DATA_SUPPRESSION_RAW);
+    DataType dataType4 =
+        DataType.newBuilder()
+            .setId("id-4")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-4")
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-1"))
+                            .addLocations(Location.LOCATION_REQUEST_HEADER)
+                            .addLocations(Location.LOCATION_ANY)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue("value-4")
+                                    .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
 
-    ResolvedPlatformDataType dataType5 =
-        new ResolvedPlatformDataType(
-            DataType.newBuilder()
-                .setId("id-5")
-                .setRule(
-                    DataTypeRule.newBuilder()
-                        .setName("datatype-5")
-                        .addScopedPatterns(
-                            ScopedPattern.newBuilder()
-                                .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
-                                .addLocations(Location.LOCATION_REQUEST_HEADER)
-                                .setLeafKeyValuePattern(
-                                    KeyValuePattern.newBuilder()
-                                        .setKeyPattern(
-                                            StringPattern.newBuilder()
-                                                .setValue("key-5")
-                                                .setOperator(Operator.OPERATOR_EQUALS))
-                                        .setValuePattern(
-                                            StringPattern.newBuilder()
-                                                .setValue("value-5")
-                                                .setOperator(Operator.OPERATOR_EQUALS)))
-                                .setAction(Action.ACTION_MATCH)))
-                .build(),
-            DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
+    DataType dataType5 =
+        DataType.newBuilder()
+            .setId("id-5")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-5")
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setGlobalScope(DataTypeRule.GlobalScope.getDefaultInstance())
+                            .addLocations(Location.LOCATION_REQUEST_HEADER)
+                            .setLeafKeyValuePattern(
+                                KeyValuePattern.newBuilder()
+                                    .setKeyPattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("key-5")
+                                            .setOperator(Operator.OPERATOR_EQUALS))
+                                    .setValuePattern(
+                                        StringPattern.newBuilder()
+                                            .setValue("value-5")
+                                            .setOperator(Operator.OPERATOR_EQUALS)))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
+    dataTypesToDataSuppressionMap.put("id-1", DataSuppression.DATA_SUPPRESSION_REDACT);
+    dataTypesToDataSuppressionMap.put("id-2", DataSuppression.DATA_SUPPRESSION_REDACT);
+    dataTypesToDataSuppressionMap.put("id-3", DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
+    dataTypesToDataSuppressionMap.put("id-4", DataSuppression.DATA_SUPPRESSION_RAW);
+    dataTypesToDataSuppressionMap.put("id-5", DataSuppression.DATA_SUPPRESSION_OBFUSCATE);
 
     ai.traceable.external.data.classification.config.service.v1.DataType expectedDataType1 =
         ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
@@ -322,6 +320,7 @@ public class DataClassificationRulesTranslatorTest {
     List<ai.traceable.external.data.classification.config.service.v1.DataType> translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
             Optional.of("env-1"),
             PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
 
@@ -338,6 +337,7 @@ public class DataClassificationRulesTranslatorTest {
     translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
             Optional.of("env-1"),
             PREDICATE_SUPPORT_LEVEL_UNSPECIFIED);
 
@@ -354,6 +354,7 @@ public class DataClassificationRulesTranslatorTest {
     translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
             Optional.of("env-2"),
             PREDICATE_SUPPORT_LEVEL_UNSPECIFIED);
 
@@ -364,6 +365,7 @@ public class DataClassificationRulesTranslatorTest {
     translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
             Optional.empty(),
             PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
     expectedDataTypes = List.of(expectedDataType2, expectedDataType5);
@@ -372,6 +374,7 @@ public class DataClassificationRulesTranslatorTest {
     translatedDataTypes =
         dataClassificationRulesTranslator.translateDataTypes(
             List.of(dataType1, dataType2, dataType3, dataType4, dataType5),
+            dataTypesToDataSuppressionMap,
             Optional.of("env-random"),
             PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
     expectedDataTypes = List.of(expectedDataType2, expectedDataType5);

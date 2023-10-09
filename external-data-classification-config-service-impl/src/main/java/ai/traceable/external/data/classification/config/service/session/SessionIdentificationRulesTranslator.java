@@ -53,11 +53,18 @@ public class SessionIdentificationRulesTranslator {
   MatchConditionTranslator matchConditionTranslator;
 
   public List<DataType> translateSessionIdentificationRules(
-      List<SessionIdentificationRule> sessionIdentificationRules) {
+      List<SessionIdentificationRule> sessionIdentificationRules, Optional<String> envName) {
     return sessionIdentificationRules.stream()
+        .filter(rule -> matchEnvScope(rule, envName))
         .map(this::translateSessionIdentificationRule)
         .flatMap(Collection::stream)
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean matchEnvScope(SessionIdentificationRule rule, Optional<String> environmentName) {
+    return rule.getScope().getEnvironmentNamesList().isEmpty()
+        || environmentName.isEmpty()
+        || (rule.getScope().getEnvironmentNamesList().contains(environmentName.get()));
   }
 
   private List<DataType> translateSessionIdentificationRule(SessionIdentificationRule rule) {

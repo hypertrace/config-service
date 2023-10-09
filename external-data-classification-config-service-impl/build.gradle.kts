@@ -18,10 +18,8 @@ dependencies {
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.configservice.validation)
   implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.hypertrace.framework.metrics)
   implementation(libs.slf4j.api)
   implementation(libs.guice)
-  implementation(libs.guava)
   implementation(projects.configUtils)
 
   annotationProcessor(libs.lombok)

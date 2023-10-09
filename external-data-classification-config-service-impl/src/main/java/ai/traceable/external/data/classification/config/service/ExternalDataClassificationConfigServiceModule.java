@@ -38,8 +38,9 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
   @Override
   protected void configure() {
     bind(BindableService.class).to(ExternalDataClassificationConfigServiceImpl.class);
+    bind(InsightsServiceCoordinator.class).to(InsightsServiceCoordinatorImpl.class);
     bind(ExternalDataClassificationConfig.class)
-        .toProvider(() -> new ExternalDataClassificationConfig(this.config));
+        .toInstance(new ExternalDataClassificationConfig(this.config));
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
   }
 

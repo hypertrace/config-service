@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
@@ -30,6 +31,10 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.external.data.classification.config.service.session.MatchConditionTranslator;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationConstants;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesDao;
+import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesTranslator;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc;
@@ -40,8 +45,6 @@ import ai.traceable.external.data.classification.config.service.v1.GetDataClassi
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
-import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
-import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc.InsightsServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
@@ -52,23 +55,11 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest;
 import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesResponse;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
-import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceBlockingStub;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.util.Modules;
-import com.typesafe.config.ConfigFactory;
-import io.grpc.BindableService;
 import io.grpc.stub.StreamObserver;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.config.service.test.MockGenericConfigService;
-import org.hypertrace.core.grpcutils.client.InProcessGrpcChannelRegistry;
-import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
-import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,64 +71,52 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class ExternalDataClassificationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   ExternalDataClassificationServiceBlockingStub externalDataClassificationServiceBlockingStub;
+  SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
+  DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
+  SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceBlockingStub
+      sessionIdentificationConfigServiceBlockingStub;
+  @Mock InsightsServiceCoordinator insightsServiceCoordinator;
+
+  UuidGenerator uuidGenerator = new UuidGenerator();
   @Mock FeatureCachingClient featureCachingClient;
   List<DataClassificationOverride> dataClassificationOverrides;
   @Mock ExternalDataClassificationConfig externalDataClassificationConfig;
 
   @BeforeEach
   void setup() {
-    PlatformMetricsRegistry.getMeterRegistry().clear();
     mockGenericConfigService = new MockGenericConfigService();
-    Injector injector =
-        Guice.createInjector(
-            Modules.override(
-                    new ExternalDataClassificationConfigServiceModule(
-                        this.mockGenericConfigService.channel(),
-                        ConfigFactory.empty(),
-                        new InProcessGrpcChannelRegistry(),
-                        this.featureCachingClient))
-                .with(
-                    new AbstractModule() {
-                      @Override
-                      public void configure() {
-                        bind(ExternalDataClassificationConfig.class)
-                            .toInstance(externalDataClassificationConfig);
-                        bind(SensitiveDataConfigServiceBlockingStub.class)
-                            .toInstance(
-                                SensitiveDataConfigServiceGrpc.newBlockingStub(
-                                    mockGenericConfigService.channel()));
-                        bind(DataClassificationConfigServiceBlockingStub.class)
-                            .toInstance(
-                                DataClassificationConfigServiceGrpc.newBlockingStub(
-                                    mockGenericConfigService.channel()));
-                        bind(SessionIdentificationConfigServiceBlockingStub.class)
-                            .toInstance(
-                                SessionIdentificationConfigServiceGrpc.newBlockingStub(
-                                    mockGenericConfigService.channel()));
-                        bind(InsightsServiceBlockingStub.class)
-                            .toInstance(
-                                InsightsServiceGrpc.newBlockingStub(
-                                    mockGenericConfigService.channel()));
-                      }
-                    }));
+    sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    dataClassificationConfigServiceBlockingStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+    sessionIdentificationConfigServiceBlockingStub =
+        SessionIdentificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
     when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    when(externalDataClassificationConfig.getCacheRefreshDuration())
-        .thenReturn(Duration.ofMinutes(1));
-    when(externalDataClassificationConfig.getCacheThreadPoolSize()).thenReturn(1);
-    when(externalDataClassificationConfig.getCacheMaxSize()).thenReturn(10);
-    when(externalDataClassificationConfig.getCacheExpirationDuration())
-        .thenReturn(Duration.ofMinutes(1));
     mockGenericConfigService
         .addService(new MockSessionIdentificationConfigService())
-        .addService(injector.getInstance(BindableService.class))
+        .addService(
+            new ExternalDataClassificationConfigServiceImpl(
+                externalDataClassificationConfig,
+                new ExternalDataClassificationConfigRequestValidator(),
+                new RedactionRulesDao(sensitiveDataConfigServiceBlockingStub),
+                new DataClassificationRulesDao(dataClassificationConfigServiceBlockingStub),
+                new RedactionRulesTranslator(),
+                new DataClassificationRulesTranslator(),
+                new ExternalDataClassificationRuleResponseBuilder(
+                    uuidGenerator, featureCachingClient),
+                insightsServiceCoordinator,
+                featureCachingClient,
+                new SessionIdentificationRulesDao(sessionIdentificationConfigServiceBlockingStub),
+                new SessionIdentificationRulesTranslator(
+                    new SessionIdentificationConstants(), new MatchConditionTranslator())))
         .addService(new MockSensitiveDataConfigService())
         .addService(new MockDataClassificationConfigService())
         .start();
     externalDataClassificationServiceBlockingStub =
         ExternalDataClassificationServiceGrpc.newBlockingStub(
-                this.mockGenericConfigService.channel())
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+            this.mockGenericConfigService.channel());
   }
 
   @AfterEach
@@ -151,6 +130,14 @@ public class ExternalDataClassificationConfigServiceImplTest {
     GetDataClassificationConfigResponse response =
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
             GetDataClassificationConfigRequest.getDefaultInstance());
+    assertEquals(1, response.getDataTypesCount());
+
+    response =
+        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
+            GetDataClassificationConfigRequest.newBuilder()
+                .setChangeFilter(OnlyIfChangedFilter.getDefaultInstance())
+                .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
+                .build());
     assertEquals(1, response.getDataTypesCount());
 
     response =
@@ -271,79 +258,28 @@ public class ExternalDataClassificationConfigServiceImplTest {
 
     Optional<ai.traceable.external.data.classification.config.service.v1.DataType>
         dbStatementDataType =
-            RequestContext.forTenantId("First")
-                .call(
-                    () ->
-                        externalDataClassificationServiceBlockingStub
-                            .getDataClassificationConfig(
-                                GetDataClassificationConfigRequest.getDefaultInstance())
-                            .getDataTypesList()
-                            .stream()
-                            .filter(
-                                dataType -> "db_query_attributes".equals(dataType.getDataTypeId()))
-                            .findFirst());
+            externalDataClassificationServiceBlockingStub
+                .getDataClassificationConfig(
+                    GetDataClassificationConfigRequest.getDefaultInstance())
+                .getDataTypesList()
+                .stream()
+                .filter(dataType -> "db_query_attributes".equals(dataType.getDataTypeId()))
+                .findFirst();
 
     assertEquals(
         Optional.of(defaultDataType.toBuilder().clearTransformation().build()),
         dbStatementDataType);
 
     when(featureCachingClient.isRaspInspectionEnabled(any())).thenReturn(false);
-    // Use new request context to ensure we don't hit the cached result from first FF check
     dbStatementDataType =
-        RequestContext.forTenantId("Second")
-            .call(
-                () ->
-                    externalDataClassificationServiceBlockingStub
-                        .getDataClassificationConfig(
-                            GetDataClassificationConfigRequest.getDefaultInstance())
-                        .getDataTypesList()
-                        .stream()
-                        .filter(dataType -> "db_query_attributes".equals(dataType.getDataTypeId()))
-                        .findFirst());
+        externalDataClassificationServiceBlockingStub
+            .getDataClassificationConfig(GetDataClassificationConfigRequest.getDefaultInstance())
+            .getDataTypesList()
+            .stream()
+            .filter(dataType -> "db_query_attributes".equals(dataType.getDataTypeId()))
+            .findFirst();
 
     assertEquals(Optional.of(defaultDataType), dbStatementDataType);
-  }
-
-  @Test
-  void cachesNextResponse() {
-    dataClassificationOverrides = new ArrayList<>();
-    GetDataClassificationConfigResponse firstResponse =
-        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
-            GetDataClassificationConfigRequest.getDefaultInstance());
-    // Same request again (which wouldn't typically happen from the same agent)
-    externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
-        GetDataClassificationConfigRequest.getDefaultInstance());
-    // New request with newly generated hash
-
-    GetDataClassificationConfigResponse secondResponse =
-        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
-            GetDataClassificationConfigRequest.newBuilder()
-                .setChangeFilter(
-                    OnlyIfChangedFilter.newBuilder().setPreviousHash(firstResponse.getHash()))
-                .build());
-
-    // Second response should have same hash, but otherwise be empty
-    assertEquals(firstResponse.getHash(), secondResponse.getHash());
-    assertEquals(
-        GetDataClassificationConfigResponse.getDefaultInstance(),
-        secondResponse.toBuilder().clearHash().build());
-
-    assertEquals(
-        2,
-        PlatformMetricsRegistry.getMeterRegistry()
-            .get("cache.gets")
-            .tag("cache", "ExternalDataClassificationConfigServiceImplResponseCache")
-            .tag("result", "hit")
-            .functionCounter()
-            .count());
-    assertEquals(
-        1,
-        PlatformMetricsRegistry.getMeterRegistry()
-            .get("cache.gets")
-            .tag("cache", "ExternalDataClassificationConfigServiceImplResponseCache")
-            .tag("result", "miss")
-            .functionCounter()
-            .count());
   }
 
   class MockDataClassificationConfigService
@@ -395,7 +331,6 @@ public class ExternalDataClassificationConfigServiceImplTest {
                       .setSensitivity(Sensitivity.SENSITIVITY_LOW)
                       .addDataTypeIds("datatype-3"))
               .build();
-
       responseObserver.onNext(
           GetDataSetsResponse.newBuilder()
               .addAllDataSets(List.of(dataSet1, dataSet2, dataSet3, legacyDataSet))
