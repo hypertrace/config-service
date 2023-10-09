@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
@@ -32,12 +33,14 @@ class AstRulesManagerTest {
   private RulesManager rulesManager;
   private RequestContext requestContext;
   private ConfigChangeEventGenerator mockConfigChangeEventGenerator;
+  private AstConfigServiceConfig mockAstConfigServiceConfig;
 
   @BeforeEach
   void setup() {
     mockConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     mockConfigChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockAstConfigServiceConfig = mock(AstConfigServiceConfig.class);
     mockConfigService.start();
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
@@ -50,7 +53,10 @@ class AstRulesManagerTest {
             configServiceBlockingStub, mockConfigChangeEventGenerator);
     rulesManager =
         new AstRulesManager(
-            scanPurgeConfigStore, vulnerabilityMetadataOverridesStore, astFeatureConfigStore);
+            scanPurgeConfigStore,
+            vulnerabilityMetadataOverridesStore,
+            astFeatureConfigStore,
+            mockAstConfigServiceConfig);
     requestContext = RequestContext.forTenantId("default-tenant");
   }
 

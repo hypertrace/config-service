@@ -261,7 +261,12 @@ data:
     }
     ast.config.service = {
       defaultPurgeDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultPurgeDuration }}
-    }
+      defaultAstFeatureConfig = {
+        astEnabled = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astEnabled }}
+        astReplayConfig = {
+          enabled = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.enabled }}
+        }
+      }
     local.api.naming.config = {
       agent.polling.frequency = {{ .Values.localApiNamingConfig.agentPollingFrequency }}
       {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}

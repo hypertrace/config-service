@@ -1,5 +1,6 @@
 package ai.traceable.ast.config.service.rules;
 
+import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
 import ai.traceable.ast.config.service.v1.AstEnabledConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
@@ -28,6 +29,7 @@ class AstRulesManager implements RulesManager {
   private final ScanPurgeConfigStore scanPurgeConfigStore;
   private final VulnerabilityMetadataOverridesStore vulnerabilityMetadataOverridesStore;
   private final AstFeatureConfigStore astFeatureConfigStore;
+  private final AstConfigServiceConfig config;
 
   @Override
   public ScanPurgeConfig updateScanPurgeConfig(
@@ -100,7 +102,12 @@ class AstRulesManager implements RulesManager {
           astFeatureConfigBuilder.setEnabledConfig(request.getEnabledConfig());
         } else {
           astFeatureConfigBuilder.setEnabledConfig(
-              AstEnabledConfig.newBuilder().setReplayConfig(getDefaultAstReplayConfig()).build());
+              AstEnabledConfig.newBuilder()
+                  .setReplayConfig(
+                      AstReplayConfig.newBuilder()
+                          .setReplayEnabled(config.defaultIsAstReplayEnabled())
+                          .build())
+                  .build());
         }
         break;
       case DISABLED_CONFIG:
@@ -119,14 +126,6 @@ class AstRulesManager implements RulesManager {
         .deleteObject(requestContext, request.getMetadataId())
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()))
         .getDeletedData();
-  }
-
-  private AstEnabledConfig getDefaultAstEnabledConfig() {
-    return AstEnabledConfig.newBuilder().setReplayConfig(getDefaultAstReplayConfig()).build();
-  }
-
-  private AstReplayConfig getDefaultAstReplayConfig() {
-    return AstReplayConfig.newBuilder().setReplayEnabled(false).build();
   }
 
   public void updateVulnerabilityMetadataOverrides(

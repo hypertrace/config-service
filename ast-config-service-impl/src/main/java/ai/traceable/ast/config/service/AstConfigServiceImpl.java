@@ -4,7 +4,10 @@ import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.rules.RulesValidator;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc.AstConfigServiceImplBase;
+import ai.traceable.ast.config.service.v1.AstDisabledConfig;
+import ai.traceable.ast.config.service.v1.AstEnabledConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
+import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
@@ -187,10 +190,22 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       rulesValidator.validateOrThrow(requestContext, request);
-      responseObserver.onNext(
+      GetAstFeatureConfigsResponse.Builder getAstFeatureConfigsResponseBuilder =
           GetAstFeatureConfigsResponse.newBuilder()
-              .addAllConfigs(rulesManager.getAstFeatureConfigs(requestContext, request))
-              .build());
+              .addAllConfigs(rulesManager.getAstFeatureConfigs(requestContext, request));
+      if (config.defaultIsAstEnabled()) {
+        getAstFeatureConfigsResponseBuilder.setDefaultEnabledConfig(
+            AstEnabledConfig.newBuilder()
+                .setReplayConfig(
+                    AstReplayConfig.newBuilder()
+                        .setReplayEnabled(config.defaultIsAstEnabled())
+                        .build())
+                .build());
+      } else {
+        getAstFeatureConfigsResponseBuilder.setDefaultDisabledConfig(
+            AstDisabledConfig.newBuilder().build());
+      }
+      responseObserver.onNext(getAstFeatureConfigsResponseBuilder.build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error(

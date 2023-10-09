@@ -250,6 +250,10 @@ traceableConfigServiceConfig:
     migrationDisabled: false
   astConfigService:
     defaultPurgeDuration: 30d
+    defaultAstFeatureConfig:
+      astEnabled: true
+      astReplayConfig:
+        enabled: false
   actorService:
     host: actor-service
     port: 50888

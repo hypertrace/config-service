@@ -97,4 +97,8 @@ message AstFeatureConfigFilter {
 
 message GetAstFeatureConfigsResponse {
   repeated AstFeatureConfig configs = 1;
+  oneof default_config {
+    AstDisabledConfig default_disabled_config = 2;
+    AstEnabledConfig default_enabled_config = 3;
+  }
 }
