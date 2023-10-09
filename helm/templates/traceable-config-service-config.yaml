@@ -267,6 +267,7 @@ data:
           enabled = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.enabled }}
         }
       }
+    }
     local.api.naming.config = {
       agent.polling.frequency = {{ .Values.localApiNamingConfig.agentPollingFrequency }}
       {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}
