@@ -1,96 +1,89 @@
 package ai.traceable.external.data.classification.config.service;
 
-import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
-import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_RAW;
-import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
-import static java.util.function.Function.identity;
-
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataSet;
-import ai.traceable.data.classification.config.service.v1.DataSetInfo;
-import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
-import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.external.data.classification.config.service.legacy.LegacyRuleManager;
 import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesDao;
 import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesTranslator;
-import ai.traceable.external.data.classification.config.service.v1.DataType.Builder;
+import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceImplBase;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.OnlyIfChangedFilter;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
-import ai.traceable.sensitivedata.config.service.v1.Parameter;
-import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
-import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
-import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
-import com.google.inject.Inject;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.stub.StreamObserver;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 class ExternalDataClassificationConfigServiceImpl
     extends ExternalDataClassificationServiceImplBase {
 
-  private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  // and with id in PiiFilterConfigServiceImpl in sensitive data config service
-  private static final String LEGACY_REDACT_DATA_SET_ID = "legacy-dataset-redacted-id";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  // and with id in PiiFilterConfigServiceImpl in sensitive data config service
-  private static final String LEGACY_OBFUSCATE_DATA_SET_ID = "legacy-dataset-obfuscated-id";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  // and with id in PiiFilterConfigServiceImpl in sensitive data config service
-  private static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID =
-      "legacy-dataset-sensitive-headers-id";
-
-  private static final String DB_STATEMENT_DATA_TYPE_ID = "db_query_attributes";
   private final ExternalDataClassificationConfig externalDataClassificationConfig;
   private final ExternalDataClassificationConfigRequestValidator
       externalDataClassificationConfigRequestValidator;
-  private final RedactionRulesDao redactionRulesDao;
-  private final DataClassificationRulesDao dataClassificationRulesDao;
   private final SessionIdentificationRulesDao sessionIdentificationRulesDao;
   private final SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator;
-  private final RedactionRulesTranslator redactionRulesTranslator;
-  private final DataClassificationRulesTranslator dataClassificationRulesTranslator;
+  private final LegacyRuleManager legacyRuleManager;
+  private final PlatformDataTypeManager platformDataTypeManager;
+  private final OverrideRuleManager overrideRuleManager;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
-  private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final FeatureCachingClient featureCachingClient;
+
+  private final LoadingCache<
+          ContextualKey<GetDataClassificationConfigRequest>, GetDataClassificationConfigResponse>
+      responseCache;
 
   @Inject
   public ExternalDataClassificationConfigServiceImpl(
       ExternalDataClassificationConfig externalDataClassificationConfig,
       ExternalDataClassificationConfigRequestValidator
           externalDataClassificationConfigRequestValidator,
-      RedactionRulesDao redactionRulesDao,
-      DataClassificationRulesDao dataClassificationRulesDao,
-      RedactionRulesTranslator redactionRulesTranslator,
-      DataClassificationRulesTranslator dataClassificationRulesTranslator,
-      ExternalDataClassificationRuleResponseBuilder responseBuilder,
-      InsightsServiceCoordinator insightsServiceCoordinator,
-      FeatureCachingClient featureCachingClient,
       SessionIdentificationRulesDao sessionIdentificationRulesDao,
-      SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator) {
+      SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator,
+      LegacyRuleManager legacyRuleManager,
+      PlatformDataTypeManager platformDataTypeManager,
+      OverrideRuleManager overrideRuleManager,
+      ExternalDataClassificationRuleResponseBuilder responseBuilder,
+      FeatureCachingClient featureCachingClient) {
     this.externalDataClassificationConfig = externalDataClassificationConfig;
     this.externalDataClassificationConfigRequestValidator =
         externalDataClassificationConfigRequestValidator;
-    this.redactionRulesDao = redactionRulesDao;
-    this.dataClassificationRulesDao = dataClassificationRulesDao;
-    this.redactionRulesTranslator = redactionRulesTranslator;
-    this.dataClassificationRulesTranslator = dataClassificationRulesTranslator;
-    this.responseBuilder = responseBuilder;
-    this.insightsServiceCoordinator = insightsServiceCoordinator;
-    this.featureCachingClient = featureCachingClient;
     this.sessionIdentificationRulesDao = sessionIdentificationRulesDao;
     this.sessionIdentificationRulesTranslator = sessionIdentificationRulesTranslator;
+    this.legacyRuleManager = legacyRuleManager;
+    this.platformDataTypeManager = platformDataTypeManager;
+    this.overrideRuleManager = overrideRuleManager;
+    this.responseBuilder = responseBuilder;
+    this.featureCachingClient = featureCachingClient;
+
+    this.responseCache =
+        CacheBuilder.newBuilder()
+            .expireAfterAccess(this.externalDataClassificationConfig.getCacheExpirationDuration())
+            .refreshAfterWrite(this.externalDataClassificationConfig.getCacheRefreshDuration())
+            .maximumSize(this.externalDataClassificationConfig.getCacheMaxSize())
+            .recordStats()
+            .build(
+                CacheLoader.asyncReloading(
+                    CacheLoader.from(this::calculateResponse), this.buildExecutor()));
+
+    PlatformMetricsRegistry.registerCache(
+        "ExternalDataClassificationConfigServiceImplResponseCache",
+        this.responseCache,
+        Collections.emptyMap());
   }
 
   @Override
@@ -101,111 +94,8 @@ class ExternalDataClassificationConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.externalDataClassificationConfigRequestValidator.validateOrThrow(
           requestContext, request);
-      if (!this.featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
-        responseObserver.onNext(this.responseBuilder.buildDisabledResponse());
-        responseObserver.onCompleted();
-        return;
-      }
-      Optional<String> envOptional =
-          Optional.of(request.getEnvironmentFilter().getEnvironmentName())
-              .filter(envName -> !envName.isBlank());
-      Optional<DataSuppression> dataSuppressionOverrideOptional =
-          envOptional.flatMap(
-              env ->
-                  this.dataClassificationRulesDao.getDataSuppressionOverride(requestContext, env));
-      Map<String, DataType> dataTypesToIdMap =
-          this.dataClassificationRulesDao.getAllDataTypes(requestContext).stream()
-              .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
-      List<DataSet> enabledDataSets =
-          this.dataClassificationRulesDao.getAllDataSets(requestContext).stream()
-              .filter(dataSet -> dataSet.getInfo().getEnabled())
-              .collect(Collectors.toUnmodifiableList());
-      List<DataSet> dataSetsToTranslate =
-          enabledDataSets.stream()
-              .map(
-                  dataSet ->
-                      updateDataSetIfDataSuppressionOverridden(
-                          dataSet, dataSuppressionOverrideOptional))
-              .filter(
-                  dataSet ->
-                      !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX)
-                          && (dataSet
-                                  .getInfo()
-                                  .getDataSuppression()
-                                  .equals(DataSuppression.DATA_SUPPRESSION_REDACT)
-                              || dataSet
-                                  .getInfo()
-                                  .getDataSuppression()
-                                  .equals(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)))
-              .sorted(Comparator.comparingInt(o -> comparatorUtility(o.getInfo())))
-              .collect(Collectors.toUnmodifiableList());
-      List<DataType> dataTypes = new ArrayList<>();
-      Map<String, DataSuppression> dataTypesToDataSuppressionMap = new HashMap<>();
-      for (DataSet dataSet : dataSetsToTranslate) {
-        DataSuppression dataSuppression = dataSet.getInfo().getDataSuppression();
-        for (String dataTypeId : dataSet.getInfo().getDataTypeIdsList()) {
-          if (dataTypesToIdMap.containsKey(dataTypeId)
-              && !dataTypesToDataSuppressionMap.containsKey(dataTypeId)) {
-            dataTypesToDataSuppressionMap.put(dataTypeId, dataSuppression);
-            dataTypes.add(dataTypesToIdMap.get(dataTypeId));
-          }
-        }
-      }
-      dataTypes = Collections.unmodifiableList(dataTypes);
-      Map<String, DataSet> enabledDataSetMap =
-          enabledDataSets.stream()
-              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
-      List<ai.traceable.external.data.classification.config.service.v1.DataType> externalDataTypes =
-          new ArrayList<>();
-      List<RedactionRule> redactionRules =
-          this.redactionRulesDao.getEnabledRedactionRules(requestContext);
-      externalDataTypes.addAll(
-          redactionRulesTranslator.translateRedactionRules(
-              getFilteredRedactionRules(
-                  redactionRules, enabledDataSetMap, dataSuppressionOverrideOptional)));
-      externalDataTypes.addAll(
-          dataClassificationRulesTranslator.translateDataTypes(
-              dataTypes,
-              dataTypesToDataSuppressionMap,
-              envOptional,
-              request.getPredicateSupportLevel()));
-
-      if (featureCachingClient.isSessionIdentificationV2EnabledForTenant(requestContext)) {
-        List<SessionIdentificationRule> sessionIdentificationRules =
-            this.sessionIdentificationRulesDao.getEnabledSessionIdentificationRules(requestContext);
-        externalDataTypes.addAll(
-            this.sessionIdentificationRulesTranslator.translateSessionIdentificationRules(
-                sessionIdentificationRules, envOptional));
-      }
-
-      // sensitive headers
-      RedactionStrategy redactionStrategy =
-          dataSuppressionOverrideOptional
-              .flatMap(this::translateDataSuppression)
-              .orElseGet(
-                  () -> redactionRulesDao.getParamTypeHeaderRedactionStrategy(requestContext));
-      if (enabledDataSetMap.containsKey(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)
-          && (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
-              || redactionStrategy.equals(REDACTION_STRATEGY_REDACT))) {
-        List<Parameter> sensitiveHeaderParameters =
-            insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
-        redactionRulesTranslator
-            .translateDataTypeForSensitiveHeaders(sensitiveHeaderParameters, redactionStrategy)
-            .ifPresent(externalDataTypes::add);
-      }
-
-      externalDataTypes.addAll(
-          dataSuppressionOverrideOptional
-              .map(
-                  dataSuppressionOverride ->
-                      resolveDefaultDataTypes(requestContext, dataSuppressionOverride))
-              .orElseGet(() -> resolveDefaultDataTypes(requestContext)));
       responseObserver.onNext(
-          this.responseBuilder.buildEnabledResponse(
-              request,
-              requestContext,
-              externalDataTypes,
-              this.externalDataClassificationConfig.getDefaultDataParsingRules()));
+          this.responseCache.get(requestContext.buildInternalContextualKey(request)));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get external data classification rules", e);
@@ -213,126 +103,94 @@ class ExternalDataClassificationConfigServiceImpl
     }
   }
 
-  private DataSet updateDataSetIfDataSuppressionOverridden(
-      DataSet dataSet, Optional<DataSuppression> dataSuppressionOverrideOptional) {
-    return dataSuppressionOverrideOptional
-        .map(
-            dataSuppression ->
-                dataSet.toBuilder()
-                    .setInfo(dataSet.getInfo().toBuilder().setDataSuppression(dataSuppression))
-                    .build())
-        .orElse(dataSet);
-  }
-
-  private List<RedactionRule> getFilteredRedactionRules(
-      List<RedactionRule> redactionRules,
-      Map<String, DataSet> enabledDataSetMap,
-      Optional<DataSuppression> dataSuppressionOverrideOptional) {
-    Set<RedactionStrategy> allowedRedactionStrategy = new HashSet<>();
-    Optional.ofNullable(enabledDataSetMap.get(LEGACY_REDACT_DATA_SET_ID))
-        .ifPresent(ds -> allowedRedactionStrategy.add(REDACTION_STRATEGY_REDACT));
-    Optional.ofNullable(enabledDataSetMap.get(LEGACY_OBFUSCATE_DATA_SET_ID))
-        .ifPresent(ds -> allowedRedactionStrategy.add(REDACTION_STRATEGY_HASH));
-    Optional<RedactionStrategy> redactionStrategyOverrideOptional =
-        dataSuppressionOverrideOptional.flatMap(this::translateDataSuppression);
-    return redactionRules.stream()
-        .filter(
-            // filter redactions rules as follows :
-            // 1. all session identifier redaction rules are allowed
-            // 2. redactions rules only in enabled legacy data sets are allowed
-            redactionRule ->
-                redactionRule.getSessionIdentifier()
-                    || allowedRedactionStrategy.contains(redactionRule.getRedactionStrategy()))
-        .map(
-            redactionRule ->
-                updateRedactionRuleIfRedactionStrategyOverridden(
-                    redactionRule, redactionStrategyOverrideOptional))
-        .filter(
-            // post update filter redactions rules as follows :
-            // 1. all session identifier redaction rules are still allowed
-            // 2. redactions rules only with redaction strategy as REDACT or HASH are allowed
-            redactionRule ->
-                redactionRule.getSessionIdentifier()
-                    || redactionRule.getRedactionStrategy().equals(REDACTION_STRATEGY_HASH)
-                    || redactionRule.getRedactionStrategy().equals(REDACTION_STRATEGY_REDACT))
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private RedactionRule updateRedactionRuleIfRedactionStrategyOverridden(
-      RedactionRule redactionRule, Optional<RedactionStrategy> redactionStrategyOverrideOptional) {
-    return redactionStrategyOverrideOptional
-        .map(
-            redactionStrategy ->
-                redactionRule.toBuilder().setRedactionStrategy(redactionStrategy).build())
-        .orElse(redactionRule);
-  }
-
-  private static int comparatorUtility(DataSetInfo dataSetInfo) {
-    switch (dataSetInfo.getDataSuppression()) {
-      case DATA_SUPPRESSION_REDACT:
-        return 0;
-      case DATA_SUPPRESSION_OBFUSCATE:
-        return 1;
-      case DATA_SUPPRESSION_RAW:
-        return 2;
-      default:
-        return Integer.MAX_VALUE;
+  private GetDataClassificationConfigResponse calculateResponse(
+      ContextualKey<GetDataClassificationConfigRequest> requestKey) {
+    RequestContext requestContext = requestKey.getContext();
+    if (!this.featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
+      return this.responseBuilder.buildDisabledResponse();
     }
-  }
+    GetDataClassificationConfigRequest request = requestKey.getData();
+    Optional<String> requestedEnvironment =
+        Optional.of(request.getEnvironmentFilter().getEnvironmentName())
+            .filter(envName -> !envName.isBlank());
+    List<DataClassificationOverride> overrides =
+        overrideRuleManager.getOverrides(requestContext, request.getEnvironmentFilter());
+    List<DataSet> enabledDataSets = this.platformDataTypeManager.getEnabledDataSets(requestContext);
+    ImmutableList.Builder<DataType> customDataTypes = ImmutableList.builder();
 
-  private Optional<RedactionStrategy> translateDataSuppression(DataSuppression dataSuppression) {
-    switch (dataSuppression) {
-      case DATA_SUPPRESSION_REDACT:
-        return Optional.of(REDACTION_STRATEGY_REDACT);
-      case DATA_SUPPRESSION_OBFUSCATE:
-        return Optional.of(REDACTION_STRATEGY_HASH);
-      case DATA_SUPPRESSION_RAW:
-        return Optional.of(REDACTION_STRATEGY_RAW);
-      default:
-        log.warn(
-            "Unable to translate data suppression {} to appropriate redaction strategy",
-            dataSuppression);
-        return Optional.empty();
+    customDataTypes
+        .addAll(
+            this.legacyRuleManager.getDataTypesFromLegacyRedactionRules(
+                requestContext, enabledDataSets))
+        .addAll(
+            this.platformDataTypeManager.getDataTypes(
+                requestContext,
+                enabledDataSets,
+                requestedEnvironment,
+                request.getPredicateSupportLevel()));
+    if (featureCachingClient.isSessionIdentificationV2EnabledForTenant(requestContext)) {
+      customDataTypes.addAll(
+          this.sessionIdentificationRulesTranslator.translateSessionIdentificationRules(
+              this.sessionIdentificationRulesDao.getEnabledSessionIdentificationRules(
+                  requestContext, request.getEnvironmentFilter())));
     }
+    customDataTypes.addAll(
+        this.legacyRuleManager.getDataTypesFromLegacySensitiveHeaders(
+            requestContext, enabledDataSets));
+
+    List<DataType> externalDataTypes =
+        ImmutableList.<DataType>builder()
+            .addAll(
+                this.overrideRuleManager.applyOverridesAndFilterRawRules(
+                    customDataTypes.build(), overrides))
+            .addAll( // Default rules are always sent, even if they don't suppress (due to TPA bug)
+                this.overrideRuleManager.applyOverrides(
+                    this.platformDataTypeManager.getDefaultDataTypes(requestContext), overrides))
+            .build();
+
+    // TODO - consider sorting the final list by redaction strategy. This would be a behavior change
+    // But would prevent an obfuscating session rule overriding a redacting data classification rule
+    GetDataClassificationConfigResponse response =
+        this.responseBuilder.buildEnabledResponse(
+            request,
+            requestContext,
+            externalDataTypes,
+            this.externalDataClassificationConfig.getDefaultDataParsingRules());
+    this.updateCacheIfNeeded(requestKey, response);
+    return response;
   }
 
-  private List<ai.traceable.external.data.classification.config.service.v1.DataType>
-      resolveDefaultDataTypes(
-          RequestContext requestContext, DataSuppression dataSuppressionOverride) {
-    // Default rules are always sent, even if they don't redact (TPA bug)
-    return resolveDefaultDataTypes(requestContext).stream()
-        .map(defaultType -> this.applyDataSuppressionOverride(defaultType, dataSuppressionOverride))
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private List<ai.traceable.external.data.classification.config.service.v1.DataType>
-      resolveDefaultDataTypes(RequestContext requestContext) {
-    if (featureCachingClient.isRaspInspectionEnabled(requestContext)) {
-      return externalDataClassificationConfig.getDefaultExternalDataTypes().stream()
-          .map(
-              dataType -> {
-                if (DB_STATEMENT_DATA_TYPE_ID.equals(dataType.getDataTypeId())) {
-                  return dataType.toBuilder().clearTransformation().build();
-                }
-                return dataType;
-              })
-          .collect(Collectors.toUnmodifiableList());
+  private void updateCacheIfNeeded(
+      ContextualKey<GetDataClassificationConfigRequest> requestContextualKey,
+      GetDataClassificationConfigResponse response) {
+    // If the response has changed that will change the hash of the next request. However, since
+    // request is effectively asking for the same data, we can calculate it and cache it, too.
+    // For example, after the following call sequence:
+    // { req, hash(old_resp) } -> { new_resp, hash(new_resp) }
+    // We know the agent's next request should be
+    // { req, hash(new_resp) }
+    // And we can calculate the response to that, indicating nothing has changed should be
+    // {g empty_response, hash(new_resp) }
+    GetDataClassificationConfigRequest lastRequest = requestContextualKey.getData();
+    String newHash = response.getHash();
+    if (lastRequest.getChangeFilter().getPreviousHash().equals(newHash)) {
+      return;
     }
-    return this.externalDataClassificationConfig.getDefaultExternalDataTypes();
+    GetDataClassificationConfigRequest expectedNextRequest =
+        lastRequest.toBuilder()
+            .setChangeFilter(OnlyIfChangedFilter.newBuilder().setPreviousHash(newHash).build())
+            .build();
+    this.responseCache.put(
+        requestContextualKey.getContext().buildInternalContextualKey(expectedNextRequest),
+        this.responseBuilder.buildNoChangeResponseForHash(newHash));
   }
 
-  private ai.traceable.external.data.classification.config.service.v1.DataType
-      applyDataSuppressionOverride(
-          ai.traceable.external.data.classification.config.service.v1.DataType dataType,
-          DataSuppression dataSuppressionOverride) {
-    if (dataSuppressionOverride == DataSuppression.DATA_SUPPRESSION_RAW) {
-      return dataType.toBuilder().clearTransformation().build();
-    }
-
-    return this.dataClassificationRulesTranslator
-        .translateDataSuppression(dataSuppressionOverride)
-        .map(transformation -> dataType.toBuilder().setTransformation(transformation))
-        .map(Builder::build)
-        .orElse(dataType);
+  private ExecutorService buildExecutor() {
+    return Executors.newFixedThreadPool(
+        this.externalDataClassificationConfig.getCacheThreadPoolSize(),
+        new ThreadFactoryBuilder()
+            .setDaemon(true)
+            .setNameFormat("external-data-classification-%d")
+            .build());
   }
 }

@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -68,16 +67,15 @@ class DataClassificationRulesTranslator {
   private static final List<String> EMPTY_PREFIXES_LIST = List.of();
 
   List<DataType> translateDataTypes(
-      List<ai.traceable.data.classification.config.service.v1.DataType> dataTypes,
-      Map<String, DataSuppression> dataTypesToDataSuppressionMap,
+      List<ResolvedPlatformDataType> resolvedPlatformDataTypes,
       Optional<String> environmentName,
       PredicateSupportLevel predicateSupportLevel) {
-    return dataTypes.stream()
+    return resolvedPlatformDataTypes.stream()
         .map(
-            dataType ->
+            resolvedType ->
                 translateDataType(
-                    dataType,
-                    dataTypesToDataSuppressionMap.get(dataType.getId()),
+                    resolvedType.getDataType(),
+                    resolvedType.getSuppression(),
                     environmentName,
                     predicateSupportLevel))
         .flatMap(Optional::stream)
@@ -145,13 +143,12 @@ class DataClassificationRulesTranslator {
                   .setPathValuePredicate(
                       translateLeafPathValuePattern(scopedPattern.getLeafKeyValuePattern()))
                   .build());
-        } else {
-          return Optional.of(
-              dataTypeMatchRuleBuilder
-                  .setPathValuePredicate(
-                      translatePathValuePattern(scopedPattern.getLeafKeyValuePattern()))
-                  .build());
         }
+        return Optional.of(
+            dataTypeMatchRuleBuilder
+                .setPathValuePredicate(
+                    translatePathValuePattern(scopedPattern.getLeafKeyValuePattern()))
+                .build());
       case PATTERN_NOT_SET:
       default:
         log.error("Unsupported scoped pattern type: {}", scopedPattern);

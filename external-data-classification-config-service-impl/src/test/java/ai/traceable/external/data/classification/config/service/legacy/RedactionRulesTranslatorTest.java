@@ -1,4 +1,4 @@
-package ai.traceable.external.data.classification.config.service;
+package ai.traceable.external.data.classification.config.service.legacy;
 
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS;
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_MATCHES_REGEX;

@@ -1,4 +1,4 @@
-package ai.traceable.external.data.classification.config.service;
+package ai.traceable.external.data.classification.config.service.legacy;
 
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS;
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_MATCHES_REGEX;
@@ -45,13 +45,13 @@ class RedactionRulesTranslator {
   private static final List<String> REQUEST_HEADER_PREFIXES =
       List.of("http.request.header", "rpc.request.metadata");
 
-  public List<DataType> translateRedactionRules(List<RedactionRule> redactionRules) {
+  List<DataType> translateRedactionRules(List<RedactionRule> redactionRules) {
     return redactionRules.stream()
         .map(this::translateRedactionRule)
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<DataType> translateDataTypeForSensitiveHeaders(
+  Optional<DataType> translateDataTypeForSensitiveHeaders(
       List<Parameter> sensitiveHeaderParameters, RedactionStrategy redactionStrategy) {
     Optional<DataTransformation> maybeDataTransformation =
         translateRedactionStrategyForHeaders(redactionStrategy);
