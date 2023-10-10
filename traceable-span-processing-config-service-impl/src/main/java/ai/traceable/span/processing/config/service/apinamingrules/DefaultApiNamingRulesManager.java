@@ -1,5 +1,8 @@
 package ai.traceable.span.processing.config.service.apinamingrules;
 
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Stream.empty;
+
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
@@ -68,9 +71,10 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
                     apiNamingRuleInfo.getRuleConfig().hasSegmentMatchingBasedConfig())
             .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo));
 
-    Stream<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo =
+    List<ApiNamingRuleInfo> apiSpecBasedNamingRulesInfo =
         request.getRulesInfoList().stream()
-            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig());
+            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig())
+            .collect(toUnmodifiableList());
     Stream<ApiNamingRule> apiSpecBasedRuleStream =
         buildApiSpecBasedNamingRules(requestContext, apiSpecBasedNamingRulesInfo);
 
@@ -85,20 +89,23 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             Stream.concat(
                     Stream.concat(segmentMatchingBasedRuleStream, apiSpecBasedRuleStream),
                     astScanBasedRuleStream)
-                .collect(Collectors.toUnmodifiableList())));
+                .collect(toUnmodifiableList())));
   }
 
   private Stream<ApiNamingRule> buildApiSpecBasedNamingRules(
-      RequestContext requestContext,
-      Stream<ApiNamingRuleInfo> apiSpecBasedApiNamingRuleInfoStream) {
+      RequestContext requestContext, List<ApiNamingRuleInfo> apiSpecBasedApiNamingRulesInfo) {
+    if (apiSpecBasedApiNamingRulesInfo.isEmpty()) {
+      return empty();
+    }
     List<ApiNamingRule> existingApiNamingRules =
         getAllApiNamingRuleDetails(requestContext).stream()
             .map(ApiNamingRuleDetails::getRule)
-            .collect(Collectors.toUnmodifiableList());
+            .collect(toUnmodifiableList());
 
-    return apiSpecBasedApiNamingRuleInfoStream.map(
-        apiNamingRuleInfo ->
-            createApiSpecBasedNamingRule(existingApiNamingRules.stream(), apiNamingRuleInfo));
+    return apiSpecBasedApiNamingRulesInfo.stream()
+        .map(
+            apiNamingRuleInfo ->
+                createApiSpecBasedNamingRule(existingApiNamingRules.stream(), apiNamingRuleInfo));
   }
 
   @Override
@@ -127,7 +134,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
         apiNamingRulesConfigStore.getAllData(requestContext).stream()
             .map(ApiNamingRuleDetails::getRule)
             .filter(apiNamingRule -> apiNamingRuleMap.containsKey(apiNamingRule.getId()))
-            .collect(Collectors.toUnmodifiableList());
+            .collect(toUnmodifiableList());
 
     List<ApiNamingRule> updatedRules = new ArrayList<>();
     for (ApiNamingRule existingRule : existingRules) {
@@ -185,7 +192,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
       List<ContextualConfigObject<ApiNamingRule>> contextualConfigObjects) {
     return contextualConfigObjects.stream()
         .map(this::buildApiNamingRuleDetails)
-        .collect(Collectors.toUnmodifiableList());
+        .collect(toUnmodifiableList());
   }
 
   private ApiNamingRule buildApiNamingRule(
@@ -240,7 +247,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
                                                   .getApiSpecIdsList()
                                                   .stream(),
                                               apiSpecBasedConfig.getApiSpecIdsList().stream())
-                                          .collect(Collectors.toUnmodifiableList()))
+                                          .collect(toUnmodifiableList()))
                                   .addAllRegexes(apiSpecBasedConfig.getRegexesList())
                                   .addAllValues(apiSpecBasedConfig.getValuesList())
                                   .build())
