@@ -43,8 +43,12 @@ class ExternalDataClassificationRuleResponseBuilder {
     responseBuilder.setHash(responseHash);
 
     if (responseHash.equals(request.getChangeFilter().getPreviousHash())) {
-      return GetDataClassificationConfigResponse.newBuilder().setHash(responseHash).build();
+      return this.buildNoChangeResponseForHash(responseHash);
     }
     return responseBuilder.build();
+  }
+
+  GetDataClassificationConfigResponse buildNoChangeResponseForHash(String hash) {
+    return GetDataClassificationConfigResponse.newBuilder().setHash(hash).build();
   }
 }

@@ -1,4 +1,4 @@
-package ai.traceable.external.data.classification.config.service;
+package ai.traceable.external.data.classification.config.service.legacy;
 
 import ai.traceable.platform.insights.api.v1.AttributeFilter;
 import ai.traceable.platform.insights.api.v1.AttributeValue;
@@ -15,19 +15,18 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-class InsightsServiceCoordinatorImpl implements InsightsServiceCoordinator {
+class InsightsServiceCoordinator {
   private static final String HEADER_NAMESPACED_NAME = "headerNamespacedName";
   private static final String IS_HEADER_PII = "isHeaderPii";
 
   private final InsightsServiceBlockingStub insightsServiceBlockingStub;
 
   @Inject
-  InsightsServiceCoordinatorImpl(InsightsServiceBlockingStub insightsServiceBlockingStub) {
+  InsightsServiceCoordinator(InsightsServiceBlockingStub insightsServiceBlockingStub) {
     this.insightsServiceBlockingStub = insightsServiceBlockingStub;
   }
 
-  @Override
-  public List<Parameter> getSensitiveHeaderParameters(RequestContext requestContext) {
+  List<Parameter> getSensitiveHeaderParameters(RequestContext requestContext) {
     AttributeFilter isPiiAttributeFilter =
         AttributeFilter.newBuilder()
             .setOperator(Operator.OPERATOR_EQ)
