@@ -207,13 +207,23 @@ public class CustomSignatureModsecRulesManagerTest {
         rules,
         List.of(
             new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_HEADER, "^x\\-(real|forward)", "128.0.0.1"),
+                KeyValueTag.KEY_VALUE_TAG_HEADER, "x\\-(real|forward)", "128.0.0.1"),
             new KeyValueCombination(
                 KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param|parameter)[a-s1-9_-]{3,16}$", "5")),
         List.of(
             MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
             MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
         List.of(MatchOperator.MATCH_OPERATOR_EQUALS));
+
+    createRules(
+        rules,
+        List.of(
+            new KeyValueCombination(
+                KeyValueTag.KEY_VALUE_TAG_QUERY_PARAMETER, "^q-apple|q-banana", "mango"),
+            new KeyValueCombination(
+                KeyValueTag.KEY_VALUE_TAG_BODY_PARAMETER, "^b-apple|b-banana", "mango")),
+        List.of(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX),
+        List.of(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX));
 
     createChainedRule(rules, 0, 10, 80, 100);
     createChainedRule(rules, 15, 95);
@@ -224,9 +234,9 @@ public class CustomSignatureModsecRulesManagerTest {
     assertEquals(
         rules.size()
             + 4
+            + 6
             + 4
-            + 4
-            + 23, /* 4 extra chained rules for NOT_CONTAIN rules, 4 extra chained rules for REGEX with PIPE KeyValue rules, 3+1 extra chained rules and 23 lines of modsec directives */
+            + 23, /* 4 extra chained rules for NOT_CONTAIN rules, 6 extra chained rules for REGEX with PIPE KeyValue rules, 3+1 extra chained rules and 23 lines of modsec directives */
         response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
     assertEquals(rules.size(), response.getRulesCount());
     assertEquals(

@@ -4,6 +4,7 @@ import static ai.traceable.modsecurity.rule.conversion.clause.ModsecOperatorConv
 
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecKeyValueMatchClause;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression;
+import ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator;
 import ai.traceable.modsecurity.rule.secrule.ModsecSecRule;
 import ai.traceable.modsecurity.rule.secrule.operator.ModsecOperatorExpression;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariable;
@@ -16,6 +17,8 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 public class CustomModsecKeyValueMatchClauseConverter {
+  private static final String REGEX_STARTING_ANCHOR_ENDPOINT = "^";
+  private static final String COLON = ":";
 
   private final ModsecVariableConverter variableConverter;
   private final ModsecOperatorConverter operatorConverter;
@@ -214,13 +217,41 @@ public class CustomModsecKeyValueMatchClauseConverter {
             .variables(Collections.singletonList(new ModsecVariable(modsecVariableMetadata)))
             .operatorExpression(valueOperatorExpression)
             .build();
+
     ModsecSecRule chainedRule =
         ModsecSecRule.builder()
             .variables(
                 Collections.singletonList(
                     new ModsecVariable(ModsecVariableMetadata.MATCHED_VARS_NAMES)))
-            .operatorExpression(operatorConverter.getValueOperatorExpression(keyMatchExpression))
+            .operatorExpression(
+                operatorConverter.getValueOperatorExpression(
+                    modifyRegexPatternForChainedRule(modsecVariableMetadata, keyMatchExpression)))
             .build();
     return List.of(primaryRule, chainedRule);
+  }
+
+  // When trying to match a regex pattern like ^a$, what Matched_vars_names returns is ARGS:a which
+  // does not match the regex. Hence, we should remove the beginning ^ and replace it with :
+  private static CustomModsecMatchExpression modifyRegexPatternForChainedRule(
+      ModsecVariableMetadata modsecVariableMetadata,
+      CustomModsecMatchExpression keyMatchExpression) {
+    if (keyMatchExpression
+            .getValueMatchOperator()
+            .equals(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+        || keyMatchExpression
+            .getValueMatchOperator()
+            .equals(MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)) {
+      if (keyMatchExpression.getMatchValue().startsWith(REGEX_STARTING_ANCHOR_ENDPOINT)) {
+        keyMatchExpression =
+            keyMatchExpression.toBuilder()
+                .setMatchValue(
+                    REGEX_STARTING_ANCHOR_ENDPOINT
+                        + modsecVariableMetadata
+                        + COLON
+                        + keyMatchExpression.getMatchValue().substring(1))
+                .build();
+      }
+    }
+    return keyMatchExpression;
   }
 }
