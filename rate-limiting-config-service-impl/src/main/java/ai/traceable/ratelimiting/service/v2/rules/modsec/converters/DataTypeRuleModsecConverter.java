@@ -4,14 +4,20 @@ import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataTypeRuleWrapper;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DataTypeRuleModsecConverter {
+  private static final String DEFAULT_LOG_DATA_CAPTURE =
+      "%{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}";
+  private static final String DATA_TYPE_RULE_MESSAGE = "Data type rule - %s %s";
+  private static final String DATA_TYPE_RULE_MESSAGE_CUSTOM_LOCATION_SUFFIX = "at custom location";
+  private static final String DATA_TYPE_RULE_LOG_MESSAGE = "Matched data-type - %s as %s";
+
   private final ModsecBlobConverterUtils modsecBlobConverterUtils;
   private final ScopedPatternConverter scopedPatternConverter;
   private final ScopedPatternWithCustomLocationConverter scopedPatternWithCustomLocationConverter;
@@ -34,25 +40,27 @@ public class DataTypeRuleModsecConverter {
     try {
       Clause wrappedUrlRegexesClause =
           modsecBlobConverterUtils.buildUrlRegexClause(wrapperUrlRegexes);
-      List<Clause> ruleClauses = getRuleClauseLists(dataTypeRuleWrapper, environmentIds);
 
-      return ruleClauses.stream()
-          .map(
-              clause ->
-                  modsecBlobConverterUtils.convertToModsecRule(
-                      dataTypeRuleWrapper.getModsecRuleId(),
-                      wrappedUrlRegexesClause,
-                      Collections.singletonList(clause),
-                      String.format(
-                          "Data type rule - %s %s",
-                          dataTypeRuleWrapper.getDataTypeId(),
-                          dataTypeRuleWrapper.getCustomLocation().hasCustomMatchingLocation()
-                              ? "at custom location"
-                              : ""),
-                      String.format(
-                          "Matched data-type - %s", dataTypeRuleWrapper.getRule().getName()),
-                      modsecIdAssignment))
-          .collect(Collectors.toUnmodifiableList());
+      List<String> modsecBlobs = new ArrayList<>();
+      for (int i = 0; i < dataTypeRuleWrapper.getRule().getScopedPatternsCount(); i++) {
+        if (filterScopedPattern(
+            dataTypeRuleWrapper.getRule().getScopedPatterns(i), environmentIds)) {
+          String index = String.valueOf(i);
+          convertScopedPattern(
+                  dataTypeRuleWrapper, dataTypeRuleWrapper.getRule().getScopedPatterns(i))
+              .stream()
+              .map(
+                  clause ->
+                      buildModsecBlob(
+                          dataTypeRuleWrapper,
+                          modsecIdAssignment,
+                          wrappedUrlRegexesClause,
+                          index,
+                          clause))
+              .forEach(modsecBlobs::add);
+        }
+      }
+      return modsecBlobs;
     } catch (Exception e) {
       log.warn(
           "Cannot convert data-classification with details {} into modsec rule",
@@ -62,13 +70,27 @@ public class DataTypeRuleModsecConverter {
     }
   }
 
-  private List<Clause> getRuleClauseLists(
-      DataTypeRuleWrapper dataTypeRuleWrapper, final List<String> environmentIds) {
-    return dataTypeRuleWrapper.getRule().getScopedPatternsList().stream()
-        .filter(scopedPattern -> filterScopedPattern(scopedPattern, environmentIds))
-        .map(scopedPattern -> convertScopedPattern(dataTypeRuleWrapper, scopedPattern))
-        .flatMap(List::stream)
-        .collect(Collectors.toUnmodifiableList());
+  private String buildModsecBlob(
+      DataTypeRuleWrapper dataTypeRuleWrapper,
+      AtomicLong modsecIdAssignment,
+      Clause wrappedUrlRegexesClause,
+      String index,
+      Clause clause) {
+    return modsecBlobConverterUtils.convertToModsecRule(
+        dataTypeRuleWrapper.getBaseModsecRuleId() + index,
+        wrappedUrlRegexesClause,
+        Collections.singletonList(clause),
+        String.format(
+            DATA_TYPE_RULE_MESSAGE,
+            dataTypeRuleWrapper.getDataTypeId(),
+            dataTypeRuleWrapper.getCustomLocation().hasCustomMatchingLocation()
+                ? DATA_TYPE_RULE_MESSAGE_CUSTOM_LOCATION_SUFFIX
+                : ""),
+        String.format(
+            DATA_TYPE_RULE_LOG_MESSAGE,
+            dataTypeRuleWrapper.getRule().getName(),
+            DEFAULT_LOG_DATA_CAPTURE),
+        modsecIdAssignment);
   }
 
   private static boolean filterScopedPattern(

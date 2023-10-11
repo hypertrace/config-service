@@ -49,6 +49,7 @@ import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.IdType;
+import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
@@ -72,10 +73,12 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassifica
 import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobValidator;
 import java.time.Clock;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -122,6 +125,7 @@ class RateLimitingModsecRulesManagerTest {
     doReturn(
             DataTypeRule.newBuilder()
                 .setName("PAN Card")
+                .addScopedPatterns(ignoreScopePattern)
                 .addScopedPatterns(buildScopedPatternPANCard())
                 .build())
         .when(dataClassificationInfo)
@@ -204,6 +208,8 @@ class RateLimitingModsecRulesManagerTest {
     assertContainsModsec(
         expectedCreditCardWithCustomLocation("/order/.*|/myOrders|/pastOrders"),
         response.getModsecBlobsData(0).getModsecBlob());
+    assertContainsModsec(
+        expectedIgnoreConditionBlob, response.getModsecBlobsData(0).getModsecBlob());
 
     assertContainsModsec(expectedModsecBlobRuleId4, response.getModsecBlobsData(1).getModsecBlob());
     assertContainsModsec(
@@ -226,10 +232,18 @@ class RateLimitingModsecRulesManagerTest {
         List.of(
             buildRateLimitingModsecRule(
                 rateLimitingRules.get(0),
-                List.of("credit-card:" + EMPTY_LOCATION_HASH, "PAN:" + EMPTY_LOCATION_HASH)),
+                List.of(
+                    Pair.of("credit-card:" + EMPTY_LOCATION_HASH + 0, Collections.emptyList()),
+                    Pair.of(
+                        "PAN:" + EMPTY_LOCATION_HASH + 1,
+                        List.of("PAN:" + EMPTY_LOCATION_HASH + 0)))),
             buildRateLimitingModsecRule(
                 rateLimitingRules.get(3),
-                List.of("credit-card:" + PROMPT_LOCATION_HASH, "PAN:" + PROMPT_LOCATION_HASH))),
+                List.of(
+                    Pair.of("credit-card:" + PROMPT_LOCATION_HASH + 0, Collections.emptyList()),
+                    Pair.of(
+                        "PAN:" + PROMPT_LOCATION_HASH + 1,
+                        List.of("PAN:" + PROMPT_LOCATION_HASH + 0))))),
         response.getRulesList());
   }
 
@@ -329,17 +343,25 @@ class RateLimitingModsecRulesManagerTest {
               .build());
 
   private static RateLimitingModsecRule buildRateLimitingModsecRule(
-      RateLimitingRule rule, List<String> dataTypeModsecIds) {
+      RateLimitingRule rule, List<Pair<String, List<String>>> dataTypeIds) {
     return RateLimitingModsecRule.newBuilder()
         .setId(rule.getId())
         .setData(rule.getData())
         .addAssociatedModsecRuleIds(
             ModsecRuleIdInfo.newBuilder()
-                .addMatchingIds(rule.getId())
+                .addMatchConditions(MatchCondition.newBuilder().setMatchId(rule.getId()))
                 .setType(IdType.ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES))
         .addAssociatedModsecRuleIds(
             ModsecRuleIdInfo.newBuilder()
-                .addAllMatchingIds(dataTypeModsecIds)
+                .addAllMatchConditions(
+                    dataTypeIds.stream()
+                        .map(
+                            id ->
+                                MatchCondition.newBuilder()
+                                    .setMatchId(id.getLeft())
+                                    .addAllIgnoreIds(id.getRight())
+                                    .build())
+                        .collect(Collectors.toUnmodifiableList()))
                 .setType(IdType.ID_TYPE_DATA_TYPE_CUSTOM_LOCATION))
         .build();
   }
@@ -428,6 +450,23 @@ class RateLimitingModsecRulesManagerTest {
         .build();
   }
 
+  private static ScopedPattern ignoreScopePattern =
+      ScopedPattern.newBuilder()
+          .setGlobalScope(GlobalScope.getDefaultInstance())
+          .addLocations(Location.LOCATION_REQUEST_HEADER)
+          .setAction(DataTypeRule.Action.ACTION_IGNORE)
+          .setKeyValuePattern(
+              KeyValuePattern.newBuilder()
+                  .setKeyPattern(
+                      StringPattern.newBuilder()
+                          .setValue("a|b")
+                          .setOperator(Operator.OPERATOR_MATCHES_REGEX))
+                  .setValuePattern(
+                      StringPattern.newBuilder()
+                          .setValue("c")
+                          .setOperator(Operator.OPERATOR_MATCHES_REGEX)))
+          .build();
+
   private static ScopedPattern buildScopedPatternPANCard() {
     return ScopedPattern.newBuilder()
         .setGlobalScope(GlobalScope.getDefaultInstance())
@@ -448,8 +487,9 @@ class RateLimitingModsecRulesManagerTest {
   }
 
   private static final String EMPTY_LOCATION_HASH =
-      uuidGenerator.generateId(RegexBasedMatching.getDefaultInstance());
-  private static final String PROMPT_LOCATION_HASH = uuidGenerator.generateId(PROMPT_LOCATION);
+      uuidGenerator.generateId(RegexBasedMatching.getDefaultInstance()) + "_";
+  private static final String PROMPT_LOCATION_HASH =
+      uuidGenerator.generateId(PROMPT_LOCATION) + "_";
 
   private static final List<String> expectedModsecBlobRuleId1 =
       List.of(
@@ -474,21 +514,35 @@ class RateLimitingModsecRulesManagerTest {
           "SecRule REQUEST_URI_RAW \"@rx /order/.*|/myOrders|/pastOrders\" \"id:200000",
           ",phase:2,capture,t:none,"
               + "msg:'Data type rule - credit-card ',"
-              + "logdata:'Matched data-type - Credit Card',"
+              + "logdata:'Matched data-type - Credit Card as %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',"
               + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/credit-card:"
               + EMPTY_LOCATION_HASH
+              + "0"
               + "',severity:'CRITICAL',chain\"\n"
               + "SecRule ARGS_POST:/^(.*[.])?cc([.].*)?$/ \"@rx ^5554$\" \"capture,block,t:none\"");
+
+  private static final List<String> expectedIgnoreConditionBlob =
+      List.of(
+          "SecRule REQUEST_URI_RAW \"@rx /order/.*|/myOrders|/pastOrders\" \"id:2000000",
+          ",phase:2,capture,t:none,msg:'Data type rule - PAN ',"
+              + "logdata:'Matched data-type - PAN Card as %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}'"
+              + ",tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'"
+              + "rule-uuid/PAN:"
+              + EMPTY_LOCATION_HASH
+              + "0"
+              + "',severity:'CRITICAL',chain\"\n"
+              + "SecRule REQUEST_HEADERS \"@rx c\" \"capture,t:none,chain\"\n"
+              + "SecRule MATCHED_VARS_NAMES \"@rx a|b\" \"capture,block,t:none\"");
 
   private static List<String> expectedCreditCardWithCustomLocation(String urlRegexes) {
     return List.of(
         String.format("SecRule REQUEST_URI_RAW \"@rx %s\" \"id:200000", urlRegexes),
         ",phase:2,capture,t:none,"
             + "msg:'Data type rule - credit-card at custom location',"
-            + "logdata:'Matched data-type - Credit Card',"
+            + "logdata:'Matched data-type - Credit Card as %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',"
             + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/credit-card:"
-            + PROMPT_LOCATION_HASH
-            + "',severity:'CRITICAL',chain\"\n"
+            + PROMPT_LOCATION_HASH,
+        "',severity:'CRITICAL',chain\"\n"
             + "SecRule ARGS_POST:prompt \"@rx cc.*5554|5554.*cc\" \"capture,block,t:none\"");
   }
 }

@@ -13,7 +13,8 @@ public class CombinationBlockingDetails implements BlockingDetails {
 
   public enum Operator {
     AND,
-    OR;
+    OR,
+    NOT
   }
 
   @Override

@@ -5,6 +5,7 @@ import ai.traceable.ratelimiting.config.service.v2.Condition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.IdType;
+import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType;
@@ -54,14 +55,14 @@ public class EnrichedRateLimitingModsecRule {
             .setData(rule.getData())
             .addAssociatedModsecRuleIds(
                 ModsecRuleIdInfo.newBuilder()
-                    .addMatchingIds(rule.getId())
+                    .addMatchConditions(MatchCondition.newBuilder().setMatchId(rule.getId()))
                     .setType(IdType.ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES))
             .addAssociatedModsecRuleIds(
                 ModsecRuleIdInfo.newBuilder()
-                    .addAllMatchingIds(
+                    .addAllMatchConditions(
                         dataTypeRuleWrappers.stream()
-                            .map(DataTypeRuleWrapper::getModsecRuleId)
-                            .distinct()
+                            .map(DataTypeRuleWrapper::getModsecMatchConditions)
+                            .flatMap(List::stream)
                             .collect(Collectors.toUnmodifiableList()))
                     .setType(IdType.ID_TYPE_DATA_TYPE_CUSTOM_LOCATION))
             .build();

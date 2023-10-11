@@ -28,15 +28,24 @@ abstract class AbstractBlockingDetailsVisitor
     return BlockingDetailsCondition.newBuilder()
         .setDetailsCombination(
             BlockingDetailsCombination.newBuilder()
-                .setOperator(
-                    combinationBlockingDetails.getOperator().equals(Operator.OR)
-                        ? ConditionsOperator.CONDITIONS_OPERATOR_OR
-                        : ConditionsOperator.CONDITIONS_OPERATOR_AND)
+                .setOperator(getOperator(combinationBlockingDetails.getOperator()))
                 .addAllDetailsConditions(
                     combinationBlockingDetails.getBlockingDetailsOperands().stream()
                         .map(blockingDetails -> blockingDetails.accept(this))
                         .collect(Collectors.toUnmodifiableList())))
         .build();
+  }
+
+  private static ConditionsOperator getOperator(Operator operator) {
+    switch (operator) {
+      case AND:
+        return ConditionsOperator.CONDITIONS_OPERATOR_AND;
+      case OR:
+        return ConditionsOperator.CONDITIONS_OPERATOR_OR;
+      case NOT:
+        return ConditionsOperator.CONDITIONS_OPERATOR_NOT;
+    }
+    throw new UnsupportedOperationException(String.format("Unsupported Operator %s", operator));
   }
 
   @Override

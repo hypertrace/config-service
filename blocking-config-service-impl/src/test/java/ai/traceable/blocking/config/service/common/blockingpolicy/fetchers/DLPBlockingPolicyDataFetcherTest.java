@@ -33,11 +33,13 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.IdType;
+import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -189,12 +191,13 @@ class DLPBlockingPolicyDataFetcherTest {
                         .setExpirationTimestampMillis(activeTimestamp)))
         .addAssociatedModsecRuleIds(
             ModsecRuleIdInfo.newBuilder()
-                .addMatchingIds("rule-id-" + id)
+                .addMatchConditions(MatchCondition.newBuilder().setMatchId("rule-id-" + id))
                 .setType(IdType.ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES))
         .addAssociatedModsecRuleIds(
             ModsecRuleIdInfo.newBuilder()
-                .addMatchingIds("credit-card-id")
-                .addMatchingIds("ssn-id")
+                .addMatchConditions(MatchCondition.newBuilder().setMatchId("credit-card-id"))
+                .addMatchConditions(
+                    MatchCondition.newBuilder().setMatchId("ssn-id").addIgnoreIds("ignore-id"))
                 .setType(IdType.ID_TYPE_DATA_TYPE_CUSTOM_LOCATION))
         .build();
   }
@@ -227,7 +230,22 @@ class DLPBlockingPolicyDataFetcherTest {
                             CustomSignatureBlockingDetails.builder()
                                 .ruleId("credit-card-id")
                                 .build(),
-                            CustomSignatureBlockingDetails.builder().ruleId("ssn-id").build()))
+                            CombinationBlockingDetails.builder()
+                                .operator(Operator.AND)
+                                .blockingDetailsOperands(
+                                    List.of(
+                                        CombinationBlockingDetails.builder()
+                                            .operator(Operator.NOT)
+                                            .blockingDetailsOperands(
+                                                Collections.singleton(
+                                                    CustomSignatureBlockingDetails.builder()
+                                                        .ruleId("ignore-id")
+                                                        .build()))
+                                            .build(),
+                                        CustomSignatureBlockingDetails.builder()
+                                            .ruleId("ssn-id")
+                                            .build()))
+                                .build()))
                     .build()))
         .build();
   }

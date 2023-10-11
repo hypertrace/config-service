@@ -20,12 +20,18 @@ message RateLimitingModsecRule {
 
 message ModsecRuleIdInfo {
   // Implicit OR within the list
-  repeated string matching_ids = 1;
+  repeated MatchCondition match_conditions = 1;
   IdType type = 2;
+
   enum IdType {
     ID_TYPE_DATA_TYPE_UNSPECIFIED = 0;
     ID_TYPE_DATA_TYPE_CUSTOM_LOCATION = 1;
     ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES = 2;
+  }
+
+  message MatchCondition{
+    repeated string ignore_ids = 1;
+    string match_id = 2;
   }
 }
 

@@ -9,6 +9,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.EnvironmentScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValuePattern;
@@ -62,8 +63,19 @@ class DataTypeConfigRequestValidator {
           .withDescription("scoped pattern cannot be empty: " + printMessage(rule))
           .asRuntimeException();
     }
+    boolean isAllIgnorePatterns = true;
     for (ScopedPattern scopedPattern : scopedPatternList) {
       validateScopedPattern(scopedPattern);
+      if (scopedPattern.getAction().equals(Action.ACTION_MATCH)) {
+        isAllIgnorePatterns = false;
+      }
+    }
+    if (isAllIgnorePatterns) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "A data type rule pattern should have at least one match pattern: "
+                  + printMessage(rule))
+          .asRuntimeException();
     }
   }
 

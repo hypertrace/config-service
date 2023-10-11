@@ -26,15 +26,18 @@ import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.Condition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo;
 import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.IdType;
+import ai.traceable.ratelimiting.config.service.v2.ModsecRuleIdInfo.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -217,14 +220,11 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
 
   private static Optional<BlockingDetails> buildCustomSignatureRulesMultiMatch(
       ModsecRuleIdInfo modsecRuleIdInfo) {
-    if (modsecRuleIdInfo.getMatchingIdsList().size() == 0) {
+    if (modsecRuleIdInfo.getMatchConditionsCount() == 0) {
       return Optional.empty();
     }
-    if (modsecRuleIdInfo.getMatchingIdsList().size() == 1) {
-      return Optional.of(
-          CustomSignatureBlockingDetails.builder()
-              .ruleId(modsecRuleIdInfo.getMatchingIdsList().get(0))
-              .build());
+    if (modsecRuleIdInfo.getMatchConditionsCount() == 1) {
+      return Optional.of(parseMatchCondition(modsecRuleIdInfo.getMatchConditions(0)));
     }
     return Optional.of(
         CombinationBlockingDetails.builder()
@@ -233,10 +233,37 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                     ? Operator.OR
                     : Operator.AND)
             .blockingDetailsOperands(
-                modsecRuleIdInfo.getMatchingIdsList().stream()
-                    .map(ruleId -> CustomSignatureBlockingDetails.builder().ruleId(ruleId).build())
+                modsecRuleIdInfo.getMatchConditionsList().stream()
+                    .map(DLPBlockingPolicyDataFetcher::parseMatchCondition)
                     .collect(Collectors.toUnmodifiableList()))
             .build());
+  }
+
+  private static BlockingDetails parseMatchCondition(MatchCondition matchCondition) {
+    if (matchCondition.getIgnoreIdsCount() == 0) {
+      return CustomSignatureBlockingDetails.builder().ruleId(matchCondition.getMatchId()).build();
+    }
+    return CombinationBlockingDetails.builder()
+        .operator(Operator.AND)
+        .blockingDetailsOperands(
+            Stream.concat(
+                    matchCondition.getIgnoreIdsList().stream()
+                        .map(
+                            ignoreId ->
+                                CombinationBlockingDetails.builder()
+                                    .operator(Operator.NOT)
+                                    .blockingDetailsOperands(
+                                        Collections.singleton(
+                                            CustomSignatureBlockingDetails.builder()
+                                                .ruleId(ignoreId)
+                                                .build()))
+                                    .build()),
+                    Stream.of(
+                        CustomSignatureBlockingDetails.builder()
+                            .ruleId(matchCondition.getMatchId())
+                            .build()))
+                .collect(Collectors.toUnmodifiableList()))
+        .build();
   }
 
   private static BlockingPolicyData.RuleType getRuleType(String id, ActionCase actionCase) {
