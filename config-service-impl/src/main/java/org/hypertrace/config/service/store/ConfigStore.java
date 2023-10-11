@@ -44,13 +44,15 @@ public interface ConfigStore {
   ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext) throws IOException;
 
   /**
-   * Get the configs with the latest version for the specified resources.
+   * Get all the configs with the latest version(along with the context to which it applies) for the
+   * specified resource keys
    *
    * @param configResourceContexts
-   * @return
+   * @return the configs
+   * @throws IOException
    */
-  List<ContextSpecificConfig> getConfigs(Set<ConfigResourceContext> configResourceContexts)
-      throws IOException;
+  Map<ConfigResourceContext, ContextSpecificConfig> getAllContextConfigs(
+      Set<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**
    * Get all the configs with the latest version(along with the context to which it applies) for the

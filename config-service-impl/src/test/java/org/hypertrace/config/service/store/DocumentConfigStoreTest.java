@@ -122,9 +122,9 @@ class DocumentConfigStoreTest {
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
             .build();
-    List<ContextSpecificConfig> actualConfigs =
-        configStore.getConfigs(Set.of(configResourceContext));
-    assertEquals(List.of(expectedConfig), actualConfigs);
+    Map<ConfigResourceContext, ContextSpecificConfig> actualConfigs =
+        configStore.getAllContextConfigs(Set.of(configResourceContext));
+    assertEquals(Map.of(configResourceContext, expectedConfig), actualConfigs);
   }
 
   @Test

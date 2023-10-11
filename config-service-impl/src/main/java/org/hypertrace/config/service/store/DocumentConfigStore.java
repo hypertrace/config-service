@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -163,7 +164,7 @@ public class DocumentConfigStore implements ConfigStore {
     if (configResourceContexts.isEmpty()) {
       return;
     }
-    collection.delete(getConfigResourceContextsFilter(configResourceContexts));
+    collection.delete(buildConfigResourceContextsFilter(configResourceContexts));
   }
 
   @Override
@@ -175,15 +176,20 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public List<ContextSpecificConfig> getConfigs(Set<ConfigResourceContext> configResourceContexts)
-      throws IOException {
+  public Map<ConfigResourceContext, ContextSpecificConfig> getAllContextConfigs(
+      Set<ConfigResourceContext> configResourceContexts) throws IOException {
     Map<ConfigResourceContext, Optional<ConfigDocument>> configDocs =
         getLatestVersionConfigDocs(configResourceContexts);
-    return configDocs.values().stream()
-        .flatMap(Optional::stream)
-        .map(this::convertToContextSpecificConfig)
-        .flatMap(Optional::stream)
-        .collect(Collectors.toUnmodifiableList());
+
+    return configDocs.entrySet().stream()
+        .collect(
+            Collectors.toUnmodifiableMap(
+                Entry::getKey,
+                entry ->
+                    entry
+                        .getValue()
+                        .flatMap(this::convertToContextSpecificConfig)
+                        .orElseGet(() -> emptyConfig(entry.getKey().getContext()))));
   }
 
   @Override
@@ -237,7 +243,7 @@ public class DocumentConfigStore implements ConfigStore {
       return Collections.emptyMap();
     }
 
-    Filter filter = getConfigResourceContextsFilter(configResourceContexts);
+    Filter filter = buildConfigResourceContextsFilter(configResourceContexts);
     // build query
     Query query = new Query();
     query.setFilter(filter);
@@ -262,7 +268,7 @@ public class DocumentConfigStore implements ConfigStore {
     return latestVersionConfigDocs;
   }
 
-  private Filter getConfigResourceContextsFilter(
+  private Filter buildConfigResourceContextsFilter(
       Set<ConfigResourceContext> configResourceContexts) {
     List<Filter> childFilters =
         configResourceContexts.stream()
