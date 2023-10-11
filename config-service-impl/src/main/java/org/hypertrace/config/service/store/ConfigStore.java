@@ -5,6 +5,7 @@ import com.typesafe.config.Config;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -43,6 +44,15 @@ public interface ConfigStore {
   ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext) throws IOException;
 
   /**
+   * Get the configs with the latest version for the specified resources.
+   *
+   * @param configResourceContexts
+   * @return
+   */
+  List<ContextSpecificConfig> getConfigs(Set<ConfigResourceContext> configResourceContexts)
+      throws IOException;
+
+  /**
    * Get all the configs with the latest version(along with the context to which it applies) for the
    * specified parameters, sorted in the descending order of their creation time.
    *
@@ -62,6 +72,13 @@ public interface ConfigStore {
    */
   List<UpsertedConfig> writeAllConfigs(
       Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException;
+
+  /**
+   * delete the config values associated with the specified config resources.
+   *
+   * @param configResourceContexts
+   */
+  void deleteConfigs(Set<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**
    * Health check for the backend store

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
@@ -193,8 +194,7 @@ class ConfigServiceGrpcImplTest {
         () -> configServiceGrpc.deleteConfig(getDeleteConfigRequest(), responseObserver);
     RequestContext.forTenantId(TENANT_ID).run(runnable);
 
-    verify(configStore, times(1))
-        .writeConfig(eq(configResourceWithContext), eq(""), eq(emptyValue()));
+    verify(configStore, times(1)).deleteConfigs(eq(Set.of(configResourceWithContext)));
     verify(responseObserver, times(1))
         .onNext(eq(DeleteConfigResponse.newBuilder().setDeletedConfig(deletedConfig).build()));
     verify(responseObserver, times(1)).onCompleted();
@@ -222,15 +222,17 @@ class ConfigServiceGrpcImplTest {
             getConfigResourceContext(context2),
             emptyValue());
 
-    when(configStore.writeAllConfigs(writeAllConfigsRequest, ""))
+    when(configStore.getConfigs(writeAllConfigsRequest.keySet()))
         .thenReturn(
             List.of(
-                buildUpsertedConfig(context1, emptyValue(), config1, 10L, 20L),
-                buildUpsertedConfig(context2, emptyValue(), config2, 10L, 20L)));
+                buildContextSpecificConfig(context1, config1, 10L, 20L),
+                buildContextSpecificConfig(context2, config2, 10L, 20L)));
     Runnable runnable =
         () -> configServiceGrpc.deleteConfigs(deleteConfigsRequest, responseObserver);
     RequestContext.forTenantId(TENANT_ID).run(runnable);
-    verify(configStore, times(1)).writeAllConfigs(eq(writeAllConfigsRequest), eq(""));
+    verify(configStore, times(1))
+        .deleteConfigs(
+            eq(Set.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
     verify(responseObserver, times(1))
         .onNext(
             DeleteConfigsResponse.newBuilder()
@@ -265,8 +267,7 @@ class ConfigServiceGrpcImplTest {
                 getDefaultContextDeleteConfigRequest(), responseObserver);
     RequestContext.forTenantId(TENANT_ID).run(runnable);
 
-    verify(configStore, times(1))
-        .writeConfig(eq(configResourceWithoutContext), eq(""), eq(emptyValue()));
+    verify(configStore, times(1)).deleteConfigs(eq(Set.of(configResourceWithoutContext)));
     verify(responseObserver, times(1))
         .onNext(eq(DeleteConfigResponse.newBuilder().setDeletedConfig(deletedConfig).build()));
     verify(responseObserver, times(1)).onCompleted();

@@ -108,6 +108,26 @@ class DocumentConfigStoreTest {
   }
 
   @Test
+  void getConfigs() throws IOException {
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2)));
+    when(collection.search(any(Query.class))).thenReturn(iterator);
+
+    ContextSpecificConfig expectedConfig =
+        ContextSpecificConfig.newBuilder()
+            .setConfig(config1)
+            .setContext("context")
+            .setCreationTimestamp(TIMESTAMP1)
+            .setUpdateTimestamp(TIMESTAMP2)
+            .build();
+    List<ContextSpecificConfig> actualConfigs =
+        configStore.getConfigs(Set.of(configResourceContext));
+    assertEquals(List.of(expectedConfig), actualConfigs);
+  }
+
+  @Test
   void getConfig() throws IOException {
     CloseableIteratorImpl iterator =
         new CloseableIteratorImpl(

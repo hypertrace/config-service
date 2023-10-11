@@ -11,7 +11,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -125,16 +125,15 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
       ContextSpecificConfig configToDelete = configStore.getConfig(configResourceContext);
-
       // if configToDelete is null/empty (i.e. config value doesn't exist or is already deleted),
       // then throw NOT_FOUND exception
-      if (ConfigServiceUtils.isNull(configToDelete.getConfig())) {
+      if (configToDelete == null || ConfigServiceUtils.isNull(configToDelete.getConfig())) {
         responseObserver.onError(Status.NOT_FOUND.asException());
         return;
       }
 
-      // write an empty config for the specified config resource. This maintains the versioning.
-      configStore.writeConfig(configResourceContext, getUserId(), emptyValue());
+      // delete the config for the specified config resource.
+      configStore.deleteConfigs(Set.of(configResourceContext));
       responseObserver.onNext(
           DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
       responseObserver.onCompleted();
@@ -155,37 +154,23 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                 .asException());
         return;
       }
+
       Map<ConfigResourceContext, Value> valuesByContext =
           request.getConfigsList().stream()
               .map(
                   requestedDelete ->
                       Map.entry(this.getConfigResourceContext(requestedDelete), emptyValue()))
               .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
-
-      List<UpsertedConfig> deletedConfigs =
-          configStore.writeAllConfigs(valuesByContext, getUserId());
-
+      List<ContextSpecificConfig> configs = configStore.getConfigs(valuesByContext.keySet());
+      // delete the configs for the specified config resources.
+      configStore.deleteConfigs(valuesByContext.keySet());
       responseObserver.onNext(
-          DeleteConfigsResponse.newBuilder()
-              .addAllDeletedConfigs(
-                  deletedConfigs.stream()
-                      .map(this::buildDeletedContextSpecificConfig)
-                      .collect(Collectors.toUnmodifiableList()))
-              .build());
+          DeleteConfigsResponse.newBuilder().addAllDeletedConfigs(configs).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete configs failed for request: {}", request, e);
       responseObserver.onError(e);
     }
-  }
-
-  private ContextSpecificConfig buildDeletedContextSpecificConfig(UpsertedConfig deletedConfig) {
-    return ContextSpecificConfig.newBuilder()
-        .setContext(deletedConfig.getContext())
-        .setCreationTimestamp(deletedConfig.getCreationTimestamp())
-        .setUpdateTimestamp(deletedConfig.getUpdateTimestamp())
-        .setConfig(deletedConfig.getPrevConfig())
-        .build();
   }
 
   @Override

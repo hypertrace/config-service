@@ -159,11 +159,33 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
+  public void deleteConfigs(Set<ConfigResourceContext> configResourceContexts) {
+    if (configResourceContexts.isEmpty()) {
+      return;
+    }
+    collection.delete(getConfigResourceContextsFilter(configResourceContexts));
+  }
+
+  @Override
   public ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext)
       throws IOException {
     return getLatestVersionConfigDoc(configResourceContext)
         .flatMap(this::convertToContextSpecificConfig)
         .orElseGet(() -> emptyConfig(configResourceContext.getContext()));
+  }
+
+  @Override
+  public List<ContextSpecificConfig> getConfigs(Set<ConfigResourceContext> configResourceContexts)
+      throws IOException {
+    Map<ConfigResourceContext, Optional<ConfigDocument>> configDocs =
+        getLatestVersionConfigDocs(configResourceContexts);
+    return configDocs.values().stream()
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(this::convertToContextSpecificConfig)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -216,20 +238,8 @@ public class DocumentConfigStore implements ConfigStore {
     if (configResourceContexts.isEmpty()) {
       return Collections.emptyMap();
     }
-    // build filter
-    List<Filter> childFilters =
-        configResourceContexts.stream()
-            .map(this::getConfigResourceFieldContextFilter)
-            .collect(Collectors.toUnmodifiableList());
-    Filter configResourceFieldContextFilter = new Filter();
-    configResourceFieldContextFilter.setOp(Filter.Op.OR);
-    configResourceFieldContextFilter.setChildFilters(childFilters.toArray(Filter[]::new));
-    Filter tenantIdFilter =
-        Filter.eq(
-            TENANT_ID_FIELD_NAME,
-            configResourceContexts.iterator().next().getConfigResource().getTenantId());
-    Filter filter = tenantIdFilter.and(configResourceFieldContextFilter);
 
+    Filter filter = getConfigResourceContextsFilter(configResourceContexts);
     // build query
     Query query = new Query();
     query.setFilter(filter);
@@ -252,6 +262,22 @@ public class DocumentConfigStore implements ConfigStore {
       }
     }
     return latestVersionConfigDocs;
+  }
+
+  private Filter getConfigResourceContextsFilter(
+      Set<ConfigResourceContext> configResourceContexts) {
+    List<Filter> childFilters =
+        configResourceContexts.stream()
+            .map(this::getConfigResourceFieldContextFilter)
+            .collect(Collectors.toUnmodifiableList());
+    Filter configResourceFieldContextFilter = new Filter();
+    configResourceFieldContextFilter.setOp(Filter.Op.OR);
+    configResourceFieldContextFilter.setChildFilters(childFilters.toArray(Filter[]::new));
+    Filter tenantIdFilter =
+        Filter.eq(
+            TENANT_ID_FIELD_NAME,
+            configResourceContexts.iterator().next().getConfigResource().getTenantId());
+    return tenantIdFilter.and(configResourceFieldContextFilter);
   }
 
   private Filter getConfigResourceContextFilter(ConfigResourceContext configResourceContext) {
