@@ -31,6 +31,11 @@ protobuf {
 
 dependencies {
   api(libs.bundles.grpc.api)
+  constraints {
+    implementation("com.google.guava:guava:32.1.2-jre") {
+      because("https://nvd.nist.gov/vuln/detail/CVE-2023-2976")
+    }
+  }
 }
 
 sourceSets {

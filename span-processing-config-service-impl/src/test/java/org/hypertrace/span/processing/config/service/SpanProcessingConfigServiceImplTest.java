@@ -19,6 +19,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.span.processing.config.service.store.ExcludeSpanRulesConfigStore;
@@ -63,10 +64,12 @@ class SpanProcessingConfigServiceImplTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
 
     this.timestampConverter = mock(TimestampConverter.class);
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.mockGenericConfigService
         .addService(
             new SpanProcessingConfigServiceImpl(
-                new ExcludeSpanRulesConfigStore(genericStub, this.timestampConverter),
+                new ExcludeSpanRulesConfigStore(
+                    genericStub, this.timestampConverter, configChangeEventGenerator),
                 new SpanProcessingConfigRequestValidator(),
                 this.timestampConverter,
                 buildMockConfig()))
