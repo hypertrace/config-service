@@ -2,9 +2,9 @@
 protoc = "3.23.2"
 grpc = "1.57.2"
 gson = "2.9.0"
-hypertrace-grpcutils = "0.12.2"
-hypertrace-framework = "0.1.58"
-kafka-streams-framework = "0.3.2"
+hypertrace-grpcutils = "0.12.5"
+hypertrace-framework = "0.1.61"
+kafka-streams-framework = "0.3.9"
 lombok = "1.18.28"
 jackson = "2.15.2"
 
