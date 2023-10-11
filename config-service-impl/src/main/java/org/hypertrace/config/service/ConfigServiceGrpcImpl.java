@@ -1,6 +1,5 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
 import static org.hypertrace.config.service.ConfigServiceUtils.filterNull;
 import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -155,15 +155,13 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
         return;
       }
 
-      Map<ConfigResourceContext, Value> valuesByContext =
+      Set<ConfigResourceContext> configResourceContexts =
           request.getConfigsList().stream()
-              .map(
-                  requestedDelete ->
-                      Map.entry(this.getConfigResourceContext(requestedDelete), emptyValue()))
-              .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
-      List<ContextSpecificConfig> configs = configStore.getConfigs(valuesByContext.keySet());
+              .map(this::getConfigResourceContext)
+              .collect(Collectors.toUnmodifiableSet());
+      List<ContextSpecificConfig> configs = configStore.getConfigs(configResourceContexts);
       // delete the configs for the specified config resources.
-      configStore.deleteConfigs(valuesByContext.keySet());
+      configStore.deleteConfigs(configResourceContexts);
       responseObserver.onNext(
           DeleteConfigsResponse.newBuilder().addAllDeletedConfigs(configs).build());
       responseObserver.onCompleted();
