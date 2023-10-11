@@ -180,11 +180,9 @@ public class DocumentConfigStore implements ConfigStore {
     Map<ConfigResourceContext, Optional<ConfigDocument>> configDocs =
         getLatestVersionConfigDocs(configResourceContexts);
     return configDocs.values().stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .map(this::convertToContextSpecificConfig)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
