@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.utils.TimestampConverter;
@@ -25,11 +26,13 @@ public class ExcludeSpanRulesConfigStore extends IdentifiedObjectStore<ExcludeSp
   @Inject
   public ExcludeSpanRulesConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         EXCLUDE_SPAN_RULES_CONFIG_RESOURCE_NAMESPACE,
-        EXCLUDE_SPAN_RULES_RESOURCE_NAME);
+        EXCLUDE_SPAN_RULES_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
   }
 
