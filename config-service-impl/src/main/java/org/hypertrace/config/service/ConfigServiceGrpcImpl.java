@@ -81,11 +81,11 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       for (String context : request.getContextsList()) {
         Optional<ContextSpecificConfig> maybeContextConfig =
             configStore.getConfig(getConfigResourceContext(request, context));
-        if (maybeContextConfig.isEmpty()) {
-          continue;
-        }
-
-        config = merge(config, maybeContextConfig.get());
+        ContextSpecificConfig lastConfig = config;
+        config =
+            maybeContextConfig
+                .map(contextConfig -> merge(lastConfig, contextConfig))
+                .orElse(config);
       }
 
       filterNull(config)
@@ -131,20 +131,20 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   @Override
   public void deleteConfig(
       DeleteConfigRequest request, StreamObserver<DeleteConfigResponse> responseObserver) {
+
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
-      Optional<ContextSpecificConfig> maybeConfig = configStore.getConfig(configResourceContext);
-      // if configToDelete is null/empty (i.e. config value doesn't exist or is already deleted),
-      // then throw NOT_FOUND exception
-      if (maybeConfig.isEmpty()) {
-        responseObserver.onError(Status.NOT_FOUND.asException());
-        return;
-      }
+      DeleteConfigResponse deleteResponse =
+          configStore
+              .getConfig(configResourceContext)
+              .map(
+                  configToDelete ->
+                      DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build())
+              .orElseThrow(Status.NOT_FOUND::asException);
 
       // delete the config for the specified config resource.
       configStore.deleteConfigs(Set.of(configResourceContext));
-      responseObserver.onNext(
-          DeleteConfigResponse.newBuilder().setDeletedConfig(maybeConfig.get()).build());
+      responseObserver.onNext(deleteResponse);
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete config failed for request:{}", request, e);
