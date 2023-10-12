@@ -8,8 +8,6 @@ import static org.hypertrace.config.service.TestUtils.getConfig1;
 import static org.hypertrace.config.service.TestUtils.getConfig2;
 import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURATIONS_COLLECTION;
-import static org.hypertrace.config.service.store.DocumentConfigStore.DATA_STORE_TYPE;
-import static org.hypertrace.config.service.store.DocumentConfigStore.DOC_STORE_CONFIG_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -19,14 +17,13 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
@@ -35,10 +32,10 @@ import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
-import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.Query;
+import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -60,15 +57,8 @@ class DocumentConfigStoreTest {
   @BeforeEach()
   void beforeEach() {
     collection = mock(Collection.class);
-    String datastoreType = "MockDatastore";
-    DatastoreProvider.register(datastoreType, MockDatastore.class);
-    Map<String, Object> dataStoreConfig =
-        Map.of(DATA_STORE_TYPE, datastoreType, datastoreType, Map.of());
-    Map<String, Object> configMap = Map.of(DOC_STORE_CONFIG_KEY, dataStoreConfig);
-    Config storeConfig = ConfigFactory.parseMap(configMap);
     this.mockClock = mock(Clock.class);
-    this.configStore = new DocumentConfigStore(mockClock);
-    this.configStore.init(storeConfig);
+    this.configStore = new DocumentConfigStore(mockClock, new MockDatastore());
   }
 
   @Test
@@ -108,6 +98,27 @@ class DocumentConfigStoreTest {
   }
 
   @Test
+  void getConfigs() throws IOException {
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2)));
+    when(collection.search(any(Query.class))).thenReturn(iterator);
+
+    ContextSpecificConfig expectedConfig =
+        ContextSpecificConfig.newBuilder()
+            .setConfig(config1)
+            .setContext("context")
+            .setCreationTimestamp(TIMESTAMP1)
+            .setUpdateTimestamp(TIMESTAMP2)
+            .build();
+    ConfigResourceContext context = getConfigResourceContext("context");
+    Map<ConfigResourceContext, ContextSpecificConfig> actualConfigs =
+        configStore.getContextConfigs(Set.of(context));
+    assertEquals(Map.of(context, expectedConfig), actualConfigs);
+  }
+
+  @Test
   void getConfig() throws IOException {
     CloseableIteratorImpl iterator =
         new CloseableIteratorImpl(
@@ -122,8 +133,8 @@ class DocumentConfigStoreTest {
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
             .build();
-    ContextSpecificConfig actualConfig = configStore.getConfig(configResourceContext);
-    assertEquals(expectedConfig, actualConfig);
+    Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
+    assertEquals(Optional.of(expectedConfig), actualConfig);
   }
 
   @Test
@@ -269,12 +280,6 @@ class DocumentConfigStoreTest {
     }
 
     // default implementation for other methods as they are unused
-
-    @Override
-    public boolean init(Config config) {
-      return false;
-    }
-
     @Override
     public boolean createCollection(String s, Map<String, String> map) {
       return false;
@@ -289,5 +294,13 @@ class DocumentConfigStoreTest {
     public boolean healthCheck() {
       return false;
     }
+
+    @Override
+    public DocStoreMetricProvider getDocStoreMetricProvider() {
+      return null;
+    }
+
+    @Override
+    public void close() {}
   }
 }

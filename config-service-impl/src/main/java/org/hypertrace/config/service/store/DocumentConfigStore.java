@@ -1,15 +1,14 @@
 package org.hypertrace.config.service.store;
 
 import static com.google.common.collect.Streams.zip;
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.io.IOException;
 import java.time.Clock;
@@ -20,6 +19,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,7 +32,6 @@ import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
-import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Filter;
 import org.hypertrace.core.documentstore.Key;
@@ -42,34 +41,16 @@ import org.hypertrace.core.documentstore.Query;
 /** Document store which stores and serves the configurations. */
 @Slf4j
 public class DocumentConfigStore implements ConfigStore {
-
-  static final String DOC_STORE_CONFIG_KEY = "document.store";
-  static final String DATA_STORE_TYPE = "dataStoreType";
   static final String CONFIGURATIONS_COLLECTION = "configurations";
   private final Clock clock;
 
-  private Datastore datastore;
-  private Collection collection;
+  private final Datastore datastore;
+  private final Collection collection;
 
-  public DocumentConfigStore() {
-    this(Clock.systemUTC());
-  }
-
-  DocumentConfigStore(Clock clock) {
+  public DocumentConfigStore(Clock clock, Datastore datastore) {
     this.clock = clock;
-  }
-
-  @Override
-  public void init(Config config) {
-    datastore = initDataStore(config);
+    this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
-  }
-
-  private Datastore initDataStore(Config config) {
-    Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
-    String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
-    Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
-    return DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
   }
 
   @Override
@@ -159,11 +140,28 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext)
+  public void deleteConfigs(java.util.Collection<ConfigResourceContext> configResourceContexts) {
+    if (configResourceContexts.isEmpty()) {
+      return;
+    }
+    collection.delete(buildConfigResourceContextsFilter(configResourceContexts));
+  }
+
+  @Override
+  public Optional<ContextSpecificConfig> getConfig(ConfigResourceContext configResourceContext)
       throws IOException {
     return getLatestVersionConfigDoc(configResourceContext)
-        .flatMap(this::convertToContextSpecificConfig)
-        .orElseGet(() -> emptyConfig(configResourceContext.getContext()));
+        .flatMap(this::convertToContextSpecificConfig);
+  }
+
+  @Override
+  public Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+      java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
+    return Maps.filterValues(
+        Maps.transformValues(
+            getLatestVersionConfigDocs(configResourceContexts),
+            doc -> doc.flatMap(this::convertToContextSpecificConfig).orElse(null)),
+        Objects::nonNull);
   }
 
   @Override
@@ -212,24 +210,12 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private Map<ConfigResourceContext, Optional<ConfigDocument>> getLatestVersionConfigDocs(
-      Set<ConfigResourceContext> configResourceContexts) throws IOException {
+      java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
     if (configResourceContexts.isEmpty()) {
       return Collections.emptyMap();
     }
-    // build filter
-    List<Filter> childFilters =
-        configResourceContexts.stream()
-            .map(this::getConfigResourceFieldContextFilter)
-            .collect(Collectors.toUnmodifiableList());
-    Filter configResourceFieldContextFilter = new Filter();
-    configResourceFieldContextFilter.setOp(Filter.Op.OR);
-    configResourceFieldContextFilter.setChildFilters(childFilters.toArray(Filter[]::new));
-    Filter tenantIdFilter =
-        Filter.eq(
-            TENANT_ID_FIELD_NAME,
-            configResourceContexts.iterator().next().getConfigResource().getTenantId());
-    Filter filter = tenantIdFilter.and(configResourceFieldContextFilter);
 
+    Filter filter = buildConfigResourceContextsFilter(configResourceContexts);
     // build query
     Query query = new Query();
     query.setFilter(filter);
@@ -252,6 +238,29 @@ public class DocumentConfigStore implements ConfigStore {
       }
     }
     return latestVersionConfigDocs;
+  }
+
+  private Filter buildConfigResourceContextsFilter(
+      java.util.Collection<ConfigResourceContext> configResourceContexts) {
+    if (configResourceContexts.isEmpty()) {
+      throw new RuntimeException("Config resource contexts cannot be empty");
+    }
+    List<Filter> childFilters =
+        configResourceContexts.stream()
+            .map(this::getConfigResourceFieldContextFilter)
+            .collect(Collectors.toUnmodifiableList());
+    Filter configResourceFieldContextFilter = new Filter();
+    configResourceFieldContextFilter.setOp(Filter.Op.OR);
+    configResourceFieldContextFilter.setChildFilters(childFilters.toArray(Filter[]::new));
+    Filter tenantIdFilter =
+        Filter.eq(
+            TENANT_ID_FIELD_NAME,
+            configResourceContexts.stream()
+                .findFirst()
+                .orElseThrow()
+                .getConfigResource()
+                .getTenantId());
+    return tenantIdFilter.and(configResourceFieldContextFilter);
   }
 
   private Filter getConfigResourceContextFilter(ConfigResourceContext configResourceContext) {

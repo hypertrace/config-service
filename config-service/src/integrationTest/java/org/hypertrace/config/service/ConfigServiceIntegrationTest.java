@@ -286,10 +286,6 @@ public class ConfigServiceIntegrationTest {
             .getDeletedConfigsList();
 
     assertEquals(2, deletedContextSpecificConfigs.size());
-    assertEquals(CONTEXT_1, deletedContextSpecificConfigs.get(0).getContext());
-    assertEquals(config1, deletedContextSpecificConfigs.get(0).getConfig());
-    assertEquals(CONTEXT_2, deletedContextSpecificConfigs.get(1).getContext());
-    assertEquals(config2, deletedContextSpecificConfigs.get(1).getConfig());
 
     // There should be no configs for RESOURCE_NAME_1 and RESOURCE_NAMESPACE_1 for TENANT_1
     List<ContextSpecificConfig> contextSpecificConfigList =

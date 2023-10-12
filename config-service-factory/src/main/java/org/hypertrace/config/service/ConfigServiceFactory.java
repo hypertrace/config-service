@@ -14,6 +14,8 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
+import org.hypertrace.core.documentstore.Datastore;
+import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
@@ -28,6 +30,8 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
   private static final String SERVICE_NAME = "config-service";
   private static final String STORE_REPORTING_NAME = "config-service-store";
   private static final String GENERIC_CONFIG_SERVICE_CONFIG = "generic.config.service";
+  private static final String DOC_STORE_CONFIG_KEY = "document.store";
+  private static final String DATA_STORE_TYPE = "dataStoreType";
 
   private ConfigStore store;
   private GrpcServiceContainerEnvironment grpcServiceContainerEnvironment;
@@ -86,12 +90,19 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
 
   protected ConfigStore buildConfigStore(Config config) {
     try {
-      ConfigStore configStore = new DocumentConfigStore();
-      configStore.init(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
+      Datastore datastore = initDataStore(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
+      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
       this.store = configStore;
       return configStore;
     } catch (Exception e) {
       throw new RuntimeException("Error in getting or initializing config store", e);
     }
+  }
+
+  private Datastore initDataStore(Config config) {
+    Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
+    String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
+    Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
+    return DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
   }
 }

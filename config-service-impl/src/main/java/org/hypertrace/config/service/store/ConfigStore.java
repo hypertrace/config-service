@@ -1,10 +1,11 @@
 package org.hypertrace.config.service.store;
 
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -15,14 +16,6 @@ import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
  * resources.
  */
 public interface ConfigStore {
-
-  /**
-   * Initialize the config store
-   *
-   * @param config
-   */
-  void init(Config config);
-
   /**
    * Write the config value associated with the specified config resource to the store.
    *
@@ -40,7 +33,19 @@ public interface ConfigStore {
    * @param configResourceContext
    * @return
    */
-  ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext) throws IOException;
+  Optional<ContextSpecificConfig> getConfig(ConfigResourceContext configResourceContext)
+      throws IOException;
+
+  /**
+   * Get all the configs with the latest version(along with the context to which it applies) for the
+   * specified resource keys
+   *
+   * @param configResourceContexts
+   * @return the configs
+   * @throws IOException
+   */
+  Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+      Collection<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**
    * Get all the configs with the latest version(along with the context to which it applies) for the
@@ -62,6 +67,13 @@ public interface ConfigStore {
    */
   List<UpsertedConfig> writeAllConfigs(
       Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException;
+
+  /**
+   * delete the config values associated with the specified config resources.
+   *
+   * @param configResourceContexts
+   */
+  void deleteConfigs(Collection<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**
    * Health check for the backend store
