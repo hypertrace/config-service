@@ -1,6 +1,5 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
 import static org.hypertrace.config.service.TestUtils.CONTEXT1;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAME;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAMESPACE;
@@ -219,26 +218,20 @@ class ConfigServiceGrpcImplTest {
             .addConfigs(getConfigToDelete(context2))
             .build();
 
-    Map<ConfigResourceContext, Value> writeAllConfigsRequest =
-        Map.of(
-            getConfigResourceContext(context1),
-            emptyValue(),
-            getConfigResourceContext(context2),
-            emptyValue());
-
-    when(configStore.getContextConfigs(writeAllConfigsRequest.keySet()))
+    when(configStore.getContextConfigs(
+            List.of(getConfigResourceContext(context1), getConfigResourceContext(context2))))
         .thenReturn(
             Map.of(
                 getConfigResourceContext(context1),
-                    Optional.of(buildContextSpecificConfig(context1, config1, 10L, 20L)),
+                    buildContextSpecificConfig(context1, config1, 10L, 20L),
                 getConfigResourceContext(context2),
-                    Optional.of(buildContextSpecificConfig(context2, config2, 10L, 20L))));
+                    buildContextSpecificConfig(context2, config2, 10L, 20L)));
     Runnable runnable =
         () -> configServiceGrpc.deleteConfigs(deleteConfigsRequest, responseObserver);
     RequestContext.forTenantId(TENANT_ID).run(runnable);
     verify(configStore, times(1))
         .deleteConfigs(
-            eq(List.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
+            eq(Set.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
     verify(responseObserver, times(1)).onNext(any());
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));

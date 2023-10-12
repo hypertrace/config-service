@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -158,12 +159,13 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public Map<ConfigResourceContext, Optional<ContextSpecificConfig>> getContextConfigs(
+  public Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
       java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
-    Map<ConfigResourceContext, Optional<ConfigDocument>> configDocs =
-        getLatestVersionConfigDocs(configResourceContexts);
-    return Maps.transformValues(
-        configDocs, maybeConfigDoc -> maybeConfigDoc.flatMap(this::convertToContextSpecificConfig));
+    return Maps.filterValues(
+        Maps.transformValues(
+            getLatestVersionConfigDocs(configResourceContexts),
+            doc -> doc.flatMap(this::convertToContextSpecificConfig).orElse(null)),
+        Objects::nonNull);
   }
 
   @Override

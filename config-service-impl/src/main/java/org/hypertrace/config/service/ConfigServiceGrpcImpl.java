@@ -168,17 +168,12 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
           request.getConfigsList().stream()
               .map(this::getConfigResourceContext)
               .collect(Collectors.toUnmodifiableList());
-      Map<ConfigResourceContext, Optional<ContextSpecificConfig>> configs =
+      Map<ConfigResourceContext, ContextSpecificConfig> configs =
           configStore.getContextConfigs(configResourceContexts);
       // delete the configs for the specified config resources.
-      configStore.deleteConfigs(configResourceContexts);
+      configStore.deleteConfigs(configs.keySet());
       responseObserver.onNext(
-          DeleteConfigsResponse.newBuilder()
-              .addAllDeletedConfigs(
-                  configs.values().stream()
-                      .flatMap(Optional::stream)
-                      .collect(Collectors.toUnmodifiableList()))
-              .build());
+          DeleteConfigsResponse.newBuilder().addAllDeletedConfigs(configs.values()).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete configs failed for request: {}", request, e);

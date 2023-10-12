@@ -44,7 +44,7 @@ public interface ConfigStore {
    * @return the configs
    * @throws IOException
    */
-  Map<ConfigResourceContext, Optional<ContextSpecificConfig>> getContextConfigs(
+  Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
       Collection<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**
