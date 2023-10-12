@@ -1,5 +1,6 @@
 package org.hypertrace.config.service;
 
+import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
 import static org.hypertrace.config.service.ConfigServiceUtils.filterNull;
 import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 
@@ -10,6 +11,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -69,17 +71,24 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getConfig(
       GetConfigRequest request, StreamObserver<GetConfigResponse> responseObserver) {
     try {
-      ContextSpecificConfig config = configStore.getConfig(getConfigResourceContext(request));
-
+      ConfigResourceContext configResourceContext = getConfigResourceContext(request);
+      Optional<ContextSpecificConfig> maybeConfig = configStore.getConfig(configResourceContext);
+      // initialize empty config if not present to handle merges better
+      if (maybeConfig.isEmpty()) {
+        maybeConfig = Optional.of(emptyConfig(configResourceContext.getContext()));
+      }
       // get the configs for the contexts mentioned in the request and merge them in the specified
       // order
       for (String context : request.getContextsList()) {
-        ContextSpecificConfig contextSpecificConfig =
+        Optional<ContextSpecificConfig> contextSpecificConfig =
             configStore.getConfig(getConfigResourceContext(request, context));
-        config = merge(config, contextSpecificConfig);
+        if (contextSpecificConfig.isEmpty()) {
+          continue;
+        }
+        maybeConfig = Optional.of(merge(maybeConfig.get(), contextSpecificConfig.get()));
       }
 
-      filterNull(config)
+      filterNull(maybeConfig.get())
           .map(
               nonNullConfig ->
                   GetConfigResponse.newBuilder()
@@ -124,10 +133,10 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       DeleteConfigRequest request, StreamObserver<DeleteConfigResponse> responseObserver) {
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
-      ContextSpecificConfig configToDelete = configStore.getConfig(configResourceContext);
+      Optional<ContextSpecificConfig> maybeConfig = configStore.getConfig(configResourceContext);
       // if configToDelete is null/empty (i.e. config value doesn't exist or is already deleted),
       // then throw NOT_FOUND exception
-      if (configToDelete == null || ConfigServiceUtils.isNull(configToDelete.getConfig())) {
+      if (maybeConfig.isEmpty()) {
         responseObserver.onError(Status.NOT_FOUND.asException());
         return;
       }
@@ -135,7 +144,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       // delete the config for the specified config resource.
       configStore.deleteConfigs(Set.of(configResourceContext));
       responseObserver.onNext(
-          DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
+          DeleteConfigResponse.newBuilder().setDeletedConfig(maybeConfig.get()).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete config failed for request:{}", request, e);
@@ -160,7 +169,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
               .map(this::getConfigResourceContext)
               .collect(Collectors.toUnmodifiableSet());
       Map<ConfigResourceContext, ContextSpecificConfig> configs =
-          configStore.getAllContextConfigs(configResourceContexts);
+          configStore.getContextConfigs(configResourceContexts);
       // delete the configs for the specified config resources.
       configStore.deleteConfigs(configResourceContexts);
       responseObserver.onNext(

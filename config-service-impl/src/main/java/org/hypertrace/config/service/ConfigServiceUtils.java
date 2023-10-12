@@ -31,6 +31,7 @@ public class ConfigServiceUtils {
   public static ContextSpecificConfig merge(
       ContextSpecificConfig defaultContextSpecificConfig,
       ContextSpecificConfig overridingContextSpecificConfig) {
+
     Value defaultConfig = defaultContextSpecificConfig.getConfig();
     Value overridingConfig = overridingContextSpecificConfig.getConfig();
     if (isNull(defaultConfig)) {

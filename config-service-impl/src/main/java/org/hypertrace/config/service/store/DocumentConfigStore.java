@@ -1,7 +1,6 @@
 package org.hypertrace.config.service.store;
 
 import static com.google.common.collect.Streams.zip;
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyConfig;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
@@ -160,7 +159,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public void deleteConfigs(Set<ConfigResourceContext> configResourceContexts) {
+  public void deleteConfigs(java.util.Collection<ConfigResourceContext> configResourceContexts) {
     if (configResourceContexts.isEmpty()) {
       return;
     }
@@ -168,28 +167,24 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public ContextSpecificConfig getConfig(ConfigResourceContext configResourceContext)
+  public Optional<ContextSpecificConfig> getConfig(ConfigResourceContext configResourceContext)
       throws IOException {
     return getLatestVersionConfigDoc(configResourceContext)
-        .flatMap(this::convertToContextSpecificConfig)
-        .orElseGet(() -> emptyConfig(configResourceContext.getContext()));
+        .flatMap(this::convertToContextSpecificConfig);
   }
 
   @Override
-  public Map<ConfigResourceContext, ContextSpecificConfig> getAllContextConfigs(
-      Set<ConfigResourceContext> configResourceContexts) throws IOException {
+  public Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+      java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
     Map<ConfigResourceContext, Optional<ConfigDocument>> configDocs =
         getLatestVersionConfigDocs(configResourceContexts);
-
     return configDocs.entrySet().stream()
+        .filter(entry -> entry.getValue().isPresent())
         .collect(
             Collectors.toUnmodifiableMap(
                 Entry::getKey,
                 entry ->
-                    entry
-                        .getValue()
-                        .flatMap(this::convertToContextSpecificConfig)
-                        .orElseGet(() -> emptyConfig(entry.getKey().getContext()))));
+                    entry.getValue().flatMap(this::convertToContextSpecificConfig).orElseThrow()));
   }
 
   @Override
@@ -238,7 +233,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private Map<ConfigResourceContext, Optional<ConfigDocument>> getLatestVersionConfigDocs(
-      Set<ConfigResourceContext> configResourceContexts) throws IOException {
+      java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
     if (configResourceContexts.isEmpty()) {
       return Collections.emptyMap();
     }
@@ -269,7 +264,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private Filter buildConfigResourceContextsFilter(
-      Set<ConfigResourceContext> configResourceContexts) {
+      java.util.Collection<ConfigResourceContext> configResourceContexts) {
     List<Filter> childFilters =
         configResourceContexts.stream()
             .map(this::getConfigResourceFieldContextFilter)
@@ -280,7 +275,11 @@ public class DocumentConfigStore implements ConfigStore {
     Filter tenantIdFilter =
         Filter.eq(
             TENANT_ID_FIELD_NAME,
-            configResourceContexts.iterator().next().getConfigResource().getTenantId());
+            configResourceContexts.stream()
+                .findFirst()
+                .orElseThrow()
+                .getConfigResource()
+                .getTenantId());
     return tenantIdFilter.and(configResourceFieldContextFilter);
   }
 

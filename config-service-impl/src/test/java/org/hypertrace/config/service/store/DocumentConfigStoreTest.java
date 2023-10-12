@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
@@ -123,7 +124,7 @@ class DocumentConfigStoreTest {
             .setUpdateTimestamp(TIMESTAMP2)
             .build();
     Map<ConfigResourceContext, ContextSpecificConfig> actualConfigs =
-        configStore.getAllContextConfigs(Set.of(configResourceContext));
+        configStore.getContextConfigs(Set.of(configResourceContext));
     assertEquals(Map.of(configResourceContext, expectedConfig), actualConfigs);
   }
 
@@ -142,8 +143,8 @@ class DocumentConfigStoreTest {
             .setCreationTimestamp(TIMESTAMP1)
             .setUpdateTimestamp(TIMESTAMP2)
             .build();
-    ContextSpecificConfig actualConfig = configStore.getConfig(configResourceContext);
-    assertEquals(expectedConfig, actualConfig);
+    Optional<ContextSpecificConfig> actualConfig = configStore.getConfig(configResourceContext);
+    assertEquals(Optional.of(expectedConfig), actualConfig);
   }
 
   @Test
