@@ -134,7 +134,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       }
 
       // write an empty config for the specified config resource. This maintains the versioning.
-      configStore.writeConfig(configResourceContext, getUserId(), emptyValue());
+      configStore.deleteConfigs(List.of(configResourceContext));
       responseObserver.onNext(
           DeleteConfigResponse.newBuilder().setDeletedConfig(configToDelete).build());
       responseObserver.onCompleted();
@@ -155,37 +155,25 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                 .asException());
         return;
       }
-      Map<ConfigResourceContext, Value> valuesByContext =
-          request.getConfigsList().stream()
-              .map(
-                  requestedDelete ->
-                      Map.entry(this.getConfigResourceContext(requestedDelete), emptyValue()))
-              .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
 
-      List<UpsertedConfig> deletedConfigs =
-          configStore.writeAllConfigs(valuesByContext, getUserId());
+      List<ConfigResourceContext> valuesToDelete =
+          request.getConfigsList().stream()
+              .map(this::getConfigResourceContext)
+              .collect(Collectors.toUnmodifiableList());
+
+      Map<ConfigResourceContext, ContextSpecificConfig> configsToDelete =
+          configStore.getContextConfigs(valuesToDelete);
+      configStore.deleteConfigs(configsToDelete.keySet());
 
       responseObserver.onNext(
           DeleteConfigsResponse.newBuilder()
-              .addAllDeletedConfigs(
-                  deletedConfigs.stream()
-                      .map(this::buildDeletedContextSpecificConfig)
-                      .collect(Collectors.toUnmodifiableList()))
+              .addAllDeletedConfigs(configsToDelete.values())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Delete configs failed for request: {}", request, e);
       responseObserver.onError(e);
     }
-  }
-
-  private ContextSpecificConfig buildDeletedContextSpecificConfig(UpsertedConfig deletedConfig) {
-    return ContextSpecificConfig.newBuilder()
-        .setContext(deletedConfig.getContext())
-        .setCreationTimestamp(deletedConfig.getCreationTimestamp())
-        .setUpdateTimestamp(deletedConfig.getUpdateTimestamp())
-        .setConfig(deletedConfig.getPrevConfig())
-        .build();
   }
 
   @Override

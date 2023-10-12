@@ -3,8 +3,10 @@ package org.hypertrace.config.service.store;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -34,6 +36,8 @@ public interface ConfigStore {
   UpsertedConfig writeConfig(
       ConfigResourceContext configResourceContext, String userId, Value config) throws IOException;
 
+  void deleteConfigs(Collection<ConfigResourceContext> resourceContextCollection);
+
   /**
    * Get the config with the latest version for the specified resource.
    *
@@ -51,6 +55,9 @@ public interface ConfigStore {
    * @throws IOException
    */
   List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource) throws IOException;
+
+  Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+      Collection<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**
    * Write each of the provided config value associated with the specified config resource to the

@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -88,6 +89,27 @@ public class DocumentConfigStore implements ConfigStore {
     return optionalPreviousConfig
         .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
         .orElseGet(() -> this.buildUpsertResult(latestConfigDocument));
+  }
+
+  @Override
+  public void deleteConfigs(java.util.Collection<ConfigResourceContext> resourceContextCollection) {
+    collection.delete(
+        resourceContextCollection.stream().map(ConfigDocumentKey::new).collect(Collectors.toSet()));
+  }
+
+  @Override
+  public Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+      java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
+    return getLatestVersionConfigDocs(configResourceContexts).entrySet().stream()
+        .filter(entry -> entry.getValue().isPresent())
+        .map(
+            entry ->
+                entry
+                    .getValue()
+                    .flatMap(this::convertToContextSpecificConfig)
+                    .map(config -> Map.entry(entry.getKey(), config)))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
   }
 
   private List<UpsertedConfig> writeConfigs(
@@ -212,7 +234,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private Map<ConfigResourceContext, Optional<ConfigDocument>> getLatestVersionConfigDocs(
-      Set<ConfigResourceContext> configResourceContexts) throws IOException {
+      java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
     if (configResourceContexts.isEmpty()) {
       return Collections.emptyMap();
     }
