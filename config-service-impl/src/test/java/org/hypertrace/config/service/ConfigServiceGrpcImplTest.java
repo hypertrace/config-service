@@ -232,7 +232,14 @@ class ConfigServiceGrpcImplTest {
     verify(configStore, times(1))
         .deleteConfigs(
             eq(Set.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
-    verify(responseObserver, times(1)).onNext(any());
+    verify(responseObserver, times(1))
+        .onNext(
+            DeleteConfigsResponse.newBuilder()
+                .addAllDeletedConfigs(
+                    List.of(
+                        buildContextSpecificConfig(context1, config1, 10L, 20L),
+                        buildContextSpecificConfig(context2, config2, 10L, 20L)))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
 

@@ -47,11 +47,7 @@ public class DocumentConfigStore implements ConfigStore {
   private final Datastore datastore;
   private final Collection collection;
 
-  public DocumentConfigStore(Datastore datastore) {
-    this(Clock.systemUTC(), datastore);
-  }
-
-  DocumentConfigStore(Clock clock, Datastore datastore) {
+  public DocumentConfigStore(Clock clock, Datastore datastore) {
     this.clock = clock;
     this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);

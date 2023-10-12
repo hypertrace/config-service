@@ -91,7 +91,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
   protected ConfigStore buildConfigStore(Config config) {
     try {
       Datastore datastore = initDataStore(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
-      ConfigStore configStore = new DocumentConfigStore(datastore);
+      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
       this.store = configStore;
       return configStore;
     } catch (Exception e) {
