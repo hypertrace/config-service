@@ -198,7 +198,7 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
             AstEnabledConfig.newBuilder()
                 .setReplayConfig(
                     AstReplayConfig.newBuilder()
-                        .setReplayEnabled(config.defaultIsAstEnabled())
+                        .setReplayEnabled(config.defaultIsAstReplayEnabled())
                         .build())
                 .build());
       } else {
