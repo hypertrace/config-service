@@ -7,10 +7,8 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
 import io.grpc.Status;
 import java.io.IOException;
 import java.time.Clock;
@@ -33,7 +31,6 @@ import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
-import org.hypertrace.core.documentstore.DatastoreProvider;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Filter;
 import org.hypertrace.core.documentstore.Key;
@@ -43,40 +40,20 @@ import org.hypertrace.core.documentstore.Query;
 /** Document store which stores and serves the configurations. */
 @Slf4j
 public class DocumentConfigStore implements ConfigStore {
-
-  static final String DOC_STORE_CONFIG_KEY = "document.store";
-  static final String DATA_STORE_TYPE = "dataStoreType";
   static final String CONFIGURATIONS_COLLECTION = "configurations";
   private final Clock clock;
 
-  private Datastore datastore;
-  private Collection collection;
+  private final Datastore datastore;
+  private final Collection collection;
 
-  public DocumentConfigStore() {
-    this(Clock.systemUTC());
+  public DocumentConfigStore(Datastore datastore) {
+    this(Clock.systemUTC(), datastore);
   }
 
-  DocumentConfigStore(Clock clock) {
+  DocumentConfigStore(Clock clock, Datastore datastore) {
     this.clock = clock;
-  }
-
-  @Override
-  public void init(Config config) {
-    datastore = initDataStore(config);
-    this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
-  }
-
-  @VisibleForTesting
-  void initDatastore(Datastore datastore) {
     this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
-  }
-
-  private Datastore initDataStore(Config config) {
-    Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
-    String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
-    Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
-    return DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
   }
 
   @Override

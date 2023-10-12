@@ -72,23 +72,23 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       GetConfigRequest request, StreamObserver<GetConfigResponse> responseObserver) {
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
-      Optional<ContextSpecificConfig> maybeConfig = configStore.getConfig(configResourceContext);
-      // initialize empty config if not present to handle merges better
-      if (maybeConfig.isEmpty()) {
-        maybeConfig = Optional.of(emptyConfig(configResourceContext.getContext()));
-      }
+      ContextSpecificConfig config =
+          configStore
+              .getConfig(configResourceContext)
+              .orElse(emptyConfig(configResourceContext.getContext()));
       // get the configs for the contexts mentioned in the request and merge them in the specified
       // order
       for (String context : request.getContextsList()) {
-        Optional<ContextSpecificConfig> contextSpecificConfig =
+        Optional<ContextSpecificConfig> maybeContextConfig =
             configStore.getConfig(getConfigResourceContext(request, context));
-        if (contextSpecificConfig.isEmpty()) {
+        if (maybeContextConfig.isEmpty()) {
           continue;
         }
-        maybeConfig = Optional.of(merge(maybeConfig.get(), contextSpecificConfig.get()));
+
+        config = merge(config, maybeContextConfig.get());
       }
 
-      filterNull(maybeConfig.get())
+      filterNull(config)
           .map(
               nonNullConfig ->
                   GetConfigResponse.newBuilder()

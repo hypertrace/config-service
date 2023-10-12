@@ -1,7 +1,6 @@
 package org.hypertrace.config.service.store;
 
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -17,14 +16,6 @@ import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
  * resources.
  */
 public interface ConfigStore {
-
-  /**
-   * Initialize the config store
-   *
-   * @param config
-   */
-  void init(Config config);
-
   /**
    * Write the config value associated with the specified config resource to the store.
    *

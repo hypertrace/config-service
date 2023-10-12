@@ -58,8 +58,7 @@ class DocumentConfigStoreTest {
   void beforeEach() {
     collection = mock(Collection.class);
     this.mockClock = mock(Clock.class);
-    this.configStore = new DocumentConfigStore(mockClock);
-    this.configStore.initDatastore(new MockDatastore());
+    this.configStore = new DocumentConfigStore(mockClock, new MockDatastore());
   }
 
   @Test
