@@ -53,7 +53,7 @@ public interface ConfigStore {
    * @return the configs
    * @throws IOException
    */
-  Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+  Map<ConfigResourceContext, Optional<ContextSpecificConfig>> getContextConfigs(
       Collection<ConfigResourceContext> configResourceContexts) throws IOException;
 
   /**

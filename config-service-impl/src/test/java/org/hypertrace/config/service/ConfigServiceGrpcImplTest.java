@@ -230,9 +230,9 @@ class ConfigServiceGrpcImplTest {
         .thenReturn(
             Map.of(
                 getConfigResourceContext(context1),
-                    buildContextSpecificConfig(context1, config1, 10L, 20L),
+                    Optional.of(buildContextSpecificConfig(context1, config1, 10L, 20L)),
                 getConfigResourceContext(context2),
-                    buildContextSpecificConfig(context2, config2, 10L, 20L)));
+                    Optional.of(buildContextSpecificConfig(context2, config2, 10L, 20L))));
     Runnable runnable =
         () -> configServiceGrpc.deleteConfigs(deleteConfigsRequest, responseObserver);
     RequestContext.forTenantId(TENANT_ID).run(runnable);

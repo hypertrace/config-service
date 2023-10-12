@@ -7,6 +7,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import io.grpc.Status;
@@ -19,7 +20,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -174,17 +174,12 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
+  public Map<ConfigResourceContext, Optional<ContextSpecificConfig>> getContextConfigs(
       java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
     Map<ConfigResourceContext, Optional<ConfigDocument>> configDocs =
         getLatestVersionConfigDocs(configResourceContexts);
-    return configDocs.entrySet().stream()
-        .filter(entry -> entry.getValue().isPresent())
-        .collect(
-            Collectors.toUnmodifiableMap(
-                Entry::getKey,
-                entry ->
-                    entry.getValue().flatMap(this::convertToContextSpecificConfig).orElseThrow()));
+    return Maps.transformValues(
+        configDocs, maybeConfigDoc -> maybeConfigDoc.flatMap(this::convertToContextSpecificConfig));
   }
 
   @Override
@@ -265,6 +260,9 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Filter buildConfigResourceContextsFilter(
       java.util.Collection<ConfigResourceContext> configResourceContexts) {
+    if (configResourceContexts.isEmpty()) {
+      throw new RuntimeException("Config resource contexts cannot be empty");
+    }
     List<Filter> childFilters =
         configResourceContexts.stream()
             .map(this::getConfigResourceFieldContextFilter)
