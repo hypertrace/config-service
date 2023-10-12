@@ -8,6 +8,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 
+import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import io.grpc.Status;
@@ -20,7 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -100,16 +101,11 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public Map<ConfigResourceContext, ContextSpecificConfig> getContextConfigs(
       java.util.Collection<ConfigResourceContext> configResourceContexts) throws IOException {
-    return getLatestVersionConfigDocs(configResourceContexts).entrySet().stream()
-        .filter(entry -> entry.getValue().isPresent())
-        .map(
-            entry ->
-                entry
-                    .getValue()
-                    .flatMap(this::convertToContextSpecificConfig)
-                    .map(config -> Map.entry(entry.getKey(), config)))
-        .flatMap(Optional::stream)
-        .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
+    return Maps.filterValues(
+        Maps.transformValues(
+            getLatestVersionConfigDocs(configResourceContexts),
+            doc -> doc.flatMap(this::convertToContextSpecificConfig).orElse(null)),
+        Objects::nonNull);
   }
 
   private List<UpsertedConfig> writeConfigs(

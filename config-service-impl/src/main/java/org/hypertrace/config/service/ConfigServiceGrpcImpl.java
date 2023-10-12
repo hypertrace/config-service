@@ -1,6 +1,5 @@
 package org.hypertrace.config.service;
 
-import static org.hypertrace.config.service.ConfigServiceUtils.emptyValue;
 import static org.hypertrace.config.service.ConfigServiceUtils.filterNull;
 import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 
