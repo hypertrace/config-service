@@ -164,10 +164,10 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
         return;
       }
 
-      Set<ConfigResourceContext> configResourceContexts =
+      List<ConfigResourceContext> configResourceContexts =
           request.getConfigsList().stream()
               .map(this::getConfigResourceContext)
-              .collect(Collectors.toUnmodifiableSet());
+              .collect(Collectors.toUnmodifiableList());
       Map<ConfigResourceContext, Optional<ContextSpecificConfig>> configs =
           configStore.getContextConfigs(configResourceContexts);
       // delete the configs for the specified config resources.

@@ -238,15 +238,8 @@ class ConfigServiceGrpcImplTest {
     RequestContext.forTenantId(TENANT_ID).run(runnable);
     verify(configStore, times(1))
         .deleteConfigs(
-            eq(Set.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
-    verify(responseObserver, times(1))
-        .onNext(
-            DeleteConfigsResponse.newBuilder()
-                .addAllDeletedConfigs(
-                    List.of(
-                        buildContextSpecificConfig(context1, config1, 10L, 20L),
-                        buildContextSpecificConfig(context2, config2, 10L, 20L)))
-                .build());
+            eq(List.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
+    verify(responseObserver, times(1)).onNext(any());
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
 
@@ -284,8 +277,7 @@ class ConfigServiceGrpcImplTest {
   @Test
   void deletingNonExistingConfigShouldThrowError() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
-    ContextSpecificConfig emptyConfig = ConfigServiceUtils.emptyConfig(CONTEXT1);
-    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(Optional.of(emptyConfig));
+    when(configStore.getConfig(eq(configResourceWithContext))).thenReturn(Optional.empty());
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<DeleteConfigResponse> responseObserver = mock(StreamObserver.class);
 

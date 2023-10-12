@@ -7,6 +7,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESP
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
@@ -62,6 +63,12 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public void init(Config config) {
     datastore = initDataStore(config);
+    this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
+  }
+
+  @VisibleForTesting
+  void initDatastore(Datastore datastore) {
+    this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
   }
 
