@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ai.traceable.syslog.integration.config.service.api.v1;
+
+import "ai/traceable/syslog/integration/config/service/api/v1/syslog_server_integration_config.proto";
+
+option java_multiple_files = true;
+
+service SyslogIntegrationConfigService {
+  rpc GetSyslogServerIntegrations(GetSyslogServerIntegrationsRequest) returns (GetSyslogServerIntegrationsResponse) {}
+  rpc CreateSyslogServerIntegration(CreateSyslogServerIntegrationRequest) returns (CreateSyslogServerIntegrationResponse) {}
+  rpc UpdateSyslogServerIntegration(UpdateSyslogServerIntegrationRequest) returns (UpdateSyslogServerIntegrationResponse) {}
+  rpc DeleteSyslogServerIntegration(DeleteSyslogServerIntegrationRequest) returns (DeleteSyslogServerIntegrationResponse) {}
+}

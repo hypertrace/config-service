@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package ai.traceable.syslog.integration.config.service.api.v1;
+
+option java_multiple_files = true;
+
+message GetSyslogServerIntegrationsRequest {
+  SyslogServerIntegrationsFilter filter = 1;
+}
+
+message SyslogServerIntegrationsFilter {
+  repeated string ids = 1;
+}
+
+message GetSyslogServerIntegrationsResponse {
+  repeated SyslogServerIntegration integrations = 1;
+}
+
+message CreateSyslogServerIntegrationRequest {
+  SyslogServerIntegrationDetails integration_details = 1;
+}
+
+message CreateSyslogServerIntegrationResponse {
+  SyslogServerIntegration integration = 1;
+}
+
+message UpdateSyslogServerIntegrationRequest {
+  SyslogServerIntegration integration = 1;
+}
+
+message UpdateSyslogServerIntegrationResponse {
+  SyslogServerIntegration integration = 1;
+}
+
+message DeleteSyslogServerIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteSyslogServerIntegrationResponse {
+}
+
+message SyslogServerIntegrationDetails {
+  string name = 1;
+  string description = 2;
+  SyslogServerConnectionDetails server_connection_details = 3;
+  SyslogLogFormat log_format = 4;
+}
+
+message SyslogServerIntegration {
+  string id = 1;
+  SyslogServerIntegrationDetails details = 2;
+}
+
+message SyslogServerConnectionDetails {
+  string host = 1;
+  int32 port = 2;
+  SyslogServerSslCredentials ssl_credentials = 3; // optional
+}
+
+message SyslogServerSslCredentials {
+  EncryptedText ssl_ca_cert = 1;  // Certificate Authority for SSL
+}
+
+message EncryptedText {
+  string key_id = 1; // Key used to encrypt the message
+  string value = 2;
+}
+
+enum SyslogLogFormat {
+  SYSLOG_LOG_FORMAT_UNSPECIFIED = 0;
+  SYSLOG_LOG_FORMAT_RFC_5424 = 1; // https://www.rfc-editor.org/rfc/rfc5424.txt
+  SYSLOG_LOG_FORMAT_RFC_3164 = 2; // https://www.rfc-editor.org/rfc/rfc3164.txt
+}
