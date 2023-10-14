@@ -18,6 +18,7 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsR
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.SplunkIntegrationChannelConfig;
+import org.hypertrace.notification.config.service.v1.SyslogIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
 import org.hypertrace.notification.config.service.v1.WebhookHeader;
@@ -112,7 +113,8 @@ public class NotificationChannelConfigServiceRequestValidator {
     if (data.getEmailChannelConfigCount() == 0
         && data.getWebhookChannelConfigCount() == 0
         && data.getS3BucketChannelConfigCount() == 0
-        && data.getSplunkIntegrationChannelConfigCount() == 0) {
+        && data.getSplunkIntegrationChannelConfigCount() == 0
+        && data.getSyslogIntegrationChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT.withDescription("No config present").asRuntimeException();
     }
     data.getEmailChannelConfigList().forEach(this::validateEmailChannelConfig);
@@ -120,6 +122,8 @@ public class NotificationChannelConfigServiceRequestValidator {
     data.getS3BucketChannelConfigList().forEach(this::validateS3BucketConfig);
     data.getSplunkIntegrationChannelConfigList()
         .forEach(this::validateSplunkIntegrationChannelConfig);
+    data.getSyslogIntegrationChannelConfigList()
+        .forEach(this::validateSyslogIntegrationChannelConfig);
   }
 
   public void validateGetAllNotificationChannelsRequest(
@@ -179,5 +183,12 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNonDefaultPresenceOrThrow(
         splunkIntegrationChannelConfig,
         SplunkIntegrationChannelConfig.SPLUNK_INTEGRATION_ID_FIELD_NUMBER);
+  }
+
+  private void validateSyslogIntegrationChannelConfig(
+      SyslogIntegrationChannelConfig syslogIntegrationChannelConfig) {
+    validateNonDefaultPresenceOrThrow(
+        syslogIntegrationChannelConfig,
+        SyslogIntegrationChannelConfig.SYSLOG_SERVER_INTEGRATION_ID_FIELD_NUMBER);
   }
 }

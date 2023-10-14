@@ -15,6 +15,7 @@ message NotificationChannelMutableData {
   repeated WebhookChannelConfig webhook_channel_config = 3;
   repeated AwsS3BucketChannelConfig s3_bucket_channel_config = 4;
   repeated SplunkIntegrationChannelConfig splunk_integration_channel_config = 5;
+  repeated SyslogIntegrationChannelConfig syslog_integration_channel_config = 6;
 }
 
 message AwsS3BucketChannelConfig {
@@ -54,4 +55,8 @@ message WebhookHeader {
 
 message SplunkIntegrationChannelConfig {
   string splunk_integration_id = 1;
+}
+
+message SyslogIntegrationChannelConfig {
+  string syslog_server_integration_id = 1;
 }
