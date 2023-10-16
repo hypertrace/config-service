@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -232,14 +233,7 @@ class ConfigServiceGrpcImplTest {
     verify(configStore, times(1))
         .deleteConfigs(
             eq(Set.of(getConfigResourceContext(context1), getConfigResourceContext(context2))));
-    verify(responseObserver, times(1))
-        .onNext(
-            DeleteConfigsResponse.newBuilder()
-                .addAllDeletedConfigs(
-                    List.of(
-                        buildContextSpecificConfig(context1, config1, 10L, 20L),
-                        buildContextSpecificConfig(context2, config2, 10L, 20L)))
-                .build());
+    verify(responseObserver, times(1)).onNext(argThat(this::matchDeletedResponse));
     verify(responseObserver, times(1)).onCompleted();
     verify(responseObserver, never()).onError(any(Throwable.class));
 
@@ -249,6 +243,13 @@ class ConfigServiceGrpcImplTest {
                 DeleteConfigsRequest.getDefaultInstance(), responseObserver);
     RequestContext.forTenantId(TENANT_ID).run(runnable);
     verify(responseObserver, times(1)).onError(any(Throwable.class));
+  }
+
+  private boolean matchDeletedResponse(DeleteConfigsResponse response) {
+    List<ContextSpecificConfig> configs = response.getDeletedConfigsList();
+    return configs.size() == 2
+        && configs.contains(buildContextSpecificConfig("context1", config1, 10L, 20L))
+        && configs.contains(buildContextSpecificConfig("context2", config2, 10L, 20L));
   }
 
   @Test
