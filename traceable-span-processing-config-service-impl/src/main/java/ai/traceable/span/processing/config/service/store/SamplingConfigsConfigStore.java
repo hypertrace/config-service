@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -24,11 +25,13 @@ public class SamplingConfigsConfigStore extends IdentifiedObjectStore<SamplingCo
   @Inject
   public SamplingConfigsConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         SpanProcessingConfigConstants.RESOURCE_NAMESPACE,
-        SAMPLING_CONFIGS_RESOURCE_NAME);
+        SAMPLING_CONFIGS_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
   }
 

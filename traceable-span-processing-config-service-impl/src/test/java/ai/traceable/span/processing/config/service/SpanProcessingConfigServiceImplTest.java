@@ -121,7 +121,7 @@ class SpanProcessingConfigServiceImplTest {
     TimestampConverter timestampConverter = mock(TimestampConverter.class);
 
     SamplingConfigsConfigStore samplingConfigsConfigStore =
-        new SamplingConfigsConfigStore(genericStub, timestampConverter);
+        new SamplingConfigsConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
     ApiNamingRulesConfigStore apiNamingRulesConfigStore =
         new ApiNamingRulesConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
     ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore =
