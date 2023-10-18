@@ -1,0 +1,116 @@
+
+- ruleId: crs_101
+  ruleName: Server Side Request Forgery (SSRF) Signatures
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
+  
+- ruleId: crs_913
+  ruleName: Scanner Detection
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SCANNER_DETECTED
+  
+- ruleId: crs_941
+  ruleName: Cross Site Scripting (XSS)
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_XSS
+  
+- ruleId: crs_943
+  ruleName: Session Fixation
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SESSION_FIXATION
+  
+- ruleId: crs_921
+  ruleName: HTTP Protocol Attacks
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  
+- ruleId: crs_102
+  ruleName: XML External Entity Injection (XXE)
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  
+- ruleId: crs_934
+  ruleName: NodeJS Injection
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  
+- ruleId: crs_942
+  ruleName: SQL Injection
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  
+- ruleId: crs_930
+  ruleName: Local File Inclusion
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PATH_MANIPULATION
+  
+- ruleId: crs_931
+  ruleName: Remote File Inclusion
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PATH_MANIPULATION
+  eventDetails:
+    description: |
+      Traceable identified a Remote File Inclusion attack, where the attacker was able to include files in the application. 
+      This dynamic file inclusion allows the attacker to execute malicious code in the context of the web application.
+    mitigation: |
+      Restrict the inclusion of user provided files, urls to the web application.
+      Maintain a list of accepted files that can be included in the web application. Use mappings to a file name rather than the actual file names in this scenario.
+      All application processes should be run with the minimal privileges required. Also, processes must shed privileges as soon as they no longer require them.
+    impact: |
+      Attackers could include arbitrary code, which could then be used to
+        - execute malicious code on the web application.
+        - read and modify files or sensitive information on the web server.
+        - cause issues in the availability of the web server.
+        - can facilitate the execution of other attacks such as cross site scripting, denial of service.
+    references: |
+      OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+      OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
+      OWASP Top 10 - 2017 - A1:Injection - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
+      Common Weakness Enumeration (CWE) - CWE-98:Improper Control of Filename for Include/Require Statement in PHP Program ('PHP Remote File Inclusion') - https://cwe.mitre.org/data/definitions/98.html
+      Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-193:PHP Remote File Inclusion - https://capec.mitre.org/data/definitions/193.html
+      MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
+      Web Application Security Consortium - WASC-5:Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
+
+
+- ruleId: crs_932
+  ruleName: Remote Code Execution
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  
+- ruleId: crs_944
+  ruleName: Java Application Attacks
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  subRuleInfos:
+  - ruleId: crs_944120
+    eventDetails:
+      description: |
+        - Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. 
+        - This can lead to a dangerous “Remote Code Execution”. 
+        - A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
+      mitigation: |
+        - Deserialization of untrusted data is inherently dangerous and should be avoided.
+        - Auditing your system against such vulnerabilities is very difficult: you have to check every implementation of readObject, including those in third-party libraries and the runtime library.
+      impact: |
+        - By controlling the input to the deserialization process an attacker can trigger the invocation of any readObject deserialization-method. 
+        - It is theoretically possible for such a method to allow bytecode injection.
+        - In practice it is certainly possible to easily exhaust memory or CPU resources this way, resulting in denial-of-service attacks.
+      references: |
+        - https://owasp.org/www-project-top-ten/2017/A8_2017-Insecure_Deserialization
+        - https://owasp.org/Top10/A04_2021-Insecure_Design/
+        - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - https://cwe.mitre.org/data/definitions/502.html
+        - https://docs.oracle.com/javase/7/docs/platform/serialization/spec/input.html#2971
+        - https://capec.mitre.org/data/definitions/586.html
+  - ruleId: crs_9440210
+    eventDetails:
+      description: |
+        - Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. 
+        - This can lead to a dangerous “Remote Code Execution”. 
+        - A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
+      mitigation: |
+        - Deserialization of untrusted data is inherently dangerous and should be avoided.
+        - Auditing your system against such vulnerabilities is very difficult: you have to check every implementation of readObject, including those in third-party libraries and the runtime library.
+      impact: |
+        - By controlling the input to the deserialization process an attacker can trigger the invocation of any readObject deserialization-method. 
+        - It is theoretically possible for such a method to allow bytecode injection.
+        - In practice it is certainly possible to easily exhaust memory or CPU resources this way, resulting in denial-of-service attacks.
+      references: |
+        - https://owasp.org/www-project-top-ten/2017/A8_2017-Insecure_Deserialization
+        - https://owasp.org/Top10/A04_2021-Insecure_Design/
+        - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - https://cwe.mitre.org/data/definitions/502.html
+        - https://docs.oracle.com/javase/7/docs/platform/serialization/spec/input.html#2971
+        - https://capec.mitre.org/data/definitions/586.html
+
+- ruleId: crs_103
+  ruleName: Basic Authentication Violation
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS

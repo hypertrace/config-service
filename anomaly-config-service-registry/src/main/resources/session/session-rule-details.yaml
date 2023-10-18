@@ -1,0 +1,62 @@
+- ruleId: bola
+  ruleName: Authorization Bypass - Object Level
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  eventLabels:
+    CWE: 285
+    OWASP_API_2023: API1
+    OWASP_API: API1
+  eventDetails:
+    description: |
+      Traceable identified a Broken Object Level Authentication (BOLA) also known as Insecure Direct Object Reference (IDOR).
+      It is an access control attack where unvalidated user input can be used for unauthorized access to resources or operations.
+      The attack occurs when the web application exposes a direct reference to an internal implementation object, and then fails to run proper authorization checks to ensure whether the current user is permitted to access a resource or operation.
+      An insecure direct object reference attack occurs when the following three conditions are met:
+      - The attacked application reveals a direct reference to an internal resource or operation.
+      - The attacker is able to manipulate a URL or form parameter to modify the direct reference.
+      - The application grants attacker the access to the internal object without checking if the user is authorized.
+    mitigation: |
+      The best way to protect your code against BOLA is to implement authorization checks on object-level user access.
+      In addition, use non sequential identifiers like UUIDs to make it harder for attackers to tamper with user-controllable values.
+    impact: |
+      Unauthorized access can result to:
+      - data disclosure to unauthorized parties
+      - data loss by deletion of unauthorized resources
+      - data manipulation by modifying unauthorized objects
+      - full account takeover.
+    references: |
+      OWASP API Top 10 - 2019 - API1:Broken Object Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa1-broken-object-level-authorization.md\\n
+      OWASP Top 10 - 2021 - A1:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/\\n
+      OWASP Top 10 - 2017 - A5:Broken Access Control  - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control\\n
+      Common Weakness Enumeration (CWE) - CWE-285:Improper Authorization - https://cwe.mitre.org/data/definitions/285.html\\n
+      SANS TOP 25 - http://cwe.mitre.org/top25/\\n
+      OWASP IDOR Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html\\n
+      Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html\\n
+      MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/\\n
+      Web Application Security Consortium - WASC-02:Insufficient Authorization - http://projects.webappsec.org/w/page/13246940/Insufficient%20Authorization
+
+- ruleId: userIdBola
+  ruleName: Authorization Bypass - User Level
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  eventLabels: 
+    CWE: 285
+    OWASP_API_2023: API1
+    OWASP_API: API1
+    
+- ruleId: sessionv
+  ruleName: Session Violation
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  subRuleInfos:
+  - ruleId: sessionv_landspeed
+    ruleName: Land Speed Violation
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 501
+      OWASP_API_2023: API8
+      OWASP_API: API7
+  - ruleId: sessionv_expiry
+    ruleName: Session Expired
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 613
+      OWASP_API_2023: API8
+      OWASP_API: API7

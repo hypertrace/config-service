@@ -1,0 +1,155 @@
+- ruleId: unknownParam
+  ruleName: Unrecognized Field
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels: 
+    CWE: 472
+    OWASP_API: API8
+    
+- ruleId: enum
+  ruleName: Invalid Enumerations
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels: 
+    CWE: 183
+    OWASP_API_2023: API8
+    OWASP_API: API7
+    
+- ruleId: integer
+  ruleName: Value Out of Range
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels: 
+    CWE: 190
+    OWASP_API: API8
+    
+- ruleId: type
+  ruleName: Type Anomaly
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels: 
+    CWE: 843
+    OWASP_API_2023: API8
+    OWASP_API: API7
+    
+- ruleId: missingParam
+  ruleName: Missing Field
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels: 
+    CWE: 287
+    OWASP_API_2023: API8
+    OWASP_API: API7
+    
+- ruleId: device
+  ruleName: Unexpected User Agent
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  eventLabels: 
+    CWE: 644
+    OWASP_API: API8
+    
+- ruleId: httpStatus
+  ruleName: Unexpected HTTP Response Code
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  eventLabels: 
+    CWE: 204
+    OWASP_API_2023: API8
+    OWASP_API: API7
+    
+- ruleId: contentType
+  ruleName: Content Type Anomaly
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  eventLabels: 
+    CWE: 436
+    OWASP_API_2023: API8
+    OWASP_API: API7
+    
+- ruleId: contentSize
+  ruleName: Content Size Anomaly
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  eventLabels: 
+    CWE: 1043
+    OWASP_API_2023: API8
+    OWASP_API: API7
+    
+- ruleId: ssrf
+  ruleName: Server-Side Request Forgery (SSRF)
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
+  eventLabels: 
+    CWE: 918
+    OWASP_API_2023: API7
+    
+- ruleId: bfla
+  ruleName: Broken Function Level Authorization (BFLA)
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  eventLabels: 
+    CWE: 285
+    OWASP_API_2023: API5
+    OWASP_API: API5
+  eventDetails:
+    description: |
+      Traceable identified Broken function level authorization attack. 
+      Humans are predictable in nature and they tend to follow several patterns when it comes to hosting endpoints, for example it usually occurs that higher privilege endpoints are hosted on the same relative path, which makes it easier for the attackers to guess these endpoints but that alone does not make the attack successful.
+      Attackers have to be able to access endpoints as lower privileged users as well of course. This access can occur by executing the provided HTTP method (for example POST) but it can also occur on other methods that the developers left enabled (un)intentionally (for example DELETE). These issues are often made worse by how predictable the endpoints are (for example /books?id=0 might indicate the presence of an endpoint /books/all which may print out books the user should not be able to access.).
+    mitigation: |
+      Your application should have a consistent and easy to analyze authorization module that is invoked from all your business functions. Frequently, such protection is provided by one or more components external to the application code.
+      - The enforcement mechanism(s) should deny all access by default, requiring explicit grants to specific roles for access to every function.
+      - Review your API endpoints against function level authorization flaws, while keeping in mind the business logic of the application and groups hierarchy.
+      - Make sure that all of your administrative controllers inherit from an administrative abstract controller that implements authorization checks based on the user’s group/role.
+      - Make sure that administrative functions inside a regular controller implements authorization checks based on the user’s group and role.
+    impact: |
+      Such flaws allow attackers to access unauthorized functionality. Administrative functions are key targets for this type of attack.
+    references: |
+      - OWASP Article on Forced Browsing - https://www.owasp.org/index.php/Forced_browsing
+      - OWASP Top 10 2013-A7-Missing Function Level Access Control - https://www.owasp.org/index.php/Top_10_2013-A7-Missing_Function_Level_Access_Control
+      - OWASP Development Guide: Chapter on Authorization - https://www.owasp.org/index.php/Category:Access_Control
+      - CWE-285: Improper Authorization - https://cwe.mitre.org/data/definitions/285.html
+
+- ruleId: jwt
+  ruleName: JWT Anomaly
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS
+  subRuleInfos:
+  - ruleId: jwt_exp
+    ruleName: JWT Expired
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 613
+      OWASP_API_2023: API2
+      OWASP_API: API2
+    eventDetails:
+      description: |
+        JWT claims supports the field "iat" to declare the token creation timestamp, and the field "exp" to declare the token expiration timestamp. If the token is expired, it must be rejected. But sometimes, expiration is handled internally by using the "iat" claim. Absence of these checks leads to possible attacks.
+      mitigation: |
+        "iat" and "exp" claims must be present in the JWT token. The application must reject the token if the "exp" claim is expired, or it must reject the token if the "iat" claim is older than the configured maximum age.
+      impact: |
+        A token that never expires can be used to access the API indefinitely. If no expiration information is available, the only way to invalidate the token is to change the secret.
+      references: |
+        JWT documentation - https://jwt.io/introduction
+        JWT claims - https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims
+
+  - ruleId: jwt_nbf
+    ruleName: JWT Premature Usage
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 613
+      OWASP_API_2023: API2
+      OWASP_API: API2
+
+  - ruleId: jwt_iss
+    ruleName: Unknown JWT Issuer
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 639
+      OWASP_API_2023: API2
+      OWASP_API: API2
+
+  - ruleId: jwt_aud
+    ruleName: Unauthorised JWT audience
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 347
+      OWASP_API_2023: API2
+      OWASP_API: API2
+
+  - ruleId: jwt_alg
+    ruleName: JWT Algorithm Confusion
+    subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    eventLabels:
+      CWE: 345
+      OWASP_API_2023: API2
+      OWASP_API: API2

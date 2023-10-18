@@ -8,19 +8,52 @@ import ai.traceable.anomaly.config.service.v1.aggregator.AggregationConfig;
 import ai.traceable.anomaly.config.service.v1.aggregator.EventAggregationGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ConfigConverter {
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
+  private static final ObjectMapper YAML_OBJECT_MAPPER = new ObjectMapper(new YAMLFactory());
+  private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
+
+  public Map<String, AnomalyRuleInfo> getAnomalyRuleInfos(
+      String fileName, AnomalyEventFamily eventFamily) {
+    try {
+      JsonNode jsonNode =
+          YAML_OBJECT_MAPPER.readValue(
+              getClass().getClassLoader().getResourceAsStream(fileName), JsonNode.class);
+      Iterator<JsonNode> iterator = jsonNode.elements();
+      List<AnomalyRuleInfo> rules = new ArrayList<>();
+      while (iterator.hasNext()) {
+        String ruleJson = JSON_OBJECT_MAPPER.writeValueAsString(iterator.next());
+        AnomalyRuleInfo.Builder builder = AnomalyRuleInfo.newBuilder().setEventFamily(eventFamily);
+        JSON_PARSER.merge(ruleJson, builder);
+        rules.add(builder.build());
+      }
+      return rules.stream()
+          .collect(Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, Function.identity()));
+    } catch (Exception e) {
+      log.error("Error in reading anomaly rule infos from file: {}", fileName, e);
+      return Collections.emptyMap();
+    }
+  }
 
   public Map<String, AnomalyRuleInfo> convertAnomalyRuleInfos(
       List<? extends Config> configsList, AnomalyEventFamily eventFamily) {

@@ -12,6 +12,7 @@ dependencies {
   implementation(libs.guice)
   implementation(libs.protobuf.javautil)
   implementation(libs.re2j)
+  implementation(libs.jackson.yaml)
   implementation(libs.slf4j.api)
 
   annotationProcessor(libs.lombok)

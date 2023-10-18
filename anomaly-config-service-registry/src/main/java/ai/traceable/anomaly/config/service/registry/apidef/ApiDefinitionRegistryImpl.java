@@ -15,10 +15,9 @@ public class ApiDefinitionRegistryImpl implements ApiDefinitionRegistry {
 
   private static final String APIDEF_DIRECTORY = "apidef/";
   private static final String APIDEF_RULE_DETAILS_FILE_PATH =
-      APIDEF_DIRECTORY + "apidef-rule-details.conf";
+      APIDEF_DIRECTORY + "apidef-rule-details.yaml";
   private static final String APIDEF_DETECTION_CONFIGS_FILE_PATH =
       APIDEF_DIRECTORY + "apidef-detection-configs.conf";
-  private static final String APIDEF_RULES_CONFIG_KEY = "apiDefRules";
   private static final String APIDEF_RULE_ID_TO_CONFIG_MAP_KEY = "apiDefRuleIdToConfigMap";
 
   private final Map<String, AnomalyRuleInfo> apiDefRules;
@@ -28,9 +27,8 @@ public class ApiDefinitionRegistryImpl implements ApiDefinitionRegistry {
   @Inject
   public ApiDefinitionRegistryImpl(ConfigConverter configConverter) {
     this.apiDefRules =
-        configConverter.convertAnomalyRuleInfos(
-            loadApiDefRuleDetails().getConfigList(APIDEF_RULES_CONFIG_KEY),
-            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF);
+        configConverter.getAnomalyRuleInfos(
+            APIDEF_RULE_DETAILS_FILE_PATH, AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF);
     this.apiDefRuleIdToConfigMap =
         configConverter
             .convertToAnomalyDetectionConfigs(
@@ -52,17 +50,6 @@ public class ApiDefinitionRegistryImpl implements ApiDefinitionRegistry {
   public Map<String, ApiDefinitionMetadataAnomalyDetectionConfig>
       getApiDefRuleIdToDetectionConfigMap() {
     return apiDefRuleIdToConfigMap;
-  }
-
-  private Config loadApiDefRuleDetails() {
-    try {
-      return ConfigFactory.parseResources(APIDEF_RULE_DETAILS_FILE_PATH);
-    } catch (Exception e) {
-      throw new RuntimeException(
-          String.format(
-              "Unable to read apiDef rule details file: %s", APIDEF_RULE_DETAILS_FILE_PATH),
-          e);
-    }
   }
 
   private Config loadApiDefDetectionConfigs() {

@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.registry.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
@@ -16,7 +17,7 @@ import org.junit.jupiter.api.Test;
 public class SessionRulesRegistryTest {
 
   @Test
-  public void testRules() {
+  public void testRules() throws Exception {
     SessionRulesRegistryImpl sessionRulesRegistry =
         new SessionRulesRegistryImpl(new ConfigConverter());
 
@@ -30,6 +31,12 @@ public class SessionRulesRegistryTest {
                     anomalyRuleInfo.getRuleId() + " :: " + anomalyRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.joining("\n")));
+
+    AnomalyRuleInfo bolaRuleInfo = anomalyRuleInfos.get("bola");
+    assertFalse(bolaRuleInfo.getEventDetails().getDescription().isBlank());
+    assertFalse(bolaRuleInfo.getEventDetails().getMitigation().isBlank());
+    assertFalse(bolaRuleInfo.getEventDetails().getImpact().isBlank());
+    assertFalse(bolaRuleInfo.getEventDetails().getReferences().isBlank());
   }
 
   @Test

@@ -2,9 +2,11 @@ package ai.traceable.anomaly.config.service.registry.apidef;
 
 import static ai.traceable.anomaly.config.service.v1.AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.v1.AnomalyEventDetails;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BflaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
@@ -35,9 +37,13 @@ public class ApiDefinitionRegistryTest {
         apiDefinitionRegistry.getApiDefRuleInfos().values().stream()
             .map(
                 anomalyRuleInfo -> {
+                  if (anomalyRuleInfo.getRuleId().equals("bfla")) {
+                    verifyEventDetails(anomalyRuleInfo.getEventDetails());
+                  }
                   String jwtRuleId = "jwt";
                   if (anomalyRuleInfo.getRuleId().equals(jwtRuleId)) {
                     assertEquals(5, anomalyRuleInfo.getSubRuleInfosCount());
+
                     anomalyRuleInfo
                         .getSubRuleInfosList()
                         .forEach(
@@ -47,6 +53,9 @@ public class ApiDefinitionRegistryTest {
                                   ANOMALY_SUB_RULE_TYPE_REGULAR, subRuleInfo.getSubRuleTypes(0));
                               assertTrue(subRuleInfo.getRuleId().startsWith(jwtRuleId));
                               assertTrue(subRuleInfo.getEventLabelsCount() > 0);
+                              if (subRuleInfo.getRuleId().equals("jwt_exp")) {
+                                verifyEventDetails(subRuleInfo.getEventDetails());
+                              }
                             });
                   } else {
                     assertEquals(0, anomalyRuleInfo.getSubRuleInfosCount());
@@ -62,6 +71,13 @@ public class ApiDefinitionRegistryTest {
             .collect(Collectors.toSet());
 
     assertEquals(ruleIdsFromApiDefRuleInfos, ruleIdsFromApiDefDetectionConfigs);
+  }
+
+  private void verifyEventDetails(AnomalyEventDetails eventDetails) {
+    assertFalse(eventDetails.getDescription().isBlank());
+    assertFalse(eventDetails.getMitigation().isBlank());
+    assertFalse(eventDetails.getImpact().isBlank());
+    assertFalse(eventDetails.getReferences().isBlank());
   }
 
   @Test

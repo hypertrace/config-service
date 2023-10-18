@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
+import ai.traceable.anomaly.config.service.v1.AnomalyEventDetails;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
@@ -190,7 +191,32 @@ public class ModsecRulesRegistryTest {
             .collect(Collectors.joining("\n")));
     anomalyRuleInfos
         .values()
-        .forEach(anomalyRuleInfo -> assertTrue(anomalyRuleInfo.getRuleId().startsWith("crs_")));
+        .forEach(
+            anomalyRuleInfo -> {
+              assertTrue(anomalyRuleInfo.getRuleId().startsWith("crs_"));
+              if (anomalyRuleInfo.getRuleId().equals("crs_931")) {
+                verifyEventDetails(anomalyRuleInfo.getEventDetails());
+              }
+              if (anomalyRuleInfo.getRuleId().equals("crs_944")) {
+                assertEquals(11, anomalyRuleInfo.getSubRuleInfosCount());
+                anomalyRuleInfo
+                    .getSubRuleInfosList()
+                    .forEach(
+                        subRuleInfo -> {
+                          if (Set.of("crs_944120", "crs_9440210")
+                              .contains(subRuleInfo.getRuleId())) {
+                            verifyEventDetails(subRuleInfo.getEventDetails());
+                          }
+                        });
+              }
+            });
+  }
+
+  private void verifyEventDetails(AnomalyEventDetails eventDetails) {
+    assertFalse(eventDetails.getDescription().isBlank());
+    assertFalse(eventDetails.getMitigation().isBlank());
+    assertFalse(eventDetails.getImpact().isBlank());
+    assertFalse(eventDetails.getReferences().isBlank());
   }
 
   @Test
