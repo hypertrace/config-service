@@ -1,12 +1,15 @@
 package ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules;
 
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
+import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule.Builder;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
 import ai.traceable.localprocessing.config.service.v1.LogicalOperator;
 import ai.traceable.localprocessing.config.service.v1.RelationalOperator;
 import ai.traceable.localprocessing.config.service.v1.SpanFilter;
 import ai.traceable.localprocessing.config.service.v1.SpanFilterValue;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,7 +26,8 @@ import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServ
 @Slf4j
 public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
 
-  private static final String URL_SPAN_ATTRIBUTE_KEY = "http.url";
+  private static final List<String> URL_SPAN_ATTRIBUTE_KEYS =
+      List.of("http.url", "http.target", "http.path", "url.full", "url.path");
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
@@ -52,11 +56,8 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
         .getRuleDetailsList()
         .stream()
         .map(ExcludeSpanRuleDetails::getRule)
-        .collect(Collectors.toUnmodifiableList())
-        .stream()
         .map(excludeSpanRule -> convertExcludeSpanRule(excludeSpanRule, serviceName, environment))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -81,90 +82,107 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
       return Optional.empty();
     }
 
-    Optional<SpanFilter> spanFilter = convertFilter(excludeSpanRule.getRuleInfo().getFilter());
-    if (spanFilter.isEmpty()) {
-      return Optional.empty();
-    }
-
-    return Optional.of(
-        ExcludeSpanProcessingRule.newBuilder()
-            .setExcludeSpanProcessingRuleInfo(
-                ExcludeSpanProcessingRuleInfo.newBuilder()
-                    .setId(excludeSpanRule.getId())
-                    .setFilter(spanFilter.get())
-                    .build())
-            .build());
+    return convertFilter(excludeSpanRule.getRuleInfo().getFilter())
+        .map(
+            spanFilter ->
+                ExcludeSpanProcessingRule.newBuilder()
+                    .setExcludeSpanProcessingRuleInfo(
+                        ExcludeSpanProcessingRuleInfo.newBuilder()
+                            .setId(excludeSpanRule.getId())
+                            .setFilter(spanFilter)))
+        .map(Builder::build);
   }
 
   private Optional<SpanFilter> convertFilter(
       org.hypertrace.span.processing.config.service.v1.SpanFilter filter) {
-    SpanFilter.Builder filterBuilder = SpanFilter.newBuilder();
-    if (filter.hasLogicalSpanFilter()) {
-      ai.traceable.localprocessing.config.service.v1.LogicalSpanFilterExpression
-          logicalSpanFilterExpression = convertLogicalFilter(filter.getLogicalSpanFilter());
-      if (logicalSpanFilterExpression.getOperandsCount() == 1) {
-        return Optional.of(logicalSpanFilterExpression.getOperands(0));
-      }
-      return Optional.of(
-          filterBuilder
-              .setLogicalFilter(convertLogicalFilter(filter.getLogicalSpanFilter()))
-              .build());
-    } else {
-      Optional<ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression>
-          relationalSpanFilterExpression =
-              convertRelationalFilter(filter.getRelationalSpanFilter());
-      if (relationalSpanFilterExpression.isEmpty()) {
+    switch (filter.getSpanFilterExpressionCase()) {
+      case LOGICAL_SPAN_FILTER:
+        return this.convertLogicalFilter(filter.getLogicalSpanFilter());
+      case RELATIONAL_SPAN_FILTER:
+        return this.convertRelationalFilter(filter.getRelationalSpanFilter());
+      default:
+        log.warn("Unsupported filter case: {}", filter);
         return Optional.empty();
-      }
-      return Optional.of(
-          filterBuilder.setRelationalFilter(relationalSpanFilterExpression.get()).build());
+      case SPANFILTEREXPRESSION_NOT_SET:
+        return Optional.empty();
     }
   }
 
-  private ai.traceable.localprocessing.config.service.v1.LogicalSpanFilterExpression
-      convertLogicalFilter(LogicalSpanFilterExpression logicalSpanFilter) {
-    return ai.traceable.localprocessing.config.service.v1.LogicalSpanFilterExpression.newBuilder()
-        .setOperator(convertLogicalOperator(logicalSpanFilter.getOperator()))
-        .addAllOperands(
-            logicalSpanFilter.getOperandsList().stream()
-                .map(this::convertFilter)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toUnmodifiableList()))
-        .build();
+  private Optional<SpanFilter> convertLogicalFilter(LogicalSpanFilterExpression logicalSpanFilter) {
+    List<SpanFilter> children =
+        logicalSpanFilter.getOperandsList().stream()
+            .map(this::convertFilter)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toUnmodifiableList());
+
+    return combineFiltersWithOperator(
+        children, convertLogicalOperator(logicalSpanFilter.getOperator()));
   }
 
-  private Optional<ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression>
-      convertRelationalFilter(RelationalSpanFilterExpression relationalSpanFilter) {
-    Optional<String> spanAttributeKey = getSpanAttributeKey(relationalSpanFilter);
-    if (spanAttributeKey.isEmpty()) {
+  private Optional<SpanFilter> convertRelationalFilter(
+      RelationalSpanFilterExpression relationalSpanFilter) {
+    List<SpanFilter> individualAttributeFilters =
+        getSpanAttributeKeys(relationalSpanFilter).stream()
+            .map(
+                key ->
+                    buildRelationalFilter(
+                        key,
+                        relationalSpanFilter.getOperator(),
+                        relationalSpanFilter.getRightOperand()))
+            .collect(Collectors.toUnmodifiableList());
+
+    return combineFiltersWithOperator(
+        individualAttributeFilters, LogicalOperator.LOGICAL_OPERATOR_OR);
+  }
+
+  private Optional<SpanFilter> combineFiltersWithOperator(
+      List<SpanFilter> filters, LogicalOperator operator) {
+    if (filters.isEmpty()) {
       return Optional.empty();
     }
+    if (filters.size() == 1) {
+      return Optional.of(Iterables.getOnlyElement(filters));
+    }
     return Optional.of(
-        ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression.newBuilder()
-            .setOperator(convertRelationalOperator(relationalSpanFilter.getOperator()))
-            .setSpanAttributeKey(spanAttributeKey.get())
-            .setRightOperand(
-                SpanFilterValue.newBuilder()
-                    .setStringValue(relationalSpanFilter.getRightOperand().getStringValue())
-                    .build())
+        SpanFilter.newBuilder()
+            .setLogicalFilter(
+                ai.traceable.localprocessing.config.service.v1.LogicalSpanFilterExpression
+                    .newBuilder()
+                    .setOperator(operator)
+                    .addAllOperands(filters))
             .build());
   }
 
-  private Optional<String> getSpanAttributeKey(
+  private SpanFilter buildRelationalFilter(
+      String key,
+      org.hypertrace.span.processing.config.service.v1.RelationalOperator operator,
+      org.hypertrace.span.processing.config.service.v1.SpanFilterValue filterValue) {
+    return SpanFilter.newBuilder()
+        .setRelationalFilter(
+            ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression
+                .newBuilder()
+                .setSpanAttributeKey(key)
+                .setOperator(convertRelationalOperator(operator))
+                .setRightOperand(
+                    SpanFilterValue.newBuilder().setStringValue(filterValue.getStringValue())))
+        .build();
+  }
+
+  private List<String> getSpanAttributeKeys(
       RelationalSpanFilterExpression relationalSpanFilterExpression) {
     if (relationalSpanFilterExpression.hasSpanAttributeKey()) {
-      return Optional.of(relationalSpanFilterExpression.getSpanAttributeKey());
+      return List.of(relationalSpanFilterExpression.getSpanAttributeKey());
     }
     switch (relationalSpanFilterExpression.getField()) {
       case FIELD_URL:
-        return Optional.of(URL_SPAN_ATTRIBUTE_KEY);
+        return URL_SPAN_ATTRIBUTE_KEYS;
       case FIELD_SERVICE_NAME:
       case FIELD_ENVIRONMENT_NAME:
-        return Optional.empty();
+        return Collections.emptyList();
       default:
         log.error("Unknown span filter field type: {}", relationalSpanFilterExpression.getField());
-        return Optional.empty();
+        return Collections.emptyList();
     }
   }
 

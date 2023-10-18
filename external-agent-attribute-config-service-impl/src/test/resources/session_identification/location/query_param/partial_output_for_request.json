@@ -1,21 +1,135 @@
 {
-  "attributeRules": [{
-    "projector": {
-      "attributeProjector": {
-        "attributeKey": "http.url",
-        "attributeRule": {
-          "projector": {
-            "regexCaptureGroupProjector": {
-              "regexCaptureGroup": "\\?(.*)$",
-              "attributeRule": {
-                "projector": {
-                  "urlEncodedProjector": {
-                    "urlParamRule": {
-                      "attributeRule": {
-                      },
-                      "keyPredicate": {
-                        "operator": "COMPARISON_OPERATOR_EQUALS",
-                        "value": "param1"
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.url",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "\\?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "urlEncodedProjector": {
+                      "urlParamRule": {
+                        "attributeRule": {
+                        },
+                        "keyPredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "param1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.target",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "\\?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "urlEncodedProjector": {
+                      "urlParamRule": {
+                        "attributeRule": {
+                        },
+                        "keyPredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "param1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.path",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "\\?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "urlEncodedProjector": {
+                      "urlParamRule": {
+                        "attributeRule": {
+                        },
+                        "keyPredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "param1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "url.full",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "\\?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "urlEncodedProjector": {
+                      "urlParamRule": {
+                        "attributeRule": {
+                        },
+                        "keyPredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "param1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "url.query",
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "\\?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "urlEncodedProjector": {
+                      "urlParamRule": {
+                        "attributeRule": {
+                        },
+                        "keyPredicate": {
+                          "operator": "COMPARISON_OPERATOR_EQUALS",
+                          "value": "param1"
+                        }
                       }
                     }
                   }
@@ -26,32 +140,5 @@
         }
       }
     }
-  }, {
-    "projector": {
-      "attributeProjector": {
-        "attributeKey": "http.target",
-        "attributeRule": {
-          "projector": {
-            "regexCaptureGroupProjector": {
-              "regexCaptureGroup": "\\?(.*)$",
-              "attributeRule": {
-                "projector": {
-                  "urlEncodedProjector": {
-                    "urlParamRule": {
-                      "attributeRule": {
-                      },
-                      "keyPredicate": {
-                        "operator": "COMPARISON_OPERATOR_EQUALS",
-                        "value": "param1"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }]
+  ]
 }

@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.location;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_KEYS;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_OR_QUERY_ATTRIBUTE_KEYS;
 
 import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.MatchConditionTranslator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
@@ -23,7 +23,7 @@ public class QueryParamLocationTranslator implements RequestLocationTranslator {
   @Override
   public List<Projector> translateForRequest(
       MatchCondition matchCondition, AttributeRule attributeValue) {
-    return URL_KEYS.stream()
+    return URL_OR_QUERY_ATTRIBUTE_KEYS.stream()
         .map(location -> translate(matchCondition, attributeValue, location))
         .collect(Collectors.toUnmodifiableList());
   }

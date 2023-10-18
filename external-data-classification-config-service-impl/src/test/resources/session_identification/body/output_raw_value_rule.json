@@ -1,80 +1,217 @@
 {
   "dataTypeId": "rule-id",
-  "matchRules": [{
-    "spanFilter": {
-      "requiredMatchingAttributes": [{
-        "namePredicate": {
-          "operator": "OPERATOR_EQUALS",
-          "value": "traceableai.session.new.rule-id.0.id"
-        }
-      },
-        {
-          "namePredicate": {
-            "operator": "OPERATOR_EQUALS",
-            "value": "service.name"
+  "matchRules": [
+    {
+      "spanFilter": {
+        "requiredMatchingAttributes": [
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "traceableai.session.new.rule-id.0.id"
+            }
           },
-          "valuePredicate": {
-            "operator": "OPERATOR_MATCHES_REGEX",
-            "value": "service1.*|^service2$"
-          }
-      },
-        {
-          "namePredicate": {
-            "operator": "OPERATOR_EQUALS",
-            "value": "http.url"
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "service.name"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "service1.*|^service2$"
+            }
           },
-          "valuePredicate": {
-            "operator": "OPERATOR_MATCHES_REGEX",
-            "value": "url.*"
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "http.url"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "url.*"
+            }
           }
-        }
-      ]
+        ]
+      },
+      "attributeFilter": {
+        "prefixes": [
+          "http.response.body",
+          "rpc.response.body"
+        ]
+      },
+      "result": "RESULT_MATCH",
+      "pathPredicate": {
+        "jsonPath": "$.a.b.c.d"
+      }
     },
-    "attributeFilter": {
-      "prefixes": ["http.response.body", "rpc.response.body"]
+    {
+      "spanFilter": {
+        "requiredMatchingAttributes": [
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "traceableai.session.new.rule-id.0.id"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "service.name"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "service1.*|^service2$"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "http.target"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "url.*"
+            }
+          }
+        ]
+      },
+      "attributeFilter": {
+        "prefixes": [
+          "http.response.body",
+          "rpc.response.body"
+        ]
+      },
+      "result": "RESULT_MATCH",
+      "pathPredicate": {
+        "jsonPath": "$.a.b.c.d"
+      }
     },
-    "result": "RESULT_MATCH",
-    "pathPredicate": {
-      "jsonPath": "$.a.b.c.d"
+    {
+      "spanFilter": {
+        "requiredMatchingAttributes": [
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "traceableai.session.new.rule-id.0.id"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "service.name"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "service1.*|^service2$"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "http.path"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "url.*"
+            }
+          }
+        ]
+      },
+      "attributeFilter": {
+        "prefixes": [
+          "http.response.body",
+          "rpc.response.body"
+        ]
+      },
+      "result": "RESULT_MATCH",
+      "pathPredicate": {
+        "jsonPath": "$.a.b.c.d"
+      }
+    },
+    {
+      "spanFilter": {
+        "requiredMatchingAttributes": [
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "traceableai.session.new.rule-id.0.id"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "service.name"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "service1.*|^service2$"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "url.full"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "url.*"
+            }
+          }
+        ]
+      },
+      "attributeFilter": {
+        "prefixes": [
+          "http.response.body",
+          "rpc.response.body"
+        ]
+      },
+      "result": "RESULT_MATCH",
+      "pathPredicate": {
+        "jsonPath": "$.a.b.c.d"
+      }
+    },
+    {
+      "spanFilter": {
+        "requiredMatchingAttributes": [
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "traceableai.session.new.rule-id.0.id"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "service.name"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "service1.*|^service2$"
+            }
+          },
+          {
+            "namePredicate": {
+              "operator": "OPERATOR_EQUALS",
+              "value": "url.path"
+            },
+            "valuePredicate": {
+              "operator": "OPERATOR_MATCHES_REGEX",
+              "value": "url.*"
+            }
+          }
+        ]
+      },
+      "attributeFilter": {
+        "prefixes": [
+          "http.response.body",
+          "rpc.response.body"
+        ]
+      },
+      "result": "RESULT_MATCH",
+      "pathPredicate": {
+        "jsonPath": "$.a.b.c.d"
+      }
     }
-  },{
-    "spanFilter": {
-      "requiredMatchingAttributes": [{
-        "namePredicate": {
-          "operator": "OPERATOR_EQUALS",
-          "value": "traceableai.session.new.rule-id.0.id"
-        }
-      },
-        {
-          "namePredicate": {
-            "operator": "OPERATOR_EQUALS",
-            "value": "service.name"
-          },
-          "valuePredicate": {
-            "operator": "OPERATOR_MATCHES_REGEX",
-            "value": "service1.*|^service2$"
-          }
-        },
-        {
-          "namePredicate": {
-            "operator": "OPERATOR_EQUALS",
-            "value": "http.target"
-          },
-          "valuePredicate": {
-            "operator": "OPERATOR_MATCHES_REGEX",
-            "value": "url.*"
-          }
-        }
-      ]
-    },
-    "attributeFilter": {
-      "prefixes": ["http.response.body", "rpc.response.body"]
-    },
-    "result": "RESULT_MATCH",
-    "pathPredicate": {
-      "jsonPath": "$.a.b.c.d"
-    }
-  }],
+  ],
   "transformation": "DATA_TRANSFORMATION_OBFUSCATE",
   "suppressionPattern": "a.*bcd"
 }

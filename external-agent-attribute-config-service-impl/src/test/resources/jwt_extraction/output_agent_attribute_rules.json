@@ -30,6 +30,42 @@
                       "value": "abc$"
                     }
                   }
+                },
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                      "value": "http.path"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "abc$"
+                    }
+                  }
+                },
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                      "value": "url.full"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "abc$"
+                    }
+                  }
+                },
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                      "value": "url.path"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "abc$"
+                    }
+                  }
                 }
               ]
             }

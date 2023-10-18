@@ -52,11 +52,35 @@ public class SpanProcessingRulesManagerTestUtils {
                                         ai.traceable.localprocessing.config.service.v1
                                             .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
                                         "val"))),
-                            buildRelationalFilter(
-                                "http.url",
-                                ai.traceable.localprocessing.config.service.v1.RelationalOperator
-                                    .RELATIONAL_OPERATOR_EQUALS,
-                                "url"))))
+                            buildLogicalFilterLocalProcessing(
+                                ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_OR,
+                                List.of(
+                                    buildRelationalFilter(
+                                        "http.url",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "http.target",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "http.path",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "url.full",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "url.path",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"))))))
                 .build())
         .build();
   }

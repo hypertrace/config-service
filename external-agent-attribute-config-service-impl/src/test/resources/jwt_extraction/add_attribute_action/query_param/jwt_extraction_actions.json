@@ -115,6 +115,180 @@
           }
         }
       }
+    },
+    {
+      "projector": {
+        "regexCaptureGroupProjector": {
+          "regexCaptureGroup": "\\?(.*)$",
+          "attributeRule": {
+            "projector": {
+              "urlEncodedProjector": {
+                "urlParamRule": {
+                  "key": "jwt-query-param",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.payload.http.path.jwt-query-param.exp",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "claimRule": {
+                                  "key": "exp",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.header.http.path.jwt-query-param.alg",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "headerRule": {
+                                  "key": "alg",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "regexCaptureGroupProjector": {
+          "regexCaptureGroup": "\\?(.*)$",
+          "attributeRule": {
+            "projector": {
+              "urlEncodedProjector": {
+                "urlParamRule": {
+                  "key": "jwt-query-param",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.payload.url.full.jwt-query-param.exp",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "claimRule": {
+                                  "key": "exp",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.header.url.full.jwt-query-param.alg",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "headerRule": {
+                                  "key": "alg",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "regexCaptureGroupProjector": {
+          "regexCaptureGroup": "\\?(.*)$",
+          "attributeRule": {
+            "projector": {
+              "urlEncodedProjector": {
+                "urlParamRule": {
+                  "key": "jwt-query-param",
+                  "attributeRule": {
+                    "initialActions": [
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.payload.url.query.jwt-query-param.exp",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "claimRule": {
+                                  "key": "exp",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "attributeAddition": {
+                          "attributeKey": "traceableai.jwt.header.url.query.jwt-query-param.alg",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "jwtProjector": {
+                                "headerRule": {
+                                  "key": "alg",
+                                  "attributeRule": {
+                                    "projector": {
+                                      "noOpProjector": {}
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

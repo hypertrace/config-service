@@ -158,7 +158,10 @@ public class DataClassificationRulesTranslatorTest {
                                     "http.request.header",
                                     "rpc.request.metadata",
                                     "http.url",
-                                    "http.target")))
+                                    "http.target",
+                                    "http.path",
+                                    "url.full",
+                                    "url.query")))
                     .setResult(Result.RESULT_MATCH)
                     .setPathPredicate(
                         PathPredicate.newBuilder()
@@ -188,6 +191,9 @@ public class DataClassificationRulesTranslatorTest {
                                     "http.response.header.set-cookie",
                                     "http.url",
                                     "http.target",
+                                    "http.path",
+                                    "url.full",
+                                    "url.query",
                                     "http.request.body",
                                     "rpc.request.body",
                                     "http.response.body",
@@ -248,6 +254,9 @@ public class DataClassificationRulesTranslatorTest {
                                     "http.response.header.set-cookie",
                                     "http.url",
                                     "http.target",
+                                    "http.path",
+                                    "url.full",
+                                    "url.query",
                                     "http.request.body",
                                     "rpc.request.body",
                                     "http.response.body",

@@ -26,7 +26,8 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class SessionIdentificationRulesTranslator {
-  private static final List<String> URL_KEYS = List.of("http.url", "http.target");
+  private static final List<String> URL_KEYS =
+      List.of("http.url", "http.target", "http.path", "url.full", "url.path");
   private static final Map<RequestAttributeKeyLocation, List<String>>
       REQUEST_ATTRIBUTE_KEY_LOCATION_LIST_MAP =
           Map.of(
@@ -37,7 +38,7 @@ public class SessionIdentificationRulesTranslator {
               RequestAttributeKeyLocation.REQUEST_ATTRIBUTE_KEY_LOCATION_BODY,
               List.of("http.request.body", "rpc.request.body"),
               RequestAttributeKeyLocation.REQUEST_ATTRIBUTE_KEY_LOCATION_QUERY_PARAMETER,
-              List.of("http.url"));
+              List.of("http.url", "http.target", "http.path", "url.full", "url.query"));
 
   private static final Map<ResponseAttributeKeyLocation, List<String>>
       RESPONSE_ATTRIBUTE_KEY_LOCATION_LIST_MAP =

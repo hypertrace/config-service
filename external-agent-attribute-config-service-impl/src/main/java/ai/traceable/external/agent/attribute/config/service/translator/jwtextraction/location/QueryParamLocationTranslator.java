@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.location;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_KEYS;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_OR_QUERY_ATTRIBUTE_KEYS;
 
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtTranslationException;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
@@ -22,7 +22,7 @@ public class QueryParamLocationTranslator extends AbstractLocationTranslator {
       throw new JwtTranslationException(
           "Only EQUALS predicate operator supported for query param location");
     }
-    return URL_KEYS.stream()
+    return URL_OR_QUERY_ATTRIBUTE_KEYS.stream()
         .map(formatString -> String.format(formatString, queryParamPredicate.getValue()))
         .map(
             qualifiedAttributeKey ->

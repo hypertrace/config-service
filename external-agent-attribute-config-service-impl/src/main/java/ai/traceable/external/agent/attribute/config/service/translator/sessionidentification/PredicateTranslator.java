@@ -1,6 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification;
 
-import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_KEYS;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_OR_PATH_ATTRIBUTE_KEYS;
 
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
@@ -131,7 +131,7 @@ class PredicateTranslator {
                       .addChildren(
                           attributeRuleBuilder.buildPredicate(
                               ComparisonOperator.COMPARISON_OPERATOR_EQUALS,
-                              URL_KEYS,
+                              URL_OR_PATH_ATTRIBUTE_KEYS,
                               ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
                               String.join("|", scope.getUrlMatchRegexesList())))
                       .addChildren(serviceScopePredicate.get()))
@@ -142,7 +142,7 @@ class PredicateTranslator {
       return Optional.of(
           attributeRuleBuilder.buildPredicate(
               ComparisonOperator.COMPARISON_OPERATOR_EQUALS,
-              URL_KEYS,
+              URL_OR_PATH_ATTRIBUTE_KEYS,
               ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX,
               String.join("|", scope.getUrlMatchRegexesList())));
     }

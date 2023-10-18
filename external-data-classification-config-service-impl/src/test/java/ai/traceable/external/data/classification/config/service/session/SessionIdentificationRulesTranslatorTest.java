@@ -33,7 +33,7 @@ class SessionIdentificationRulesTranslatorTest {
     DataType.Builder rawValueBuilder = DataType.newBuilder();
     PARSER.merge(reader("session_identification/body/output_raw_value_rule.json"), rawValueBuilder);
     Assertions.assertEquals(
-        attributeRules, List.of(rawValueBuilder.build(), extractedValueBuilder.build()));
+        List.of(rawValueBuilder.build(), extractedValueBuilder.build()), attributeRules);
   }
 
   @Test
@@ -53,7 +53,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(
         reader("session_identification/header/output_raw_value_rule.json"), rawValueBuilder);
     Assertions.assertEquals(
-        attributeRules, List.of(rawValueBuilder.build(), extractedValueBuilder.build()));
+        List.of(rawValueBuilder.build(), extractedValueBuilder.build()), attributeRules);
   }
 
   @Test
@@ -73,7 +73,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(
         reader("session_identification/cookie/output_raw_value_rule.json"), rawValueBuilder);
     Assertions.assertEquals(
-        attributeRules, List.of(rawValueBuilder.build(), extractedValueBuilder.build()));
+        List.of(rawValueBuilder.build(), extractedValueBuilder.build()), attributeRules);
   }
 
   @Test
@@ -93,7 +93,7 @@ class SessionIdentificationRulesTranslatorTest {
     PARSER.merge(
         reader("session_identification/query_param/output_raw_value_rule.json"), rawValueBuilder);
     Assertions.assertEquals(
-        attributeRules, List.of(rawValueBuilder.build(), extractedValueBuilder.build()));
+        List.of(rawValueBuilder.build(), extractedValueBuilder.build()), attributeRules);
   }
 
   private static Reader reader(String fileName) throws IOException {

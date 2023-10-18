@@ -23,6 +23,11 @@ public class AgentAttributeConstants {
   public static final String AUTH_TYPES_ATTRIBUTE_KEY = "traceableai.auth.types";
   public static final String AUTH_TYPES_RULE_ATTRIBUTE_KEY = "traceableai.auth.rules";
   public static final String JWT_EXTRACTION_RULE_ATTRIBUTE_KEY_PREFIX = "traceableai.jwt";
-  public static final String BASIC_AUTH_TYPE = "Basic";
-  public static final List<String> URL_KEYS = List.of("http.url", "http.target");
+  // The attributes used to hold parts or all of the URL continue to evolve in OTEL and our agents.
+  // Here we split into two use cases - one based on usages that require the path, and one that
+  // requires the query. Attributes that hold the combined value are exposed in both.
+  public static final List<String> URL_OR_PATH_ATTRIBUTE_KEYS =
+      List.of("http.url", "http.target", "http.path", "url.full", "url.path");
+  public static final List<String> URL_OR_QUERY_ATTRIBUTE_KEYS =
+      List.of("http.url", "http.target", "http.path", "url.full", "url.query");
 }

@@ -1575,138 +1575,115 @@
           "predicate": {
             "logicalPredicate": {
               "operator": "LOGICAL_OPERATOR_AND",
-              "children": [{
-                "logicalPredicate": {
-                  "operator": "LOGICAL_OPERATOR_OR",
-                  "children": [{
-                    "attributePredicate": {
-                      "namePredicate": {
-                        "operator": "COMPARISON_OPERATOR_EQUALS",
-                        "value": "http.url"
+              "children": [
+                {
+                  "logicalPredicate": {
+                    "operator": "LOGICAL_OPERATOR_OR",
+                    "children": [
+                      {
+                        "attributePredicate": {
+                          "namePredicate": {
+                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                            "value": "http.url"
+                          },
+                          "valuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "url.*"
+                          }
+                        }
                       },
-                      "valuePredicate": {
-                        "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                        "value": "url.*"
-                      }
-                    }
-                  }, {
-                    "attributePredicate": {
-                      "namePredicate": {
-                        "operator": "COMPARISON_OPERATOR_EQUALS",
-                        "value": "http.target"
+                      {
+                        "attributePredicate": {
+                          "namePredicate": {
+                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                            "value": "http.target"
+                          },
+                          "valuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "url.*"
+                          }
+                        }
                       },
-                      "valuePredicate": {
-                        "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                        "value": "url.*"
+                      {
+                        "attributePredicate": {
+                          "namePredicate": {
+                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                            "value": "http.path"
+                          },
+                          "valuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "url.*"
+                          }
+                        }
+                      },
+                      {
+                        "attributePredicate": {
+                          "namePredicate": {
+                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                            "value": "url.full"
+                          },
+                          "valuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "url.*"
+                          }
+                        }
+                      },
+                      {
+                        "attributePredicate": {
+                          "namePredicate": {
+                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                            "value": "url.path"
+                          },
+                          "valuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "url.*"
+                          }
+                        }
                       }
+                    ]
+                  }
+                },
+                {
+                  "attributePredicate": {
+                    "namePredicate": {
+                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                      "value": "service.name"
+                    },
+                    "valuePredicate": {
+                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                      "value": "service1.*"
                     }
-                  }]
-                }
-              }, {
-                "attributePredicate": {
-                  "namePredicate": {
-                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                    "value": "service.name"
-                  },
-                  "valuePredicate": {
-                    "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                    "value": "service1.*"
                   }
                 }
-              }]
+              ]
             }
           },
           "attributeRule": {
             "projector": {
               "eachMatchingProjector": {
-                "attributeRules": [{
-                  "projector": {
-                    "conditionalProjector": {
-                      "predicate": {
-                        "logicalPredicate": {
-                          "operator": "LOGICAL_OPERATOR_OR",
-                          "children": [{
-                            "projectorPredicate": {
-                              "projector": {
-                                "attributeProjector": {
-                                  "attributeRule": {
-                                    "projector": {
-                                      "regexCaptureGroupProjector": {
-                                        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
-                                        "attributeRule": {
-                                          "projector": {
-                                            "conditionalProjector": {
-                                              "predicate": {
-                                                "currentValuePredicate": {
-                                                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                                                  "value": "xyz"
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "attributeKeyPredicate": {
-                                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                                    "value": "http.request.header.authorization"
-                                  }
-                                }
-                              }
-                            }
-                          }, {
-                            "projectorPredicate": {
-                              "projector": {
-                                "attributeProjector": {
-                                  "attributeRule": {
-                                    "projector": {
-                                      "regexCaptureGroupProjector": {
-                                        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
-                                        "attributeRule": {
-                                          "projector": {
-                                            "conditionalProjector": {
-                                              "predicate": {
-                                                "currentValuePredicate": {
-                                                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                                                  "value": "xyz"
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "attributeKeyPredicate": {
-                                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                                    "value": "rpc.request.metadata.authorization"
-                                  }
-                                }
-                              }
-                            }
-                          }]
-                        }
-                      },
-                      "attributeRule": {
-                        "projector": {
-                          "eachMatchingProjector": {
-                            "attributeRules": [{
-                              "projector": {
-                                "firstMatchingProjector": {
-                                  "attributeRules": [{
-                                    "initialActions": [{
-                                      "attributeAddition": {
-                                        "attributeKey": "traceableai.session.new.rule-id.0.id",
-                                        "valueProjectionRule": {
-                                          "projector": {
-                                            "attributeProjector": {
-                                              "attributeKey": "http.response.body",
-                                              "attributeRule": {
-                                                "projector": {
-                                                  "regexCaptureGroupProjector": {
-                                                    "regexCaptureGroup": "a.*bcd",
-                                                    "attributeRule": {
+                "attributeRules": [
+                  {
+                    "projector": {
+                      "conditionalProjector": {
+                        "predicate": {
+                          "logicalPredicate": {
+                            "operator": "LOGICAL_OPERATOR_OR",
+                            "children": [
+                              {
+                                "projectorPredicate": {
+                                  "projector": {
+                                    "attributeProjector": {
+                                      "attributeRule": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                                            "attributeRule": {
+                                              "projector": {
+                                                "conditionalProjector": {
+                                                  "predicate": {
+                                                    "currentValuePredicate": {
+                                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                      "value": "xyz"
                                                     }
                                                   }
                                                 }
@@ -1714,21 +1691,30 @@
                                             }
                                           }
                                         }
+                                      },
+                                      "attributeKeyPredicate": {
+                                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                                        "value": "http.request.header.authorization"
                                       }
-                                    }]
-                                  }, {
-                                    "initialActions": [{
-                                      "attributeAddition": {
-                                        "attributeKey": "traceableai.session.new.rule-id.0.id",
-                                        "valueProjectionRule": {
-                                          "projector": {
-                                            "attributeProjector": {
-                                              "attributeKey": "rpc.response.body",
-                                              "attributeRule": {
-                                                "projector": {
-                                                  "regexCaptureGroupProjector": {
-                                                    "regexCaptureGroup": "a.*bcd",
-                                                    "attributeRule": {
+                                    }
+                                  }
+                                }
+                              },
+                              {
+                                "projectorPredicate": {
+                                  "projector": {
+                                    "attributeProjector": {
+                                      "attributeRule": {
+                                        "projector": {
+                                          "regexCaptureGroupProjector": {
+                                            "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                                            "attributeRule": {
+                                              "projector": {
+                                                "conditionalProjector": {
+                                                  "predicate": {
+                                                    "currentValuePredicate": {
+                                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                      "value": "xyz"
                                                     }
                                                   }
                                                 }
@@ -1736,55 +1722,130 @@
                                             }
                                           }
                                         }
+                                      },
+                                      "attributeKeyPredicate": {
+                                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                                        "value": "rpc.request.metadata.authorization"
                                       }
-                                    }]
-                                  }]
+                                    }
+                                  }
                                 }
                               }
-                            }, {
-                              "projector": {
-                                "firstMatchingProjector": {
-                                  "attributeRules": [{
-                                    "initialActions": [{
-                                      "attributeAddition": {
-                                        "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
-                                        "valueProjectionRule": {
-                                          "projector": {
-                                            "conditionalProjector": {
-                                              "predicate": {
-                                                "attributePredicate": {
-                                                  "namePredicate": {
-                                                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                                                    "value": "traceableai.session.new.rule-id.0.id"
+                            ]
+                          }
+                        },
+                        "attributeRule": {
+                          "projector": {
+                            "eachMatchingProjector": {
+                              "attributeRules": [
+                                {
+                                  "projector": {
+                                    "firstMatchingProjector": {
+                                      "attributeRules": [
+                                        {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "traceableai.session.new.rule-id.0.id",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "attributeProjector": {
+                                                      "attributeKey": "http.response.body",
+                                                      "attributeRule": {
+                                                        "projector": {
+                                                          "regexCaptureGroupProjector": {
+                                                            "regexCaptureGroup": "a.*bcd",
+                                                            "attributeRule": {
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
                                                   }
                                                 }
-                                              },
-                                              "attributeRule": {
-                                                "projector": {
-                                                  "attributeProjector": {
-                                                    "attributeKey": "http.response.header.set-cookie",
-                                                    "attributeRule": {
-                                                      "projector": {
-                                                        "cookieProjector": {
-                                                          "cookieNameRule": {
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "traceableai.session.new.rule-id.0.id",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "attributeProjector": {
+                                                      "attributeKey": "rpc.response.body",
+                                                      "attributeRule": {
+                                                        "projector": {
+                                                          "regexCaptureGroupProjector": {
+                                                            "regexCaptureGroup": "a.*bcd",
+                                                            "attributeRule": {
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "projector": {
+                                    "firstMatchingProjector": {
+                                      "attributeRules": [
+                                        {
+                                          "initialActions": [
+                                            {
+                                              "attributeAddition": {
+                                                "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
+                                                "valueProjectionRule": {
+                                                  "projector": {
+                                                    "conditionalProjector": {
+                                                      "predicate": {
+                                                        "attributePredicate": {
+                                                          "namePredicate": {
+                                                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                            "value": "traceableai.session.new.rule-id.0.id"
+                                                          }
+                                                        }
+                                                      },
+                                                      "attributeRule": {
+                                                        "projector": {
+                                                          "attributeProjector": {
+                                                            "attributeKey": "http.response.header.set-cookie",
                                                             "attributeRule": {
                                                               "projector": {
-                                                                "regexCaptureGroupProjector": {
-                                                                  "regexCaptureGroup": "1.*234",
-                                                                  "attributeRule": {
-                                                                    "projector": {
-                                                                      "jsonProjector": {
-                                                                        "jsonPathRule": {
-                                                                          "key": "$.a.b.c.d",
+                                                                "cookieProjector": {
+                                                                  "cookieNameRule": {
+                                                                    "attributeRule": {
+                                                                      "projector": {
+                                                                        "regexCaptureGroupProjector": {
+                                                                          "regexCaptureGroup": "1.*234",
                                                                           "attributeRule": {
                                                                             "projector": {
-                                                                              "jwtProjector": {
-                                                                                "claimRule": {
-                                                                                  "key": "claim-key-1",
+                                                                              "jsonProjector": {
+                                                                                "jsonPathRule": {
+                                                                                  "key": "$.a.b.c.d",
                                                                                   "attributeRule": {
                                                                                     "projector": {
-                                                                                      "base64Projector": {
-                                                                                        "attributeRule": {
+                                                                                      "jwtProjector": {
+                                                                                        "claimRule": {
+                                                                                          "key": "claim-key-1",
+                                                                                          "attributeRule": {
+                                                                                            "projector": {
+                                                                                              "base64Projector": {
+                                                                                                "attributeRule": {
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
                                                                                         }
                                                                                       }
                                                                                     }
@@ -1795,14 +1856,14 @@
                                                                           }
                                                                         }
                                                                       }
+                                                                    },
+                                                                    "keyPredicate": {
+                                                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                                                      "value": "cookie1"
                                                                     }
                                                                   }
                                                                 }
                                                               }
-                                                            },
-                                                            "keyPredicate": {
-                                                              "operator": "COMPARISON_OPERATOR_EQUALS",
-                                                              "value": "cookie1"
                                                             }
                                                           }
                                                         }
@@ -1812,20 +1873,20 @@
                                                 }
                                               }
                                             }
-                                          }
+                                          ]
                                         }
-                                      }
-                                    }]
-                                  }]
+                                      ]
+                                    }
+                                  }
                                 }
-                              }
-                            }]
+                              ]
+                            }
                           }
                         }
                       }
                     }
                   }
-                }]
+                ]
               }
             }
           }
