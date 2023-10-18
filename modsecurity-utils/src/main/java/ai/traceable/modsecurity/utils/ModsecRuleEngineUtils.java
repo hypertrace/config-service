@@ -27,7 +27,7 @@ public class ModsecRuleEngineUtils {
   }
 
   public static Status validate(String modsecRuleBlob) {
-    if (loadNativeRuleEngineLibrary() == false) {
+    if (loadNativeLibrarySuccess == false) {
       log.warn("Skipping modsec SecRule validation.. Native libraries for rule engine not loaded!");
       return Status.UNKNOWN;
     }
@@ -51,7 +51,7 @@ public class ModsecRuleEngineUtils {
 
   public static List<RuleMatch> getModsecRuleMatches(
       String modsecRuleBlob, Map<String, String> attributesMap) {
-    if (loadNativeRuleEngineLibrary() == false) {
+    if (loadNativeLibrarySuccess == false) {
       log.warn("Skipping modsec SecRule evaluation.. Native libraries for rule engine not loaded!");
       return Collections.emptyList();
     }
@@ -64,7 +64,7 @@ public class ModsecRuleEngineUtils {
   }
 
   public static RuleEngine createRuleEngine(String modsecRuleBlob) {
-    if (loadNativeRuleEngineLibrary() == false) {
+    if (loadNativeLibrarySuccess == false) {
       log.warn("Skipping modsec SecRule evaluation.. Native libraries for rule engine not loaded!");
       return null;
     }
