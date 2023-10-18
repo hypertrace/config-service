@@ -26,6 +26,7 @@ dependencies {
   implementation(libs.typesafe.config)
   implementation(libs.slf4j.api)
   implementation(libs.commons.csv)
+  implementation(libs.commons.lang)
 
   implementation(libs.hypertrace.grpcutils.context)
   implementation(libs.hypertrace.grpcutils.client)

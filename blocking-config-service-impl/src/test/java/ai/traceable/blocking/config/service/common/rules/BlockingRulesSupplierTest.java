@@ -44,6 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,7 +93,10 @@ public class BlockingRulesSupplierTest {
             () ->
                 Arrays.stream(IpTypeRuleInfo.IpType.values())
                     .filter(ipType -> !ipType.equals(IpTypeRuleInfo.IpType.TOR_EXIT_NODE))
-                    .collect(Collectors.toMap(Function.identity(), IpTypeRuleInfo::new)));
+                    .collect(
+                        Collectors.toMap(
+                            Function.identity(),
+                            ipType -> IpTypeRuleInfo.builder().ipType(ipType).build())));
 
     when(dlpRulesFetcher.fetchDlpModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, SERVICE_NAMES))
         .thenReturn(
@@ -315,8 +319,9 @@ public class BlockingRulesSupplierTest {
 
     List<IpTypeRuleInfo.IpType> ipTypeRuleInfoList =
         blockingRulesSupplier
-            .getIpTypeIpMappings(Function.identity(), Collections.emptySet())
+            .getIpTypeIpMappings(t -> new ImmutablePair<>(t, ""), Collections.emptySet())
             .stream()
+            .map(ImmutablePair::getLeft)
             .map(IpTypeRuleInfo::getIpType)
             .collect(Collectors.toList());
     verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
@@ -328,7 +333,10 @@ public class BlockingRulesSupplierTest {
         ipTypeRuleInfoList);
 
     ipTypeRuleInfoList =
-        blockingRulesSupplier.getIpTypeIpMappings(Function.identity(), SERVICE_NAMES).stream()
+        blockingRulesSupplier
+            .getIpTypeIpMappings(t -> new ImmutablePair<>(t, ""), SERVICE_NAMES)
+            .stream()
+            .map(ImmutablePair::getLeft)
             .map(IpTypeRuleInfo::getIpType)
             .collect(Collectors.toList());
     assertEquals(

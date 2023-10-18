@@ -35,6 +35,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /**
@@ -196,8 +197,8 @@ public class BlockingRulesSupplier {
    * Returns list of Ip-Type to Ip-range mappings in the form of objects defined by the converter
    * keyed by service name
    */
-  public <T> List<T> getIpTypeIpMappings(
-      Function<IpTypeRuleInfo, T> ruleConverter, Set<String> serviceNames) {
+  public <T> List<ImmutablePair<T, String>> getIpTypeIpMappings(
+      Function<IpTypeRuleInfo, ImmutablePair<T, String>> ruleConverter, Set<String> serviceNames) {
     Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> ipTypesInfoMap =
         blockingRulesSupplierContext.getIpTypeRulesInfoMap();
 
@@ -327,8 +328,8 @@ public class BlockingRulesSupplier {
         .map(RegionCondition.Region::getCountryIsoCode);
   }
 
-  private static <T> List<T> convertIpTypeIpMappings(
-      Function<IpTypeRuleInfo, T> ruleConverter,
+  private static <T> List<ImmutablePair<T, String>> convertIpTypeIpMappings(
+      Function<IpTypeRuleInfo, ImmutablePair<T, String>> ruleConverter,
       Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> ipTypesInfoMap,
       Stream<IpTypeRuleInfo.IpType> ipTypes) {
     return ipTypes

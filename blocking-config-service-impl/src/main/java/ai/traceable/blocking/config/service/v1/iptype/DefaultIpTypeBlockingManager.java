@@ -7,6 +7,8 @@ import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
@@ -24,13 +26,25 @@ class DefaultIpTypeBlockingManager implements IpTypeBlockingManager {
   public IpTypeBlockingRules getEnabledBlockingRules(
       RequestContext requestContext, String requestHash, Optional<String> environmentId) {
 
-    List<IpTypeRule> ipTypeRules =
+    List<ImmutablePair<IpTypeRule, String>> ipTypeBlockingRules =
         ipTypeRuleAggregator.getEnabledBlockingRules(requestContext, environmentId);
-    String responseHash = uuidGenerator.generateId(ipTypeRules);
+
+    // Calculating uuid of IpTypeBlob is very costly due to large size of the blob, hence using the
+    // existing hash
+    String responseHash =
+        uuidGenerator.generateId(
+            ipTypeBlockingRules.stream()
+                .map(ImmutablePair::getRight)
+                .collect(Collectors.toUnmodifiableList()));
+
     IpTypeBlockingRules.Builder ipTypeBlockingRulesBuilder =
         IpTypeBlockingRules.newBuilder().setHash(responseHash);
+
     if (!responseHash.equals(requestHash)) {
-      ipTypeBlockingRulesBuilder.addAllIpTypeRuleList(ipTypeRules);
+      ipTypeBlockingRulesBuilder.addAllIpTypeRuleList(
+          ipTypeBlockingRules.stream()
+              .map(ImmutablePair::getLeft)
+              .collect(Collectors.toUnmodifiableList()));
     }
     return ipTypeBlockingRulesBuilder.build();
   }

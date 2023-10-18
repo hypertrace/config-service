@@ -19,8 +19,7 @@ import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.config.utils.UuidGenerator;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -33,14 +32,15 @@ class IpTypeBlockingManagerTest {
     BlockingConfigManagerBase manager =
         new IpTypeBlockingManager(ipTypeRuleConverter, mockUuidGenerator);
 
-    RequestContext requestContext = RequestContext.forTenantId("TENANT_ID");
-    Optional<String> environmentId = Optional.of("environment");
-
     IpTypeRule ipTypeRule1 = Mockito.mock(IpTypeRule.class);
     IpTypeRule ipTypeRule2 = Mockito.mock(IpTypeRule.class);
     IpTypeRule ipTypeRule3 = Mockito.mock(IpTypeRule.class);
-    List<IpTypeRule> mockIpTypeRuleList = List.of(ipTypeRule1, ipTypeRule2);
-    List<IpTypeRule> mockServiceIpTypeRuleList = List.of(ipTypeRule2, ipTypeRule3);
+    List<ImmutablePair<IpTypeRule, String>> mockIpTypeRuleList =
+        List.of(
+            new ImmutablePair<>(ipTypeRule1, "hash1"), new ImmutablePair<>(ipTypeRule2, "hash2"));
+    List<ImmutablePair<IpTypeRule, String>> mockServiceIpTypeRuleList =
+        List.of(
+            new ImmutablePair<>(ipTypeRule2, "hash2"), new ImmutablePair<>(ipTypeRule3, "hash3"));
 
     AgentCapabilities agentCapabilities1 = Mockito.mock(AgentCapabilities.class);
     AgentCapabilities agentCapabilities2 = Mockito.mock(AgentCapabilities.class);
@@ -59,8 +59,8 @@ class IpTypeBlockingManagerTest {
         .when(blockingRulesSupplier)
         .getIpTypeIpMappings(any(), eq(Collections.singleton("serviceName")));
 
-    doReturn("mock-hash").when(mockUuidGenerator).generateId(mockIpTypeRuleList);
-    doReturn("mock-hash").when(mockUuidGenerator).generateId(mockServiceIpTypeRuleList);
+    doReturn("mock-hash").when(mockUuidGenerator).generateId(List.of("hash1", "hash2"));
+    doReturn("mock-hash").when(mockUuidGenerator).generateId(List.of("hash2", "hash3"));
 
     // Test in case hashes don't match the new ip-type config is loaded
     assertEquals(
@@ -68,7 +68,8 @@ class IpTypeBlockingManagerTest {
             BlockingConfigResponseElement.newBuilder()
                 .setHash("mock-hash")
                 .setIpTypeBlockingRules(
-                    IpTypeBlockingRules.newBuilder().addAllIpTypeRuleList(mockIpTypeRuleList))
+                    IpTypeBlockingRules.newBuilder()
+                        .addAllIpTypeRuleList(List.of(ipTypeRule1, ipTypeRule2)))
                 .addAgentCapabilities(agentCapabilities1)
                 .addAgentCapabilities(agentCapabilities2)
                 .build()),
@@ -121,7 +122,9 @@ class IpTypeBlockingManagerTest {
             BlockingConfigResponseElement.newBuilder()
                 .setHash("mock-hash")
                 .setIpTypeBlockingRules(
-                    IpTypeBlockingRules.newBuilder().addAllIpTypeRuleList(mockIpTypeRuleList))
+                    IpTypeBlockingRules.newBuilder()
+                        .addIpTypeRuleList(ipTypeRule1)
+                        .addIpTypeRuleList(ipTypeRule2))
                 .addAgentCapabilities(agentCapabilities1)
                 .addAgentCapabilities(agentCapabilities2)
                 .addAgentCapabilities(agentCapabilities3)
@@ -153,7 +156,7 @@ class IpTypeBlockingManagerTest {
 
     // Test in case hashes do match the new ip-type config and different hash for the
     // service-component
-    doReturn("mock-hash2").when(mockUuidGenerator).generateId(mockServiceIpTypeRuleList);
+    doReturn("mock-hash2").when(mockUuidGenerator).generateId(List.of("hash2", "hash3"));
     assertEquals(
         List.of(
             BlockingConfigResponseElement.newBuilder()
@@ -166,7 +169,7 @@ class IpTypeBlockingManagerTest {
                 .setHash("mock-hash2")
                 .setIpTypeBlockingRules(
                     IpTypeBlockingRules.newBuilder()
-                        .addAllIpTypeRuleList(mockServiceIpTypeRuleList))
+                        .addAllIpTypeRuleList(List.of(ipTypeRule2, ipTypeRule3)))
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(
@@ -195,7 +198,9 @@ class IpTypeBlockingManagerTest {
             BlockingConfigResponseElement.newBuilder()
                 .setHash("mock-hash")
                 .setIpTypeBlockingRules(
-                    IpTypeBlockingRules.newBuilder().addAllIpTypeRuleList(mockIpTypeRuleList))
+                    IpTypeBlockingRules.newBuilder()
+                        .addIpTypeRuleList(ipTypeRule1)
+                        .addIpTypeRuleList(ipTypeRule2))
                 .addAgentCapabilities(agentCapabilities1)
                 .addAgentCapabilities(agentCapabilities2)
                 .build(),
@@ -203,7 +208,8 @@ class IpTypeBlockingManagerTest {
                 .setHash("mock-hash2")
                 .setIpTypeBlockingRules(
                     IpTypeBlockingRules.newBuilder()
-                        .addAllIpTypeRuleList(mockServiceIpTypeRuleList))
+                        .addIpTypeRuleList(ipTypeRule2)
+                        .addIpTypeRuleList(ipTypeRule3))
                 .addAgentCapabilities(agentCapabilities3)
                 .build()),
         manager.generateBlockingElements(

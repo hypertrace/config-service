@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class IpTypeRuleAggregatorBase<T> {
@@ -26,7 +27,7 @@ public class IpTypeRuleAggregatorBase<T> {
     this.ipTypeConverter = ipTypeConverter;
   }
 
-  public List<T> getEnabledBlockingRules(
+  public List<ImmutablePair<T, String>> getEnabledBlockingRules(
       RequestContext requestContext, Optional<String> environmentId) {
     List<MaliciousSourcesRule> maliciousSourcesRules =
         blockingIpTypesClient.fetchMaliciousSourceRules(requestContext, environmentId);
@@ -40,6 +41,7 @@ public class IpTypeRuleAggregatorBase<T> {
             .collect(Collectors.toUnmodifiableList());
 
     Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> ipTypesInfoMap = ipTypeRulesSupplier.get();
+
     return blockingIpTypes.stream()
         .map(IpTypeRuleInfo::convertIpType)
         .map(ipTypesInfoMap::get)
@@ -49,6 +51,6 @@ public class IpTypeRuleAggregatorBase<T> {
   }
 
   public interface GenericIpTypeRuleConverter<T> {
-    T convert(IpTypeRuleInfo ipTypeRule);
+    ImmutablePair<T, String> convert(IpTypeRuleInfo ipTypeRule);
   }
 }

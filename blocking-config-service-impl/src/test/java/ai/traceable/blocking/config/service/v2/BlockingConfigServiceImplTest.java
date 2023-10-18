@@ -100,7 +100,10 @@ class BlockingConfigServiceImplTest {
         .thenReturn(
             () ->
                 Arrays.stream(IpTypeRuleInfo.IpType.values())
-                    .collect(Collectors.toMap(Function.identity(), IpTypeRuleInfo::new)));
+                    .collect(
+                        Collectors.toMap(
+                            Function.identity(),
+                            ipType -> IpTypeRuleInfo.builder().ipType(ipType).build())));
     BlockingRulesSupplierContext blockingRulesSupplierContext =
         new BlockingRulesSupplierContext(rulesFetchers, ipTypeRulesLoader);
     this.blockingConfigService =

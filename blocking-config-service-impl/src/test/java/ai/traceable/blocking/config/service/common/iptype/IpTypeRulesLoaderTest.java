@@ -6,6 +6,7 @@ import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo.IpRange
 import ai.traceable.config.utils.LatestInstantNamedPathFinder;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import com.typesafe.config.ConfigFactory;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +28,8 @@ class IpTypeRulesLoaderTest {
     Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo> ipTypeRulesMap =
         builder.getLatestDataSupplier().get();
     assertEquals(5, ipTypeRulesMap.size());
-    ipTypeRulesMap
-        .entrySet()
-        .forEach(entry -> assertEquals(testIpTypeRules.get(entry.getKey()), entry.getValue()));
+    ipTypeRulesMap.forEach(
+        (key, value) -> assertEqualsIpTypeRuleInfo(testIpTypeRules.get(key), value));
   }
 
   private void insertTestDataForVerification() {
@@ -51,19 +51,31 @@ class IpTypeRulesLoaderTest {
         getIpTypeRule(IpTypeRuleInfo.IpType.ANONYMOUS_VPN, List.of(31L, 42L, 43L, 49L)));
   }
 
+  private static void assertEqualsIpTypeRuleInfo(IpTypeRuleInfo expected, IpTypeRuleInfo actual) {
+    assertEquals(expected.getIpType(), actual.getIpType());
+    assertEquals(expected.getIpv4Ranges(), actual.getIpv4Ranges());
+    assertEquals(expected.getIpv4Addresses(), actual.getIpv4Addresses());
+    assertEquals(expected.getUuid(), actual.getUuid());
+  }
+
   private IpTypeRuleInfo getIpTypeRule(IpTypeRuleInfo.IpType ipType, List<Long> rangePairs) {
     assert rangePairs.size() % 2 == 0;
 
-    IpTypeRuleInfo commonIpTypeRule = new IpTypeRuleInfo(ipType);
+    List<Integer> ipv4Addresses = new ArrayList<>();
+    List<IpRangeInfo> ipRanges = new ArrayList<>();
     for (int i = 0; i < rangePairs.size(); i += 2) {
       long startIp = rangePairs.get(i);
       long endIp = rangePairs.get(i + 1);
       if (startIp == endIp) {
-        commonIpTypeRule.getIpv4Addresses().add((int) startIp);
+        ipv4Addresses.add((int) startIp);
       } else {
-        commonIpTypeRule.getIpv4Ranges().add(new IpRangeInfo((int) startIp, (int) endIp));
+        ipRanges.add(new IpRangeInfo((int) startIp, (int) endIp));
       }
     }
-    return commonIpTypeRule;
+    return IpTypeRuleInfo.builder()
+        .ipType(ipType)
+        .ipv4Addresses(ipv4Addresses)
+        .ipv4Ranges(ipRanges)
+        .build();
   }
 }

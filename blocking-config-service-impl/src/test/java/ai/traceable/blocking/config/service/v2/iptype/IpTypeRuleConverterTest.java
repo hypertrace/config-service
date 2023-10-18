@@ -15,11 +15,14 @@ class IpTypeRuleConverterTest {
 
   @Test
   void testRuleConversion() {
-    IpTypeRuleInfo ipTypeRuleInfo = new IpTypeRuleInfo(IpTypeRuleInfo.IpType.ANONYMOUS_VPN);
-    ipTypeRuleInfo.getIpv4Ranges().add(new IpRangeInfo(11, 22));
-    ipTypeRuleInfo.getIpv4Ranges().add(new IpRangeInfo(33, 44));
-    ipTypeRuleInfo.getIpv4Addresses().add(55);
-    ipTypeRuleInfo.getIpv4Addresses().add(66);
+    IpTypeRuleInfo ipTypeRuleInfo =
+        IpTypeRuleInfo.builder()
+            .ipType(IpTypeRuleInfo.IpType.ANONYMOUS_VPN)
+            .ipv4Address(55)
+            .ipv4Address(66)
+            .ipv4Range(new IpRangeInfo(11, 22))
+            .ipv4Range(new IpRangeInfo(33, 44))
+            .build();
 
     IpTypeRule expectedIpTypeRule =
         IpTypeRule.newBuilder()
@@ -35,6 +38,7 @@ class IpTypeRuleConverterTest {
             .build();
 
     GenericIpTypeRuleConverter<IpTypeRule> ipTypeRuleConverter = new IpTypeRuleConverter();
-    assertEquals(expectedIpTypeRule, ipTypeRuleConverter.convert(ipTypeRuleInfo));
+    assertEquals(expectedIpTypeRule, ipTypeRuleConverter.convert(ipTypeRuleInfo).getLeft());
+    assertEquals(ipTypeRuleInfo.getUuid(), ipTypeRuleConverter.convert(ipTypeRuleInfo).getRight());
   }
 }

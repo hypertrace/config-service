@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -27,13 +28,18 @@ class IpTypeRuleAggregatorBaseTest {
     IpTypeRulesLoader ipTypeRulesLoader = mock(IpTypeRulesLoader.class);
     BlockingIpTypesClient blockingIpTypesClient = mock(BlockingIpTypesClient.class);
 
-    IpTypeRuleInfo rule1 = new IpTypeRuleInfo(IpTypeRuleInfo.IpType.BOT);
-    rule1.getIpv4Addresses().add(11);
-    rule1.getIpv4Ranges().add(new IpRangeInfo(151, 161));
-
-    IpTypeRuleInfo rule2 = new IpTypeRuleInfo(IpTypeRuleInfo.IpType.ANONYMOUS_VPN);
-    rule1.getIpv4Addresses().add(22);
-    rule1.getIpv4Ranges().add(new IpRangeInfo(252, 262));
+    IpTypeRuleInfo rule1 =
+        IpTypeRuleInfo.builder()
+            .ipType(IpTypeRuleInfo.IpType.BOT)
+            .ipv4Address(11)
+            .ipv4Range(new IpRangeInfo(151, 161))
+            .build();
+    IpTypeRuleInfo rule2 =
+        IpTypeRuleInfo.builder()
+            .ipType(IpTypeRuleInfo.IpType.ANONYMOUS_VPN)
+            .ipv4Address(22)
+            .ipv4Range(new IpRangeInfo(252, 262))
+            .build();
 
     Supplier<Map<IpTypeRuleInfo.IpType, IpTypeRuleInfo>> ipTypeRuleSupplier =
         () -> Map.of(IpTypeRuleInfo.IpType.BOT, rule1, IpTypeRuleInfo.IpType.ANONYMOUS_VPN, rule2);
@@ -57,17 +63,18 @@ class IpTypeRuleAggregatorBaseTest {
     GenericIpTypeRuleConverter<String> mockIpTypeRuleConverter =
         (GenericIpTypeRuleConverter<String>) Mockito.mock(GenericIpTypeRuleConverter.class);
     // Mock converter response for expected rule
-    when(mockIpTypeRuleConverter.convert(rule1)).thenReturn("happy");
+    when(mockIpTypeRuleConverter.convert(rule1)).thenReturn(new ImmutablePair<>("happy", "hash"));
 
     IpTypeRuleAggregatorBase<String> ipTypeRuleAggregator =
         new IpTypeRuleAggregatorBase<>(
             ipTypeRulesLoader, blockingIpTypesClient, mockIpTypeRuleConverter);
 
-    List<String> enabledBlockingRules =
+    List<ImmutablePair<String, String>> enabledBlockingRules =
         ipTypeRuleAggregator.getEnabledBlockingRules(
             RequestContext.forTenantId("tenantId"), Optional.empty());
 
     assertEquals(1, enabledBlockingRules.size());
-    assertEquals("happy", enabledBlockingRules.get(0));
+    assertEquals("happy", enabledBlockingRules.get(0).getLeft());
+    assertEquals("hash", enabledBlockingRules.get(0).getRight());
   }
 }

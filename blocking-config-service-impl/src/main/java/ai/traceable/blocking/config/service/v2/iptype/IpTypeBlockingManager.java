@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class IpTypeBlockingManager implements BlockingConfigManagerBase {
   private final IpTypeRuleConverter ipTypeRuleConverter;
@@ -87,13 +88,25 @@ public class IpTypeBlockingManager implements BlockingConfigManagerBase {
   }
 
   private void updateResponseHashComponentsMap(
-      List<IpTypeRule> ipTypeBlockingRules,
+      List<ImmutablePair<IpTypeRule, String>> ipTypeBlockingRules,
       List<AgentRequestComponent> components,
       Map<String, AgentResponseComponent<List<IpTypeRule>>> responseHashComponentsMap) {
-    String responseHash = uuidGenerator.generateId(ipTypeBlockingRules);
+    // Calculating uuid of IpTypeBlob is very costly due to large size of the blob, hence using the
+    // existing hash
+    String responseHash =
+        uuidGenerator.generateId(
+            ipTypeBlockingRules.stream()
+                .map(ImmutablePair::getRight)
+                .collect(Collectors.toUnmodifiableList()));
     responseHashComponentsMap
         .computeIfAbsent(
-            responseHash, hash -> new AgentResponseComponent<>(ipTypeBlockingRules, responseHash))
+            responseHash,
+            hash ->
+                new AgentResponseComponent<>(
+                    ipTypeBlockingRules.stream()
+                        .map(ImmutablePair::getLeft)
+                        .collect(Collectors.toUnmodifiableList()),
+                    responseHash))
         .getAgentRequestComponents()
         .addAll(components);
   }
