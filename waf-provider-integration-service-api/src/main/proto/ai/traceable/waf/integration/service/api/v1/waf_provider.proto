@@ -22,6 +22,7 @@ message WafIntegrationDetails {
     ImpervaIntegrationParams imperva_integration_params = 5;
     AzureIntegrationParams azure_integration_params = 6;
   }
+  WafIntegrationScope waf_integration_scope = 7;
 }
 
 message CloudflareIntegrationParams {
@@ -39,10 +40,21 @@ message UpdatedWafIntegrationDetails {
     ImpervaIntegrationUpdateParams updated_imperva_integration_params = 5;
     AzureIntegrationUpdateParams updated_azure_integration_params = 6;
   }
+  WafIntegrationScope waf_integration_scope = 7;
 }
 
 message UpdatedCloudflareIntegrationParams {
   string zone = 1;
   string email = 2;
   optional string api_token = 3;
+}
+
+message WafIntegrationScope {
+  oneof scope { // if no option selected, default is customer scope (all environments)
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
 }

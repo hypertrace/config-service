@@ -16,6 +16,7 @@ import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
+import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
@@ -26,6 +27,7 @@ import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -568,6 +570,32 @@ class WafIntegrationConfigRequestValidatorTest {
           wafIntegrationConfigRequestValidator.validateOrThrow(request4, REQUEST_CONTEXT);
         });
 
+    // empty environment id
+    UpdateWafIntegrationRequest request5 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of())))
+                    .setUpdatedAwsIntegrationParams(
+                        AwsIntegrationUpdateParams.newBuilder()
+                            .setAuthCredentials(
+                                AuthCredentials.newBuilder()
+                                    .setAccessKeyId("id")
+                                    .setEncryptedSecretAccessKey("key"))
+                            .addResources(
+                                AwsResource.newBuilder().setArn("arn").setRegion("region"))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT);
+        });
+
     UpdateWafIntegrationRequest validRequest =
         UpdateWafIntegrationRequest.newBuilder()
             .setId("id")
@@ -837,12 +865,43 @@ class WafIntegrationConfigRequestValidatorTest {
         StatusRuntimeException.class,
         () -> wafIntegrationConfigRequestValidator.validateOrThrow(request10, REQUEST_CONTEXT));
 
+    CreateWafIntegrationRequest request11 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of())))
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId("tenant-id")
+                                    .setSubscriptionId("subscription-id")
+                                    .setAzureEnvironment("azure-env")
+                                    .addAzureResourceGroupDetails(
+                                        AzureResourceGroupDetails.newBuilder()
+                                            .setName("name")
+                                            .setRegion("region"))
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId("client-id")
+                                            .setEncryptedClientSecret("secret")
+                                            .setAccessKeyId("key-id")))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request11, REQUEST_CONTEXT));
+
     // valid request
     CreateWafIntegrationRequest validRequest =
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
                     .setName("name")
+                    .setWafIntegrationScope(WafIntegrationScope.getDefaultInstance())
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(

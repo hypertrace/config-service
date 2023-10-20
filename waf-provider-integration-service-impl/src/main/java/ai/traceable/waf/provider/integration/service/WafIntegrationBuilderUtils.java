@@ -69,7 +69,9 @@ public class WafIntegrationBuilderUtils {
     WafIntegrationDetails.Builder builder =
         WafIntegrationDetails.newBuilder()
             .setName(request.getUpdatedWafIntegrationDetails().getName())
-            .setDescription(request.getUpdatedWafIntegrationDetails().getDescription());
+            .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
+            .setWafIntegrationScope(
+                request.getUpdatedWafIntegrationDetails().getWafIntegrationScope());
     CloudflareIntegrationParams.Builder cloudFlareIntegrationParamsBuilder =
         CloudflareIntegrationParams.newBuilder()
             .setEmail(
@@ -110,7 +112,9 @@ public class WafIntegrationBuilderUtils {
             WafIntegrationDetails.newBuilder()
                 .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
                 .setName(request.getUpdatedWafIntegrationDetails().getName())
-                .setAwsIntegrationParams(awsIntegrationParamsBuilder.build()))
+                .setAwsIntegrationParams(awsIntegrationParamsBuilder.build())
+                .setWafIntegrationScope(
+                    request.getUpdatedWafIntegrationDetails().getWafIntegrationScope()))
         .build();
   }
 
@@ -139,7 +143,9 @@ public class WafIntegrationBuilderUtils {
                                 : existingWafIntegration
                                     .getWafIntegrationDetails()
                                     .getImpervaIntegrationParams()
-                                    .getApiKey())))
+                                    .getApiKey()))
+                .setWafIntegrationScope(
+                    request.getUpdatedWafIntegrationDetails().getWafIntegrationScope()))
         .build();
   }
 
@@ -158,7 +164,9 @@ public class WafIntegrationBuilderUtils {
                         updatedAzureIntegrationParams,
                         existingWafIntegration
                             .getWafIntegrationDetails()
-                            .getAzureIntegrationParams())))
+                            .getAzureIntegrationParams()))
+                .setWafIntegrationScope(
+                    request.getUpdatedWafIntegrationDetails().getWafIntegrationScope()))
         .build();
   }
 

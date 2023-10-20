@@ -19,6 +19,7 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
+import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
@@ -37,6 +38,7 @@ import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceBlockingStub;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
@@ -55,6 +57,11 @@ class WafIntegrationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   Config mockConfig;
   WafProviderServiceBlockingStub wafProviderServiceBlockingStub;
+  WafIntegrationScope wafConfigScope =
+      WafIntegrationScope.newBuilder()
+          .setEnvironmentScope(
+              EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("id1", "id2")))
+          .build();
 
   @BeforeEach
   void setup() {
@@ -111,6 +118,7 @@ class WafIntegrationConfigServiceImplTest {
     return WafIntegrationDetails.newBuilder()
         .setName(name)
         .setDescription("des")
+        .setWafIntegrationScope(wafConfigScope)
         .setAwsIntegrationParams(
             AwsIntegrationParams.newBuilder()
                 .setAuthCredentials(AuthCredentials.newBuilder().setAccessKeyId("id"))
@@ -182,6 +190,7 @@ class WafIntegrationConfigServiceImplTest {
                 WafIntegrationDetails.newBuilder()
                     .setName("name")
                     .setDescription("des")
+                    .setWafIntegrationScope(wafConfigScope)
                     .setAwsIntegrationParams(
                         AwsIntegrationParams.newBuilder()
                             .setAccessKeyId(
@@ -284,6 +293,7 @@ class WafIntegrationConfigServiceImplTest {
         WafIntegrationDetails.newBuilder()
             .setName("name3")
             .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAccessKeyId(
@@ -318,6 +328,7 @@ class WafIntegrationConfigServiceImplTest {
         WafIntegrationDetails.newBuilder()
             .setName("name3")
             .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAccessKeyId(
@@ -411,11 +422,16 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse createResponse =
         wafProviderServiceBlockingStub.createWafIntegration(createRequest);
     String id = createResponse.getWafIntegration().getId();
-
+    WafIntegrationScope updateWafIntegrationScope =
+        WafIntegrationScope.newBuilder()
+            .setEnvironmentScope(
+                EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("updatedId")))
+            .build();
     UpdatedWafIntegrationDetails updatedDetails =
         UpdatedWafIntegrationDetails.newBuilder()
             .setName("name1")
             .setDescription("des")
+            .setWafIntegrationScope(updateWafIntegrationScope)
             .setUpdatedCloudflareIntegrationParams(
                 UpdatedCloudflareIntegrationParams.newBuilder().setEmail("email1").setZone("zone"))
             .build();
@@ -434,6 +450,9 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegrationDetails()
             .getCloudflareIntegrationParams()
             .getEmail());
+    assertEquals(
+        updateWafIntegrationScope,
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getWafIntegrationScope());
   }
 
   @Test
@@ -770,6 +789,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
             .setCloudflareIntegrationParams(
                 CloudflareIntegrationParams.newBuilder()
                     .setApiToken("apitoken")
@@ -780,6 +800,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAuthCredentials(
@@ -798,6 +819,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
             .setImpervaIntegrationParams(
                 ImpervaIntegrationParams.newBuilder()
                     .setApiId("id")
@@ -812,6 +834,7 @@ class WafIntegrationConfigServiceImplTest {
         return WafIntegrationDetails.newBuilder()
             .setName(name)
             .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
             .setAzureIntegrationParams(
                 AzureIntegrationParams.newBuilder()
                     .addAzureIntegrationDetails(
