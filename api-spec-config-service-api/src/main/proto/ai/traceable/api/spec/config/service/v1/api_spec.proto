@@ -55,6 +55,7 @@ message CreateApiSpec {
   optional string file_content_sha256 = 4;
   optional string spec_path = 5;
   bool api_discovery_enabled = 6;
+  SpecType spec_type = 7;
 }
 
 // update
@@ -107,6 +108,14 @@ message ApiSpec {
   optional string file_content_sha256 = 7;
   optional string spec_path = 8;
   bool api_discovery_enabled = 9;
+  SpecType spec_type = 10;
+}
+
+enum SpecType {
+  SPEC_TYPE_UNSPECIFIED = 0;
+  SPEC_TYPE_OPEN_API_SPEC = 1;
+  SPEC_TYPE_POSTMAN_COLLECTION = 2;
+  SPEC_TYPE_POSTMAN_ENVIRONMENT = 3;
 }
 
 enum ApiSpecStatus {
