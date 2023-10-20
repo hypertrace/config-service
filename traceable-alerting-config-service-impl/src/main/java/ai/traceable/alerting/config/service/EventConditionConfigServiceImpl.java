@@ -1,15 +1,19 @@
 package ai.traceable.alerting.config.service;
 
+import ai.traceable.alerting.config.service.v2.AgentAlertCondition;
 import ai.traceable.alerting.config.service.v2.CreateEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.CreateEventConditionResponse;
+import ai.traceable.alerting.config.service.v2.DataCollectionChangeCondition;
 import ai.traceable.alerting.config.service.v2.DeleteEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.DeleteEventConditionResponse;
 import ai.traceable.alerting.config.service.v2.EventCondition;
 import ai.traceable.alerting.config.service.v2.EventConditionConfigServiceGrpc;
 import ai.traceable.alerting.config.service.v2.EventConditionMutableData;
+import ai.traceable.alerting.config.service.v2.EventConditionMutableData.Builder;
 import ai.traceable.alerting.config.service.v2.EventConditionScope;
 import ai.traceable.alerting.config.service.v2.GetAllEventConditionsRequest;
 import ai.traceable.alerting.config.service.v2.GetAllEventConditionsResponse;
+import ai.traceable.alerting.config.service.v2.NewDeployment;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionResponse;
 import ai.traceable.config.utils.UuidGenerator;
@@ -199,7 +203,28 @@ public class EventConditionConfigServiceImpl
             .setEnvironmentScope(
                 EventConditionScope.EnvironmentScope.newBuilder()
                     .addAllEnvironmentNames(environments)));
-
+    if (builder.hasDataCollectionChangeCondition()) {
+      return input.toBuilder()
+          .setEventConditionMutableData(buildEventConditionForDataCollection(builder))
+          .build();
+    }
     return input.toBuilder().setEventConditionMutableData(builder).build();
+  }
+
+  private EventConditionMutableData buildEventConditionForDataCollection(Builder builder) {
+    DataCollectionChangeCondition.Builder dataCollectionEventConditionBuilder =
+        builder.getDataCollectionChangeCondition().toBuilder();
+    // Setting to NewDeployment for backward compatibility
+    if (!dataCollectionEventConditionBuilder.hasAgentAlertCondition()) {
+      dataCollectionEventConditionBuilder.setAgentAlertCondition(
+          buildDefaultDataCollectionChangeCondition());
+    }
+    return builder.setDataCollectionChangeCondition(dataCollectionEventConditionBuilder).build();
+  }
+
+  private AgentAlertCondition buildDefaultDataCollectionChangeCondition() {
+    return AgentAlertCondition.newBuilder()
+        .setNewDeployment(NewDeployment.getDefaultInstance())
+        .build();
   }
 }
