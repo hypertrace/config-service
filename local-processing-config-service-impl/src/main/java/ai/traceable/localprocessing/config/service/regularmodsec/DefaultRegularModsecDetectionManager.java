@@ -1,5 +1,8 @@
 package ai.traceable.localprocessing.config.service.regularmodsec;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
@@ -12,6 +15,10 @@ import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DefaultRegularModsecDetectionManager implements RegularModsecDetectionManager {
+  private static final AnomalyConfigScope CUSTOMER_CONFIG_SCOPE =
+      AnomalyConfigScope.newBuilder()
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+          .build();
   private static final RegularModsecDetectionRules EMPTY_MODSEC_RULES =
       RegularModsecDetectionRules.newBuilder()
           .setRegularModsecDetectionRulesBlob("")
@@ -31,7 +38,10 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
 
   @Override
   public RegularModsecDetectionRules getDetectionRules(
-      RequestContext requestContext, String requestHash, boolean shouldUseCoraza) {
+      RequestContext requestContext,
+      String requestHash,
+      boolean shouldUseCoraza,
+      String environmentId) {
     // https://traceableai.atlassian.net/browse/ENG-15496
     // Only Safe CRS rules will be evaluated on sensitive params on Traceable Platform Agent due
     // to perf constraints
@@ -47,6 +57,14 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
                             shouldUseCoraza
                                 ? ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3
                                 : ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+                        .setConfigScope(
+                            environmentId.isBlank()
+                                ? CUSTOMER_CONFIG_SCOPE
+                                : AnomalyConfigScope.newBuilder()
+                                    .setEnvironmentScope(
+                                        AnomalyEnvironmentScope.newBuilder()
+                                            .setEnvironmentId(environmentId))
+                                    .build())
                         .build()));
     if (response.getModsecCrsRulesList().size() == 1
         && response.getModsecCrsRulesList().get(0).getSubRuleType()

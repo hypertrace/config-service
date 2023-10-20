@@ -67,7 +67,7 @@ class AnomalyModsecConfigServiceImplTest {
 
     reset(responseStreamObserver);
 
-    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false)))
+    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false), any()))
         .thenReturn(List.of(rule1, rule2));
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
@@ -100,7 +100,7 @@ class AnomalyModsecConfigServiceImplTest {
   @DisplayName("Should propagate expection on occured manager")
   void should_propagate_error() {
     when(modsecValidator.validate(any())).thenReturn(Status.OK);
-    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false)))
+    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false), any()))
         .thenThrow(RuntimeException.class);
 
     StreamObserver<GetModsecCrsRulesResponse> responseStreamObserver = mock(StreamObserver.class);

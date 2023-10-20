@@ -2,10 +2,12 @@ package ai.traceable.localprocessing.config.service.customsignature;
 
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import com.google.inject.Inject;
@@ -31,7 +33,10 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
 
   @Override
   public CustomModsecDetectionRules getEnabledRules(
-      RequestContext requestContext, String requestHash, boolean shouldUseCoraza) {
+      RequestContext requestContext,
+      String requestHash,
+      boolean shouldUseCoraza,
+      String environmentId) {
     GetCustomSignatureModsecRulesResponse response =
         requestContext.call(
             () ->
@@ -41,6 +46,14 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
                             GetRulesFilter.newBuilder()
                                 .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
                                 .setDisabled(false)
+                                .setRuleScope(
+                                    environmentId.isBlank()
+                                        ? RuleScope.getDefaultInstance()
+                                        : RuleScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                EnvironmentScope.newBuilder()
+                                                    .addEnvironmentIds(environmentId))
+                                            .build())
                                 .build())
                         .setRuleVersion(
                             shouldUseCoraza

@@ -66,7 +66,9 @@ class BlockingConfigServiceImplTest {
     doReturn(customModsecBlockingRules)
         .when(customModsecBlockingManager)
         .getEnabledBlockingRules(REQUEST_CONTEXT, hash1, environmentId);
-    doReturn(modsecCrsBlockingRules).when(modsecBlockingManager).getBlockingRules(hash1);
+    doReturn(modsecCrsBlockingRules)
+        .when(modsecBlockingManager)
+        .getEnabledBlockingRules(REQUEST_CONTEXT, hash1, environmentId);
     doReturn(ipTypeBlockingRules)
         .when(ipTypeBlockingManager)
         .getEnabledBlockingRules(REQUEST_CONTEXT, hash1, environmentId);

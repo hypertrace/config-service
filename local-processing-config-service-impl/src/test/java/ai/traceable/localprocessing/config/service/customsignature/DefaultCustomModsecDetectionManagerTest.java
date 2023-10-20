@@ -11,10 +11,12 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
+import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import java.util.List;
@@ -59,7 +61,7 @@ class DefaultCustomModsecDetectionManagerTest {
     assertEquals(
         expectedModsecDetectionRules,
         customModsecDetectionManager.getEnabledRules(
-            RequestContext.forTenantId("test"), "", false));
+            RequestContext.forTenantId("test"), "", false, "environmentId"));
 
     // When hash matches we don't expect the blob
     assertEquals(
@@ -69,7 +71,8 @@ class DefaultCustomModsecDetectionManagerTest {
         customModsecDetectionManager.getEnabledRules(
             RequestContext.forTenantId("test"),
             uuidGenerator.generateId("Tester rule blob"),
-            false));
+            false,
+            "environmentId"));
   }
 
   @Test
@@ -92,6 +95,12 @@ class DefaultCustomModsecDetectionManagerTest {
                     GetRulesFilter.newBuilder()
                         .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
                         .setDisabled(false)
+                        .setRuleScope(
+                            RuleScope.newBuilder()
+                                .setEnvironmentScope(
+                                    EnvironmentScope.newBuilder()
+                                        .addEnvironmentIds("environmentId"))
+                                .build())
                         .build())
                 .setRuleVersion(CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3)
                 .build()))
@@ -100,7 +109,8 @@ class DefaultCustomModsecDetectionManagerTest {
     // When coraza was enabled, only then we expect the blob
     assertEquals(
         expectedModsecDetectionRules,
-        customModsecDetectionManager.getEnabledRules(RequestContext.forTenantId("test"), "", true));
+        customModsecDetectionManager.getEnabledRules(
+            RequestContext.forTenantId("test"), "", true, "environmentId"));
   }
 
   @Test
@@ -111,6 +121,6 @@ class DefaultCustomModsecDetectionManagerTest {
         RuntimeException.class,
         () ->
             customModsecDetectionManager.getEnabledRules(
-                RequestContext.forTenantId("test"), "", false));
+                RequestContext.forTenantId("test"), "", false, "environmentId"));
   }
 }

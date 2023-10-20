@@ -1,5 +1,8 @@
 package ai.traceable.blocking.config.service.common.modsec;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
@@ -7,9 +10,14 @@ import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Optional;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class BlockingModsecBlobFetcher {
-
+  private static final AnomalyConfigScope CUSTOMER_CONFIG_SCOPE =
+      AnomalyConfigScope.newBuilder()
+          .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+          .build();
   private final AnomalyModsecConfigServiceBlockingStub configServiceBlockingStub;
 
   @Inject
@@ -18,14 +26,29 @@ public class BlockingModsecBlobFetcher {
     this.configServiceBlockingStub = anomalyModsecConfigServiceBlockingStub;
   }
 
-  public String getBlockingModsecBlob(ModsecRuleVersion modsecRuleVersion) {
+  public String getEnabledRulesBlob(
+      RequestContext requestContext,
+      ModsecRuleVersion modsecRuleVersion,
+      Optional<String> environmentId) {
     GetModsecCrsRulesResponse response =
-        configServiceBlockingStub.getModsecCrsRules(
-            GetModsecCrsRulesRequest.newBuilder()
-                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
-                .setRuleVersion(modsecRuleVersion)
-                .setRemoveDisabledRules(true)
-                .build());
+        requestContext.call(
+            () ->
+                configServiceBlockingStub.getModsecCrsRules(
+                    GetModsecCrsRulesRequest.newBuilder()
+                        .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+                        .setRuleVersion(modsecRuleVersion)
+                        .setRemoveDisabledRules(true)
+                        .setConfigScope(
+                            environmentId
+                                .map(
+                                    id ->
+                                        AnomalyConfigScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                AnomalyEnvironmentScope.newBuilder()
+                                                    .setEnvironmentId(id))
+                                            .build())
+                                .orElse(CUSTOMER_CONFIG_SCOPE))
+                        .build()));
 
     String blockingCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1

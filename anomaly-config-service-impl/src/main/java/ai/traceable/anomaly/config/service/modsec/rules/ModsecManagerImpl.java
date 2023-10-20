@@ -1,9 +1,9 @@
 package ai.traceable.anomaly.config.service.modsec.rules;
 
-import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
@@ -53,9 +53,10 @@ public class ModsecManagerImpl implements ModsecManager {
       RequestContext requestContext,
       ModsecRuleVersion modsecRuleVersion,
       List<AnomalySubRuleType> requestTypes,
-      boolean removeDisabledRules) {
+      boolean removeDisabledRules,
+      AnomalyConfigScope anomalyConfigScope) {
     if (removeDisabledRules) {
-      if (isGlobalConfigDisabled(requestContext)) {
+      if (isGlobalConfigDisabled(requestContext, anomalyConfigScope)) {
         return requestTypes.stream()
             .map(requestType -> ModsecCrsRulesData.newBuilder().setSubRuleType(requestType).build())
             .collect(Collectors.toUnmodifiableList());
@@ -64,7 +65,10 @@ public class ModsecManagerImpl implements ModsecManager {
       Set<String> configStatusDisabledModsecRuleIds = new HashSet<>();
       Set<String> blockingDisabledModsecRuleIds = new HashSet<>();
       populateDisabledModsecRuleIds(
-          requestContext, configStatusDisabledModsecRuleIds, blockingDisabledModsecRuleIds);
+          requestContext,
+          configStatusDisabledModsecRuleIds,
+          blockingDisabledModsecRuleIds,
+          anomalyConfigScope);
 
       return requestTypes.stream()
           .map(
@@ -105,11 +109,11 @@ public class ModsecManagerImpl implements ModsecManager {
         .build();
   }
 
-  private boolean isGlobalConfigDisabled(RequestContext requestContext) {
+  private boolean isGlobalConfigDisabled(
+      RequestContext requestContext, AnomalyConfigScope anomalyConfigScope) {
     AnomalyConfigStatus configStatus =
         globalAnomalyConfigStatusManager
-            .getScopedAnomalyConfigStatus(
-                requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope())
+            .getScopedAnomalyConfigStatus(requestContext, anomalyConfigScope)
             .getConfigStatus();
 
     return configStatus.getDisabled() && !configStatus.getInternal();
@@ -118,9 +122,10 @@ public class ModsecManagerImpl implements ModsecManager {
   private void populateDisabledModsecRuleIds(
       RequestContext requestContext,
       Set<String> configStatusDisabledModsecRuleIds,
-      Set<String> blockingDisabledModsecRuleIds) {
+      Set<String> blockingDisabledModsecRuleIds,
+      AnomalyConfigScope anomalyConfigScope) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
-        getAnomalyRuleConfigMap(requestContext);
+        getAnomalyRuleConfigMap(requestContext, anomalyConfigScope);
     Map<String, AnomalyRuleInfo> ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos();
 
     for (String ruleId : ruleInfoMap.keySet()) {
@@ -159,12 +164,10 @@ public class ModsecManagerImpl implements ModsecManager {
   }
 
   private Map<String, AnomalyDetectionConfig> getAnomalyRuleConfigMap(
-      RequestContext requestContext) {
+      RequestContext requestContext, AnomalyConfigScope anomalyConfigScope) {
     return anomalyDetectionConfigManager
         .getScopedAnomalyDetectionConfig(
-            requestContext,
-            AnomalyConfigScopeUtils.getDefaultCustomerConfigScope(),
-            ANOMALY_DETECTION_CONFIGS_FILTER)
+            requestContext, anomalyConfigScope, ANOMALY_DETECTION_CONFIGS_FILTER)
         .getAnomalyDetectionConfigsList()
         .stream()
         .filter(

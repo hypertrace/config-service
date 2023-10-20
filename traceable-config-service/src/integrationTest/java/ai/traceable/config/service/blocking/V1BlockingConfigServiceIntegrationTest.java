@@ -363,9 +363,10 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertNotEquals(emptyValueUuid, customModsecBlockingRulesHash);
     assertFalse(response.getCustomModsecBlockingRules().getCustomModsecRulesBlob().isEmpty());
 
-    assertEquals(
-        modsecCrsBlockingRulesHash, response.getSafeCrsBlockingRules().getHash()); // not changed
-    assertTrue(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
+    assertNotEquals(
+        modsecCrsBlockingRulesHash,
+        response.getSafeCrsBlockingRules().getHash()); // Blobs should be different
+    assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
     // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
     // malicious-source) + 3 ip-type

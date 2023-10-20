@@ -26,6 +26,7 @@ message GetLocalProcessingConfigRequest {
   string protection_mode_hash = 3;
   string sampling_policies_hash = 4;
   AgentCapabilities agent_capabilities = 5;
+  optional string environment = 6;
 
   message AgentCapabilities {
     repeated Component components = 1;

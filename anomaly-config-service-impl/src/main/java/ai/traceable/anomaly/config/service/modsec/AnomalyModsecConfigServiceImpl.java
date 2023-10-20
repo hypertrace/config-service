@@ -51,7 +51,8 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
                           ? defaultModsecRuleVersion
                           : request.getRuleVersion(),
                       request.getSubRuleTypesList(),
-                      request.getRemoveDisabledRules()))
+                      request.getRemoveDisabledRules(),
+                      request.getConfigScope()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

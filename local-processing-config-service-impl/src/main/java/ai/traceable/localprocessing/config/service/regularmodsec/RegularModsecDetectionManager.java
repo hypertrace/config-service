@@ -5,7 +5,10 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RegularModsecDetectionManager {
   RegularModsecDetectionRules getDetectionRules(
-      RequestContext requestContext, String requestHash, boolean shouldUseCoraza);
+      RequestContext requestContext,
+      String requestHash,
+      boolean shouldUseCoraza,
+      String environmentId);
 
   RegularModsecDetectionRules getEmptyRules();
 }

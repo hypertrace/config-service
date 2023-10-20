@@ -48,10 +48,12 @@ class ModsecBlockingManagerTest {
 
     doReturn(V3_blob)
         .when(mockBlockingModsecBlobFetcher)
-        .getBlockingModsecBlob(ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
+        .getEnabledRulesBlob(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, environmentId);
     doReturn(V3_seg_arg_blob)
         .when(mockBlockingModsecBlobFetcher)
-        .getBlockingModsecBlob(ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+        .getEnabledRulesBlob(
+            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS, environmentId);
   }
 
   @Test

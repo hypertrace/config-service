@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.modsec.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import io.grpc.Status;
@@ -16,7 +17,7 @@ class ModsecValidatorImplTest {
 
   @BeforeEach
   void setUp() {
-    this.validator = new ModsecValidatorImpl();
+    this.validator = new ModsecValidatorImpl(new AnomalyConfigValidator());
   }
 
   @Test

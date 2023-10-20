@@ -69,7 +69,8 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
                 requestContext, request.getCustomModsecBlockingRulesHash(), environmentId));
 
         responseBuilder.setSafeCrsBlockingRules(
-            modsecBlockingManager.getBlockingRules(request.getSafeCrsBlockingRulesHash()));
+            modsecBlockingManager.getEnabledBlockingRules(
+                requestContext, request.getSafeCrsBlockingRulesHash(), environmentId));
 
         responseBuilder.setIpTypeBlockingRules(
             ipTypeBlockingManager.getEnabledBlockingRules(

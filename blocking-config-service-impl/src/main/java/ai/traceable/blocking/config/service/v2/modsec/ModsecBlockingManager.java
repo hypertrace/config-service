@@ -55,16 +55,21 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
     }
 
     List<BlockingConfigResponseElement> responseElements = new ArrayList<>();
-    buildResponseElement(modsecRequestElements, ModsecRuleVersion.MODSEC_RULE_VERSION_V3)
+    buildResponseElement(
+            modsecRequestElements, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, blockingRulesSupplier)
         .ifPresent(responseElements::add);
     buildResponseElement(
-            modsecRequestElements, ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
+            modsecRequestElements,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+            blockingRulesSupplier)
         .ifPresent(responseElements::add);
     return responseElements;
   }
 
   private Optional<BlockingConfigResponseElement> buildResponseElement(
-      List<BlockingConfigRequestElement> requestElements, ModsecRuleVersion modsecRuleVersion) {
+      List<BlockingConfigRequestElement> requestElements,
+      ModsecRuleVersion modsecRuleVersion,
+      BlockingRulesSupplier blockingRulesSupplier) {
     List<AgentCapabilities> matchingRequestAgentCapabilities = new ArrayList<>();
     List<String> previousHashes = new ArrayList<>();
     requestElements.forEach(
@@ -87,7 +92,10 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
     }
 
     String blockingCrsRulesBlob =
-        blockingModsecBlobFetcher.getBlockingModsecBlob(modsecRuleVersion);
+        blockingModsecBlobFetcher.getEnabledRulesBlob(
+            blockingRulesSupplier.getRequestContext(),
+            modsecRuleVersion,
+            blockingRulesSupplier.getEnvironmentId());
     String responseHash = uuidGenerator.generateId(blockingCrsRulesBlob);
 
     // Checking if hashes of all requests are same

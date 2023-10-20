@@ -7,6 +7,9 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
@@ -46,7 +49,15 @@ class DefaultRegularModsecDetectionManagerTest {
             .setHash(uuidGenerator.generateId("Tester rule blob"))
             .build();
 
-    when(configServiceBlockingStub.getModsecCrsRules(any()))
+    when(configServiceBlockingStub.getModsecCrsRules(
+            GetModsecCrsRulesRequest.newBuilder()
+                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+                .setRemoveDisabledRules(true)
+                .setRuleVersion(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
+                .build()))
         .thenReturn(
             GetModsecCrsRulesResponse.newBuilder()
                 .addAllModsecCrsRules(
@@ -61,7 +72,7 @@ class DefaultRegularModsecDetectionManagerTest {
     assertEquals(
         expectedModsecDetectionRules,
         regularModsecDetectionManager.getDetectionRules(
-            RequestContext.forTenantId("test"), "", false));
+            RequestContext.forTenantId("test"), "", false, ""));
 
     // When hash matches we don't expect the blob
     assertEquals(
@@ -71,7 +82,8 @@ class DefaultRegularModsecDetectionManagerTest {
         regularModsecDetectionManager.getDetectionRules(
             RequestContext.forTenantId("test"),
             uuidGenerator.generateId("Tester rule blob"),
-            false));
+            false,
+            ""));
   }
 
   @Test
@@ -87,6 +99,10 @@ class DefaultRegularModsecDetectionManagerTest {
                 .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                 .setRemoveDisabledRules(true)
                 .setRuleVersion(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3)
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setEnvironmentScope(
+                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environmentId")))
                 .build()))
         .thenReturn(
             GetModsecCrsRulesResponse.newBuilder()
@@ -102,7 +118,7 @@ class DefaultRegularModsecDetectionManagerTest {
     assertEquals(
         expectedModsecDetectionRules,
         regularModsecDetectionManager.getDetectionRules(
-            RequestContext.forTenantId("test"), "", true));
+            RequestContext.forTenantId("test"), "", true, "environmentId"));
   }
 
   @Test
@@ -112,6 +128,6 @@ class DefaultRegularModsecDetectionManagerTest {
         RuntimeException.class,
         () ->
             regularModsecDetectionManager.getDetectionRules(
-                RequestContext.forTenantId("test"), "", false));
+                RequestContext.forTenantId("test"), "", false, "environmentId"));
   }
 }

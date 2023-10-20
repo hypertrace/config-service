@@ -15,8 +15,11 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
@@ -38,6 +41,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ModsecManagerImplTest {
+  private static final String environmentId = "env-id";
+
   private ModsecRulesRegistry modsecRulesRegistry;
   private AnomalyDetectionConfigManager anomalyDetectionConfigManager;
   private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
@@ -75,11 +80,21 @@ class ModsecManagerImplTest {
         .thenReturn("block");
 
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
-            eq(requestContext), eq(AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()), any()))
+            eq(requestContext),
+            eq(
+                AnomalyConfigScope.newBuilder()
+                    .setEnvironmentScope(
+                        AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))
+                    .build()),
+            any()))
         .thenReturn(ScopedAnomalyDetectionConfig.getDefaultInstance());
 
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            eq(requestContext), eq(AnomalyConfigScopeUtils.getDefaultCustomerConfigScope())))
+            requestContext,
+            AnomalyConfigScope.newBuilder()
+                .setEnvironmentScope(
+                    AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))
+                .build()))
         .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
 
     List<AnomalySubRuleType> request =
@@ -98,7 +113,14 @@ class ModsecManagerImplTest {
                 .build());
     List<ModsecCrsRulesData> response =
         modsecManager.getModsecCrsRules(
-            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
+            requestContext,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            request,
+            true,
+            AnomalyConfigScope.newBuilder()
+                .setEnvironmentScope(
+                    AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))
+                .build());
     assertEquals(expectedResponse.size(), response.size());
     assertTrue(response.containsAll(expectedResponse));
     assertTrue(expectedResponse.containsAll(response));
@@ -107,6 +129,9 @@ class ModsecManagerImplTest {
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
             eq(requestContext), eq(AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()), any()))
         .thenReturn(getModsecRules());
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()))
+        .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
 
     when(modsecRulesRegistry.getModsecRuleInfos()).thenReturn(getModsecRuleInfoMap());
     // config status for subRule1 and subRule4 is disabled, subRule2 is blockingDisabled
@@ -131,7 +156,13 @@ class ModsecManagerImplTest {
                 .build());
     response =
         modsecManager.getModsecCrsRules(
-            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
+            requestContext,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            request,
+            true,
+            AnomalyConfigScope.newBuilder()
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                .build());
     assertEquals(expectedResponse, response);
 
     request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
@@ -143,12 +174,18 @@ class ModsecManagerImplTest {
                 .build());
     response =
         modsecManager.getModsecCrsRules(
-            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
+            requestContext,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            request,
+            true,
+            AnomalyConfigScope.newBuilder()
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                .build());
     assertEquals(expectedResponse, response);
 
     // global config disabled
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            eq(requestContext), eq(AnomalyConfigScopeUtils.getDefaultCustomerConfigScope())))
+            requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()))
         .thenReturn(
             ScopedAnomalyConfigStatus.newBuilder()
                 .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
@@ -161,7 +198,13 @@ class ModsecManagerImplTest {
                 .build());
     response =
         modsecManager.getModsecCrsRules(
-            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
+            requestContext,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            request,
+            true,
+            AnomalyConfigScope.newBuilder()
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                .build());
     assertEquals(expectedResponse, response);
 
     // default blocking rules
@@ -174,7 +217,7 @@ class ModsecManagerImplTest {
         .thenReturn(ScopedAnomalyDetectionConfig.getDefaultInstance());
 
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            eq(requestContext), eq(AnomalyConfigScopeUtils.getDefaultCustomerConfigScope())))
+            requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()))
         .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
     modsecManager =
         new ModsecManagerImpl(
@@ -188,7 +231,13 @@ class ModsecManagerImplTest {
                 .build());
     response =
         modsecManager.getModsecCrsRules(
-            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3, request, true);
+            requestContext,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+            request,
+            true,
+            AnomalyConfigScope.newBuilder()
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                .build());
     assertEquals(expectedResponse, response);
   }
 

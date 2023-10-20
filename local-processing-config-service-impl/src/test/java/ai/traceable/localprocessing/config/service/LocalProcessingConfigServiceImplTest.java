@@ -207,7 +207,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedCustomModsecDetectionRules)
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any(), eq(false));
+        .getEnabledRules(any(), any(), eq(false), any());
     RegularModsecDetectionRules expectedRegularModsecDetectionRules =
         RegularModsecDetectionRules.newBuilder()
             .setRegularModsecDetectionRulesBlob("some blob")
@@ -215,7 +215,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), eq(false));
+        .getDetectionRules(any(), any(), eq(false), any());
     GetLocalProcessingConfigResponse localProcessingConfigResponse =
         localProcessingConfigStub.getLocalProcessingConfig(
             GetLocalProcessingConfigRequest.newBuilder()
@@ -239,7 +239,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedCustomModsecDetectionRules)
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any(), eq(true));
+        .getEnabledRules(any(), any(), eq(true), eq("environmentId"));
     RegularModsecDetectionRules expectedRegularModsecDetectionRules =
         RegularModsecDetectionRules.newBuilder()
             .setRegularModsecDetectionRulesBlob("some blob")
@@ -247,7 +247,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), eq(true));
+        .getDetectionRules(any(), any(), eq(true), eq("environmentId"));
     GetLocalProcessingConfigResponse localProcessingConfigResponse =
         localProcessingConfigStub.getLocalProcessingConfig(
             GetLocalProcessingConfigRequest.newBuilder()
@@ -259,6 +259,7 @@ class LocalProcessingConfigServiceImplTest {
                                 .setTraceablePlatformAgentVersion("1.32.0")
                                 .build())
                         .build())
+                .setEnvironment("environmentId")
                 .build());
     assertEquals(
         expectedCustomModsecDetectionRules,
@@ -319,10 +320,10 @@ class LocalProcessingConfigServiceImplTest {
 
     doReturn(expectedCustomModsecDetectionRules)
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(RequestContext.class), eq("Custom"), anyBoolean());
+        .getEnabledRules(any(RequestContext.class), eq("Custom"), anyBoolean(), any());
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(RequestContext.class), eq("Regular"), anyBoolean());
+        .getDetectionRules(any(RequestContext.class), eq("Regular"), anyBoolean(), any());
 
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -344,10 +345,10 @@ class LocalProcessingConfigServiceImplTest {
   void getLocalProcessingConfig_protectionConfig() {
     doReturn(CustomModsecDetectionRules.getDefaultInstance())
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any(), anyBoolean());
+        .getEnabledRules(any(), any(), anyBoolean(), any());
     doReturn(RegularModsecDetectionRules.getDefaultInstance())
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), anyBoolean());
+        .getDetectionRules(any(), any(), anyBoolean(), any());
 
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -403,10 +404,10 @@ class LocalProcessingConfigServiceImplTest {
   void getSamplingPoliciesConfig() {
     doReturn(CustomModsecDetectionRules.getDefaultInstance())
         .when(customModsecDetectionManager)
-        .getEnabledRules(any(), any(), anyBoolean());
+        .getEnabledRules(any(), any(), anyBoolean(), any());
     doReturn(RegularModsecDetectionRules.getDefaultInstance())
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), anyBoolean());
+        .getDetectionRules(any(), any(), anyBoolean(), any());
 
     SamplingPolicies samplingPolicies =
         localProcessingConfigStub

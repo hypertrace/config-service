@@ -84,10 +84,16 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
         responseBuilder
             .setCustomModsecDetectionRules(
                 customModsecDetectionManager.getEnabledRules(
-                    requestContext, request.getCustomModsecDetectionRulesHash(), shouldUseCoraza))
+                    requestContext,
+                    request.getCustomModsecDetectionRulesHash(),
+                    shouldUseCoraza,
+                    request.getEnvironment()))
             .setRegularModsecDetectionRules(
                 regularModsecDetectionManager.getDetectionRules(
-                    requestContext, request.getRegularModsecDetectionRulesHash(), shouldUseCoraza));
+                    requestContext,
+                    request.getRegularModsecDetectionRulesHash(),
+                    shouldUseCoraza,
+                    request.getEnvironment()));
       }
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
