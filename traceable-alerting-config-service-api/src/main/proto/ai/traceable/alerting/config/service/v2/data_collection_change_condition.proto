@@ -5,5 +5,28 @@ option java_multiple_files = true;
 package ai.traceable.alerting.config.service.v2;
 
 message DataCollectionChangeCondition {
+  oneof type {
+    AgentAlertCondition agent_alert_condition = 1;
+  }
+}
 
+message AgentAlertCondition {
+  oneof type {
+    NewDeployment new_deployment = 1;
+    AgentActivityStatusChange agent_activity_status_change = 3;
+  }
+}
+
+message NewDeployment {
+}
+
+message AgentActivityStatusChange {
+  repeated AgentActivityStatus activity_status_changes = 1;
+}
+
+enum AgentActivityStatus {
+  AGENT_ACTIVITY_STATUS_UNSPECIFIED = 0;
+  AGENT_ACTIVITY_STATUS_ACTIVE = 1;
+  AGENT_ACTIVITY_STATUS_IDLE = 2;
+  AGENT_ACTIVITY_STATUS_OFFLINE = 3;
 }
