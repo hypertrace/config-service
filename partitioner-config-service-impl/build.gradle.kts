@@ -1,24 +1,24 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.partitionerConfigServiceApi)
-  implementation(libs.protobuf.javautil)
+  implementation(commonLibs.protobuf.javautil)
 
-  implementation(libs.guice)
-  implementation(libs.slf4j.api)
-  implementation(libs.typesafe.config)
-  implementation(libs.hypertrace.documentstore)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.hypertrace.documentstore)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(testFixtures(projects.configServiceApi))
 }
 

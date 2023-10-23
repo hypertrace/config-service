@@ -1,24 +1,24 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.spacesConfigServiceApi)
   implementation(projects.configServiceApi)
   implementation(projects.configProtoConverter)
-  implementation(libs.guava)
-  implementation(libs.rxjava3)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.rxjava3)
 
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.grpcutils.rxserver)
-  implementation(libs.hypertrace.grpcutils.rxclient)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.grpcutils.rx.server)
+  implementation(commonLibs.hypertrace.grpcutils.rx.client)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(testFixtures(projects.configServiceApi))
 }
 
