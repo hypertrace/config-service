@@ -41,13 +41,10 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     this.spanFilterMatcher = spanFilterMatcher;
   }
 
-  public List<ExcludeSpanProcessingRule> getAllExcludeSpanProcessingRules(
-      RequestContext requestContext, String serviceName, Optional<String> environment) {
+  @Override
+  public List<ExcludeSpanRule> getAllExcludeSpanRules(RequestContext requestContext) {
     log.debug(
-        "Requesting for exclude span processing rules within request context: {} for service name: {} and environment: {}",
-        requestContext,
-        serviceName,
-        environment);
+        "Requesting for exclude span processing rules within request context: {} ", requestContext);
     return requestContext
         .call(
             () ->
@@ -56,6 +53,21 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
         .getRuleDetailsList()
         .stream()
         .map(ExcludeSpanRuleDetails::getRule)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
+  public List<ExcludeSpanProcessingRule> getAllMatchingExcludeSpanProcessingRules(
+      RequestContext requestContext,
+      List<ExcludeSpanRule> excludeSpanRules,
+      String serviceName,
+      Optional<String> environment) {
+    log.debug(
+        "Trying to match exclude span processing rules for service name: {} and environment: {} within request context: {}",
+        requestContext,
+        serviceName,
+        environment);
+    return excludeSpanRules.stream()
         .map(excludeSpanRule -> convertExcludeSpanRule(excludeSpanRule, serviceName, environment))
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());

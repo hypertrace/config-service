@@ -9,12 +9,14 @@ import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
+import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
 
 @Slf4j
 public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesManager {
@@ -37,9 +39,15 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
       RequestContext requestContext, GetSpanProcessingRulesRequest request) {
     Optional<String> environment =
         request.hasEnvironment() ? Optional.of(request.getEnvironment()) : Optional.empty();
+    final List<ExcludeSpanRule> excludeSpanRules =
+        excludeSpanRulesManager.getAllExcludeSpanRules(requestContext);
+    final List<SamplingConfig> samplingConfigs =
+        rateLimitConfigManager.getAllSamplingConfigs(requestContext);
     List<SpanProcessingRulesServiceResponse> serviceResponses = new ArrayList<>();
     for (SpanProcessingRulesServiceRequest serviceRequest : request.getServiceRequestsList()) {
-      serviceResponses.add(getSpanProcessingRules(requestContext, serviceRequest, environment));
+      serviceResponses.add(
+          getSpanProcessingRules(
+              requestContext, excludeSpanRules, samplingConfigs, serviceRequest, environment));
     }
     return GetSpanProcessingRulesResponse.newBuilder()
         .addAllSpanProcessingRulesServiceResponses(serviceResponses)
@@ -48,11 +56,14 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
 
   private SpanProcessingRulesServiceResponse getSpanProcessingRules(
       RequestContext requestContext,
+      List<ExcludeSpanRule> excludeSpanRules,
+      List<SamplingConfig> samplingConfigs,
       SpanProcessingRulesServiceRequest serviceRequest,
       Optional<String> environment) {
     String serviceName = serviceRequest.getServiceName();
     SpanProcessingRules spanProcessingRules =
-        getSpanProcessingRules(requestContext, serviceName, environment);
+        getSpanProcessingRules(
+            requestContext, excludeSpanRules, samplingConfigs, serviceName, environment);
     String hash = uuidGenerator.generateId(spanProcessingRules);
     if (hash.equals(serviceRequest.getHash())) {
       return SpanProcessingRulesServiceResponse.newBuilder()
@@ -68,15 +79,20 @@ public class DefaultSpanProcessingRulesManager implements SpanProcessingRulesMan
   }
 
   private SpanProcessingRules getSpanProcessingRules(
-      RequestContext requestContext, String serviceName, Optional<String> environment) {
+      RequestContext requestContext,
+      List<ExcludeSpanRule> excludeSpanRules,
+      List<SamplingConfig> samplingConfigs,
+      String serviceName,
+      Optional<String> environment) {
     SpanProcessingRules.Builder spanProcessingRulesBuilder =
         SpanProcessingRules.newBuilder()
             .addAllExcludeSpanRules(
-                excludeSpanRulesManager.getAllExcludeSpanProcessingRules(
-                    requestContext, serviceName, environment));
+                excludeSpanRulesManager.getAllMatchingExcludeSpanProcessingRules(
+                    requestContext, excludeSpanRules, serviceName, environment));
 
     Optional<RateLimitConfig> rateLimitConfigOptional =
-        rateLimitConfigManager.getRateLimitConfig(requestContext, serviceName, environment);
+        rateLimitConfigManager.getFirstMatchingRateLimitConfig(
+            requestContext, samplingConfigs, serviceName, environment);
     rateLimitConfigOptional.ifPresent(spanProcessingRulesBuilder::setRateLimitConfig);
 
     return spanProcessingRulesBuilder.build();

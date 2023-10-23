@@ -9,9 +9,11 @@ import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimitStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import com.google.inject.Inject;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -40,15 +42,22 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
   }
 
   @Override
-  public Optional<RateLimitConfig> getRateLimitConfig(
-      RequestContext requestContext, String serviceName, Optional<String> environment) {
+  public List<SamplingConfig> getAllSamplingConfigs(final RequestContext requestContext) {
     return requestContext
         .call(
             () ->
                 configServiceBlockingStub.getAllResolvedSamplingConfigs(
                     GetAllResolvedSamplingConfigsRequest.newBuilder().build()))
-        .getSamplingConfigsList()
-        .stream()
+        .getSamplingConfigsList();
+  }
+
+  @Override
+  public Optional<RateLimitConfig> getFirstMatchingRateLimitConfig(
+      RequestContext requestContext,
+      List<SamplingConfig> samplingConfigs,
+      String serviceName,
+      Optional<String> environment) {
+    return samplingConfigs.stream()
         .map(samplingConfig -> convertSamplingConfig(samplingConfig, serviceName, environment))
         .filter(Optional::isPresent)
         .findFirst()
