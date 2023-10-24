@@ -48,6 +48,7 @@ dependencies {
   implementation(projects.astConfigServiceImpl)
   implementation(projects.apiGatewayConfigServiceImpl)
   implementation(projects.splunkIntegrationConfigServiceImpl)
+  implementation(projects.syslogIntegrationConfigServiceImpl)
   implementation(projects.astHooksConfigServiceImpl)
   implementation(projects.savedFilterConfigServiceImpl)
   implementation(projects.anomalyScoringConfigServiceImpl)
