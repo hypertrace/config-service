@@ -1,6 +1,7 @@
 package ai.traceable.api.spec.config.service.store;
 
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
+import ai.traceable.api.spec.config.service.v1.SpecType;
 import ai.traceable.config.utils.TimestampConverter;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
@@ -43,6 +44,12 @@ public class ApiSpecConfigStore extends IdentifiedObjectStore<ApiSpec> {
                     .setLastUpdatedTimestamp(
                         timestampConverter.convert(
                             contextualConfigObject.getLastUpdatedTimestamp()))
+                    .setSpecType(
+                        SpecType.SPEC_TYPE_UNSPECIFIED.equals(
+                                contextualConfigObject.getData().getSpecType())
+                            ? SpecType
+                                .SPEC_TYPE_OPEN_API_SPEC // defaulting for backward compatibility
+                            : contextualConfigObject.getData().getSpecType())
                     .build())
         .collect(Collectors.toUnmodifiableList());
   }

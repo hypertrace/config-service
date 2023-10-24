@@ -1,6 +1,7 @@
 package ai.traceable.api.spec.config.service;
 
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UNSPECIFIED;
+import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_UNSPECIFIED;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
@@ -17,6 +18,7 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecResponse;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
+import ai.traceable.api.spec.config.service.v1.SpecType;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecResponse;
@@ -117,13 +119,16 @@ public class ApiSpecConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      responseObserver.onNext(
-          GetApiSpecResponse.newBuilder()
-              .setApiSpec(
-                  this.apiSpecConfigStore
-                      .getData(requestContext, request.getId())
-                      .orElseThrow(Status.INTERNAL::asRuntimeException))
-              .build());
+      ApiSpec apiSpec =
+          this.apiSpecConfigStore
+              .getData(requestContext, request.getId())
+              .orElseThrow(Status.INTERNAL::asRuntimeException);
+      // defaulting for backward compatibility
+      apiSpec =
+          SPEC_TYPE_UNSPECIFIED.equals(apiSpec.getSpecType())
+              ? ApiSpec.newBuilder(apiSpec).setSpecType(SpecType.SPEC_TYPE_OPEN_API_SPEC).build()
+              : apiSpec;
+      responseObserver.onNext(GetApiSpecResponse.newBuilder().setApiSpec(apiSpec).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Error getting api spec for request: {}", request, e);
@@ -145,7 +150,12 @@ public class ApiSpecConfigServiceImpl
               .setName(createApiSpec.getName())
               .setApiNamingEnabled(createApiSpec.getApiNamingEnabled())
               .setStatus(createApiSpec.getStatus())
-              .setApiDiscoveryEnabled(createApiSpec.getApiDiscoveryEnabled());
+              .setApiDiscoveryEnabled(createApiSpec.getApiDiscoveryEnabled())
+              // defaulting for backward compatibility, request side handling due to traceable-cli
+              .setSpecType(
+                  SPEC_TYPE_UNSPECIFIED.equals(createApiSpec.getSpecType())
+                      ? SpecType.SPEC_TYPE_OPEN_API_SPEC
+                      : createApiSpec.getSpecType());
 
       List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
 
@@ -232,6 +242,13 @@ public class ApiSpecConfigServiceImpl
           this.apiSpecConfigStore
               .getData(requestContext, updateApiSpec.getSpecId())
               .orElseThrow(Status.NOT_FOUND::asException);
+      // defaulting for backward compatibility
+      existingApiSpec =
+          SPEC_TYPE_UNSPECIFIED.equals(existingApiSpec.getSpecType())
+              ? ApiSpec.newBuilder(existingApiSpec)
+                  .setSpecType(SpecType.SPEC_TYPE_OPEN_API_SPEC)
+                  .build()
+              : existingApiSpec;
       ApiSpec updatedApiSpec = buildUpdatedApiSpec(existingApiSpec, updateApiSpec);
       ContextualConfigObject<ApiSpec> contextualConfigObject =
           this.apiSpecConfigStore.upsertObject(requestContext, updatedApiSpec);

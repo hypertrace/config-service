@@ -21,6 +21,7 @@ import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.FileContentSha256Filter;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.SpecType;
 import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
@@ -564,6 +565,7 @@ class ApiSpecConfigServiceImplTest {
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setSpecPath("/test/spec1.json")
+            .setSpecType(SpecType.SPEC_TYPE_OPEN_API_SPEC)
             .build();
     ApiSpec updatedSecondApiSpec =
         ApiSpec.newBuilder()
@@ -574,6 +576,7 @@ class ApiSpecConfigServiceImplTest {
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setSpecPath("/test/spec2.json")
+            .setSpecType(SpecType.SPEC_TYPE_OPEN_API_SPEC)
             .build();
 
     assertTrue(updatedApiSpecs.contains(updatedFirstApiSpec));
