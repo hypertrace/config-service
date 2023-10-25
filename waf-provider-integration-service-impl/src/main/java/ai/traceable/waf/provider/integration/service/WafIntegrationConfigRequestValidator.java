@@ -8,10 +8,13 @@ import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
+import ai.traceable.waf.integration.service.api.v1.AzureApplicationGatewayWafDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AzureFrontDoorWafDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureManagedRuleDefinition;
 import ai.traceable.waf.integration.service.api.v1.AzureResourceGroupDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
@@ -251,6 +254,42 @@ public class WafIntegrationConfigRequestValidator {
     azureIntegrationDetails
         .getAzureResourceGroupDetailsList()
         .forEach(this::validateAzureResourceGroupDetails);
+
+    switch (azureIntegrationDetails.getWafEndpointTypeCase()) {
+      case FRONT_DOOR_WAF_DETAILS:
+        validateFrontDoorWafDetails(azureIntegrationDetails.getFrontDoorWafDetails());
+        break;
+      case APPLICATION_GATEWAY_WAF_DETAILS:
+        validateAzureApplicationGatewayWafDetails(
+            azureIntegrationDetails.getApplicationGatewayWafDetails());
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                "Invalid azure waf type: " + azureIntegrationDetails.getWafEndpointTypeCase())
+            .asRuntimeException();
+    }
+  }
+
+  private void validateFrontDoorWafDetails(AzureFrontDoorWafDetails frontDoorWafDetails) {
+    validateNonDefaultPresenceOrThrow(
+        frontDoorWafDetails, AzureFrontDoorWafDetails.FRONT_DOOR_NAMES_FIELD_NUMBER);
+    if (frontDoorWafDetails.hasManagedRuleDefinition()) {
+      validateAzureManagedRuleDefinition(frontDoorWafDetails.getManagedRuleDefinition());
+    }
+  }
+
+  private void validateAzureApplicationGatewayWafDetails(
+      AzureApplicationGatewayWafDetails applicationGatewayWafDetails) {
+    validateAzureManagedRuleDefinition(applicationGatewayWafDetails.getManagedRuleDefinition());
+  }
+
+  private void validateAzureManagedRuleDefinition(
+      AzureManagedRuleDefinition managedRuleDefinition) {
+    validateNonDefaultPresenceOrThrow(
+        managedRuleDefinition, AzureManagedRuleDefinition.RULE_SET_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        managedRuleDefinition, AzureManagedRuleDefinition.RULE_SET_VERSION_FIELD_NUMBER);
   }
 
   private void validateAzureResourceGroupDetails(

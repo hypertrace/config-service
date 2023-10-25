@@ -19,6 +19,24 @@ message AzureIntegrationDetails {
   repeated AzureResourceGroupDetails azure_resource_group_details = 4;
   AzureAuthCredentials auth_credentials = 5;
   string id = 6;
+  oneof waf_endpoint_type {
+    AzureFrontDoorWafDetails front_door_waf_details = 7;
+    AzureApplicationGatewayWafDetails application_gateway_waf_details = 8;
+  }
+}
+
+message AzureFrontDoorWafDetails {
+  repeated string front_door_names = 1;
+  AzureManagedRuleDefinition managed_rule_definition = 2;
+}
+
+message AzureApplicationGatewayWafDetails {
+  AzureManagedRuleDefinition managed_rule_definition = 1;
+}
+
+message AzureManagedRuleDefinition {
+  string rule_set_type = 1;
+  string rule_set_version = 2;
 }
 
 message AzureResourceGroupDetails {

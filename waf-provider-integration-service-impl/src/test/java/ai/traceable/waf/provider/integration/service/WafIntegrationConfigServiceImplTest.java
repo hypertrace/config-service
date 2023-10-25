@@ -9,10 +9,12 @@ import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
+import ai.traceable.waf.integration.service.api.v1.AzureApplicationGatewayWafDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AzureManagedRuleDefinition;
 import ai.traceable.waf.integration.service.api.v1.AzureResourceGroupDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
@@ -660,6 +662,12 @@ class WafIntegrationConfigServiceImplTest {
                                 AzureResourceGroupDetails.newBuilder()
                                     .setName("new-name")
                                     .setRegion("new-region"))
+                            .setApplicationGatewayWafDetails(
+                                AzureApplicationGatewayWafDetails.newBuilder()
+                                    .setManagedRuleDefinition(
+                                        AzureManagedRuleDefinition.newBuilder()
+                                            .setRuleSetType("OWASP")
+                                            .setRuleSetVersion("3.2")))
                             .setAuthCredentials(
                                 AzureAuthCredentials.newBuilder()
                                     .setClientId("new-client-id")
@@ -846,6 +854,12 @@ class WafIntegrationConfigServiceImplTest {
                                 AzureResourceGroupDetails.newBuilder()
                                     .setName("name")
                                     .setRegion("region"))
+                            .setApplicationGatewayWafDetails(
+                                AzureApplicationGatewayWafDetails.newBuilder()
+                                    .setManagedRuleDefinition(
+                                        AzureManagedRuleDefinition.newBuilder()
+                                            .setRuleSetType("OWASP")
+                                            .setRuleSetVersion("3.2")))
                             .setAuthCredentials(
                                 AzureAuthCredentials.newBuilder()
                                     .setClientId("client-id")
