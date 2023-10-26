@@ -54,16 +54,20 @@ message SyslogServerIntegration {
 message SyslogServerConnectionDetails {
   string host = 1;
   int32 port = 2;
-  SyslogServerSslCredentials ssl_credentials = 3; // optional
+  SyslogServerCredentials credentials = 3; // optional
 }
 
-message SyslogServerSslCredentials {
-  EncryptedText ssl_ca_cert = 1;  // Certificate Authority for SSL
-}
+message SyslogServerCredentials {
+  string encryption_key_id = 1; // Key used to encrypt the different secrets
+  optional string encrypted_ssl_ca_cert = 2;  // Certificate Authority for SSL
+  SyslogServerAccountTokenDetails account_token_details = 3;  // needs RFC_5424 Syslog Format
 
-message EncryptedText {
-  string key_id = 1; // Key used to encrypt the message
-  string value = 2;
+  message SyslogServerAccountTokenDetails {
+    string encrypted_token_id = 1;
+    // Unique PEN assigned by IANA
+    // https://www.iana.org/assignments/enterprise-numbers/
+    int64 private_identification_number = 2;
+  }
 }
 
 enum SyslogLogFormat {

@@ -7,9 +7,11 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import ai.traceable.syslog.integration.config.service.api.v1.CreateSyslogServerIntegrationRequest;
 import ai.traceable.syslog.integration.config.service.api.v1.DeleteSyslogServerIntegrationRequest;
-import ai.traceable.syslog.integration.config.service.api.v1.EncryptedText;
 import ai.traceable.syslog.integration.config.service.api.v1.GetSyslogServerIntegrationsRequest;
+import ai.traceable.syslog.integration.config.service.api.v1.SyslogLogFormat;
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerConnectionDetails;
+import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerCredentials;
+import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerCredentials.SyslogServerAccountTokenDetails;
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerIntegration;
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerIntegrationDetails;
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerIntegrationsFilter;
@@ -84,33 +86,65 @@ public class SyslogIntegrationConfigRequestValidator {
     if (!integrationDetails.hasServerConnectionDetails()) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
-              "Serve Connection Details should be present to create syslog server integration")
+              "Server Connection Details should be present to create syslog server integration")
           .asRuntimeException();
     }
     validateNonDefaultPresenceOrThrow(integrationDetails, NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(integrationDetails, LOG_FORMAT_FIELD_NUMBER);
-    validateServerConnectionDetails(integrationDetails.getServerConnectionDetails());
+    validateServerConnectionDetails(
+        integrationDetails.getServerConnectionDetails(), integrationDetails.getLogFormat());
   }
 
   private void validateUpdateIntegrationDetails(SyslogServerIntegrationDetails integrationDetails) {
     validateNonDefaultPresenceOrThrow(integrationDetails, NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(integrationDetails, LOG_FORMAT_FIELD_NUMBER);
-    validateServerConnectionDetails(integrationDetails.getServerConnectionDetails());
+    validateServerConnectionDetails(
+        integrationDetails.getServerConnectionDetails(), integrationDetails.getLogFormat());
   }
 
   private void validateServerConnectionDetails(
-      SyslogServerConnectionDetails serverConnectionDetails) {
+      SyslogServerConnectionDetails serverConnectionDetails, SyslogLogFormat logFormat) {
     validateNonDefaultPresenceOrThrow(
         serverConnectionDetails, SyslogServerConnectionDetails.HOST_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        serverConnectionDetails, SyslogServerConnectionDetails.PORT_FIELD_NUMBER);
-    if (serverConnectionDetails.getSslCredentials().hasSslCaCert()) {
-      validateEncryptedText(serverConnectionDetails.getSslCredentials().getSslCaCert());
+    if (serverConnectionDetails.getPort() < 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Server port should be a positive number"))
+          .asRuntimeException();
+    }
+    if (serverConnectionDetails.hasCredentials()) {
+      validateSyslogServerCredentials(serverConnectionDetails.getCredentials(), logFormat);
     }
   }
 
-  private void validateEncryptedText(EncryptedText encryptedText) {
-    validateNonDefaultPresenceOrThrow(encryptedText, EncryptedText.KEY_ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(encryptedText, EncryptedText.VALUE_FIELD_NUMBER);
+  private void validateSyslogServerCredentials(
+      SyslogServerCredentials credentials, SyslogLogFormat logFormat) {
+    if (!SyslogServerCredentials.getDefaultInstance().equals(credentials)) {
+      validateNonDefaultPresenceOrThrow(
+          credentials, SyslogServerCredentials.ENCRYPTION_KEY_ID_FIELD_NUMBER);
+      if (credentials.hasEncryptedSslCaCert()) {
+        validateNonDefaultPresenceOrThrow(
+            credentials, SyslogServerCredentials.ENCRYPTED_SSL_CA_CERT_FIELD_NUMBER);
+      }
+      if (credentials.hasAccountTokenDetails()) {
+        validateSyslogServerAccountTokenDetails(credentials.getAccountTokenDetails(), logFormat);
+      }
+    }
+  }
+
+  private void validateSyslogServerAccountTokenDetails(
+      SyslogServerAccountTokenDetails accountTokenDetails, SyslogLogFormat logFormat) {
+    validateNonDefaultPresenceOrThrow(
+        accountTokenDetails, SyslogServerAccountTokenDetails.ENCRYPTED_TOKEN_ID_FIELD_NUMBER);
+    if (accountTokenDetails.getPrivateIdentificationNumber() <= 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format("Private Identification Number should be a positive number"))
+          .asRuntimeException();
+    }
+    if (!logFormat.equals(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_5424)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Account Token Details require Syslog format to be RFC_5424")
+          .asRuntimeException();
+    }
   }
 }

@@ -13,7 +13,6 @@ import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerConnect
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerIntegration;
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerIntegrationDetails;
 import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerIntegrationsFilter;
-import ai.traceable.syslog.integration.config.service.api.v1.SyslogServerSslCredentials;
 import ai.traceable.syslog.integration.config.service.api.v1.UpdateSyslogServerIntegrationRequest;
 import ai.traceable.syslog.integration.config.service.store.SyslogIntegrationConfigStore;
 import ai.traceable.syslog.integration.config.service.validator.SyslogIntegrationConfigRequestValidator;
@@ -51,10 +50,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
     SyslogServerIntegration actual =
         syslogIntegrationConfigServiceBlockingStub
@@ -83,10 +79,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
 
     SyslogServerIntegration existing = createIntegration(expected);
@@ -102,8 +95,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setServerConnectionDetails(
                         SyslogServerConnectionDetails.newBuilder()
                             .setHost("updatedHost")
-                            .setPort(1002)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder()))
+                            .setPort(1002))
                     .build())
             .build();
 
@@ -136,10 +128,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration 1")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
 
     SyslogServerIntegration existing1 = createIntegration(request1);
@@ -152,10 +141,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration 2")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
     createIntegration(request2);
 
@@ -188,10 +174,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration 1")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
 
     createIntegration(request1);
@@ -204,10 +187,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration 2")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
 
     createIntegration(request2);
@@ -231,10 +211,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration 1")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
 
     createIntegration(request1);
@@ -247,10 +224,7 @@ class SyslogIntegrationConfigServiceImplTest {
                     .setDescription("Syslog integration 2")
                     .setLogFormat(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164)
                     .setServerConnectionDetails(
-                        SyslogServerConnectionDetails.newBuilder()
-                            .setHost("host")
-                            .setPort(1001)
-                            .setSslCredentials(SyslogServerSslCredentials.newBuilder())))
+                        SyslogServerConnectionDetails.newBuilder().setHost("host").setPort(1001)))
             .build();
     SyslogServerIntegration existing = createIntegration(request2);
 
