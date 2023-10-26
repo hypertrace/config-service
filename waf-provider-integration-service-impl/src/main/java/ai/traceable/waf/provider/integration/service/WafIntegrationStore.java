@@ -3,6 +3,7 @@ package ai.traceable.waf.provider.integration.service;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import java.util.List;
@@ -75,7 +76,24 @@ public class WafIntegrationStore
             wafIntegration ->
                 checkWafTypePresence(
                     getWafProviderTypeFromDetails(wafIntegration.getWafIntegrationDetails()),
-                    requiredTypes));
+                    requiredTypes))
+        .filter(
+            wafIntegration ->
+                filterOnScope(
+                    wafIntegration.getWafIntegrationDetails().getWafIntegrationScope(),
+                    filter.getWafIntegrationScope()));
+  }
+
+  private boolean filterOnScope(
+      WafIntegrationScope wafIntegrationScope, WafIntegrationScope wafIntegrationFilterScope) {
+    List<String> environmentIds = wafIntegrationScope.getEnvironmentScope().getEnvironmentIdsList();
+    if (!wafIntegrationFilterScope.hasEnvironmentScope() || environmentIds.isEmpty()) {
+      return true;
+    }
+
+    List<String> filterEnvironmentIds =
+        wafIntegrationFilterScope.getEnvironmentScope().getEnvironmentIdsList();
+    return environmentIds.stream().anyMatch(filterEnvironmentIds::contains);
   }
 
   private boolean checkWafIdPresence(String id, List<String> requiredIds) {

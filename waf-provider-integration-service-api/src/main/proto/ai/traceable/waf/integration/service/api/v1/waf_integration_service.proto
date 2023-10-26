@@ -67,6 +67,7 @@ message DeleteWafIntegrationResponse {
 message GetWafIntegrationsFilter {
   repeated string ids = 1;
   repeated WafProviderType waf_provider_types = 2;
+  WafIntegrationScope waf_integration_scope = 3;
   enum WafProviderType {
     WAF_PROVIDER_TYPE_UNSPECIFIED = 0;
     WAF_PROVIDER_TYPE_CLOUDFLARE = 1;

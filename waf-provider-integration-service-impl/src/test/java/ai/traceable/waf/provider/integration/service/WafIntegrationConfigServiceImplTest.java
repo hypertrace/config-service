@@ -248,6 +248,80 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void getWafIntegrationsFilterTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    // do not match environment ids
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("id"))))
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    assertEquals(0, response.getWafIntegrationCount());
+
+    // environment id list is empty
+    request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of())))
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE))
+            .build();
+    response = wafProviderServiceBlockingStub.getWafIntegrations(request);
+    assertEquals(0, response.getWafIntegrationCount());
+
+    // matches filter environment ids
+    request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("id1"))))
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE))
+            .build();
+    response = wafProviderServiceBlockingStub.getWafIntegrations(request);
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(
+        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+
+    // environment scope is not set in filter (all environment case)
+    request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .setWafIntegrationScope(WafIntegrationScope.newBuilder())
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_CLOUDFLARE))
+            .build();
+    response = wafProviderServiceBlockingStub.getWafIntegrations(request);
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(
+        expectedDetails, response.getWafIntegrationList().get(0).getWafIntegrationDetails());
+  }
+
+  @Test
   void getWafIntegrationsCloudflareTest() {
     WafIntegrationDetails expectedDetails =
         createWafIntegrationDetails(
