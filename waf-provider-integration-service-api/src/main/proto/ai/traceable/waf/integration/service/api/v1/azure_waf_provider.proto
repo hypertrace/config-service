@@ -27,7 +27,6 @@ message AzureIntegrationDetails {
 
 message AzureFrontDoorWafDetails {
   repeated string front_door_names = 1;
-  AzureManagedRuleDefinition managed_rule_definition = 2;
 }
 
 message AzureApplicationGatewayWafDetails {

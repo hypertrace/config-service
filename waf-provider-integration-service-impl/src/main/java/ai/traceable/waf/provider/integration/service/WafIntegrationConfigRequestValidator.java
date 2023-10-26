@@ -257,7 +257,7 @@ public class WafIntegrationConfigRequestValidator {
 
     switch (azureIntegrationDetails.getWafEndpointTypeCase()) {
       case FRONT_DOOR_WAF_DETAILS:
-        validateFrontDoorWafDetails(azureIntegrationDetails.getFrontDoorWafDetails());
+        validateAzureFrontDoorWafDetails(azureIntegrationDetails.getFrontDoorWafDetails());
         break;
       case APPLICATION_GATEWAY_WAF_DETAILS:
         validateAzureApplicationGatewayWafDetails(
@@ -271,12 +271,9 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
-  private void validateFrontDoorWafDetails(AzureFrontDoorWafDetails frontDoorWafDetails) {
+  private void validateAzureFrontDoorWafDetails(AzureFrontDoorWafDetails frontDoorWafDetails) {
     validateNonDefaultPresenceOrThrow(
         frontDoorWafDetails, AzureFrontDoorWafDetails.FRONT_DOOR_NAMES_FIELD_NUMBER);
-    if (frontDoorWafDetails.hasManagedRuleDefinition()) {
-      validateAzureManagedRuleDefinition(frontDoorWafDetails.getManagedRuleDefinition());
-    }
   }
 
   private void validateAzureApplicationGatewayWafDetails(
