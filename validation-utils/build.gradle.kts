@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-  api(libs.hypertrace.grpcutils.context)
-  api(libs.grpc.api)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.seancfoley.ipaddress)
+  api(commonLibs.hypertrace.grpcutils.context)
+  api(commonLibs.grpc.api)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(localLibs.seancfoley.ipaddress)
 }

@@ -9,11 +9,11 @@ plugins {
   java
   application
   jacoco
-  id("org.hypertrace.docker-java-application-plugin")
-  id("org.hypertrace.docker-publish-plugin")
-  id("org.hypertrace.integration-test-plugin")
-  id("org.hypertrace.jacoco-report-plugin")
-  id("org.hypertrace.publish-plugin")
+  alias(commonLibs.plugins.hypertrace.docker.application)
+  alias(commonLibs.plugins.hypertrace.docker.publish)
+  alias(commonLibs.plugins.hypertrace.integrationtest)
+  alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.hypertrace.publish)
 }
 
 tasks.register<DockerCreateNetwork>("createIntegrationTestNetwork") {
@@ -55,21 +55,21 @@ tasks.integrationTest {
 }
 
 dependencies {
-  implementation(libs.hypertrace.grpc.framework)
+  implementation(commonLibs.hypertrace.framework.grpc)
   implementation(projects.configServiceFactory)
 
-  runtimeOnly(libs.slf4j.log4jimpl)
-  runtimeOnly(libs.grpc.netty)
+  runtimeOnly(commonLibs.log4j.slf4j2.impl)
+  runtimeOnly(commonLibs.grpc.netty)
 
   // Integration test dependencies
   integrationTestImplementation(projects.configServiceImpl)
   integrationTestImplementation(projects.configProtoConverter)
-  integrationTestImplementation(libs.junit.jupiter)
-  integrationTestImplementation(libs.guava)
-  integrationTestImplementation(libs.hypertrace.framework.integrationtest)
-  integrationTestImplementation(libs.hypertrace.grpcutils.client)
-  integrationTestImplementation(libs.hypertrace.grpcutils.context)
-  integrationTestImplementation(libs.hypertrace.documentstore)
+  integrationTestImplementation(commonLibs.junit.jupiter)
+  integrationTestImplementation(commonLibs.guava)
+  integrationTestImplementation(commonLibs.hypertrace.integrationtest.framework)
+  integrationTestImplementation(commonLibs.hypertrace.grpcutils.client)
+  integrationTestImplementation(commonLibs.hypertrace.grpcutils.context)
+  integrationTestImplementation(commonLibs.hypertrace.documentstore)
 }
 
 application {

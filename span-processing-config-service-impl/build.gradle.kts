@@ -1,7 +1,7 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
@@ -12,22 +12,22 @@ dependencies {
   implementation(projects.configProtoConverter)
   implementation(projects.configServiceChangeEventGenerator)
 
-  implementation(libs.protobuf.javautil)
-  implementation(libs.google.re2j)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.google.re2j)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
 
-  implementation(libs.guice)
-  implementation(libs.guava)
-  implementation(libs.slf4j.api)
-  implementation(libs.typesafe.config)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.typesafe.config)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(testFixtures(projects.configServiceApi))
 }
 

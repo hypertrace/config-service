@@ -1,28 +1,27 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.configServiceApi)
   api(projects.configServiceChangeEventApi)
-  api(libs.hypertrace.grpcutils.context)
+  api(commonLibs.hypertrace.grpcutils.context)
 
   implementation(projects.configServiceChangeEventGenerator)
-  implementation(libs.slf4j.api)
+  implementation(commonLibs.slf4j2.api)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
-  testImplementation(libs.mockito.inline)
-  testImplementation(libs.protobuf.javautil)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.protobuf.javautil)
 
-  testAnnotationProcessor(libs.lombok)
-  testCompileOnly(libs.lombok)
+  testAnnotationProcessor(commonLibs.lombok)
+  testCompileOnly(commonLibs.lombok)
 }
 
 tasks.test {

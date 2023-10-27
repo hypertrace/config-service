@@ -3,10 +3,10 @@ plugins {
 }
 
 dependencies {
-  api(libs.hypertrace.grpc.framework)
+  api(commonLibs.hypertrace.framework.grpc)
 
   implementation(projects.configServiceChangeEventGenerator)
-  implementation(libs.hypertrace.documentstore)
+  implementation(commonLibs.hypertrace.documentstore)
   implementation(projects.configServiceImpl)
   implementation(projects.spacesConfigServiceImpl)
   implementation(projects.labelsConfigServiceImpl)

@@ -1,19 +1,13 @@
 plugins {
-  id("org.hypertrace.repository-plugin") version "0.4.2"
-  id("org.hypertrace.ci-utils-plugin") version "0.3.2"
-  id("org.hypertrace.jacoco-report-plugin") version "0.2.1" apply false
-  id("org.hypertrace.publish-plugin") version "1.0.5" apply false
-  id("org.hypertrace.docker-java-application-plugin") version "0.9.9" apply false
-  id("org.hypertrace.docker-publish-plugin") version "0.9.9" apply false
-  id("org.hypertrace.integration-test-plugin") version "0.2.0" apply false
-  id("org.hypertrace.code-style-plugin") version "1.2.0" apply false
-  id("com.google.protobuf") version "0.8.19" apply false
-  id("org.owasp.dependencycheck") version "8.2.1"
+  alias(commonLibs.plugins.hypertrace.ciutils)
+  alias(commonLibs.plugins.hypertrace.codestyle) apply false
+  alias(commonLibs.plugins.hypertrace.publish) apply false
+  alias(commonLibs.plugins.owasp.dependencycheck)
 }
 
 subprojects {
   group = "org.hypertrace.config.service"
-  pluginManager.withPlugin("org.hypertrace.publish-plugin") {
+  pluginManager.withPlugin(rootProject.commonLibs.plugins.hypertrace.publish.get().pluginId) {
     configure<org.hypertrace.gradle.publishing.HypertracePublishExtension> {
       license.set(org.hypertrace.gradle.publishing.License.TRACEABLE_COMMUNITY)
     }
@@ -25,8 +19,7 @@ subprojects {
       targetCompatibility = JavaVersion.VERSION_11
     }
   }
-
-  apply(plugin = "org.hypertrace.code-style-plugin")
+  apply(plugin = rootProject.commonLibs.plugins.hypertrace.codestyle.get().pluginId)
 }
 
 dependencyCheck {

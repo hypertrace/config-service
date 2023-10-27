@@ -1,3 +1,5 @@
+import org.hypertrace.gradle.dependency.DependencyPluginSettingExtension
+
 rootProject.name = "config-service-root"
 
 pluginManagement {
@@ -10,9 +12,13 @@ pluginManagement {
 
 plugins {
   id("org.hypertrace.version-settings") version "0.2.0"
+  id("org.hypertrace.dependency-settings") version "0.1.1"
 }
 
-enableFeaturePreview("VERSION_CATALOGS")
+configure<DependencyPluginSettingExtension> {
+  catalogVersion.set("0.2.9")
+}
+
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":config-service-change-event-api")

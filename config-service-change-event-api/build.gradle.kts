@@ -1,15 +1,12 @@
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
-
 plugins {
   `java-library`
-  id("com.google.protobuf")
-  id("org.hypertrace.publish-plugin")
+  alias(commonLibs.plugins.google.protobuf)
+  alias(commonLibs.plugins.hypertrace.publish)
 }
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:${libs.versions.protoc.get()}"
+    artifact = "com.google.protobuf:protoc:${commonLibs.versions.protoc.get()}"
   }
 }
 
@@ -22,7 +19,7 @@ sourceSets {
 }
 
 dependencies {
-  api(libs.protobuf.java)
-  api(platform(libs.kafka.bom))
-  api(libs.kafka.clients)
+  api(commonLibs.protobuf.java)
+  api(platform(commonLibs.hypertrace.kafka.bom))
+  api(commonLibs.kafka.clients)
 }
