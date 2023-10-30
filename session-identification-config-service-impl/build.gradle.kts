@@ -1,34 +1,34 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
-  api(libs.typesafe.config)
-  api(libs.grpc.api)
-  api(libs.hypertrace.configservice.changeeventgenerator)
+  api(commonLibs.typesafe.config)
+  api(commonLibs.grpc.api)
+  api(localLibs.hypertrace.configservice.changeeventgenerator)
   api(projects.featureCachingClient)
   implementation(projects.sensitiveDataConfigServiceApi)
   implementation(projects.configUtils)
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.sessionIdentificationConfigServiceApi)
-  implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.hypertrace.configservice.validation)
-  implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.objectstore)
+  implementation(localLibs.hypertrace.configservice.validation)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
 
-  implementation(libs.guice)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.slf4j.api)
-  implementation(libs.uuidCreator)
-  implementation(libs.hypertrace.grpcutils.client)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.hypertrace.grpcutils.client)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
 tasks.test {

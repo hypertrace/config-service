@@ -1,3 +1,5 @@
+import org.hypertrace.gradle.dependency.DependencyPluginSettingExtension
+
 pluginManagement {
   repositories {
     mavenLocal()
@@ -12,14 +14,19 @@ pluginManagement {
 
 plugins {
   id("org.hypertrace.version-settings") version "0.2.0"
+  id("ai.traceable.dependency-settings") version "1.6.2"
 }
 
 rootProject.name = "traceable-config-service-root"
 
-enableFeaturePreview("VERSION_CATALOGS")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
+configure<DependencyPluginSettingExtension> {
+  catalogVersion.set("0.3.0")
+}
+
 includeBuild("./hypertrace-config-service")
+
 include(":traceable-config-service")
 include(":sensitive-data-config-service-api")
 include(":sensitive-data-config-service-impl")

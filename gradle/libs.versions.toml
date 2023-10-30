@@ -1,38 +1,4 @@
-[versions]
-protoc = "3.21.12"
-grpc = "1.57.2"
-lombok = "1.18.22"
-jackson = "2.15.2"
-hypertrace-grpcutils = "0.12.2"
-hypertrace-framework = "0.1.61"
-hypertrace-entityService = "0.8.81"
-traceable-platformGateway = "0.7.21"
-traceable-platform-apiAnomalyDetection = "0.9.50"
-kafka-streams-framework = "0.3.7"
-actorService = "0.2.118"
-
-junit = "5.10.0"
-mockito = "4.4.0"
-
 [libraries]
-traceable-actorService-api = { module = "ai.traceable.platform:actor-service-api", version.ref = "actorService" }
-traceable-opaDistributor-api = { module = "ai.traceable.platform:opa-aggregator-api", version = "0.2.47" }
-traceable-insights-api = { module = "ai.traceable.platform:insights-service-api", version = "0.49.69" }
-traceable-activityevent-api = { module = "ai.traceable.activity.event.service:activity-event-api", version = "0.5.100" }
-traceable-licensemetering-api = { module = "ai.traceable.license.metering.service:license-metering-service-api", version = "0.1.40" }
-traceable-platform-jnimodsecurity = { module = "ai.traceable.platform:jni-modsecurity", version = "0.1.111"}
-traceable-apiNamingModel = { module = "ai.traceable.platform:api-naming-model", version = "0.13.1" }
-traceable-platformGateway-deepDataStore = { module = "ai.traceable.platform-gateway:deep-data-store", version.ref = "traceable-platformGateway" }
-traceable-platformGateway-trainingEvaluationFramework = { module = "ai.traceable.platform-gateway:training-evaluation-framework", version.ref = "traceable-platformGateway" }
-traceable-platformGateway-ipUtils = { module = "ai.traceable.platform-gateway:ip-utils", version.ref = "traceable-platformGateway" }
-traceable-platformGateway-eventInvalidationCache = { module = "ai.traceable.platform-gateway:event-invalidation-cache", version.ref = "traceable-platformGateway" }
-traceable-featureFlag-api = { module = "ai.traceable.featureflag:feature-flag-service-api", version = "0.5.6" }
-traceable-platform-configProviders = { module = "ai.traceable.platform:config-providers", version.ref = "traceable-platform-apiAnomalyDetection"}
-
-hypertrace-grpcutils-client = { module = "org.hypertrace.core.grpcutils:grpc-client-utils", version.ref = "hypertrace-grpcutils" }
-hypertrace-grpcutils-server = { module = "org.hypertrace.core.grpcutils:grpc-server-utils", version.ref = "hypertrace-grpcutils" }
-hypertrace-grpcutils-context = { module = "org.hypertrace.core.grpcutils:grpc-context-utils", version.ref = "hypertrace-grpcutils" }
-hypertrace-eventstore = { module = "org.hypertrace.core.eventstore:event-store", version = "0.1.2" }
 hypertrace-configservice-server = { module = "org.hypertrace.config.service:config-service" }
 hypertrace-configservice-impl = { module = "org.hypertrace.config.service:config-service-impl" }
 hypertrace-configservice-api = { module = "org.hypertrace.config.service:config-service-api" }
@@ -48,49 +14,6 @@ hypertrace-configservice-spanProcessingUtils = { module = "org.hypertrace.config
 hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.config.service:config-service-change-event-generator" }
 hypertrace-configservice-changeeventapi = { module = "org.hypertrace.config.service:config-service-change-event-api" }
 hypertrace-configservice-factory = { module = "org.hypertrace.config.service:config-service-factory" }
-hypertrace-grpc-framework = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
-hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }
-hypertrace-framework-integrationtest = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
-hypertrace-documentstore = { module = "org.hypertrace.core.documentstore:document-store", version = "0.7.31" }
-
-# https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1746337898/Config+Service+-+Dependency+Hell
-# We would ideally want to segregate config service into 2 services - agent-configuration-service, and config-service and not have config-service depend on entity-service
-hypertrace-entityservice-api = { module = "org.hypertrace.entity.service:entity-service-api", version.ref = "hypertrace-entityService" }
-hypertrace-entityservice-client = { module = "org.hypertrace.entity.service:entity-service-client", version.ref = "hypertrace-entityService" }
 hypertrace-configservice-partitioner-config-impl = { module = "org.hypertrace.config.service:partitioner-config-service-impl" }
 
-guava = { module = "com.google.guava:guava", version = "32.1.2-jre" }
-guice = { module = "com.google.inject:guice", version = "5.0.1" }
-javax-annotation = { module = "javax.annotation:javax.annotation-api", version = "1.3.2" }
-typesafe-config = { module = "com.typesafe:config", version = "1.4.2" }
-re2j = { module = "com.google.re2j:re2j", version = "1.6" }
-uuidCreator = { module = "com.github.f4b6a3:uuid-creator", version = "2.7.11" }
-lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
-commons-csv = { module = "org.apache.commons:commons-csv", version = "1.8" }
-commons-lang = { module = "org.apache.commons:commons-lang3", version = "3.11" }
-commons-net = { module = "commons-net:commons-net", version = "3.9.0" }
-commons-validator = { module = "commons-validator:commons-validator", version = "1.7" }
-jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
-kafka-bom = { module = "org.hypertrace.core.kafkastreams.framework:kafka-bom", version.ref = "kafka-streams-framework"}
-kafka-avro-serializer = { module = "io.confluent:kafka-avro-serializer"}
-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
-grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
-grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpc" }
-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpc" }
-protobuf-javautil = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protoc" }
-jersey-common = { module = "org.glassfish.jersey.core:jersey-common", version = "2.36" }
-json-path = { module = "com.jayway.jsonpath:json-path", version = "2.8.0"}
 automaton = { module = "dk.brics.automaton:automaton", version = "1.11-8"}
-
-slf4j-log4jimpl = { module = "org.apache.logging.log4j:log4j-slf4j-impl", version = "2.17.2" }
-slf4j-api = { module = "org.slf4j:slf4j-api", version = "1.7.36" }
-
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
-
-mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
-mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
-
-[bundles]
-grpc-api = ["grpc-stub", "grpc-protobuf", "javax-annotation"]

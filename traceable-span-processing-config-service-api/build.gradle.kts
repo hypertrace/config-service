@@ -1,24 +1,19 @@
 
-import com.google.protobuf.gradle.generateProtoTasks
 import com.google.protobuf.gradle.id
-import com.google.protobuf.gradle.ofSourceSet
-import com.google.protobuf.gradle.plugins
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
 
 plugins {
   `java-library`
-  id("com.google.protobuf") version "0.8.17"
-  id("ai.traceable.publish-plugin")
+  alias(commonLibs.plugins.google.protobuf)
+  alias(commonLibs.plugins.traceable.publish)
 }
 
 protobuf {
   protoc {
-    artifact = "com.google.protobuf:protoc:${libs.versions.protoc.get()}"
+    artifact = "com.google.protobuf:protoc:${commonLibs.versions.protoc.get()}"
   }
   plugins {
     id("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:${libs.versions.grpc.get()}"
+      artifact = "io.grpc:protoc-gen-grpc-java:${commonLibs.versions.grpc.get()}"
     }
   }
   generateProtoTasks {
@@ -31,7 +26,7 @@ protobuf {
 }
 
 dependencies {
-  api(libs.bundles.grpc.api)
+  api(commonLibs.bundles.grpc.api)
 }
 
 sourceSets {

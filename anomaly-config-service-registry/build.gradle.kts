@@ -1,26 +1,26 @@
 plugins {
   `java-library`
-  id("ai.traceable.publish-plugin")
+  alias(commonLibs.plugins.traceable.publish)
 }
 
 dependencies {
   api(projects.anomalyConfigServiceApi)
-  api(libs.javax.annotation)
-  api(libs.typesafe.config)
+  api(commonLibs.javax.annotation)
+  api(commonLibs.typesafe.config)
 
   implementation(projects.anomalyConfigServiceUtils)
-  implementation(libs.guice)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.re2j)
-  implementation(libs.jackson.yaml)
-  implementation(libs.slf4j.api)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.re2j)
+  implementation(commonLibs.jackson.yaml)
+  implementation(commonLibs.slf4j2.api)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.commons.lang)
-  testImplementation(libs.traceable.platform.jnimodsecurity)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.commons.lang)
+  testImplementation(commonLibs.traceable.modsecurity.jni)
 }
 
 tasks.test {

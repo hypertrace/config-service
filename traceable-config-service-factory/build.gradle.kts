@@ -3,13 +3,13 @@ plugins {
 }
 
 dependencies {
-  api(libs.hypertrace.grpc.framework)
+  api(commonLibs.hypertrace.framework.grpc)
 
-  implementation(libs.hypertrace.configservice.factory)
-  implementation(libs.hypertrace.configservice.impl)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
-  implementation(libs.typesafe.config)
-  implementation(libs.hypertrace.configservice.partitioner.config.impl)
+  implementation(localLibs.hypertrace.configservice.factory)
+  implementation(localLibs.hypertrace.configservice.impl)
+  implementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  implementation(commonLibs.typesafe.config)
+  implementation(localLibs.hypertrace.configservice.partitioner.config.impl)
 
   implementation(projects.activityEventProducer)
   implementation(projects.sensitiveDataConfigServiceImpl)
@@ -55,6 +55,6 @@ dependencies {
   implementation(projects.savedQueryConfigServiceImpl)
   implementation(projects.dashboardConfigServiceImpl)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 }

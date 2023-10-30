@@ -1,40 +1,40 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.sensitiveDataConfigServiceApi)
   api(projects.featureCachingClient)
-  api(libs.hypertrace.configservice.changeeventgenerator)
-  api(libs.hypertrace.grpcutils.client)
-  api(libs.typesafe.config)
-  api(libs.grpc.api)
+  api(localLibs.hypertrace.configservice.changeeventgenerator)
+  api(commonLibs.hypertrace.grpcutils.client)
+  api(commonLibs.typesafe.config)
+  api(commonLibs.grpc.api)
   implementation(projects.configUtils)
   implementation(projects.dataClassificationConfigServiceApi)
 
-  implementation(libs.hypertrace.configservice.api)
-  implementation(libs.traceable.insights.api)
-  implementation(libs.guava)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.slf4j.api)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.re2j)
-  implementation(libs.guice)
-  implementation(libs.uuidCreator)
+  implementation(localLibs.hypertrace.configservice.api)
+  implementation(commonLibs.traceable.insights.api)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.objectstore)
+  implementation(commonLibs.re2j)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.uuidcreator)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
   testImplementation(testFixtures(projects.traceableConfigService))
-  testAnnotationProcessor(libs.lombok)
-  testCompileOnly(libs.lombok)
+  testAnnotationProcessor(commonLibs.lombok)
+  testCompileOnly(commonLibs.lombok)
 }
 
 tasks.test {

@@ -1,30 +1,30 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.licenseStatusConfigServiceApi)
-  implementation(libs.hypertrace.configservice.api)
-  implementation(libs.guice)
-  implementation(libs.guava)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.typesafe.config)
-  implementation(libs.slf4j.api)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.api)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
   // https://traceableai.atlassian.net/browse/ENG-20659
   // This is temporary. Remove this once license enforcer changes are in place
-  implementation(libs.traceable.licensemetering.api)
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
-  implementation(libs.hypertrace.framework.metrics)
+  implementation(commonLibs.traceable.licensemetering.api)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
+  implementation(commonLibs.hypertrace.framework.metrics)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
 tasks.test {

@@ -1,7 +1,7 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
@@ -13,32 +13,32 @@ dependencies {
   implementation(projects.customSignatureConfigServiceApi)
   implementation(projects.entityFetcherCache)
 
-  implementation(libs.hypertrace.configservice.api)
-  implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.hypertrace.configservice.spanProcessingUtils)
-  implementation(libs.guice)
-  implementation(libs.guava)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.typesafe.config)
-  implementation(libs.slf4j.api)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
-  implementation(libs.hypertrace.configservice.span.processing.api)
-  implementation(libs.uuidCreator)
-  implementation(libs.hypertrace.entityservice.api)
-  implementation(libs.traceable.apiNamingModel)
-  implementation(libs.traceable.platformGateway.deepDataStore)
-  implementation(libs.traceable.platformGateway.trainingEvaluationFramework)
-  implementation(libs.hypertrace.framework.metrics)
+  implementation(localLibs.hypertrace.configservice.api)
+  implementation(localLibs.hypertrace.configservice.objectstore)
+  implementation(localLibs.hypertrace.configservice.spanProcessingUtils)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  implementation(localLibs.hypertrace.configservice.span.processing.api)
+  implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.hypertrace.entityservice.api)
+  implementation(commonLibs.traceable.apinaming.model)
+  implementation(commonLibs.traceable.platform.deepDataStore)
+  implementation(commonLibs.traceable.platform.trainingEvaluationFramework)
+  implementation(commonLibs.hypertrace.framework.metrics)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.inline)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
 tasks.test {

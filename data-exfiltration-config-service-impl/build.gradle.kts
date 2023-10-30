@@ -3,30 +3,30 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.dataExfiltrationConfigServiceApi)
-  implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.hypertrace.configservice.api)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
-  implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.hypertrace.configservice.validation)
-  implementation(libs.hypertrace.grpcutils.client)
+  implementation(localLibs.hypertrace.configservice.objectstore)
+  implementation(localLibs.hypertrace.configservice.api)
+  implementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.validation)
+  implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(projects.configUtils)
 
-  implementation(libs.guice)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.slf4j.api)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.slf4j2.api)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
 tasks.test {

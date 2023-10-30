@@ -1,31 +1,31 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.externalUserAttributionConfigServiceApi)
-  api(libs.typesafe.config)
+  api(commonLibs.typesafe.config)
   implementation(projects.userAttributionConfigServiceApi)
-  implementation(libs.guice)
-  implementation(libs.slf4j.api)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.uuidCreator)
-  implementation(libs.protobuf.javautil)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.protobuf.javautil)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
-  testImplementation(libs.protobuf.javautil)
-  testImplementation(libs.grpc.core)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.protobuf.javautil)
+  testImplementation(commonLibs.grpc.core)
 
-  testAnnotationProcessor(libs.lombok)
-  testCompileOnly(libs.lombok)
+  testAnnotationProcessor(commonLibs.lombok)
+  testCompileOnly(commonLibs.lombok)
 }
 
 tasks.test {

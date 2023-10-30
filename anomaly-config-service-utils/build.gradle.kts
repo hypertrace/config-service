@@ -1,8 +1,8 @@
 plugins {
   `java-library`
-  id("ai.traceable.publish-plugin")
+  alias(commonLibs.plugins.traceable.publish)
 }
 
 dependencies {
-  testImplementation(libs.junit.jupiter)
+  testImplementation(commonLibs.junit.jupiter)
 }

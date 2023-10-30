@@ -1,34 +1,34 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
-  api(libs.grpc.api)
-  api(libs.hypertrace.configservice.changeeventgenerator)
+  api(commonLibs.grpc.api)
+  api(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(projects.savedQueryConfigServiceApi)
   implementation(projects.configUtils)
 
-  implementation(libs.guice)
-  implementation(libs.slf4j.api)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.configservice.api)
-  implementation(libs.hypertrace.configservice.validation)
-  implementation(libs.hypertrace.configservice.objectstore)
-  implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.hypertrace.configservice.changeeventgenerator)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(localLibs.hypertrace.configservice.api)
+  implementation(localLibs.hypertrace.configservice.validation)
+  implementation(localLibs.hypertrace.configservice.objectstore)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
-  testImplementation(libs.hypertrace.grpcutils.context)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.hypertrace.grpcutils.context)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
 tasks.test {

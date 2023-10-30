@@ -1,39 +1,39 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
   api(projects.externalAgentAttributeConfigServiceApi)
-  api(libs.typesafe.config)
+  api(commonLibs.typesafe.config)
   api(projects.featureCachingClient)
   implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.sessionIdentificationConfigServiceApi)
   implementation(projects.authDetectionConfigServiceApi)
   implementation(projects.jwtExtractionConfigServiceApi)
   implementation(projects.traceableSpanProcessingConfigServiceApi)
-  implementation(libs.guice)
-  implementation(libs.slf4j.api)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.configservice.protoconverter)
-  implementation(libs.uuidCreator)
-  implementation(libs.protobuf.javautil)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.protobuf.javautil)
   implementation(projects.configUtils)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
-  testImplementation(libs.protobuf.javautil)
-  testImplementation(libs.guava)
-  testImplementation(testFixtures(libs.hypertrace.configservice.api))
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.protobuf.javautil)
+  testImplementation(commonLibs.guava)
+  testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 
-  testAnnotationProcessor(libs.lombok)
-  testCompileOnly(libs.lombok)
+  testAnnotationProcessor(commonLibs.lombok)
+  testCompileOnly(commonLibs.lombok)
 }
 
 tasks.test {

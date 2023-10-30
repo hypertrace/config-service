@@ -1,30 +1,29 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
-  id("ai.traceable.publish-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.traceable.publish)
 }
 
 dependencies {
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.hypertrace.entityservice.api)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.entityservice.api)
   implementation(projects.configUtils)
 
-  implementation(libs.traceable.platformGateway.eventInvalidationCache)
+  implementation(commonLibs.traceable.platform.eventInvalidationCache)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  implementation(libs.guava)
-  implementation(libs.guice)
-  implementation(libs.typesafe.config)
-  implementation(libs.slf4j.api)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.guice)
+  implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.slf4j2.api)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.inline)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
 }
 
 tasks.test {

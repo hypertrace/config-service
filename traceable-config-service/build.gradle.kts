@@ -10,11 +10,11 @@ plugins {
   application
   jacoco
   `java-test-fixtures`
-  id("org.hypertrace.jacoco-report-plugin")
-  id("org.hypertrace.docker-java-application-plugin")
-  id("org.hypertrace.docker-publish-plugin")
-  id("ai.traceable.docker-convention-plugin")
-  id("org.hypertrace.integration-test-plugin") version "0.2.0"
+  alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.hypertrace.docker.application)
+  alias(commonLibs.plugins.hypertrace.docker.publish)
+  alias(commonLibs.plugins.traceable.docker)
+  alias(commonLibs.plugins.hypertrace.integrationtest)
 }
 
 tasks.register<DockerCreateNetwork>("createIntegrationTestNetwork") {
@@ -36,7 +36,7 @@ tasks.register<DockerPullImage>("pullEntityServiceImage") {
 }
 
 tasks.register<DockerPullImage>("pullActorServiceImage") {
-  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:${libs.versions.actorService.get()}")
+  image.set(docker.registryCredentials.url.get() + "/traceable/actor-service:${commonLibs.versions.traceable.actorservice.get()}")
 }
 
 tasks.register<DockerStartContainer>("startMongoContainer") {
@@ -115,41 +115,36 @@ tasks.integrationTest {
 
 dependencies {
   implementation(projects.traceableConfigServiceFactory)
-  implementation(libs.hypertrace.grpc.framework)
+  implementation(commonLibs.hypertrace.framework.grpc)
 
-  runtimeOnly(libs.grpc.netty)
-  runtimeOnly(libs.slf4j.log4jimpl)
-  runtimeOnly(platform(libs.kafka.bom))
-  runtimeOnly(libs.kafka.avro.serializer)
+  runtimeOnly(commonLibs.grpc.netty)
+  runtimeOnly(commonLibs.log4j.slf4j2.impl)
+  runtimeOnly(platform(commonLibs.hypertrace.kafka.bom))
+  runtimeOnly(commonLibs.kafka.avro.serializer)
 
-  constraints {
-    runtimeOnly(libs.jersey.common)
-  }
-
-  testFixturesImplementation(libs.traceable.actorService.api)
-  testFixturesImplementation(libs.traceable.insights.api)
-  testFixturesImplementation(libs.traceable.featureFlag.api)
-  testFixturesImplementation(libs.traceable.licensemetering.api)
-  testFixturesImplementation(libs.hypertrace.grpcutils.context)
-  testFixturesImplementation(libs.hypertrace.grpcutils.client)
+  testFixturesImplementation(commonLibs.traceable.actorservice.api)
+  testFixturesImplementation(commonLibs.traceable.insights.api)
+  testFixturesImplementation(commonLibs.traceable.featureflag.api)
+  testFixturesImplementation(commonLibs.traceable.licensemetering.api)
+  testFixturesImplementation(commonLibs.hypertrace.grpcutils.context)
+  testFixturesImplementation(commonLibs.hypertrace.grpcutils.client)
 
   // Integration test dependencies
   integrationTestImplementation(testFixtures(projects.traceableConfigService))
-  integrationTestImplementation(libs.traceable.actorService.api)
-  integrationTestImplementation(libs.traceable.insights.api)
-  integrationTestImplementation(libs.traceable.featureFlag.api)
-  integrationTestImplementation(libs.traceable.licensemetering.api)
-  integrationTestImplementation(libs.traceable.apiNamingModel)
-  integrationTestImplementation(libs.traceable.platformGateway.trainingEvaluationFramework)
-  integrationTestImplementation(libs.junit.jupiter)
-  integrationTestImplementation(libs.guava)
-  integrationTestImplementation(libs.hypertrace.framework.integrationtest)
-  integrationTestImplementation(libs.hypertrace.documentstore)
-  integrationTestImplementation(libs.hypertrace.grpcutils.client)
-  integrationTestImplementation(libs.hypertrace.grpcutils.context)
-  integrationTestImplementation(libs.hypertrace.entityservice.api)
-  integrationTestImplementation(libs.hypertrace.entityservice.client)
-  integrationTestImplementation(libs.protobuf.javautil)
+  integrationTestImplementation(commonLibs.traceable.actorservice.api)
+  integrationTestImplementation(commonLibs.traceable.insights.api)
+  integrationTestImplementation(commonLibs.traceable.featureflag.api)
+  integrationTestImplementation(commonLibs.traceable.licensemetering.api)
+  integrationTestImplementation(commonLibs.traceable.apinaming.model)
+  integrationTestImplementation(commonLibs.traceable.platform.trainingEvaluationFramework)
+  integrationTestImplementation(commonLibs.junit.jupiter)
+  integrationTestImplementation(commonLibs.guava)
+  integrationTestImplementation(commonLibs.hypertrace.integrationtest.framework)
+  integrationTestImplementation(commonLibs.hypertrace.documentstore)
+  integrationTestImplementation(commonLibs.hypertrace.grpcutils.client)
+  integrationTestImplementation(commonLibs.hypertrace.grpcutils.context)
+  integrationTestImplementation(commonLibs.hypertrace.entityservice.api)
+  integrationTestImplementation(commonLibs.protobuf.javautil)
   integrationTestImplementation(projects.iprangeConfigServiceApi)
   integrationTestImplementation(projects.apiAttributeOverrideServiceApi)
   integrationTestImplementation(projects.blockingConfigServiceApi)
@@ -168,8 +163,8 @@ dependencies {
   integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
   integrationTestImplementation(projects.detectionExclusionConfigServiceApi)
   integrationTestImplementation(projects.splunkIntegrationConfigServiceApi)
-  integrationTestImplementation(libs.traceable.opaDistributor.api)
-  integrationTestImplementation(libs.hypertrace.configservice.partitioner.config.impl)
+  integrationTestImplementation(commonLibs.traceable.opadistributor.api)
+  integrationTestImplementation(localLibs.hypertrace.configservice.partitioner.config.impl)
 }
 
 application {

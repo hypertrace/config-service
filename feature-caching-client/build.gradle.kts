@@ -1,21 +1,21 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
 }
 
 dependencies {
-  api(libs.guice)
-  api(libs.typesafe.config)
+  api(commonLibs.guice)
+  api(commonLibs.typesafe.config)
 
-  implementation(libs.hypertrace.grpcutils.context)
-  implementation(libs.hypertrace.grpcutils.client)
-  implementation(libs.traceable.featureFlag.api)
-  implementation(libs.slf4j.api)
-  implementation(libs.guava)
+  implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.traceable.featureflag.api)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.guava)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 }
 
 tasks.test {

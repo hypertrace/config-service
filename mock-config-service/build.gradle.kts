@@ -1,19 +1,19 @@
 plugins {
   java
   application
-  id("org.hypertrace.docker-java-application-plugin")
-  id("org.hypertrace.docker-publish-plugin")
-  id("ai.traceable.docker-convention-plugin")
+  alias(commonLibs.plugins.hypertrace.docker.application)
+  alias(commonLibs.plugins.hypertrace.docker.publish)
+  alias(commonLibs.plugins.traceable.docker)
 }
 
 dependencies {
-  runtimeOnly(libs.grpc.netty)
-  implementation(libs.protobuf.javautil)
-  implementation(libs.typesafe.config)
-  implementation(libs.slf4j.api)
-  runtimeOnly(libs.slf4j.log4jimpl)
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  runtimeOnly(commonLibs.grpc.netty)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.slf4j2.api)
+  runtimeOnly(commonLibs.log4j.slf4j2.impl)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
   implementation(projects.sensitiveDataConfigServiceApi)
   implementation(projects.localProcessingConfigServiceApi)

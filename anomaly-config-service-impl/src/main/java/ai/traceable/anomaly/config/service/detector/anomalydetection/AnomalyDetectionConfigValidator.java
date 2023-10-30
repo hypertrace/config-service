@@ -254,6 +254,7 @@ public class AnomalyDetectionConfigValidator {
     }
     return Status.OK;
   }
+
   /**
    * @param apiDefinitionDetectionConfigs
    * @return Status.INVALID_ARGUMENT in case both ruleId and config case are not present, ruleId is

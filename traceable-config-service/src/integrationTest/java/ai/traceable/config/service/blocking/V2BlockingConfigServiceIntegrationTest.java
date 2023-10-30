@@ -173,10 +173,11 @@ import org.hypertrace.entity.data.service.v1.EntityDataServiceGrpc;
 import org.hypertrace.entity.data.service.v1.EntityDataServiceGrpc.EntityDataServiceBlockingStub;
 import org.hypertrace.entity.data.service.v1.Value;
 import org.hypertrace.entity.service.constants.EntityConstants;
-import org.hypertrace.entity.type.service.client.EntityTypeServiceClient;
 import org.hypertrace.entity.type.service.v1.AttributeKind;
 import org.hypertrace.entity.type.service.v1.AttributeType;
 import org.hypertrace.entity.type.service.v1.EntityType;
+import org.hypertrace.entity.type.service.v1.EntityTypeServiceGrpc;
+import org.hypertrace.entity.type.service.v1.EntityTypeServiceGrpc.EntityTypeServiceBlockingStub;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -257,8 +258,11 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
-    EntityTypeServiceClient entityTypeServiceClient =
-        new EntityTypeServiceClient(channelRegistry.forPlaintextAddress("localhost", 60061));
+    EntityTypeServiceBlockingStub entityTypeServiceClient =
+        EntityTypeServiceGrpc.newBlockingStub(
+                channelRegistry.forPlaintextAddress("localhost", 60061))
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     EntityDataServiceBlockingStub entityDataServiceBlockingStub =
         EntityDataServiceGrpc.newBlockingStub(
@@ -272,31 +276,36 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
     // Make actor_id identifying attribute
-    entityTypeServiceClient.upsertEntityType(
-        TENANT_ID,
-        EntityType.newBuilder()
-            .setName("ACTOR")
-            .setTenantId(TENANT_ID)
-            .addAttributeType(
-                AttributeType.newBuilder()
-                    .setName("actor_id")
-                    .setIdentifyingAttribute(true)
-                    .setValueKind(AttributeKind.TYPE_STRING)
-                    .build())
-            .build());
+    RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                entityTypeServiceClient.upsertEntityType(
+                    EntityType.newBuilder()
+                        .setName("ACTOR")
+                        .setTenantId(TENANT_ID)
+                        .addAttributeType(
+                            AttributeType.newBuilder()
+                                .setName("actor_id")
+                                .setIdentifyingAttribute(true)
+                                .setValueKind(AttributeKind.TYPE_STRING)
+                                .build())
+                        .build()));
 
-    entityTypeServiceClient.upsertEntityType(
-        TENANT_ID,
-        EntityType.newBuilder()
-            .setName("SERVICE")
-            .setTenantId(TENANT_ID)
-            .addAttributeType(
-                AttributeType.newBuilder()
-                    .setName(EntityConstants.getValue(CommonAttribute.COMMON_ATTRIBUTE_FQN))
-                    .setIdentifyingAttribute(true)
-                    .setValueKind(AttributeKind.TYPE_STRING)
-                    .build())
-            .build());
+    RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                entityTypeServiceClient.upsertEntityType(
+                    EntityType.newBuilder()
+                        .setName("SERVICE")
+                        .setTenantId(TENANT_ID)
+                        .addAttributeType(
+                            AttributeType.newBuilder()
+                                .setName(
+                                    EntityConstants.getValue(CommonAttribute.COMMON_ATTRIBUTE_FQN))
+                                .setIdentifyingAttribute(true)
+                                .setValueKind(AttributeKind.TYPE_STRING)
+                                .build())
+                        .build()));
 
     Entity entity =
         Entity.newBuilder()

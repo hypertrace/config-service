@@ -1,32 +1,32 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
-  id("ai.traceable.publish-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.traceable.publish)
 }
 
 dependencies {
   api(projects.traceableSpanProcessingConfigServiceApi)
 
-  implementation(libs.protobuf.javautil)
-  implementation(libs.uuidCreator)
-  implementation(libs.slf4j.api)
-  implementation(libs.re2j)
-  implementation(libs.commons.net)
-  implementation(libs.commons.validator)
-  implementation(libs.typesafe.config)
-  implementation(libs.commons.csv)
-  implementation(libs.guava)
-  implementation(libs.json.path)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.re2j)
+  implementation(commonLibs.commons.net)
+  implementation(commonLibs.commons.validator)
+  implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.commons.csv)
+  implementation(commonLibs.guava)
+  implementation(commonLibs.json.path)
 
-  annotationProcessor(libs.lombok)
-  compileOnly(libs.lombok)
+  annotationProcessor(commonLibs.lombok)
+  compileOnly(commonLibs.lombok)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.core)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
 
-  testAnnotationProcessor(libs.lombok)
-  testCompileOnly(libs.lombok)
+  testAnnotationProcessor(commonLibs.lombok)
+  testCompileOnly(commonLibs.lombok)
 }
 
 tasks.test {

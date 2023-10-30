@@ -1,19 +1,18 @@
 plugins {
   `java-library`
   jacoco
-  id("org.hypertrace.jacoco-report-plugin")
-  id("ai.traceable.publish-plugin")
+  alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.traceable.publish)
 }
 
 dependencies {
   api(projects.apiGatewayConfigServiceApi)
 
-  implementation(libs.guice)
+  implementation(commonLibs.guice)
 
-  testImplementation(libs.junit.jupiter)
-  testImplementation(libs.mockito.inline)
-  testImplementation(libs.mockito.core)
-  testImplementation(libs.mockito.junit)
+  testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
 }
 
 tasks.test {
