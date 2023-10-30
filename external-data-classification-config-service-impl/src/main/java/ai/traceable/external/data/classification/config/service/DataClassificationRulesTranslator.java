@@ -97,10 +97,13 @@ class DataClassificationRulesTranslator {
     }
     DataType.Builder dataTypeBuilder = DataType.newBuilder();
     dataTypeBuilder.setDataTypeId(dataType.getId());
+    DataTransformation transformation = translateDataSuppression(dataSuppression);
+    if (shouldDataTransformationBeSetOnDataType(transformation)) {
+      dataTypeBuilder.setTransformation(transformation);
+    }
     if (dataType.getRule().hasSuppressionPattern()) {
       dataTypeBuilder.setSuppressionPattern(dataType.getRule().getSuppressionPattern());
     }
-    translateDataSuppression(dataSuppression).ifPresent(dataTypeBuilder::setTransformation);
     dataTypeBuilder.addAllMatchRules(matchRules);
     return Optional.of(dataTypeBuilder.build());
   }
@@ -258,19 +261,29 @@ class DataClassificationRulesTranslator {
     }
   }
 
-  Optional<DataTransformation> translateDataSuppression(DataSuppression dataSuppression) {
+  DataTransformation translateDataSuppression(DataSuppression dataSuppression) {
     switch (dataSuppression) {
       case DATA_SUPPRESSION_REDACT:
-        return Optional.of(DataTransformation.DATA_TRANSFORMATION_REDACT);
+        return DataTransformation.DATA_TRANSFORMATION_REDACT;
       case DATA_SUPPRESSION_OBFUSCATE:
-        return Optional.of(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE);
+        return DataTransformation.DATA_TRANSFORMATION_OBFUSCATE;
       case DATA_SUPPRESSION_RAW:
       case DATA_SUPPRESSION_UNSPECIFIED:
-        return Optional.empty();
+        return DataTransformation.DATA_TRANSFORMATION_UNSPECIFIED;
       case UNRECOGNIZED:
       default:
-        log.error("Received unknown data suppression mode : {}", dataSuppression);
-        return Optional.empty();
+        log.error("Received unsupported data suppression mode : {}", dataSuppression);
+        return DataTransformation.UNRECOGNIZED;
+    }
+  }
+
+  boolean shouldDataTransformationBeSetOnDataType(DataTransformation dataTransformation) {
+    switch (dataTransformation) {
+      case UNRECOGNIZED:
+      case DATA_TRANSFORMATION_UNSPECIFIED:
+        return false;
+      default:
+        return true;
     }
   }
 }
