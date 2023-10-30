@@ -95,12 +95,12 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: traceable-config-service/build/docker
-          cache-from: type=gha,scope=main-service
+          cache-from: type=registry,ref=${{ secrets.GCP_CACHE_ARTIFACT_REGISTRY }}/traceable/traceable-config-service
 
       - name: Scan docker image
         uses: ./.github/actions/trivy-scan
         with:
-          image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/traceable/traceable-config-service
+          image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/docker/traceable/traceable-config-service
           auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
 
   test:

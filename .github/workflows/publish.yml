@@ -99,7 +99,7 @@ jobs:
           image: traceable/traceable-config-service
           tag: ${{ steps.tag.outputs.tag }}
           context: traceable-config-service/build/docker
-          cache-scope: main-service
+          cache-type: registry
 
   publish-charts:
     needs: [ create-release, publish-artifacts ]

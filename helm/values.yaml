@@ -19,7 +19,7 @@ maxUnavailable: 0
 chartType: application
 
 image:
-  registry: us-docker.pkg.dev/traceable-actions-386017
+  registry: us-docker.pkg.dev/traceable-actions-386017/docker
   repository: traceable/traceable-config-service
   pullPolicy: IfNotPresent
   tagOverride: ""
@@ -54,6 +54,14 @@ topologySpreadConstraints: []
 hostNetwork: false
 
 securityContext: {}
+
+initContainers: []
+
+extraVolumes: []
+
+extraVolumeMounts: []
+
+extraEnvs: []
 
 javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError"
 
