@@ -9,6 +9,7 @@ import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventDetails;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BflaAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.ContentExplosionAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentSizeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentTypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeviceAnomalyConfig;
@@ -17,6 +18,7 @@ import ai.traceable.anomaly.config.service.v1.detector.HttpStatusAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.JwtAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.MissingParamAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.detector.SpecialCharacterAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SsrfAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.TypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UnknownParamAnomalyConfig;
@@ -158,6 +160,18 @@ public class ApiDefinitionRegistryTest {
         ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
             .setAnomalyRuleId("jwt")
             .setJwt(JwtAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "specialCharacter",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("specialCharacter")
+            .setSpecialCharacter(SpecialCharacterAnomalyConfig.getDefaultInstance())
+            .build());
+    expectedMap.put(
+        "contentExplosion",
+        ApiDefinitionMetadataAnomalyDetectionConfig.newBuilder()
+            .setAnomalyRuleId("contentExplosion")
+            .setContentExplosion(ContentExplosionAnomalyConfig.getDefaultInstance())
             .build());
 
     assertEquals(expectedMap, ruleIdToConfigMap);

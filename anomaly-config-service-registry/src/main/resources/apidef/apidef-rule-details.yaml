@@ -35,6 +35,20 @@
     CWE: 287
     OWASP_API_2023: API8
     OWASP_API: API7
+
+- ruleId: specialCharacter
+  ruleName: Special Character Tampering
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels:
+    CWE: 159
+    OWASP_2021: A3
+
+- ruleId: contentExplosion
+  ruleName: Content Explosion
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  eventLabels:
+    CWE: 405
+    OWASP_2021: A3
     
 - ruleId: device
   ruleName: Unexpected User Agent

@@ -136,6 +136,8 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     UnknownParamAnomalyConfig unknown_param = 12;
     BflaAnomalyConfig bfla = 13;
     JwtAnomalyConfig jwt = 14;
+    SpecialCharacterAnomalyConfig special_character = 16;
+    ContentExplosionAnomalyConfig content_explosion = 17;
   }
   AnomalySubRuleConfigMap sub_rule_configs = 15;
 }
@@ -285,6 +287,16 @@ message BflaAnomalyConfig {
 message JwtAnomalyConfig {
   optional double time_difference_buffer_millis = 1;
   optional double min_percent_seen = 2;
+}
+
+message SpecialCharacterAnomalyConfig {
+  optional double min_percent_seen = 1;
+  optional double min_total_traffic_seen = 2;
+}
+
+message ContentExplosionAnomalyConfig {
+  optional double min_percent_seen = 1;
+  optional double max_depth_difference_allowed = 2;
 }
 
 message LearntApiAnomalyConfig {

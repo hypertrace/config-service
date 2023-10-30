@@ -138,6 +138,7 @@ message MetadataTrainingConfig {
     JwtParamsTrainingConfig jwt_params = 24;
     ParamExclusionsConfig param_exclusions = 25;
     NumericSignTrainingConfig numeric_sign = 26;
+    StructuredContentDepthTrainingConfig structured_content_depth = 27;
   }
 }
 
@@ -218,6 +219,9 @@ message DigitLengthTrainingConfig {
 
 message NumericSignTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message StructuredContentDepthTrainingConfig {
 }
 
 message SpecialCharactersTrainingConfig {
