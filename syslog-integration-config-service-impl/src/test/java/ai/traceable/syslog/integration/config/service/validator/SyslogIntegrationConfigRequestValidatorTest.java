@@ -164,7 +164,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(0))
+                                .setPrivateEnterpriseNumber(0))
                         .build())));
 
     assertThrows(
@@ -182,7 +182,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertThrows(
@@ -200,7 +200,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertThrows(
@@ -218,7 +218,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertDoesNotThrow(
@@ -235,7 +235,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
   }
 
@@ -379,7 +379,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(0))
+                                .setPrivateEnterpriseNumber(0))
                         .build())));
 
     assertThrows(
@@ -398,7 +398,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertThrows(
@@ -417,7 +417,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertThrows(
@@ -436,7 +436,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertThrows(
@@ -455,7 +455,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
 
     assertDoesNotThrow(
@@ -473,7 +473,7 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setAccountTokenDetails(
                             SyslogServerCredentials.SyslogServerAccountTokenDetails.newBuilder()
                                 .setEncryptedTokenId("id")
-                                .setPrivateIdentificationNumber(12345))
+                                .setPrivateEnterpriseNumber(12345))
                         .build())));
   }
 

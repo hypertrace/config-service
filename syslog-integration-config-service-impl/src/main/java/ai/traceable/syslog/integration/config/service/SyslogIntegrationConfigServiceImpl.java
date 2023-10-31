@@ -109,15 +109,21 @@ public class SyslogIntegrationConfigServiceImpl
       detailsBuilder.setDescription(details.getDescription());
       detailsBuilder.setLogFormat(details.getLogFormat());
 
-      SyslogServerConnectionDetails connectionDetails =
-          details.hasServerConnectionDetails()
-              ? details.getServerConnectionDetails()
-              : syslogIntegrationConfigStore
-                  .getData(requestContext, integration.getId())
-                  .map(SyslogServerIntegration::getDetails)
-                  .map(SyslogServerIntegrationDetails::getServerConnectionDetails)
-                  .orElseThrow();
-
+      SyslogServerConnectionDetails connectionDetails = details.getServerConnectionDetails();
+      if (!connectionDetails.hasCredentials()) {
+        SyslogServerConnectionDetails existingConnectionDetails =
+            syslogIntegrationConfigStore
+                .getData(requestContext, integration.getId())
+                .map(SyslogServerIntegration::getDetails)
+                .map(SyslogServerIntegrationDetails::getServerConnectionDetails)
+                .orElseThrow();
+        if (existingConnectionDetails.hasCredentials()) {
+          connectionDetails =
+              connectionDetails.toBuilder()
+                  .setCredentials(existingConnectionDetails.getCredentials())
+                  .build();
+        }
+      }
       detailsBuilder.setServerConnectionDetails(connectionDetails);
 
       final SyslogServerIntegration updatedSyslogServerIntegration =

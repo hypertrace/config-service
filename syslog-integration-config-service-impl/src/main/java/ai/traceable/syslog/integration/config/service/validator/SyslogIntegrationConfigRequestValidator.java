@@ -135,10 +135,9 @@ public class SyslogIntegrationConfigRequestValidator {
       SyslogServerAccountTokenDetails accountTokenDetails, SyslogLogFormat logFormat) {
     validateNonDefaultPresenceOrThrow(
         accountTokenDetails, SyslogServerAccountTokenDetails.ENCRYPTED_TOKEN_ID_FIELD_NUMBER);
-    if (accountTokenDetails.getPrivateIdentificationNumber() <= 0) {
+    if (accountTokenDetails.getPrivateEnterpriseNumber() <= 0) {
       throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format("Private Identification Number should be a positive number"))
+          .withDescription(String.format("Private Enterprise Number should be a positive number"))
           .asRuntimeException();
     }
     if (!logFormat.equals(SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_5424)) {

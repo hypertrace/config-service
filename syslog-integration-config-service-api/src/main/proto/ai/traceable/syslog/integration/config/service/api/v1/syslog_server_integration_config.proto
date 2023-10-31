@@ -66,7 +66,7 @@ message SyslogServerCredentials {
     string encrypted_token_id = 1;
     // Unique PEN assigned by IANA
     // https://www.iana.org/assignments/enterprise-numbers/
-    int64 private_identification_number = 2;
+    int64 private_enterprise_number = 2;
   }
 }
 
