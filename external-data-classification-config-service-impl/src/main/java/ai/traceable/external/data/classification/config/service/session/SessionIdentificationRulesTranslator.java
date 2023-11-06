@@ -207,7 +207,10 @@ public class SessionIdentificationRulesTranslator {
     if (!projections.isEmpty() && projections.get(0).hasJsonPath()) {
       return Optional.of(
           PathPredicate.newBuilder()
-              .setJsonPath(projections.get(0).getJsonPath().getPath())
+              .setPathSegmentPredicate(
+                  StringPredicate.newBuilder()
+                      .setOperator(Operator.OPERATOR_EQUALS)
+                      .setValue(projections.get(0).getJsonPath().getPath()))
               .build());
     }
     return Optional.empty();

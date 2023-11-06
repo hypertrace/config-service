@@ -26,6 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SessionIdentificationRuleConverter {
   private static final String REQUEST_COOKIE_COMPLEX_DATA_KEY = "http.request.header.cookie";
   private static final String RESPONSE_BODY_COMPLEX_DATA_KEY = "http.response.body";
+  private static final String EMPTY_STRING = "";
+  private static final String ESCAPE_STRING = "\\";
 
   public Optional<SessionIdentificationRule> convert(RedactionRule redactionRule) {
     if (redactionRule.getComplexData().getKey().equals(RESPONSE_BODY_COMPLEX_DATA_KEY)) {
@@ -105,7 +107,11 @@ public class SessionIdentificationRuleConverter {
                                 ValueProjection.newBuilder()
                                     .setJsonPath(
                                         ValueProjection.JsonPathProjection.newBuilder()
-                                            .setPath(redactionRule.getRegex())))));
+                                            .setPath(
+                                                // removing escaped characters as old rules have
+                                                // only json paths with dot and dollar escaped.
+                                                removeEscapeCharacters(
+                                                    redactionRule.getRegex()))))));
     if (redactionRule.getRedactionStrategy().equals(RedactionStrategy.REDACTION_STRATEGY_HASH)) {
       tokenValueRule.setValueObfuscationStrategy(ObfuscationStrategy.OBFUSCATION_STRATEGY_HASH);
     }
@@ -146,5 +152,9 @@ public class SessionIdentificationRuleConverter {
             SessionIdentificationRuleStatus.newBuilder().setDisabled(redactionRule.getDisabled()))
         .addTokenRules(tokenRule)
         .build();
+  }
+
+  private String removeEscapeCharacters(String s) {
+    return s.replace(ESCAPE_STRING, EMPTY_STRING);
   }
 }
