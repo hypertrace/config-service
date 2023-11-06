@@ -182,7 +182,16 @@ public class WafIntegrationBuilderUtils {
         updatedAzureIntegrationParams.getAzureIntegrationDetailsList().stream()
             .map(
                 azureIntegrationDetails -> {
-                  if (azureIntegrationDetails
+                  // new azure integration detail
+                  if (azureIntegrationDetails.getId().isEmpty()
+                      && !azureIntegrationDetails
+                          .getAuthCredentials()
+                          .getEncryptedClientSecret()
+                          .isEmpty()) {
+                    return azureIntegrationDetails.toBuilder()
+                        .setId(UUID.randomUUID().toString())
+                        .build();
+                  } else if (azureIntegrationDetails
                       .getAuthCredentials()
                       .getEncryptedClientSecret()
                       .isEmpty()) {
