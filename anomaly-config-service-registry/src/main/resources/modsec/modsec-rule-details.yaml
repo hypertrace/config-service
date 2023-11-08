@@ -2,6 +2,28 @@
 - ruleId: crs_101
   ruleName: Server Side Request Forgery (SSRF) Signatures
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
+  eventDetails:
+    description: |
+      SSRF is a type of attack where an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
+    mitigation: |
+      Validate the input URL and prevent internal services from reaching internet applications:
+      - Use regular expressions to validate possible URLs, avoiding unwanted domain names, ports, and protocols
+      - Use a whitelist of allowed domains, protocols and ports
+      - Prevent internal resources from reaching internet facing applications
+    impact: |
+      The impact of this attack depends on the affected systems - it can range from Sensitive Data Exposure, DOS, RCE, and more.
+      - A vulnerable API importing remote code could be affected by RCE
+      - A vulnerable API reading remote files might provide access internal sensitive APIs
+      - A vulnerable API reading remote files can be used to request other protocols, like telnet or ftp
+      - A vulnerable API reading remote files can sometimes be affected by RCE
+      - A vulnerable API can sometimes be exploited to download big files and cause DOS
+    references: |
+      - Server Side Request Forgery: https://owasp.org/www-community/attacks/Server_Side_Request_Forgery
+      - OWASP Top 10 - 2021 - A10 2021-Server-Side Request Forgery - https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/
+      - CWE - SANS - Server-Side Request Forgery (SSRF) - https://cwe.mitre.org/data/definitions/918.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - https://capec.mitre.org/data/definitions/664.html
+      - MITRE Attack - T1190 Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
+      - SSRF Bible Cheatsheet - https://cheatsheetseries.owasp.org/assets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet_SSRF_Bible.pdf
   
 - ruleId: crs_913
   ruleName: Scanner Detection
@@ -10,10 +32,43 @@
 - ruleId: crs_941
   ruleName: Cross Site Scripting (XSS)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_XSS
+  eventDetails:
+    description: |
+      Cross-site scripting (XSS) attacks occur when untrusted user input is used by the application, usually from a web request and the web application dynamically generates a web page that contains this untrusted data. The victim visits the generated web page through a web browser where the malicious script is executed in the context of the web server's domain, effectively violating the web browser's same-origin policy. The attacker could transfer private information from the victim's browser or send malicious requests to a web site on behalf of the victim. Phishing attacks could be used to emulate trusted web sites and trick the victim into entering a password, allowing the attacker to compromise the victim's account on that web site. Finally, the script could exploit a vulnerability in the web browser itself possibly taking over the victim's machine, sometimes referred to as "drive-by hacking."
+    mitigation: |
+      Assume all input is malicious. Use an "accept known good" input validation strategy. Use a vetted library or framework that does not allow this weakness to occur or provides constructs that make this weakness easier to avoid. Use a whitelist of allowed characters that do not need to be encoded.
+      To help mitigate XSS attacks against the user's session cookie, set the session cookie to be HttpOnly. This will prevent the cookie from being accessed by a client side script.
+    impact: |
+      Consequence of an XSS attack could be any of the following regardless of the type:
+      - an annoyance to end user to complete account compromise.
+      - can be exploited to manipulate or steal credentials/cookies or compromise confidential information.
+      - forge requests from the victim's browser.
+      - execute malicious code on the end user systems for a variety of nefarious purposes
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+      - OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
+      - OWASP Top 10 - 2017 - A7:Cross-Site Scripting (XSS) - https://owasp.org/www-project-top-ten/2017/A7_2017-Cross-Site_Scripting_(XSS).html
+      - OWASP: Cross Site Scripting (XSS) - https://owasp.org/www-community/attacks/xss/
+      - OWASP: XSS (Cross Site Scripting) Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+      - CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') - https://cwe.mitre.org/data/definitions/79.html
+      - CAPEC-592: Stored Cross-Site Scripting - https://capec.mitre.org/data/definitions/592.html
   
 - ruleId: crs_943
   ruleName: Session Fixation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SESSION_FIXATION
+  eventDetails:
+    description: |
+      Session Fixation is an attack that permits an attacker to hijack a valid user session. The attack explores a limitation in the way the web application manages the session ID, more specifically the vulnerable web application. When authenticating a user, it doesn’t assign a new session ID, making it possible to use an existent session ID. The attack consists of obtaining a valid session ID (e.g. by connecting to the application), inducing a user to authenticate himself with that session ID, and then hijacking the user-validated session by the knowledge of the used session ID. The attacker has to provide a legitimate Web application session ID and try to make the victim’s browser use it.
+      The session fixation attack is not a class of Session Hijacking, which steals the established session between the client and the Web Server after the user logs in. Instead, the Session Fixation attack fixes an established session on the victim’s browser, so the attack starts before the user logs in.
+    mitigation: |
+      - Generate a new session ID every time a user authenticates themself, even if a set session ID has been provided in the request.
+      - Timeout user sessions after a short period of time with no activity. This will limit the amount of time the attacker is able to spend on the victim's session with the current session ID.
+    impact: |
+      A successful session fixation attack gives the attacker access to the victim's account. This could mean access to higher level privileges or the ability to look at sensitive data.
+    references: |
+      - http://www.acros.si/papers/session_fixation.pdf
+      - http://en.wikipedia.org/wiki/Session_fixation
+      - http://www.derkeiler.com/pdf/Mailing-Lists/Securiteam/2002-12/0099.pdf
   
 - ruleId: crs_921
   ruleName: HTTP Protocol Attacks
@@ -30,10 +85,74 @@
 - ruleId: crs_942
   ruleName: SQL Injection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  eventDetails:
+    description: |
+      Traceable identified a SQL injection attack.
+      It occurs when data input by a user:
+        - is NOT validated, filtered or sanitized by the application
+        - is used to build Dynamic queries or non-parameterized calls without context-aware escaping
+      This is an extremely common attack and its success can have critical implications.
+    mitigation: |
+      - The best way to protect your code against SQL injections is using parameterized queries (prepared statements). Almost all modern languages provide built-in libraries for this.
+      - Wherever possible, do not create dynamic SQL queries or SQL queries with string concatenation. If not, sanitize the user input.
+      - Using a database access layer (DAL)/ object relational mapping (ORM). Most of the ORM systems use only parameterized queries and this can solve the whole SQL injection problem centrally.
+    impact: |
+      Depending on the backend database, and the software stack, an attacker can execute one or more of the following type of attacks successfully:
+      - Can read, update and delete arbitrary data/tables from the database.
+      - Can read/write files into the underlying file system.
+      - Can execute commands to the underlying operating system.
+    references: |
+      - SQL Injection: https://owasp.org/www-community/attacks/SQL_Injection
+      - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+      - OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
+      - OWASP Top 10 - 2017 - A1:Injection - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
+      - Common Weakness Enumeration (CWE) - CWE-89:SQL Injection - http://cwe.mitre.org/data/definitions/89.html
+      - SANS TOP 25 - http://cwe.mitre.org/top25/
+      - OWASP SQL Injection Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-7:Blind SQL Injection - https://capec.mitre.org/data/definitions/7.html
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
+      - Web Application Security Consortium - WASC-19:SQL Injection - http://projects.webappsec.org/w/page/13246963/SQL%20Injection
   
 - ruleId: crs_930
   ruleName: Local File Inclusion
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PATH_MANIPULATION
+  subRuleInfos:
+  - ruleId: crs_930100
+    eventDetails:
+      description: |
+        Traceable identified a Path Traversal attack, where the attacker was able to access files or directories which were stored outside the web root folder. This is done using the ../ sequences to navigate outside the current directory.
+      mitigation: |
+        - Use labels instead of file paths to refer to a file.
+        - Do not trust user input. Sanitize these input to remove sequences such as ../.
+        - Avoid storing sensitive files inside the web root folder.
+        - Apply access control policies to restrict the access of files to users.
+      impact: |
+        The attacker will be able to view sensitive information or files to does not have authorization for, which they could then use this sensitive information to carry out different other attacks.
+      references: |
+        - OWASP Top 10 - 2021 – A01:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+        - OWASP Top 10 - 2017 - A5:Broken Access Control - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control
+        - Common Weakness Enumeration (CWE) CWE-22:Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') - https://cwe.mitre.org/data/definitions/22.html
+        - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-126:Path Traversal - https://capec.mitre.org/data/definitions/126.html
+        - MITRE Attack - T1083:File and Directory Discovery - https://attack.mitre.org/techniques/T1083/
+        - Web Application Security Consortium - WASC-33:Path Traversal - http://projects.webappsec.org/w/page/13246952/Path%20Traversal
+  - ruleId: crs_930110
+    eventDetails:
+      description: |
+        Traceable identified a Path Traversal attack, where the attacker was able to access files or directories which were stored outside the web root folder. This is done using the ../ sequences to navigate outside the current directory.
+      mitigation: |
+        - Use labels instead of file paths to refer to a file.
+        - Do not trust user input. Sanitize these input to remove sequences such as ../.
+        - Avoid storing sensitive files inside the web root folder.
+        - Apply access control policies to restrict the access of files to users.
+      impact: |
+        The attacker will be able to view sensitive information or files to does not have authorization for, which they could then use this sensitive information to carry out different other attacks.
+      references: |
+        - OWASP Top 10 - 2021 – A01:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+        - OWASP Top 10 - 2017 - A5:Broken Access Control - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control
+        - Common Weakness Enumeration (CWE) CWE-22:Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') - https://cwe.mitre.org/data/definitions/22.html
+        - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-126:Path Traversal - https://capec.mitre.org/data/definitions/126.html
+        - MITRE Attack - T1083:File and Directory Discovery - https://attack.mitre.org/techniques/T1083/
+        - Web Application Security Consortium - WASC-33:Path Traversal - http://projects.webappsec.org/w/page/13246952/Path%20Traversal
   
 - ruleId: crs_931
   ruleName: Remote File Inclusion
@@ -43,9 +162,9 @@
       Traceable identified a Remote File Inclusion attack, where the attacker was able to include files in the application. 
       This dynamic file inclusion allows the attacker to execute malicious code in the context of the web application.
     mitigation: |
-      Restrict the inclusion of user provided files, urls to the web application.
-      Maintain a list of accepted files that can be included in the web application. Use mappings to a file name rather than the actual file names in this scenario.
-      All application processes should be run with the minimal privileges required. Also, processes must shed privileges as soon as they no longer require them.
+      - Restrict the inclusion of user provided files, urls to the web application.
+      - Maintain a list of accepted files that can be included in the web application. Use mappings to a file name rather than the actual file names in this scenario.
+      - All application processes should be run with the minimal privileges required. Also, processes must shed privileges as soon as they no longer require them.
     impact: |
       Attackers could include arbitrary code, which could then be used to
         - execute malicious code on the web application.
@@ -53,18 +172,62 @@
         - cause issues in the availability of the web server.
         - can facilitate the execution of other attacks such as cross site scripting, denial of service.
     references: |
-      OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
-      OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
-      OWASP Top 10 - 2017 - A1:Injection - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
-      Common Weakness Enumeration (CWE) - CWE-98:Improper Control of Filename for Include/Require Statement in PHP Program ('PHP Remote File Inclusion') - https://cwe.mitre.org/data/definitions/98.html
-      Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-193:PHP Remote File Inclusion - https://capec.mitre.org/data/definitions/193.html
-      MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
-      Web Application Security Consortium - WASC-5:Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
-
+      - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+      - OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
+      - OWASP Top 10 - 2017 - A1:Injection - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
+      - Common Weakness Enumeration (CWE) - CWE-98:Improper Control of Filename for Include/Require Statement in PHP Program ('PHP Remote File Inclusion') - https://cwe.mitre.org/data/definitions/98.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-193:PHP Remote File Inclusion - https://capec.mitre.org/data/definitions/193.html
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
+      - Web Application Security Consortium - WASC-5:Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
 
 - ruleId: crs_932
   ruleName: Remote Code Execution
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  subRuleInfos:
+  - ruleId: crs_932170
+    eventDetails:
+      description: |
+        Traceable identified a Shell Shock RCE attack. While defining an environment variable for a function definition, BASH would run commands following the function definition as BASH supports this functionality.
+        This allowed the attackers to execute unexpected, dangerous commands directly on the operating system. This weakness can lead to a vulnerability in environments in which the attacker does not have direct access to the operating system, such as in web applications. Alternatively, if the weakness occurs in a privileged program, it could allow the attacker to specify commands that normally would not be accessible, or to call alternate commands with privileges that the attacker does not have. The problem is exacerbated if the compromised process does not follow the principle of least privilege, because the attacker-controlled commands may run with special system privileges that increases the amount of damage.
+      mitigation: |
+        - Update the current version of BASH running for the application.
+        - Do not use user input before sanitization for environment variable definitions.
+      impact: |
+        Attackers could execute unauthorized commands, which could then be used to
+        - fully compromise the host and the application.
+        - read and modify files on OS for which the attacker does not have permissions to access directly.
+        - compromise other parts of hosting infrastructure exploiting trust relationship.
+        Since the targeted application is directly executing the commands instead of the attacker, any malicious activities may appear to come from the application or the application's owner.
+      references: |
+        - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - OWASP Top 10 - 2021 - A06:Vulnerable and Outdated Components - https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
+        - OWASP Top 10 - 2017 - A09:Using Components with Known Vulnerabilities - https://owasp.org/www-project-top-ten/2017/A9_2017-Using_Components_with_Known_Vulnerabilities
+        - Common Weakness Enumeration (CWE) - CWE-78:Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') - https://cwe.mitre.org/data/definitions/78.html
+        - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-248:Command Injection - https://capec.mitre.org/data/definitions/248.html
+        - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
+        - Web Application Security Consortium - WASC-31:OS Commanding - http://projects.webappsec.org/w/page/13246950/OS%20Commanding
+  - ruleId: crs_932171
+    eventDetails:
+      description: |
+        Traceable identified a Shell Shock RCE attack. While defining an environment variable for a function definition, BASH would run commands following the function definition as BASH supports this functionality.
+        This allowed the attackers to execute unexpected, dangerous commands directly on the operating system. This weakness can lead to a vulnerability in environments in which the attacker does not have direct access to the operating system, such as in web applications. Alternatively, if the weakness occurs in a privileged program, it could allow the attacker to specify commands that normally would not be accessible, or to call alternate commands with privileges that the attacker does not have. The problem is exacerbated if the compromised process does not follow the principle of least privilege, because the attacker-controlled commands may run with special system privileges that increases the amount of damage.
+      mitigation: |
+        - Update the current version of BASH running for the application.
+        - Do not use user input before sanitization for environment variable definitions.
+      impact: |
+        Attackers could execute unauthorized commands, which could then be used to
+        - fully compromise the host and the application.
+        - read and modify files on OS for which the attacker does not have permissions to access directly.
+        - compromise other parts of hosting infrastructure exploiting trust relationship.
+        Since the targeted application is directly executing the commands instead of the attacker, any malicious activities may appear to come from the application or the application's owner.
+      references: |
+        - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - OWASP Top 10 - 2021 - A06:Vulnerable and Outdated Components - https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
+        - OWASP Top 10 - 2017 - A09:Using Components with Known Vulnerabilities - https://owasp.org/www-project-top-ten/2017/A9_2017-Using_Components_with_Known_Vulnerabilities
+        - Common Weakness Enumeration (CWE) - CWE-78:Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') - https://cwe.mitre.org/data/definitions/78.html
+        - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-248:Command Injection - https://capec.mitre.org/data/definitions/248.html
+        - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
+        - Web Application Security Consortium - WASC-31:OS Commanding - http://projects.webappsec.org/w/page/13246950/OS%20Commanding
   
 - ruleId: crs_944
   ruleName: Java Application Attacks
@@ -73,9 +236,8 @@
   - ruleId: crs_944120
     eventDetails:
       description: |
-        - Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. 
-        - This can lead to a dangerous “Remote Code Execution”. 
-        - A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
+        Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. This can lead to a dangerous “Remote Code Execution”. 
+        A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
       mitigation: |
         - Deserialization of untrusted data is inherently dangerous and should be avoided.
         - Auditing your system against such vulnerabilities is very difficult: you have to check every implementation of readObject, including those in third-party libraries and the runtime library.
@@ -93,9 +255,8 @@
   - ruleId: crs_9440210
     eventDetails:
       description: |
-        - Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. 
-        - This can lead to a dangerous “Remote Code Execution”. 
-        - A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
+        Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. This can lead to a dangerous “Remote Code Execution”. 
+        A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
       mitigation: |
         - Deserialization of untrusted data is inherently dangerous and should be avoided.
         - Auditing your system against such vulnerabilities is very difficult: you have to check every implementation of readObject, including those in third-party libraries and the runtime library.
@@ -110,7 +271,70 @@
         - https://cwe.mitre.org/data/definitions/502.html
         - https://docs.oracle.com/javase/7/docs/platform/serialization/spec/input.html#2971
         - https://capec.mitre.org/data/definitions/586.html
+  - ruleId: crs_9440900
+    eventDetails:
+      description: |
+        Traceable identified a Log4Shell attack where the attacker was able to exploit a vulnerable endpoint by sending a malicious request with a malicious endpoint. The malicious payload is evaluated by the log4j, and the LDAP+JNDI payload is executed.
+        Depending on the application permissions, the exploit might be able to execute arbitrary code outside the java virtual machine, and take control of the server.
+      mitigation: |
+        Upgrade log4j to version:
+        - Java 6: 2.3.2 or higher
+        - Java 7: 2.12.4 or higher
+        - Java 8+: 2.17.1 or higher
+      impact: |
+        A successful exploitation of log4shell might lead to arbitrary code execution.
+      references: |
+        - Log4j vulnerability: https://www.ncsc.gov.uk/information/log4j-vulnerability-what-everyone-needs-to-know
+        - OWASP API Top 10 - 2019 - A8 Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - CVE-2021-44228 - Log4j - https://cve.mitre.org/cgi-bin/cvename.cgi?name=cve-2021-44228
+  - ruleId: crs_9440920
+    eventDetails:
+      description: |
+        Traceable identified a Spring4Shell attack where the attacker finds compatible “java gadgets” which contain characteristics that allows the attacker to evaluate code, write files, or more.
+        This Spring4Shell attack relies on the form to model de-serialization feature that uses data binders to create spring models. Data binding allows the developers to dynamically bind the user input to the domain model of an application.
+      mitigation: |
+        Upgrade Spring to version:
+        - Spring Framework 5.3.x → 5.3.18 or higher
+        - Spring Framework 5.2.x → 5.2.20 or higher
+        Upgrade Tomcat to version:
+          - Apache Tomcat 10.0.x → 10.0.20 or higher
+          - Apache Tomcat 9.0.x → 9.0.62 or higher
+          - Apache Tomcat 8.5.x → 8.5.78 or higher
+        Good practices in CI/CD could mitigate the risk of providing useful gadgets to an attacker, rendering this exploit less dangerous.
+      impact: |
+        A successful exploitation of spring4shell might lead to arbitrary code execution.
+      references: |
+        - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - OWASP Top 10 - 2021 – A03:Injection - https://owasp.org/Top10/A03_2021-Injection/
+        - OWASP Top 10 - 2021 – A06:Vulnerable and Outdated Components - https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
+        - OWASP Top 10 - 2017 - A1:Injection - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
+        - OWASP Top 10 - 2017 - A9:Using Components with Known Vulnerabilities - https://owasp.org/www-project-top-ten/2017/A9_2017-Using_Components_with_Known_Vulnerabilities
+        - Common Weakness Enumeration (CWE) CWE-153:Input Data Manipulation - https://capec.mitre.org/data/definitions/153.html
+        - SANS TOP 25 - http://cwe.mitre.org/top25/
+        - MITRE Attack - TA0007:Discovery - https://attack.mitre.org/tactics/TA0007/
+        - CVE-2022-22965 - Spring4Shell - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-22965
+        - Web Application Security Consortium - WASC-20:Improper Input Handling - http://projects.webappsec.org/w/page/13246933/Improper%20Input%20Handling
 
 - ruleId: crs_103
   ruleName: Basic Authentication Violation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS
+  subRuleInfos:
+  - ruleId: crs_1030100
+    eventDetails:
+      description: |
+        HTTP basic authentication is simple, sending a username and password with each request. However, if appropriate security protocols such as TLS session encryption are not used for all communication, the username and password information can be sent in the clear, making it easy for attackers to steal the credentials.
+      mitigation: |
+        Make sure that HTTP authentication is transmitted over HTTPS.
+      impact: |
+        - An attacker eavesdropping the traffic might obtain logins and passwords of valid users.
+        - It may be vulnerable to account brute-forcing or may encourage Man-in-The-Middle (MiTM) attacks.
+        - Because the included credentials contain so little context, they can easily be misused in attacks such as cross-site request forgeries (CSRF)
+      references: |
+        - https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure.html
+        - https://owasp.org/Top10/A02_2021-Cryptographic_Failures
+        - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/dist/owasp-api-security-top-10.pdf
+        - https://capec.mitre.org/data/definitions/102.html
+        - https://cwe.mitre.org/data/definitions/522.html
+        - https://www.first.org/cvss/calculator/3.0#CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
+        - http://projects.webappsec.org/Insufficient%20Transport%20Layer%20Protection
+        - https://attack.mitre.org/techniques/T1190/

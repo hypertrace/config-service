@@ -1,9 +1,28 @@
 - ruleId: unknownParam
-  ruleName: Unrecognized Field
+  ruleName: Mass Assignment
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
   eventLabels: 
     CWE: 472
-    OWASP_API: API8
+    OWASP_API: API6
+  eventDetails:
+    description: |
+      Traceable identified a Mass Assignment attack.
+      It occur when parameters that are not meant to be supported are deployed. Some examples are:
+      - An application uses ORM to create a user object, the ORM framework will accept all database fields, even sensitive fields like role.
+      - Read-only fields are not filtered out when creating an "article" object.
+      - A user can disable MFA skipping security controls by setting the "skipMfa" field to true.
+    mitigation: |
+      The best way to protect your code against Mass Assignment is to make the API schemas and deployed apps consistent. The application should only accept parameters declared in the API schema.
+      While using ORM frameworks, always use lists of permitted parameters. Don't accepting raw inputs.
+    impact: |
+      It depends on the exposed parameters.
+      - A parameter like role might have a critical impact in your application by allowing privilege escalation.
+      - A parameter like skipMfa might have a high impact in your application by allowing MFA bypass.
+      - A parameter like country_code might have a medium impact in your application by allowing country-block bypass.
+    references: |
+      - OWASP API Top 10 - 2019 - A6 Mass Assignment - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa6-mass-assignment.md
+      - CWE - SANS - TOP 25 - http://cwe.mitre.org/top25/
+      - Common Weakness Enumeration - Improperly Controlled Modification of Dynamically-Determined Object Attributes - https://cwe.mitre.org/data/definitions/915.html
     
 - ruleId: enum
   ruleName: Invalid Enumerations
@@ -19,6 +38,19 @@
   eventLabels: 
     CWE: 190
     OWASP_API: API8
+  eventDetails:
+    description: |
+      Traceable identified a Value Out of range attack, where the application tries to assign an integer value outside than range which the memory assigned to the variable can hold.
+    mitigation: |
+      Enforce range limits for custom user inputs of a request. Use scanners regularly to look for such attack vulnerabilities.
+    impact: |
+      Writing outside the ranges can corrupt data, crash the program, or cause the execution of malicious code.
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+      - Common Weakness Enumeration (CWE) - CWE-190:Integer Overflow or Wraparound - https://cwe.mitre.org/data/definitions/190.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-92:Forced Integer Overflow - https://capec.mitre.org/data/definitions/92.html
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
+      - Web Application Security Consortium - WASC-03:Integer Overflows - http://projects.webappsec.org/w/page/13246946/Integer%20Overflows
     
 - ruleId: type
   ruleName: Type Anomaly
@@ -87,6 +119,28 @@
   eventLabels: 
     CWE: 918
     OWASP_API_2023: API7
+  eventDetails:
+    description: |
+      SSRF is a type of attack where an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
+    mitigation: |
+      Validate the input URL and prevent internal services from reaching internet applications:
+      - Use regular expressions to validate possible URLs, avoiding unwanted domain names, ports, and protocols
+      - Use a whitelist of allowed domains, protocols and ports
+      - Prevent internal resources from reaching internet facing applications
+    impact: |
+      The impact of this attack depends on the affected systems - it can range from Sensitive Data Exposure, DOS, RCE, and more.
+      - A vulnerable API importing remote code could be affected by RCE
+      - A vulnerable API reading remote files might provide access internal sensitive APIs
+      - A vulnerable API reading remote files can be used to request other protocols, like telnet or ftp
+      - A vulnerable API reading remote files can sometimes be affected by RCE
+      - A vulnerable API can sometimes be exploited to download big files and cause DOS
+    references: |
+      - Server Side Request Forgery: https://owasp.org/www-community/attacks/Server_Side_Request_Forgery
+      - OWASP Top 10 - 2021 - A10 2021-Server-Side Request Forgery - https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/
+      - CWE - SANS - Server-Side Request Forgery (SSRF) - https://cwe.mitre.org/data/definitions/918.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - https://capec.mitre.org/data/definitions/664.html
+      - MITRE Attack - T1190 Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
+      - SSRF Bible Cheatsheet - https://cheatsheetseries.owasp.org/assets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet_SSRF_Bible.pdf
     
 - ruleId: bfla
   ruleName: Broken Function Level Authorization (BFLA)
@@ -133,8 +187,8 @@
       impact: |
         A token that never expires can be used to access the API indefinitely. If no expiration information is available, the only way to invalidate the token is to change the secret.
       references: |
-        JWT documentation - https://jwt.io/introduction
-        JWT claims - https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims
+        - JWT documentation - https://jwt.io/introduction
+        - JWT claims - https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims
 
   - ruleId: jwt_nbf
     ruleName: JWT Premature Usage
@@ -167,3 +221,14 @@
       CWE: 345
       OWASP_API_2023: API2
       OWASP_API: API2
+    eventDetails:
+      description: |
+        JWT declares the signing algorithm in the headers block. There are cases where the authorization code is designed to handle a single algorithm, but the JWT token is signed with a different algorithm by the attacker. This can lead to token confusion.
+      mitigation: |
+        The authorization code has to handle only supported algorithms, and return an error if the algorithm is not supported.
+      impact: |
+        In some scenarios, JWT algorithm confusion might lead not to a error, but to a validation bypass.
+        An attacker can exploit a vulnerable application by creating a JWT token with a different algorithm than the one supported by the application.
+      references: |
+        - JWT documentation - https://jwt.io/introduction
+        - JWT Confusion Attack - https://portswigger.net/web-security/jwt/algorithm-confusion
