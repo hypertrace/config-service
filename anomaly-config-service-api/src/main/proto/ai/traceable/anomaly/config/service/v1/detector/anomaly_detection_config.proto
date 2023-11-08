@@ -292,6 +292,7 @@ message JwtAnomalyConfig {
 message SpecialCharacterAnomalyConfig {
   optional double min_percent_seen = 1;
   optional double min_total_traffic_seen = 2;
+  repeated string exclude_special_characters = 3;
 }
 
 message ContentExplosionAnomalyConfig {
