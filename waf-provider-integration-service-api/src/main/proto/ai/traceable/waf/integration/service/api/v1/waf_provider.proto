@@ -25,6 +25,13 @@ message WafIntegrationDetails {
     GcpIntegrationParams gcp_integration_params = 8;
   }
   WafIntegrationScope waf_integration_scope = 7;
+  repeated WafIntegrationTarget integration_targets = 20; //leaving numbers for oneof
+}
+
+message WafIntegrationTarget {
+  oneof type {
+    RuleType rule_target = 1;
+  }
 }
 
 message CloudflareIntegrationParams {
@@ -44,6 +51,7 @@ message UpdatedWafIntegrationDetails {
     GcpIntegrationUpdateParams updated_gcp_integration_params = 8;
   }
   WafIntegrationScope waf_integration_scope = 7;
+  repeated WafIntegrationTarget integration_targets = 20;
 }
 
 message UpdatedCloudflareIntegrationParams {
@@ -56,6 +64,14 @@ message WafIntegrationScope {
   oneof scope { // if no option selected, default is customer scope (all environments)
     EnvironmentScope environment_scope = 1;
   }
+}
+
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_CUSTOM_SIGNATURE = 1;
+  RULE_TYPE_THREAT_ACTORS = 2;
+  RULE_TYPE_IP_RANGE = 3;
 }
 
 message EnvironmentScope {

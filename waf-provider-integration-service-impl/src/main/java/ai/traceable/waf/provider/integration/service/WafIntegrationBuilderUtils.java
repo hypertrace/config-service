@@ -13,6 +13,7 @@ import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParam
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.Builder;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
 import java.util.List;
@@ -23,21 +24,35 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class WafIntegrationBuilderUtils {
+
+  private static void updateGenericFields(
+      WafIntegrationDetails.Builder builder, UpdateWafIntegrationRequest request) {
+    WafIntegrationDetails.Builder updatedWafIntegrationDetails =
+        builder
+            .setName(request.getUpdatedWafIntegrationDetails().getName())
+            .setDescription(request.getUpdatedWafIntegrationDetails().getDescription());
+    updateScope(updatedWafIntegrationDetails, request);
+    updateTargets(updatedWafIntegrationDetails, request);
+  }
+
   public static WafIntegration getUpdatedIntegration(
       UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
-    WafIntegration updatedWafIntegration;
+    Builder updatedWafIntegrationDetailsBuilder =
+        existingWafIntegration.getWafIntegrationDetails().toBuilder();
+    updateGenericFields(updatedWafIntegrationDetailsBuilder, request);
+
     switch (request.getUpdatedWafIntegrationDetails().getIntegrationParamsCase()) {
       case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
-        updatedWafIntegration = getUpdatedCloudflareWafIntegration(request, existingWafIntegration);
+        updateCloudflareWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
       case UPDATED_AWS_INTEGRATION_PARAMS:
-        updatedWafIntegration = getUpdatedAwsWafIntegration(request, existingWafIntegration);
+        updateAwsWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
       case UPDATED_IMPERVA_INTEGRATION_PARAMS:
-        updatedWafIntegration = getUpdatedImpervaWafIntegration(request, existingWafIntegration);
+        updateImpervaWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
       case UPDATED_AZURE_INTEGRATION_PARAMS:
-        updatedWafIntegration = getUpdatedAzureWafIntegration(request, existingWafIntegration);
+        updateAzureWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -46,12 +61,14 @@ public class WafIntegrationBuilderUtils {
                     + request.getUpdatedWafIntegrationDetails().getIntegrationParamsCase())
             .asRuntimeException();
     }
-
-    return updatedWafIntegration;
+    return WafIntegration.newBuilder()
+        .setId(existingWafIntegration.getId())
+        .setWafIntegrationDetails(updatedWafIntegrationDetailsBuilder)
+        .build();
   }
 
-  private static WafIntegration getUpdatedCloudflareWafIntegration(
-      UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
+  private static void updateCloudflareWafIntegration(
+      UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder detailsBuilder) {
     String apiToken =
         request
                 .getUpdatedWafIntegrationDetails()
@@ -61,17 +78,8 @@ public class WafIntegrationBuilderUtils {
                 .getUpdatedWafIntegrationDetails()
                 .getUpdatedCloudflareIntegrationParams()
                 .getApiToken()
-            : existingWafIntegration
-                .getWafIntegrationDetails()
-                .getCloudflareIntegrationParams()
-                .getApiToken();
+            : detailsBuilder.getCloudflareIntegrationParams().getApiToken();
 
-    WafIntegrationDetails.Builder builder =
-        WafIntegrationDetails.newBuilder()
-            .setName(request.getUpdatedWafIntegrationDetails().getName())
-            .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
-            .setWafIntegrationScope(
-                request.getUpdatedWafIntegrationDetails().getWafIntegrationScope());
     CloudflareIntegrationParams.Builder cloudFlareIntegrationParamsBuilder =
         CloudflareIntegrationParams.newBuilder()
             .setEmail(
@@ -86,13 +94,25 @@ public class WafIntegrationBuilderUtils {
                     .getZone())
             .setApiToken(apiToken);
 
-    builder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
-
-    return existingWafIntegration.toBuilder().setWafIntegrationDetails(builder).build();
+    detailsBuilder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
   }
 
-  private static WafIntegration getUpdatedAwsWafIntegration(
-      UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
+  private static void updateTargets(
+      WafIntegrationDetails.Builder builder, UpdateWafIntegrationRequest request) {
+    builder
+        .clearIntegrationTargets()
+        .addAllIntegrationTargets(
+            request.getUpdatedWafIntegrationDetails().getIntegrationTargetsList());
+  }
+
+  private static void updateScope(
+      WafIntegrationDetails.Builder builder, UpdateWafIntegrationRequest request) {
+    builder.setWafIntegrationScope(
+        request.getUpdatedWafIntegrationDetails().getWafIntegrationScope());
+  }
+
+  private static void updateAwsWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
     AwsIntegrationUpdateParams awsIntegrationUpdateParams =
         request.getUpdatedWafIntegrationDetails().getUpdatedAwsIntegrationParams();
     AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
@@ -105,69 +125,36 @@ public class WafIntegrationBuilderUtils {
           awsIntegrationUpdateParams.getRuleGroupCapacity());
     }
     updateConnectionCredentials(
-        awsIntegrationUpdateParams, awsIntegrationParamsBuilder, existingWafIntegration);
-    return WafIntegration.newBuilder()
-        .setId(existingWafIntegration.getId())
-        .setWafIntegrationDetails(
-            WafIntegrationDetails.newBuilder()
-                .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
-                .setName(request.getUpdatedWafIntegrationDetails().getName())
-                .setAwsIntegrationParams(awsIntegrationParamsBuilder.build())
-                .setWafIntegrationScope(
-                    request.getUpdatedWafIntegrationDetails().getWafIntegrationScope()))
-        .build();
+        awsIntegrationUpdateParams, awsIntegrationParamsBuilder, detailsBuilder);
+
+    detailsBuilder.setAwsIntegrationParams(awsIntegrationParamsBuilder);
   }
 
-  private static WafIntegration getUpdatedImpervaWafIntegration(
-      UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
+  private static void updateImpervaWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
     ImpervaIntegrationUpdateParams updatedImpervaIntegrationParams =
         request.getUpdatedWafIntegrationDetails().getUpdatedImpervaIntegrationParams();
-    return WafIntegration.newBuilder()
-        .setId(existingWafIntegration.getId())
-        .setWafIntegrationDetails(
-            WafIntegrationDetails.newBuilder()
-                .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
-                .setName(request.getUpdatedWafIntegrationDetails().getName())
-                .setImpervaIntegrationParams(
-                    ImpervaIntegrationParams.newBuilder()
-                        .setApiId(
-                            updatedImpervaIntegrationParams.hasApiId()
-                                ? updatedImpervaIntegrationParams.getApiId()
-                                : existingWafIntegration
-                                    .getWafIntegrationDetails()
-                                    .getImpervaIntegrationParams()
-                                    .getApiId())
-                        .setApiKey(
-                            updatedImpervaIntegrationParams.hasApiKey()
-                                ? updatedImpervaIntegrationParams.getApiKey()
-                                : existingWafIntegration
-                                    .getWafIntegrationDetails()
-                                    .getImpervaIntegrationParams()
-                                    .getApiKey()))
-                .setWafIntegrationScope(
-                    request.getUpdatedWafIntegrationDetails().getWafIntegrationScope()))
-        .build();
+
+    detailsBuilder.setImpervaIntegrationParams(
+        ImpervaIntegrationParams.newBuilder()
+            .setApiId(
+                updatedImpervaIntegrationParams.hasApiId()
+                    ? updatedImpervaIntegrationParams.getApiId()
+                    : detailsBuilder.getImpervaIntegrationParams().getApiId())
+            .setApiKey(
+                updatedImpervaIntegrationParams.hasApiKey()
+                    ? updatedImpervaIntegrationParams.getApiKey()
+                    : detailsBuilder.getImpervaIntegrationParams().getApiKey()));
   }
 
-  private static WafIntegration getUpdatedAzureWafIntegration(
-      UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
+  private static void updateAzureWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
     AzureIntegrationUpdateParams updatedAzureIntegrationParams =
         request.getUpdatedWafIntegrationDetails().getUpdatedAzureIntegrationParams();
-    return WafIntegration.newBuilder()
-        .setId(existingWafIntegration.getId())
-        .setWafIntegrationDetails(
-            WafIntegrationDetails.newBuilder()
-                .setDescription(request.getUpdatedWafIntegrationDetails().getDescription())
-                .setName(request.getUpdatedWafIntegrationDetails().getName())
-                .setAzureIntegrationParams(
-                    getUpdatedAzureIntegrationParams(
-                        updatedAzureIntegrationParams,
-                        existingWafIntegration
-                            .getWafIntegrationDetails()
-                            .getAzureIntegrationParams()))
-                .setWafIntegrationScope(
-                    request.getUpdatedWafIntegrationDetails().getWafIntegrationScope()))
-        .build();
+
+    detailsBuilder.setAzureIntegrationParams(
+        getUpdatedAzureIntegrationParams(
+            updatedAzureIntegrationParams, detailsBuilder.getAzureIntegrationParams()));
   }
 
   private static AzureIntegrationParams getUpdatedAzureIntegrationParams(
@@ -222,7 +209,7 @@ public class WafIntegrationBuilderUtils {
   private static void updateConnectionCredentials(
       AwsIntegrationUpdateParams awsIntegrationUpdateParams,
       AwsIntegrationParams.Builder builder,
-      WafIntegration existingWafIntegration) {
+      Builder existingWafIntegrationBuilder) {
     switch (awsIntegrationUpdateParams.getConnectionCredentialsCase()) {
       case AUTH_CREDENTIALS:
         builder.setAuthCredentials(
@@ -233,8 +220,7 @@ public class WafIntegrationBuilderUtils {
                             .getAuthCredentials()
                             .getEncryptedSecretAccessKey()
                             .isEmpty()
-                        ? existingWafIntegration
-                            .getWafIntegrationDetails()
+                        ? existingWafIntegrationBuilder
                             .getAwsIntegrationParams()
                             .getAuthCredentials()
                             .getEncryptedSecretAccessKey()
@@ -256,7 +242,7 @@ public class WafIntegrationBuilderUtils {
                 .setEncryptedSecretAccessKey(
                     awsIntegrationUpdateParams.hasEncryptedSecretAccessKey()
                         ? awsIntegrationUpdateParams.getEncryptedSecretAccessKey()
-                        : getAWSEncryptedSecretAccessKey(existingWafIntegration))
+                        : getAWSEncryptedSecretAccessKey(existingWafIntegrationBuilder))
                 .build());
         return;
       default:
@@ -264,9 +250,9 @@ public class WafIntegrationBuilderUtils {
     }
   }
 
-  private static String getAWSEncryptedSecretAccessKey(WafIntegration existingWafIntegration) {
+  private static String getAWSEncryptedSecretAccessKey(Builder existingWafIntegrationBuilder) {
     AwsIntegrationParams awsIntegrationParams =
-        existingWafIntegration.getWafIntegrationDetails().getAwsIntegrationParams();
+        existingWafIntegrationBuilder.getAwsIntegrationParams();
     if (awsIntegrationParams.hasAuthCredentials()) {
       return awsIntegrationParams.getAuthCredentials().getEncryptedSecretAccessKey();
     }
@@ -295,7 +281,8 @@ public class WafIntegrationBuilderUtils {
             .setId(wafIntegration.getId())
             .setWafIntegrationDetails(
                 wafIntegration.getWafIntegrationDetails().toBuilder()
-                    .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build()))
+                    .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build())
+                    .build())
             .build();
       default:
         return wafIntegration;
@@ -303,49 +290,51 @@ public class WafIntegrationBuilderUtils {
   }
 
   public static WafIntegration stripSecrets(WafIntegration wafIntegration) {
-    if (wafIntegration.getWafIntegrationDetails().hasAwsIntegrationParams()) {
-      AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
-          wafIntegration.getWafIntegrationDetails().getAwsIntegrationParams().toBuilder();
-      awsIntegrationParamsBuilder.clearEncryptedSecretAccessKey();
-      AuthCredentials authCredentials = awsIntegrationParamsBuilder.getAuthCredentials();
-      if (awsIntegrationParamsBuilder.hasAuthCredentials()) {
-        awsIntegrationParamsBuilder.setAuthCredentials(
-            authCredentials.toBuilder().clearEncryptedSecretAccessKey().build());
-      }
-      return WafIntegration.newBuilder()
-          .setId(wafIntegration.getId())
-          .setWafIntegrationDetails(
-              wafIntegration.getWafIntegrationDetails().toBuilder()
-                  .setAwsIntegrationParams(awsIntegrationParamsBuilder.build()))
-          .build();
-    } else if (wafIntegration.getWafIntegrationDetails().hasAzureIntegrationParams()) {
-      List<AzureIntegrationDetails> azureIntegrationDetailsList =
-          wafIntegration
-              .getWafIntegrationDetails()
-              .getAzureIntegrationParams()
-              .getAzureIntegrationDetailsList()
-              .stream()
-              .map(
-                  azureIntegrationDetails -> {
-                    AzureAuthCredentials azureAuthCredentials =
-                        azureIntegrationDetails.getAuthCredentials();
-                    return azureIntegrationDetails.toBuilder()
-                        .setAuthCredentials(
-                            azureAuthCredentials.toBuilder().clearEncryptedClientSecret())
-                        .build();
-                  })
-              .collect(Collectors.toUnmodifiableList());
+    switch (wafIntegration.getWafIntegrationDetails().getIntegrationParamsCase()) {
+      case AWS_INTEGRATION_PARAMS:
+        AwsIntegrationParams.Builder awsIntegrationParamsBuilder =
+            wafIntegration.getWafIntegrationDetails().getAwsIntegrationParams().toBuilder();
+        awsIntegrationParamsBuilder.clearEncryptedSecretAccessKey();
+        AuthCredentials authCredentials = awsIntegrationParamsBuilder.getAuthCredentials();
+        if (awsIntegrationParamsBuilder.hasAuthCredentials()) {
+          awsIntegrationParamsBuilder.setAuthCredentials(
+              authCredentials.toBuilder().clearEncryptedSecretAccessKey().build());
+        }
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(
+                wafIntegration.getWafIntegrationDetails().toBuilder()
+                    .setAwsIntegrationParams(awsIntegrationParamsBuilder.build()))
+            .build();
+      case AZURE_INTEGRATION_PARAMS:
+        List<AzureIntegrationDetails> azureIntegrationDetailsList =
+            wafIntegration
+                .getWafIntegrationDetails()
+                .getAzureIntegrationParams()
+                .getAzureIntegrationDetailsList()
+                .stream()
+                .map(
+                    azureIntegrationDetails -> {
+                      AzureAuthCredentials azureAuthCredentials =
+                          azureIntegrationDetails.getAuthCredentials();
+                      return azureIntegrationDetails.toBuilder()
+                          .setAuthCredentials(
+                              azureAuthCredentials.toBuilder().clearEncryptedClientSecret())
+                          .build();
+                    })
+                .collect(Collectors.toUnmodifiableList());
 
-      return WafIntegration.newBuilder()
-          .setId(wafIntegration.getId())
-          .setWafIntegrationDetails(
-              wafIntegration.getWafIntegrationDetails().toBuilder()
-                  .setAzureIntegrationParams(
-                      AzureIntegrationParams.newBuilder()
-                          .addAllAzureIntegrationDetails(azureIntegrationDetailsList)))
-          .build();
+        return WafIntegration.newBuilder()
+            .setId(wafIntegration.getId())
+            .setWafIntegrationDetails(
+                wafIntegration.getWafIntegrationDetails().toBuilder()
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAllAzureIntegrationDetails(azureIntegrationDetailsList)))
+            .build();
+      default:
+        return wafIntegration;
     }
-    return wafIntegration;
   }
 
   private static AuthCredentials.Builder getAuthCredentialsBuilder(

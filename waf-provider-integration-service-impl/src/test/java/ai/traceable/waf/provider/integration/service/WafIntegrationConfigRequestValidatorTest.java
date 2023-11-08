@@ -592,11 +592,8 @@ class WafIntegrationConfigRequestValidatorTest {
                             .addResources(
                                 AwsResource.newBuilder().setArn("arn").setRegion("region"))))
             .build();
-    assertThrows(
-        StatusRuntimeException.class,
-        () -> {
-          wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT);
-        });
+    assertDoesNotThrow(
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT));
 
     UpdateWafIntegrationRequest validRequest =
         UpdateWafIntegrationRequest.newBuilder()
@@ -903,7 +900,9 @@ class WafIntegrationConfigRequestValidatorTest {
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
                     .setName("name")
-                    .setWafIntegrationScope(WafIntegrationScope.getDefaultInstance())
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(

@@ -33,6 +33,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.IntegrationActionType;
+import ai.traceable.waf.integration.service.api.v1.RuleType;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
@@ -41,6 +42,7 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationTarget;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc;
 import ai.traceable.waf.integration.service.api.v1.WafProviderServiceGrpc.WafProviderServiceBlockingStub;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
@@ -121,6 +123,12 @@ class WafIntegrationConfigServiceImplTest {
         .setName(name)
         .setDescription("des")
         .setWafIntegrationScope(wafConfigScope)
+        .addIntegrationTargets(
+            WafIntegrationTarget.newBuilder()
+                .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                .build())
+        .addIntegrationTargets(
+            WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_IP_RANGE).build())
         .setAwsIntegrationParams(
             AwsIntegrationParams.newBuilder()
                 .setAuthCredentials(AuthCredentials.newBuilder().setAccessKeyId("id"))
@@ -193,6 +201,14 @@ class WafIntegrationConfigServiceImplTest {
                     .setName("name")
                     .setDescription("des")
                     .setWafIntegrationScope(wafConfigScope)
+                    .addIntegrationTargets(
+                        WafIntegrationTarget.newBuilder()
+                            .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                            .build())
+                    .addIntegrationTargets(
+                        WafIntegrationTarget.newBuilder()
+                            .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                            .build())
                     .setAwsIntegrationParams(
                         AwsIntegrationParams.newBuilder()
                             .setAccessKeyId(
@@ -370,6 +386,14 @@ class WafIntegrationConfigServiceImplTest {
             .setName("name3")
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAccessKeyId(
@@ -405,6 +429,14 @@ class WafIntegrationConfigServiceImplTest {
             .setName("name3")
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAccessKeyId(
@@ -529,6 +561,9 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(
         updateWafIntegrationScope,
         updateResponse.getWafIntegration().getWafIntegrationDetails().getWafIntegrationScope());
+    assertEquals(
+        List.of(),
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getIntegrationTargetsList());
   }
 
   @Test
@@ -546,6 +581,10 @@ class WafIntegrationConfigServiceImplTest {
         UpdatedWafIntegrationDetails.newBuilder()
             .setName("name1")
             .setDescription("des")
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                    .build())
             .setUpdatedAwsIntegrationParams(
                 AwsIntegrationUpdateParams.newBuilder()
                     .setAuthCredentials(
@@ -585,6 +624,12 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegrationDetails()
             .getAwsIntegrationParams()
             .getRuleGroupCapacity());
+    assertEquals(
+        List.of(
+            WafIntegrationTarget.newBuilder()
+                .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                .build()),
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getIntegrationTargetsList());
   }
 
   @Test
@@ -872,6 +917,14 @@ class WafIntegrationConfigServiceImplTest {
             .setName(name)
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
             .setCloudflareIntegrationParams(
                 CloudflareIntegrationParams.newBuilder()
                     .setApiToken("apitoken")
@@ -883,6 +936,14 @@ class WafIntegrationConfigServiceImplTest {
             .setName(name)
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
             .setAwsIntegrationParams(
                 AwsIntegrationParams.newBuilder()
                     .setAuthCredentials(
@@ -902,6 +963,14 @@ class WafIntegrationConfigServiceImplTest {
             .setName(name)
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
             .setImpervaIntegrationParams(
                 ImpervaIntegrationParams.newBuilder()
                     .setApiId("id")
@@ -917,6 +986,14 @@ class WafIntegrationConfigServiceImplTest {
             .setName(name)
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                    .build())
+            .addIntegrationTargets(
+                WafIntegrationTarget.newBuilder()
+                    .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                    .build())
             .setAzureIntegrationParams(
                 AzureIntegrationParams.newBuilder()
                     .addAzureIntegrationDetails(

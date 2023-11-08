@@ -77,10 +77,7 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
               .getData(requestContext, request.getId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseStreamObserver.onNext(
-          GetWafIntegrationResponse.newBuilder()
-              .setWafIntegration(
-                  WafIntegrationBuilderUtils.getBackwardCompatibleWafIntegration(wafIntegration))
-              .build());
+          GetWafIntegrationResponse.newBuilder().setWafIntegration(wafIntegration).build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
       responseStreamObserver.onError(e);
@@ -96,14 +93,12 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
       List<WafIntegration> wafIntegrationList =
           wafIntegrationStore.getAllConfigData(requestContext, request.getFilter());
-      List<WafIntegration> wafIntegrationsWithStripSecrets =
+      List<WafIntegration> wafIntegrations =
           wafIntegrationList.stream()
               .map(WafIntegrationBuilderUtils::stripSecrets)
               .collect(Collectors.toList());
       responseStreamObserver.onNext(
-          GetWafIntegrationsResponse.newBuilder()
-              .addAllWafIntegration(wafIntegrationsWithStripSecrets)
-              .build());
+          GetWafIntegrationsResponse.newBuilder().addAllWafIntegration(wafIntegrations).build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
       responseStreamObserver.onError(e);
@@ -143,6 +138,7 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
 
       WafIntegration updatedWafIntegration =
           WafIntegrationBuilderUtils.getUpdatedIntegration(request, existingWafIntegration);
+
       WafIntegration upsertedWafIntegration =
           wafIntegrationStore.upsertObject(requestContext, updatedWafIntegration).getData();
       responseStreamObserver.onNext(

@@ -85,26 +85,30 @@ public class WafIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(
         updateWafIntegrationDetails, UpdatedWafIntegrationDetails.NAME_FIELD_NUMBER);
     validateUpdateIntegrationParams(updateWafIntegrationDetails);
-    validateWafIntegrationScope(updateWafIntegrationDetails.getWafIntegrationScope());
+    this.validateWafIntegrationScope(updateWafIntegrationDetails.getWafIntegrationScope());
   }
 
   private void validateWafIntegrationDetails(WafIntegrationDetails wafIntegrationDetails) {
     validateNonDefaultPresenceOrThrow(
         wafIntegrationDetails, WafIntegrationDetails.NAME_FIELD_NUMBER);
     validateIntegrationParams(wafIntegrationDetails);
-    validateWafIntegrationScope(wafIntegrationDetails.getWafIntegrationScope());
+    this.validateWafIntegrationScope(wafIntegrationDetails.getWafIntegrationScope());
   }
 
   private void validateWafIntegrationScope(WafIntegrationScope wafConfigScope) {
-    if (wafConfigScope.hasEnvironmentScope()) {
-      validateNonDefaultPresenceOrThrow(
-          wafConfigScope.getEnvironmentScope(), EnvironmentScope.ENVIRONMENT_IDS_FIELD_NUMBER);
-      if (wafConfigScope.getEnvironmentScope().getEnvironmentIdsList().stream()
-          .anyMatch(String::isEmpty)) {
-        throw Status.INVALID_ARGUMENT
-            .withDescription("Environment id should not be empty string")
-            .asRuntimeException();
-      }
+    switch (wafConfigScope.getScopeCase()) {
+      case ENVIRONMENT_SCOPE:
+        this.validateEnvironmentScope(wafConfigScope.getEnvironmentScope());
+        return;
+      default:
+    }
+  }
+
+  private void validateEnvironmentScope(EnvironmentScope environmentScope) {
+    if (environmentScope.getEnvironmentIdsList().stream().anyMatch(String::isEmpty)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Environment id should not be empty string")
+          .asRuntimeException();
     }
   }
 
