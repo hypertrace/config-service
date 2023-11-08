@@ -4,7 +4,7 @@ import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigConstants;
 import ai.traceable.span.processing.config.service.impl.v1.PersistedKeyValueRetentionRule;
-import ai.traceable.span.processing.config.service.impl.v1.RuleType;
+import ai.traceable.span.processing.config.service.v1.DataLocation;
 import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigRequest;
 import ai.traceable.span.processing.config.service.v1.IngestionStage;
 import com.google.inject.Inject;
@@ -49,10 +49,10 @@ public class SpanIngestionRulesConfigStore
   }
 
   protected List<PersistedKeyValueRetentionRule> getFilteredRuleList(
-      RequestContext requestContext, IngestionStage ruleStage, RuleType ruleType) {
+      RequestContext requestContext, IngestionStage ruleStage, DataLocation dataLocation) {
     return this.getAllConfigData(requestContext).stream()
         .filter(rule -> rule.getIngestionStage().equals(ruleStage))
-        .filter(rule -> rule.getRuleType().equals(ruleType))
+        .filter(rule -> rule.getLocation().equals(dataLocation))
         .collect(Collectors.toUnmodifiableList());
   }
 

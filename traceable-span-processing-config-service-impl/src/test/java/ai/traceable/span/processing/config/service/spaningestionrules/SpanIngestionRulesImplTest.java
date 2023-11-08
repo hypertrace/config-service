@@ -21,6 +21,7 @@ import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigRequ
 import ai.traceable.span.processing.config.service.v1.IngestionStage;
 import ai.traceable.span.processing.config.service.v1.KeyValueRetentionRule;
 import ai.traceable.span.processing.config.service.v1.KeyValueRetentionRuleData;
+import ai.traceable.span.processing.config.service.v1.Predicate;
 import ai.traceable.span.processing.config.service.v1.RankSpanIngestionRuleRequest;
 import ai.traceable.span.processing.config.service.v1.RetentionAction;
 import ai.traceable.span.processing.config.service.v1.SpanIngestionConfigFilter;
@@ -120,10 +121,12 @@ class SpanIngestionRulesImplTest {
                             .setAction(
                                 RetentionAction.newBuilder()
                                     .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                                    .setValue("header-1")))
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                            .setValue("header-1"))))
                     .build())
             .getRule();
 
@@ -140,10 +143,12 @@ class SpanIngestionRulesImplTest {
                             .setAction(
                                 RetentionAction.newBuilder()
                                     .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                                    .setValue("response-header-1")))
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                            .setValue("response-header-1"))))
                     .build())
             .getRule();
 
@@ -161,18 +166,22 @@ class SpanIngestionRulesImplTest {
                     .setId(firstCreated.getId())
                     .setKeyValueRetentionRuleData(
                         firstCreated.getData().toBuilder()
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(StringPredicate.Operator.OPERATOR_MATCHES_REGEX)
-                                    .setValue("header-updated"))
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                StringPredicate.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("header-updated")))
                             .setExpiration(Timestamp.newBuilder().setSeconds(1913807000)))
                     .build())
             .getRule();
 
-    assertEquals("header-updated", firstUpdated.getData().getKeyMatch().getValue());
+    assertEquals(
+        "header-updated", firstUpdated.getData().getPredicate().getTargetKeyPredicate().getValue());
     assertEquals(
         StringPredicate.Operator.OPERATOR_MATCHES_REGEX,
-        firstUpdated.getData().getKeyMatch().getOperator());
+        firstUpdated.getData().getPredicate().getTargetKeyPredicate().getOperator());
     assertEquals(1913807000, firstUpdated.getData().getExpiration().getSeconds());
 
     KeyValueRetentionRule secondCreated =
@@ -185,10 +194,12 @@ class SpanIngestionRulesImplTest {
                             .setAction(
                                 RetentionAction.newBuilder()
                                     .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                                    .setValue("header-2"))
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                            .setValue("header-2")))
                             .setExpiration(Timestamp.newBuilder().setSeconds(1913807880)))
                     .build())
             .getRule();
@@ -225,10 +236,12 @@ class SpanIngestionRulesImplTest {
                             .setAction(
                                 RetentionAction.newBuilder()
                                     .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                                    .setValue("header-1"))
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                            .setValue("header-1")))
                             .setExpiration(Timestamp.newBuilder().setSeconds(1692537480)))
                     .build())
             .getRule();
@@ -281,10 +294,12 @@ class SpanIngestionRulesImplTest {
                       .setAction(
                           RetentionAction.newBuilder()
                               .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                      .setKeyMatch(
-                          StringPredicate.newBuilder()
-                              .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                              .setValue(String.format("request-header-%s", i))))
+                      .setPredicate(
+                          Predicate.newBuilder()
+                              .setTargetKeyPredicate(
+                                  StringPredicate.newBuilder()
+                                      .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                      .setValue(String.format("request-header-%s", i)))))
               .build());
     }
 
@@ -297,10 +312,12 @@ class SpanIngestionRulesImplTest {
                       .setAction(
                           RetentionAction.newBuilder()
                               .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                      .setKeyMatch(
-                          StringPredicate.newBuilder()
-                              .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                              .setValue(String.format("response-header-%s", i))))
+                      .setPredicate(
+                          Predicate.newBuilder()
+                              .setTargetKeyPredicate(
+                                  StringPredicate.newBuilder()
+                                      .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                      .setValue(String.format("response-header-%s", i)))))
               .build());
     }
 
@@ -330,10 +347,13 @@ class SpanIngestionRulesImplTest {
                     .setId(firstRequestHeaderRule.getId())
                     .setKeyValueRetentionRuleData(
                         firstRequestHeaderRule.getData().toBuilder()
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(StringPredicate.Operator.OPERATOR_MATCHES_REGEX)
-                                    .setValue("request-header-updated"))
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                StringPredicate.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("request-header-updated")))
                             .setExpiration(Timestamp.newBuilder().setSeconds(1913807000)))
                     .build())
             .getRule();

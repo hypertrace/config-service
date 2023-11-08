@@ -5,12 +5,15 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.span.processing.config.service.impl.v1.PersistedKeyValueRetentionRule;
-import ai.traceable.span.processing.config.service.impl.v1.RuleType;
 import ai.traceable.span.processing.config.service.v1.CreateSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DataLocation;
 import ai.traceable.span.processing.config.service.v1.IngestionStage;
 import ai.traceable.span.processing.config.service.v1.KeyValueRetentionRuleData;
+import ai.traceable.span.processing.config.service.v1.Predicate;
 import ai.traceable.span.processing.config.service.v1.RetentionAction;
+import ai.traceable.span.processing.config.service.v1.RetentionAction.RetainAction;
 import ai.traceable.span.processing.config.service.v1.StringPredicate;
+import ai.traceable.span.processing.config.service.v1.StringPredicate.Operator;
 import com.google.protobuf.Timestamp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,12 +40,13 @@ class SpanIngestionRuleBuilderTest {
             .setRequestHeaderRule(
                 KeyValueRetentionRuleData.newBuilder()
                     .setAction(
-                        RetentionAction.newBuilder()
-                            .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                    .setKeyMatch(
-                        StringPredicate.newBuilder()
-                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                            .setValue("test-header"))
+                        RetentionAction.newBuilder().setRetain(RetainAction.getDefaultInstance()))
+                    .setPredicate(
+                        Predicate.newBuilder()
+                            .setTargetKeyPredicate(
+                                StringPredicate.newBuilder()
+                                    .setOperator(Operator.OPERATOR_EQUALS)
+                                    .setValue("test-header")))
                     .setExpiration(Timestamp.newBuilder().setSeconds(1913807880)))
             .build();
 
@@ -57,12 +61,14 @@ class SpanIngestionRuleBuilderTest {
                     .setAction(
                         RetentionAction.newBuilder()
                             .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-                    .setKeyMatch(
-                        StringPredicate.newBuilder()
-                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                            .setValue("test-header"))
+                    .setPredicate(
+                        Predicate.newBuilder()
+                            .setTargetKeyPredicate(
+                                StringPredicate.newBuilder()
+                                    .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                    .setValue("test-header")))
                     .setExpiration(Timestamp.newBuilder().setSeconds(1913807880)))
-            .setRuleType(RuleType.RULE_TYPE_REQUEST_HEADER_RULE)
+            .setLocation(DataLocation.DATA_LOCATION_REQUEST_HEADER)
             .build();
 
     assertEquals(expected, actual);

@@ -7,6 +7,7 @@ import ai.traceable.span.processing.config.service.v1.CreateSpanIngestionRuleReq
 import ai.traceable.span.processing.config.service.v1.DeleteSpanIngestionRuleRequest;
 import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigRequest;
 import ai.traceable.span.processing.config.service.v1.KeyValueRetentionRuleData;
+import ai.traceable.span.processing.config.service.v1.Predicate;
 import ai.traceable.span.processing.config.service.v1.RankSpanIngestionRuleRequest;
 import ai.traceable.span.processing.config.service.v1.RetentionAction;
 import ai.traceable.span.processing.config.service.v1.StringPredicate;
@@ -71,7 +72,9 @@ class SpanIngestionRequestValidator {
 
   private void validateKeyValueRetentionRuleData(KeyValueRetentionRuleData data) {
     validateRetentionAction(data.getAction());
-    validateStringPredicate(data.getKeyMatch());
+    if (data.hasPredicate()) {
+      validatePredicate(data.getPredicate());
+    }
   }
 
   private void validateRetentionAction(RetentionAction action) {
@@ -89,9 +92,23 @@ class SpanIngestionRequestValidator {
     }
   }
 
-  private void validateStringPredicate(StringPredicate keyMatch) {
-    validateNonDefaultPresenceOrThrow(keyMatch, StringPredicate.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(keyMatch, StringPredicate.VALUE_FIELD_NUMBER);
+  private void validatePredicate(Predicate predicate) {
+    switch (predicate.getPredicateCase()) {
+      case TARGET_KEY_PREDICATE:
+        validateStringPredicate(predicate.getTargetKeyPredicate());
+        return;
+      case PREDICATE_NOT_SET:
+        return;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unsupported predicate case %s", predicate))
+            .asRuntimeException();
+    }
+  }
+
+  private void validateStringPredicate(StringPredicate stringPredicate) {
+    validateNonDefaultPresenceOrThrow(stringPredicate, StringPredicate.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(stringPredicate, StringPredicate.VALUE_FIELD_NUMBER);
   }
 
   private void validateRuleData(UpdateSpanIngestionRuleRequest request) {

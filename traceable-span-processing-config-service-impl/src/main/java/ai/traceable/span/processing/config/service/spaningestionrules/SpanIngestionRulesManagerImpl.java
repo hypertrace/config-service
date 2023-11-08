@@ -3,8 +3,8 @@ package ai.traceable.span.processing.config.service.spaningestionrules;
 import ai.traceable.config.utils.ObjectDiffer;
 import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.span.processing.config.service.impl.v1.PersistedKeyValueRetentionRule;
-import ai.traceable.span.processing.config.service.impl.v1.RuleType;
 import ai.traceable.span.processing.config.service.v1.CreateSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DataLocation;
 import ai.traceable.span.processing.config.service.v1.DeleteSpanIngestionRuleRequest;
 import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigRequest;
 import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigResponse;
@@ -43,19 +43,19 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
 
     List<KeyValueRetentionRule> requestHeaderRules =
         rules.stream()
-            .filter(rule -> rule.getRuleType().equals(RuleType.RULE_TYPE_REQUEST_HEADER_RULE))
+            .filter(rule -> rule.getLocation().equals(DataLocation.DATA_LOCATION_REQUEST_HEADER))
             .map(this::getConvertedKeyValueRetentionRule)
             .collect(Collectors.toUnmodifiableList());
 
     List<KeyValueRetentionRule> responseHeaderRules =
         rules.stream()
-            .filter(rule -> rule.getRuleType().equals(RuleType.RULE_TYPE_RESPONSE_HEADER_RULE))
+            .filter(rule -> rule.getLocation().equals(DataLocation.DATA_LOCATION_RESPONSE_HEADER))
             .map(this::getConvertedKeyValueRetentionRule)
             .collect(Collectors.toUnmodifiableList());
 
     List<KeyValueRetentionRule> attributeRules =
         rules.stream()
-            .filter(rule -> rule.getRuleType().equals(RuleType.RULE_TYPE_ATTRIBUTE_RULE))
+            .filter(rule -> rule.getLocation().equals(DataLocation.DATA_LOCATION_ATTRIBUTE))
             .map(this::getConvertedKeyValueRetentionRule)
             .collect(Collectors.toUnmodifiableList());
 
@@ -82,7 +82,7 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
     PersistedKeyValueRetentionRule newRule = this.ruleBuilder.generateNewRuleWithoutRank(request);
     List<PersistedKeyValueRetentionRule> existingRules =
         this.ruleStore.getFilteredRuleList(
-            requestContext, request.getStage(), this.ruleTypeFromRuleCase(request));
+            requestContext, request.getStage(), this.dataLocationFromRuleCase(request));
     List<PersistedKeyValueRetentionRule> mergedAndRankedRules =
         this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
     this.ruleStore.upsertObjects(
@@ -112,7 +112,7 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
         .orElseThrow(Status.NOT_FOUND::asRuntimeException);
     List<PersistedKeyValueRetentionRule> rulesAfterDelete =
         this.ruleStore.getFilteredRuleList(
-            requestContext, ruleToDelete.getIngestionStage(), ruleToDelete.getRuleType());
+            requestContext, ruleToDelete.getIngestionStage(), ruleToDelete.getLocation());
     List<PersistedKeyValueRetentionRule> rerankedRules =
         this.rankCalculator.rankFromOrder(rulesAfterDelete);
 
@@ -153,7 +153,7 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
             .orElseThrow(Status.NOT_FOUND::asRuntimeException);
     List<PersistedKeyValueRetentionRule> existingRules =
         this.ruleStore.getFilteredRuleList(
-            requestContext, ruleToUpdate.getIngestionStage(), ruleToUpdate.getRuleType());
+            requestContext, ruleToUpdate.getIngestionStage(), ruleToUpdate.getLocation());
     List<PersistedKeyValueRetentionRule> rerankedRuled =
         request.hasPrecedingRuleId()
             ? this.rankCalculator.rerankAfterOtherObject(
@@ -172,21 +172,21 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
     KeyValueRetentionRuleData.Builder builder =
         KeyValueRetentionRuleData.newBuilder()
             .setAction(rule.getData().getAction())
-            .setKeyMatch(rule.getData().getKeyMatch());
+            .setPredicate(rule.getData().getPredicate());
     if (rule.getData().hasExpiration()) {
       builder.setExpiration(rule.getData().getExpiration());
     }
     return KeyValueRetentionRule.newBuilder().setId(rule.getId()).setData(builder.build()).build();
   }
 
-  private RuleType ruleTypeFromRuleCase(CreateSpanIngestionRuleRequest request) {
+  private DataLocation dataLocationFromRuleCase(CreateSpanIngestionRuleRequest request) {
     switch (request.getRuleCase()) {
       case REQUEST_HEADER_RULE:
-        return RuleType.RULE_TYPE_REQUEST_HEADER_RULE;
+        return DataLocation.DATA_LOCATION_REQUEST_HEADER;
       case RESPONSE_HEADER_RULE:
-        return RuleType.RULE_TYPE_RESPONSE_HEADER_RULE;
+        return DataLocation.DATA_LOCATION_RESPONSE_HEADER;
       case ATTRIBUTE_RULE:
-        return RuleType.RULE_TYPE_ATTRIBUTE_RULE;
+        return DataLocation.DATA_LOCATION_ATTRIBUTE;
       default:
         throw Status.INVALID_ARGUMENT.asRuntimeException();
     }

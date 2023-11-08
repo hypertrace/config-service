@@ -7,6 +7,7 @@ import ai.traceable.span.processing.config.service.v1.DeleteSpanIngestionRuleReq
 import ai.traceable.span.processing.config.service.v1.GetSpanIngestionConfigRequest;
 import ai.traceable.span.processing.config.service.v1.IngestionStage;
 import ai.traceable.span.processing.config.service.v1.KeyValueRetentionRuleData;
+import ai.traceable.span.processing.config.service.v1.Predicate;
 import ai.traceable.span.processing.config.service.v1.RankSpanIngestionRuleRequest;
 import ai.traceable.span.processing.config.service.v1.RetentionAction;
 import ai.traceable.span.processing.config.service.v1.StringPredicate;
@@ -36,10 +37,12 @@ class SpanIngestionRequestValidatorTest {
           .setAction(
               RetentionAction.newBuilder()
                   .setRetain(RetentionAction.RetainAction.getDefaultInstance()))
-          .setKeyMatch(
-              StringPredicate.newBuilder()
-                  .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
-                  .setValue("test-header"))
+          .setPredicate(
+              Predicate.newBuilder()
+                  .setTargetKeyPredicate(
+                      StringPredicate.newBuilder()
+                          .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                          .setValue("test-header")))
           .setExpiration(Timestamp.newBuilder().setSeconds(1913807880))
           .build();
 
@@ -121,22 +124,14 @@ class SpanIngestionRequestValidatorTest {
                 VALID_CREATE_HEADER_RULE_REQUEST.toBuilder()
                     .clearRequestHeaderRule()
                     .setRequestHeaderRule(
-                        VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder().clearKeyMatch().build())
-                    .build()));
-
-    this.assertInvalidArg(
-        () ->
-            this.validator.validateOrThrow(
-                VALID_REQUEST_CONTEXT,
-                VALID_CREATE_HEADER_RULE_REQUEST.toBuilder()
-                    .clearRequestHeaderRule()
-                    .setRequestHeaderRule(
                         VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder()
-                            .clearKeyMatch()
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setValue("header-1") // operator missing
-                                )
+                            .clearPredicate()
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setValue("header-1") // operator missing
+                                        ))
                             .build())
                     .build()));
 
@@ -148,12 +143,15 @@ class SpanIngestionRequestValidatorTest {
                     .clearRequestHeaderRule()
                     .setRequestHeaderRule(
                         VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder()
-                            .clearKeyMatch()
-                            .setKeyMatch(
-                                StringPredicate.newBuilder()
-                                    .setOperator(
-                                        StringPredicate.Operator.OPERATOR_EQUALS) // value missing
-                                )
+                            .clearPredicate()
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                StringPredicate.Operator
+                                                    .OPERATOR_EQUALS) // value missing
+                                        ))
                             .build())
                     .build()));
   }
@@ -179,16 +177,6 @@ class SpanIngestionRequestValidatorTest {
                     .setKeyValueRetentionRuleData(
                         VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder().clearAction().build())
                     .build())); // missing action
-
-    this.assertInvalidArg(
-        () ->
-            this.validator.validateOrThrow(
-                VALID_REQUEST_CONTEXT,
-                VALID_UPDATE_RULE_REQUEST.toBuilder()
-                    .clearRule()
-                    .setKeyValueRetentionRuleData(
-                        VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder().clearKeyMatch().build())
-                    .build())); // missing key-match
   }
 
   @Test

@@ -398,6 +398,7 @@ message GetSpanIngestionConfigRequest {
 
 message SpanIngestionConfigFilter {
   optional bool is_rule_expired = 1;
+  KeyValueRetentionRuleScope scope = 2;
 }
 
 message GetSpanIngestionConfigResponse {

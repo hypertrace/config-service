@@ -7,16 +7,25 @@ import "google/protobuf/timestamp.proto";
 option java_multiple_files = true;
 
 message KeyValueRetentionRuleSet {
-  // Basically like a network aCL - apply first matching rule or use default if no match
+  // Basically like a network ACL - apply first matching rule or use default if no match
   repeated KeyValueRetentionRule rules = 1;
   RetentionAction default = 2;
 }
 
+message KeyValueRetentionRuleScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+  message EnvironmentScope {
+    repeated string environment_ids = 1;
+  }
+}
+
 message KeyValueRetentionRuleData {
   RetentionAction action = 1;
-  // We could support value match if needed in future
-  StringPredicate key_match = 2;
+  Predicate predicate = 2;
   google.protobuf.Timestamp expiration = 3;
+  KeyValueRetentionRuleScope scope = 4;
 }
 
 message KeyValueRetentionRule {
@@ -35,6 +44,12 @@ message RetentionAction {
   message DiscardAction {}
 }
 
+message Predicate {
+  oneof predicate {
+    StringPredicate target_key_predicate = 1;
+  }
+}
+
 message StringPredicate {
   Operator operator = 1;
   string value = 2;
@@ -44,6 +59,13 @@ message StringPredicate {
     OPERATOR_EQUALS = 1;
     OPERATOR_MATCHES_REGEX = 2;
   }
+}
+
+enum DataLocation {
+  DATA_LOCATION_UNSPECIFIED = 0;
+  DATA_LOCATION_REQUEST_HEADER = 1;
+  DATA_LOCATION_RESPONSE_HEADER = 2;
+  DATA_LOCATION_ATTRIBUTE = 3;
 }
 
 enum IngestionStage {

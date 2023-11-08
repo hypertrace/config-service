@@ -2,8 +2,8 @@ package ai.traceable.span.processing.config.service.spaningestionrules;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.span.processing.config.service.impl.v1.PersistedKeyValueRetentionRule;
-import ai.traceable.span.processing.config.service.impl.v1.RuleType;
 import ai.traceable.span.processing.config.service.v1.CreateSpanIngestionRuleRequest;
+import ai.traceable.span.processing.config.service.v1.DataLocation;
 import ai.traceable.span.processing.config.service.v1.UpdateSpanIngestionRuleRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -33,7 +33,7 @@ class SpanIngestionRuleBuilder {
         .setId(request.getId())
         .setIngestionStage(existingRule.getIngestionStage())
         .setData(request.getKeyValueRetentionRuleData())
-        .setRuleType(existingRule.getRuleType())
+        .setLocation(existingRule.getLocation())
         .setRank(existingRule.getRank())
         .build();
   }
@@ -44,15 +44,17 @@ class SpanIngestionRuleBuilder {
       case REQUEST_HEADER_RULE:
         builder
             .setData(request.getRequestHeaderRule())
-            .setRuleType(RuleType.RULE_TYPE_REQUEST_HEADER_RULE);
+            .setLocation(DataLocation.DATA_LOCATION_REQUEST_HEADER);
         return;
       case RESPONSE_HEADER_RULE:
         builder
             .setData(request.getResponseHeaderRule())
-            .setRuleType(RuleType.RULE_TYPE_RESPONSE_HEADER_RULE);
+            .setLocation(DataLocation.DATA_LOCATION_RESPONSE_HEADER);
         return;
       case ATTRIBUTE_RULE:
-        builder.setData(request.getAttributeRule()).setRuleType(RuleType.RULE_TYPE_ATTRIBUTE_RULE);
+        builder
+            .setData(request.getAttributeRule())
+            .setLocation(DataLocation.DATA_LOCATION_ATTRIBUTE);
         return;
       case RULE_NOT_SET:
       default:
