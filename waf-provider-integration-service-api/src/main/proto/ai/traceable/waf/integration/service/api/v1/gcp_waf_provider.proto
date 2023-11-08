@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message GcpIntegrationParams {
+  GcpIntegrationDetails gcp_integration_details = 1;
+}
+
+message GcpIntegrationUpdateParams {
+  GcpIntegrationDetails gcp_integration_details = 1;
+}
+
+message GcpIntegrationDetails {
+  string project_id = 1; // Gcp project ID
+  string security_policy_name = 2; // security policy name on which rules needs to be applied.
+  GcpAuthCredentials auth_credentials = 3;
+  DenyActionResponseCode deny_action_response_code = 4;
+  enum DenyActionResponseCode {
+    DENY_ACTION_RESPONSE_CODE_UNSPECIFIED = 0;
+    DENY_ACTION_RESPONSE_CODE_403 = 1;
+    DENY_ACTION_RESPONSE_CODE_404 = 2;
+    DENY_ACTION_RESPONSE_CODE_502 = 3;
+  }
+}
+
+
+message GcpAuthCredentials {
+  string encrypted_service_account_key = 1; // service account key of Json format.
+  string key_id = 2; // id of key used to encrypt the service account key.
+}
