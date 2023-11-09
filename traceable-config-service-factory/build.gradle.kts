@@ -54,6 +54,7 @@ dependencies {
   implementation(projects.anomalyScoringConfigServiceImpl)
   implementation(projects.savedQueryConfigServiceImpl)
   implementation(projects.dashboardConfigServiceImpl)
+  implementation(projects.jiraIntegrationConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

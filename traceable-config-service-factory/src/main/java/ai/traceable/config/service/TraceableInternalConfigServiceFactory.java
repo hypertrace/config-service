@@ -17,6 +17,7 @@ import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltra
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceFactory;
 import ai.traceable.integration.config.service.IntegrationConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
+import ai.traceable.jira.integration.config.service.JiraIntegrationConfigServiceFactory;
 import ai.traceable.jwt.extraction.config.service.JwtExtractionConfigServiceFactory;
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
@@ -149,6 +150,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),
+            wrap(
+                JiraIntegrationConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 new RateLimitingConfigServiceImpl( // v1
                     providers.getLocalChannel(),

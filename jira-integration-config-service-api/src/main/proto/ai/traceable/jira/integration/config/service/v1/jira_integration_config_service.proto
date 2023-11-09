@@ -1,0 +1,80 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.jira.integration.config.service.api.v1;
+
+service JiraIntegrationConfigService {
+  rpc CreateJiraIntegration (CreateJiraIntegrationRequest) returns (CreateJiraIntegrationResponse) {}
+  rpc GetJiraIntegrations (GetJiraIntegrationsRequest) returns (GetJiraIntegrationsResponse) {}
+  rpc UpdateJiraIntegration (UpdateJiraIntegrationRequest) returns (UpdateJiraIntegrationResponse) {}
+  rpc DeleteJiraIntegration (DeleteJiraIntegrationRequest) returns (DeleteJiraIntegrationResponse) {}
+}
+
+message CreateJiraIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  string consumer_key = 3;
+  string base_url = 4;
+  EncryptedData encrypted_access_token = 5;
+  Scope scope = 6;
+}
+
+message CreateJiraIntegrationResponse {
+  JiraIntegration integration = 1;
+}
+
+message GetJiraIntegrationsRequest {
+  JiraIntegrationFilter jira_integration_filter = 1;
+}
+
+message GetJiraIntegrationsResponse {
+  repeated JiraIntegration integration = 1;
+}
+
+message UpdateJiraIntegrationRequest {
+  string jira_integration_id = 1;
+  string name = 2;
+  string description = 3;
+  Scope scope = 4;
+}
+
+message UpdateJiraIntegrationResponse {
+  JiraIntegration integration = 1;
+}
+
+message DeleteJiraIntegrationRequest {
+  string jira_integration_id = 1;
+}
+
+message DeleteJiraIntegrationResponse {
+}
+
+message JiraIntegration {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string consumer_key = 4;
+  string base_url = 5;
+  Scope scope = 6;
+  EncryptedData encrypted_access_token = 7;
+}
+
+message JiraIntegrationFilter {
+  // filtering with scope with environment-ids a,b,c,...
+  // will fetch integrations containing at-least one matching environment
+  Scope filter_scope = 1;
+}
+
+message Scope {
+  oneof scope_type {
+    StringList environment_ids = 1;
+  }
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+message EncryptedData {
+  string base64_encrypted_value = 1;
+  string key_id = 2;
+}
