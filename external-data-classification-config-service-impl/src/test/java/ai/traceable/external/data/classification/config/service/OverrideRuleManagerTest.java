@@ -3,6 +3,7 @@ package ai.traceable.external.data.classification.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataSuppressionOverride;
@@ -32,6 +33,9 @@ class OverrideRuleManagerTest {
 
   @Mock DataClassificationRulesDao dataClassificationRulesDao;
   @Mock DataClassificationRulesTranslator dataClassificationRulesTranslator;
+  @Mock FeatureCachingClient mockFeatureClient;
+
+  @Mock RequestContext mockRequestContext;
 
   @InjectMocks OverrideRuleManager overrideRuleManager;
 
@@ -72,7 +76,8 @@ class OverrideRuleManagerTest {
             .build();
 
     assertEquals(
-        List.of(original), this.overrideRuleManager.applyOverrides(List.of(original), List.of()));
+        List.of(original),
+        this.overrideRuleManager.applyOverrides(mockRequestContext, List.of(original), List.of()));
   }
 
   @Test
@@ -97,11 +102,12 @@ class OverrideRuleManagerTest {
         .thenReturn(DataTransformation.DATA_TRANSFORMATION_UNSPECIFIED);
     assertEquals(
         List.of(expectedRawTransform),
-        this.overrideRuleManager.applyOverrides(List.of(original), List.of(overrideToRaw)));
+        this.overrideRuleManager.applyOverrides(
+            mockRequestContext, List.of(original), List.of(overrideToRaw)));
     assertEquals(
         Collections.emptyList(),
         this.overrideRuleManager.applyOverridesAndFilterRawRules(
-            List.of(original), List.of(overrideToRaw)));
+            mockRequestContext, List.of(original), List.of(overrideToRaw)));
   }
 
   @Test
@@ -128,11 +134,12 @@ class OverrideRuleManagerTest {
         .thenReturn(DataTransformation.DATA_TRANSFORMATION_REDACT);
     assertEquals(
         List.of(expectedRedactOverride),
-        this.overrideRuleManager.applyOverrides(List.of(original), List.of(overrideToRedact)));
+        this.overrideRuleManager.applyOverrides(
+            mockRequestContext, List.of(original), List.of(overrideToRedact)));
     assertEquals(
         List.of(expectedRedactOverride),
         this.overrideRuleManager.applyOverridesAndFilterRawRules(
-            List.of(original), List.of(overrideToRedact)));
+            mockRequestContext, List.of(original), List.of(overrideToRedact)));
   }
 
   @Test
@@ -203,9 +210,12 @@ class OverrideRuleManagerTest {
     when(this.dataClassificationRulesTranslator.translateDataSuppression(
             DataSuppression.DATA_SUPPRESSION_REDACT))
         .thenReturn(DataTransformation.DATA_TRANSFORMATION_REDACT);
+    when(this.mockFeatureClient.areDataClassificationFilteredOverridesEnabled(mockRequestContext))
+        .thenReturn(true);
     assertEquals(
         List.of(expectedOverride, original),
-        this.overrideRuleManager.applyOverrides(List.of(original), List.of(overrideToRedact)));
+        this.overrideRuleManager.applyOverrides(
+            mockRequestContext, List.of(original), List.of(overrideToRedact)));
   }
 
   @Test
@@ -291,9 +301,12 @@ class OverrideRuleManagerTest {
     when(this.dataClassificationRulesTranslator.translateDataSuppression(
             DataSuppression.DATA_SUPPRESSION_RAW))
         .thenReturn(DataTransformation.DATA_TRANSFORMATION_UNSPECIFIED);
+    when(this.mockFeatureClient.areDataClassificationFilteredOverridesEnabled(mockRequestContext))
+        .thenReturn(true);
     assertEquals(
         List.of(expectedFirstOverride, expectedSecondOverride),
         this.overrideRuleManager.applyOverrides(
+            mockRequestContext,
             List.of(original),
             List.of(
                 firstRedactingOverride,
@@ -330,11 +343,82 @@ class OverrideRuleManagerTest {
                         DataSuppressionOverride.newBuilder()
                             .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)))
             .build();
+    when(this.mockFeatureClient.areDataClassificationFilteredOverridesEnabled(mockRequestContext))
+        .thenReturn(true);
     when(this.dataClassificationRulesTranslator.translateDataSuppression(
             DataSuppression.DATA_SUPPRESSION_OBFUSCATE))
         .thenReturn(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE);
     assertEquals(
         List.of(original),
-        this.overrideRuleManager.applyOverrides(List.of(original), List.of(overrideToRedact)));
+        this.overrideRuleManager.applyOverrides(
+            mockRequestContext, List.of(original), List.of(overrideToRedact)));
+  }
+
+  @Test
+  void testSkipFilteredOverridesIfFlagDisabled() {
+
+    DataType original =
+        DataType.newBuilder()
+            .setDataTypeId("dt-id")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_OBFUSCATE)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setPathPredicate(
+                        PathPredicate.newBuilder()
+                            .setPathSegmentPredicate(
+                                StringPredicate.newBuilder()
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS)
+                                    .setValue("path"))))
+            .build();
+    DataType expectedUnconditionalOverride = original.toBuilder().clearTransformation().build();
+    DataClassificationOverride firstRedactingOverride =
+        DataClassificationOverride.newBuilder()
+            .setDataClassificationOverrideRule(
+                DataClassificationOverrideRule.newBuilder()
+                    .setSpanFilter(
+                        SpanFilter.newBuilder()
+                            .setNegationFilter(
+                                SpanFilter.newBuilder()
+                                    .setKeyValueFilter(
+                                        SpanKeyValueFilter.newBuilder()
+                                            .setKeyPattern(
+                                                StringPattern.newBuilder()
+                                                    .setOperator(Operator.OPERATOR_EQUALS)
+                                                    .setValue("ip"))
+                                            .setValuePattern(
+                                                StringPattern.newBuilder()
+                                                    .setOperator(Operator.OPERATOR_EQUALS)
+                                                    .setValue("ip-value")))
+                                    .build()))
+                    .setDataSuppressionOverride(
+                        DataSuppressionOverride.newBuilder()
+                            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)))
+            .build();
+
+    DataClassificationOverride unconditionalRawOverride =
+        DataClassificationOverride.newBuilder()
+            .setDataClassificationOverrideRule(
+                DataClassificationOverrideRule.newBuilder()
+                    .setDataSuppressionOverride(
+                        DataSuppressionOverride.newBuilder()
+                            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)))
+            .build();
+    when(this.dataClassificationRulesTranslator.translateDataSuppression(
+            DataSuppression.DATA_SUPPRESSION_RAW))
+        .thenReturn(DataTransformation.DATA_TRANSFORMATION_UNSPECIFIED);
+    when(this.mockFeatureClient.areDataClassificationFilteredOverridesEnabled(mockRequestContext))
+        .thenReturn(false);
+    assertEquals(
+        List.of(expectedUnconditionalOverride),
+        this.overrideRuleManager.applyOverrides(
+            mockRequestContext,
+            List.of(original),
+            List.of(
+                firstRedactingOverride,
+                unconditionalRawOverride,
+                firstRedactingOverride,
+                unconditionalRawOverride)));
   }
 }

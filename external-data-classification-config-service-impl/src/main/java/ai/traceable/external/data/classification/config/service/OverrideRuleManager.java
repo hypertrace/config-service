@@ -1,5 +1,6 @@
 package ai.traceable.external.data.classification.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataSuppressionOverride;
@@ -33,6 +34,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class OverrideRuleManager {
   private final DataClassificationRulesDao dataClassificationRulesDao;
   private final DataClassificationRulesTranslator dataClassificationRulesTranslator;
+  private final FeatureCachingClient featureCachingClient;
 
   List<DataClassificationOverride> getOverrides(
       RequestContext requestContext, EnvironmentFilter environmentFilter) {
@@ -45,15 +47,19 @@ class OverrideRuleManager {
   }
 
   List<DataType> applyOverrides(
-      List<DataType> dataTypes, List<DataClassificationOverride> overrides) {
+      RequestContext requestContext,
+      List<DataType> dataTypes,
+      List<DataClassificationOverride> overrides) {
     return dataTypes.stream()
-        .flatMap(dataType -> this.applyOverridesToDatatype(dataType, overrides))
+        .flatMap(dataType -> this.applyOverridesToDatatype(requestContext, dataType, overrides))
         .collect(Collectors.toUnmodifiableList());
   }
 
   List<DataType> applyOverridesAndFilterRawRules(
-      List<DataType> dataTypes, List<DataClassificationOverride> overrides) {
-    return this.filterRawRules(this.applyOverrides(dataTypes, overrides));
+      RequestContext requestContext,
+      List<DataType> dataTypes,
+      List<DataClassificationOverride> overrides) {
+    return this.filterRawRules(this.applyOverrides(requestContext, dataTypes, overrides));
   }
 
   private List<DataType> filterRawRules(List<DataType> dataTypes) {
@@ -69,7 +75,9 @@ class OverrideRuleManager {
   }
 
   private Stream<DataType> applyOverridesToDatatype(
-      DataType originalDataType, List<DataClassificationOverride> overrides) {
+      RequestContext requestContext,
+      DataType originalDataType,
+      List<DataClassificationOverride> overrides) {
     // Each override can potentially match a different set of criteria and change the behavior in
     // different ways.
     // so we produce a new data type for each override that matches that declared criteria and
@@ -77,7 +85,7 @@ class OverrideRuleManager {
     // possible to not match (i.e. the override is conditional), we also add the original data type
     // back to match with lower priority than the override.
     List<DataClassificationOverride> usableOverrides =
-        this.filterToUsableOverrides(originalDataType, overrides);
+        this.filterToUsableOverrides(requestContext, originalDataType, overrides);
     return Streams.concat(
         this.buildDataTypesWithOverrides(originalDataType, usableOverrides),
         this.buildOriginalDataWithoutOverrides(originalDataType, usableOverrides).stream());
@@ -130,10 +138,22 @@ class OverrideRuleManager {
   }
 
   private List<DataClassificationOverride> filterToUsableOverrides(
-      DataType originalDataType, List<DataClassificationOverride> overrides) {
-    // First remove the overrides that aren't supported.
-    List<DataClassificationOverride> usableOverrides =
-        overrides.stream()
+      RequestContext requestContext,
+      DataType originalDataType,
+      List<DataClassificationOverride> overrides) {
+    List<DataClassificationOverride> usableOverrides = overrides;
+
+    // First remove conditional overrides if flag disabled
+    if (!this.featureCachingClient.areDataClassificationFilteredOverridesEnabled(requestContext)) {
+      usableOverrides =
+          usableOverrides.stream()
+              .filter(this::isUnconditional)
+              .collect(Collectors.toUnmodifiableList());
+    }
+
+    // Then remove the overrides that aren't supported.
+    usableOverrides =
+        usableOverrides.stream()
             .filter(
                 override -> {
                   switch (override.getDataClassificationOverrideRule().getOverrideCase()) {

@@ -30,6 +30,7 @@ public class FeatureCachingClient {
 
   private static final boolean DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE = false;
   private static final boolean DEFAULT_DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG_VALUE = false;
+  private static final boolean DEFAULT_DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG_VALUE = false;
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
   private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = true;
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
@@ -41,6 +42,8 @@ public class FeatureCachingClient {
   private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
+  private static final String DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG =
+      "data-classification.filtered-overrides";
   private static final String IPQS_ENABLED_FLAG = "enricher.ipqs-ip-intelligence";
   // Flag is no longer UI-only and has been renamed, but key can't be changed without creating anew
   private static final String USER_ATTRIBUTION_V2_FLAG = "ui.user-attribution-v2";
@@ -55,6 +58,7 @@ public class FeatureCachingClient {
           DATA_CLASSIFICATION_RP1_FLAG,
           DATA_CLASSIFICATION_RP2_FLAG,
           DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG,
+          DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG,
           IPQS_ENABLED_FLAG,
           USER_ATTRIBUTION_V2_FLAG,
           DETECTION_EXCLUSION_V2_FLAG,
@@ -78,7 +82,7 @@ public class FeatureCachingClient {
     this.featureFlagCache =
         CacheBuilder.newBuilder()
             .refreshAfterWrite(config.getRefreshDuration())
-            .expireAfterWrite(config.getExpirationDuration())
+            .expireAfterAccess(config.getExpirationDuration())
             .build(
                 CacheLoader.asyncReloading(
                     CacheLoader.from(this::getFeatureFlagMap),
@@ -123,6 +127,20 @@ public class FeatureCachingClient {
           "Failed to retrieve current feature flag value for Data Classification Enhanced Obfuscation",
           exception);
       return DEFAULT_DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG_VALUE;
+    }
+  }
+
+  public boolean areDataClassificationFilteredOverridesEnabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG));
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for Data Classification Filtered Overrides",
+          exception);
+      return DEFAULT_DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG_VALUE;
     }
   }
 

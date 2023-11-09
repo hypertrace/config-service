@@ -142,10 +142,12 @@ class ExternalDataClassificationConfigServiceImpl
         ImmutableList.<DataType>builder()
             .addAll(
                 this.overrideRuleManager.applyOverridesAndFilterRawRules(
-                    customDataTypes.build(), overrides))
+                    requestContext, customDataTypes.build(), overrides))
             .addAll( // Default rules are always sent, even if they don't suppress (due to TPA bug)
                 this.overrideRuleManager.applyOverrides(
-                    this.platformDataTypeManager.getDefaultDataTypes(requestContext), overrides))
+                    requestContext,
+                    this.platformDataTypeManager.getDefaultDataTypes(requestContext),
+                    overrides))
             .build();
 
     // TODO - consider sorting the final list by redaction strategy. This would be a behavior change
