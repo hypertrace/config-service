@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.saved.query.config.service.store.DeletedSavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryStoreManager;
 import ai.traceable.saved.query.config.service.v1.CreateSavedQueryRequest;
@@ -19,13 +20,15 @@ import ai.traceable.saved.query.config.service.v1.SavedQueryServiceGrpc;
 import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.validation.SavedQueryRequestValidator;
 import com.google.protobuf.Timestamp;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -39,15 +42,31 @@ class SavedQueryConfigServiceImplTest {
   private static final String QUERY_NAME_1 = "query-1";
   private static final String QUERY_NAME_2 = "query-2";
   private static final String SEC_EVENTS_SCOPE = "security-events";
+  private static final String SAVED_QUERY_CONFIG_SERVICE = "saved.query.config.service";
 
   private SavedQueryServiceGrpc.SavedQueryServiceBlockingStub savedQueryServiceBlockingStub;
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private TimestampConverter timestampConverter;
   @Mock private UuidGenerator uuidGenerator;
+  @Mock private Config mockConfig;
 
-  @BeforeEach
-  void beforeEach() {
+  @AfterEach
+  void afterEach() {
+    this.mockGenericConfigService.shutdown();
+  }
+
+  @Test
+  void testSavedQueryCRUD() {
+    String jsonString =
+        "\"default\": {\n"
+            + "    \"saved\": {\n"
+            + "      \"queries\": [\n"
+            + "      ]\n"
+            + "    }\n"
+            + "  }";
+    when(mockConfig.getConfig(SAVED_QUERY_CONFIG_SERVICE))
+        .thenReturn(ConfigFactory.parseString(jsonString));
     this.mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
@@ -56,6 +75,8 @@ class SavedQueryConfigServiceImplTest {
         .addService(
             new SavedQueryConfigServiceImpl(
                 new SavedQueryStoreManager(
+                    new DeletedSavedQueryConfigStore(genericStub, eventGenerator),
+                    new DefaultSavedQueryConfig(mockConfig),
                     new SavedQueryConfigStore(genericStub, eventGenerator),
                     this.timestampConverter,
                     uuidGenerator),
@@ -70,15 +91,6 @@ class SavedQueryConfigServiceImplTest {
     when(this.timestampConverter.convert(any()))
         .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
     when(uuidGenerator.generateRandomId()).thenReturn(UUID_1);
-  }
-
-  @AfterEach
-  void afterEach() {
-    this.mockGenericConfigService.shutdown();
-  }
-
-  @Test
-  void testSavedQueryCRUD() {
     QueryClauses queryClauses1 =
         QueryClauses.newBuilder()
             .addSelection("column:count(calls)")
@@ -179,6 +191,136 @@ class SavedQueryConfigServiceImplTest {
                 .withCallCredentials(
                     RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get())
                 .deleteSavedQuery(DeleteSavedQueryRequest.newBuilder().setId(UUID_1).build()));
+
+    getSavedQueriesResponse =
+        requestContext.call(
+            () ->
+                this.savedQueryServiceBlockingStub.getSavedQueries(
+                    GetSavedQueriesRequest.newBuilder().build()));
+    assertEquals(0, getSavedQueriesResponse.getSavedQueriesCount());
+  }
+
+  @Test
+  void testDefaultSavedQueryCRUD() {
+    String uuid = "b592ec8e-0de6-4fd4-96aa-0449ef995192";
+    String name = "Top APIs seeing bot traffic with poor IP reputation from Data Center";
+    String jsonString =
+        "\"default\": {\n"
+            + "    \"saved\": {\n"
+            + "      \"queries\": [\n"
+            + "        {\n"
+            + "          \"id\": \""
+            + uuid
+            + "\",\n"
+            + "          \"name\": \""
+            + name
+            + "\",\n"
+            + "          \"scope\": \"endpoint-traces\",\n"
+            + "          \"query_clauses\": {\n"
+            + "            \"selection\": [\n"
+            + "              \"column:count(calls)\"\n"
+            + "            ],\n"
+            + "            \"filter\": [\n"
+            + "              \"ipIsBot_eq_true\",\n"
+            + "              \"ipReputationLevel_eq_HIGH\",\n"
+            + "              \"ipConnectionType_eq_Data%20Center\"\n"
+            + "            ],\n"
+            + "            \"group_by\": [\n"
+            + "              \"apiName\"\n"
+            + "            ],\n"
+            + "            \"order_by\": [],\n"
+            + "            \"group_limit\": \"5\",\n"
+            + "            \"interval\": \"5m\"\n"
+            + "          }\n"
+            + "        }\n"
+            + "      ]\n"
+            + "    }\n"
+            + "  }";
+
+    QueryClauses queryClauses1 =
+        QueryClauses.newBuilder()
+            .addSelection("column:count(calls)")
+            .addAllFilter(
+                List.of(
+                    "ipIsBot_eq_true",
+                    "ipReputationLevel_eq_HIGH",
+                    "ipConnectionType_eq_Data%20Center"))
+            .addAllGroupBy(List.of("apiName"))
+            .setInterval("5m")
+            .setGroupLimit("5")
+            .build();
+    SavedQuery expectedSavedQuery =
+        SavedQuery.newBuilder()
+            .setId(uuid)
+            .setName(name)
+            .setScope("endpoint-traces")
+            .setQueryClauses(queryClauses1)
+            .build();
+    Config savedQueryConfig = ConfigFactory.parseString(jsonString);
+    when(mockConfig.getConfig(SAVED_QUERY_CONFIG_SERVICE)).thenReturn(savedQueryConfig);
+
+    this.mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    this.mockGenericConfigService
+        .addService(
+            new SavedQueryConfigServiceImpl(
+                new SavedQueryStoreManager(
+                    new DeletedSavedQueryConfigStore(genericStub, eventGenerator),
+                    new DefaultSavedQueryConfig(mockConfig),
+                    new SavedQueryConfigStore(genericStub, eventGenerator),
+                    this.timestampConverter,
+                    uuidGenerator),
+                new SavedQueryRequestValidator()))
+        .start();
+
+    this.savedQueryServiceBlockingStub =
+        SavedQueryServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    when(this.timestampConverter.convert(any()))
+        .thenReturn(Timestamp.newBuilder().setSeconds(1697479787).build());
+
+    RequestContext requestContext = buildRequestContext();
+    GetSavedQueriesResponse getSavedQueriesResponse =
+        requestContext.call(
+            () ->
+                this.savedQueryServiceBlockingStub.getSavedQueries(
+                    GetSavedQueriesRequest.newBuilder()
+                        .setFilter(
+                            GetSavedQueriesFilter.newBuilder().setScope(TRACES_SCOPE).build())
+                        .build()));
+    assertEquals(1, getSavedQueriesResponse.getSavedQueriesCount());
+    assertEquals(expectedSavedQuery, getSavedQueriesResponse.getSavedQueries(0));
+
+    QueryClauses updatedQueryClause =
+        QueryClauses.newBuilder(queryClauses1).setGroupLimit("100").build();
+    expectedSavedQuery =
+        SavedQuery.newBuilder(expectedSavedQuery)
+            .setQueryClauses(updatedQueryClause)
+            .setCreatedTimestamp(Timestamp.newBuilder().setSeconds(1697479787).build())
+            .setUpdatedTimestamp(Timestamp.newBuilder().setSeconds(1697479787).build())
+            .build();
+    SavedQuery updatedSavedQuery =
+        requestContext.call(
+            () ->
+                this.savedQueryServiceBlockingStub
+                    .updateSavedQuery(
+                        UpdateSavedQueryRequest.newBuilder()
+                            .setId(uuid)
+                            .setName(name)
+                            .setQueryClauses(updatedQueryClause)
+                            .build())
+                    .getSavedQuery());
+    assertEquals(expectedSavedQuery, updatedSavedQuery);
+
+    requestContext.call(
+        () ->
+            this.savedQueryServiceBlockingStub
+                .withCallCredentials(
+                    RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get())
+                .deleteSavedQuery(DeleteSavedQueryRequest.newBuilder().setId(uuid).build()));
 
     getSavedQueriesResponse =
         requestContext.call(

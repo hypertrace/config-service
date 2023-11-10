@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package ai.traceable.saved.query.config.service.v1;
+
+option java_multiple_files = true;
+
+message DeletedDefaultSavedQuery {
+  string id = 1;
+}
