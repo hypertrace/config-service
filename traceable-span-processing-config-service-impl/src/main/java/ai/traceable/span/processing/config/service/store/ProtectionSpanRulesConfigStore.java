@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -24,11 +25,13 @@ public class ProtectionSpanRulesConfigStore extends IdentifiedObjectStore<Protec
   @Inject
   public ProtectionSpanRulesConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      TimestampConverter timestampConverter) {
+      TimestampConverter timestampConverter,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         SpanProcessingConfigConstants.RESOURCE_NAMESPACE,
-        PROTECTION_SPAN_RULES_RESOURCE_NAME);
+        PROTECTION_SPAN_RULES_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
   }
 

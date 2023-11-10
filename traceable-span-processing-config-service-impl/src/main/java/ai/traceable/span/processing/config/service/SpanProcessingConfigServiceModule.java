@@ -1,7 +1,6 @@
 package ai.traceable.span.processing.config.service;
 
 import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManagerModule;
-import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManagerModule;
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManagerModule;
 import ai.traceable.span.processing.config.service.samplingconfigs.SamplingConfigManagerModule;
 import ai.traceable.span.processing.config.service.servicenaming.ServiceNamingRuleModule;
@@ -36,7 +35,6 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
     bind(ConfigChangeEventGenerator.class).toInstance(this.configChangeEventGenerator);
     bind(Clock.class).toInstance(Clock.systemUTC());
 
-    install(new LicenseStatusConfigManagerModule());
     install(new SamplingConfigManagerModule());
     install(new ApiNamingRulesManagerModule());
     install(new ProtectionSpanRulesManagerModule());

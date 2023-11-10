@@ -1,5 +1,7 @@
 package ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules;
 
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanAttributeConstants.URL_SPAN_ATTRIBUTE_KEYS;
+
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule.Builder;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
@@ -26,8 +28,6 @@ import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServ
 @Slf4j
 public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
 
-  private static final List<String> URL_SPAN_ATTRIBUTE_KEYS =
-      List.of("http.url", "http.target", "http.path", "url.full", "url.path");
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
@@ -124,8 +124,7 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     List<SpanFilter> children =
         logicalSpanFilter.getOperandsList().stream()
             .map(this::convertFilter)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
+            .flatMap(Optional::stream)
             .collect(Collectors.toUnmodifiableList());
 
     return combineFiltersWithOperator(

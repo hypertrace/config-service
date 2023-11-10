@@ -8,7 +8,6 @@ import ai.traceable.span.processing.config.service.v1.RateLimit;
 import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
 import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
-import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
@@ -22,13 +21,6 @@ class SpanProcessingConfigServiceImplTestUtils {
         .setName("name")
         .setDisabled(false)
         .setFilter(buildFilter())
-        .build();
-  }
-
-  static SamplingConfig buildSamplingConfig(String id, long quantityAllowed) {
-    return SamplingConfig.newBuilder()
-        .setId(id)
-        .setSamplingConfigInfo(buildSamplingConfigInfo(quantityAllowed))
         .build();
   }
 

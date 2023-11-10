@@ -2,10 +2,15 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedExcludeSpanProcessingRule;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedExcludeSpanProcessingRuleServiceNamesAndEnvironmentsProcessed;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedProtectionSpanProcessingRule;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedProtectionSpanProcessingRuleServiceNamesAndEnvironmentsProcessed;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildExpectedRateLimitConfig;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponse;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponseEnvironmentFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllExcludeSpanRulesResponseServiceNameFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponse;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseEnvironmentFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseServiceNameFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponse;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseEnvironmentFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseServiceNameFilter;
@@ -16,16 +21,21 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.DefaultExcludeSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.protectionspanrules.DefaultProtectionSpanRulesManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.protectionspanrules.ProtectionSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.DefaultRateLimitConfigManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimitconfig.RateLimitConfigManager;
+import ai.traceable.localprocessing.config.service.utils.FilterConverter;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesResponse;
+import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
+import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
 import java.util.List;
 import org.hypertrace.config.span.processing.utils.SpanFilterMatcher;
@@ -60,12 +70,20 @@ class DefaultSpanProcessingRulesManagerTest {
     ExcludeSpanRulesManager excludeSpanRulesManager =
         new DefaultExcludeSpanRulesManager(
             spanProcessingConfigServiceBlockingStub, new SpanFilterMatcher());
+    ProtectionSpanRulesManager protectionSpanRulesManager =
+        new DefaultProtectionSpanRulesManager(
+            traceableSpanProcessingConfigServiceBlockingStub,
+            spanFilterMatcher,
+            new FilterConverter());
     RateLimitConfigManager rateLimitConfigManager =
         new DefaultRateLimitConfigManager(
             traceableSpanProcessingConfigServiceBlockingStub, spanFilterMatcher);
     spanProcessingRulesManager =
         new DefaultSpanProcessingRulesManager(
-            excludeSpanRulesManager, rateLimitConfigManager, uuidGenerator);
+            excludeSpanRulesManager,
+            protectionSpanRulesManager,
+            rateLimitConfigManager,
+            uuidGenerator);
     requestContext = RequestContext.forTenantId("tenantId");
   }
 
@@ -75,6 +93,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(buildGetAllExcludeSpanRulesResponse(false));
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
@@ -136,6 +156,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(buildGetAllExcludeSpanRulesResponseEnvironmentFilter());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
             requestContext,
@@ -210,6 +232,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(buildGetAllExcludeSpanRulesResponseServiceNameFilter());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
@@ -273,6 +297,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(buildGetAllExcludeSpanRulesResponse(true));
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
             requestContext,
@@ -305,12 +331,256 @@ class DefaultSpanProcessingRulesManagerTest {
   }
 
   @Test
+  void testGetAllProtectionSpanRules() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponse(false));
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .build())
+                .build());
+    ProtectionSpanProcessingRule expectedProtectionSpanProcessingRule =
+        buildExpectedProtectionSpanProcessingRule();
+
+    String hash =
+        uuidGenerator.generateId(
+            SpanProcessingRules.newBuilder()
+                .addAllProtectionSpanRules(List.of(expectedProtectionSpanProcessingRule))
+                .build());
+    SpanProcessingRules expectedSpanProcessingRules =
+        SpanProcessingRules.newBuilder()
+            .addProtectionSpanRules(expectedProtectionSpanProcessingRule)
+            .build();
+
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setSpanProcessingRules(expectedSpanProcessingRules)
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRules))
+                    .setServiceName("service1")
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+
+    getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .setHash(hash)
+                        .build())
+                .build());
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setHash(hash)
+                    .setServiceName("service1")
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllProtectionSpanRulesEnvironmentFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponseEnvironmentFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .setEnvironment("env")
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .setHash("")
+                        .build())
+                .build());
+    List<SpanProcessingRulesServiceResponse> spanProcessingRulesServiceResponses =
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList();
+
+    SpanProcessingRules spanProcessingRules =
+        spanProcessingRulesServiceResponses.get(0).getSpanProcessingRules();
+    List<ProtectionSpanProcessingRule> protectionSpanProcessingRules =
+        spanProcessingRules.getProtectionSpanRulesList();
+
+    SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
+    assertEquals(0, protectionSpanProcessingRules.size());
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("service1")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRules))
+                    .setSpanProcessingRules(spanProcessingRules)
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+
+    getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .setEnvironment("value")
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .setHash("")
+                        .build())
+                .build());
+    spanProcessingRulesServiceResponses =
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList();
+    spanProcessingRules = spanProcessingRulesServiceResponses.get(0).getSpanProcessingRules();
+    protectionSpanProcessingRules = spanProcessingRules.getProtectionSpanRulesList();
+
+    assertEquals(1, protectionSpanProcessingRules.size());
+    ProtectionSpanProcessingRule expectedProtectionSpanProcessingRule =
+        buildExpectedProtectionSpanProcessingRuleServiceNamesAndEnvironmentsProcessed();
+    expectedSpanProcessingRules =
+        SpanProcessingRules.newBuilder()
+            .addProtectionSpanRules(expectedProtectionSpanProcessingRule)
+            .build();
+
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("service1")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRules))
+                    .setSpanProcessingRules(expectedSpanProcessingRules)
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllProtectionSpanRulesServiceNameFilter() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponseServiceNameFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("value")
+                        .setHash("")
+                        .build())
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("vil")
+                        .setHash("")
+                        .build())
+                .build());
+
+    List<SpanProcessingRulesServiceResponse> spanProcessingRulesServiceResponses =
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList();
+
+    SpanProcessingRules spanProcessingRulesFirst =
+        spanProcessingRulesServiceResponses.get(0).getSpanProcessingRules();
+    List<ProtectionSpanProcessingRule> protectionSpanProcessingRulesFirst =
+        spanProcessingRulesFirst.getProtectionSpanRulesList();
+
+    SpanProcessingRules spanProcessingRulesSecond =
+        spanProcessingRulesServiceResponses.get(1).getSpanProcessingRules();
+    List<ProtectionSpanProcessingRule> protectionSpanProcessingRulesSecond =
+        spanProcessingRulesSecond.getProtectionSpanRulesList();
+
+    SpanProcessingRules expectedSpanProcessingRulesFirst =
+        SpanProcessingRules.newBuilder()
+            .addAllProtectionSpanRules(protectionSpanProcessingRulesFirst)
+            .build();
+    SpanProcessingRules expectedSpanProcessingRulesSecond =
+        SpanProcessingRules.newBuilder()
+            .addAllProtectionSpanRules(protectionSpanProcessingRulesSecond)
+            .build();
+
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("value")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRulesFirst))
+                    .setSpanProcessingRules(expectedSpanProcessingRulesFirst)
+                    .build())
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("vil")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRulesSecond))
+                    .setSpanProcessingRules(expectedSpanProcessingRulesSecond)
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllProtectionSpanRulesRuleDisabled() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(GetAllResolvedSamplingConfigsResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponse(true));
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .build())
+                .build());
+    List<SpanProcessingRulesServiceResponse> spanProcessingRulesServiceResponses =
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList();
+
+    SpanProcessingRules spanProcessingRules =
+        spanProcessingRulesServiceResponses.get(0).getSpanProcessingRules();
+    List<ProtectionSpanProcessingRule> protectionSpanProcessingRules =
+        spanProcessingRules.getProtectionSpanRulesList();
+
+    SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
+    assertEquals(0, protectionSpanProcessingRules.size());
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("service1")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRules))
+                    .setSpanProcessingRules(spanProcessingRules)
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+  }
+
+  @Test
   void testGetRateLimitConfig() {
     when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
         .thenReturn(buildGetAllResolvedSamplingConfigsResponse());
-
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
-        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+        .thenReturn(GetAllExcludeSpanRulesResponse.getDefaultInstance());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
@@ -369,6 +639,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(buildGetAllResolvedSamplingConfigsResponseEnvironmentFilter());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
             requestContext,
@@ -431,6 +703,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(buildGetAllResolvedSamplingConfigsResponseServiceNameFilter());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
@@ -477,6 +751,8 @@ class DefaultSpanProcessingRulesManagerTest {
         .thenReturn(buildGetAllResolvedSamplingConfigsResponse());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
         .thenReturn(buildGetAllExcludeSpanRulesResponse(false));
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(buildGetAllResolvedProtectionSpanRulesResponse(false));
 
     GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
         spanProcessingRulesManager.getSpanProcessingRulesResponse(
@@ -490,6 +766,8 @@ class DefaultSpanProcessingRulesManagerTest {
 
     ExcludeSpanProcessingRule expectedExcludeSpanProcessingRule =
         buildExpectedExcludeSpanProcessingRule();
+    ProtectionSpanProcessingRule expectedProtectionSpanProcessingRule =
+        buildExpectedProtectionSpanProcessingRule();
     RateLimitConfig expectedRateLimitConfig = buildExpectedRateLimitConfig();
 
     String hash =
@@ -497,11 +775,13 @@ class DefaultSpanProcessingRulesManagerTest {
             SpanProcessingRules.newBuilder()
                 .setRateLimitConfig(expectedRateLimitConfig)
                 .addAllExcludeSpanRules(List.of(expectedExcludeSpanProcessingRule))
+                .addAllProtectionSpanRules(List.of(expectedProtectionSpanProcessingRule))
                 .build());
     SpanProcessingRules expectedSpanProcessingRules =
         SpanProcessingRules.newBuilder()
             .setRateLimitConfig(expectedRateLimitConfig)
             .addExcludeSpanRules(expectedExcludeSpanProcessingRule)
+            .addProtectionSpanRules(expectedProtectionSpanProcessingRule)
             .build();
 
     assertEquals(

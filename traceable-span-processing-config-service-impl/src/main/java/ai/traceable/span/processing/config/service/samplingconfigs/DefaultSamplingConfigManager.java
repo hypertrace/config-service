@@ -1,50 +1,30 @@
 package ai.traceable.span.processing.config.service.samplingconfigs;
 
-import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
-
 import ai.traceable.config.utils.TimestampConverter;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
-import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.store.SamplingConfigsConfigStore;
 import ai.traceable.span.processing.config.service.v1.CreateSamplingConfigRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteSamplingConfigRequest;
-import ai.traceable.span.processing.config.service.v1.RateLimit;
-import ai.traceable.span.processing.config.service.v1.RateLimitConfig;
-import ai.traceable.span.processing.config.service.v1.RateLimitStrategy;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigMetadata;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfig;
 import ai.traceable.span.processing.config.service.v1.UpdateSamplingConfigRequest;
-import ai.traceable.span.processing.config.service.v1.WindowedRateLimit;
 import com.google.inject.Inject;
-import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@AllArgsConstructor(onConstructor_ = @Inject)
 public class DefaultSamplingConfigManager implements SamplingConfigManager {
 
-  private static final String ZERO_SAMPLING_CONFIG_ID = "zero-sampling-config-id";
-
   private final TimestampConverter timestampConverter;
-  private final LicenseStatusConfigManager licenseStatusConfigManager;
   private final SamplingConfigsConfigStore samplingConfigsConfigStore;
-
-  @Inject
-  public DefaultSamplingConfigManager(
-      SamplingConfigsConfigStore samplingConfigsConfigStore,
-      TimestampConverter timestampConverter,
-      LicenseStatusConfigManager licenseStatusConfigManager) {
-    this.timestampConverter = timestampConverter;
-    this.samplingConfigsConfigStore = samplingConfigsConfigStore;
-    this.licenseStatusConfigManager = licenseStatusConfigManager;
-  }
 
   @Override
   public List<SamplingConfigDetails> getAllSamplingConfigsDetails(RequestContext requestContext) {
@@ -53,10 +33,8 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
 
   @Override
   public List<SamplingConfig> getAllResolvedSamplingConfigs(RequestContext requestContext) {
-    LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus(requestContext);
-    if (LICENSE_LIMIT_EXHAUSTED.equals(licenseStatus.getTracesLicenseLimit())) {
-      return List.of(buildZeroSamplingConfig());
-    }
+    // A zero sampling config should be applied ideally if the license limit is exhausted. Since we
+    // don't maintain licensing properly today, allowing them to be applied always
     return getAllSamplingConfigs(requestContext);
   }
 
@@ -125,39 +103,6 @@ public class DefaultSamplingConfigManager implements SamplingConfigManager {
             SamplingConfigInfo.newBuilder()
                 .setRateLimitConfig(updateSamplingConfig.getRateLimitConfig())
                 .setFilter(updateSamplingConfig.getFilter())
-                .build())
-        .build();
-  }
-
-  private SamplingConfig buildZeroSamplingConfig() {
-    return SamplingConfig.newBuilder()
-        .setId(ZERO_SAMPLING_CONFIG_ID)
-        .setSamplingConfigInfo(
-            SamplingConfigInfo.newBuilder()
-                .setRateLimitConfig(
-                    RateLimitConfig.newBuilder()
-                        .setTraceLimitGlobal(
-                            RateLimit.newBuilder()
-                                .setFixedWindowLimit(
-                                    WindowedRateLimit.newBuilder()
-                                        .setQuantityAllowed(0)
-                                        .setWindowDuration(
-                                            Duration.newBuilder().setSeconds(60).build())
-                                        .build())
-                                .build())
-                        .setTraceLimitPerEndpoint(
-                            RateLimit.newBuilder()
-                                .setFixedWindowLimit(
-                                    WindowedRateLimit.newBuilder()
-                                        .setQuantityAllowed(0)
-                                        .setWindowDuration(
-                                            Duration.newBuilder().setSeconds(60).build())
-                                        .build())
-                                .build())
-                        .setApiEndpointCacheDuration(
-                            Duration.newBuilder().setSeconds(604800).build())
-                        .setRateLimitStrategy(RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP)
-                        .build())
                 .build())
         .build();
   }

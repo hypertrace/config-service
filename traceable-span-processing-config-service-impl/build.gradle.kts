@@ -12,7 +12,6 @@ protobuf {
 }
 
 dependencies {
-  api(projects.licenseStatusConfigServiceApi)
   api(projects.traceableSpanProcessingConfigServiceApi)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(projects.configUtils)

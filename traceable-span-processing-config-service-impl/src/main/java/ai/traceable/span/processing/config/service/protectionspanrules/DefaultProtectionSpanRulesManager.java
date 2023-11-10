@@ -1,10 +1,6 @@
 package ai.traceable.span.processing.config.service.protectionspanrules;
 
-import static ai.traceable.licensestatus.config.service.v1.LicenseLimit.LICENSE_LIMIT_EXHAUSTED;
-
 import ai.traceable.config.utils.TimestampConverter;
-import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
-import ai.traceable.span.processing.config.service.licensestatus.LicenseStatusConfigManager;
 import ai.traceable.span.processing.config.service.store.ProtectionSpanRulesConfigStore;
 import ai.traceable.span.processing.config.service.v1.CreateProtectionSpanRuleRequest;
 import ai.traceable.span.processing.config.service.v1.DeleteProtectionSpanRuleRequest;
@@ -17,28 +13,18 @@ import ai.traceable.span.processing.config.service.v1.UpdateProtectionSpanRuleRe
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusException;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@AllArgsConstructor(onConstructor_ = @Inject)
 public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesManager {
 
   private final TimestampConverter timestampConverter;
-  private final LicenseStatusConfigManager licenseStatusConfigManager;
   private final ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore;
-
-  @Inject
-  public DefaultProtectionSpanRulesManager(
-      ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore,
-      TimestampConverter timestampConverter,
-      LicenseStatusConfigManager licenseStatusConfigManager) {
-    this.timestampConverter = timestampConverter;
-    this.protectionSpanRulesConfigStore = protectionSpanRulesConfigStore;
-    this.licenseStatusConfigManager = licenseStatusConfigManager;
-  }
 
   @Override
   public List<ProtectionSpanRuleDetails> getAllProtectionSpanRuleDetails(
@@ -48,11 +34,9 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
 
   @Override
   public List<ProtectionSpanRule> getAllResolvedProtectionSpanRule(RequestContext requestContext) {
-    LicenseStatus licenseStatus = licenseStatusConfigManager.getLicenseStatus(requestContext);
-    if (!licenseStatus.hasProtectionLicense()
-        || LICENSE_LIMIT_EXHAUSTED.equals(licenseStatus.getTracesLicenseLimit())) {
-      return Collections.emptyList();
-    }
+    // Protection rules should ideally be applied only when behind a protection license and the
+    // license limit isn't exhausted. Since we don't maintain licenses properly today, allowing them
+    // to be applied always.
     return getAllProtectionSpanRules(requestContext);
   }
 

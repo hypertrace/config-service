@@ -2,6 +2,8 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules;
 
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
+import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRule;
+import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRuleInfo;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
@@ -81,6 +83,88 @@ public class SpanProcessingRulesManagerTestUtils {
                                         ai.traceable.localprocessing.config.service.v1
                                             .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
                                         "url"))))))
+                .build())
+        .build();
+  }
+
+  public static ProtectionSpanProcessingRule buildExpectedProtectionSpanProcessingRule() {
+    return ProtectionSpanProcessingRule.newBuilder()
+        .setProtectionSpanProcessingRuleInfo(
+            ProtectionSpanProcessingRuleInfo.newBuilder()
+                .setId("id")
+                .setFilter(
+                    buildLogicalFilterLocalProcessing(
+                        ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                            .LOGICAL_OPERATOR_AND,
+                        List.of(
+                            buildLogicalFilterLocalProcessing(
+                                ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_OR,
+                                List.of(
+                                    buildRelationalFilter(
+                                        "key",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                        "val"),
+                                    buildRelationalFilter(
+                                        "key",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                        "val"))),
+                            buildLogicalFilterLocalProcessing(
+                                ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_OR,
+                                List.of(
+                                    buildRelationalFilter(
+                                        "http.url",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "http.target",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "http.path",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "url.full",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"),
+                                    buildRelationalFilter(
+                                        "url.path",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "url"))))))
+                .build())
+        .build();
+  }
+
+  public static ProtectionSpanProcessingRule
+      buildExpectedProtectionSpanProcessingRuleServiceNamesAndEnvironmentsProcessed() {
+    return ProtectionSpanProcessingRule.newBuilder()
+        .setProtectionSpanProcessingRuleInfo(
+            ProtectionSpanProcessingRuleInfo.newBuilder()
+                .setId("id")
+                .setFilter(
+                    buildLogicalFilterLocalProcessing(
+                        ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                            .LOGICAL_OPERATOR_OR,
+                        List.of(
+                            buildRelationalFilter(
+                                "key",
+                                ai.traceable.localprocessing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                "val"),
+                            buildRelationalFilter(
+                                "key",
+                                ai.traceable.localprocessing.config.service.v1.RelationalOperator
+                                    .RELATIONAL_OPERATOR_CONTAINS,
+                                "val"))))
                 .build())
         .build();
   }
