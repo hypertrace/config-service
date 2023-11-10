@@ -19,6 +19,10 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
+import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
@@ -931,6 +935,141 @@ class WafIntegrationConfigRequestValidatorTest {
   }
 
   @Test
+  void invalidCreateGcpRequestTest() {
+    // empty gcp integration details
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(GcpIntegrationParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT));
+
+    // missing gcp project-id
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setSecurityPolicyName("policy-1")
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setValue("secret")
+                                                    .setKeyId("key-id")
+                                                    .build())))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request2, REQUEST_CONTEXT));
+
+    // missing gcp security policy
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-1")
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setValue("secret")
+                                                    .setKeyId("key-id")
+                                                    .build())))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request3, REQUEST_CONTEXT));
+
+    // missing gcp service account key
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-1")
+                                    .setSecurityPolicyName("policy-1")
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setKeyId("key-id")
+                                                    .build())))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request4, REQUEST_CONTEXT));
+
+    // missing gcp key id
+    CreateWafIntegrationRequest request5 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-1")
+                                    .setSecurityPolicyName("policy-1")
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setValue("secret")
+                                                    .build())))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT));
+
+    // valid request
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-1")
+                                    .setSecurityPolicyName("policy-1")
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setValue("secret")
+                                                    .setKeyId("key-id")
+                                                    .build())))))
+            .build();
+    assertDoesNotThrow(
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));
+  }
+
+  @Test
   void invalidUpdateAzureRequestTest() {
     // empty azure integration params list
     UpdateWafIntegrationRequest request1 =
@@ -974,6 +1113,50 @@ class WafIntegrationConfigRequestValidatorTest {
                                         AzureAuthCredentials.newBuilder()
                                             .setClientId("client-id")
                                             .setAccessKeyId("key-id")))))
+            .build();
+    assertDoesNotThrow(
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));
+  }
+
+  @Test
+  void invalidUpdateGcpRequestTest() {
+    // empty gcp integration params list
+    UpdateWafIntegrationRequest request1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedGcpIntegrationParams(
+                        GcpIntegrationUpdateParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request1, REQUEST_CONTEXT));
+
+    // valid request
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedGcpIntegrationParams(
+                        GcpIntegrationUpdateParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-id")
+                                    .setSecurityPolicyName("policy-name")
+                                    .setDenyActionResponseCode(
+                                        GcpIntegrationDetails.DenyActionResponseCode
+                                            .DENY_ACTION_RESPONSE_CODE_403)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setKeyId("key-id")
+                                                    .setValue("secret")
+                                                    .build())))))
             .build();
     assertDoesNotThrow(
         () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));

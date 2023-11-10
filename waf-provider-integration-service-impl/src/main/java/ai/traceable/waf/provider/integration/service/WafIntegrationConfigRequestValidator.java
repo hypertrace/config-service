@@ -21,6 +21,10 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
+import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
@@ -118,6 +122,7 @@ public class WafIntegrationConfigRequestValidator {
       case WAF_PROVIDER_TYPE_AWS:
       case WAF_PROVIDER_TYPE_IMPERVA:
       case WAF_PROVIDER_TYPE_AZURE:
+      case WAF_PROVIDER_TYPE_GCP:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -147,6 +152,10 @@ public class WafIntegrationConfigRequestValidator {
         validateUpdatedAzureIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedAzureIntegrationParams());
         break;
+      case UPDATED_GCP_INTEGRATION_PARAMS:
+        validateUpdatedGcpIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedGcpIntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -154,6 +163,30 @@ public class WafIntegrationConfigRequestValidator {
                 "Unexpected integration params case: " + printMessage(updatedWafIntegrationDetails))
             .asRuntimeException();
     }
+  }
+
+  private void validateUpdatedGcpIntegrationParams(
+      GcpIntegrationUpdateParams gcpIntegrationUpdateParams) {
+    validateUpdatedGcpIntegrationDetails(gcpIntegrationUpdateParams.getGcpIntegrationDetails());
+  }
+
+  private void validateUpdatedGcpIntegrationDetails(GcpIntegrationDetails gcpIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
+    validateUpdatedGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
+  }
+
+  private void validateUpdatedGcpAuthCredentials(GcpAuthCredentials authCredentials) {
+    if (authCredentials.hasEncryptedServiceAccountKey()) {
+      validateGcpServiceAccountKey(authCredentials.getEncryptedServiceAccountKey());
+    }
+  }
+
+  private void validateGcpServiceAccountKey(GcpAuthCredentials.EncryptedText serviceAccountKey) {
+    validateNonDefaultPresenceOrThrow(serviceAccountKey, EncryptedText.KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(serviceAccountKey, EncryptedText.VALUE_FIELD_NUMBER);
   }
 
   private void validateIntegrationParams(WafIntegrationDetails wafIntegrationDetails) {
@@ -170,12 +203,33 @@ public class WafIntegrationConfigRequestValidator {
       case AZURE_INTEGRATION_PARAMS:
         validateAzureIntegrationParam(wafIntegrationDetails.getAzureIntegrationParams());
         break;
+      case GCP_INTEGRATION_PARAMS:
+        validateGcpIntegrationParams(wafIntegrationDetails.getGcpIntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
                 "Unexpected integration params case: " + printMessage(wafIntegrationDetails))
             .asRuntimeException();
+    }
+  }
+
+  private void validateGcpIntegrationParams(GcpIntegrationParams gcpIntegrationParams) {
+    validateGcpIntegrationDetails(gcpIntegrationParams.getGcpIntegrationDetails());
+  }
+
+  private void validateGcpIntegrationDetails(GcpIntegrationDetails gcpIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
+    validateGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
+  }
+
+  private void validateGcpAuthCredentials(GcpAuthCredentials authCredentials) {
+    if (authCredentials.hasEncryptedServiceAccountKey()) {
+      validateGcpServiceAccountKey(authCredentials.getEncryptedServiceAccountKey());
     }
   }
 

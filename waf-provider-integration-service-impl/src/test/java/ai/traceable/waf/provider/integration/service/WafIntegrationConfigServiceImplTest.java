@@ -22,6 +22,9 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
+import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsDetailsRequest;
@@ -100,6 +103,18 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
+  void createWafIntegrationGcpTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails("name", "email", IntegrationParamsCase.GCP_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(
+        stripGcpSecrets(expectedDetails), response.getWafIntegration().getWafIntegrationDetails());
   }
 
   @Test
@@ -520,6 +535,31 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void getWafIntegrationsGcpTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.GCP_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_GCP))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    WafIntegration expectedWafIntegration = createResponse.getWafIntegration();
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(expectedWafIntegration, response.getWafIntegrationList().get(0));
+  }
+
+  @Test
   void updateWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -867,7 +907,6 @@ class WafIntegrationConfigServiceImplTest {
 
   @Test
   void deleteWafIntegrationImpervaTest() {
-
     WafIntegrationDetails details =
         createWafIntegrationDetails(
             "name", "email", IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
@@ -907,6 +946,21 @@ class WafIntegrationConfigServiceImplTest {
       default:
         throw new RuntimeException();
     }
+  }
+
+  private WafIntegrationDetails stripGcpSecrets(WafIntegrationDetails expectedDetails) {
+    GcpIntegrationDetails gcpIntegrationDetails =
+        expectedDetails.getGcpIntegrationParams().getGcpIntegrationDetails();
+    GcpAuthCredentials.Builder gcpAuthCredentialsBuilder =
+        gcpIntegrationDetails.toBuilder().getAuthCredentials().toBuilder()
+            .clearEncryptedServiceAccountKey();
+    GcpIntegrationDetails updatedGcpIntegrationDetails =
+        gcpIntegrationDetails.toBuilder().setAuthCredentials(gcpAuthCredentialsBuilder).build();
+    GcpIntegrationParams updatedGcpIntegrationParams =
+        expectedDetails.getGcpIntegrationParams().toBuilder()
+            .setGcpIntegrationDetails(updatedGcpIntegrationDetails)
+            .build();
+    return expectedDetails.toBuilder().setGcpIntegrationParams(updatedGcpIntegrationParams).build();
   }
 
   private WafIntegrationDetails createWafIntegrationDetails(
@@ -1016,6 +1070,29 @@ class WafIntegrationConfigServiceImplTest {
                                     .setClientId("client-id")
                                     .setEncryptedClientSecret("secret")
                                     .setAccessKeyId("key-id")))
+                    .build())
+            .build();
+      case GCP_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .setGcpIntegrationParams(
+                GcpIntegrationParams.newBuilder()
+                    .setGcpIntegrationDetails(
+                        GcpIntegrationDetails.newBuilder()
+                            .setProjectId("project-1")
+                            .setSecurityPolicyName("policy-1")
+                            .setDenyActionResponseCodeValue(400)
+                            .setAuthCredentials(
+                                GcpAuthCredentials.newBuilder()
+                                    .setEncryptedServiceAccountKey(
+                                        GcpAuthCredentials.EncryptedText.newBuilder()
+                                            .setKeyId("key1")
+                                            .setValue("value1")
+                                            .build())
+                                    .build())
+                            .build())
                     .build())
             .build();
       default:

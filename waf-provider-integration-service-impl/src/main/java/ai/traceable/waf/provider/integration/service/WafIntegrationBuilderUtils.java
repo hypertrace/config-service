@@ -8,6 +8,10 @@ import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
@@ -54,6 +58,9 @@ public class WafIntegrationBuilderUtils {
       case UPDATED_AZURE_INTEGRATION_PARAMS:
         updateAzureWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
+      case UPDATED_GCP_INTEGRATION_PARAMS:
+        updateGcpWafIntegration(request, updatedWafIntegrationDetailsBuilder);
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -65,6 +72,31 @@ public class WafIntegrationBuilderUtils {
         .setId(existingWafIntegration.getId())
         .setWafIntegrationDetails(updatedWafIntegrationDetailsBuilder)
         .build();
+  }
+
+  private static GcpIntegrationParams getUpdatedGcpIntegrationParams(
+      GcpIntegrationUpdateParams updatedGcpIntegrationParams,
+      GcpIntegrationParams gcpIntegrationParams) {
+    GcpIntegrationDetails updatedGcpIntegrationDetails =
+        updatedGcpIntegrationParams.getGcpIntegrationDetails();
+    GcpIntegrationDetails existingGcpIntegrationDetails =
+        gcpIntegrationParams.getGcpIntegrationDetails();
+    GcpIntegrationDetails gcpIntegrationDetails =
+        updatedGcpIntegrationDetails.toBuilder()
+            .setAuthCredentials(
+                updatedRequestHasAuthCredentials(updatedGcpIntegrationDetails)
+                    ? updatedGcpIntegrationDetails.getAuthCredentials()
+                    : existingGcpIntegrationDetails.getAuthCredentials())
+            .build();
+    return GcpIntegrationParams.newBuilder()
+        .setGcpIntegrationDetails(gcpIntegrationDetails)
+        .build();
+  }
+
+  private static boolean updatedRequestHasAuthCredentials(
+      GcpIntegrationDetails gcpIntegrationDetails) {
+    return gcpIntegrationDetails.hasAuthCredentials()
+        && gcpIntegrationDetails.getAuthCredentials().hasEncryptedServiceAccountKey();
   }
 
   private static void updateCloudflareWafIntegration(
@@ -155,6 +187,16 @@ public class WafIntegrationBuilderUtils {
     detailsBuilder.setAzureIntegrationParams(
         getUpdatedAzureIntegrationParams(
             updatedAzureIntegrationParams, detailsBuilder.getAzureIntegrationParams()));
+  }
+
+  private static void updateGcpWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
+    GcpIntegrationUpdateParams updatedGcpIntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedGcpIntegrationParams();
+
+    detailsBuilder.setGcpIntegrationParams(
+        getUpdatedGcpIntegrationParams(
+            updatedGcpIntegrationParams, detailsBuilder.getGcpIntegrationParams()));
   }
 
   private static AzureIntegrationParams getUpdatedAzureIntegrationParams(
@@ -323,7 +365,6 @@ public class WafIntegrationBuilderUtils {
                           .build();
                     })
                 .collect(Collectors.toUnmodifiableList());
-
         return WafIntegration.newBuilder()
             .setId(wafIntegration.getId())
             .setWafIntegrationDetails(
@@ -332,9 +373,33 @@ public class WafIntegrationBuilderUtils {
                         AzureIntegrationParams.newBuilder()
                             .addAllAzureIntegrationDetails(azureIntegrationDetailsList)))
             .build();
+      case GCP_INTEGRATION_PARAMS:
+        return getGcpWafIntegrationWithSecretsStripped(wafIntegration);
       default:
         return wafIntegration;
     }
+  }
+
+  private static WafIntegration getGcpWafIntegrationWithSecretsStripped(
+      WafIntegration wafIntegration) {
+    GcpIntegrationParams gcpIntegrationParams =
+        wafIntegration.getWafIntegrationDetails().getGcpIntegrationParams();
+    GcpIntegrationDetails.Builder gcpIntegrationDetailsBuilder =
+        gcpIntegrationParams.getGcpIntegrationDetails().toBuilder();
+    GcpAuthCredentials gcpAuthCredentials =
+        gcpIntegrationParams.getGcpIntegrationDetails().getAuthCredentials();
+    gcpIntegrationDetailsBuilder.setAuthCredentials(
+        gcpAuthCredentials.toBuilder().clearEncryptedServiceAccountKey());
+    return WafIntegration.newBuilder()
+        .setId(wafIntegration.getId())
+        .setWafIntegrationDetails(
+            wafIntegration.getWafIntegrationDetails().toBuilder()
+                .setGcpIntegrationParams(
+                    gcpIntegrationParams.toBuilder()
+                        .setGcpIntegrationDetails(gcpIntegrationDetailsBuilder.build())
+                        .build())
+                .build())
+        .build();
   }
 
   private static AuthCredentials.Builder getAuthCredentialsBuilder(
