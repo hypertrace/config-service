@@ -16,29 +16,45 @@ message AzureIntegrationDetails {
   string azure_tenant_id = 1;
   string subscription_id = 2;
   string azure_environment = 3;
-  repeated AzureResourceGroupDetails azure_resource_group_details = 4;
+  repeated AzureResourceGroupDetails azure_resource_group_details = 4 [deprecated = true];
   AzureAuthCredentials auth_credentials = 5;
   string id = 6;
   oneof waf_endpoint_type {
-    AzureFrontDoorWafDetails front_door_waf_details = 7;
-    AzureApplicationGatewayWafDetails application_gateway_waf_details = 8;
+    AzureFrontDoorWafDetails front_door_waf_details = 7 [deprecated = true];
+    AzureApplicationGatewayWafDetails application_gateway_waf_details = 8 [deprecated = true];
   }
+  AzureWafPolicyDetails azure_waf_policy_details = 9;
 }
 
+message AzureWafPolicyDetails {
+  string waf_policy_name = 1; // waf policy name on which rules need to applied
+  string waf_policy_resource_group_name = 2; // resource group name of the above specified waf policy
+  AzureWafPolicyType azure_waf_policy_type = 3; // type of waf policy
+}
+
+enum AzureWafPolicyType {
+  AZURE_WAF_POLICY_TYPE_UNSPECIFIED = 0;
+  AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY = 1;
+  AZURE_WAF_POLICY_TYPE_FRONT_DOOR = 2;
+}
 message AzureFrontDoorWafDetails {
+  option deprecated = true;
   repeated string front_door_names = 1;
 }
 
 message AzureApplicationGatewayWafDetails {
+  option deprecated = true;
   AzureManagedRuleDefinition managed_rule_definition = 1;
 }
 
 message AzureManagedRuleDefinition {
+  option deprecated = true;
   string rule_set_type = 1;
   string rule_set_version = 2;
 }
 
 message AzureResourceGroupDetails {
+  option deprecated = true;
   string name = 1;
   string region = 2;
 }

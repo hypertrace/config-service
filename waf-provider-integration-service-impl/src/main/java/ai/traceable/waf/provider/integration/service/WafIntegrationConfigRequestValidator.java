@@ -8,14 +8,11 @@ import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AwsResource;
-import ai.traceable.waf.integration.service.api.v1.AzureApplicationGatewayWafDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
-import ai.traceable.waf.integration.service.api.v1.AzureFrontDoorWafDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
-import ai.traceable.waf.integration.service.api.v1.AzureManagedRuleDefinition;
-import ai.traceable.waf.integration.service.api.v1.AzureResourceGroupDetails;
+import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -307,52 +304,16 @@ public class WafIntegrationConfigRequestValidator {
         azureIntegrationDetails, AzureIntegrationDetails.SUBSCRIPTION_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         azureIntegrationDetails, AzureIntegrationDetails.AZURE_ENVIRONMENT_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        azureIntegrationDetails, AzureIntegrationDetails.AZURE_RESOURCE_GROUP_DETAILS_FIELD_NUMBER);
-    azureIntegrationDetails
-        .getAzureResourceGroupDetailsList()
-        .forEach(this::validateAzureResourceGroupDetails);
-
-    switch (azureIntegrationDetails.getWafEndpointTypeCase()) {
-      case FRONT_DOOR_WAF_DETAILS:
-        validateAzureFrontDoorWafDetails(azureIntegrationDetails.getFrontDoorWafDetails());
-        break;
-      case APPLICATION_GATEWAY_WAF_DETAILS:
-        validateAzureApplicationGatewayWafDetails(
-            azureIntegrationDetails.getApplicationGatewayWafDetails());
-        break;
-      default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                "Invalid azure waf type: " + azureIntegrationDetails.getWafEndpointTypeCase())
-            .asRuntimeException();
-    }
+    validateAzureWafPolicyDetails(azureIntegrationDetails.getAzureWafPolicyDetails());
   }
 
-  private void validateAzureFrontDoorWafDetails(AzureFrontDoorWafDetails frontDoorWafDetails) {
+  private void validateAzureWafPolicyDetails(AzureWafPolicyDetails azureWafPolicyDetails) {
     validateNonDefaultPresenceOrThrow(
-        frontDoorWafDetails, AzureFrontDoorWafDetails.FRONT_DOOR_NAMES_FIELD_NUMBER);
-  }
-
-  private void validateAzureApplicationGatewayWafDetails(
-      AzureApplicationGatewayWafDetails applicationGatewayWafDetails) {
-    validateAzureManagedRuleDefinition(applicationGatewayWafDetails.getManagedRuleDefinition());
-  }
-
-  private void validateAzureManagedRuleDefinition(
-      AzureManagedRuleDefinition managedRuleDefinition) {
+        azureWafPolicyDetails, AzureWafPolicyDetails.WAF_POLICY_NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
-        managedRuleDefinition, AzureManagedRuleDefinition.RULE_SET_TYPE_FIELD_NUMBER);
+        azureWafPolicyDetails, AzureWafPolicyDetails.WAF_POLICY_RESOURCE_GROUP_NAME_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
-        managedRuleDefinition, AzureManagedRuleDefinition.RULE_SET_VERSION_FIELD_NUMBER);
-  }
-
-  private void validateAzureResourceGroupDetails(
-      AzureResourceGroupDetails azureResourceGroupDetails) {
-    validateNonDefaultPresenceOrThrow(
-        azureResourceGroupDetails, AzureResourceGroupDetails.NAME_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        azureResourceGroupDetails, AzureResourceGroupDetails.REGION_FIELD_NUMBER);
+        azureWafPolicyDetails, AzureWafPolicyDetails.AZURE_WAF_POLICY_TYPE_FIELD_NUMBER);
   }
 
   private void validateAzureAuthCredentials(AzureAuthCredentials azureAuthCredentials) {
