@@ -29,6 +29,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafP
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
@@ -173,6 +174,7 @@ public class WafIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateUpdatedGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
+    validateSecurityPolicyScope(gcpIntegrationDetails);
   }
 
   private void validateUpdatedGcpAuthCredentials(GcpAuthCredentials authCredentials) {
@@ -222,6 +224,20 @@ public class WafIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
+    validateSecurityPolicyScope(gcpIntegrationDetails);
+  }
+
+  private void validateSecurityPolicyScope(GcpIntegrationDetails gcpIntegrationDetails) {
+    switch ((gcpIntegrationDetails.getSecurityPolicyScopeCase())) {
+      case REGION_SECURITY_POLICY_SCOPE:
+        validateNonDefaultPresenceOrThrow(
+            gcpIntegrationDetails.getRegionSecurityPolicyScope(),
+            RegionSecurityPolicyScope.REGION_FIELD_NUMBER);
+      case SECURITYPOLICYSCOPE_NOT_SET:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Security policy scope missing")
+            .asRuntimeException();
+    }
   }
 
   private void validateGcpAuthCredentials(GcpAuthCredentials authCredentials) {

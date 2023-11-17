@@ -32,6 +32,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsResponse;
+import ai.traceable.waf.integration.service.api.v1.GlobalSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.IntegrationActionType;
@@ -1083,6 +1084,8 @@ class WafIntegrationConfigServiceImplTest {
                                             .setValue("value1")
                                             .build())
                                     .build())
+                            .setGlobalSecurityPolicyScope(
+                                GlobalSecurityPolicyScope.getDefaultInstance())
                             .build())
                     .build())
             .build();

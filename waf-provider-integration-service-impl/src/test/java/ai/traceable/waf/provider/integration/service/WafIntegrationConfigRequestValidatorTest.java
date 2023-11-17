@@ -26,8 +26,10 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsFilter.WafProviderType;
 import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
+import ai.traceable.waf.integration.service.api.v1.GlobalSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
@@ -974,7 +976,9 @@ class WafIntegrationConfigRequestValidatorTest {
                                                 GcpAuthCredentials.EncryptedText.newBuilder()
                                                     .setValue("secret")
                                                     .setKeyId("key-id")
-                                                    .build())))))
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -998,7 +1002,9 @@ class WafIntegrationConfigRequestValidatorTest {
                                                 GcpAuthCredentials.EncryptedText.newBuilder()
                                                     .setValue("secret")
                                                     .setKeyId("key-id")
-                                                    .build())))))
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -1022,7 +1028,9 @@ class WafIntegrationConfigRequestValidatorTest {
                                             .setEncryptedServiceAccountKey(
                                                 GcpAuthCredentials.EncryptedText.newBuilder()
                                                     .setKeyId("key-id")
-                                                    .build())))))
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -1046,11 +1054,40 @@ class WafIntegrationConfigRequestValidatorTest {
                                             .setEncryptedServiceAccountKey(
                                                 GcpAuthCredentials.EncryptedText.newBuilder()
                                                     .setValue("secret")
-                                                    .build())))))
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
         () -> wafIntegrationConfigRequestValidator.validateOrThrow(request5, REQUEST_CONTEXT));
+
+    // region security policy set but region field is missing
+    CreateWafIntegrationRequest request6 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-1")
+                                    .setSecurityPolicyName("policy-1")
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setValue("secret")
+                                                    .setKeyId("key-id")
+                                                    .build()))
+                                    .setRegionSecurityPolicyScope(
+                                        RegionSecurityPolicyScope.getDefaultInstance()))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> wafIntegrationConfigRequestValidator.validateOrThrow(request6, REQUEST_CONTEXT));
 
     // valid request
     CreateWafIntegrationRequest validRequest =
@@ -1071,7 +1108,9 @@ class WafIntegrationConfigRequestValidatorTest {
                                                 GcpAuthCredentials.EncryptedText.newBuilder()
                                                     .setValue("secret")
                                                     .setKeyId("key-id")
-                                                    .build())))))
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
             .build();
     assertDoesNotThrow(
         () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));
@@ -1161,7 +1200,9 @@ class WafIntegrationConfigRequestValidatorTest {
                                                 GcpAuthCredentials.EncryptedText.newBuilder()
                                                     .setKeyId("key-id")
                                                     .setValue("secret")
-                                                    .build())))))
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
             .build();
     assertDoesNotThrow(
         () -> wafIntegrationConfigRequestValidator.validateOrThrow(validRequest, REQUEST_CONTEXT));

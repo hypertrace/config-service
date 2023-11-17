@@ -23,6 +23,16 @@ message GcpIntegrationDetails {
     DENY_ACTION_RESPONSE_CODE_404 = 2;
     DENY_ACTION_RESPONSE_CODE_502 = 3;
   }
+  oneof security_policy_scope {
+    GlobalSecurityPolicyScope global_security_policy_scope = 7;
+    RegionSecurityPolicyScope region_security_policy_scope = 8;
+  }
+}
+
+message GlobalSecurityPolicyScope {}
+
+message RegionSecurityPolicyScope {
+  string region = 1;
 }
 
 
