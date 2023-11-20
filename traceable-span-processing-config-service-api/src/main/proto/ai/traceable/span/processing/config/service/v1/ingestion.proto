@@ -58,6 +58,8 @@ message StringPredicate {
     OPERATOR_UNSPECIFIED = 0;
     OPERATOR_EQUALS = 1;
     OPERATOR_MATCHES_REGEX = 2;
+    OPERATOR_STARTS_WITH = 3;
+    OPERATOR_ENDS_WITH = 4;
   }
 }
 
