@@ -13,11 +13,15 @@ message DataCollectionChangeCondition {
 message AgentAlertCondition {
   oneof type {
     NewDeployment new_deployment = 1;
+    NoDataInEnvironment no_data_in_environment = 2;
     AgentActivityStatusChange agent_activity_status_change = 3;
   }
 }
 
 message NewDeployment {
+}
+
+message NoDataInEnvironment {
 }
 
 message AgentActivityStatusChange {
