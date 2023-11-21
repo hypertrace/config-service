@@ -94,7 +94,7 @@ public class SavedQueryStoreManager {
       RequestContext requestContext, GetSavedQueriesRequest request) {
     Set<String> deletedIds = this.deletedSavedQueryStore.getDeletedDefaultIds(requestContext);
     List<SavedQuery> undeletedDefaultQueries =
-        defaultSavedQueryConfig.getAllQueries().stream()
+        defaultSavedQueryConfig.getQueriesForScope(request.getFilter().getScope()).stream()
             .filter(query -> !deletedIds.contains(query.getId()))
             .collect(Collectors.toUnmodifiableList());
     List<SavedQuery> storedSavedQueries =

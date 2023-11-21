@@ -38,7 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SavedQueryConfigServiceImplTest {
 
   private static final String UUID_1 = "uuid-1";
-  private static final String TRACES_SCOPE = "traces";
+  private static final String TRACES_SCOPE = "endpoint-traces";
   private static final String QUERY_NAME_1 = "query-1";
   private static final String QUERY_NAME_2 = "query-2";
   private static final String SEC_EVENTS_SCOPE = "security-events";
@@ -253,7 +253,7 @@ class SavedQueryConfigServiceImplTest {
         SavedQuery.newBuilder()
             .setId(uuid)
             .setName(name)
-            .setScope("endpoint-traces")
+            .setScope(TRACES_SCOPE)
             .setQueryClauses(queryClauses1)
             .build();
     Config savedQueryConfig = ConfigFactory.parseString(jsonString);
@@ -293,6 +293,25 @@ class SavedQueryConfigServiceImplTest {
                         .build()));
     assertEquals(1, getSavedQueriesResponse.getSavedQueriesCount());
     assertEquals(expectedSavedQuery, getSavedQueriesResponse.getSavedQueries(0));
+
+    getSavedQueriesResponse =
+        requestContext.call(
+            () ->
+                this.savedQueryServiceBlockingStub.getSavedQueries(
+                    GetSavedQueriesRequest.newBuilder()
+                        .setFilter(
+                            GetSavedQueriesFilter.newBuilder().setScope(SEC_EVENTS_SCOPE).build())
+                        .build()));
+    assertEquals(0, getSavedQueriesResponse.getSavedQueriesCount());
+
+    getSavedQueriesResponse =
+        requestContext.call(
+            () ->
+                this.savedQueryServiceBlockingStub.getSavedQueries(
+                    GetSavedQueriesRequest.newBuilder()
+                        .setFilter(GetSavedQueriesFilter.newBuilder().build())
+                        .build()));
+    assertEquals(1, getSavedQueriesResponse.getSavedQueriesCount());
 
     QueryClauses updatedQueryClause =
         QueryClauses.newBuilder(queryClauses1).setGroupLimit("100").build();
