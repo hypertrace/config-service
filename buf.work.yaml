@@ -43,4 +43,5 @@ directories:
   - session-identification-config-service-api/src/main/proto
   - saved-query-config-service-api/src/main/proto
   - dashboard-config-service-api/src/main/proto
+  - runner-logs-config-service-api/src/main/proto
   - modsecurity-utils/src/main/proto

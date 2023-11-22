@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:0.5.119=runtimeClasspath
-ai.traceable.bom:traceable-bom:0.3.16=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.19=compileClasspath,runtimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.25=runtimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath
@@ -235,7 +235,7 @@ org.eclipse.jetty:jetty-util:9.4.53.v20231009=runtimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath
 org.glassfish:javax.json:1.0.4=runtimeClasspath
 org.hdrhistogram:HdrHistogram:2.1.12=runtimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.2.11=compileClasspath,runtimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.0=compileClasspath,runtimeClasspath
 org.hypertrace.core.datamodel:data-model:0.1.31=runtimeClasspath
 org.hypertrace.core.documentstore:document-store:0.7.49=runtimeClasspath
 org.hypertrace.core.eventstore:event-store:0.1.3=runtimeClasspath

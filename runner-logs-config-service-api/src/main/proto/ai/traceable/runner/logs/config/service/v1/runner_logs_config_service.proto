@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package ai.traceable.runner.logs.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/duration.proto";
+
+service RunnerLogsConfigService {
+  rpc GetRunnerLogsPurgeConfig (GetRunnerLogsPurgeConfigRequest) returns (GetRunnerLogsPurgeConfigResponse) {}
+  rpc UpdateRunnerLogsPurgeConfig (UpdateRunnerLogsPurgeConfigRequest) returns (UpdateRunnerLogsPurgeConfigResponse) {}
+
+  rpc GetRunnerLogsPersistenceConfig (GetRunnerLogsPersistenceConfigRequest) returns (GetRunnerLogsPersistenceConfigResponse) {}
+  rpc UpdateRunnerLogsPersistenceConfig (UpdateRunnerLogsPersistenceConfigRequest) returns (UpdateRunnerLogsPersistenceConfigResponse) {}
+}
+
+message GetRunnerLogsPurgeConfigRequest {}
+
+message GetRunnerLogsPurgeConfigResponse {
+  RunnerLogsPurgeConfig runner_logs_purge_config = 1;
+}
+
+message UpdateRunnerLogsPurgeConfigRequest {
+  RunnerLogsPurgeConfigUpdate runner_logs_purge_config_update = 1;
+}
+
+message RunnerLogsPurgeConfigUpdate {
+  AstScanLogsPurgeConfigUpdate ast_scan_logs_purge_config = 1;
+}
+
+message AstScanLogsPurgeConfigUpdate {
+  bool enabled = 1;
+  google.protobuf.Duration retention_duration = 2;
+}
+
+message UpdateRunnerLogsPurgeConfigResponse {
+  RunnerLogsPurgeConfig runner_logs_purge_config = 1;
+}
+
+message RunnerLogsPurgeConfig {
+  AstScanLogsPurgeConfig ast_scan_logs_purge_config = 1;
+}
+
+message AstScanLogsPurgeConfig {
+  bool enabled = 1;
+  google.protobuf.Duration retention_duration = 2;
+}
+
+message GetRunnerLogsPersistenceConfigRequest {}
+
+message GetRunnerLogsPersistenceConfigResponse{
+  RunnerLogsPersistenceConfig runner_logs_persistence_config = 1;
+}
+
+message RunnerLogsPersistenceConfig {
+  AstScanLogsPersistenceConfig ast_scan_logs_persistence_config = 1;
+}
+
+message AstScanLogsPersistenceConfig {
+  optional int32 max_persist_log_lines = 1;
+}
+
+message UpdateRunnerLogsPersistenceConfigRequest {
+  RunnerLogsPersistenceConfigUpdate runner_logs_persistence_config_update = 1;
+}
+
+message RunnerLogsPersistenceConfigUpdate{
+  AstScanLogsPersistenceConfigUpdate ast_scan_logs_persistence_config = 1;
+}
+
+message AstScanLogsPersistenceConfigUpdate {
+  optional int32 max_persist_log_lines = 1;
+}
+
+message UpdateRunnerLogsPersistenceConfigResponse {
+  RunnerLogsPersistenceConfig runner_logs_persistence_config = 1;
+}
