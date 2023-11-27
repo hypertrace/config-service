@@ -21,6 +21,7 @@ message DataParsingRule {
     DATA_PARSING_MODE_URL_ENCODED = 4;
     DATA_PARSING_MODE_XML = 5;
     DATA_PARSING_MODE_MULTIPART = 6;
+    DATA_PARSING_MODE_CONTENT_TYPE_HEADER = 7;
   }
 
   message DropOnFailure {

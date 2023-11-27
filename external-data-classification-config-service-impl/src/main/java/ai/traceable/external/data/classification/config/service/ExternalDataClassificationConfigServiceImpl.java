@@ -40,6 +40,7 @@ class ExternalDataClassificationConfigServiceImpl
   private final LegacyRuleManager legacyRuleManager;
   private final PlatformDataTypeManager platformDataTypeManager;
   private final OverrideRuleManager overrideRuleManager;
+  private final DataParsingRuleManager dataParsingRuleManager;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
   private final FeatureCachingClient featureCachingClient;
 
@@ -57,6 +58,7 @@ class ExternalDataClassificationConfigServiceImpl
       LegacyRuleManager legacyRuleManager,
       PlatformDataTypeManager platformDataTypeManager,
       OverrideRuleManager overrideRuleManager,
+      DataParsingRuleManager dataParsingRuleManager,
       ExternalDataClassificationRuleResponseBuilder responseBuilder,
       FeatureCachingClient featureCachingClient) {
     this.externalDataClassificationConfig = externalDataClassificationConfig;
@@ -67,6 +69,7 @@ class ExternalDataClassificationConfigServiceImpl
     this.legacyRuleManager = legacyRuleManager;
     this.platformDataTypeManager = platformDataTypeManager;
     this.overrideRuleManager = overrideRuleManager;
+    this.dataParsingRuleManager = dataParsingRuleManager;
     this.responseBuilder = responseBuilder;
     this.featureCachingClient = featureCachingClient;
 
@@ -157,7 +160,8 @@ class ExternalDataClassificationConfigServiceImpl
             request,
             requestContext,
             externalDataTypes,
-            this.externalDataClassificationConfig.getDefaultDataParsingRules());
+            this.dataParsingRuleManager.getDefaultParsingRulesForAgent(
+                request.getAgentCapabilities()));
     this.updateCacheIfNeeded(requestKey, response);
     return response;
   }
@@ -172,7 +176,7 @@ class ExternalDataClassificationConfigServiceImpl
     // We know the agent's next request should be
     // { req, hash(new_resp) }
     // And we can calculate the response to that, indicating nothing has changed should be
-    // {g empty_response, hash(new_resp) }
+    // { empty_response, hash(new_resp) }
     GetDataClassificationConfigRequest lastRequest = requestContextualKey.getData();
     String newHash = response.getHash();
     if (lastRequest.getChangeFilter().getPreviousHash().equals(newHash)) {
