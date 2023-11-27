@@ -55,6 +55,7 @@ dependencies {
   implementation(projects.savedQueryConfigServiceImpl)
   implementation(projects.dashboardConfigServiceImpl)
   implementation(projects.jiraIntegrationConfigServiceImpl)
+  implementation(projects.runnerLogsConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
