@@ -30,6 +30,8 @@ import ai.traceable.span.processing.config.service.v1.StringPredicate;
 import ai.traceable.span.processing.config.service.v1.UpdateSpanIngestionRuleRequest;
 import ai.traceable.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
 import com.google.protobuf.Timestamp;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -88,9 +90,16 @@ class SpanIngestionRulesImplTest {
     SpanIngestionRulesConfigStore ruleStore =
         new SpanIngestionRulesConfigStore(
             genericStub, configChangeEventGenerator, rankCalculator, clock, timestampConverter);
+    Config config = ConfigFactory.empty();
+    SpanIngestionRulesConfig spanIngestionRulesConfig = new SpanIngestionRulesConfig(config);
     SpanIngestionRulesManager spanIngestionRuleManager =
         new SpanIngestionRulesManagerImpl(
-            ruleStore, validator, ruleBuilder, rankCalculator, objectDiffer);
+            ruleStore,
+            validator,
+            ruleBuilder,
+            spanIngestionRulesConfig,
+            rankCalculator,
+            objectDiffer);
 
     this.mockGenericConfigService
         .addService(

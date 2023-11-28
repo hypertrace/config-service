@@ -30,6 +30,7 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
   private final SpanIngestionRulesConfigStore ruleStore;
   private final SpanIngestionRequestValidator validator;
   private final SpanIngestionRuleBuilder ruleBuilder;
+  private final SpanIngestionRulesConfig spanIngestionRulesConfig;
   private final RankCalculator<PersistedKeyValueRetentionRule, String> rankCalculator;
   private final ObjectDiffer objectDiffer;
 
@@ -63,14 +64,17 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
         .setRequestHeaderRuleset(
             KeyValueRetentionRuleSet.newBuilder()
                 .addAllRules(requestHeaderRules)
+                .addAllRules(spanIngestionRulesConfig.getDefaultRequestHeaderRetentionRules())
                 .setDefault(DEFAULT_RULE_ACTION))
         .setResponseHeaderRuleset(
             KeyValueRetentionRuleSet.newBuilder()
                 .addAllRules(responseHeaderRules)
+                .addAllRules(spanIngestionRulesConfig.getDefaultResponseHeaderRetentionRules())
                 .setDefault(DEFAULT_RULE_ACTION))
         .setAttributeRuleset(
             KeyValueRetentionRuleSet.newBuilder()
                 .addAllRules(attributeRules)
+                .addAllRules(spanIngestionRulesConfig.getDefaultAttributeRetentionRules())
                 .setDefault(DEFAULT_RULE_ACTION))
         .build();
   }

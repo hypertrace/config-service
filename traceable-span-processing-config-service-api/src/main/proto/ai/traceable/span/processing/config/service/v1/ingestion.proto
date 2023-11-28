@@ -52,7 +52,14 @@ message Predicate {
 
 message StringPredicate {
   Operator operator = 1;
-  string value = 2;
+  oneof rhs  {
+    string value = 2;
+    StringList any_of_values = 3;
+  }
+
+  message StringList {
+    repeated string values = 4;
+  }
 
   enum Operator {
     OPERATOR_UNSPECIFIED = 0;
@@ -60,6 +67,7 @@ message StringPredicate {
     OPERATOR_MATCHES_REGEX = 2;
     OPERATOR_STARTS_WITH = 3;
     OPERATOR_ENDS_WITH = 4;
+    OPERATOR_CONTAINS = 5;
   }
 }
 

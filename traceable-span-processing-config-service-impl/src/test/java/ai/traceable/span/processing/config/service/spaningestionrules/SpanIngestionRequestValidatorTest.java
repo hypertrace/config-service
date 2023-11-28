@@ -15,6 +15,7 @@ import ai.traceable.span.processing.config.service.v1.UpdateSpanIngestionRuleReq
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.Collections;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -152,6 +153,45 @@ class SpanIngestionRequestValidatorTest {
                                                 StringPredicate.Operator
                                                     .OPERATOR_EQUALS) // value missing
                                         ))
+                            .build())
+                    .build()));
+
+    this.assertInvalidArg(
+        () ->
+            this.validator.validateOrThrow(
+                VALID_REQUEST_CONTEXT,
+                VALID_CREATE_HEADER_RULE_REQUEST.toBuilder()
+                    .clearRequestHeaderRule()
+                    .setRequestHeaderRule(
+                        VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder()
+                            .clearPredicate()
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                            .setAnyOfValues(
+                                                StringPredicate.StringList.getDefaultInstance())))
+                            .build())
+                    .build()));
+
+    this.assertInvalidArg(
+        () ->
+            this.validator.validateOrThrow(
+                VALID_REQUEST_CONTEXT,
+                VALID_CREATE_HEADER_RULE_REQUEST.toBuilder()
+                    .clearRequestHeaderRule()
+                    .setRequestHeaderRule(
+                        VALID_KEY_VALUE_RETENTION_RULE_DATA.toBuilder()
+                            .clearPredicate()
+                            .setPredicate(
+                                Predicate.newBuilder()
+                                    .setTargetKeyPredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(StringPredicate.Operator.OPERATOR_EQUALS)
+                                            .setAnyOfValues(
+                                                StringPredicate.StringList.newBuilder()
+                                                    .addAllValues(Collections.emptyList()))))
                             .build())
                     .build()));
   }

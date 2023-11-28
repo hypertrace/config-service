@@ -108,7 +108,22 @@ class SpanIngestionRequestValidator {
 
   private void validateStringPredicate(StringPredicate stringPredicate) {
     validateNonDefaultPresenceOrThrow(stringPredicate, StringPredicate.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(stringPredicate, StringPredicate.VALUE_FIELD_NUMBER);
+    switch (stringPredicate.getRhsCase()) {
+      case VALUE:
+        validateNonDefaultPresenceOrThrow(stringPredicate, StringPredicate.VALUE_FIELD_NUMBER);
+        return;
+      case ANY_OF_VALUES:
+        validateStringList(stringPredicate.getAnyOfValues());
+        return;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unsupported rhs case %s", stringPredicate))
+            .asRuntimeException();
+    }
+  }
+
+  private void validateStringList(StringPredicate.StringList anyOfValues) {
+    validateNonDefaultPresenceOrThrow(anyOfValues, StringPredicate.StringList.VALUES_FIELD_NUMBER);
   }
 
   private void validateRuleData(UpdateSpanIngestionRuleRequest request) {

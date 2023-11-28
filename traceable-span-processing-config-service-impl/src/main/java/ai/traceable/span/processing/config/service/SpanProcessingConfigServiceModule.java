@@ -39,7 +39,7 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
     install(new ApiNamingRulesManagerModule());
     install(new ProtectionSpanRulesManagerModule());
     install(new ServiceNamingRuleModule());
-    install(new SpanIngestionRulesManagerModule());
+    install(new SpanIngestionRulesManagerModule(config));
   }
 
   @Provides
