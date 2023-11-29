@@ -107,6 +107,11 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
 
   public void deleteRule(RequestContext requestContext, DeleteSpanIngestionRuleRequest request) {
     this.validator.validateOrThrow(requestContext, request);
+    if (spanIngestionRulesConfig.getDefaultRetentionRuleIds().contains(request.getId())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Default rules cannot be deleted")
+          .asRuntimeException();
+    }
     PersistedKeyValueRetentionRule ruleToDelete =
         this.ruleStore
             .getData(requestContext, request.getId())
@@ -130,11 +135,16 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
 
   public KeyValueRetentionRule updateRule(
       RequestContext requestContext, UpdateSpanIngestionRuleRequest request) {
+    this.validator.validateOrThrow(requestContext, request);
+    if (spanIngestionRulesConfig.getDefaultRetentionRuleIds().contains(request.getId())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Default rules cannot be updated")
+          .asRuntimeException();
+    }
     PersistedKeyValueRetentionRule existingRule =
         this.ruleStore
             .getData(requestContext, request.getId())
             .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-    this.validator.validateOrThrow(requestContext, request);
 
     PersistedKeyValueRetentionRule updatedRule =
         this.ruleStore
@@ -151,6 +161,15 @@ class SpanIngestionRulesManagerImpl implements SpanIngestionRulesManager {
 
   public void rankRules(RequestContext requestContext, RankSpanIngestionRuleRequest request) {
     this.validator.validateOrThrow(requestContext, request);
+    if (spanIngestionRulesConfig.getDefaultRetentionRuleIds().contains(request.getIdToUpdate())
+        || (request.hasPrecedingRuleId()
+            && spanIngestionRulesConfig
+                .getDefaultRetentionRuleIds()
+                .contains(request.getPrecedingRuleId()))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Default rules cannot be used in ranking")
+          .asRuntimeException();
+    }
     PersistedKeyValueRetentionRule ruleToUpdate =
         this.ruleStore
             .getData(requestContext, request.getIdToUpdate())

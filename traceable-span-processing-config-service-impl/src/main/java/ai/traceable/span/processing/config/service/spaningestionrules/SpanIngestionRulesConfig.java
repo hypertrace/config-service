@@ -5,7 +5,9 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
@@ -22,6 +24,7 @@ class SpanIngestionRulesConfig {
   private final List<KeyValueRetentionRule> defaultRequestHeaderRetentionRules;
   private final List<KeyValueRetentionRule> defaultResponseHeaderRetentionRules;
   private final List<KeyValueRetentionRule> defaultAttributeRetentionRules;
+  private final Set<String> defaultRetentionRuleIds;
 
   SpanIngestionRulesConfig(Config config) {
     if (config.hasPath(DEFAULT_REQUEST_HEADER_RETENTION_RULES)) {
@@ -50,6 +53,15 @@ class SpanIngestionRulesConfig {
     } else {
       this.defaultAttributeRetentionRules = Collections.emptyList();
     }
+
+    this.defaultRetentionRuleIds =
+        Stream.concat(
+                defaultRequestHeaderRetentionRules.stream(),
+                Stream.concat(
+                    defaultResponseHeaderRetentionRules.stream(),
+                    defaultAttributeRetentionRules.stream()))
+            .map(KeyValueRetentionRule::getId)
+            .collect(Collectors.toUnmodifiableSet());
   }
 
   List<KeyValueRetentionRule> getDefaultRequestHeaderRetentionRules() {
@@ -62,6 +74,10 @@ class SpanIngestionRulesConfig {
 
   List<KeyValueRetentionRule> getDefaultAttributeRetentionRules() {
     return defaultAttributeRetentionRules;
+  }
+
+  Set<String> getDefaultRetentionRuleIds() {
+    return defaultRetentionRuleIds;
   }
 
   @SneakyThrows
