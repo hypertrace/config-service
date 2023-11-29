@@ -39,8 +39,11 @@ public class JiraIntegrationCoordinator {
 
   public List<JiraIntegration> getJiraIntegration(
       RequestContext requestContext, GetJiraIntegrationsRequest request) {
-    return jiraIntegrationStore.getAllConfigData(
-        requestContext, request.getJiraIntegrationFilter());
+    if (request.hasJiraIntegrationFilter()) {
+      return jiraIntegrationStore.getAllConfigData(
+          requestContext, request.getJiraIntegrationFilter());
+    }
+    return jiraIntegrationStore.getAllConfigData(requestContext);
   }
 
   public JiraIntegration updateJiraIntegration(

@@ -7,13 +7,16 @@ import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegration
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
-import ai.traceable.jira.integration.config.service.api.v1.StringList;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -30,15 +33,42 @@ public class JiraIntegrationConfigServiceValidator {
     validateNonDefaultPresenceOrThrow(request, CreateJiraIntegrationRequest.BASE_URL_FIELD_NUMBER);
     validateEncryptedDataOrThrow(request.getEncryptedAccessToken());
     if (request.hasScope()) {
-      validateScopeOrThrow(request.getScope());
-      if (request.getScope().hasEnvironmentIds()) {
-        assertNoEnvironmentOverlapOrThrow(
-            request.getScope().getEnvironmentIds().getValuesList(), requestContext);
-      }
+      validateScopeForMutationOrThrow(request.getScope(), requestContext, Collections.emptySet());
     } else {
-      // scope not set means environment list is empty
-      assertNoEnvironmentOverlapOrThrow(List.of(), requestContext);
+      validateUnscopedForMutationOrThrow(requestContext, Collections.emptySet());
     }
+  }
+
+  private void validateUnscopedForMutationOrThrow(
+      RequestContext requestContext, Set<String> allowedJiraIntegrationIds) {
+    if (containsOtherJiraIntegrations(
+        jiraIntegrationStore.getAllConfigData(requestContext), allowedJiraIntegrationIds)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Cannot persist an unscoped integration as it will conflict with one or more existing integrations.")
+          .asRuntimeException();
+    }
+  }
+
+  private void validateScopeForMutationOrThrow(
+      Scope scope, RequestContext requestContext, Set<String> allowedJiraIntegrationIds) {
+    validateScopeOrThrow(scope);
+    JiraIntegrationFilter filter = JiraIntegrationFilter.newBuilder().setFilterScope(scope).build();
+    if (containsOtherJiraIntegrations(
+        jiraIntegrationStore.getAllConfigData(requestContext, filter), allowedJiraIntegrationIds)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Given scope is not suitable for mutation as it conflicts with existing integrations.")
+          .asRuntimeException();
+    }
+  }
+
+  private boolean containsOtherJiraIntegrations(
+      List<JiraIntegration> jiraIntegrationList, Set<String> allowedJiraIntegrationIds) {
+    return !allowedJiraIntegrationIds.containsAll(
+        jiraIntegrationList.stream()
+            .map(JiraIntegration::getId)
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   private void validateEncryptedDataOrThrow(EncryptedData encryptedData) {
@@ -81,7 +111,10 @@ public class JiraIntegrationConfigServiceValidator {
         request, UpdateJiraIntegrationRequest.JIRA_INTEGRATION_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(request, UpdateJiraIntegrationRequest.NAME_FIELD_NUMBER);
     if (request.hasScope()) {
-      validateScopeOrThrow(request.getScope());
+      validateScopeForMutationOrThrow(
+          request.getScope(), requestContext, Set.of(request.getJiraIntegrationId()));
+    } else {
+      validateUnscopedForMutationOrThrow(requestContext, Set.of(request.getJiraIntegrationId()));
     }
   }
 
@@ -90,23 +123,5 @@ public class JiraIntegrationConfigServiceValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
         request, DeleteJiraIntegrationRequest.JIRA_INTEGRATION_ID_FIELD_NUMBER);
-  }
-
-  private void assertNoEnvironmentOverlapOrThrow(
-      List<String> environments, RequestContext requestContext) {
-    if (!jiraIntegrationStore
-        .getAllConfigData(
-            requestContext,
-            JiraIntegrationFilter.newBuilder()
-                .setFilterScope(
-                    Scope.newBuilder()
-                        .setEnvironmentIds(StringList.newBuilder().addAllValues(environments)))
-                .build())
-        .isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              "The provided set of Environments overlap with one or more existing Jira-Integrations")
-          .asRuntimeException();
-    }
   }
 }

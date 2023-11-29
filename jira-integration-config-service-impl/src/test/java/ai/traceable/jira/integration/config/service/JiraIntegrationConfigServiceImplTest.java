@@ -173,11 +173,20 @@ class JiraIntegrationConfigServiceImplTest {
         StatusRuntimeException.class,
         () -> stub.createJiraIntegration(createJiraIntegrationRequest1));
 
-    // this creation request should succeed
+    // this following integration without environments (valid for all environments) should also face
+    // the overlap conflict and fail
     CreateJiraIntegrationRequest createJiraIntegrationRequest2 =
+        dummyCreateJiraIntegrationRequest(1);
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> stub.createJiraIntegration(createJiraIntegrationRequest2));
+
+    // this creation request should succeed - there is no overlap with environments of an existing
+    // integration
+    CreateJiraIntegrationRequest createJiraIntegrationRequest3 =
         dummyCreateJiraIntegrationRequest(1, "env2", "env3");
     JiraIntegration expectedJiraIntegration = dummyJiraIntegration(1, "env2", "env3");
-    assertDoesNotThrow(() -> stub.createJiraIntegration(createJiraIntegrationRequest2));
+    assertDoesNotThrow(() -> stub.createJiraIntegration(createJiraIntegrationRequest3));
     assertEquals(
         expectedJiraIntegration.toBuilder().clearId().build(),
         jiraIntegrationStore
@@ -197,6 +206,7 @@ class JiraIntegrationConfigServiceImplTest {
   @Test
   @Tag("useMockUpsert")
   @Tag("useMockGet")
+  @Tag("useMockGetAll")
   void updateJiraIntegrationTest() {
     RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
     JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
@@ -244,13 +254,14 @@ class JiraIntegrationConfigServiceImplTest {
             .orElseThrow()
             .hasScope());
 
-    // this will fail because updating with the given scope will cause overlap in environments with
+    // this will fail because updating with the new scope will cause overlap in environments with
     // an existing integration
     JiraIntegration jiraIntegration2 = dummyJiraIntegration(2, "env4");
     jiraIntegrationStore.upsertObject(requestContext, jiraIntegration2);
     UpdateJiraIntegrationRequest updateJiraIntegrationRequest3 =
         UpdateJiraIntegrationRequest.newBuilder()
             .setJiraIntegrationId(jiraIntegration2.getId())
+            .setName("newName")
             .setDescription("newDescription")
             .build();
     assertThrows(
