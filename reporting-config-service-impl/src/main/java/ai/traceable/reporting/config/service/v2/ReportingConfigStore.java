@@ -68,9 +68,14 @@ public class ReportingConfigStore
 
   private boolean filterByEnvironmentId(
       ReportConfiguration reportConfiguration, GetReportsFilter filter) {
-    // If filter does not have any environmentId, then return true
-    // Else if filter contains environment Id, then it must match with that present within report.
+    // If filter does not have any environmentId, then return true.
+    // Else filter value must either be present within report environment list field, or it must be
+    // equal to older report environment field.
     return !filter.hasEnvironmentId()
+        || reportConfiguration
+            .getCommonConfigurationDetails()
+            .getEnvironmentIdsList()
+            .contains(filter.getEnvironmentId())
         || filter
             .getEnvironmentId()
             .equals(reportConfiguration.getCommonConfigurationDetails().getEnvironmentId());

@@ -13,7 +13,9 @@ message ReportConfiguration {
 // common fields that can be passed during creation and subsequent update
 message CommonConfigurationDetails {
   string name = 1;
-  optional string environment_id = 2;
+  optional string environment_id = 2 [deprecated = true];
+  repeated string environment_ids = 7;
+
   // JSON serialised configuration for all templates within report
   string templates_configuration = 3;
   SchedulingDetails scheduling_details = 4;

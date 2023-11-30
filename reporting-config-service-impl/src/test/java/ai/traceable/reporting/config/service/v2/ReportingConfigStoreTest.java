@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.util.List;
 import java.util.Optional;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -87,6 +88,38 @@ public class ReportingConfigStoreTest {
   }
 
   @Test
+  void testFilterReportWithEnvironmentListById() {
+    // no environment in filter
+    {
+      ReportConfiguration reportConfiguration = createReportConfigurationWithEnvList();
+      GetReportsFilter filter = GetReportsFilter.newBuilder().build();
+      Optional<ReportConfiguration> maBeReportConfig =
+          reportingConfigStore.filterConfigData(reportConfiguration, filter);
+      assertTrue(maBeReportConfig.isPresent());
+      assertEquals(reportConfiguration, maBeReportConfig.get());
+    }
+
+    // environment in filter is present within report environment list
+    {
+      ReportConfiguration reportConfiguration = createReportConfigurationWithEnvList();
+      GetReportsFilter filter = GetReportsFilter.newBuilder().setEnvironmentId("env2").build();
+      Optional<ReportConfiguration> maBeReportConfig =
+          reportingConfigStore.filterConfigData(reportConfiguration, filter);
+      assertTrue(maBeReportConfig.isPresent());
+      assertEquals(reportConfiguration, maBeReportConfig.get());
+    }
+
+    // environment in filter is not present within report environment list
+    {
+      ReportConfiguration reportConfiguration = createReportConfigurationWithEnvList();
+      GetReportsFilter filter = GetReportsFilter.newBuilder().setEnvironmentId("env1").build();
+      Optional<ReportConfiguration> maBeReportConfig =
+          reportingConfigStore.filterConfigData(reportConfiguration, filter);
+      assertFalse(maBeReportConfig.isPresent());
+    }
+  }
+
+  @Test
   void testFilterReportByName() {
     // no names in filter
     {
@@ -161,6 +194,24 @@ public class ReportingConfigStoreTest {
         .setCommonConfigurationDetails(
             CommonConfigurationDetails.newBuilder()
                 .setEnvironmentId("env1")
+                .setFormat(Format.FORMAT_PDF)
+                .setName("report1")
+                .setSchedulingDetails(
+                    SchedulingDetails.newBuilder().setScheduledJobId("scheduledJob1").build())
+                .setTemplatesConfiguration("template configuration")
+                .setNotificationDetails(
+                    NotificationDetails.newBuilder().addEmailAddresses("name@example.com").build())
+                .build())
+        .build();
+  }
+
+  private ReportConfiguration createReportConfigurationWithEnvList() {
+    return ReportConfiguration.newBuilder()
+        .setId("id1")
+        .setCreator("creator1")
+        .setCommonConfigurationDetails(
+            CommonConfigurationDetails.newBuilder()
+                .addAllEnvironmentIds(List.of("env2", "env3"))
                 .setFormat(Format.FORMAT_PDF)
                 .setName("report1")
                 .setSchedulingDetails(
