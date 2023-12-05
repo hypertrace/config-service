@@ -60,8 +60,8 @@ dependencies {
   api(commonLibs.bundles.grpc.api)
 
   testFixturesApi(commonLibs.grpc.api)
-  testFixturesApi(commonLibs.grpc.inprocess)
   testFixturesApi(projects.configServiceApi)
+  testFixturesImplementation(commonLibs.grpc.inprocess)
   testFixturesImplementation(commonLibs.grpc.stub)
   testFixturesImplementation(commonLibs.grpc.core)
   testFixturesImplementation(commonLibs.hypertrace.grpcutils.context)
