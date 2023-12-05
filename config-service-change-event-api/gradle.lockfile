@@ -1,12 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.fasterxml.jackson:jackson-bom:2.15.2=compileClasspath,runtimeClasspath
+com.fasterxml.jackson:jackson-bom:2.16.0=compileClasspath,runtimeClasspath
 com.github.luben:zstd-jni:1.5.2-1=runtimeClasspath
 com.google.protobuf:protobuf-java:3.24.1=compileClasspath,runtimeClasspath
-io.grpc:grpc-bom:1.57.2=compileClasspath,runtimeClasspath
+io.grpc:grpc-bom:1.59.1=compileClasspath,runtimeClasspath
 org.apache.kafka:kafka-clients:7.4.0-ccs=compileClasspath,runtimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.0=compileClasspath,runtimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.5=compileClasspath,runtimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.3.9=compileClasspath,runtimeClasspath
 org.lz4:lz4-java:1.8.0=runtimeClasspath
 org.slf4j:slf4j-api:2.0.7=runtimeClasspath
