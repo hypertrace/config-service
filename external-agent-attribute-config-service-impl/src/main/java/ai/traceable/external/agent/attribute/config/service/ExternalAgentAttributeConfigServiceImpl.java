@@ -1,5 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service;
 
+import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.JSON_PATH_EXTRACTION_FIX_MIN_TPA_VERSION;
 import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -97,7 +98,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
                   semanticVersioningComparator.isVersionSupported(
                       tpaVersion, PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION),
                   semanticVersioningComparator.isVersionSupported(
-                      tpaVersion, PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION)));
+                      tpaVersion, JSON_PATH_EXTRACTION_FIX_MIN_TPA_VERSION)));
       List<AttributeRule> rules = attributeRulesCache.getUnchecked(agentAttributeIdentifier);
       responseObserver.onNext(this.responseBuilder.buildEnabledResponse(request, rules));
       responseObserver.onCompleted();
