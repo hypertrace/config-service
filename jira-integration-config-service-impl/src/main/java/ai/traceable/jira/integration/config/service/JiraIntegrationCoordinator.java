@@ -28,8 +28,10 @@ public class JiraIntegrationCoordinator {
             .setName(request.getName())
             .setConsumerKey(request.getConsumerKey())
             .setBaseUrl(request.getBaseUrl())
-            .setScope(request.getScope())
             .setEncryptedAccessToken(request.getEncryptedAccessToken());
+    if (request.hasScope()) {
+      jiraIntegration.setScope(request.getScope());
+    }
     if (request.hasDescription()) {
       jiraIntegration.setDescription(request.getDescription());
     }
