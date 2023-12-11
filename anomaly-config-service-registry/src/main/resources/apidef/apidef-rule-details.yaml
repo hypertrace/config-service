@@ -6,8 +6,8 @@
     OWASP_API: API6
   eventDetails:
     description: |
-      Traceable identified a Mass Assignment attack.
-      It occur when parameters that are not meant to be supported are deployed. Some examples are:
+      A Mass Assignment attack is flagged when parameters that are not meant to be supported are deployed.
+      Some examples are:
       - An application uses ORM to create a user object, the ORM framework will accept all database fields, even sensitive fields like role.
       - Read-only fields are not filtered out when creating an "article" object.
       - A user can disable MFA skipping security controls by setting the "skipMfa" field to true.
@@ -31,6 +31,13 @@
     CWE: 183
     OWASP_API_2023: API8
     OWASP_API: API7
+  eventDetails:
+    description: "The value of an enumeration in the request does not match the expected values. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
+    mitigation: "Implement input validation in your API to ensure all enumeration values are within the expected range. Consider using a schema validation library to automate this process."
+    impact: "If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities."
+    references: |
+      - CWE-183: Permissive List of Allowed Inputs - https://cwe.mitre.org/data/definitions/183.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
     
 - ruleId: integer
   ruleName: Value Out of Range
@@ -40,7 +47,7 @@
     OWASP_API: API8
   eventDetails:
     description: |
-      Traceable identified a Value Out of range attack, where the application tries to assign an integer value outside than range which the memory assigned to the variable can hold.
+      A Value Out of Range attack is flagged when the attacker tries to assign an integer value outside than range which the memory assigned to the variable can hold.
     mitigation: |
       Enforce range limits for custom user inputs of a request. Use scanners regularly to look for such attack vulnerabilities.
     impact: |
@@ -59,6 +66,13 @@
     CWE: 843
     OWASP_API_2023: API8
     OWASP_API: API7
+  eventDetails:
+    description: "The type of a parameter in the request does not match the expected type. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
+    mitigation: "Implement input validation in your API to ensure all parameters are of the correct type. Consider using a schema validation library to automate this process."
+    impact: "If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities."
+    references: |
+      - CWE-843: Access of Resource Using Incompatible Type ('Type Confusion') - https://cwe.mitre.org/data/definitions/843.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
     
 - ruleId: missingParam
   ruleName: Missing Field
@@ -67,6 +81,13 @@
     CWE: 287
     OWASP_API_2023: API8
     OWASP_API: API7
+  eventDetails:
+    description: "A required field is missing in the request parameters. This could indicate a malformed request or an attempt to bypass security controls."
+    mitigation: "Implement input validation in your API to ensure all required fields are present in the request. Consider using a schema validation library to automate this process."
+    impact: "If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities."
+    references: |
+      - CWE-287: Improper Authentication - https://cwe.mitre.org/data/definitions/287.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
 
 - ruleId: specialCharacter
   ruleName: Special Character Tampering
@@ -74,6 +95,13 @@
   eventLabels:
     CWE: 159
     OWASP_2021: A3
+  eventDetails:
+    description: "A special characters in the request parameters are being tampered beyond the learnt normal characters, which may indicate an attempt to exploit a security vulnerability."
+    mitigation: "Implement input validation and sanitization in your API. Ensure that special characters in request parameters are handled safely."
+    impact: "If not mitigated, this could lead to security vulnerabilities such as SQL Injection, Cross-Site Scripting (XSS), and Command Injection."
+    references: |
+      - CWE-159: Failure to Sanitize Special Element - https://cwe.mitre.org/data/definitions/159.html
+      - OWASP Top 10 2021: A3 - Injection - https://owasp.org/Top10/A03_2021-Injection/
 
 - ruleId: contentExplosion
   ruleName: Content Explosion
@@ -81,6 +109,13 @@
   eventLabels:
     CWE: 405
     OWASP_2021: A3
+  eventDetails:
+    description: "The size of the content in a request or response significantly increases due to nested references, which may indicate an attempt to overload the system (a type of Denial of Service attack)."
+    mitigation: "Implement rate limiting and data size checks in your API. Disable reference expansion by default and limit depth of request structures being processed. Monitor the size of requests and responses and set reasonable limits."
+    impact: "If not mitigated, this could lead to system overload and potential Denial of Service (DoS)."
+    references: |
+      - CWE-405: Asymmetric Resource Consumption (Resource Exhaustion) - https://cwe.mitre.org/data/definitions/405.html
+      - OWASP Top 10 2021: A3 - Injection - https://owasp.org/Top10/A03_2021-Injection/
     
 - ruleId: device
   ruleName: Unexpected User Agent
@@ -88,6 +123,13 @@
   eventLabels: 
     CWE: 644
     OWASP_API: API8
+  eventDetails:
+    description: "The User Agent in the request headers is significantly different from the expected values."
+    mitigation: "Ensure that your API is expecting the correct User Agents for each operation. Consider implementing checks in your API to validate the User Agents."
+    impact: "If not mitigated, this could lead to unauthorized access or misuse of your API, potentially leading to security vulnerabilities."
+    references: |
+      - CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax - https://cwe.mitre.org/data/definitions/644.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
     
 - ruleId: httpStatus
   ruleName: Unexpected HTTP Response Code
@@ -96,6 +138,13 @@
     CWE: 204
     OWASP_API_2023: API8
     OWASP_API: API7
+  eventDetails:
+    description: "The HTTP response code of a request is significantly different from the expected values."
+    mitigation: "Ensure that your API is returning the correct HTTP response codes for each operation. Consider implementing checks in your API to validate the response codes."
+    impact: "If not mitigated, this could lead to incorrect handling of responses, potentially leading to security vulnerabilities or functional issues."
+    references: |
+      - CWE-204: Response Discrepancy Information Leak - https://cwe.mitre.org/data/definitions/204.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
     
 - ruleId: contentType
   ruleName: Content Type Anomaly
@@ -104,6 +153,13 @@
     CWE: 436
     OWASP_API_2023: API8
     OWASP_API: API7
+  eventDetails:
+    description: "The content type of a request or response is significantly different from the norm or expected value."
+    mitigation: "Ensure that the content type of requests and responses is within expected values. Consider implementing content type checks in your API."
+    impact: "If not mitigated, this could lead to unexpected behavior in the handling of requests and responses, potentially leading to security vulnerabilities."
+    references: |
+      - CWE-436: Interpretation Conflict - https://cwe.mitre.org/data/definitions/436.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
     
 - ruleId: contentSize
   ruleName: Content Size Anomaly
@@ -112,6 +168,13 @@
     CWE: 1043
     OWASP_API_2023: API8
     OWASP_API: API7
+  eventDetails:
+    description: "The size of the content in a request or response is significantly different from the norm."
+    mitigation: "Ensure that the size of the content in requests and responses is within expected limits. Consider implementing rate limiting and data size checks in your API."
+    impact: "If not mitigated, this could lead to denial of service attacks, where an attacker sends large amounts of data to overwhelm the system, or information disclosure, where an unusually large response size might indicate a data leak."
+    references: |
+      - CWE-1043: Insufficiently Controlled Size of Resource Requested ('Resource Exhaustion') - https://cwe.mitre.org/data/definitions/1043.html
+      - OWASP API Security Top 10 - 2023 - API8:2023 - Denial of Service - https://owasp.org/API-Security/editions/2023/en/0xa8-denial-of-service/
     
 - ruleId: ssrf
   ruleName: Server-Side Request Forgery (SSRF)
@@ -151,7 +214,7 @@
     OWASP_API: API5
   eventDetails:
     description: |
-      Traceable identified Broken function level authorization attack. 
+      Broken Function Level Authorization attack behaviour is detected.
       Humans are predictable in nature and they tend to follow several patterns when it comes to hosting endpoints, for example it usually occurs that higher privilege endpoints are hosted on the same relative path, which makes it easier for the attackers to guess these endpoints but that alone does not make the attack successful.
       Attackers have to be able to access endpoints as lower privileged users as well of course. This access can occur by executing the provided HTTP method (for example POST) but it can also occur on other methods that the developers left enabled (un)intentionally (for example DELETE). These issues are often made worse by how predictable the endpoints are (for example /books?id=0 might indicate the presence of an endpoint /books/all which may print out books the user should not be able to access.).
     mitigation: |
@@ -165,6 +228,7 @@
     references: |
       - OWASP Article on Forced Browsing - https://www.owasp.org/index.php/Forced_browsing
       - OWASP Top 10 2013-A7-Missing Function Level Access Control - https://www.owasp.org/index.php/Top_10_2013-A7-Missing_Function_Level_Access_Control
+      - OWASP API Top 10 - 2019 - API5:Broken Function Level Authorization - https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/
       - OWASP Development Guide: Chapter on Authorization - https://www.owasp.org/index.php/Category:Access_Control
       - CWE-285: Improper Authorization - https://cwe.mitre.org/data/definitions/285.html
 
@@ -187,8 +251,10 @@
       impact: |
         A token that never expires can be used to access the API indefinitely. If no expiration information is available, the only way to invalidate the token is to change the secret.
       references: |
-        - JWT documentation - https://jwt.io/introduction
-        - JWT claims - https://auth0.com/docs/secure/tokens/json-web-tokens/json-web-token-claims
+        - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.5)
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - CWE-613: Insufficient Session Expiration (https://cwe.mitre.org/data/definitions/613.html)
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
   - ruleId: jwt_nbf
     ruleName: JWT Premature Usage
@@ -197,6 +263,15 @@
       CWE: 613
       OWASP_API_2023: API2
       OWASP_API: API2
+    eventDetails:
+      description: "A JWT token is used before its 'Not Before' (nbf) claim."
+      mitigation: "Ensure that the 'Not Before' (nbf) claim in JWT tokens is properly validated."
+      impact: "If not mitigated, this could lead to tokens being used prematurely, potentially causing authorization issues."
+      references: |
+        - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.5)
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - CWE-613: Insufficient Session Expiration (https://cwe.mitre.org/data/definitions/613.html)
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
   - ruleId: jwt_iss
     ruleName: Unknown JWT Issuer
@@ -205,14 +280,32 @@
       CWE: 639
       OWASP_API_2023: API2
       OWASP_API: API2
+    eventDetails:
+      description: "A JWT token has been issued by an unknown or untrusted source."
+      mitigation: "Ensure that JWT tokens are issued by a trusted source and that the issuer is validated."
+      impact: "If not mitigated, this could lead to unauthorized access and potential data breaches."
+      references: |
+        - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.1)
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - CWE-639: Authorization Bypass Through User-Controlled Key (https://cwe.mitre.org/data/definitions/639.html)
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
   - ruleId: jwt_aud
-    ruleName: Unauthorised JWT audience
+    ruleName: Unauthorized JWT audience
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
     eventLabels:
       CWE: 347
       OWASP_API_2023: API2
       OWASP_API: API2
+    eventDetails:
+      description: "A JWT token has an audience (aud) claim that the server does not expect. This could indicate an attempt to use a token issued for a different service."
+      mitigation: "Ensure that the server validates the 'aud' claim of the JWT token and only accepts tokens intended for itself."
+      impact: "If this issue is not addressed, it could potentially allow an attacker to use a token issued for a different service, leading to unauthorized access."
+      references: |
+        - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.3)
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - CWE-347: Improper Verification of Cryptographic Signature (https://cwe.mitre.org/data/definitions/347.html)
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
   - ruleId: jwt_alg
     ruleName: JWT Algorithm Confusion
@@ -232,3 +325,5 @@
       references: |
         - JWT documentation - https://jwt.io/introduction
         - JWT Confusion Attack - https://portswigger.net/web-security/jwt/algorithm-confusion
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
+        - CWE-345: Insufficient Verification of Data Authenticity (https://cwe.mitre.org/data/definitions/345.html)

@@ -7,16 +7,20 @@
     OWASP_API: API1
   eventDetails:
     description: |
-      Traceable identified a Broken Object Level Authentication (BOLA) also known as Insecure Direct Object Reference (IDOR).
-      It is an access control attack where unvalidated user input can be used for unauthorized access to resources or operations.
+      An anomaly characteristic of Broken Object Level Authorization (BOLA) attack is detected by flagging the deviation from the baseline of the API sequences and the data flow between them.
+      It is an access control attack where unvalidated user input can be used for unauthorized access to resources or operations and is also known as Insecure Direct Object Reference (IDOR).
       The attack occurs when the web application exposes a direct reference to an internal implementation object, and then fails to run proper authorization checks to ensure whether the current user is permitted to access a resource or operation.
-      An insecure direct object reference attack occurs when the following three conditions are met:
+      A Authorization Bypass attack occurs when the following three conditions are met:
       - The attacked application reveals a direct reference to an internal resource or operation.
       - The attacker is able to manipulate a URL or form parameter to modify the direct reference.
       - The application grants attacker the access to the internal object without checking if the user is authorized.
+
     mitigation: |
       The best way to protect your code against BOLA is to implement authorization checks on object-level user access.
       In addition, use non sequential identifiers like UUIDs to make it harder for attackers to tamper with user-controllable values.
+
+      To protect in Traceable:
+      - Add an enumeration policy on the API endpoint to restrict the number of objects that can be accessed.
     impact: |
       Unauthorized access can result to:
       - data disclosure to unauthorized parties
@@ -41,6 +45,37 @@
     CWE: 285
     OWASP_API_2023: API1
     OWASP_API: API1
+  eventDetails:
+    description: |
+        An anomaly characteristic is detected for Authorization Bypass at User Level, by building a baseline of API parameter values with user metadata, and flagging any deviation from the baseline.
+        The attacker can gain unauthorized access to resources or operations not intended for them by manipulating the API metadata.
+        The attack occurs when the web application exposes a direct reference to an internal implementation object, and then fails to run proper authorization checks to ensure whether the current user is permitted to access a resource or operation.
+        A Authorization Bypass attack occurs when the following three conditions are met:
+        - The attacked application reveals a direct reference to an internal resource or operation.
+        - The attacker is able to manipulate a URL or form parameter to modify the direct reference.
+        - The application grants attacker the access to the internal object without checking if the user is authorized.
+    mitigation: |
+      The best way to protect your code against Authorization Bypass is to implement authorization checks on APIs and parameters in request as well as responses.
+      
+      To protect in Traceable:
+      - Add an enumeration policy on the API endpoint to restrict the number of objects that can be accessed.
+      - Add a data protection policy on the API endpoint to restrict the number of sensitive data that can be exposed.
+    impact: |
+      Unauthorized access can result to:
+      - data disclosure to unauthorized parties
+      - data loss by deletion of unauthorized resources
+      - data manipulation by modifying unauthorized objects
+      - full account takeover.
+    references: |
+      - OWASP API Top 10 - 2019 - API1:Broken Object Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa1-broken-object-level-authorization.md\\n
+      - OWASP Top 10 - 2021 - A1:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/\\n
+      - OWASP Top 10 - 2017 - A5:Broken Access Control  - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control\\n
+      - Common Weakness Enumeration (CWE) - CWE-285:Improper Authorization - https://cwe.mitre.org/data/definitions/285.html\\n
+      - SANS TOP 25 - http://cwe.mitre.org/top25/\\n
+      - OWASP IDOR Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html\\n
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html\\n
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/\\n
+      - Web Application Security Consortium - WASC-02:Insufficient Authorization - http://projects.webappsec.org/w/page/13246940/Insufficient%20Authorization
     
 - ruleId: sessionv
   ruleName: Session Violation
@@ -51,12 +86,29 @@
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
     eventLabels:
       CWE: 501
-      OWASP_API_2023: API8
-      OWASP_API: API7
+      OWASP_API_2023: API2
+      OWASP_API: API2
+    eventDetails:
+      description: "A series of requests from the same session are originating from geographically distant locations in a short time span, which is physically impossible, indicating that the session might be hijacked."
+      mitigation: "Implement session management best practices, such as session timeout, session invalidation after logout, and IP binding. Consider using multi-factor authentication for added security."
+      impact: "If not mitigated, this could lead to session hijacking, where an attacker can impersonate a user and perform actions on their behalf."
+      references: |
+        - OWASP API Top 10 - 2023 - API2:Broken Authentication - https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+        - OWASP Top 10 - 2021 - A2:Broken Authentication - https://owasp.org/Top10/A02_2021-Broken_Authentication/
+        - Common Weakness Enumeration (CWE) - CWE-501:Trust Boundary Violation - https://cwe.mitre.org/data/definitions/501.html
+
   - ruleId: sessionv_expiry
     ruleName: Session Expired
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
     eventLabels:
       CWE: 613
-      OWASP_API_2023: API8
-      OWASP_API: API7
+      OWASP_API_2023: API2
+      OWASP_API: API2
+    eventDetails:
+      description: "A request is made with an expired session token. This could indicate a delayed or replayed request."
+      mitigation: "Implement session management best practices, such as session timeout and session invalidation after logout. Ensure that your application checks the validity of session tokens with each request."
+      impact: "If not mitigated, this could lead to unauthorized actions being performed if an expired session token is accepted."
+      references: |
+        - OWASP API Top 10 - 2023 - API2:Broken Authentication - https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+        - OWASP Top 10 - 2021 - A2:Broken Authentication - https://owasp.org/Top10/A02_2021-Broken_Authentication/
+        - Common Weakness Enumeration (CWE) - CWE-613:Insufficient Session Expiration - https://cwe.mitre.org/data/definitions/613.html

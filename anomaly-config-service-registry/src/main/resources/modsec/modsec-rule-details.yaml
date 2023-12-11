@@ -10,6 +10,7 @@
       - Use regular expressions to validate possible URLs, avoiding unwanted domain names, ports, and protocols
       - Use a whitelist of allowed domains, protocols and ports
       - Prevent internal resources from reaching internet facing applications
+      Traceable recommends to enable block mode for this rule.
     impact: |
       The impact of this attack depends on the affected systems - it can range from Sensitive Data Exposure, DOS, RCE, and more.
       - A vulnerable API importing remote code could be affected by RCE
@@ -24,11 +25,20 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - https://capec.mitre.org/data/definitions/664.html
       - MITRE Attack - T1190 Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - SSRF Bible Cheatsheet - https://cheatsheetseries.owasp.org/assets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet_SSRF_Bible.pdf
-  
+
 - ruleId: crs_913
   ruleName: Scanner Detection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SCANNER_DETECTED
-  
+  eventDetails:
+    description: "Automated scanning activity is detected. Scanners are often used by attackers to discover vulnerabilities in your application."
+    mitigation: |
+      Monitor your application logs for scanning activity and investigate any suspicious behavior. Consider implementing rate limiting to reduce the effectiveness of scanners.
+      Traceable recommends to enable block mode for this rule.
+    impact: |
+      If not mitigated, scanners can discover vulnerabilities in your application and provide attackers with information they can use to exploit these vulnerabilities.
+      Traceable recommends to enable block mode for this rule.
+    references: "For more information, refer to the OWASP Testing Guide: Testing for Vulnerability Scanners."
+
 - ruleId: crs_941
   ruleName: Cross Site Scripting (XSS)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_XSS
@@ -52,7 +62,7 @@
       - OWASP: XSS (Cross Site Scripting) Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
       - CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') - https://cwe.mitre.org/data/definitions/79.html
       - CAPEC-592: Stored Cross-Site Scripting - https://capec.mitre.org/data/definitions/592.html
-  
+
 - ruleId: crs_943
   ruleName: Session Fixation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SESSION_FIXATION
@@ -69,25 +79,52 @@
       - http://www.acros.si/papers/session_fixation.pdf
       - http://en.wikipedia.org/wiki/Session_fixation
       - http://www.derkeiler.com/pdf/Mailing-Lists/Securiteam/2002-12/0099.pdf
-  
+
 - ruleId: crs_921
   ruleName: HTTP Protocol Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
-  
+  eventDetails:
+    description: "Anomalies are detected in the HTTP protocol usage, which may indicate an attempt to exploit HTTP protocol vulnerabilities."
+    mitigation: |
+      Ensure that your application correctly implements the HTTP protocol and handles any protocol-level errors.
+      Consider using security middleware that can protect against protocol-level attacks.
+    impact: "If not mitigated, this could lead to unauthorized access, data leakage, or denial of service."
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - http://owasp.org/www-project-api-security/2019/en/0xa8-injection.html
+      - OWASP API Top 10 - 2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
+      - OWASP Top 10 - 2021 - A4:Broken Access Control - https://owasp.org/Top10/A04_2021-Broken_Access_Control/
+
+
 - ruleId: crs_102
   ruleName: XML External Entity Injection (XXE)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
-  
+  eventDetails:
+    description: "XML External Entity Injection (XXE) attack signatures are detected. XXE attacks exploit the way an application processes XML input with external references, potentially leading to disclosure of internal files, denial of service, or remote code execution."
+    mitigation: |
+      To mitigate XXE attacks, disable the use of external entities in your XML parser. Also, validate and sanitize all XML input to your application.
+      Traceable recommends to enable block mode for this rule.
+    impact: "If not mitigated, XXE attacks can lead to disclosure of internal files, denial of service, or even remote code execution."
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - https://owasp.org/www-project-api-security/2019/en/0xa8-injection.html
+      - OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
+
 - ruleId: crs_934
   ruleName: NodeJS Injection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
-  
+  eventDetails:
+    description: "An anomaly characteristic of Node.js injection attack is detected. Node.js injection attacks occur when an attacker can control the input data that is parsed by the Node.js engine in server or client, potentially leading to arbitrary code execution."
+    mitigation: "To mitigate Node.js injection attacks, avoid using the eval() function. If it's absolutely necessary, ensure that the input data is properly sanitized and validated."
+    impact: "If not mitigated, Node.js injection attacks can lead to arbitrary code execution, which could compromise the security of your application."
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - https://owasp.org/www-project-api-security/2019/en/0xa8-injection.html
+      - OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
+
 - ruleId: crs_942
   ruleName: SQL Injection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
   eventDetails:
     description: |
-      Traceable identified a SQL injection attack.
+      An anomaly characteristic of SQL injection attack is detected. SQL injection is a code injection technique that exploits a security vulnerability in an application's software.
       It occurs when data input by a user:
         - is NOT validated, filtered or sanitized by the application
         - is used to build Dynamic queries or non-parameterized calls without context-aware escaping
@@ -112,18 +149,26 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-7:Blind SQL Injection - https://capec.mitre.org/data/definitions/7.html
       - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - Web Application Security Consortium - WASC-19:SQL Injection - http://projects.webappsec.org/w/page/13246963/SQL%20Injection
-  
+
 - ruleId: crs_930
   ruleName: Local File Inclusion
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PATH_MANIPULATION
+  eventDetails:
+    description: "An anomaly characteristic of Local File Inclusion (LFI) attack is detected. LFI attacks occur when an attacker can manipulate a file path to access files elsewhere in the server's file system."
+    mitigation: "To mitigate LFI attacks, validate and sanitize all user inputs that are used in file paths. Avoid using user input to construct file paths where possible."
+    impact: "If not mitigated, LFI attacks can lead to disclosure of sensitive information, such as source code or configuration files, which could compromise the security of your application."
+    references: |
+      - OWASP Top 10 - 2021 – A01:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - OWASP Top 10 - 2017 - A5:Broken Access Control - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control
   subRuleInfos:
   - ruleId: crs_930100
     eventDetails:
       description: |
-        Traceable identified a Path Traversal attack, where the attacker was able to access files or directories which were stored outside the web root folder. This is done using the ../ sequences to navigate outside the current directory.
+        An anomaly characteristic of Path Traversal attack is detected.
+        Path Traversal attack are successful when the attacker is able to access files or directories which are stored outside the web root folder. This is done using the ../ sequences to navigate outside the current directory.
       mitigation: |
         - Use labels instead of file paths to refer to a file.
-        - Do not trust user input. Sanitize these input to remove sequences such as ../.
+        - Do not trust user input. Sanitize these input to remove sequences such as ../
         - Avoid storing sensitive files inside the web root folder.
         - Apply access control policies to restrict the access of files to users.
       impact: |
@@ -138,7 +183,8 @@
   - ruleId: crs_930110
     eventDetails:
       description: |
-        Traceable identified a Path Traversal attack, where the attacker was able to access files or directories which were stored outside the web root folder. This is done using the ../ sequences to navigate outside the current directory.
+        An anomaly characteristic of Path Traversal attack is detected.
+        The attack is successful if the attacker is able to access files or directories which are stored outside the web root folder. This is done using the ../ sequences to navigate outside the current directory.
       mitigation: |
         - Use labels instead of file paths to refer to a file.
         - Do not trust user input. Sanitize these input to remove sequences such as ../.
@@ -153,13 +199,14 @@
         - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-126:Path Traversal - https://capec.mitre.org/data/definitions/126.html
         - MITRE Attack - T1083:File and Directory Discovery - https://attack.mitre.org/techniques/T1083/
         - Web Application Security Consortium - WASC-33:Path Traversal - http://projects.webappsec.org/w/page/13246952/Path%20Traversal
-  
+
 - ruleId: crs_931
   ruleName: Remote File Inclusion
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PATH_MANIPULATION
   eventDetails:
     description: |
-      Traceable identified a Remote File Inclusion attack, where the attacker was able to include files in the application. 
+      An anomaly characteristic of Remote File Inclusion(RFI) attack is detected.
+      RFI attacks occur when the attacker is able to include files in the application. This is done by including a remote file using a URL or a remote file path using other protocols such as FTP, SSH, SMB, etc.
       This dynamic file inclusion allows the attacker to execute malicious code in the context of the web application.
     mitigation: |
       - Restrict the inclusion of user provided files, urls to the web application.
@@ -183,11 +230,19 @@
 - ruleId: crs_932
   ruleName: Remote Code Execution
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  eventDetails:
+    description: "An anomaly characteristic of Remote Code Execution (RCE) attack is detected. RCE attacks occur when an attacker can execute arbitrary commands or code on a remote server."
+    mitigation: "To mitigate RCE attacks, validate and sanitize all user inputs. Avoid using user input in system commands where possible. Regularly update and patch your systems to fix known vulnerabilities."
+    impact: "If not mitigated, RCE attacks can lead to full system compromise, allowing an attacker to perform any action they want on the server."
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - https://owasp.org/www-project-api-security/2019/en/0xa8-injection.html
+      - OWASP Top 10 - 2021 - A3:Injection - https://owasp.org/Top10/A03_2021-Injection/
   subRuleInfos:
   - ruleId: crs_932170
     eventDetails:
       description: |
-        Traceable identified a Shell Shock RCE attack. While defining an environment variable for a function definition, BASH would run commands following the function definition as BASH supports this functionality.
+        An anomaly characteristic of Shell Shock RCE attack is detected.
+        While defining an environment variable for a function definition, BASH would run commands following the function definition as BASH supports this functionality.
         This allowed the attackers to execute unexpected, dangerous commands directly on the operating system. This weakness can lead to a vulnerability in environments in which the attacker does not have direct access to the operating system, such as in web applications. Alternatively, if the weakness occurs in a privileged program, it could allow the attacker to specify commands that normally would not be accessible, or to call alternate commands with privileges that the attacker does not have. The problem is exacerbated if the compromised process does not follow the principle of least privilege, because the attacker-controlled commands may run with special system privileges that increases the amount of damage.
       mitigation: |
         - Update the current version of BASH running for the application.
@@ -209,7 +264,7 @@
   - ruleId: crs_932171
     eventDetails:
       description: |
-        Traceable identified a Shell Shock RCE attack. While defining an environment variable for a function definition, BASH would run commands following the function definition as BASH supports this functionality.
+        An anomaly characteristic of Shell Shock RCE attack is detected. While defining an environment variable for a function definition, BASH would run commands following the function definition as BASH supports this functionality.
         This allowed the attackers to execute unexpected, dangerous commands directly on the operating system. This weakness can lead to a vulnerability in environments in which the attacker does not have direct access to the operating system, such as in web applications. Alternatively, if the weakness occurs in a privileged program, it could allow the attacker to specify commands that normally would not be accessible, or to call alternate commands with privileges that the attacker does not have. The problem is exacerbated if the compromised process does not follow the principle of least privilege, because the attacker-controlled commands may run with special system privileges that increases the amount of damage.
       mitigation: |
         - Update the current version of BASH running for the application.
@@ -228,7 +283,7 @@
         - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-248:Command Injection - https://capec.mitre.org/data/definitions/248.html
         - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
         - Web Application Security Consortium - WASC-31:OS Commanding - http://projects.webappsec.org/w/page/13246950/OS%20Commanding
-  
+
 - ruleId: crs_944
   ruleName: Java Application Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
@@ -236,13 +291,13 @@
   - ruleId: crs_944120
     eventDetails:
       description: |
-        Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. This can lead to a dangerous “Remote Code Execution”. 
+        Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. This can lead to a dangerous “Remote Code Execution”.
         A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
       mitigation: |
         - Deserialization of untrusted data is inherently dangerous and should be avoided.
         - Auditing your system against such vulnerabilities is very difficult: you have to check every implementation of readObject, including those in third-party libraries and the runtime library.
       impact: |
-        - By controlling the input to the deserialization process an attacker can trigger the invocation of any readObject deserialization-method. 
+        - By controlling the input to the deserialization process an attacker can trigger the invocation of any readObject deserialization-method.
         - It is theoretically possible for such a method to allow bytecode injection.
         - In practice it is certainly possible to easily exhaust memory or CPU resources this way, resulting in denial-of-service attacks.
       references: |
@@ -255,13 +310,13 @@
   - ruleId: crs_9440210
     eventDetails:
       description: |
-        Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. This can lead to a dangerous “Remote Code Execution”. 
+        Java Serialization seems to be in use. If not correctly validated, an attacker can send a specially crafted object. This can lead to a dangerous “Remote Code Execution”.
         A magic sequence identifying JSO can also be used by attackers (Base64: rO0AB, Raw: 0xac, 0xed, 0x00, 0x05).
       mitigation: |
         - Deserialization of untrusted data is inherently dangerous and should be avoided.
         - Auditing your system against such vulnerabilities is very difficult: you have to check every implementation of readObject, including those in third-party libraries and the runtime library.
       impact: |
-        - By controlling the input to the deserialization process an attacker can trigger the invocation of any readObject deserialization-method. 
+        - By controlling the input to the deserialization process an attacker can trigger the invocation of any readObject deserialization-method.
         - It is theoretically possible for such a method to allow bytecode injection.
         - In practice it is certainly possible to easily exhaust memory or CPU resources this way, resulting in denial-of-service attacks.
       references: |
@@ -274,7 +329,7 @@
   - ruleId: crs_9440900
     eventDetails:
       description: |
-        Traceable identified a Log4Shell attack where the attacker was able to exploit a vulnerable endpoint by sending a malicious request with a malicious endpoint. The malicious payload is evaluated by the log4j, and the LDAP+JNDI payload is executed.
+        An anomaly characteristic of Log4Shell attack is detected. Log4Shell attack ocuurs when the attacker is able to exploit a vulnerable endpoint by sending a malicious request with a malicious endpoint. The malicious payload is evaluated by the log4j, and the LDAP+JNDI payload is executed.
         Depending on the application permissions, the exploit might be able to execute arbitrary code outside the java virtual machine, and take control of the server.
       mitigation: |
         Upgrade log4j to version:
@@ -290,7 +345,7 @@
   - ruleId: crs_9440920
     eventDetails:
       description: |
-        Traceable identified a Spring4Shell attack where the attacker finds compatible “java gadgets” which contain characteristics that allows the attacker to evaluate code, write files, or more.
+        An anomaly characteristic of Spring4Shell attack is detected. This attack occurs if the attacker finds compatible “java gadgets” which contain characteristics that allows the attacker to evaluate code, write files, or more.
         This Spring4Shell attack relies on the form to model de-serialization feature that uses data binders to create spring models. Data binding allows the developers to dynamically bind the user input to the domain model of an application.
       mitigation: |
         Upgrade Spring to version:
