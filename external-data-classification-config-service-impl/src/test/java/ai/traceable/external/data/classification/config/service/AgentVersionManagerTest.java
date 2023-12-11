@@ -20,8 +20,7 @@ class AgentVersionManagerTest {
 
   @InjectMocks AgentVersionManager agentVersionManager;
 
-  // TODO update once known
-  private static final String ACTUAL_REQUIRED_VERSION = "9.9.9-rc.0";
+  private static final String ACTUAL_REQUIRED_VERSION = "1.39.0-rc.0";
 
   @Test
   void testNewAgentVersion() {

@@ -9,8 +9,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)
 class AgentVersionManager {
-  private static final String CONTENT_TYPE_PARSE_RULE_SUPPORT_MIN_TPA_VERSION =
-      "9.9.9-rc.0"; // TODO - get final value for this version
+  private static final String CONTENT_TYPE_PARSE_RULE_SUPPORT_MIN_TPA_VERSION = "1.39.0-rc.0";
   SemanticVersioningComparator versionComparator;
 
   boolean isContentTypeParseRuleSupported(AgentCapabilities agentCapabilities) {
