@@ -123,11 +123,22 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateKeyStringCondition(StringCondition stringCondition) {
-    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
     switch (stringCondition.getOperator()) {
       case OPERATOR_EQUALS:
+        break;
       case OPERATOR_MATCHES_REGEX:
-        return;
+        final String keyPattern = stringCondition.getValue();
+        final Status regexValidationStatus = RegexValidator.validate(keyPattern);
+        if (!regexValidationStatus.isOk()) {
+          throw regexValidationStatus
+              .withDescription(
+                  String.format(
+                      "Invalid regex for key : %s for stringCondition: %s",
+                      keyPattern, printMessage(stringCondition)))
+              .asRuntimeException();
+        }
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
@@ -140,8 +151,9 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
     switch (stringCondition.getOperator()) {
       case OPERATOR_MATCHES_REGEX:
+        validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
         final String pattern = stringCondition.getValue();
-        Status regexValidationStatus = RegexValidator.validate(pattern);
+        final Status regexValidationStatus = RegexValidator.validate(pattern);
         if (!regexValidationStatus.isOk()) {
           throw regexValidationStatus
               .withDescription(String.format("Invalid regex : %s", pattern))
@@ -155,14 +167,18 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
             final String ip = stringCondition.getValue();
             if (!isValidIpAddressOrSubnet(ip)) {
               throwInvalidArgumentException(
-                  "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
+                  String.format(
+                      "Invalid IP address or CIDR in StringCondition: %s",
+                      printMessage(stringCondition)));
             }
             break;
           case VALUES:
             if (stringCondition.getValues().getValuesList().stream()
                 .anyMatch(s -> !isValidIpAddressOrSubnet(s))) {
               throwInvalidArgumentException(
-                  "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
+                  String.format(
+                      "Invalid list of IP addresses or CIDRs in StringCondition: %s",
+                      printMessage(stringCondition)));
             }
             break;
           default:
