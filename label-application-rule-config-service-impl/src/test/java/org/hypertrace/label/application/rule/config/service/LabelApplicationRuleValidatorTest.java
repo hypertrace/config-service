@@ -24,8 +24,7 @@ public class LabelApplicationRuleValidatorTest {
   private final LabelApplicationRuleValidator labelApplicationRuleValidator;
   private final StringCondition errorKeyCondition;
   private final StringCondition correctKeyCondition;
-  private final StringCondition correctKeyConditionWithMatchesIPs;
-  private final StringCondition incorrectKeyConditionWithMatchesIPs;
+  private final StringCondition correctKeyConditionMatchesRegex;
   private final StringCondition correctAuthKeyCondition;
   private final StringCondition correctStringValueCondition;
   private final StringCondition correctRegexStringValueCondition;
@@ -49,15 +48,10 @@ public class LabelApplicationRuleValidatorTest {
             .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
             .setValue("foo")
             .build();
-    correctKeyConditionWithMatchesIPs =
+    correctKeyConditionMatchesRegex =
         StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_MATCHES_IPS)
-            .setValue("1.2.3.4")
-            .build();
-    incorrectKeyConditionWithMatchesIPs =
-        StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_MATCHES_IPS)
-            .setValue("4.5.6.7/s")
+            .setOperator(StringCondition.Operator.OPERATOR_MATCHES_REGEX)
+            .setValue("foo.*")
             .build();
     errorUnaryValueCondition =
         UnaryCondition.newBuilder()
@@ -191,7 +185,7 @@ public class LabelApplicationRuleValidatorTest {
     // This will check the condition that foo(key) = bar(value)
     LeafCondition errorLeafCondition =
         LeafCondition.newBuilder()
-            .setKeyCondition(correctKeyConditionWithMatchesIPs)
+            .setKeyCondition(correctKeyCondition)
             .setStringCondition(correctStringValueConditionWithMatchesIPs)
             .build();
     Condition matchingCondition =
@@ -207,7 +201,7 @@ public class LabelApplicationRuleValidatorTest {
     // This will check the condition that foo(key) = bar(value)
     LeafCondition errorLeafCondition =
         LeafCondition.newBuilder()
-            .setKeyCondition(incorrectKeyConditionWithMatchesIPs)
+            .setKeyCondition(correctKeyConditionMatchesRegex)
             .setStringCondition(incorrectStringValueConditionWithMatchesIPs)
             .build();
     Condition matchingCondition =

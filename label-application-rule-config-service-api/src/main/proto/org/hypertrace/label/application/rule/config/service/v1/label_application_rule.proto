@@ -35,6 +35,7 @@ message LabelApplicationRuleData {
   }
 
   message LeafCondition {
+    // only equals and regex are supported for key condition
     StringCondition key_condition = 1;
     oneof condition {
       StringCondition string_condition = 2;

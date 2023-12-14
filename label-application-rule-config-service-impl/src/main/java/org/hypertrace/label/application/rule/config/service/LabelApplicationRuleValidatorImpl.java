@@ -80,7 +80,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateLeafCondition(LeafCondition leafCondition) {
-    validateStringCondition(leafCondition.getKeyCondition());
+    validateKeyStringCondition(leafCondition.getKeyCondition());
     switch (leafCondition.getConditionCase()) {
       case STRING_CONDITION:
         validateStringCondition(leafCondition.getStringCondition());
@@ -118,6 +118,20 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
             String.format(
                 "Unexpected Case in %s:%n %s",
                 getName(jsonCondition), printMessage(jsonCondition)));
+    }
+  }
+
+  private void validateKeyStringCondition(StringCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
+    switch (stringCondition.getOperator()) {
+      case OPERATOR_EQUALS:
+      case OPERATOR_MATCHES_REGEX:
+        return;
+      default:
+        throwInvalidArgumentException(
+            String.format(
+                "Invalid operator for key condition: %s: %s",
+                getName(stringCondition), printMessage(stringCondition)));
     }
   }
 
