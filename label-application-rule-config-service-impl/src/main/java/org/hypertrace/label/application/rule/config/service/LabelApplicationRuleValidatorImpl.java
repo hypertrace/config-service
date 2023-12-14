@@ -12,6 +12,8 @@ import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import org.hypertrace.config.validation.RegexValidator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;

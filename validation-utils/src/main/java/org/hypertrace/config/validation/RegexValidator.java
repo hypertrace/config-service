@@ -1,4 +1,4 @@
-package org.hypertrace.label.application.rule.config.service;
+package org.hypertrace.config.validation;
 
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
