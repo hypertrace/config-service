@@ -57,6 +57,8 @@ public class DataClassificationOverrideConfigRequestValidator {
         validateEnvironmentScope(scope);
         break;
       case SCOPE_NOT_SET:
+        // No scope is valid
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected scope case:" + scope.getScopeCase())
@@ -67,7 +69,7 @@ public class DataClassificationOverrideConfigRequestValidator {
   private void validateOverride(DataClassificationOverrideRule rule) {
     switch (rule.getOverrideCase()) {
       case DATA_SUPPRESSION_OVERRIDE:
-        validateDataSupressionOverride(rule);
+        validateDataSuppressionOverride(rule);
         break;
       case OVERRIDE_NOT_SET:
       default:
@@ -99,7 +101,7 @@ public class DataClassificationOverrideConfigRequestValidator {
         DataClassificationOverrideRule.EnvironmentScope.ENVIRONMENT_ID_FIELD_NUMBER);
   }
 
-  private void validateDataSupressionOverride(DataClassificationOverrideRule rule) {
+  private void validateDataSuppressionOverride(DataClassificationOverrideRule rule) {
     DataSetInfo.DataSuppression suppression =
         rule.getDataSuppressionOverride().getDataSuppression();
     if (suppression.equals(DataSetInfo.DataSuppression.UNRECOGNIZED)
@@ -111,12 +113,6 @@ public class DataClassificationOverrideConfigRequestValidator {
   }
 
   private void validateScopeFilter(DataClassificationOverrideFilter filter) {
-    filter
-        .getScopeFilter()
-        .getScopesList()
-        .forEach(
-            dataClassificationOverrideScope -> {
-              validateScope(dataClassificationOverrideScope);
-            });
+    filter.getScopeFilter().getScopesList().forEach(this::validateScope);
   }
 }
