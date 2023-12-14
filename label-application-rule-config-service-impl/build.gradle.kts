@@ -15,6 +15,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.google.re2j)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

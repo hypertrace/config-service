@@ -28,6 +28,8 @@ public class LabelApplicationRuleValidatorTest {
   private final StringCondition incorrectKeyConditionWithMatchesIPs;
   private final StringCondition correctAuthKeyCondition;
   private final StringCondition correctStringValueCondition;
+  private final StringCondition correctRegexStringValueCondition;
+  private final StringCondition incorrectRegexStringValueCondition;
   private final StringCondition correctStringValueConditionWithMatchesIPs;
   private final StringCondition incorrectStringValueConditionWithMatchesIPs;
   private final UnaryCondition errorUnaryValueCondition;
@@ -67,6 +69,16 @@ public class LabelApplicationRuleValidatorTest {
         StringCondition.newBuilder()
             .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
             .setValue("bar")
+            .build();
+    correctRegexStringValueCondition =
+        StringCondition.newBuilder()
+            .setOperator(StringCondition.Operator.OPERATOR_MATCHES_REGEX)
+            .setValue(".*bar.*")
+            .build();
+    incorrectRegexStringValueCondition =
+        StringCondition.newBuilder()
+            .setOperator(StringCondition.Operator.OPERATOR_MATCHES_REGEX)
+            .setValue("((?!bar)")
             .build();
     correctStringValueConditionWithMatchesIPs =
         StringCondition.newBuilder()
@@ -317,6 +329,43 @@ public class LabelApplicationRuleValidatorTest {
             "Correct Composite Rule", false, matchingCondition, Optional.empty());
     assertDoesNotThrow(
         () -> labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request));
+  }
+
+  @Test
+  void validateOrThrowCreateRuleLeafConditionWithMatchRegex() {
+    // This will check the condition that foo(key) = bar(value)
+    LeafCondition correctLeafCondition =
+        LeafCondition.newBuilder()
+            .setKeyCondition(correctKeyCondition)
+            .setStringCondition(correctRegexStringValueCondition)
+            .build();
+    Condition matchingCondition =
+        Condition.newBuilder().setLeafCondition(correctLeafCondition).build();
+    CreateLabelApplicationRuleRequest request =
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Correct Leaf Rule", matchingCondition, Optional.empty());
+    labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
+  }
+
+  @Test
+  void validateOrThrowCreateRuleInvalidLeafConditionWithMatchRegex() {
+    // This will check the condition that foo(key) = bar(value)
+    LeafCondition invalidLeafCondition =
+        LeafCondition.newBuilder()
+            .setKeyCondition(correctKeyCondition)
+            .setStringCondition(incorrectRegexStringValueCondition)
+            .build();
+    Condition matchingCondition =
+        Condition.newBuilder().setLeafCondition(invalidLeafCondition).build();
+    CreateLabelApplicationRuleRequest request =
+        buildCreateCreateLabelApplicationRuleRequest(
+            "Incorrect Leaf Rule", matchingCondition, Optional.empty());
+
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          labelApplicationRuleValidator.validateOrThrow(REQUEST_CONTEXT, request);
+        });
   }
 
   private CreateLabelApplicationRuleRequest buildCreateCreateLabelApplicationRuleRequest(

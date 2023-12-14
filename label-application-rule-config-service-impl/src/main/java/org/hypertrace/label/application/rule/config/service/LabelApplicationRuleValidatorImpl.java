@@ -4,16 +4,14 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.isValidIpAddre
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
-import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_MATCHES_IPS;
-import static org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition.Operator.OPERATOR_NOT_MATCHES_IPS;
 
 import com.google.protobuf.Message;
+import com.google.re2j.Matcher;
+import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
@@ -125,29 +123,39 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
 
   private void validateStringCondition(StringCondition stringCondition) {
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
-    if (stringCondition.getOperator().equals(OPERATOR_MATCHES_IPS)
-        || stringCondition.getOperator().equals(OPERATOR_NOT_MATCHES_IPS)) {
-      switch (stringCondition.getKindCase()) {
-        case VALUE:
-          final String ip = stringCondition.getValue();
-          if (!isValidIpAddressOrSubnet(ip)) {
+    switch (stringCondition.getOperator()) {
+      case OPERATOR_MATCHES_REGEX:
+        final String pattern = stringCondition.getValue();
+        Status regexValidationStatus = RegexValidator.validate(pattern);
+        if (!regexValidationStatus.isOk()) {
+          throw regexValidationStatus
+              .withDescription(String.format("Invalid regex : %s", pattern))
+              .asRuntimeException();
+        }
+        break;
+      case OPERATOR_MATCHES_IPS:
+      case OPERATOR_NOT_MATCHES_IPS:
+        switch (stringCondition.getKindCase()) {
+          case VALUE:
+            final String ip = stringCondition.getValue();
+            if (!isValidIpAddressOrSubnet(ip)) {
+              throwInvalidArgumentException(
+                  "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
+            }
+            break;
+          case VALUES:
+            if (stringCondition.getValues().getValuesList().stream()
+                .anyMatch(s -> !isValidIpAddressOrSubnet(s))) {
+              throwInvalidArgumentException(
+                  "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
+            }
+            break;
+          default:
             throwInvalidArgumentException(
-                "StringCondition in LabelApplicationRule should have a valid IP address or CIDR");
-          }
-          break;
-        case VALUES:
-          if (stringCondition.getValues().getValuesList().stream()
-              .anyMatch(s -> !isValidIpAddressOrSubnet(s))) {
-            throwInvalidArgumentException(
-                "StringCondition in LabelApplicationRule should have a valid list of IP addresses and CIDRs");
-          }
-          break;
-        default:
-          throwInvalidArgumentException(
-              String.format(
-                  "Unexpected Case in %s:%n %s",
-                  getName(stringCondition), printMessage(stringCondition)));
-      }
+                String.format(
+                    "Unexpected Case in %s:%n %s",
+                    getName(stringCondition), printMessage(stringCondition)));
+        }
     }
   }
 
