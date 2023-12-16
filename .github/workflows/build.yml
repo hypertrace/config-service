@@ -253,3 +253,4 @@ jobs:
         uses: ./.github/actions/dependency-check
         with:
           auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
+          database-password: ${{ secrets.NVD_DATABASE_PASSWORD }}

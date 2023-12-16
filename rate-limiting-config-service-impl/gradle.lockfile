@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:0.6.15=compileClasspath,runtimeClasspath
-ai.traceable.bom:traceable-bom:0.3.56=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.59=compileClasspath,runtimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.7.38=runtimeClasspath
 ai.traceable.platform-gateway:event-invalidation-cache:0.7.38=runtimeClasspath
 ai.traceable.platform-gateway:ip-utils:0.7.38=compileClasspath,runtimeClasspath
