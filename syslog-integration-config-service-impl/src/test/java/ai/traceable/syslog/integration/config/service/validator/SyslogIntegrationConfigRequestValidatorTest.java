@@ -135,6 +135,21 @@ class SyslogIntegrationConfigRequestValidatorTest {
                         .setEncryptedSslCaCert("")
                         .build())));
 
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            syslogIntegrationConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                getCreateRequest(
+                    "name",
+                    "host",
+                    0,
+                    SyslogLogFormat.SYSLOG_LOG_FORMAT_RFC_3164,
+                    SyslogServerCredentials.newBuilder()
+                        .setEncryptionKeyId("keyId")
+                        .setSslCaCert("")
+                        .build())));
+
     assertDoesNotThrow(
         () ->
             syslogIntegrationConfigRequestValidator.validateOrThrow(
