@@ -25,7 +25,8 @@ public final class BlockingPolicyData {
     IP_TYPE_RULE,
     EMAIL_DOMAIN_RULE,
     DATA_EXFILTRATION,
-    ENUMERATION
+    ENUMERATION,
+    TRANSACTION_BASED_DLP
   }
 
   public enum RuleType {

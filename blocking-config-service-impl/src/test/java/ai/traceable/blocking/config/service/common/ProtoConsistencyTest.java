@@ -2,25 +2,11 @@ package ai.traceable.blocking.config.service.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class ProtoConsistencyTest {
-
-  @Test
-  @DisplayName("Blocking category enum consistency between v1 and v2")
-  void testBlockingCategoryProtoConsistency() {
-    assertEquals(
-        BlockingCategory.values().length,
-        ai.traceable.blocking.config.service.v2.BlockingCategory.values().length);
-    for (int i = 0; i < BlockingCategory.values().length - 1; i++) {
-      assertEquals(
-          BlockingCategory.forNumber(i).name(),
-          ai.traceable.blocking.config.service.v2.BlockingCategory.forNumber(i).name());
-    }
-  }
 
   @Test
   @DisplayName("Blocking status enum consistency between v1 and v2")

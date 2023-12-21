@@ -118,6 +118,8 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
         return BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
       case ENUMERATION:
         return BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
+      case TRANSACTION_BASED_DLP:
+        return BlockingCategory.BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
       default:
         log.error("Cannot find blocking category type corresponding to - {}", category);
         return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;

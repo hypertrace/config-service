@@ -3,12 +3,12 @@ package ai.traceable.config.service.blocking;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
-import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
 import static ai.traceable.blocking.config.service.v2.BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW;
 import static ai.traceable.blocking.config.service.v2.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
 import static ai.traceable.blocking.config.service.v2.BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT;
@@ -1038,7 +1038,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     // Verifying DLP Policy
     assertEquals(
-        BLOCKING_CATEGORY_DATA_EXFILTRATION,
+        BLOCKING_CATEGORY_TRANSACTION_BASED_DLP,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_RULE_TYPE_BLOCK,

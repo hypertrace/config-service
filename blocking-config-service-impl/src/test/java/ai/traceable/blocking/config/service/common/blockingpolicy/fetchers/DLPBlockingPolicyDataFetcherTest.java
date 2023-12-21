@@ -105,7 +105,7 @@ class DLPBlockingPolicyDataFetcherTest {
         buildBlockingDetails("1"),
         serviceScopeDLPRules.get("service1").get(0).getBlockingDetails());
     assertEquals(
-        Category.DATA_EXFILTRATION, serviceScopeDLPRules.get("service1").get(0).getCategory());
+        Category.TRANSACTION_BASED_DLP, serviceScopeDLPRules.get("service1").get(0).getCategory());
     assertEquals(
         BlockingPolicyData.RuleType.ALLOW,
         serviceScopeDLPRules.get("service1").get(0).getRuleType());
@@ -122,8 +122,7 @@ class DLPBlockingPolicyDataFetcherTest {
         buildBlockingDetails("2"),
         serviceScopeDLPRules.get("service2").get(0).getBlockingDetails());
     assertEquals(
-        BlockingPolicyData.Category.DATA_EXFILTRATION,
-        serviceScopeDLPRules.get("service2").get(0).getCategory());
+        Category.TRANSACTION_BASED_DLP, serviceScopeDLPRules.get("service2").get(0).getCategory());
     assertEquals(
         BlockingPolicyData.RuleType.BLOCK,
         serviceScopeDLPRules.get("service2").get(0).getRuleType());

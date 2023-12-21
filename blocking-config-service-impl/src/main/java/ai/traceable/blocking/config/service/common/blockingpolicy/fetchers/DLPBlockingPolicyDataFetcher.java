@@ -100,7 +100,7 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
 
     return Optional.of(
         BlockingPolicyData.builder()
-            .category(Category.DATA_EXFILTRATION)
+            .category(Category.TRANSACTION_BASED_DLP)
             .ruleType(ruleType)
             .bucket(ruleBucket)
             .info(

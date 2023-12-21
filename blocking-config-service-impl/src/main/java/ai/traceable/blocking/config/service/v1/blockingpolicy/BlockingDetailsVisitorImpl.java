@@ -43,6 +43,7 @@ public class BlockingDetailsVisitorImpl implements BlockingDetailsVisitor<Builde
       log.warn(
           "Skipping: Blocking Config Service V1 does not support multiple custom signature rules in one blocking rule - {}",
           customSignatureBlockingDetails);
+      return null;
     }
     return BlockingDetails.newBuilder()
         .setCustomSignatureDetails(
@@ -76,6 +77,7 @@ public class BlockingDetailsVisitorImpl implements BlockingDetailsVisitor<Builde
       log.warn(
           "Skipping: Blocking Config Service V1 does not support multiple modsec rules in one blocking rule - {}",
           modsecBlockingDetails);
+      return null;
     }
     return BlockingDetails.newBuilder()
         .setModsecDetails(
