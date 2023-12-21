@@ -39,7 +39,8 @@ message RegionSecurityPolicyScope {
 message GcpAuthCredentials {
   EncryptedText encrypted_service_account_key = 1; // service account key of Json format.
   message EncryptedText {
-    string key_id = 1; // Key used to encrypt the message
+    string key_id = 1; // Key used to encrypt the symmetric key
     string value = 2;
+    string symmetric_key = 3; // symmetric key which is used to encrypt and decrypt value.
   }
 }
