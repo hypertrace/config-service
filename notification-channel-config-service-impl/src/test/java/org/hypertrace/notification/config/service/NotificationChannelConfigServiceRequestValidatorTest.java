@@ -7,8 +7,11 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
 import java.io.File;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
+import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.WebhookChannelConfig;
+import org.hypertrace.notification.config.service.v1.WebhookFormat;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -73,6 +76,17 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
     notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
         notificationChannelMutableDataWithHttpsUrl, notificationChannelConfig);
 
+    // Http Webhook url while updating notification channel should throw exception
+    Assertions.assertThrows(
+        RuntimeException.class,
+        () -> {
+          notificationChannelConfigServiceRequestValidator.validateUpdateNotificationChannelRequest(
+              RequestContext.forTenantId("tenant1"),
+              getUpdateNotificationChannelRequestWithHttpUrl(),
+              notificationChannelConfig);
+        },
+        "RuntimeException was expected");
+
     // Update config with http support enabled and verify no exceptions for http url
     Config updatedNotificationChannelConfig =
         config.withValue(WEBHOOK_HTTP_SUPPORT_ENABLED, ConfigValueFactory.fromAnyRef("true"));
@@ -81,12 +95,38 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
         getNotificationChannelMutableData("http://localhost:9000/test");
     notificationChannelConfigServiceRequestValidator.validateWebhookHttpSupport(
         notificationChannelMutableDataWithHttpUrl, updatedNotificationChannelConfig);
+
+    // Update config with http support enabled and verify no exceptions for http url
+    notificationChannelConfigServiceRequestValidator.validateUpdateNotificationChannelRequest(
+        RequestContext.forTenantId("tenant1"),
+        UpdateNotificationChannelRequest.newBuilder()
+            .setId("id1")
+            .setNotificationChannelMutableData(notificationChannelMutableDataWithHttpUrl)
+            .build(),
+        updatedNotificationChannelConfig);
+  }
+
+  private static UpdateNotificationChannelRequest getUpdateNotificationChannelRequestWithHttpUrl() {
+    return UpdateNotificationChannelRequest.newBuilder()
+        .setNotificationChannelMutableData(
+            NotificationChannelMutableData.newBuilder()
+                .setChannelName("channel1")
+                .addWebhookChannelConfig(
+                    WebhookChannelConfig.newBuilder()
+                        .setUrl("http://localhost:9000/url")
+                        .setFormat(WebhookFormat.WEBHOOK_FORMAT_JSON)
+                        .build())
+                .build())
+        .build();
   }
 
   private static NotificationChannelMutableData getNotificationChannelMutableData(String url) {
     return NotificationChannelMutableData.newBuilder()
         .setChannelName("testChannel")
-        .addWebhookChannelConfig(WebhookChannelConfig.newBuilder().setUrl(url))
+        .addWebhookChannelConfig(
+            WebhookChannelConfig.newBuilder()
+                .setUrl(url)
+                .setFormat(WebhookFormat.WEBHOOK_FORMAT_JSON))
         .build();
   }
 }
