@@ -105,6 +105,8 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
     validateWebhookConfigExclusionDomains(
         request.getNotificationChannelMutableData(), notificationChannelConfig);
+    validateWebhookHttpSupport(
+        request.getNotificationChannelMutableData(), notificationChannelConfig);
   }
 
   private void validateNotificationChannelMutableData(NotificationChannelMutableData data) {
