@@ -127,7 +127,7 @@ public class SyslogIntegrationConfigRequestValidator {
       }
       if (credentials.hasSslCaCert()) {
         validateNonDefaultPresenceOrThrow(
-            credentials, SyslogServerCredentials.ENCRYPTED_SSL_CA_CERT_FIELD_NUMBER);
+            credentials, SyslogServerCredentials.SSL_CA_CERT_FIELD_NUMBER);
       }
       if (credentials.hasAccountTokenDetails()) {
         validateSyslogServerAccountTokenDetails(credentials.getAccountTokenDetails(), logFormat);
