@@ -83,3 +83,4 @@ crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
 crs_944130 :: Suspicious Java class
+crs_9440940 :: Apache Struts path traversal to RCE vulnerability: (CVE-2023-50164)

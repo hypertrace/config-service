@@ -369,6 +369,28 @@
         - MITRE Attack - TA0007:Discovery - https://attack.mitre.org/tactics/TA0007/
         - CVE-2022-22965 - Spring4Shell - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-22965
         - Web Application Security Consortium - WASC-20:Improper Input Handling - http://projects.webappsec.org/w/page/13246933/Improper%20Input%20Handling
+  - ruleId: crs_9440940
+    eventDetails:
+      description: |
+        An anomaly characteristic of Apache Struts RCE attack is detected. The attack occurs if the attacker can manipulate file upload params to enable paths traversal.
+        Under certain conditions, this manipulation can result in the upload of a malicious file, potentially enabling Remote Code Execution.
+      mitigation: |
+        Upgrade Apache Struts to:
+        - Struts 2.5.x → 2.5.33 or higher
+        - Struts 6.3.x → 6.3.0.2 or higher
+      impact: |
+        A successful exploitation of Apache Struts RCE might lead to Remote Code Execution
+      references: |
+        - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+        - OWASP Top 10 - 2021 – A03:Injection - https://owasp.org/Top10/A03_2021-Injection/
+        - OWASP Top 10 - 2021 – A06:Vulnerable and Outdated Components - https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
+        - OWASP Top 10 - 2017 - A1:Injection - https://owasp.org/www-project-top-ten/2017/A1_2017-Injection
+        - OWASP Top 10 - 2017 - A9:Using Components with Known Vulnerabilities - https://owasp.org/www-project-top-ten/2017/A9_2017-Using_Components_with_Known_Vulnerabilities
+        - CWE-552: Files or Directories Accessible to External Parties: https://cwe.mitre.org/data/definitions/552.html
+        - SANS TOP 25 - http://cwe.mitre.org/top25/
+        - CAPEC-150: Collect Data from Common Resource Locations: https://capec.mitre.org/data/definitions/150.html
+        - CAPEC-639: Probe System Files: https://capec.mitre.org/data/definitions/639.html
+        - [ANN] Apache Struts 6.3.0.2 & 2.5.33: https://lists.apache.org/thread/yh09b3fkf6vz5d6jdgrlvmg60lfwtqhj
 
 - ruleId: crs_103
   ruleName: Basic Authentication Violation
