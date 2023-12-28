@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:0.6.26=compileClasspath,runtimeClasspath
-ai.traceable.bom:traceable-bom:0.3.66=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.68=compileClasspath,runtimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath
 com.fasterxml.jackson.core:jackson-annotations:2.16.0=compileClasspath,runtimeClasspath

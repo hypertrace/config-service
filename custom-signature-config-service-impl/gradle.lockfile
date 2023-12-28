@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:0.6.26=compileClasspath,runtimeClasspath
-ai.traceable.bom:traceable-bom:0.3.66=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.68=compileClasspath,runtimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.111=compileClasspath,runtimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath
