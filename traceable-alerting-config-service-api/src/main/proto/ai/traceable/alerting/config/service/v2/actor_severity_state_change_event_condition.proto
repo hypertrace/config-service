@@ -6,6 +6,7 @@ package ai.traceable.alerting.config.service.v2;
 
 message ActorSeverityStateChangeEventCondition {
   repeated ActorSeverity actor_severity_types = 1;
+  repeated IpReputationLevel actor_ip_reputation_levels = 2;
 }
 
 enum ActorSeverity {
@@ -14,4 +15,12 @@ enum ActorSeverity {
     ACTOR_SEVERITY_TYPE_MEDIUM = 2;
     ACTOR_SEVERITY_TYPE_HIGH = 3;
     ACTOR_SEVERITY_TYPE_CRITICAL = 4;
+}
+
+enum IpReputationLevel {
+    IP_REPUTATION_LEVEL_UNSPECIFIED = 0;
+    IP_REPUTATION_LEVEL_LOW = 1;
+    IP_REPUTATION_LEVEL_MEDIUM = 2;
+    IP_REPUTATION_LEVEL_HIGH = 3;
+    IP_REPUTATION_LEVEL_CRITICAL = 4;
 }
