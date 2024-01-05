@@ -43,7 +43,11 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       StreamObserver<CreateWafIntegrationResponse> responseStreamObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
+      List<WafIntegration> existingWafIntegrations =
+          wafIntegrationStore.getAllConfigData(
+              requestContext, GetWafIntegrationsFilter.newBuilder().build());
+      wafIntegrationConfigRequestValidator.validateOrThrow(
+          request, requestContext, existingWafIntegrations);
       WafIntegration wafIntegration =
           WafIntegration.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -130,7 +134,11 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       StreamObserver<UpdateWafIntegrationResponse> responseStreamObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      wafIntegrationConfigRequestValidator.validateOrThrow(request, requestContext);
+      List<WafIntegration> existingWafIntegrations =
+          wafIntegrationStore.getAllConfigData(
+              requestContext, GetWafIntegrationsFilter.newBuilder().build());
+      wafIntegrationConfigRequestValidator.validateOrThrow(
+          request, requestContext, existingWafIntegrations);
       WafIntegration existingWafIntegration =
           wafIntegrationStore
               .getData(requestContext, request.getId())

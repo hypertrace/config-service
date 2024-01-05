@@ -33,17 +33,22 @@ import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class WafIntegrationConfigRequestValidator {
 
-  public void validateOrThrow(CreateWafIntegrationRequest request, RequestContext requestContext) {
+  public void validateOrThrow(
+      CreateWafIntegrationRequest request,
+      RequestContext requestContext,
+      List<WafIntegration> existingWafIntegrations) {
     validateRequestContextOrThrow(requestContext);
-    validateWafIntegrationDetails(request.getWafIntegrationDetails());
+    validateWafIntegrationDetails(request.getWafIntegrationDetails(), existingWafIntegrations);
   }
 
   public void validateOrThrow(GetWafIntegrationRequest request, RequestContext requestContext) {
@@ -62,10 +67,14 @@ public class WafIntegrationConfigRequestValidator {
     validateWafIntegrationsFilter(request.getFilter());
   }
 
-  public void validateOrThrow(UpdateWafIntegrationRequest request, RequestContext requestContext) {
+  public void validateOrThrow(
+      UpdateWafIntegrationRequest request,
+      RequestContext requestContext,
+      List<WafIntegration> existingWafIntegrations) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateWafIntegrationRequest.ID_FIELD_NUMBER);
-    validateUpdateWafIntegrationDetails(request.getUpdatedWafIntegrationDetails());
+    validateUpdateWafIntegrationDetails(
+        request.getId(), request.getUpdatedWafIntegrationDetails(), existingWafIntegrations);
   }
 
   public void validateOrThrow(DeleteWafIntegrationRequest request, RequestContext requestContext) {
@@ -83,17 +92,20 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdateWafIntegrationDetails(
-      UpdatedWafIntegrationDetails updateWafIntegrationDetails) {
+      String id,
+      UpdatedWafIntegrationDetails updateWafIntegrationDetails,
+      List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         updateWafIntegrationDetails, UpdatedWafIntegrationDetails.NAME_FIELD_NUMBER);
-    validateUpdateIntegrationParams(updateWafIntegrationDetails);
+    validateUpdateIntegrationParams(id, updateWafIntegrationDetails, existingWafIntegrations);
     this.validateWafIntegrationScope(updateWafIntegrationDetails.getWafIntegrationScope());
   }
 
-  private void validateWafIntegrationDetails(WafIntegrationDetails wafIntegrationDetails) {
+  private void validateWafIntegrationDetails(
+      WafIntegrationDetails wafIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         wafIntegrationDetails, WafIntegrationDetails.NAME_FIELD_NUMBER);
-    validateIntegrationParams(wafIntegrationDetails);
+    validateIntegrationParams(wafIntegrationDetails, existingWafIntegrations);
     this.validateWafIntegrationScope(wafIntegrationDetails.getWafIntegrationScope());
   }
 
@@ -132,7 +144,9 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdateIntegrationParams(
-      UpdatedWafIntegrationDetails updatedWafIntegrationDetails) {
+      String id,
+      UpdatedWafIntegrationDetails updatedWafIntegrationDetails,
+      List<WafIntegration> existingWafIntegrations) {
     switch (updatedWafIntegrationDetails.getIntegrationParamsCase()) {
       case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
         validateUpdatedCloudFlareIntegrationParams(
@@ -140,7 +154,9 @@ public class WafIntegrationConfigRequestValidator {
         break;
       case UPDATED_AWS_INTEGRATION_PARAMS:
         validateUpdatedAwsIntegrationParams(
-            updatedWafIntegrationDetails.getUpdatedAwsIntegrationParams());
+            id,
+            updatedWafIntegrationDetails.getUpdatedAwsIntegrationParams(),
+            existingWafIntegrations);
         break;
       case UPDATED_IMPERVA_INTEGRATION_PARAMS:
         validateUpdatedImpervaIntegrationParam(
@@ -188,13 +204,15 @@ public class WafIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(serviceAccountKey, EncryptedText.VALUE_FIELD_NUMBER);
   }
 
-  private void validateIntegrationParams(WafIntegrationDetails wafIntegrationDetails) {
+  private void validateIntegrationParams(
+      WafIntegrationDetails wafIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     switch (wafIntegrationDetails.getIntegrationParamsCase()) {
       case CLOUDFLARE_INTEGRATION_PARAMS:
         validateCloudFlareIntegrationParams(wafIntegrationDetails.getCloudflareIntegrationParams());
         break;
       case AWS_INTEGRATION_PARAMS:
-        validateAwsIntegrationParams(wafIntegrationDetails.getAwsIntegrationParams());
+        validateAwsIntegrationParams(
+            wafIntegrationDetails.getAwsIntegrationParams(), existingWafIntegrations);
         break;
       case IMPERVA_INTEGRATION_PARAMS:
         validateImpervaIntegrationParam(wafIntegrationDetails.getImpervaIntegrationParams());
@@ -290,10 +308,14 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdatedAwsIntegrationParams(
-      AwsIntegrationUpdateParams awsIntegrationUpdateParams) {
+      String id,
+      AwsIntegrationUpdateParams awsIntegrationUpdateParams,
+      List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         awsIntegrationUpdateParams, AwsIntegrationUpdateParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationUpdateParams.getResourcesList().forEach(this::validateAwsResource);
+    validateArnAlreadyExistInAwsWafIntegration(
+        id, awsIntegrationUpdateParams.getResourcesList(), existingWafIntegrations);
   }
 
   private void validateImpervaIntegrationParam(ImpervaIntegrationParams impervaIntegrationParams) {
@@ -358,11 +380,54 @@ public class WafIntegrationConfigRequestValidator {
         cloudflareIntegrationParams, CloudflareIntegrationParams.API_TOKEN_FIELD_NUMBER);
   }
 
-  private void validateAwsIntegrationParams(AwsIntegrationParams awsIntegrationParams) {
+  private void validateAwsIntegrationParams(
+      AwsIntegrationParams awsIntegrationParams, List<WafIntegration> existingWafIntegrations) {
     validateCredentials(awsIntegrationParams);
     validateNonDefaultPresenceOrThrow(
         awsIntegrationParams, AwsIntegrationParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationParams.getResourcesList().forEach(this::validateAwsResource);
+    validateArnAlreadyExistInAwsWafIntegration(
+        awsIntegrationParams.getResourcesList(), existingWafIntegrations);
+  }
+
+  private static void validateArnAlreadyExistInAwsWafIntegration(
+      List<AwsResource> resources, List<WafIntegration> existingWafIntegrations) {
+    existingWafIntegrations.stream()
+        .filter(
+            wafIntegration -> wafIntegration.getWafIntegrationDetails().hasAwsIntegrationParams())
+        .forEach(wafIntegration -> validateArn(resources, wafIntegration));
+  }
+
+  private void validateArnAlreadyExistInAwsWafIntegration(
+      String id, List<AwsResource> resources, List<WafIntegration> existingWafIntegrations) {
+    existingWafIntegrations.stream()
+        .filter(
+            wafIntegration -> wafIntegration.getWafIntegrationDetails().hasAwsIntegrationParams())
+        .forEach(
+            wafIntegration -> {
+              if (!wafIntegration.getId().equals(id)) {
+                validateArn(resources, wafIntegration);
+              }
+            });
+  }
+
+  private static void validateArn(List<AwsResource> resources, WafIntegration wafIntegration) {
+    wafIntegration
+        .getWafIntegrationDetails()
+        .getAwsIntegrationParams()
+        .getResourcesList()
+        .forEach(
+            awsResource -> {
+              if (resources.stream()
+                  .anyMatch(resource -> resource.getArn().equals(awsResource.getArn()))) {
+                throw Status.INVALID_ARGUMENT
+                    .withDescription(
+                        String.format(
+                            "Aws waf integration already existing with arn : %s",
+                            awsResource.getArn()))
+                    .asRuntimeException();
+              }
+            });
   }
 
   private void validateAwsResource(AwsResource awsResource) {
