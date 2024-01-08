@@ -36,7 +36,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
-  private static final boolean DEFAULT_TPA_CORAZA_BASED_EVALUATION = false;
+  private static final boolean DEFAULT_TPA_CORAZA_BASED_EVALUATION = true;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
   private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
   private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
