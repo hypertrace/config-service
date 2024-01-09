@@ -566,14 +566,17 @@ message Filter {
 
 message LogicalFilter {
   LogicalOperator operator = 1;
-  repeated RelationalFilter relational_filters = 2;
+  repeated Filter filters = 2;
 }
 
 message RelationalFilter {
   oneof left_operand {
     string key = 1;
   }
-  LogicalOperator operator = 2;
+  oneof operator {
+    RelationalOperator value_operator = 2;
+  }
+
   Value value = 3;
 }
 
