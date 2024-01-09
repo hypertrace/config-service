@@ -151,6 +151,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
     switch (stringCondition.getOperator()) {
       case OPERATOR_MATCHES_REGEX:
+      case OPERATOR_NOT_MATCHES_REGEX:
         validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
         final String pattern = stringCondition.getValue();
         final Status regexValidationStatus = RegexValidator.validate(pattern);
