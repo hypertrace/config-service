@@ -1,5 +1,6 @@
 package ai.traceable.span.processing.config.service.apinamingrules;
 
+import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Stream.empty;
 
@@ -22,9 +23,11 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -102,10 +105,22 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .map(ApiNamingRuleDetails::getRule)
             .collect(toUnmodifiableList());
 
-    return apiSpecBasedApiNamingRulesInfo.stream()
-        .map(
-            apiNamingRuleInfo ->
-                createApiSpecBasedNamingRule(existingApiNamingRules.stream(), apiNamingRuleInfo));
+    Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap =
+        existingApiNamingRules.stream()
+            .collect(Collectors.toMap(ApiNamingRule::getId, Function.identity()));
+
+    Set<String> apiSpecBasedNamingRuleIds = new HashSet<>();
+    apiSpecBasedApiNamingRulesInfo.stream()
+        .forEach(
+            apiNamingRuleInfo -> {
+              ApiNamingRule apiNamingRule =
+                  createApiSpecBasedNamingRule(
+                      unmodifiableMap(existingApiNamingRuleIdToRuleMap), apiNamingRuleInfo);
+              existingApiNamingRuleIdToRuleMap.put(apiNamingRule.getId(), apiNamingRule);
+              apiSpecBasedNamingRuleIds.add(apiNamingRule.getId());
+            });
+
+    return apiSpecBasedNamingRuleIds.stream().map(existingApiNamingRuleIdToRuleMap::get);
   }
 
   @Override
@@ -207,7 +222,10 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
       case API_SPEC_BASED_CONFIG:
         Stream<ApiNamingRule> existingApiNamingRuleStream =
             getAllApiNamingRuleDetails(requestContext).stream().map(ApiNamingRuleDetails::getRule);
-        return createApiSpecBasedNamingRule(existingApiNamingRuleStream, apiNamingRuleInfo);
+        Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap =
+            existingApiNamingRuleStream.collect(
+                Collectors.toUnmodifiableMap(ApiNamingRule::getId, Function.identity()));
+        return createApiSpecBasedNamingRule(existingApiNamingRuleIdToRuleMap, apiNamingRuleInfo);
       default:
         log.error("Unrecognized api naming rule config type:{}", apiNamingRuleInfo);
         throw new RuntimeException();
@@ -215,11 +233,13 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   }
 
   private ApiNamingRule createApiSpecBasedNamingRule(
-      Stream<ApiNamingRule> existingApiNamingRuleStream, ApiNamingRuleInfo apiNamingRuleInfo) {
+      Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap,
+      ApiNamingRuleInfo apiNamingRuleInfo) {
     ApiSpecBasedConfig apiSpecBasedConfig =
         apiNamingRuleInfo.getRuleConfig().getApiSpecBasedConfig();
     Optional<ApiNamingRule> apiNamingRuleMaybe =
-        checkIfApiNamingRuleAlreadyExists(existingApiNamingRuleStream, apiNamingRuleInfo);
+        checkIfApiNamingRuleAlreadyExists(
+            existingApiNamingRuleIdToRuleMap.values().stream(), apiNamingRuleInfo);
     if (apiNamingRuleMaybe.isEmpty()) {
       return ApiNamingRule.newBuilder()
           .setId(UUID.randomUUID().toString())
