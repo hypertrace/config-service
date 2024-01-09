@@ -61,6 +61,8 @@ message LabelApplicationRuleData {
       OPERATOR_MATCHES_REGEX = 2; // operator to check if the key exists, and value matches the provided regex value
       OPERATOR_MATCHES_IPS = 3; // operator to check if the key exists, and IP value matches provided IP(s), CIDR(s)
       OPERATOR_NOT_MATCHES_IPS = 4; // operator to check if the key exists, and IP doesn't match provided IP(s), CIDR(s)
+      OPERATOR_NOT_EQUALS = 5; // operator to check if the key exists, and value is not equal to the provided value
+      OPERATOR_NOT_MATCHES_REGEX = 6; // operator to check if the key exists, and value not matches the provided regex value
     }
   }
 
@@ -70,6 +72,7 @@ message LabelApplicationRuleData {
     enum Operator {
       OPERATOR_UNSPECIFIED = 0;
       OPERATOR_EXISTS = 1; // checks for existence of the key
+      OPERATOR_NOT_EXISTS = 2; // checks for non-existence of the key
     }
   }
 
