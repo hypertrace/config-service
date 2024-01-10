@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message ApiNamingRuleConfigChangeCondition {
+  repeated ApiNamingRuleConfigChangeType change_types = 1;
+}
+
+enum ApiNamingRuleConfigChangeType {
+  API_NAMING_RULE_CONFIG_CHANGE_TYPE_UNSPECIFIED = 0;
+  API_NAMING_RULE_CONFIG_CHANGE_TYPE_CREATE = 1;
+  API_NAMING_RULE_CONFIG_CHANGE_TYPE_UPDATE = 2;
+  API_NAMING_RULE_CONFIG_CHANGE_TYPE_DELETE = 3;
+}

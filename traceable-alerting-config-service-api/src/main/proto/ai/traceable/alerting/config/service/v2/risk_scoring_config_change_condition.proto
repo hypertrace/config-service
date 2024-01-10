@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message RiskScoringConfigChangeCondition {
+  repeated RiskScoringConfigChangeType change_types = 1;
+}
+
+enum RiskScoringConfigChangeType {
+  RISK_SCORING_CONFIG_CHANGE_TYPE_UNSPECIFIED = 0;
+  RISK_SCORING_CONFIG_CHANGE_TYPE_CREATE = 1;
+  RISK_SCORING_CONFIG_CHANGE_TYPE_UPDATE = 2;
+  RISK_SCORING_CONFIG_CHANGE_TYPE_DELETE = 3;
+}

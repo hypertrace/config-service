@@ -16,6 +16,11 @@ import "ai/traceable/alerting/config/service/v2/notification_config_change_condi
 import "ai/traceable/alerting/config/service/v2/sensitive_data_configuration_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/api_fraud_incident_change_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/posture_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/api_naming_rule_config_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/exclude_span_rule_config_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/api_spec_config_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/label_config_change_condition.proto";
+import "ai/traceable/alerting/config/service/v2/risk_scoring_config_change_condition.proto";
 
 message EventCondition {
   string id = 1;
@@ -36,6 +41,11 @@ message EventConditionMutableData {
     SensitiveDataConfigurationChangeCondition sensitive_data_configuration_change_condition = 12;
     ApiFraudIncidentChangeEventCondition api_fraud_incident_change_event_condition = 13;
     PostureEventCondition posture_event_condition = 14;
+    ApiNamingRuleConfigChangeCondition api_naming_rule_config_change_condition = 15;
+    ExcludeSpanRuleConfigChangeCondition exclude_span_rule_config_change_condition = 16;
+    ApiSpecConfigChangeCondition api_spec_config_change_condition = 17;
+    LabelConfigChangeCondition label_config_change_condition = 18;
+    RiskScoringConfigChangeCondition risk_scoring_config_change_condition = 19;
   }
   optional string environment = 5 [deprecated = true];// use the EventConditionScope moving forward
   EventConditionScope scope = 9;

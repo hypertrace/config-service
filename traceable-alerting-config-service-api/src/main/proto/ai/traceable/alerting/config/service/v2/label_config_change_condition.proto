@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message LabelConfigChangeCondition {
+  repeated LabelConfigType label_config_type = 1;
+  repeated LabelConfigChangeType change_types = 2;
+}
+
+enum LabelConfigType {
+  LABEL_CONFIG_TYPE_UNSPECIFIED = 0;
+  LABEL_CONFIG_TYPE_LABEL_APPLICATION_RULE_CHANGE = 1;
+  LABEL_CONFIG_TYPE_LABEL_RULE_CHANGE = 2;
+}
+
+enum LabelConfigChangeType {
+  LABEL_CONFIG_CHANGE_TYPE_UNSPECIFIED = 0;
+  LABEL_CONFIG_CHANGE_TYPE_CREATE = 1;
+  LABEL_CONFIG_CHANGE_TYPE_UPDATE = 2;
+  LABEL_CONFIG_CHANGE_TYPE_DELETE = 3;
+}
