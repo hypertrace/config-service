@@ -73,9 +73,7 @@ public class ModsecBlobValidator {
     }
 
     try {
-      RuleEngine ruleEngine = RuleEngine.create(modsecRuleBlob);
-      RuleEngine.destroy(ruleEngine);
-      return true;
+      return RuleEngine.validateRule(modsecRuleBlob);
     } catch (Exception e) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(

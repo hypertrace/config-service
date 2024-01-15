@@ -32,21 +32,19 @@ public class ModsecRuleEngineUtils {
       return Status.UNKNOWN;
     }
     try {
-      RuleEngine ruleEngine = RuleEngine.create(modsecRuleBlob);
-      if (ruleEngine == null) {
-        return Status.UNKNOWN.withDescription(
-            String.format(
-                "Null Rule Engine is getting returned for the Modsec Rule: %s", modsecRuleBlob));
+      boolean isValid = RuleEngine.validateRule(modsecRuleBlob);
+      if (isValid) {
+        return Status.OK;
+      } else {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format("Validation failed for Modsec Rule:%s", modsecRuleBlob));
       }
-      RuleEngine.destroy(ruleEngine);
     } catch (Exception e) {
       return Status.INVALID_ARGUMENT
           .withCause(e)
           .withDescription(
-              String.format(
-                  "Exception while creating Rule Engine from Modsec Rule:%s", modsecRuleBlob));
+              String.format("Exception while validating Modsec Rule:%s", modsecRuleBlob));
     }
-    return Status.OK;
   }
 
   public static List<RuleMatch> getModsecRuleMatches(
