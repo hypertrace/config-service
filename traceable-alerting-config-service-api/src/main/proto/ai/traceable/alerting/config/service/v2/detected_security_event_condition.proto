@@ -8,6 +8,8 @@ message DetectedSecurityEventCondition {
   repeated SecurityEventType event_types = 1 [deprecated=true];
   repeated SecurityEventSeverity severities = 2;
   repeated DetectedThreatActivityCondition threat_activity_conditions = 3;
+  repeated SecurityEventImpactLevel impact_levels = 4;
+  repeated SecurityEventConfidenceLevel confidence_levels = 5;
 }
 
 message DetectedThreatActivityCondition {
@@ -60,4 +62,18 @@ enum SecurityEventType {
   SECURITY_EVENT_TYPE_RATE_LIMITING = 10;
   SECURITY_EVENT_TYPE_SSRF = 11;
   SECURITY_EVENT_TYPE_CUSTOM_SIGNATURE_RULES = 12;
+}
+
+enum SecurityEventImpactLevel {
+  SECURITY_EVENT_IMPACT_LEVEL_UNSPECIFIED = 0;
+  SECURITY_EVENT_IMPACT_LEVEL_LOW = 1;
+  SECURITY_EVENT_IMPACT_LEVEL_MEDIUM = 2;
+  SECURITY_EVENT_IMPACT_LEVEL_HIGH = 3;
+}
+
+enum SecurityEventConfidenceLevel {
+  SECURITY_EVENT_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  SECURITY_EVENT_CONFIDENCE_LEVEL_LOW = 1;
+  SECURITY_EVENT_CONFIDENCE_LEVEL_MEDIUM = 2;
+  SECURITY_EVENT_CONFIDENCE_LEVEL_HIGH = 3;
 }
