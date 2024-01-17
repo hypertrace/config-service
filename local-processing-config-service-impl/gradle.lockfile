@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.84=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.87=compileClasspath,runtimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath
 ai.traceable.platform-gateway:api-utils:0.7.38=runtimeClasspath
@@ -194,7 +194,7 @@ org.eclipse.jetty:jetty-util-ajax:9.4.53.v20231009=runtimeClasspath
 org.eclipse.jetty:jetty-util:9.4.53.v20231009=runtimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath
 org.hdrhistogram:HdrHistogram:2.1.12=runtimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.10=compileClasspath,runtimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.11=compileClasspath,runtimeClasspath
 org.hypertrace.core.datamodel:data-model:0.1.31=runtimeClasspath
 org.hypertrace.core.eventstore:event-store:0.1.3=runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.1=compileClasspath,runtimeClasspath
