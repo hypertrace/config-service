@@ -251,7 +251,10 @@ public class WafIntegrationConfigRequestValidator {
         validateNonDefaultPresenceOrThrow(
             gcpIntegrationDetails.getRegionSecurityPolicyScope(),
             RegionSecurityPolicyScope.REGION_FIELD_NUMBER);
-      case SECURITYPOLICYSCOPE_NOT_SET:
+        break;
+      case GLOBAL_SECURITY_POLICY_SCOPE:
+        break;
+      default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Security policy scope missing")
             .asRuntimeException();
