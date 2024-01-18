@@ -348,8 +348,7 @@ public class RedactionRulesDao {
       RequestContext requestContext, Map<String, Boolean> legacyDataEnabledMap) {
     RedactionStrategy redactionStrategy = getRedactionStrategyForHeaderParamType(requestContext);
     if (redactionStrategy.equals(REDACTION_STRATEGY_REDACT)
-        || redactionStrategy.equals(REDACTION_STRATEGY_HASH)
-        || redactionStrategy.equals(REDACTION_STRATEGY_RAW)) {
+        || redactionStrategy.equals(REDACTION_STRATEGY_HASH)) {
       return buildDataSet(
           List.of(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID),
           LEGACY_SENSITIVE_HEADERS_DATA_SET_ID,
@@ -364,8 +363,7 @@ public class RedactionRulesDao {
   private Optional<DataType> getSensitiveHeadersDataType(RequestContext requestContext) {
     RedactionStrategy redactionStrategy = getRedactionStrategyForHeaderParamType(requestContext);
     if (redactionStrategy.equals(REDACTION_STRATEGY_REDACT)
-        || redactionStrategy.equals(REDACTION_STRATEGY_HASH)
-        || redactionStrategy.equals(REDACTION_STRATEGY_RAW)) {
+        || redactionStrategy.equals(REDACTION_STRATEGY_HASH)) {
       return Optional.of(LEGACY_SENSITIVE_HEADERS_DATA_TYPE);
     }
     return Optional.empty();
