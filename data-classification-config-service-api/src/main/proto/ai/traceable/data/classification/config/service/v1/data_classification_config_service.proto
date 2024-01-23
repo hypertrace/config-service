@@ -61,6 +61,7 @@ message CreateDataTypeResponse {
 
 message GetDataTypesRequest {
   optional SystemDataSetVersion system_data_set_version = 1;
+  bool resolve_inherited_details = 2;
 }
 
 message GetDataTypesResponse {

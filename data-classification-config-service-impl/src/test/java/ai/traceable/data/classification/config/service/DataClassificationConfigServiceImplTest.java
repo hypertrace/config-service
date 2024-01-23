@@ -26,6 +26,7 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationOver
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
@@ -65,6 +66,7 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
+import com.google.common.collect.Iterables;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
@@ -85,7 +87,6 @@ import org.junit.jupiter.api.Test;
 class DataClassificationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
-  Config mockConfig;
   private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
       "data.classification.config.service";
   boolean sensitiveDataConfigServiceMockFlag;
@@ -99,31 +100,7 @@ class DataClassificationConfigServiceImplTest {
             .mockGetAll()
             .mockDelete()
             .mockDeleteAll();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                mock(FeatureCachingClient.class)))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
+    mockGenericConfigService.addService(new MockSensitiveDataConfigService());
     dataClassificationConfigServiceBlockingStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
@@ -137,38 +114,8 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void redactionRulesToDataTypesTest() {
-    mockGenericConfigService.shutdown();
     sensitiveDataConfigServiceMockFlag = true;
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                mock(FeatureCachingClient.class)))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService();
 
     DataType expectedDataType1 =
         DataType.newBuilder()
@@ -190,38 +137,8 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void getDataSetsFromRedactionRulesTest() {
-    mockGenericConfigService.shutdown();
     sensitiveDataConfigServiceMockFlag = true;
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                mock(FeatureCachingClient.class)))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService();
 
     GetDataSetsRequest request = GetDataSetsRequest.getDefaultInstance();
     GetDataSetsResponse response = dataClassificationConfigServiceBlockingStub.getDataSets(request);
@@ -232,38 +149,8 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void getDataSetFromRedactionRulesTest() {
-    mockGenericConfigService.shutdown();
     sensitiveDataConfigServiceMockFlag = true;
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(false);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                mock(FeatureCachingClient.class)))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService();
 
     DataSetInfo expectedDataSetInfo =
         DataSetInfo.newBuilder()
@@ -281,16 +168,6 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void systemDataTypesTest() {
-    mockGenericConfigService.shutdown();
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
     String jsonString =
         "system : {\n"
             + "datatypes : {\n"
@@ -328,34 +205,13 @@ class DataClassificationConfigServiceImplTest {
             + "]\n"
             + "}\n"
             + "}";
-    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
-    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(dataClassificationConfig);
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isDataClassificationRp2Enabled(any()))
         .thenReturn(false)
         .thenReturn(true);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                featureCachingClient))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService(
+        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
+
     GetDataTypesRequest getRequest = GetDataTypesRequest.getDefaultInstance();
 
     // RP1 case
@@ -394,16 +250,6 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void systemDataSetsTest() {
-    mockGenericConfigService.shutdown();
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
     String jsonString =
         "{\n"
             + "  \"system\": {\n"
@@ -439,36 +285,14 @@ class DataClassificationConfigServiceImplTest {
             + "  }\n"
             + "  }\n"
             + "}";
-    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
-    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(dataClassificationConfig);
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isDataClassificationRp2Enabled(any()))
         .thenReturn(false)
         .thenReturn(false)
         .thenReturn(true)
         .thenReturn(true);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                featureCachingClient))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService(
+        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
     GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
 
     // RP1 case
@@ -493,16 +317,6 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void deleteSystemDataSetTest() {
-    mockGenericConfigService.shutdown();
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
     String jsonString =
         "{\n"
             + "  \"system\": {\n"
@@ -524,30 +338,8 @@ class DataClassificationConfigServiceImplTest {
             + "  }\n"
             + "  }\n"
             + "}";
-    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
-    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(dataClassificationConfig);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                mock(FeatureCachingClient.class)))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService(
+        buildClassificationConfigFromJsonString(jsonString), mock(FeatureCachingClient.class));
     GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
     GetDataSetsResponse response =
         dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
@@ -562,16 +354,6 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateDeletedSystemDataSetTest() {
-    mockGenericConfigService.shutdown();
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
     String jsonString =
         "{\n"
             + "  \"system\": {\n"
@@ -593,29 +375,8 @@ class DataClassificationConfigServiceImplTest {
             + "  }\n"
             + "  }\n"
             + "}";
-    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
-    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(dataClassificationConfig);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                mock(FeatureCachingClient.class)))
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService(
+        buildClassificationConfigFromJsonString(jsonString), mock(FeatureCachingClient.class));
     UpdateDataSetRequest updateRequest =
         UpdateDataSetRequest.newBuilder()
             .setId("systemdataset")
@@ -651,6 +412,8 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void createDataTypeTest() {
+    registerAndStartService();
+
     DataTypeRule dataTypeRule = createDataTypeRuleForTest("data-type-rule-1", "value-1");
     CreateDataTypeRequest request =
         CreateDataTypeRequest.newBuilder().setRule(dataTypeRule).build();
@@ -661,6 +424,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void getDataTypestest() {
+    registerAndStartService();
     DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1", "value-1");
     DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2", "value-2");
     CreateDataTypeRequest request =
@@ -679,6 +443,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateDataTypeNotExisting() {
+    registerAndStartService();
     DataTypeRule dataTypeRule = createDataTypeRuleForTest("data-type-rule-1", "value-1");
     UpdateDataTypeRequest request =
         UpdateDataTypeRequest.newBuilder().setId("random-id").setRule(dataTypeRule).build();
@@ -693,6 +458,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateDataTypeTest() {
+    registerAndStartService();
     DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1", "value-1");
     DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2", "value-2");
     CreateDataTypeResponse response =
@@ -708,16 +474,6 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateSystemDataTypeTest() {
-    mockGenericConfigService.shutdown();
-    mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
     String jsonString =
         "system : {\n"
             + "datatypes : {\n"
@@ -755,34 +511,12 @@ class DataClassificationConfigServiceImplTest {
             + "]\n"
             + "}\n"
             + "}";
-    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
-    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(dataClassificationConfig);
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isDataClassificationRp2Enabled(any()))
         .thenReturn(false)
         .thenReturn(true);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                featureCachingClient))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
+    registerAndStartService(
+        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
 
     // update rp1 system data type
     DataTypeRule updatedSystemDataTypeRule =
@@ -809,6 +543,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void deleteDataTypeNotExisting() {
+    registerAndStartService();
     DeleteDataTypeRequest request = DeleteDataTypeRequest.newBuilder().setId("random-id").build();
     Throwable exception =
         assertThrows(
@@ -821,6 +556,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void deleteDataTypeTest() {
+    registerAndStartService();
     DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1", "value-1");
     DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2", "value-2");
     CreateDataTypeRequest request =
@@ -843,6 +579,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void createDataSetTest() {
+    registerAndStartService();
     DataSetInfo dataSetInfo = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     CreateDataSetRequest request = CreateDataSetRequest.newBuilder().setInfo(dataSetInfo).build();
     CreateDataSetResponse response =
@@ -853,6 +590,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void getDataSetNotExisting() {
+    registerAndStartService();
     GetDataSetRequest request = GetDataSetRequest.newBuilder().setId("random-id").build();
     Throwable exception =
         assertThrows(
@@ -865,6 +603,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void getDataSetTest() {
+    registerAndStartService();
     DataSetInfo dataSetInfo = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     CreateDataSetResponse response =
         dataClassificationConfigServiceBlockingStub.createDataSet(
@@ -880,6 +619,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void getDataSetsTest() {
+    registerAndStartService();
     DataSetInfo dataSetInfo1 = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     DataSetInfo dataSetInfo2 = createDataSetInfoForTest("data-set-2", true, List.of("1", "3"));
     String dataSetId1 =
@@ -920,6 +660,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateDataSetNotExisting() {
+    registerAndStartService();
     DataSetInfo dataSetInfo = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     UpdateDataSetRequest request =
         UpdateDataSetRequest.newBuilder().setId("random-id").setInfo(dataSetInfo).build();
@@ -934,6 +675,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateDataSetTest() {
+    registerAndStartService();
     DataSetInfo dataSetInfo1 = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     DataSetInfo dataSetInfo2 = createDataSetInfoForTest("data-set-2", true, List.of("1", "3"));
     CreateDataSetResponse createResponse =
@@ -950,6 +692,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void deleteDataSetNotExisting() {
+    registerAndStartService();
     DeleteDataSetRequest request = DeleteDataSetRequest.newBuilder().setId("random-id").build();
     Throwable exception =
         assertThrows(
@@ -962,6 +705,7 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void deleteDataSetTest() {
+    registerAndStartService();
     DataSetInfo dataSetInfo = createDataSetInfoForTest("data-set-1", true, List.of("1", "2"));
     CreateDataSetResponse response =
         dataClassificationConfigServiceBlockingStub.createDataSet(
@@ -973,6 +717,356 @@ class DataClassificationConfigServiceImplTest {
         dataClassificationConfigServiceBlockingStub.getDataSets(
             GetDataSetsRequest.getDefaultInstance());
     assertEquals(0, getResponse.getDataSetsCount());
+  }
+
+  @Test
+  void createDataClassificationOverrideTest() {
+    registerAndStartService();
+    CreateDataClassificationOverrideRequest request =
+        CreateDataClassificationOverrideRequest.newBuilder()
+            .setDataClassificationOverrideRule(getDataClassificationOverrideRule())
+            .build();
+    assertEquals(
+        request.getDataClassificationOverrideRule(),
+        dataClassificationConfigServiceBlockingStub
+            .createDataClassificationOverride(request)
+            .getCreatedDataClassificationOverride()
+            .getDataClassificationOverrideRule());
+  }
+
+  @Test
+  void getDataClassificationOverridesByEnvironmentFilterTest() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    GetDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
+            GetDataClassificationOverridesRequest.newBuilder()
+                .setFilter(
+                    DataClassificationOverrideFilter.newBuilder()
+                        .setScopeFilter(
+                            ScopeFilter.newBuilder()
+                                .addAllScopes(List.of(rule1.getScope(), rule2.getScope()))
+                                .build())
+                        .build())
+                .build());
+    assertEquals(2, response.getDataClassificationOverridesCount());
+    assertEquals(
+        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
+  }
+
+  @Test
+  void getDataClassificationOverridesByIdFilterTest() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    GetDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
+            GetDataClassificationOverridesRequest.newBuilder()
+                .setFilter(
+                    DataClassificationOverrideFilter.newBuilder()
+                        .setIdFilter(
+                            IdFilter.newBuilder()
+                                .addAllIds(
+                                    List.of(
+                                        dco1.getCreatedDataClassificationOverride().getId(),
+                                        dco2.getCreatedDataClassificationOverride().getId()))
+                                .build())
+                        .build())
+                .build());
+    assertEquals(2, response.getDataClassificationOverridesCount());
+    assertEquals(
+        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
+  }
+
+  // No filter set gets all the data classification Overrides.
+  @Test
+  void getAllDataClassificationOverrides() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    GetDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
+            GetDataClassificationOverridesRequest.newBuilder().build());
+    assertEquals(2, response.getDataClassificationOverridesCount());
+    assertEquals(
+        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
+  }
+
+  @Test
+  void getDataClassificationOverridesFilterRequestValidatorTest() {
+    registerAndStartService();
+    RequestContext requestContext = RequestContext.forTenantId("test_id");
+    GetDataClassificationOverridesRequest request =
+        GetDataClassificationOverridesRequest.newBuilder()
+            .setFilter(DataClassificationOverrideFilter.newBuilder().build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          new DataClassificationOverrideConfigRequestValidator()
+              .validateOrThrow(requestContext, request);
+        });
+  }
+
+  @Test
+  void updateDataClassificationOverrideTest() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    UpdateDataClassificationOverrideResponse response =
+        dataClassificationConfigServiceBlockingStub.updateDataClassificationOverride(
+            UpdateDataClassificationOverrideRequest.newBuilder()
+                .setId(dco1.getCreatedDataClassificationOverride().getId())
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride().getId(),
+        response.getUpdatedDataClassificationOverride().getId());
+    assertEquals(
+        rule2, response.getUpdatedDataClassificationOverride().getDataClassificationOverrideRule());
+  }
+
+  @Test
+  void deleteDataClassificationOverridesByEnvironmentFilterTest() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    DeleteDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.deleteDataClassificationOverrides(
+            DeleteDataClassificationOverridesRequest.newBuilder()
+                .setFilter(
+                    DataClassificationOverrideFilter.newBuilder()
+                        .setScopeFilter(
+                            ScopeFilter.newBuilder()
+                                .addAllScopes(List.of(rule1.getScope(), rule2.getScope()))
+                                .build())
+                        .build())
+                .build());
+    assertEquals(2, response.getDeletedDataClassificationOverridesCount());
+    assertEquals(
+        dco2.getCreatedDataClassificationOverride(),
+        response.getDeletedDataClassificationOverrides(0));
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(),
+        response.getDeletedDataClassificationOverrides(1));
+  }
+
+  @Test
+  void deleteDataClassificationOverrideByIdFilterTest() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    DeleteDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.deleteDataClassificationOverrides(
+            DeleteDataClassificationOverridesRequest.newBuilder()
+                .setFilter(
+                    DataClassificationOverrideFilter.newBuilder()
+                        .setIdFilter(
+                            IdFilter.newBuilder()
+                                .addAllIds(
+                                    List.of(
+                                        dco1.getCreatedDataClassificationOverride().getId(),
+                                        dco2.getCreatedDataClassificationOverride().getId()))
+                                .build())
+                        .build())
+                .build());
+    assertEquals(2, response.getDeletedDataClassificationOverridesCount());
+    assertEquals(
+        dco2.getCreatedDataClassificationOverride(),
+        response.getDeletedDataClassificationOverrides(0));
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(),
+        response.getDeletedDataClassificationOverrides(1));
+  }
+
+  // No filter set deletes all the data classification Overrides.
+  @Test
+  void deleteAllDataClassificationOverrides() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    DeleteDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.deleteDataClassificationOverrides(
+            DeleteDataClassificationOverridesRequest.newBuilder().build());
+    assertEquals(2, response.getDeletedDataClassificationOverridesCount());
+    assertEquals(
+        dco2.getCreatedDataClassificationOverride(),
+        response.getDeletedDataClassificationOverrides(0));
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(),
+        response.getDeletedDataClassificationOverrides(1));
+  }
+
+  @Test
+  void deleteDataClassificationOverridesFilterRequestValidatorTest() {
+    registerAndStartService();
+    RequestContext requestContext = RequestContext.forTenantId("test_id");
+    DeleteDataClassificationOverridesRequest request =
+        DeleteDataClassificationOverridesRequest.newBuilder()
+            .setFilter(DataClassificationOverrideFilter.newBuilder().build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          new DataClassificationOverrideConfigRequestValidator()
+              .validateOrThrow(requestContext, request);
+        });
+  }
+
+  @Test
+  void getRp1DataTypesRegardlessOfFeatureFlagIfRequested() {
+    String jsonString =
+        "system : {\n"
+            + "datatypes : {\n"
+            + "rp1 : [\n"
+            + "{\n"
+            + "id : systemdatatyperp1,\n"
+            + "rule : {\n"
+            + "name : systemdatatyperulerp1,\n"
+            + "scoped_patterns : [\n"
+            + "{\n"
+            + "global_scope : {},\n"
+            + "locations : [LOCATION_REQUEST_HEADER],\n"
+            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
+            + "action : ACTION_MATCH\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}\n"
+            + "]\n"
+            + "}\n"
+            + "}";
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
+    registerAndStartService(
+        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
+    GetDataTypesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataTypes(
+            GetDataTypesRequest.newBuilder()
+                .setSystemDataSetVersion(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1)
+                .build());
+    assertEquals(1, response.getDataTypesCount());
+  }
+
+  @Test
+  void testDataTypeResolution() {
+    registerAndStartService();
+    DataType createdDataType =
+        dataClassificationConfigServiceBlockingStub
+            .createDataType(
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(createDataTypeRuleForTest("data-type-rule-1", "value-1"))
+                    .build())
+            .getDataType();
+    dataClassificationConfigServiceBlockingStub.createDataSet(
+        CreateDataSetRequest.newBuilder()
+            .setInfo(
+                DataSetInfo.newBuilder()
+                    .setName("data-set-1")
+                    .setEnabled(false)
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                    .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
+                    .setColor("blue")
+                    .addDataTypeIds(createdDataType.getId()))
+            .build());
+
+    // Default fetch should match the created type
+    assertEquals(
+        createdDataType,
+        Iterables.getOnlyElement(
+            dataClassificationConfigServiceBlockingStub
+                .getDataTypes(GetDataTypesRequest.getDefaultInstance())
+                .getDataTypesList()));
+
+    // Resolved fetch should merge data set fields in
+    DataType expectedResolvedType =
+        createdDataType.toBuilder()
+            .setRule(
+                createdDataType.getRule().toBuilder()
+                    .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
+                    .setEnabled(false)
+                    .setColor("blue")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE))
+            .build();
+    assertEquals(
+        expectedResolvedType,
+        Iterables.getOnlyElement(
+            dataClassificationConfigServiceBlockingStub
+                .getDataTypes(
+                    GetDataTypesRequest.newBuilder().setResolveInheritedDetails(true).build())
+                .getDataTypesList()));
   }
 
   private DataSetInfo createDataSetInfoForTest(
@@ -1005,7 +1099,67 @@ class DataClassificationConfigServiceImplTest {
         .build();
   }
 
-  class MockSensitiveDataConfigService
+  private DataClassificationOverrideRule getDataClassificationOverrideRule() {
+    DataClassificationOverrideRule rule =
+        DataClassificationOverrideRule.newBuilder()
+            .setScope(
+                DataClassificationOverrideRule.DataClassificationOverrideScope.newBuilder()
+                    .setEnvironmentScope(
+                        DataClassificationOverrideRule.EnvironmentScope.newBuilder()
+                            .setEnvironmentId(
+                                new StringBuilder("Environment_")
+                                    .append(UUID.randomUUID())
+                                    .toString())
+                            .build())
+                    .build())
+            .setDataSuppressionOverride(
+                DataClassificationOverrideRule.DataSuppressionOverride.newBuilder()
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+                    .build())
+            .build();
+    return rule;
+  }
+
+  private void registerAndStartService() {
+    registerAndStartService(ConfigFactory.empty(), mock(FeatureCachingClient.class));
+  }
+
+  private void registerAndStartService(Config config, FeatureCachingClient featureCachingClient) {
+    ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
+        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    DataClassificationConfigServiceBlockingStub ownStub =
+        DataClassificationConfigServiceGrpc.newBlockingStub(
+            this.mockGenericConfigService.channel());
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    mockGenericConfigService
+        .addService(
+            new DataClassificationConfigServiceImpl(
+                new DataSetStore(genericStub, configChangeEventGenerator),
+                new DataTypeStore(genericStub, configChangeEventGenerator),
+                new DeletedDataSetStore(genericStub),
+                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
+                new DataSetConfigRequestValidator(),
+                new DataTypeConfigRequestValidator(),
+                new DataClassificationOverrideConfigRequestValidator(),
+                config,
+                null,
+                new RedactionRulesDao(
+                    sensitiveDataConfigServiceBlockingStub,
+                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
+                featureCachingClient,
+                new DataTypeResolver(ownStub)))
+        .start();
+  }
+
+  private Config buildClassificationConfigFromJsonString(String jsonString) {
+    return ConfigFactory.empty()
+        .withValue(
+            DATA_CLASSIFICATION_CONFIG_SERVICE, ConfigFactory.parseString(jsonString).root());
+  }
+
+  private class MockSensitiveDataConfigService
       extends SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceImplBase {
 
     @Override
@@ -1079,349 +1233,5 @@ class DataClassificationConfigServiceImplTest {
               .build());
       responseObserver.onCompleted();
     }
-  }
-
-  @Test
-  void createDataClassificationOverrideTest() {
-    CreateDataClassificationOverrideRequest request =
-        CreateDataClassificationOverrideRequest.newBuilder()
-            .setDataClassificationOverrideRule(getDataClassificationOverrideRule())
-            .build();
-    assertEquals(
-        request.getDataClassificationOverrideRule(),
-        dataClassificationConfigServiceBlockingStub
-            .createDataClassificationOverride(request)
-            .getCreatedDataClassificationOverride()
-            .getDataClassificationOverrideRule());
-  }
-
-  @Test
-  void getDataClassificationOverridesByEnvironmentFilterTest() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    CreateDataClassificationOverrideResponse dco2 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    GetDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
-            GetDataClassificationOverridesRequest.newBuilder()
-                .setFilter(
-                    DataClassificationOverrideFilter.newBuilder()
-                        .setScopeFilter(
-                            ScopeFilter.newBuilder()
-                                .addAllScopes(List.of(rule1.getScope(), rule2.getScope()))
-                                .build())
-                        .build())
-                .build());
-    assertEquals(2, response.getDataClassificationOverridesCount());
-    assertEquals(
-        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
-  }
-
-  @Test
-  void getDataClassificationOverridesByIdFilterTest() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    CreateDataClassificationOverrideResponse dco2 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    GetDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
-            GetDataClassificationOverridesRequest.newBuilder()
-                .setFilter(
-                    DataClassificationOverrideFilter.newBuilder()
-                        .setIdFilter(
-                            IdFilter.newBuilder()
-                                .addAllIds(
-                                    List.of(
-                                        dco1.getCreatedDataClassificationOverride().getId(),
-                                        dco2.getCreatedDataClassificationOverride().getId()))
-                                .build())
-                        .build())
-                .build());
-    assertEquals(2, response.getDataClassificationOverridesCount());
-    assertEquals(
-        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
-  }
-
-  // No filter set gets all the data classification Overrides.
-  @Test
-  void getAllDataClassificationOverrides() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    CreateDataClassificationOverrideResponse dco2 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    GetDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
-            GetDataClassificationOverridesRequest.newBuilder().build());
-    assertEquals(2, response.getDataClassificationOverridesCount());
-    assertEquals(
-        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
-  }
-
-  @Test
-  void getDataClassificationOverridesFilterRequestValidatorTest() {
-    RequestContext requestContext = RequestContext.forTenantId("test_id");
-    GetDataClassificationOverridesRequest request =
-        GetDataClassificationOverridesRequest.newBuilder()
-            .setFilter(DataClassificationOverrideFilter.newBuilder().build())
-            .build();
-    assertThrows(
-        StatusRuntimeException.class,
-        () -> {
-          new DataClassificationOverrideConfigRequestValidator()
-              .validateOrThrow(requestContext, request);
-        });
-  }
-
-  @Test
-  void updateDataClassificationOverrideTest() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    UpdateDataClassificationOverrideResponse response =
-        dataClassificationConfigServiceBlockingStub.updateDataClassificationOverride(
-            UpdateDataClassificationOverrideRequest.newBuilder()
-                .setId(dco1.getCreatedDataClassificationOverride().getId())
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride().getId(),
-        response.getUpdatedDataClassificationOverride().getId());
-    assertEquals(
-        rule2, response.getUpdatedDataClassificationOverride().getDataClassificationOverrideRule());
-  }
-
-  @Test
-  void deleteDataClassificationOverridesByEnvironmentFilterTest() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    CreateDataClassificationOverrideResponse dco2 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    DeleteDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.deleteDataClassificationOverrides(
-            DeleteDataClassificationOverridesRequest.newBuilder()
-                .setFilter(
-                    DataClassificationOverrideFilter.newBuilder()
-                        .setScopeFilter(
-                            ScopeFilter.newBuilder()
-                                .addAllScopes(List.of(rule1.getScope(), rule2.getScope()))
-                                .build())
-                        .build())
-                .build());
-    assertEquals(2, response.getDeletedDataClassificationOverridesCount());
-    assertEquals(
-        dco2.getCreatedDataClassificationOverride(),
-        response.getDeletedDataClassificationOverrides(0));
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride(),
-        response.getDeletedDataClassificationOverrides(1));
-  }
-
-  @Test
-  void deleteDataClassificationOverrideByIdFilterTest() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    CreateDataClassificationOverrideResponse dco2 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    DeleteDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.deleteDataClassificationOverrides(
-            DeleteDataClassificationOverridesRequest.newBuilder()
-                .setFilter(
-                    DataClassificationOverrideFilter.newBuilder()
-                        .setIdFilter(
-                            IdFilter.newBuilder()
-                                .addAllIds(
-                                    List.of(
-                                        dco1.getCreatedDataClassificationOverride().getId(),
-                                        dco2.getCreatedDataClassificationOverride().getId()))
-                                .build())
-                        .build())
-                .build());
-    assertEquals(2, response.getDeletedDataClassificationOverridesCount());
-    assertEquals(
-        dco2.getCreatedDataClassificationOverride(),
-        response.getDeletedDataClassificationOverrides(0));
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride(),
-        response.getDeletedDataClassificationOverrides(1));
-  }
-
-  // No filter set deletes all the data classification Overrides.
-  @Test
-  void deleteAllDataClassificationOverrides() {
-    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
-    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
-    CreateDataClassificationOverrideResponse dco1 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule1)
-                .build());
-    CreateDataClassificationOverrideResponse dco2 =
-        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
-            CreateDataClassificationOverrideRequest.newBuilder()
-                .setDataClassificationOverrideRule(rule2)
-                .build());
-    DeleteDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.deleteDataClassificationOverrides(
-            DeleteDataClassificationOverridesRequest.newBuilder().build());
-    assertEquals(2, response.getDeletedDataClassificationOverridesCount());
-    assertEquals(
-        dco2.getCreatedDataClassificationOverride(),
-        response.getDeletedDataClassificationOverrides(0));
-    assertEquals(
-        dco1.getCreatedDataClassificationOverride(),
-        response.getDeletedDataClassificationOverrides(1));
-  }
-
-  @Test
-  void deleteDataClassificationOverridesFilterRequestValidatorTest() {
-    RequestContext requestContext = RequestContext.forTenantId("test_id");
-    DeleteDataClassificationOverridesRequest request =
-        DeleteDataClassificationOverridesRequest.newBuilder()
-            .setFilter(DataClassificationOverrideFilter.newBuilder().build())
-            .build();
-    assertThrows(
-        StatusRuntimeException.class,
-        () -> {
-          new DataClassificationOverrideConfigRequestValidator()
-              .validateOrThrow(requestContext, request);
-        });
-  }
-
-  @Test
-  void getRp1DataTypesRegardlessOfFeatureFlagIfRequested() {
-    mockGenericConfigService.shutdown();
-    mockGenericConfigService = new MockGenericConfigService().mockGetAll();
-    ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
-        SensitiveDataConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    mockConfig = mock(Config.class);
-    when(mockConfig.hasPath(DATA_CLASSIFICATION_CONFIG_SERVICE)).thenReturn(true);
-    String jsonString =
-        "system : {\n"
-            + "datatypes : {\n"
-            + "rp1 : [\n"
-            + "{\n"
-            + "id : systemdatatyperp1,\n"
-            + "rule : {\n"
-            + "name : systemdatatyperulerp1,\n"
-            + "scoped_patterns : [\n"
-            + "{\n"
-            + "global_scope : {},\n"
-            + "locations : [LOCATION_REQUEST_HEADER],\n"
-            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
-            + "action : ACTION_MATCH\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}";
-    Config dataClassificationConfig = ConfigFactory.parseString(jsonString);
-    when(mockConfig.getConfig(DATA_CLASSIFICATION_CONFIG_SERVICE))
-        .thenReturn(dataClassificationConfig);
-    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
-    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    mockGenericConfigService
-        .addService(
-            new DataClassificationConfigServiceImpl(
-                new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
-                new DeletedDataSetStore(genericStub),
-                new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
-                new DataSetConfigRequestValidator(),
-                new DataTypeConfigRequestValidator(),
-                new DataClassificationOverrideConfigRequestValidator(),
-                mockConfig,
-                null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                featureCachingClient))
-        .addService(new MockSensitiveDataConfigService())
-        .start();
-    dataClassificationConfigServiceBlockingStub =
-        DataClassificationConfigServiceGrpc.newBlockingStub(
-            this.mockGenericConfigService.channel());
-
-    GetDataTypesResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataTypes(
-            GetDataTypesRequest.newBuilder()
-                .setSystemDataSetVersion(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1)
-                .build());
-    assertEquals(1, response.getDataTypesCount());
-  }
-
-  private DataClassificationOverrideRule getDataClassificationOverrideRule() {
-    DataClassificationOverrideRule rule =
-        DataClassificationOverrideRule.newBuilder()
-            .setScope(
-                DataClassificationOverrideRule.DataClassificationOverrideScope.newBuilder()
-                    .setEnvironmentScope(
-                        DataClassificationOverrideRule.EnvironmentScope.newBuilder()
-                            .setEnvironmentId(
-                                new StringBuilder("Environment_")
-                                    .append(UUID.randomUUID())
-                                    .toString())
-                            .build())
-                    .build())
-            .setDataSuppressionOverride(
-                DataClassificationOverrideRule.DataSuppressionOverride.newBuilder()
-                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
-                    .build())
-            .build();
-    return rule;
   }
 }

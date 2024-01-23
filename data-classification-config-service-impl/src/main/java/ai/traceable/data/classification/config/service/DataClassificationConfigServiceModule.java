@@ -1,6 +1,8 @@
 package ai.traceable.data.classification.config.service;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
+import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
@@ -48,6 +50,13 @@ class DataClassificationConfigServiceModule extends AbstractModule {
   @Provides
   SensitiveDataConfigServiceBlockingStub provideSensitiveDataConfigService() {
     return SensitiveDataConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  DataClassificationConfigServiceBlockingStub provideOwnStub() {
+    return DataClassificationConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

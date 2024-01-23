@@ -14,6 +14,10 @@ message DataTypeRule {
   optional string description = 2;
   repeated ScopedPattern scoped_patterns = 3;
   optional string suppression_pattern = 4;
+  optional bool enabled = 5;
+  DataSetInfo.DataSuppression data_suppression = 6;
+  DataSetInfo.Sensitivity sensitivity = 7;
+  optional string color = 8;
 
   message ScopedPattern {
     oneof scope {

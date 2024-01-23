@@ -41,6 +41,7 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.util.JsonFormat;
@@ -89,6 +90,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
   private final RedactionRulesDao redactionRulesDao;
   private final FeatureCachingClient featureCachingClient;
+  private final DataTypeResolver dataTypeResolver;
 
   @Inject
   public DataClassificationConfigServiceImpl(
@@ -103,7 +105,8 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
       RedactionRulesDao redactionRulesDao,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      DataTypeResolver dataTypeResolver) {
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
     this.deletedDataSetStore = deletedDataSetStore;
@@ -114,6 +117,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
         dataClassificationOverrideConfigRequestValidator;
     this.configChangeEventGenerator = Optional.ofNullable(configChangeEventGenerator);
     this.redactionRulesDao = redactionRulesDao;
+    this.dataTypeResolver = dataTypeResolver;
     List<? extends com.typesafe.config.ConfigObject> systemDataSetsObjectList = null;
     List<? extends com.typesafe.config.ConfigObject> systemDataTypesObjectList = null;
     List<? extends com.typesafe.config.ConfigObject> systemDataSetsRp2ObjectList = null;
@@ -208,21 +212,28 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           this.dataTypeStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
               .collect(Collectors.toUnmodifiableList());
-      Map<String, DataType> tenantDataTypesToIdMap =
-          tenantDataTypes.stream()
-              .collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
+      Set<String> tenantDataTypeIds =
+          tenantDataTypes.stream().map(DataType::getId).collect(Collectors.toUnmodifiableSet());
       List<DataType> filteredSystemDataTypes =
-          getSystemDataTypes(requestContext, request.getSystemDataSetVersion()).stream()
-              .filter(dataType -> !tenantDataTypesToIdMap.containsKey(dataType.getId()))
+          this.getSystemDataTypes(requestContext, request.getSystemDataSetVersion()).stream()
+              .filter(dataType -> !tenantDataTypeIds.contains(dataType.getId()))
               .collect(Collectors.toUnmodifiableList());
       List<DataType> convertedRedactionRules =
           redactionRulesDao.getAllDataTypesFromRedactionRules(requestContext);
+
+      List<DataType> collectedDataTypes =
+          ImmutableList.<DataType>builder()
+              .addAll(tenantDataTypes)
+              .addAll(filteredSystemDataTypes)
+              .addAll(convertedRedactionRules)
+              .build();
+      if (request.getResolveInheritedDetails()) {
+        collectedDataTypes =
+            this.dataTypeResolver.resolveInheritedDataTypeFields(
+                requestContext, collectedDataTypes);
+      }
       responseObserver.onNext(
-          GetDataTypesResponse.newBuilder()
-              .addAllDataTypes(tenantDataTypes)
-              .addAllDataTypes(filteredSystemDataTypes)
-              .addAllDataTypes(convertedRedactionRules)
-              .build());
+          GetDataTypesResponse.newBuilder().addAllDataTypes(collectedDataTypes).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get data types - {}", request, e);
