@@ -37,7 +37,8 @@ message WafIntegrationTarget {
 message CloudflareIntegrationParams {
   string zone = 1;
   string email = 2;
-  string api_token = 3;
+  string api_token = 3 [deprecated=true];
+  EncryptedData encrypted_api_token = 4;
 }
 
 message UpdatedWafIntegrationDetails {
@@ -57,7 +58,8 @@ message UpdatedWafIntegrationDetails {
 message UpdatedCloudflareIntegrationParams {
   string zone = 1;
   string email = 2;
-  optional string api_token = 3;
+  optional string api_token = 3 [deprecated = true];
+  optional EncryptedData encrypted_api_token = 4;
 }
 
 message WafIntegrationScope {
@@ -76,4 +78,9 @@ enum RuleType {
 
 message EnvironmentScope {
   repeated string environment_ids = 1;
+}
+
+message EncryptedData {
+  string base64_encrypted_data = 1;
+  string key_id = 2;
 }

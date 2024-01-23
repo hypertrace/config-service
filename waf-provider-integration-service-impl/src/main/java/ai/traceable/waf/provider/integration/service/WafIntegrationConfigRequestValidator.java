@@ -16,6 +16,7 @@ import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
@@ -279,6 +280,15 @@ public class WafIntegrationConfigRequestValidator {
           .withDescription("Api token is empty! " + printMessage(cloudflareIntegrationParams))
           .asRuntimeException();
     }
+    if (cloudflareIntegrationParams.hasEncryptedApiToken()) {
+      this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
+    }
+  }
+
+  private void validateEncryptedData(EncryptedData encryptedData) {
+    validateNonDefaultPresenceOrThrow(encryptedData, EncryptedData.KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        encryptedData, EncryptedData.BASE64_ENCRYPTED_DATA_FIELD_NUMBER);
   }
 
   private void validateUpdatedAzureIntegrationParams(
@@ -381,6 +391,10 @@ public class WafIntegrationConfigRequestValidator {
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.API_TOKEN_FIELD_NUMBER);
+    if (cloudflareIntegrationParams.hasEncryptedApiToken()) {
+      // TODO: remove deprecated field, and add unconditional validation on new field
+      this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
+    }
   }
 
   private void validateAwsIntegrationParams(
