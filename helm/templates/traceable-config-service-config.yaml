@@ -268,6 +268,19 @@ data:
         }
       }
     }
+    {{- if hasKey $.Values.traceableConfigServiceConfig "spanProcessingConfig" }}
+    span.processing.config.service = {
+      {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultRequestHeaderRetentionRules" }}
+      default.request.header.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultRequestHeaderRetentionRules | nindent 6 }}
+      {{- end }}
+      {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultResponseHeaderRetentionRules" }}
+      default.response.header.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultResponseHeaderRetentionRules | nindent 6 }}
+      {{- end }}
+      {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultAttributeRetentionRules" }}
+      default.attribute.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultAttributeRetentionRules | nindent 6 }}
+      {{- end }}
+    }
+    {{- end }}
     local.api.naming.config = {
       agent.polling.frequency = {{ .Values.localApiNamingConfig.agentPollingFrequency }}
       {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}
@@ -292,19 +305,7 @@ data:
       }
       {{- end }}
     }
-    {{- if hasKey $.Values "spanProcessingConfig" }}
-    span.processing.config.service = {
-      {{- if hasKey .Values.spanProcessingConfig "defaultRequestHeaderRetentionRules" }}
-      default.request.header.retention.rules = {{ .Values.spanProcessingConfig.defaultRequestHeaderRetentionRules | nindent 6 }}
-      {{- end }}
-      {{- if hasKey .Values.spanProcessingConfig "defaultResponseHeaderRetentionRules" }}
-      default.response.header.retention.rules = {{ .Values.spanProcessingConfig.defaultResponseHeaderRetentionRules | nindent 6 }}
-      {{- end }}
-      {{- if hasKey .Values.spanProcessingConfig "defaultAttributeRetentionRules" }}
-      default.attribute.retention.rules = {{ .Values.spanProcessingConfig.defaultAttributeRetentionRules | nindent 6 }}
-      {{- end }}
-    }
-    {{- end }}
+
   anomaly.conf: |-
     modsecRuleVersion = {{ .Values.anomalyConfigServiceConfig.modsecRuleVersion }}
     global {
