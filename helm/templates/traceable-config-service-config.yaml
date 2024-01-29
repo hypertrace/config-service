@@ -292,6 +292,19 @@ data:
       }
       {{- end }}
     }
+    {{- if hasKey $.Values "spanProcessingConfig" }}
+    span.processing.config.service = {
+      {{- if hasKey .Values.spanProcessingConfig "defaultRequestHeaderRetentionRules" }}
+      default.request.header.retention.rules = {{ .Values.spanProcessingConfig.defaultRequestHeaderRetentionRules | nindent 6 }}
+      {{- end }}
+      {{- if hasKey .Values.spanProcessingConfig "defaultResponseHeaderRetentionRules" }}
+      default.response.header.retention.rules = {{ .Values.spanProcessingConfig.defaultResponseHeaderRetentionRules | nindent 6 }}
+      {{- end }}
+      {{- if hasKey .Values.spanProcessingConfig "defaultAttributeRetentionRules" }}
+      default.attribute.retention.rules = {{ .Values.spanProcessingConfig.defaultAttributeRetentionRules | nindent 6 }}
+      {{- end }}
+    }
+    {{- end }}
   anomaly.conf: |-
     modsecRuleVersion = {{ .Values.anomalyConfigServiceConfig.modsecRuleVersion }}
     global {

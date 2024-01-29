@@ -302,6 +302,31 @@ anomalyConfigServiceConfig:
         }
       ]
 
+#spanProcessingConfig:
+#  defaultRequestHeaderRetentionRules: |-
+#    [
+#      {
+#        id: "a5a80efc-d62b-4579-bd80-058af0adad24",
+#        data: {
+#          action: {
+#            discard: {}
+#          },
+#          predicate: {
+#            target_key_predicate: {
+#              operator: "OPERATOR_EQUALS",
+#              any_of_values: {
+#                values: [
+#                  "ot-tracer-spanid",
+#                  "ot-tracer-traceid",
+#                  "request_id"
+#                ]
+#              }
+#            }
+#          }
+#        }
+#      }
+#    ]
+
 hpa:
   enabled: false
   minReplicas: 1
