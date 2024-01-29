@@ -48,10 +48,6 @@ public class SessionTokenRuleValidator {
         case RESPONSE_SESSION_TOKEN_DETAILS:
           validateResponseSessionTokenDetails(tokenRule.getResponseSessionTokenDetails());
           break;
-        default:
-          throw Status.INVALID_ARGUMENT
-              .withDescription(String.format("Unexpected token type: %s", printMessage(tokenRule)))
-              .asRuntimeException();
       }
     }
   }

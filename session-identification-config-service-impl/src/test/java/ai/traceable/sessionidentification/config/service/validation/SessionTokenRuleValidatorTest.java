@@ -46,16 +46,6 @@ class SessionTokenRuleValidatorTest {
   @InjectMocks SessionTokenRuleValidator tokenRuleValidator;
 
   @Test
-  void validateTokenRules() {
-    assertInvalidArgStatusContaining(
-        "Unexpected token type",
-        () ->
-            tokenRuleValidator.validateTokenRules(
-                List.of(
-                    SessionTokenRule.newBuilder().setTokenValueRule(TOKEN_VALUE_RULE).build())));
-  }
-
-  @Test
   void validateProjectionRoot() {
     assertInvalidArgStatusContaining(
         "Projection root can not be empty",
