@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message F5IntegrationParams {
+  F5IntegrationDetails f5_integration_details = 1;
+}
+
+message F5IntegrationUpdateParams {
+  F5IntegrationDetails f5_integration_details = 1;
+}
+
+message F5IntegrationDetails {
+  string url = 1; // Either hostname:port or ipaddress:port
+  F5PolicyDetails f5_policy_details = 2;
+  F5AuthCredentials f5_auth_credentials = 3;
+}
+
+message F5PolicyDetails {
+  string policy_id = 1;
+  string policy_name = 2;
+}
+
+message F5AuthCredentials {
+  string encryption_key_id = 1; // Key used to encrypt the data.
+  string encrypted_user_name = 2;
+  string encrypted_password = 3;
+}

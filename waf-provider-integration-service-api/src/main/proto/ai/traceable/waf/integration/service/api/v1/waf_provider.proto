@@ -8,6 +8,7 @@ import "ai/traceable/waf/integration/service/api/v1/azure_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/aws_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/imperva_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/gcp_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/f5_waf_provider.proto";
 
 message WafIntegration {
   string id = 1;
@@ -23,6 +24,7 @@ message WafIntegrationDetails {
     ImpervaIntegrationParams imperva_integration_params = 5;
     AzureIntegrationParams azure_integration_params = 6;
     GcpIntegrationParams gcp_integration_params = 8;
+    F5IntegrationParams f5_integration_params = 9;
   }
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20; //leaving numbers for oneof
@@ -50,6 +52,7 @@ message UpdatedWafIntegrationDetails {
     ImpervaIntegrationUpdateParams updated_imperva_integration_params = 5;
     AzureIntegrationUpdateParams updated_azure_integration_params = 6;
     GcpIntegrationUpdateParams updated_gcp_integration_params = 8;
+    F5IntegrationUpdateParams updated_f5_integration_params = 9;
   }
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20;
