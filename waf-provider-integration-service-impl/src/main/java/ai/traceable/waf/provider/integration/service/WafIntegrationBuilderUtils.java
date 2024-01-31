@@ -8,6 +8,7 @@ import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -101,6 +102,13 @@ public class WafIntegrationBuilderUtils {
 
   private static void updateCloudflareWafIntegration(
       UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder detailsBuilder) {
+    if (!updateCloudflareWafIntegrationIfV2(request, detailsBuilder)) {
+      updateCloudflareWafIntegrationV1(request, detailsBuilder);
+    }
+  }
+
+  private static void updateCloudflareWafIntegrationV1(
+      UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder detailsBuilder) {
     String apiToken =
         request
                 .getUpdatedWafIntegrationDetails()
@@ -127,6 +135,63 @@ public class WafIntegrationBuilderUtils {
             .setApiToken(apiToken);
 
     detailsBuilder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
+  }
+
+  // Returns true if the integration is V2
+  private static boolean updateCloudflareWafIntegrationIfV2(
+      UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder builder) {
+    if (!builder.getCloudflareIntegrationParams().hasEncryptedApiToken()) {
+      return false;
+    }
+    String apiToken =
+        request
+            .getUpdatedWafIntegrationDetails()
+            .getUpdatedCloudflareIntegrationParams()
+            .getEncryptedApiToken()
+            .getBase64EncryptedData();
+    String keyId =
+        request
+            .getUpdatedWafIntegrationDetails()
+            .getUpdatedCloudflareIntegrationParams()
+            .getEncryptedApiToken()
+            .getKeyId();
+    if (request
+        .getUpdatedWafIntegrationDetails()
+        .getUpdatedCloudflareIntegrationParams()
+        .hasEncryptedApiToken()) {
+      apiToken =
+          request
+              .getUpdatedWafIntegrationDetails()
+              .getUpdatedCloudflareIntegrationParams()
+              .getEncryptedApiToken()
+              .getBase64EncryptedData();
+      keyId =
+          request
+              .getUpdatedWafIntegrationDetails()
+              .getUpdatedCloudflareIntegrationParams()
+              .getEncryptedApiToken()
+              .getKeyId();
+    }
+    CloudflareIntegrationParams.Builder cloudFlareIntegrationParamsBuilder =
+        CloudflareIntegrationParams.newBuilder()
+            .setEmail(
+                request
+                    .getUpdatedWafIntegrationDetails()
+                    .getUpdatedCloudflareIntegrationParams()
+                    .getEmail())
+            .setZone(
+                request
+                    .getUpdatedWafIntegrationDetails()
+                    .getUpdatedCloudflareIntegrationParams()
+                    .getZone())
+            .setEncryptedApiToken(
+                EncryptedData.newBuilder()
+                    .setKeyId(keyId)
+                    .setBase64EncryptedData(apiToken)
+                    .build());
+
+    builder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
+    return true;
   }
 
   private static void updateTargets(
