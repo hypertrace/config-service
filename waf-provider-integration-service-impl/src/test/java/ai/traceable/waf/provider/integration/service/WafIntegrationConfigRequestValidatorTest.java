@@ -18,6 +18,11 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
+import ai.traceable.waf.integration.service.api.v1.F5AuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.F5PolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -1313,6 +1318,127 @@ class WafIntegrationConfigRequestValidatorTest {
   }
 
   @Test
+  void testInvalidCreateF5RequestTest() {
+    // empty f5 integration details
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setF5IntegrationParams(F5IntegrationParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing f5 url
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setF5IntegrationParams(
+                        F5IntegrationParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName("policyname")
+                                            .build())
+                                    .setF5AuthCredentials(
+                                        F5AuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing f5 security policy
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setF5IntegrationParams(
+                        F5IntegrationParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setF5AuthCredentials(
+                                        F5AuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing f5 auth credentials
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setF5IntegrationParams(
+                        F5IntegrationParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName("policyname")
+                                            .build())
+                                    .setUrl("https://localhost:9000")))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request4, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setF5IntegrationParams(
+                        F5IntegrationParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName("policyname")
+                                            .build())
+                                    .setF5AuthCredentials(
+                                        F5AuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+  }
+
+  @Test
   void invalidUpdateAzureRequestTest() {
     // empty azure integration params list
     UpdateWafIntegrationRequest request1 =
@@ -1410,6 +1536,77 @@ class WafIntegrationConfigRequestValidatorTest {
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+  }
+
+  @Test
+  void invalidUpdateF5RequestTest() {
+    // empty f5 integration params list
+    UpdateWafIntegrationRequest request1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedF5IntegrationParams(F5IntegrationUpdateParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedF5IntegrationParams(
+                        F5IntegrationUpdateParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName("policyname")
+                                            .build())
+                                    .setF5AuthCredentials(
+                                        F5AuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id")))
+                            .build()))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request without Auth credentials
+    UpdateWafIntegrationRequest validRequest2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedF5IntegrationParams(
+                        F5IntegrationUpdateParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName("policyname")
+                                            .build()))
+                            .build()))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
   private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {

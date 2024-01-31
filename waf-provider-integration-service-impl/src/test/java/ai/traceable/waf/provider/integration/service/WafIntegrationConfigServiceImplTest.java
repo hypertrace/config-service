@@ -21,6 +21,11 @@ import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
+import ai.traceable.waf.integration.service.api.v1.F5AuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.F5PolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -115,6 +120,18 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(
         stripGcpSecrets(expectedDetails), response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
+  void createWafIntegrationF5Test() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails("name", "email", IntegrationParamsCase.F5_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(
+        stripF5Secrets(expectedDetails), response.getWafIntegration().getWafIntegrationDetails());
   }
 
   @Test
@@ -560,6 +577,30 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void getWafIntegrationsF5Test() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails("name1", "email1", IntegrationParamsCase.F5_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_F5))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    WafIntegration expectedWafIntegration = createResponse.getWafIntegration();
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(expectedWafIntegration, response.getWafIntegrationList().get(0));
+  }
+
+  @Test
   void updateWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -855,6 +896,81 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void updateWafIntegrationF5Test() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails("name", "email", IntegrationParamsCase.F5_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des1")
+            .setUpdatedF5IntegrationParams(
+                F5IntegrationUpdateParams.newBuilder()
+                    .setF5IntegrationDetails(
+                        F5IntegrationDetails.newBuilder()
+                            .setUrl("https://localhost:8000")
+                            .setF5PolicyDetails(
+                                F5PolicyDetails.newBuilder()
+                                    .setPolicyId("policy2")
+                                    .setPolicyName("policyname2")
+                                    .build()))
+                    .build())
+            .build();
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    F5IntegrationParams f5IntegrationParams =
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getF5IntegrationParams();
+    assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals(
+        "des1", updateResponse.getWafIntegration().getWafIntegrationDetails().getDescription());
+    assertEquals("https://localhost:8000", f5IntegrationParams.getF5IntegrationDetails().getUrl());
+    assertEquals(
+        "policy2",
+        f5IntegrationParams.getF5IntegrationDetails().getF5PolicyDetails().getPolicyId());
+    assertEquals(
+        "policyname2",
+        f5IntegrationParams.getF5IntegrationDetails().getF5PolicyDetails().getPolicyName());
+
+    GetWafIntegrationsDetailsResponse wafIntegrationDetails =
+        wafProviderServiceBlockingStub.getWafIntegrationsDetails(
+            GetWafIntegrationsDetailsRequest.newBuilder()
+                .setFilter(
+                    GetWafIntegrationsFilter.newBuilder()
+                        .addIds(updateResponse.getWafIntegration().getId()))
+                .build());
+    assertEquals(
+        "password",
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getF5IntegrationParams()
+            .getF5IntegrationDetails()
+            .getF5AuthCredentials()
+            .getEncryptedPassword());
+    assertEquals(
+        "user-name",
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getF5IntegrationParams()
+            .getF5IntegrationDetails()
+            .getF5AuthCredentials()
+            .getEncryptedUserName());
+  }
+
+  @Test
   void deleteWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -923,6 +1039,28 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
+  @Test
+  void deleteWafIntegrationF5Test() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails("name", "email", IntegrationParamsCase.F5_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
   private WafIntegrationDetails createWebIdentityDetails(
       String name, IntegrationParamsCase paramsCase) {
     switch (paramsCase) {
@@ -956,6 +1094,18 @@ class WafIntegrationConfigServiceImplTest {
             .setGcpIntegrationDetails(updatedGcpIntegrationDetails)
             .build();
     return expectedDetails.toBuilder().setGcpIntegrationParams(updatedGcpIntegrationParams).build();
+  }
+
+  private WafIntegrationDetails stripF5Secrets(WafIntegrationDetails expectedDetails) {
+    F5IntegrationDetails f5IntegrationDetails =
+        expectedDetails.getF5IntegrationParams().getF5IntegrationDetails();
+    F5IntegrationDetails.Builder f5IntegrationDetailsBuilder =
+        f5IntegrationDetails.toBuilder().clearF5AuthCredentials();
+    F5IntegrationParams updatedF5IntegrationParams =
+        expectedDetails.getF5IntegrationParams().toBuilder()
+            .setF5IntegrationDetails(f5IntegrationDetailsBuilder.build())
+            .build();
+    return expectedDetails.toBuilder().setF5IntegrationParams(updatedF5IntegrationParams).build();
   }
 
   private WafIntegrationDetails createWafIntegrationDetails(
@@ -1088,6 +1238,27 @@ class WafIntegrationConfigServiceImplTest {
                                 GlobalSecurityPolicyScope.getDefaultInstance())
                             .build())
                     .build())
+            .build();
+      case F5_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .setF5IntegrationParams(
+                F5IntegrationParams.newBuilder()
+                    .setF5IntegrationDetails(
+                        F5IntegrationDetails.newBuilder()
+                            .setUrl("https://localhost:9000")
+                            .setF5PolicyDetails(
+                                F5PolicyDetails.newBuilder()
+                                    .setPolicyId("policy1")
+                                    .setPolicyName("policyname")
+                                    .build())
+                            .setF5AuthCredentials(
+                                F5AuthCredentials.newBuilder()
+                                    .setEncryptedUserName("user-name")
+                                    .setEncryptedPassword("password")
+                                    .setEncryptionKeyId("key-id"))))
             .build();
       default:
         throw new RuntimeException();

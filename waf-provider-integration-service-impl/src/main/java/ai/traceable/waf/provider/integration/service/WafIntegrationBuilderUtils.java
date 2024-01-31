@@ -9,6 +9,9 @@ import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.EncryptedData;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -62,6 +65,9 @@ public class WafIntegrationBuilderUtils {
       case UPDATED_GCP_INTEGRATION_PARAMS:
         updateGcpWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
+      case UPDATED_F5_INTEGRATION_PARAMS:
+        updateF5WafIntegration(request, updatedWafIntegrationDetailsBuilder);
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -73,6 +79,15 @@ public class WafIntegrationBuilderUtils {
         .setId(existingWafIntegration.getId())
         .setWafIntegrationDetails(updatedWafIntegrationDetailsBuilder)
         .build();
+  }
+
+  private static void updateF5WafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
+    F5IntegrationUpdateParams updatedF5IntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedF5IntegrationParams();
+    detailsBuilder.setF5IntegrationParams(
+        getUpdatedF5IntegrationParams(
+            updatedF5IntegrationParams, detailsBuilder.getF5IntegrationParams()));
   }
 
   private static GcpIntegrationParams getUpdatedGcpIntegrationParams(
@@ -94,10 +109,32 @@ public class WafIntegrationBuilderUtils {
         .build();
   }
 
+  private static F5IntegrationParams getUpdatedF5IntegrationParams(
+      F5IntegrationUpdateParams updatedF5IntegrationParams,
+      F5IntegrationParams existingF5IntegrationParams) {
+    F5IntegrationDetails updatedF5IntegrationDetails =
+        updatedF5IntegrationParams.getF5IntegrationDetails();
+    F5IntegrationDetails existingF5IntegrationDetails =
+        existingF5IntegrationParams.getF5IntegrationDetails();
+    F5IntegrationDetails f5IntegrationDetails =
+        updatedF5IntegrationDetails.toBuilder()
+            .setF5AuthCredentials(
+                updatedF5IntegrationDetails.hasF5AuthCredentials()
+                    ? updatedF5IntegrationDetails.getF5AuthCredentials()
+                    : existingF5IntegrationDetails.getF5AuthCredentials())
+            .build();
+    return F5IntegrationParams.newBuilder().setF5IntegrationDetails(f5IntegrationDetails).build();
+  }
+
   private static boolean updatedRequestHasAuthCredentials(
       GcpIntegrationDetails gcpIntegrationDetails) {
     return gcpIntegrationDetails.hasAuthCredentials()
         && gcpIntegrationDetails.getAuthCredentials().hasEncryptedServiceAccountKey();
+  }
+
+  private static boolean updatedRequestHasAuthCredentials(
+      F5IntegrationDetails f5IntegrationDetails) {
+    return f5IntegrationDetails.hasF5AuthCredentials();
   }
 
   private static void updateCloudflareWafIntegration(
@@ -440,9 +477,30 @@ public class WafIntegrationBuilderUtils {
             .build();
       case GCP_INTEGRATION_PARAMS:
         return getGcpWafIntegrationWithSecretsStripped(wafIntegration);
+      case F5_INTEGRATION_PARAMS:
+        return getF5WafIntegrationWithSecretsStripped(wafIntegration);
       default:
         return wafIntegration;
     }
+  }
+
+  private static WafIntegration getF5WafIntegrationWithSecretsStripped(
+      WafIntegration wafIntegration) {
+    F5IntegrationParams f5IntegrationParams =
+        wafIntegration.getWafIntegrationDetails().getF5IntegrationParams();
+    F5IntegrationDetails.Builder f5IntegrationDetailsBuilder =
+        f5IntegrationParams.getF5IntegrationDetails().toBuilder();
+    f5IntegrationDetailsBuilder.clearF5AuthCredentials();
+    return WafIntegration.newBuilder()
+        .setId(wafIntegration.getId())
+        .setWafIntegrationDetails(
+            wafIntegration.getWafIntegrationDetails().toBuilder()
+                .setF5IntegrationParams(
+                    f5IntegrationParams.toBuilder()
+                        .setF5IntegrationDetails(f5IntegrationDetailsBuilder.build())
+                        .build())
+                .build())
+        .build();
   }
 
   private static WafIntegration getGcpWafIntegrationWithSecretsStripped(

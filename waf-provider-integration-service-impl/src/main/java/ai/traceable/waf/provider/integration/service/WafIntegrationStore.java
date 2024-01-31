@@ -126,6 +126,8 @@ public class WafIntegrationStore
         return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_AZURE;
       case GCP_INTEGRATION_PARAMS:
         return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_GCP;
+      case F5_INTEGRATION_PARAMS:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_F5;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_UNSPECIFIED;

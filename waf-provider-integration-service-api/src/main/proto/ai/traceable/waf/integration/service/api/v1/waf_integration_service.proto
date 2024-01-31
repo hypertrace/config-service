@@ -75,5 +75,6 @@ message GetWafIntegrationsFilter {
     WAF_PROVIDER_TYPE_IMPERVA = 3;
     WAF_PROVIDER_TYPE_AZURE = 4;
     WAF_PROVIDER_TYPE_GCP = 5;
+    WAF_PROVIDER_TYPE_F5 = 6;
   }
 }

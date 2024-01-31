@@ -19,6 +19,11 @@ import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
+import ai.traceable.waf.integration.service.api.v1.F5AuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.F5PolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -134,6 +139,7 @@ public class WafIntegrationConfigRequestValidator {
       case WAF_PROVIDER_TYPE_IMPERVA:
       case WAF_PROVIDER_TYPE_AZURE:
       case WAF_PROVIDER_TYPE_GCP:
+      case WAF_PROVIDER_TYPE_F5:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -171,6 +177,10 @@ public class WafIntegrationConfigRequestValidator {
         validateUpdatedGcpIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedGcpIntegrationParams());
         break;
+      case UPDATED_F5_INTEGRATION_PARAMS:
+        validateUpdatedF5IntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedF5IntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -178,6 +188,11 @@ public class WafIntegrationConfigRequestValidator {
                 "Unexpected integration params case: " + printMessage(updatedWafIntegrationDetails))
             .asRuntimeException();
     }
+  }
+
+  private void validateUpdatedF5IntegrationParams(
+      F5IntegrationUpdateParams updatedF5IntegrationParams) {
+    validateUpdatedF5IntegrationDetails(updatedF5IntegrationParams.getF5IntegrationDetails());
   }
 
   private void validateUpdatedGcpIntegrationParams(
@@ -192,6 +207,14 @@ public class WafIntegrationConfigRequestValidator {
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateUpdatedGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
     validateSecurityPolicyScope(gcpIntegrationDetails);
+  }
+
+  private void validateUpdatedF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
+    validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
+    if (f5IntegrationDetails.hasF5AuthCredentials()) {
+      validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
+    }
   }
 
   private void validateUpdatedGcpAuthCredentials(GcpAuthCredentials authCredentials) {
@@ -224,6 +247,9 @@ public class WafIntegrationConfigRequestValidator {
       case GCP_INTEGRATION_PARAMS:
         validateGcpIntegrationParams(wafIntegrationDetails.getGcpIntegrationParams());
         break;
+      case F5_INTEGRATION_PARAMS:
+        validateF5IntegrationParams(wafIntegrationDetails.getF5IntegrationParams());
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -237,6 +263,10 @@ public class WafIntegrationConfigRequestValidator {
     validateGcpIntegrationDetails(gcpIntegrationParams.getGcpIntegrationDetails());
   }
 
+  private void validateF5IntegrationParams(F5IntegrationParams f5IntegrationParams) {
+    validateF5IntegrationDetails(f5IntegrationParams.getF5IntegrationDetails());
+  }
+
   private void validateGcpIntegrationDetails(GcpIntegrationDetails gcpIntegrationDetails) {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
@@ -244,6 +274,17 @@ public class WafIntegrationConfigRequestValidator {
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
     validateSecurityPolicyScope(gcpIntegrationDetails);
+  }
+
+  private void validateF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
+    validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
+    validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
+  }
+
+  private void validateF5SecurityPolicyDetails(F5PolicyDetails f5PolicyDetails) {
+    validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_NAME_FIELD_NUMBER);
   }
 
   private void validateSecurityPolicyScope(GcpIntegrationDetails gcpIntegrationDetails) {
@@ -266,6 +307,15 @@ public class WafIntegrationConfigRequestValidator {
     if (authCredentials.hasEncryptedServiceAccountKey()) {
       validateGcpServiceAccountKey(authCredentials.getEncryptedServiceAccountKey());
     }
+  }
+
+  private void validateF5AuthCredentials(F5AuthCredentials f5AuthCredentials) {
+    validateNonDefaultPresenceOrThrow(
+        f5AuthCredentials, F5AuthCredentials.ENCRYPTED_USER_NAME_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        f5AuthCredentials, F5AuthCredentials.ENCRYPTED_PASSWORD_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        f5AuthCredentials, F5AuthCredentials.ENCRYPTION_KEY_ID_FIELD_NUMBER);
   }
 
   private void validateUpdatedCloudFlareIntegrationParams(
