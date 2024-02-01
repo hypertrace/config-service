@@ -65,7 +65,7 @@ class SessionTokenRuleValidatorTest {
   @Test
   void validateCustomProjection() {
     assertInvalidArgStatusContaining(
-        "Invalid custom projection json",
+        "Invalid custom projection:",
         () ->
             tokenRuleValidator.validateTokenRules(
                 List.of(

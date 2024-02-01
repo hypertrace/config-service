@@ -9,10 +9,7 @@
               "cookieNameRule": {
                 "attributeRule": {
                 },
-                "keyPredicate": {
-                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                  "value": "cookie1"
-                }
+                "key": "cookie1"
               }
             }
           }

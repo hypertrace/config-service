@@ -22,6 +22,8 @@ import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleFilter;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleScope;
 import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest.GetSessionIdentificationRulesFilter;
+import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesRequest.GetSessionIdentificationRulesFilter.EnvironmentFilter;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
@@ -255,26 +257,19 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   private List<SessionIdentificationRule> fetchActiveSessionIdentificationRules(
       RequestContext requestContext, Optional<String> maybeEnvName) {
 
-    GetSessionIdentificationRulesRequest request =
-        maybeEnvName
-            .map(
-                envName ->
-                    GetSessionIdentificationRulesRequest.newBuilder()
-                        .setFilter(
-                            GetSessionIdentificationRulesRequest.GetSessionIdentificationRulesFilter
-                                .newBuilder()
-                                .setEnvironmentFilter(
-                                    GetSessionIdentificationRulesRequest
-                                        .GetSessionIdentificationRulesFilter.EnvironmentFilter
-                                        .newBuilder()
-                                        .addEnvironmentNames(envName)))
-                        .build())
-            .orElseGet(GetSessionIdentificationRulesRequest::getDefaultInstance);
+    GetSessionIdentificationRulesRequest.Builder requestBuilder =
+        GetSessionIdentificationRulesRequest.newBuilder()
+            .setFilter(GetSessionIdentificationRulesFilter.newBuilder().setDisabled(false));
+
+    maybeEnvName
+        .map(envName -> EnvironmentFilter.newBuilder().addEnvironmentNames(envName))
+        .map(EnvironmentFilter.Builder::build)
+        .ifPresent(filter -> requestBuilder.getFilterBuilder().setEnvironmentFilter(filter));
     return requestContext.call(
         () ->
             this.sessionAttributionConfigServiceBlockingStub
                 .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
-                .getSessionIdentificationRules(request)
+                .getSessionIdentificationRules(requestBuilder.build())
                 .getRulesList());
   }
 }

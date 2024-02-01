@@ -14,10 +14,7 @@
                       "urlParamRule": {
                         "attributeRule": {
                         },
-                        "keyPredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "param1"
-                        }
+                        "key": "param1"
                       }
                     }
                   }
@@ -42,10 +39,7 @@
                       "urlParamRule": {
                         "attributeRule": {
                         },
-                        "keyPredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "param1"
-                        }
+                        "key": "param1"
                       }
                     }
                   }
@@ -70,10 +64,7 @@
                       "urlParamRule": {
                         "attributeRule": {
                         },
-                        "keyPredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "param1"
-                        }
+                        "key": "param1"
                       }
                     }
                   }
@@ -98,10 +89,7 @@
                       "urlParamRule": {
                         "attributeRule": {
                         },
-                        "keyPredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "param1"
-                        }
+                        "key": "param1"
                       }
                     }
                   }
@@ -126,10 +114,7 @@
                       "urlParamRule": {
                         "attributeRule": {
                         },
-                        "keyPredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "param1"
-                        }
+                        "key": "param1"
                       }
                     }
                   }

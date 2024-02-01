@@ -3,12 +3,11 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_COOKIE_HEADER_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.RESPONSE_COOKIE_HEADER_KEY;
 
-import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.MatchConditionTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.ParsedObjectKeyRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.AttributeProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.CookieProjector;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ParsedObjectKeyRule;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
 import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
@@ -19,7 +18,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class CookieLocationTranslator
     implements ResponseLocationTranslator, RequestLocationTranslator {
-  private final MatchConditionTranslator matchConditionTranslator;
+  private final ParsedObjectKeyRuleTranslator parsedObjectKeyRuleTranslator;
 
   @Override
   public List<Projector> translateForRequest(
@@ -56,11 +55,8 @@ public class CookieLocationTranslator
                                 .setCookieProjector(
                                     CookieProjector.newBuilder()
                                         .setCookieNameRule(
-                                            ParsedObjectKeyRule.newBuilder()
-                                                .setKeyPredicate(
-                                                    matchConditionTranslator.translate(
-                                                        matchCondition))
-                                                .setAttributeRule(attributeValue))))))
+                                            parsedObjectKeyRuleTranslator.translate(
+                                                matchCondition, attributeValue))))))
         .build();
   }
 }

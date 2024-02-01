@@ -2,10 +2,9 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_OR_QUERY_ATTRIBUTE_KEYS;
 
-import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.MatchConditionTranslator;
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.ParsedObjectKeyRuleTranslator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ParsedObjectKeyRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.RegexCaptureGroupProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.UrlEncodedProjector;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
@@ -17,7 +16,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class QueryParamLocationTranslator implements RequestLocationTranslator {
-  private final MatchConditionTranslator matchConditionTranslator;
+  private final ParsedObjectKeyRuleTranslator parsedObjectKeyRuleTranslator;
   private static final String QUERY_PARAM_CAPTURE_REGEX = "\\?(.*)$";
 
   @Override
@@ -53,12 +52,9 @@ public class QueryParamLocationTranslator implements RequestLocationTranslator {
                                                         .setUrlEncodedProjector(
                                                             UrlEncodedProjector.newBuilder()
                                                                 .setUrlParamRule(
-                                                                    ParsedObjectKeyRule.newBuilder()
-                                                                        .setKeyPredicate(
-                                                                            matchConditionTranslator
-                                                                                .translate(
-                                                                                    matchCondition))
-                                                                        .setAttributeRule(
+                                                                    parsedObjectKeyRuleTranslator
+                                                                        .translate(
+                                                                            matchCondition,
                                                                             attributeValue)))))))))
         .build();
   }

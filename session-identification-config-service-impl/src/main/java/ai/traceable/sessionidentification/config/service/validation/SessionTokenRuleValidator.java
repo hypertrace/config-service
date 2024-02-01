@@ -25,6 +25,7 @@ import io.grpc.Status;
 import java.util.List;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
+import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class SessionTokenRuleValidator {
@@ -97,11 +98,12 @@ public class SessionTokenRuleValidator {
     try {
       JsonFormat.parser().merge(customProjection.getCustomProjection(), builder);
     } catch (InvalidProtocolBufferException e) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              String.format(
-                  "Invalid custom projection json %s", customProjection.getCustomProjection()))
-          .asRuntimeException();
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT.withDescription(
+                  String.format(
+                      "Invalid custom projection: %s", customProjection.getCustomProjection())))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
