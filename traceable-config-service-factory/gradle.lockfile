@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:1.0.22=runtimeClasspath
-ai.traceable.bom:traceable-bom:0.3.99=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.106=compileClasspath,runtimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.25=runtimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath
@@ -239,10 +239,10 @@ org.hypertrace.core.grpcutils:grpc-context-utils:0.13.1=compileClasspath,runtime
 org.hypertrace.core.grpcutils:grpc-server-rx-utils:0.13.1=runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-server-utils:0.12.8=runtimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.5=compileClasspath,runtimeClasspath
-org.hypertrace.core.serviceframework:platform-grpc-service-framework:0.1.64=compileClasspath,runtimeClasspath
-org.hypertrace.core.serviceframework:platform-metrics:0.1.64=runtimeClasspath
-org.hypertrace.core.serviceframework:platform-service-framework:0.1.64=compileClasspath,runtimeClasspath
-org.hypertrace.core.serviceframework:service-framework-spi:0.1.64=compileClasspath,runtimeClasspath
+org.hypertrace.core.serviceframework:platform-grpc-service-framework:0.1.67=compileClasspath,runtimeClasspath
+org.hypertrace.core.serviceframework:platform-metrics:0.1.67=runtimeClasspath
+org.hypertrace.core.serviceframework:platform-service-framework:0.1.67=compileClasspath,runtimeClasspath
+org.hypertrace.core.serviceframework:service-framework-spi:0.1.67=compileClasspath,runtimeClasspath
 org.hypertrace.core.spannormalizer:raw-span-constants:0.9.30=runtimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:0.9.30=runtimeClasspath
 org.hypertrace.entity.service:entity-service-api:0.8.90=runtimeClasspath

@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.99=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.106=compileClasspath,runtimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath
 ai.traceable.platform-gateway:api-utils:0.7.38=runtimeClasspath
@@ -200,9 +200,9 @@ org.hypertrace.core.eventstore:event-store:0.1.3=runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.1=compileClasspath,runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.1=compileClasspath,runtimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.5=compileClasspath,runtimeClasspath
-org.hypertrace.core.serviceframework:platform-metrics:0.1.64=compileClasspath,runtimeClasspath
-org.hypertrace.core.serviceframework:platform-service-framework:0.1.64=runtimeClasspath
-org.hypertrace.core.serviceframework:service-framework-spi:0.1.64=runtimeClasspath
+org.hypertrace.core.serviceframework:platform-metrics:0.1.67=compileClasspath,runtimeClasspath
+org.hypertrace.core.serviceframework:platform-service-framework:0.1.67=runtimeClasspath
+org.hypertrace.core.serviceframework:service-framework-spi:0.1.67=runtimeClasspath
 org.hypertrace.core.spannormalizer:raw-span-constants:0.9.30=runtimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:0.9.30=runtimeClasspath
 org.hypertrace.entity.service:entity-service-api:0.8.90=compileClasspath,runtimeClasspath

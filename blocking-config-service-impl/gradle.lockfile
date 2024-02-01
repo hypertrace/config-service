@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.99=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.106=compileClasspath,runtimeClasspath
 ai.traceable.platform-gateway:ip-utils:0.7.38=compileClasspath,runtimeClasspath
 ai.traceable.platform:actor-service-api:0.2.121=compileClasspath,runtimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.49=compileClasspath,runtimeClasspath
@@ -91,7 +91,7 @@ org.hypertrace.bom:hypertrace-bom:0.3.11=compileClasspath,runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.1=compileClasspath,runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.1=compileClasspath,runtimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.5=compileClasspath,runtimeClasspath
-org.hypertrace.core.serviceframework:platform-metrics:0.1.64=compileClasspath,runtimeClasspath
+org.hypertrace.core.serviceframework:platform-metrics:0.1.67=compileClasspath,runtimeClasspath
 org.hypertrace.entity.service:entity-service-api:0.8.90=compileClasspath,runtimeClasspath
 org.latencyutils:LatencyUtils:2.0.3=runtimeClasspath
 org.ow2.asm:asm:9.3=runtimeClasspath
