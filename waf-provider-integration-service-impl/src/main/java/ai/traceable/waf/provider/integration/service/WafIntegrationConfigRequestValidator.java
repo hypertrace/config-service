@@ -439,11 +439,12 @@ public class WafIntegrationConfigRequestValidator {
         cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        cloudflareIntegrationParams, CloudflareIntegrationParams.API_TOKEN_FIELD_NUMBER);
     if (cloudflareIntegrationParams.hasEncryptedApiToken()) {
       // TODO: remove deprecated field, and add unconditional validation on new field
       this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
+    } else {
+      validateNonDefaultPresenceOrThrow(
+          cloudflareIntegrationParams, CloudflareIntegrationParams.API_TOKEN_FIELD_NUMBER);
     }
   }
 
