@@ -181,17 +181,8 @@ public class WafIntegrationBuilderUtils {
       return false;
     }
     String apiToken =
-        request
-            .getUpdatedWafIntegrationDetails()
-            .getUpdatedCloudflareIntegrationParams()
-            .getEncryptedApiToken()
-            .getBase64EncryptedData();
-    String keyId =
-        request
-            .getUpdatedWafIntegrationDetails()
-            .getUpdatedCloudflareIntegrationParams()
-            .getEncryptedApiToken()
-            .getKeyId();
+        builder.getCloudflareIntegrationParams().getEncryptedApiToken().getBase64EncryptedData();
+    String keyId = builder.getCloudflareIntegrationParams().getEncryptedApiToken().getKeyId();
     if (request
         .getUpdatedWafIntegrationDetails()
         .getUpdatedCloudflareIntegrationParams()
