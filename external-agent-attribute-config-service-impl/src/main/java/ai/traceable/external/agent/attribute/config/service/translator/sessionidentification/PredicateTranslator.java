@@ -65,6 +65,17 @@ class PredicateTranslator {
 
   private Predicate translatePredicate(
       ai.traceable.sessionidentification.config.service.v1.Predicate predicate) {
+    if (predicate.hasLogicalPredicate()) {
+      return Predicate.newBuilder()
+          .setLogicalPredicate(
+              LogicalPredicate.newBuilder()
+                  .setOperator(convert(predicate.getLogicalPredicate().getOperator()))
+                  .addAllChildren(
+                      predicate.getLogicalPredicate().getChildrenList().stream()
+                          .map(this::translatePredicate)
+                          .collect(Collectors.toUnmodifiableList())))
+          .build();
+    }
     if (predicate.hasCustomPredicate()) {
       return Predicate.newBuilder()
           .setProjectorPredicate(
@@ -157,5 +168,17 @@ class PredicateTranslator {
                 .setFirstMatchingProjector(
                     Projector.FirstMatchingProjector.newBuilder().addAllAttributeRules(rules)))
         .build();
+  }
+
+  LogicalOperator convert(
+      ai.traceable.sessionidentification.config.service.v1.Predicate.LogicalOperator operator) {
+    switch (operator) {
+      case LOGICAL_OPERATOR_AND:
+        return LogicalOperator.LOGICAL_OPERATOR_AND;
+      case LOGICAL_OPERATOR_OR:
+        return LogicalOperator.LOGICAL_OPERATOR_OR;
+      default:
+        return LogicalOperator.LOGICAL_OPERATOR_UNSPECIFIED;
+    }
   }
 }

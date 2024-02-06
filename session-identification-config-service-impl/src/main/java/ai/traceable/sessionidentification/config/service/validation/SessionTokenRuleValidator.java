@@ -58,6 +58,8 @@ public class SessionTokenRuleValidator {
       validateAttributePredicate(predicate.getAttributePredicate());
     } else if (predicate.hasCustomPredicate()) {
       validateCustomProjection(predicate.getCustomPredicate());
+    } else if (predicate.hasLogicalPredicate()) {
+      validateLogicalPredicate(predicate.getLogicalPredicate());
     }
   }
 
@@ -70,6 +72,23 @@ public class SessionTokenRuleValidator {
           .asRuntimeException();
     }
     validateAttributeMatchCondition(predicate.getValueMatchCondition());
+  }
+
+  private void validateLogicalPredicate(Predicate.LogicalPredicate predicate) {
+    if (predicate.getOperator().equals(Predicate.LogicalOperator.LOGICAL_OPERATOR_UNSPECIFIED)
+        || predicate.getOperator().equals(Predicate.LogicalOperator.UNRECOGNIZED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Unexpected logical operator %s", predicate.getOperator()))
+          .asRuntimeException();
+    }
+    if (predicate.getChildrenList().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Predicate children list should not be empty")
+          .asRuntimeException();
+    }
+    for (Predicate childPredicate : predicate.getChildrenList()) {
+      validateTokenConditionalPredicate(childPredicate);
+    }
   }
 
   private void validateTokenValue(SessionTokenValueRule rule) {

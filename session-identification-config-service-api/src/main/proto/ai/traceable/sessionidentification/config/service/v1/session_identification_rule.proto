@@ -135,6 +135,7 @@ message Predicate {
   oneof predicate {
     AttributePredicate attribute_predicate = 1;
     CustomProjection custom_predicate = 2;
+    LogicalPredicate logical_predicate = 3;
   }
 
   message AttributePredicate {
@@ -144,6 +145,17 @@ message Predicate {
     }
     AttributeProjection value_projection = 3;
     MatchCondition value_match_condition = 4;
+  }
+
+  message LogicalPredicate {
+    LogicalOperator operator = 1;
+    repeated Predicate children = 2;
+  }
+
+  enum LogicalOperator {
+    LOGICAL_OPERATOR_UNSPECIFIED = 0;
+    LOGICAL_OPERATOR_AND = 1;
+    LOGICAL_OPERATOR_OR = 2;
   }
 }
 

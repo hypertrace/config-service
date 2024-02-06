@@ -3,27 +3,55 @@
 
   "tokenRules": [{
     "tokenConditionalPredicate": {
-      "attributePredicate": {
-        "request": "REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER",
-        "valueProjection": {
-          "attributeKeyMatchCondition": {
-            "operator": "MATCH_OPERATOR_EQUALS",
-            "matchValue": {
-              "stringValue": "authorization"
+      "logicalPredicate": {
+        "operator": "LOGICAL_OPERATOR_AND",
+        "children": [{
+          "attributePredicate": {
+            "request": "REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER",
+            "valueProjection": {
+              "attributeKeyMatchCondition": {
+                "operator": "MATCH_OPERATOR_EQUALS",
+                "matchValue": {
+                  "stringValue": "authorization"
+                }
+              },
+              "valueProjectionsInOrder": [{
+                "regexCaptureGroup": {
+                  "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$"
+                }
+              }]
+            },
+            "valueMatchCondition": {
+              "operator": "MATCH_OPERATOR_EQUALS",
+              "matchValue": {
+                "stringValue": "xyz"
+              }
             }
-          },
-          "valueProjectionsInOrder": [{
-            "regexCaptureGroup": {
-              "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$"
-            }
-          }]
-        },
-        "valueMatchCondition": {
-          "operator": "MATCH_OPERATOR_EQUALS",
-          "matchValue": {
-            "stringValue": "xyz"
           }
-        }
+        }, {
+          "attributePredicate": {
+            "request": "REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER",
+            "valueProjection": {
+              "attributeKeyMatchCondition": {
+                "operator": "MATCH_OPERATOR_EQUALS",
+                "matchValue": {
+                  "stringValue": "authorization"
+                }
+              },
+              "valueProjectionsInOrder": [{
+                "regexCaptureGroup": {
+                  "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$"
+                }
+              }]
+            },
+            "valueMatchCondition": {
+              "operator": "MATCH_OPERATOR_EQUALS",
+              "matchValue": {
+                "stringValue": "xyz"
+              }
+            }
+          }
+        }]
       }
     },
     "tokenValueRule": {

@@ -237,6 +237,49 @@ class SessionTokenRuleValidatorTest {
   }
 
   @Test
+  void validateLogicalPredicateList() {
+    assertInvalidArgStatusContaining(
+        "Unexpected logical operator",
+        () ->
+            tokenRuleValidator.validateTokenRules(
+                List.of(
+                    SessionTokenRule.newBuilder()
+                        .setTokenValueRule(TOKEN_VALUE_RULE)
+                        .setTokenConditionalPredicate(
+                            Predicate.newBuilder()
+                                .setLogicalPredicate(Predicate.LogicalPredicate.newBuilder()))
+                        .setRequestSessionTokenDetails(
+                            RequestSessionTokenDetails.newBuilder()
+                                .setTokenLocation(
+                                    RequestAttributeKeyLocation
+                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
+                        .build())));
+  }
+
+  @Test
+  void validateLogicalPredicateChildrenList() {
+    assertInvalidArgStatusContaining(
+        "Predicate children list should not be empty",
+        () ->
+            tokenRuleValidator.validateTokenRules(
+                List.of(
+                    SessionTokenRule.newBuilder()
+                        .setTokenValueRule(TOKEN_VALUE_RULE)
+                        .setTokenConditionalPredicate(
+                            Predicate.newBuilder()
+                                .setLogicalPredicate(
+                                    Predicate.LogicalPredicate.newBuilder()
+                                        .setOperator(
+                                            Predicate.LogicalOperator.LOGICAL_OPERATOR_AND)))
+                        .setRequestSessionTokenDetails(
+                            RequestSessionTokenDetails.newBuilder()
+                                .setTokenLocation(
+                                    RequestAttributeKeyLocation
+                                        .REQUEST_ATTRIBUTE_KEY_LOCATION_HEADER))
+                        .build())));
+  }
+
+  @Test
   void validateRequestSessionTokenDetails() {
     assertInvalidArgStatusContaining(
         "RequestSessionTokenDetails.token_location but not present",

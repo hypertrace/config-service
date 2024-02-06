@@ -3,66 +3,136 @@
     "conditionalProjector": {
       "predicate": {
         "logicalPredicate": {
-          "operator": "LOGICAL_OPERATOR_OR",
+          "operator": "LOGICAL_OPERATOR_AND",
           "children": [{
-            "projectorPredicate": {
-              "projector": {
-                "attributeProjector": {
-                  "attributeRule": {
-                    "projector": {
-                      "regexCaptureGroupProjector": {
-                        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
-                        "attributeRule": {
-                          "projector": {
-                            "conditionalProjector": {
-                              "predicate": {
-                                "currentValuePredicate": {
-                                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                                  "value": "xyz"
+            "logicalPredicate": {
+              "operator": "LOGICAL_OPERATOR_OR",
+              "children": [{
+                "projectorPredicate": {
+                  "projector": {
+                    "attributeProjector": {
+                      "attributeRule": {
+                        "projector": {
+                          "regexCaptureGroupProjector": {
+                            "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                            "attributeRule": {
+                              "projector": {
+                                "conditionalProjector": {
+                                  "predicate": {
+                                    "currentValuePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                      "value": "xyz"
+                                    }
+                                  }
                                 }
                               }
                             }
                           }
                         }
+                      },
+                      "attributeKeyPredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "http.request.header.authorization"
                       }
                     }
-                  },
-                  "attributeKeyPredicate": {
-                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                    "value": "http.request.header.authorization"
                   }
                 }
-              }
+              }, {
+                "projectorPredicate": {
+                  "projector": {
+                    "attributeProjector": {
+                      "attributeRule": {
+                        "projector": {
+                          "regexCaptureGroupProjector": {
+                            "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                            "attributeRule": {
+                              "projector": {
+                                "conditionalProjector": {
+                                  "predicate": {
+                                    "currentValuePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                      "value": "xyz"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "attributeKeyPredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "rpc.request.metadata.authorization"
+                      }
+                    }
+                  }
+                }
+              }]
             }
           }, {
-            "projectorPredicate": {
-              "projector": {
-                "attributeProjector": {
-                  "attributeRule": {
-                    "projector": {
-                      "regexCaptureGroupProjector": {
-                        "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
-                        "attributeRule": {
-                          "projector": {
-                            "conditionalProjector": {
-                              "predicate": {
-                                "currentValuePredicate": {
-                                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                                  "value": "xyz"
+            "logicalPredicate": {
+              "operator": "LOGICAL_OPERATOR_OR",
+              "children": [{
+                "projectorPredicate": {
+                  "projector": {
+                    "attributeProjector": {
+                      "attributeRule": {
+                        "projector": {
+                          "regexCaptureGroupProjector": {
+                            "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                            "attributeRule": {
+                              "projector": {
+                                "conditionalProjector": {
+                                  "predicate": {
+                                    "currentValuePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                      "value": "xyz"
+                                    }
+                                  }
                                 }
                               }
                             }
                           }
                         }
+                      },
+                      "attributeKeyPredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "http.request.header.authorization"
                       }
                     }
-                  },
-                  "attributeKeyPredicate": {
-                    "operator": "COMPARISON_OPERATOR_EQUALS",
-                    "value": "rpc.request.metadata.authorization"
                   }
                 }
-              }
+              }, {
+                "projectorPredicate": {
+                  "projector": {
+                    "attributeProjector": {
+                      "attributeRule": {
+                        "projector": {
+                          "regexCaptureGroupProjector": {
+                            "regexCaptureGroup": "^(?i:Basic|Bearer) ?(.*)$",
+                            "attributeRule": {
+                              "projector": {
+                                "conditionalProjector": {
+                                  "predicate": {
+                                    "currentValuePredicate": {
+                                      "operator": "COMPARISON_OPERATOR_EQUALS",
+                                      "value": "xyz"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "attributeKeyPredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "rpc.request.metadata.authorization"
+                      }
+                    }
+                  }
+                }
+              }]
             }
           }]
         }
