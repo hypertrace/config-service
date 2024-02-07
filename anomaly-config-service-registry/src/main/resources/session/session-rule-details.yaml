@@ -28,14 +28,14 @@
       - data manipulation by modifying unauthorized objects
       - full account takeover.
     references: |
-      - OWASP API Top 10 - 2019 - API1:Broken Object Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa1-broken-object-level-authorization.md\\n
-      - OWASP Top 10 - 2021 - A1:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/\\n
-      - OWASP Top 10 - 2017 - A5:Broken Access Control  - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control\\n
-      - Common Weakness Enumeration (CWE) - CWE-285:Improper Authorization - https://cwe.mitre.org/data/definitions/285.html\\n
-      - SANS TOP 25 - http://cwe.mitre.org/top25/\\n
-      - OWASP IDOR Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html\\n
-      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html\\n
-      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/\\n
+      - OWASP API Top 10 - 2019 - API1:Broken Object Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa1-broken-object-level-authorization.md
+      - OWASP Top 10 - 2021 - A1:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - OWASP Top 10 - 2017 - A5:Broken Access Control  - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control
+      - Common Weakness Enumeration (CWE) - CWE-285:Improper Authorization - https://cwe.mitre.org/data/definitions/285.html
+      - SANS TOP 25 - http://cwe.mitre.org/top25/
+      - OWASP IDOR Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - Web Application Security Consortium - WASC-02:Insufficient Authorization - http://projects.webappsec.org/w/page/13246940/Insufficient%20Authorization
 
 - ruleId: userIdBola
@@ -67,14 +67,14 @@
       - data manipulation by modifying unauthorized objects
       - full account takeover.
     references: |
-      - OWASP API Top 10 - 2019 - API1:Broken Object Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa1-broken-object-level-authorization.md\\n
-      - OWASP Top 10 - 2021 - A1:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/\\n
-      - OWASP Top 10 - 2017 - A5:Broken Access Control  - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control\\n
-      - Common Weakness Enumeration (CWE) - CWE-285:Improper Authorization - https://cwe.mitre.org/data/definitions/285.html\\n
-      - SANS TOP 25 - http://cwe.mitre.org/top25/\\n
-      - OWASP IDOR Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html\\n
-      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html\\n
-      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/\\n
+      - OWASP API Top 10 - 2019 - API1:Broken Object Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa1-broken-object-level-authorization.md
+      - OWASP Top 10 - 2021 - A1:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - OWASP Top 10 - 2017 - A5:Broken Access Control  - https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control
+      - Common Weakness Enumeration (CWE) - CWE-285:Improper Authorization - https://cwe.mitre.org/data/definitions/285.html
+      - SANS TOP 25 - http://cwe.mitre.org/top25/
+      - OWASP IDOR Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - Web Application Security Consortium - WASC-02:Insufficient Authorization - http://projects.webappsec.org/w/page/13246940/Insufficient%20Authorization
     
 - ruleId: sessionv
