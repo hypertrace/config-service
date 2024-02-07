@@ -110,6 +110,7 @@ message AnomalyDetectionConfig {
     SessionDefinitionMetadataAnomalyDetectionConfig session_definition_metadata_anomaly_detection_config = 8;
     BlockingMetadataAnomalyDetectionConfig blocking_metadata_anomaly_detection_config = 9;
     CustomRulesAnomalyDetectionConfig custom_rules_anomaly_detection_config = 10;
+    VolumetricAnomalyDetectionConfig volumetric_anomaly_detection_config = 11;
   }
 }
 
@@ -195,6 +196,21 @@ message CustomRulesAnomalyDetectionConfig {
     AbuseVelocity abuse_velocity_min_threshold = 1;
     int32 ip_reputation_score_min_threshold = 2;
   }
+}
+
+message VolumetricAnomalyDetectionConfig {
+  oneof config {
+    ApiCallSpikeAnomalyConfig api_call_spike = 1;
+  }
+}
+
+message ApiCallSpikeAnomalyConfig {
+  repeated IpRange excluded_ip_ranges = 1;
+}
+
+message IpRange {
+  int64 start_ip = 1;
+  int64 end_ip = 2;
 }
 
 message ModsecurityAllDetectionConfig {
