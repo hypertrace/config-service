@@ -23,7 +23,8 @@ class SessionTokenRuleTranslator {
     List<Projector> projectors = projectionRootTranslator.translateForTokenValue(tokenRule);
     switch (tokenRule.getTokenTypeCase()) {
       case RESPONSE_SESSION_TOKEN_DETAILS:
-        if (tokenRule.getResponseSessionTokenDetails().hasResponseAttributeExpiration()) {
+        if (tokenRule.getResponseSessionTokenDetails().hasResponseAttributeExpiration()
+            || tokenRule.getResponseSessionTokenDetails().hasJwtExpiration()) {
           return predicateTranslator.addConditionalPredicateIfPresent(
               AttributeRule.newBuilder()
                   .setProjector(
