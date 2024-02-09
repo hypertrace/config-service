@@ -9,7 +9,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.AttributePredicate;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
-import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
+import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
 import io.grpc.Status;
 import java.util.List;
@@ -26,14 +26,14 @@ class ExpirationTranslator {
       ResponseSessionTokenDetails responseSessionTokenDetails,
       int ruleIndex,
       String ruleId,
-      MatchCondition matchCondition) {
+      AttributeProjection attributeProjection) {
     switch (responseSessionTokenDetails.getExpirationCase()) {
       case JWT_EXPIRATION:
         return addExpirationValueAttributeAndProject(
             ruleId,
             ruleIndex,
             projectionRootTranslator.translateForJwtExpiration(
-                responseSessionTokenDetails, matchCondition));
+                responseSessionTokenDetails, attributeProjection));
       case RESPONSE_ATTRIBUTE_EXPIRATION:
         return addExpirationValueAttributeAndProject(
             ruleId,

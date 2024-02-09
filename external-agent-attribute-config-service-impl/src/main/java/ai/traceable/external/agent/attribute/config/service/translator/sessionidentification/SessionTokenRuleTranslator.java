@@ -55,8 +55,7 @@ class SessionTokenRuleTranslator {
                                                   tokenRule
                                                       .getTokenValueRule()
                                                       .getTokenValueProjection()
-                                                      .getAttributeProjection()
-                                                      .getAttributeKeyMatchCondition())
+                                                      .getAttributeProjection())
                                               .stream()
                                               .map(
                                                   action ->

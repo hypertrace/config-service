@@ -1,0 +1,30 @@
+{
+  "id": "rule-id",
+  "tokenRules": [{
+    "tokenValueRule": {
+      "tokenValueProjection": {
+        "attributeProjection": {
+          "valueProjectionsInOrder": [{
+            "regexCaptureGroup": {
+              "regexCaptureGroup": "a.*bcd"
+            }
+          },
+          {
+            "jwtPayloadClaim": {
+              "claimKey": "claim-key-1"
+            }
+          },
+          {
+            "base64Projection": {
+            }
+          }]
+        }
+      }
+    },
+    "responseSessionTokenDetails": {
+      "tokenLocation": "RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY",
+      "jwtExpiration": {
+      }
+    }
+  }]
+}
