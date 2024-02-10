@@ -54,3 +54,4 @@ crs_9440920 :: Java Spring Core: RCE (CVE-2022-22965)
 crs_9440930 :: Confluence Server OGNL Injection: Webwork: (CVE-2021-26084)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
 crs_9440940 :: Apache Struts path traversal to RCE vulnerability: (CVE-2023-50164)
+crs_9210310 :: Server Side Template Injection(SSTI) Attempt
