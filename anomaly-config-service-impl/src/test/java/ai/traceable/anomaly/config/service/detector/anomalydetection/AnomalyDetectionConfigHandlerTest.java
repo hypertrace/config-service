@@ -15,33 +15,13 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
-import ai.traceable.anomaly.config.service.v1.detector.AbuseVelocity;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventCategory;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfigMap;
-import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.*;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.EnumerationsAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.LearntApiAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -772,6 +752,82 @@ public class AnomalyDetectionConfigHandlerTest {
     assertEquals(
         AbuseVelocity.ABUSE_VELOCITY_MEDIUM, ipTypeAnomalyConfig.getAbuseVelocityMinThreshold());
     assertEquals(90, ipTypeAnomalyConfig.getIpReputationScoreMinThreshold());
+  }
+
+  @Test
+  void testVolumetricDetectionConfigConvert() throws InvalidProtocolBufferException {
+    ArrayList<IpRange> ipRangesList = new ArrayList<>();
+    ipRangesList.add(IpRange.newBuilder().setStartIp(1000).setEndIp(2000).build());
+    ipRangesList.add(IpRange.newBuilder().setStartIp(3000).setEndIp(4000).build());
+
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setVolumetricAnomalyDetectionConfig(
+                        VolumetricAnomalyDetectionConfig.newBuilder()
+                            .setApiCallSpike(
+                                ApiCallSpikeAnomalyConfig.newBuilder()
+                                    .addExcludedIpRanges(IpRange.getDefaultInstance())
+                                    .build()))
+                    .build())
+            .build();
+
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setVolumetricAnomalyDetectionConfig(
+                        VolumetricAnomalyDetectionConfig.newBuilder()
+                            .setApiCallSpike(
+                                ApiCallSpikeAnomalyConfig.newBuilder()
+                                    .addAllExcludedIpRanges(ipRangesList)
+                                    .build()))
+                    .build())
+            .build();
+
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+    AnomalyDetectionConfig detectionConfig = mergedConfig.getAnomalyDetectionConfigsList().get(0);
+
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+    assertEquals(
+        ipRangesList,
+        detectionConfig
+            .getVolumetricAnomalyDetectionConfig()
+            .getApiCallSpike()
+            .getExcludedIpRangesList());
+
+    ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
+        ScopedAnomalyDetectionConfig.newBuilder();
+    deletedConfigBuilder.setConfigScope(config1.getConfigScope());
+
+    List<AnomalyDetectionConfig> detectionConfigsToDelete = new ArrayList<>();
+    detectionConfigsToDelete.add(config1.getAnomalyDetectionConfigsList().get(0));
+
+    ScopedAnomalyDetectionConfig deleteConfig =
+        detectionConfigConverter.deleteWholeAnomalyDetectionConfigs(
+            config1, detectionConfigsToDelete, deletedConfigBuilder);
+    assertEquals(0, deleteConfig.getAnomalyDetectionConfigsList().size());
   }
 
   private AnomalyDetectionConfig getAnomalyDetectionConfig(

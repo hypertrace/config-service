@@ -24,6 +24,8 @@ public class AnomalyDetectionConfigHandler {
   private final ModsecConfigHandler modsecConfigHandler;
   private final CustomRulesConfigHandler customRulesConfigHandler;
 
+  private final VolumetricDetectionConfigHandler volumetricDetectionConfigHandler;
+
   @Inject
   public AnomalyDetectionConfigHandler(
       ApiDefinitionRegistry apiDefinitionRegistry, SessionRulesRegistry sessionRulesRegistry) {
@@ -33,6 +35,7 @@ public class AnomalyDetectionConfigHandler {
     this.blockingMetadataConfigHandler = new BlockingMetadataConfigHandler();
     this.modsecConfigHandler = new ModsecConfigHandler();
     this.customRulesConfigHandler = new CustomRulesConfigHandler();
+    this.volumetricDetectionConfigHandler = new VolumetricDetectionConfigHandler();
   }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
@@ -115,6 +118,8 @@ public class AnomalyDetectionConfigHandler {
             sessionDefinitionConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             customRulesConfigHandler.merge(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            volumetricDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -148,6 +153,9 @@ public class AnomalyDetectionConfigHandler {
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     anomalyDetectionConfigs =
         customRulesConfigHandler.deleteWholeAnomalyDetectionConfigs(
+            anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
+    anomalyDetectionConfigs =
+        volumetricDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
 
     filteredConfigBuilder.addAllAnomalyDetectionConfigs(anomalyDetectionConfigs);
