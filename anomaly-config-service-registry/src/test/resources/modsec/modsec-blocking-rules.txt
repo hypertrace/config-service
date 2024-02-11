@@ -56,3 +56,35 @@ crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
 crs_9440940 :: Apache Struts path traversal to RCE vulnerability: (CVE-2023-50164)
 crs_9210310 :: Server Side Template Injection(SSTI) Attempt
 crs_9410160 :: XSS InjectionChecker: HTML Injection
+crs_1040100 :: GraphQL Introspection Query Detected
+crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint
+crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators
+crs_921200 :: LDAP Injection Attack
+crs_9320100 :: Remote Command Execution: Unix Command Injection (T100)
+crs_9320105 :: Remote Command Execution: Unix Command Injection (T105)
+crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150)
+crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155)
+crs_932180 :: Restricted File Upload Attempt
+crs_9410170 :: NoScript XSS InjectionChecker: Attribute Injection (T170)
+crs_941260 :: IE XSS Filters - Attack (Meta charset)
+crs_9420190 :: MSSQL code execution and information gathering attempts
+crs_9420230 :: Conditional SQL injection attempts (T230)
+crs_9420291 :: Basic MongoDB SQL injection attempts (Nested JSON)
+crs_942240 :: MySQL charset switch and MSSQL DoS attempts
+crs_942250 :: MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections
+crs_942270 :: Basic sql injection. Common attack string for mysql, oracle and others
+crs_942280 :: Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts
+crs_9440210 :: Java Deserialization: Magic Bytes Base64 Encoded
+crs_9440921 :: Java Spring Core: RCE: Panic Rule (CVE-2022-22965) (T921)
+crs_944100 :: Remote Command Execution: Suspicious Java class
+crs_944130 :: Suspicious Java class
+crs_1020110 :: XML External Entity Injection: Entity Tags (T110)
+crs_921190 :: HTTP Splitting (CR/LF in request filename)
+crs_942160 :: Blind sqli tests using sleep() or benchmark()
+crs_942500 :: MySQL in-line comment
+crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
+crs_9210300 :: URL Encoding Abuse Attack Attempt
+crs_9210305 :: Null Byte Injection
+crs_941360 :: JSFuck / Hieroglyphy obfuscation
+crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer
+crs_9210400 :: Mail Injection Detected

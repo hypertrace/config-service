@@ -109,7 +109,7 @@ public class ModsecRulesRegistryTest {
           allRulesCount - blockingRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
       // few rules in file not marked for blocking
-      assertEquals(64, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
+      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
     }
     {
       // crs_913100 is disabled
@@ -168,11 +168,12 @@ public class ModsecRulesRegistryTest {
   @Test
   public void testRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleInfos();
-    assertEquals(13, anomalyRuleInfos.size());
+    assertEquals(14, anomalyRuleInfos.size());
     assertEquals(
         "crs_101 :: Server Side Request Forgery (SSRF) Signatures\n"
             + "crs_102 :: XML External Entity Injection (XXE)\n"
             + "crs_103 :: Basic Authentication Violation\n"
+            + "crs_104 :: GraphQL Attacks\n"
             + "crs_913 :: Scanner Detection\n"
             + "crs_921 :: HTTP Protocol Attacks\n"
             + "crs_930 :: Local File Inclusion\n"

@@ -153,6 +153,7 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_ATTACKER = 14 [(string_value) = "Attacker"];
   ANOMALY_RULE_CATEGORY_TOKEN_VIOLATIONS = 15 [(string_value) = "Token Violations and Anomalies", deprecated = true];
   ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS = 16 [(string_value) = "Authentication and Token Violations"];
+  ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS = 17 [(string_value) = "GraphQL Attacks"];
 }
 
 enum AnomalyConfidenceLevel {

@@ -415,3 +415,25 @@
         - https://www.first.org/cvss/calculator/3.0#CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:N
         - http://projects.webappsec.org/Insufficient%20Transport%20Layer%20Protection
         - https://attack.mitre.org/techniques/T1190/
+
+- ruleId: crs_104
+  ruleName: GraphQL Attacks
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS
+  subRuleInfos:
+  - ruleId: crs_1040100
+    eventDetails:
+      description: |
+        GraphQL introspection allows to query all information related to the supported schema and queries on a GraphQL server instance. By leveraging this misconfiguration, an attacker could retrieve sensitive information or conduct further attacks on the discovered endpoints
+      mitigation: |
+        Restrict GraphQL introspection feature to authorized users only, or disable it.
+      impact: |
+        - Attackers could view sensitive information about the service and the infrastructure on which the service is being run on, using which malicious actors can target the system with different attacks.
+      references: |
+        - OWASP API Top 10 - 2019 - API7:Security Misconfiguration - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa7-security-misconfiguration.md
+        - OWASP Top 10 - 2021 – A05:Security Misconfiguration - https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+        - OWASP Top 10 - 2017 - A6:Security Misconfiguration - https://owasp.org/www-project-top-ten/2017/A6_2017-Security_Misconfiguration
+        - Common Weakness Enumeration (CWE) CWE-16: Configuration : https://cwe.mitre.org/data/definitions/16
+        - SANS TOP 25 - http://cwe.mitre.org/top25/
+        - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-116:Excavation - https://capec.mitre.org/data/definitions/116.html
+        - MITRE Attack - T1213:Data from Information Repositories - https://attack.mitre.org/techniques/T1213/
+        - Web Application Security Consortium - WASC-15:Application Misconfiguration - http://projects.webappsec.org/w/page/13246914/Application%20Misconfiguration

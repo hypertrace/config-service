@@ -5,6 +5,7 @@ crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators :: ANOMA
 crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' , 'OWASP_API:API8' ]
 crs_1020110 :: XML External Entity Injection: Entity Tags (T110) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' , 'OWASP_API:API8' ]
 crs_1030100 :: Basic Authentication: Missing Password :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A1' , 'CWE:287' , 'OWASP_API_2023:API2' , 'OWASP_API:API2' ]
+crs_1040100 :: GraphQL Introspection Query Detected :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_API:API8' , 'CWE:16' , 'OWASP_2017:A6' , 'OWASP_2021:A5' ]
 crs_913100 :: User-Agent associated with security scanner :: ANOMALY_SEVERITY_LEVEL_MEDIUM
 crs_913110 :: Request header associated with security scanner :: ANOMALY_SEVERITY_LEVEL_MEDIUM
 crs_913120 :: Request filename/argument associated with security scanner :: ANOMALY_SEVERITY_LEVEL_LOW
@@ -119,3 +120,4 @@ crs_944130 :: Suspicious Java class :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2
 crs_9440940 :: Apache Struts path traversal to RCE vulnerability: (CVE-2023-50164) :: ANOMALY_SEVERITY_LEVEL_CRITICAL :: [ 'CWE:552' , 'OWASP_API:API8' ]
 crs_9210310 :: Server Side Template Injection(SSTI) Attempt :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_API:API8' , 'CWE:1336' ]
 crs_9410160 :: XSS InjectionChecker: HTML Injection :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A7' , 'OWASP_2021:A3' , 'CWE:79' , 'OWASP_API:API8' ]
+crs_9210400 :: Mail Injection Detected :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_API:API8' , 'CWE:77' , 'OWASP_2021:A3' ]
