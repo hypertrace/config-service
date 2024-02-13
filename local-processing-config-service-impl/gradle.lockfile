@@ -1,17 +1,17 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.126=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.127=compileClasspath,runtimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath
-ai.traceable.platform-gateway:api-utils:0.8.9=runtimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.9=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.9=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:deep-data-store:0.8.9=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.9=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.9=runtimeClasspath
-ai.traceable.platform-gateway:training-evaluation-framework:0.8.9=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:xml-utils:0.8.9=runtimeClasspath
+ai.traceable.platform-gateway:api-utils:0.8.10=runtimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.10=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.10=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:deep-data-store:0.8.10=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.10=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.10=runtimeClasspath
+ai.traceable.platform-gateway:training-evaluation-framework:0.8.10=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:xml-utils:0.8.10=runtimeClasspath
 ai.traceable.platform:api-naming-model:3.1.25=compileClasspath,runtimeClasspath
 ai.traceable.platform:trace-enricher-api:3.0.10=runtimeClasspath
 ai.traceable.platform:trace-enricher-constants:3.0.10=runtimeClasspath
