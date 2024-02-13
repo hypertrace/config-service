@@ -1,17 +1,17 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.119=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.126=compileClasspath,runtimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath
-ai.traceable.platform-gateway:api-utils:0.8.6=runtimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.6=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.6=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:deep-data-store:0.8.6=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.6=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.6=runtimeClasspath
-ai.traceable.platform-gateway:training-evaluation-framework:0.8.6=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:xml-utils:0.8.6=runtimeClasspath
+ai.traceable.platform-gateway:api-utils:0.8.9=runtimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.9=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.9=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:deep-data-store:0.8.9=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.9=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.9=runtimeClasspath
+ai.traceable.platform-gateway:training-evaluation-framework:0.8.9=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:xml-utils:0.8.9=runtimeClasspath
 ai.traceable.platform:api-naming-model:3.1.25=compileClasspath,runtimeClasspath
 ai.traceable.platform:trace-enricher-api:3.0.10=runtimeClasspath
 ai.traceable.platform:trace-enricher-constants:3.0.10=runtimeClasspath
@@ -77,7 +77,7 @@ com.helger:profiler:1.1.1=runtimeClasspath
 com.jayway.jsonpath:json-path:2.9.0=runtimeClasspath
 com.jcraft:jsch:0.1.55=runtimeClasspath
 com.lmax:disruptor:3.4.2=runtimeClasspath
-com.nimbusds:nimbus-jose-jwt:9.31=runtimeClasspath
+com.nimbusds:nimbus-jose-jwt:9.37.3=runtimeClasspath
 com.typesafe:config:1.4.2=compileClasspath,runtimeClasspath
 commons-beanutils:commons-beanutils:1.9.4=runtimeClasspath
 commons-cli:commons-cli:1.2=runtimeClasspath
@@ -194,7 +194,7 @@ org.eclipse.jetty:jetty-util-ajax:9.4.53.v20231009=runtimeClasspath
 org.eclipse.jetty:jetty-util:9.4.53.v20231009=runtimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath
 org.hdrhistogram:HdrHistogram:2.1.12=runtimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.11=compileClasspath,runtimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.12=compileClasspath,runtimeClasspath
 org.hypertrace.core.datamodel:data-model:0.1.31=runtimeClasspath
 org.hypertrace.core.eventstore:event-store:0.1.3=runtimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.1=compileClasspath,runtimeClasspath
