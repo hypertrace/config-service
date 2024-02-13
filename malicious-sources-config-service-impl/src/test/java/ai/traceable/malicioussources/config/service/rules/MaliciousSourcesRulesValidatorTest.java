@@ -564,9 +564,7 @@ public class MaliciousSourcesRulesValidatorTest {
               .addConditions(
                   MaliciousSourcesRuleCondition.newBuilder()
                       .setIpRangeCondition(
-                          IpAddressCondition.newBuilder()
-                              .addCidrIpRanges("255.255.255.0/100")
-                              .build())
+                          IpAddressCondition.newBuilder().addCidrIpRanges("192.168.0.1/8").build())
                       .build())
               .build();
 

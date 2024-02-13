@@ -669,7 +669,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .setIpRangeCondition(
                 IpAddressCondition.newBuilder()
                     .addAllIpAddresses(List.of("1.2.3.4"))
-                    .addAllCidrIpRanges(List.of("1.2.3.4/5")))
+                    .addAllCidrIpRanges(List.of("1.2.3.4/32")))
             .build());
 
     createMaliciousSourceRule(

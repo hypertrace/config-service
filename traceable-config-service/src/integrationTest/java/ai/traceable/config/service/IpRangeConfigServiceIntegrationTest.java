@@ -22,6 +22,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceIntegrationTestBase {
+  public static final String IP_ADDRESS_1_WITH_NETWORK_PREFIX = "1.1.0.0/16";
+  public static final String IP_ADDRESS_2_WITH_NETWORK_PREFIX = "16.16.0.0/16";
   private static IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private static final RuleScope ruleScope1 =
       RuleScope.newBuilder()
@@ -46,7 +48,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-1")
             .setDescription("Range rule test 1")
-            .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+            .addAllRawInputIpData(Arrays.asList("1.2.3.4", IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -70,7 +72,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setId(ruleId1)
             .setRuleDetails(ipRangeRuleDetails1)
             .addAllIpAddresses(Arrays.asList("1.2.3.4"))
-            .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .addAllIpRanges(Arrays.asList(IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleScope(ruleScope1)
             .build();
 
@@ -78,7 +80,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-2")
             .setDescription("Range rule test 2")
-            .addAllRawInputIpData(Arrays.asList("11.12.13.14", "16.16.16.16/16"))
+            .addAllRawInputIpData(Arrays.asList("11.12.13.14", IP_ADDRESS_2_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationTimestampMillis(1000).build())
@@ -101,7 +103,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRule.newBuilder()
             .setId(ruleId2)
             .setRuleDetails(ipRangeRuleDetails2)
-            .addAllIpRanges(Arrays.asList("16.16.16.16/16"))
+            .addAllIpRanges(Arrays.asList(IP_ADDRESS_2_WITH_NETWORK_PREFIX))
             .addAllIpAddresses(Arrays.asList("11.12.13.14"))
             .setRuleScope(ruleScope2)
             .build();
@@ -123,7 +125,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-1")
             .setDescription("Range rule test 1")
-            .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+            .addAllRawInputIpData(Arrays.asList("1.2.3.4", IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -145,7 +147,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setId(createdIpRangeRule1.getId())
             .setRuleDetails(ipRangeRuleDetails1)
             .addAllIpAddresses(Arrays.asList("1.2.3.4"))
-            .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .addAllIpRanges(Arrays.asList(IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleScope(ruleScope1)
             .build();
 
@@ -153,7 +155,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-2")
             .setDescription("Range rule test 2")
-            .addAllRawInputIpData(Arrays.asList("11.12.13.14", "16.16.16.16/16"))
+            .addAllRawInputIpData(Arrays.asList("11.12.13.14", IP_ADDRESS_2_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationTimestampMillis(1000).build())
@@ -175,7 +177,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRule.newBuilder()
             .setId(createdIpRangeRule2.getId())
             .setRuleDetails(ipRangeRuleDetails2)
-            .addAllIpRanges(Arrays.asList("16.16.16.16/16"))
+            .addAllIpRanges(Arrays.asList(IP_ADDRESS_2_WITH_NETWORK_PREFIX))
             .addAllIpAddresses(Arrays.asList("11.12.13.14"))
             .setRuleScope(ruleScope2)
             .build();
@@ -190,7 +192,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-1")
             .setDescription("Range rule test 1")
-            .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+            .addAllRawInputIpData(Arrays.asList("1.2.3.4", IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationTimestampMillis(1623226263462L).build())
@@ -213,7 +215,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Updated-Tester-1")
             .setDescription("Updated Range rule test 1")
-            .addAllRawInputIpData(Arrays.asList("11.12.13.14", "1.1.1.1/16"))
+            .addAllRawInputIpData(Arrays.asList("11.12.13.14", IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationDuration("PT1H3M34S").build())
@@ -224,7 +226,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setId(ruleId)
             .setRuleDetails(updatedIpRangeRuleDetails)
             .addAllIpAddresses(Arrays.asList("11.12.13.14"))
-            .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .addAllIpRanges(Arrays.asList(IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setDisabled(true)
             .setInternal(true)
             .setRuleScope(ruleScope2)
@@ -263,7 +265,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-1")
             .setDescription("Range rule test 1")
-            .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+            .addAllRawInputIpData(Arrays.asList("1.2.3.4", IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationTimestampMillis(1623226263462L).build())
@@ -287,7 +289,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
             .setId(ruleId1)
             .setRuleDetails(ipRangeRuleDetails1)
             .addAllIpAddresses(Arrays.asList("1.2.3.4"))
-            .addAllIpRanges(Arrays.asList("1.1.1.1/16"))
+            .addAllIpRanges(Arrays.asList(IP_ADDRESS_1_WITH_NETWORK_PREFIX))
             .setRuleScope(ruleScope1)
             .build();
 
@@ -295,7 +297,7 @@ public class IpRangeConfigServiceIntegrationTest extends TraceableConfigServiceI
         IpRangeRuleDetails.newBuilder()
             .setName("Tester-2")
             .setDescription("Range rule test 2")
-            .addAllRawInputIpData(Arrays.asList("11.12.13.14", "16.16.16.16/16"))
+            .addAllRawInputIpData(Arrays.asList("11.12.13.14", IP_ADDRESS_2_WITH_NETWORK_PREFIX))
             .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
             .setExpirationDetails(
                 ExpirationDetails.newBuilder().setExpirationTimestampMillis(1000).build())

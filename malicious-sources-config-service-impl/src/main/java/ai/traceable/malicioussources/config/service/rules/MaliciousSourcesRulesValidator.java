@@ -181,9 +181,9 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     }
 
     if (!ipAddressCondition.getCidrIpRangesList().stream()
-        .allMatch(IpValidationUtils::isValidSubnet)) {
+        .allMatch(IpValidationUtils::isIpAddressRangeInCIDRWithHostBitsZero)) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "IpAddressCondition in Malicious Sources rule should have a valid CIDR address");
+          "IpAddressCondition in Malicious Sources rule should have a valid CIDR address with host bits zero");
     }
 
     return Status.OK;

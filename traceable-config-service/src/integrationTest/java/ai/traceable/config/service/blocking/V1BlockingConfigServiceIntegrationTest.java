@@ -426,7 +426,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .setIpRangeCondition(
                 IpAddressCondition.newBuilder()
                     .addAllIpAddresses(List.of("1.2.3.4"))
-                    .addAllCidrIpRanges(List.of("1.2.3.4/5")))
+                    .addAllCidrIpRanges(List.of("1.2.3.4/32")))
             .build());
 
     createMaliciousSourceRule(
@@ -587,7 +587,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         ipAddress.stream().sorted().collect(Collectors.toList()),
         List.of("1.2.3.4", "11.11.11.11"));
-    assertEquals(ipRange, List.of("1.2.3.4/5"));
+    assertEquals(ipRange, List.of("1.2.3.4/32"));
     index += 2;
 
     assertEquals(
