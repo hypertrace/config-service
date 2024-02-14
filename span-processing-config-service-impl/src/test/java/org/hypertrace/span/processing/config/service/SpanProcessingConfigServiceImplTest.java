@@ -1,6 +1,7 @@
 package org.hypertrace.span.processing.config.service;
 
 import static org.hypertrace.span.processing.config.service.v1.Field.FIELD_URL;
+import static org.hypertrace.span.processing.config.service.v1.Field.FIELD_URL_PATH;
 import static org.hypertrace.span.processing.config.service.v1.LogicalOperator.LOGICAL_OPERATOR_AND;
 import static org.hypertrace.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
 import static org.hypertrace.span.processing.config.service.v1.RuleType.RULE_TYPE_SYSTEM;
@@ -284,6 +285,18 @@ class SpanProcessingConfigServiceImplTest {
                                                         .build())
                                                 .build())
                                         .build())
+                                .addOperands(
+                                    SpanFilter.newBuilder()
+                                        .setRelationalSpanFilter(
+                                            RelationalSpanFilterExpression.newBuilder()
+                                                .setOperator(RELATIONAL_OPERATOR_CONTAINS)
+                                                .setField(FIELD_URL_PATH)
+                                                .setRightOperand(
+                                                    SpanFilterValue.newBuilder()
+                                                        .setStringValue("health")
+                                                        .build())
+                                                .build())
+                                        .build())
                                 .build())
                         .build())
                 .build())
@@ -321,6 +334,15 @@ class SpanProcessingConfigServiceImplTest {
                                             Map.of(
                                                 "field",
                                                 "FIELD_URL",
+                                                "operator",
+                                                "RELATIONAL_OPERATOR_CONTAINS",
+                                                "right_operand",
+                                                Map.of("string_value", "health"))),
+                                        Map.of(
+                                            "relational_span_filter",
+                                            Map.of(
+                                                "field",
+                                                "FIELD_URL_PATH",
                                                 "operator",
                                                 "RELATIONAL_OPERATOR_CONTAINS",
                                                 "right_operand",
