@@ -19,10 +19,15 @@ import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplic
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesRequest;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action.DynamicLabel;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action.DynamicLabel.TokenExtractionRule;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Action.StaticLabels;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.CompositeCondition;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Condition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.JsonCondition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.LeafCondition;
-import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringKeyCondition;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringValueCondition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.UnaryCondition;
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleRequest;
 
@@ -60,12 +65,12 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
 
   private void validateLabelApplicationRuleData(LabelApplicationRuleData labelApplicationRuleData) {
     validateNonDefaultPresenceOrThrow(
-        labelApplicationRuleData, labelApplicationRuleData.NAME_FIELD_NUMBER);
+        labelApplicationRuleData, LabelApplicationRuleData.NAME_FIELD_NUMBER);
     validateCondition(labelApplicationRuleData.getMatchingCondition());
     validateAction(labelApplicationRuleData.getLabelAction());
   }
 
-  private void validateCondition(LabelApplicationRuleData.Condition condition) {
+  private void validateCondition(Condition condition) {
     switch (condition.getConditionCase()) {
       case LEAF_CONDITION:
         validateLeafCondition(condition.getLeafCondition());
@@ -84,7 +89,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     validateKeyStringCondition(leafCondition.getKeyCondition());
     switch (leafCondition.getConditionCase()) {
       case STRING_CONDITION:
-        validateStringCondition(leafCondition.getStringCondition());
+        validateStringValueCondition(leafCondition.getStringCondition());
         break;
       case UNARY_CONDITION:
         validateUnaryCondition(leafCondition.getUnaryCondition());
@@ -101,15 +106,15 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateCompositeCondition(CompositeCondition compositeCondition) {
-    validateNonDefaultPresenceOrThrow(compositeCondition, compositeCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(compositeCondition, CompositeCondition.OPERATOR_FIELD_NUMBER);
     compositeCondition.getChildrenList().forEach(this::validateCondition);
   }
 
   private void validateJsonCondition(JsonCondition jsonCondition) {
-    validateNonDefaultPresenceOrThrow(jsonCondition, jsonCondition.JSON_PATH_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(jsonCondition, JsonCondition.JSON_PATH_FIELD_NUMBER);
     switch (jsonCondition.getValueConditionCase()) {
       case STRING_CONDITION:
-        validateStringCondition(jsonCondition.getStringCondition());
+        validateStringValueCondition(jsonCondition.getStringCondition());
         break;
       case UNARY_CONDITION:
         validateUnaryCondition(jsonCondition.getUnaryCondition());
@@ -122,8 +127,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
-  private void validateKeyStringCondition(StringCondition stringCondition) {
-    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
+  private void validateKeyStringCondition(StringKeyCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(stringCondition, StringKeyCondition.VALUE_FIELD_NUMBER);
     switch (stringCondition.getOperator()) {
       case OPERATOR_EQUALS:
         break;
@@ -147,12 +152,12 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
-  private void validateStringCondition(StringCondition stringCondition) {
-    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
+  private void validateStringValueCondition(StringValueCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(stringCondition, StringValueCondition.OPERATOR_FIELD_NUMBER);
     switch (stringCondition.getOperator()) {
       case OPERATOR_MATCHES_REGEX:
       case OPERATOR_NOT_MATCHES_REGEX:
-        validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(stringCondition, StringValueCondition.VALUE_FIELD_NUMBER);
         final String pattern = stringCondition.getValue();
         final Status regexValidationStatus = RegexValidator.validate(pattern);
         if (!regexValidationStatus.isOk()) {
@@ -192,13 +197,13 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   }
 
   private void validateUnaryCondition(UnaryCondition unaryCondition) {
-    validateNonDefaultPresenceOrThrow(unaryCondition, unaryCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(unaryCondition, UnaryCondition.OPERATOR_FIELD_NUMBER);
   }
 
   private void validateAction(Action action) {
-    validateNonDefaultPresenceOrThrow(action, action.ENTITY_TYPES_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(action, Action.ENTITY_TYPES_FIELD_NUMBER);
     validateEntityTypes(action.getEntityTypesList());
-    validateNonDefaultPresenceOrThrow(action, action.OPERATION_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(action, Action.OPERATION_FIELD_NUMBER);
     switch (action.getValueCase()) {
       case STATIC_LABELS:
         validateStaticLabels(action.getStaticLabels());
@@ -207,7 +212,7 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
         validateDynamicLabel(action.getDynamicLabelExpression());
         break;
       case DYNAMIC_LABEL_KEY:
-        validateNonDefaultPresenceOrThrow(action, action.DYNAMIC_LABEL_KEY_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(action, Action.DYNAMIC_LABEL_KEY_FIELD_NUMBER);
         break;
       default:
         throwInvalidArgumentException(
@@ -221,8 +226,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
-  void validateStaticLabels(Action.StaticLabels staticLabels) {
-    validateNonDefaultPresenceOrThrow(staticLabels, staticLabels.IDS_FIELD_NUMBER);
+  void validateStaticLabels(StaticLabels staticLabels) {
+    validateNonDefaultPresenceOrThrow(staticLabels, StaticLabels.IDS_FIELD_NUMBER);
     List<String> staticLabelIds = staticLabels.getIdsList();
     if (Set.copyOf(staticLabelIds).size() != staticLabelIds.size()) {
       throwInvalidArgumentException(
@@ -230,13 +235,13 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
-  private void validateDynamicLabel(Action.DynamicLabel dynamicLabel) {
-    validateNonDefaultPresenceOrThrow(dynamicLabel, dynamicLabel.LABEL_EXPRESSION_FIELD_NUMBER);
+  private void validateDynamicLabel(DynamicLabel dynamicLabel) {
+    validateNonDefaultPresenceOrThrow(dynamicLabel, DynamicLabel.LABEL_EXPRESSION_FIELD_NUMBER);
     validateLabelExpression(dynamicLabel);
     dynamicLabel.getTokenExtractionRulesList().forEach(this::validateTokenExtractionRule);
   }
 
-  public void validateLabelExpression(Action.DynamicLabel dynamicLabel) {
+  public void validateLabelExpression(DynamicLabel dynamicLabel) {
     String labelExpression = dynamicLabel.getLabelExpression();
     List<String> validKeys = new ArrayList<>();
     dynamicLabel
@@ -261,9 +266,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
     }
   }
 
-  private void validateTokenExtractionRule(
-      Action.DynamicLabel.TokenExtractionRule tokenExtractionRule) {
-    validateNonDefaultPresenceOrThrow(tokenExtractionRule, tokenExtractionRule.KEY_FIELD_NUMBER);
+  private void validateTokenExtractionRule(TokenExtractionRule tokenExtractionRule) {
+    validateNonDefaultPresenceOrThrow(tokenExtractionRule, TokenExtractionRule.KEY_FIELD_NUMBER);
   }
 
   private void throwInvalidArgumentException(String description) {

@@ -13,7 +13,6 @@ import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +34,8 @@ import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationR
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.Condition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.JsonCondition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.LeafCondition;
-import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringCondition;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringKeyCondition;
+import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.StringValueCondition;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRuleData.UnaryCondition;
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplicationRuleResponse;
@@ -73,7 +73,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void createLabelApplicationRule() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule simpleRule = createSimpleRule();
     LabelApplicationRule compositeRule = createCompositeRule();
     List<LabelApplicationRule> createdRules = List.of(simpleRule, compositeRule);
     List<LabelApplicationRuleData> createdData =
@@ -107,7 +107,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void getLabelApplicationRules() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule simpleRule = createSimpleRule();
     LabelApplicationRule compositeRule = createCompositeRule();
     Set<LabelApplicationRule> expectedRules = Set.of(simpleRule, compositeRule);
     GetLabelApplicationRulesResponse response =
@@ -120,7 +120,7 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void updateLabelApplicationRule() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule simpleRule = createSimpleRule();
     LabelApplicationRuleData expectedData = buildSimpleRuleData("auth", "not-valid");
     String updateRuleId = simpleRule.getId();
     UpdateLabelApplicationRuleRequest request =
@@ -135,22 +135,20 @@ public class LabelApplicationRuleConfigServiceImplTest {
 
   @Test
   void updateLabelApplicationRuleError() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
     LabelApplicationRuleData expectedData = buildSimpleRuleData("auth", "not-valid");
     UpdateLabelApplicationRuleRequest request =
         UpdateLabelApplicationRuleRequest.newBuilder().setId("1").setData(expectedData).build();
     Throwable exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> {
-              labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(request);
-            });
+            () ->
+                labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(request));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test
   void deleteApplicationRule() {
-    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule simpleRule = createSimpleRule();
     LabelApplicationRule compositeRule = createCompositeRule();
     List<LabelApplicationRule> rules = List.of(simpleRule, compositeRule);
     rules.forEach(
@@ -173,39 +171,38 @@ public class LabelApplicationRuleConfigServiceImplTest {
     Throwable exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> {
-              labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
-            });
+            () ->
+                labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   private LabelApplicationRuleData buildCompositeRuleData() {
     // This condition implies foo(key) exists AND foo(key) = bar(value) AND
     // req.http.headers.auth(key) = valid(value)
-    StringCondition fooKeyCondition =
-        StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+    StringKeyCondition fooKeyCondition =
+        StringKeyCondition.newBuilder()
+            .setOperator(StringKeyCondition.Operator.OPERATOR_EQUALS)
             .setValue("foo")
             .build();
     UnaryCondition fooUnaryValueCondition =
         UnaryCondition.newBuilder().setOperator(UnaryCondition.Operator.OPERATOR_EXISTS).build();
-    StringCondition fooStringValueCondition =
-        StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+    StringValueCondition fooStringValueCondition =
+        StringValueCondition.newBuilder()
+            .setOperator(StringValueCondition.Operator.OPERATOR_EQUALS)
             .setValue("bar")
             .build();
 
-    StringCondition authKeyCondition =
-        StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+    StringKeyCondition authKeyCondition =
+        StringKeyCondition.newBuilder()
+            .setOperator(StringKeyCondition.Operator.OPERATOR_EQUALS)
             .setValue("auth")
             .build();
     JsonCondition authJsonValueCondition =
         JsonCondition.newBuilder()
             .setJsonPath("req.http.headers")
             .setStringCondition(
-                StringCondition.newBuilder()
-                    .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+                StringValueCondition.newBuilder()
+                    .setOperator(StringValueCondition.Operator.OPERATOR_EQUALS)
                     .setValue("valid")
                     .build())
             .build();
@@ -250,14 +247,14 @@ public class LabelApplicationRuleConfigServiceImplTest {
   }
 
   private LabelApplicationRuleData buildSimpleRuleData(String key, String value) {
-    StringCondition fooKeyCondition =
-        StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+    StringKeyCondition fooKeyCondition =
+        StringKeyCondition.newBuilder()
+            .setOperator(StringKeyCondition.Operator.OPERATOR_EQUALS)
             .setValue(key)
             .build();
-    StringCondition fooValueCondition =
-        StringCondition.newBuilder()
-            .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+    StringValueCondition fooValueCondition =
+        StringValueCondition.newBuilder()
+            .setOperator(StringValueCondition.Operator.OPERATOR_EQUALS)
             .setValue(value)
             .build();
     LeafCondition leafCondition =
@@ -274,8 +271,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
         .build();
   }
 
-  private LabelApplicationRule createSimpleRule(String key, String value) {
-    LabelApplicationRuleData simpleRuleData = buildSimpleRuleData(key, value);
+  private LabelApplicationRule createSimpleRule() {
+    LabelApplicationRuleData simpleRuleData = buildSimpleRuleData("auth", "valid");
     CreateLabelApplicationRuleRequest simpleRuleRequest =
         CreateLabelApplicationRuleRequest.newBuilder().setData(simpleRuleData).build();
     CreateLabelApplicationRuleResponse simpleRuleResponse =
@@ -284,8 +281,6 @@ public class LabelApplicationRuleConfigServiceImplTest {
   }
 
   private LabelApplicationRule createCompositeRule() {
-    Map<String, LabelApplicationRule> createdRulesById = new HashMap<>();
-
     LabelApplicationRuleData compositeRuleData = buildCompositeRuleData();
     CreateLabelApplicationRuleRequest compositeRuleRequest =
         CreateLabelApplicationRuleRequest.newBuilder().setData(compositeRuleData).build();
