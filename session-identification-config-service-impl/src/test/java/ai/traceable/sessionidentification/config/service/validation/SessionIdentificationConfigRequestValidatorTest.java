@@ -15,6 +15,7 @@ import ai.traceable.sessionidentification.config.service.v1.MatchOperator;
 import ai.traceable.sessionidentification.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenDetails;
+import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleScope;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenValueRule;
@@ -100,7 +101,23 @@ class SessionIdentificationConfigRequestValidatorTest {
         () ->
             validator.validateCreateRequest(
                 mockRequestContext,
-                CreateSessionIdentificationRuleRequest.newBuilder().addTokenRules(RULE).build()));
+                CreateSessionIdentificationRuleRequest.newBuilder().addTokenRules(RULE).build(),
+                List.of()));
+  }
+
+  @Test
+  void validateCreate_same_name() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertInvalidArgStatusContaining(
+        "Session Identification rule with name",
+        () ->
+            validator.validateCreateRequest(
+                mockRequestContext,
+                CreateSessionIdentificationRuleRequest.newBuilder()
+                    .setName("rule1")
+                    .addTokenRules(RULE)
+                    .build(),
+                List.of(SessionIdentificationRule.newBuilder().setName("rule1").build())));
   }
 
   @Test
@@ -117,7 +134,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                         SessionIdentificationRuleScope.newBuilder()
                             .addAllEnvironmentNames(List.of("env", "env")))
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
     assertInvalidArgStatusContaining(
         "duplicate element: src",
         () ->
@@ -129,7 +147,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                         SessionIdentificationRuleScope.newBuilder()
                             .addAllServiceNameRegexes(List.of("src", "src")))
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
     assertInvalidArgStatusContaining(
         "duplicate element: url",
         () ->
@@ -141,7 +160,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                         SessionIdentificationRuleScope.newBuilder()
                             .addAllUrlMatchRegexes(List.of("url", "url")))
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
   }
 
   @Test
@@ -155,7 +175,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                 UpdateSessionIdentificationRuleRequest.newBuilder()
                     .setId("id")
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
   }
 
   @Test
@@ -166,7 +187,24 @@ class SessionIdentificationConfigRequestValidatorTest {
         () ->
             validator.validateUpdateRequest(
                 mockRequestContext,
-                UpdateSessionIdentificationRuleRequest.newBuilder().addTokenRules(RULE).build()));
+                UpdateSessionIdentificationRuleRequest.newBuilder().addTokenRules(RULE).build(),
+                List.of()));
+  }
+
+  @Test
+  void validateUpdate_same_name() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    assertInvalidArgStatusContaining(
+        "Session Identification rule with name",
+        () ->
+            validator.validateUpdateRequest(
+                mockRequestContext,
+                UpdateSessionIdentificationRuleRequest.newBuilder()
+                    .setId("id")
+                    .setName("rule1")
+                    .addTokenRules(RULE)
+                    .build(),
+                List.of(SessionIdentificationRule.newBuilder().setName("rule1").build())));
   }
 
   @Test
@@ -182,7 +220,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                     .setName("rule")
                     .setScope(SessionIdentificationRuleScope.getDefaultInstance())
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
     assertInvalidArgStatusContaining(
         "duplicate element: env",
         () ->
@@ -195,7 +234,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                         SessionIdentificationRuleScope.newBuilder()
                             .addAllEnvironmentNames(List.of("env", "env")))
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
     assertInvalidArgStatusContaining(
         "duplicate element: src",
         () ->
@@ -208,7 +248,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                         SessionIdentificationRuleScope.newBuilder()
                             .addAllServiceNameRegexes(List.of("src", "src")))
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
     assertInvalidArgStatusContaining(
         "duplicate element: url",
         () ->
@@ -221,7 +262,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                         SessionIdentificationRuleScope.newBuilder()
                             .addAllUrlMatchRegexes(List.of("url", "url")))
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
 
     assertInvalidArgStatusContaining(
         "One of the scope must be non empty",
@@ -233,7 +275,8 @@ class SessionIdentificationConfigRequestValidatorTest {
                     .setName("rule")
                     .setScope(SessionIdentificationRuleScope.newBuilder())
                     .addTokenRules(RULE)
-                    .build()));
+                    .build(),
+                List.of()));
   }
 
   private void assertInvalidArgStatusContaining(String text, Executable executable) {

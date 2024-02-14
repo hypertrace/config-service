@@ -16,6 +16,8 @@ import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentif
 import ai.traceable.sessionidentification.config.service.validation.SessionIdentificationConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -74,7 +76,11 @@ public class SessionIdentificationConfigServiceImpl
       StreamObserver<CreateSessionIdentificationRuleResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.validator.validateCreateRequest(requestContext, request);
+      List<SessionIdentificationRule> existingSessionIdentificationRules =
+          getExistingSessionIdentificationRules(requestContext);
+
+      this.validator.validateCreateRequest(
+          requestContext, request, existingSessionIdentificationRules);
 
       SessionIdentificationRule newRule =
           this.ruleGenerator.generateNewRuleFromCreateRequest(request);
@@ -101,7 +107,10 @@ public class SessionIdentificationConfigServiceImpl
       StreamObserver<UpdateSessionIdentificationRuleResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.validator.validateUpdateRequest(requestContext, request);
+      List<SessionIdentificationRule> existingSessionIdentificationRules =
+          getExistingSessionIdentificationRules(requestContext);
+      this.validator.validateUpdateRequest(
+          requestContext, request, existingSessionIdentificationRules);
       SessionIdentificationRule rule;
       if (legacySessionIdentificationRuleTranslatingDao.isSessionIdentificationRuleFromOldStore(
           requestContext, request.getId())) {
@@ -159,5 +168,19 @@ public class SessionIdentificationConfigServiceImpl
     return Status.fromThrowable(exception)
         .withCause(exception)
         .asException(requestContext.buildTrailers());
+  }
+
+  private List<SessionIdentificationRule> getExistingSessionIdentificationRules(
+      RequestContext requestContext) {
+    List<SessionIdentificationRule> existingSessionIdentificationRules =
+        new ArrayList<>(
+            this.ruleStore.getAllConfigData(
+                requestContext,
+                GetSessionIdentificationRulesRequest.GetSessionIdentificationRulesFilter
+                    .getDefaultInstance()));
+    existingSessionIdentificationRules.addAll(
+        legacySessionIdentificationRuleTranslatingDao.getSessionIdentificationRulesFromOldStore(
+            requestContext));
+    return existingSessionIdentificationRules;
   }
 }

@@ -11,6 +11,7 @@ import ai.traceable.sessionidentification.config.service.v1.SessionIdentificatio
 import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentificationRuleRequest;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -36,10 +37,13 @@ public class SessionIdentificationConfigRequestValidator {
   }
 
   public void validateCreateRequest(
-      RequestContext requestContext, CreateSessionIdentificationRuleRequest request) {
+      RequestContext requestContext,
+      CreateSessionIdentificationRuleRequest request,
+      List<SessionIdentificationRule> existingSessionIdentificationRules) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
         request, CreateSessionIdentificationRuleRequest.NAME_FIELD_NUMBER);
+    validateRuleForSameName(request.getName(), existingSessionIdentificationRules);
     tokenRuleValidator.validateTokenRules(request.getTokenRulesList());
     if (request.hasScope()) {
       validateRuleScope(request.getScope());
@@ -47,12 +51,15 @@ public class SessionIdentificationConfigRequestValidator {
   }
 
   public void validateUpdateRequest(
-      RequestContext requestContext, UpdateSessionIdentificationRuleRequest request) {
+      RequestContext requestContext,
+      UpdateSessionIdentificationRuleRequest request,
+      List<SessionIdentificationRule> existingSessionIdentificationRules) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
         request, UpdateSessionIdentificationRuleRequest.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         request, UpdateSessionIdentificationRuleRequest.NAME_FIELD_NUMBER);
+    validateRuleForSameName(request.getName(), existingSessionIdentificationRules);
     tokenRuleValidator.validateTokenRules(request.getTokenRulesList());
     if (request.hasScope()) {
       validateRuleScope(request.getScope());
@@ -99,6 +106,17 @@ public class SessionIdentificationConfigRequestValidator {
       Set.of(scopes.toArray());
     } catch (IllegalArgumentException e) {
       throw Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException();
+    }
+  }
+
+  private void validateRuleForSameName(String ruleName, List<SessionIdentificationRule> rules) {
+    Optional<SessionIdentificationRule> existingRuleWithSameName =
+        rules.stream().filter(rule -> rule.getName().equals(ruleName)).findFirst();
+    if (existingRuleWithSameName.isPresent()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format("Session Identification rule with name %s already exists", ruleName))
+          .asRuntimeException();
     }
   }
 }
