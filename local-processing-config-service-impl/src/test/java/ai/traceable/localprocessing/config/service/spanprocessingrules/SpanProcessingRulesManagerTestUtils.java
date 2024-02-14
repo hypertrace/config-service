@@ -82,7 +82,26 @@ public class SpanProcessingRulesManagerTestUtils {
                                         "url.path",
                                         ai.traceable.localprocessing.config.service.v1
                                             .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
-                                        "url"))))))
+                                        "url"))),
+                            buildLogicalFilterLocalProcessing(
+                                ai.traceable.localprocessing.config.service.v1.LogicalOperator
+                                    .LOGICAL_OPERATOR_OR,
+                                List.of(
+                                    buildRelationalFilter(
+                                        "http.request.path",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "path"),
+                                    buildRelationalFilter(
+                                        "http.path",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "path"),
+                                    buildRelationalFilter(
+                                        "http.target",
+                                        ai.traceable.localprocessing.config.service.v1
+                                            .RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                        "path"))))))
                 .build())
         .build();
   }
@@ -229,7 +248,12 @@ public class SpanProcessingRulesManagerTestUtils {
                                                 Field.FIELD_URL,
                                                 null,
                                                 RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
-                                                "url"))))
+                                                "url"),
+                                            buildRelationalFilter(
+                                                Field.FIELD_URL_PATH,
+                                                null,
+                                                RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                                "path"))))
                                 .build())
                         .build()))
         .build();

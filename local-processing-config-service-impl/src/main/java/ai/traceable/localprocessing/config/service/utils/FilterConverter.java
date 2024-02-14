@@ -1,5 +1,6 @@
 package ai.traceable.localprocessing.config.service.utils;
 
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanAttributeConstants.URL_PATH_SPAN_ATTRIBUTE_KEYS;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanAttributeConstants.URL_SPAN_ATTRIBUTE_KEYS;
 
 import ai.traceable.localprocessing.config.service.v1.LogicalOperator;
@@ -102,6 +103,8 @@ public class FilterConverter {
     switch (relationalSpanFilterExpression.getField()) {
       case FIELD_URL:
         return URL_SPAN_ATTRIBUTE_KEYS;
+      case FIELD_URL_PATH:
+        return URL_PATH_SPAN_ATTRIBUTE_KEYS;
       case FIELD_SERVICE_NAME:
       case FIELD_ENVIRONMENT_NAME:
         return Collections.emptyList();
