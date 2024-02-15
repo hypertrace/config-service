@@ -174,10 +174,14 @@ public class WafIntegrationBuilderUtils {
     detailsBuilder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
   }
 
-  // Returns true if the integration is V2
+  // Returns true if the integration is V2, or we are trying to update to V2
   private static boolean updateCloudflareWafIntegrationIfV2(
       UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder builder) {
-    if (!builder.getCloudflareIntegrationParams().hasEncryptedApiToken()) {
+    if (!builder.getCloudflareIntegrationParams().hasEncryptedApiToken()
+        && !request
+            .getUpdatedWafIntegrationDetails()
+            .getUpdatedCloudflareIntegrationParams()
+            .hasEncryptedApiToken()) {
       return false;
     }
     String apiToken =
