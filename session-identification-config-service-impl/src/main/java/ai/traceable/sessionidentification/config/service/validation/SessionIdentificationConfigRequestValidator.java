@@ -43,7 +43,8 @@ public class SessionIdentificationConfigRequestValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
         request, CreateSessionIdentificationRuleRequest.NAME_FIELD_NUMBER);
-    validateRuleForSameName(request.getName(), existingSessionIdentificationRules);
+    validateRuleForSameName(
+        request.getName(), Optional.empty(), existingSessionIdentificationRules);
     tokenRuleValidator.validateTokenRules(request.getTokenRulesList());
     if (request.hasScope()) {
       validateRuleScope(request.getScope());
@@ -59,7 +60,8 @@ public class SessionIdentificationConfigRequestValidator {
         request, UpdateSessionIdentificationRuleRequest.ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         request, UpdateSessionIdentificationRuleRequest.NAME_FIELD_NUMBER);
-    validateRuleForSameName(request.getName(), existingSessionIdentificationRules);
+    validateRuleForSameName(
+        request.getName(), Optional.of(request.getId()), existingSessionIdentificationRules);
     tokenRuleValidator.validateTokenRules(request.getTokenRulesList());
     if (request.hasScope()) {
       validateRuleScope(request.getScope());
@@ -109,10 +111,14 @@ public class SessionIdentificationConfigRequestValidator {
     }
   }
 
-  private void validateRuleForSameName(String ruleName, List<SessionIdentificationRule> rules) {
+  private void validateRuleForSameName(
+      String ruleName, Optional<String> ruleIdOptional, List<SessionIdentificationRule> rules) {
     Optional<SessionIdentificationRule> existingRuleWithSameName =
         rules.stream().filter(rule -> rule.getName().equals(ruleName)).findFirst();
-    if (existingRuleWithSameName.isPresent()) {
+    if (existingRuleWithSameName.isPresent()
+        && ruleIdOptional
+            .map(ruleId -> !ruleId.equals(existingRuleWithSameName.get().getId()))
+            .orElse(true)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format("Session Identification rule with name %s already exists", ruleName))
