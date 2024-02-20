@@ -1,0 +1,4 @@
+- ruleId: volumetricApiCallSpike
+  ruleName: Volumetric API Call Spike
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_VOLUMETRIC
+

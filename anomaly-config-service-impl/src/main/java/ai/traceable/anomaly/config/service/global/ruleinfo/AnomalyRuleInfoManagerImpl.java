@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.global.ruleinfo;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import com.google.common.collect.ImmutableList;
@@ -15,15 +16,18 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final ApiDefinitionRegistry apiDefinitionRegistry;
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final SessionRulesRegistry sessionRulesRegistry;
+  private final VolumetricRulesRegistry volumetricRulesRegistry;
 
   @Inject
   AnomalyRuleInfoManagerImpl(
       ApiDefinitionRegistry apiDefinitionRegistry,
       ModsecRulesRegistry modsecRulesRegistry,
-      SessionRulesRegistry sessionRulesRegistry) {
+      SessionRulesRegistry sessionRulesRegistry,
+      VolumetricRulesRegistry volumetricRulesRegistry) {
     this.apiDefinitionRegistry = apiDefinitionRegistry;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.sessionRulesRegistry = sessionRulesRegistry;
+    this.volumetricRulesRegistry = volumetricRulesRegistry;
   }
 
   @Override
@@ -43,6 +47,9 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                   break;
                 case ANOMALY_EVENT_FAMILY_SESSION:
                   ruleInfos.addAll(sessionRulesRegistry.getSessionRuleInfos().values());
+                  break;
+                case ANOMALY_EVENT_FAMILY_VOLUMETRIC:
+                  ruleInfos.addAll(volumetricRulesRegistry.getVolumetricRuleInfos().values());
                   break;
                 default:
                   throw new IllegalArgumentException(

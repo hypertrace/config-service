@@ -10,6 +10,7 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
@@ -23,6 +24,7 @@ class AnomalyRuleInfoManagerImplTest {
   private ApiDefinitionRegistry apiDefinitionRegistry;
   private ModsecRulesRegistry modsecRulesRegistry;
   private SessionRulesRegistry sessionRulesRegistry;
+  private VolumetricRulesRegistryImpl volumetricRulesRegistry;
   private RuleInfoManager ruleInfoManager;
   private RequestContext requestContext;
 
@@ -31,9 +33,13 @@ class AnomalyRuleInfoManagerImplTest {
     apiDefinitionRegistry = mock(ApiDefinitionRegistryImpl.class);
     modsecRulesRegistry = mock(ModsecRulesRegistryImpl.class);
     sessionRulesRegistry = mock(SessionRulesRegistryImpl.class);
+    volumetricRulesRegistry = mock(VolumetricRulesRegistryImpl.class);
     ruleInfoManager =
         new AnomalyRuleInfoManagerImpl(
-            apiDefinitionRegistry, modsecRulesRegistry, sessionRulesRegistry);
+            apiDefinitionRegistry,
+            modsecRulesRegistry,
+            sessionRulesRegistry,
+            volumetricRulesRegistry);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -50,6 +56,8 @@ class AnomalyRuleInfoManagerImplTest {
                 "id-1", buildAnomalyRuleInfo("id-1"),
                 "id-2", buildAnomalyRuleInfo("id-2"),
                 "id-3", buildAnomalyRuleInfo("id-3")));
+    when(volumetricRulesRegistry.getVolumetricRuleInfos())
+        .thenReturn(Map.of("id-1", buildAnomalyRuleInfo("id-1")));
     List<AnomalyRuleInfo> response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
@@ -58,6 +66,10 @@ class AnomalyRuleInfoManagerImplTest {
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF));
     // As two are repeated
+    assertEquals(1, response.size());
+    response =
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC));
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
@@ -73,7 +85,8 @@ class AnomalyRuleInfoManagerImplTest {
             List.of(
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
-                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION));
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC));
     // Common rules are not duplicated
     assertEquals(4, response.size());
 

@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
@@ -28,14 +29,17 @@ public class AnomalyDetectionConfigHandler {
 
   @Inject
   public AnomalyDetectionConfigHandler(
-      ApiDefinitionRegistry apiDefinitionRegistry, SessionRulesRegistry sessionRulesRegistry) {
+      ApiDefinitionRegistry apiDefinitionRegistry,
+      SessionRulesRegistry sessionRulesRegistry,
+      VolumetricRulesRegistry volumetricRulesRegistry) {
     this.apiDefinitionConfigHandler = new ApiDefinitionConfigHandler(apiDefinitionRegistry);
     this.sessionDefinitionConfigHandler = new SessionDefinitionConfigHandler(sessionRulesRegistry);
     this.apiStateBasedConfigHandler = new ApiStateBasedConfigHandler();
     this.blockingMetadataConfigHandler = new BlockingMetadataConfigHandler();
     this.modsecConfigHandler = new ModsecConfigHandler();
     this.customRulesConfigHandler = new CustomRulesConfigHandler();
-    this.volumetricDetectionConfigHandler = new VolumetricDetectionConfigHandler();
+    this.volumetricDetectionConfigHandler =
+        new VolumetricDetectionConfigHandler(volumetricRulesRegistry);
   }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
@@ -91,6 +95,10 @@ public class AnomalyDetectionConfigHandler {
                 case ANOMALY_DETECTION_CONFIG_TYPE_CUSTOM_RULES:
                   builder.addAllAnomalyDetectionConfigs(
                       customRulesConfigHandler.merge(preferredConfig, fallbackConfig));
+                  break;
+                case ANOMALY_DETECTION_CONFIG_TYPE_VOLUMETRIC:
+                  builder.addAllAnomalyDetectionConfigs(
+                      volumetricDetectionConfigHandler.merge(preferredConfig, fallbackConfig));
                   break;
                 default:
                   LOGGER.error(

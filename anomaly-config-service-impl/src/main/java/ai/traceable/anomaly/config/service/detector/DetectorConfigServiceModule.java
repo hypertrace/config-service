@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigModule;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
@@ -28,9 +29,13 @@ public class DetectorConfigServiceModule extends AbstractModule {
   DetectorConfigServiceConfig providesDetectorConfigServiceConfig(
       AnomalyConfigServiceConfig config,
       ApiDefinitionRegistry apiDefinitionRegistry,
-      SessionRulesRegistry sessionDefinitionRegistry) {
+      SessionRulesRegistry sessionDefinitionRegistry,
+      VolumetricRulesRegistry volumetricRulesRegistry) {
 
     return new DetectorConfigServiceConfig(
-        config.getDetectorConfigServiceConfig(), apiDefinitionRegistry, sessionDefinitionRegistry);
+        config.getDetectorConfigServiceConfig(),
+        apiDefinitionRegistry,
+        sessionDefinitionRegistry,
+        volumetricRulesRegistry);
   }
 }

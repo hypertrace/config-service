@@ -6,6 +6,8 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import com.google.inject.AbstractModule;
 
 public class AnomalyConfigRegistryModule extends AbstractModule {
@@ -14,5 +16,6 @@ public class AnomalyConfigRegistryModule extends AbstractModule {
     bind(ApiDefinitionRegistry.class).to(ApiDefinitionRegistryImpl.class);
     bind(ModsecRulesRegistry.class).to(ModsecRulesRegistryImpl.class);
     bind(SessionRulesRegistry.class).to(SessionRulesRegistryImpl.class);
+    bind(VolumetricRulesRegistry.class).to(VolumetricRulesRegistryImpl.class);
   }
 }

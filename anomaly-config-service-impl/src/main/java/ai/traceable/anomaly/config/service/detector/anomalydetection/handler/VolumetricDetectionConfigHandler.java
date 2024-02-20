@@ -2,16 +2,25 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.VolumetricAnomalyDetectionConfig;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class VolumetricDetectionConfigHandler {
+
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(VolumetricDetectionConfigHandler.class);
+  private final Map<String, VolumetricAnomalyDetectionConfig> volumetricRuleIdToConfigMap;
+
+  VolumetricDetectionConfigHandler(VolumetricRulesRegistry volumetricRulesRegistry) {
+    this.volumetricRuleIdToConfigMap = volumetricRulesRegistry.getVolumetricRuleIdToConfigMap();
+  }
+
   /**
    * @param preferredConfig
    * @param fallbackConfig
@@ -24,10 +33,32 @@ class VolumetricDetectionConfigHandler {
 
     getVolumetricConfigs(preferredConfig.getAnomalyDetectionConfigsList())
         .forEach(
-            detectionConfig ->
-                configCaseMap.put(
-                    detectionConfig.getVolumetricAnomalyDetectionConfig().getConfigCase(),
-                    detectionConfig));
+            detectionConfig -> {
+              VolumetricAnomalyDetectionConfig.ConfigCase configCase =
+                  detectionConfig.getVolumetricAnomalyDetectionConfig().getConfigCase();
+              if (configCase.equals(VolumetricAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
+                String ruleId =
+                    detectionConfig.getVolumetricAnomalyDetectionConfig().getAnomalyRuleId();
+                if (!volumetricRuleIdToConfigMap.containsKey(ruleId)) {
+                  LOGGER.error(
+                      "Invalid ruleId \"{}\" and empty configCase for VolumetricAnomalyDetectionConfig for configScope {}",
+                      ruleId,
+                      preferredConfig.getConfigScope());
+                  return;
+                }
+                VolumetricAnomalyDetectionConfig volumetricAnomalyConfig =
+                    volumetricRuleIdToConfigMap.get(ruleId);
+                configCase = volumetricAnomalyConfig.getConfigCase();
+                detectionConfig =
+                    (AnomalyDetectionConfig)
+                        mergeConfigs(
+                            detectionConfig,
+                            AnomalyDetectionConfig.newBuilder()
+                                .setVolumetricAnomalyDetectionConfig(volumetricAnomalyConfig)
+                                .build());
+              }
+              configCaseMap.put(configCase, detectionConfig);
+            });
 
     getVolumetricConfigs(fallbackConfig.getAnomalyDetectionConfigsList())
         .forEach(

@@ -10,6 +10,8 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -32,8 +34,11 @@ public class AnomalyDetectionConfigHandlerTest {
       new ApiDefinitionRegistryImpl(configConverter);
   private final SessionRulesRegistry sessionRulesRegistry =
       new SessionRulesRegistryImpl(configConverter);
+  private final VolumetricRulesRegistry volumetricRulesRegistry =
+      new VolumetricRulesRegistryImpl(configConverter);
   private final AnomalyDetectionConfigHandler detectionConfigConverter =
-      new AnomalyDetectionConfigHandler(apiDefinitionRegistry, sessionRulesRegistry);
+      new AnomalyDetectionConfigHandler(
+          apiDefinitionRegistry, sessionRulesRegistry, volumetricRulesRegistry);
 
   @Test
   void testModsecConfigConvert() throws InvalidProtocolBufferException {
@@ -796,23 +801,38 @@ public class AnomalyDetectionConfigHandlerTest {
                     .build())
             .build();
 
+    ScopedAnomalyDetectionConfig config3 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setVolumetricAnomalyDetectionConfig(
+                        VolumetricAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("volumetricApiCallSpike")
+                            .build()))
+            .build();
+
     Value value = detectionConfigConverter.convert(config1);
     assertEquals(config1, detectionConfigConverter.convert(value));
 
-    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
-    AnomalyDetectionConfig detectionConfig = mergedConfig.getAnomalyDetectionConfigsList().get(0);
+    ScopedAnomalyDetectionConfig mergedConfig1 = detectionConfigConverter.merge(config2, config1);
+    AnomalyDetectionConfig detectionConfig1 = mergedConfig1.getAnomalyDetectionConfigsList().get(0);
 
-    assertTrue(detectionConfig.getConfigStatus().getDisabled());
-    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertTrue(detectionConfig1.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig1.getConfigStatus().getInternal());
     assertEquals(
         AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
-        detectionConfig.getCategoryConfig().getEventCategory());
+        detectionConfig1.getCategoryConfig().getEventCategory());
     assertEquals(
         AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
-        detectionConfig.getCategoryConfig().getEventScoreCategory());
+        detectionConfig1.getCategoryConfig().getEventScoreCategory());
     assertEquals(
         ipRangesList,
-        detectionConfig
+        detectionConfig1
             .getVolumetricAnomalyDetectionConfig()
             .getApiCallSpike()
             .getExcludedIpRangesList());
@@ -828,6 +848,11 @@ public class AnomalyDetectionConfigHandlerTest {
         detectionConfigConverter.deleteWholeAnomalyDetectionConfigs(
             config1, detectionConfigsToDelete, deletedConfigBuilder);
     assertEquals(0, deleteConfig.getAnomalyDetectionConfigsList().size());
+
+    ScopedAnomalyDetectionConfig mergedConfig2 = detectionConfigConverter.merge(config3, config1);
+    AnomalyDetectionConfig detectionConfig2 = mergedConfig1.getAnomalyDetectionConfigsList().get(0);
+    assertTrue(detectionConfig1.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig1.getConfigStatus().getInternal());
   }
 
   private AnomalyDetectionConfig getAnomalyDetectionConfig(

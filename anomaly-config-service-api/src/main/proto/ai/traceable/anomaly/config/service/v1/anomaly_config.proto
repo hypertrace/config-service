@@ -98,6 +98,7 @@ enum AnomalyEventFamily {
   ANOMALY_EVENT_FAMILY_SESSION = 3;
   ANOMALY_EVENT_FAMILY_RATE_LIMIT = 4;
   ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE = 5;
+  ANOMALY_EVENT_FAMILY_VOLUMETRIC = 6;
 }
 
 message AnomalyRuleInfo {
@@ -154,6 +155,7 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_TOKEN_VIOLATIONS = 15 [(string_value) = "Token Violations and Anomalies", deprecated = true];
   ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS = 16 [(string_value) = "Authentication and Token Violations"];
   ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS = 17 [(string_value) = "GraphQL Attacks"];
+  ANOMALY_RULE_CATEGORY_VOLUMETRIC = 18 [(string_value) = "Volumetric Anomalies"];
 }
 
 enum AnomalyConfidenceLevel {

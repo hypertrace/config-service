@@ -15,26 +15,15 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
-import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.CustomIpAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
-import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
-import ai.traceable.anomaly.config.service.v1.detector.IntegerAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.*;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -67,8 +56,11 @@ public class AnomalyDetectionConfigManagerTest {
       new ApiDefinitionRegistryImpl(configConverter);
   private final SessionRulesRegistry sessionRulesRegistry =
       new SessionRulesRegistryImpl(configConverter);
+  private final VolumetricRulesRegistry volumetricRulesRegistry =
+      new VolumetricRulesRegistryImpl(configConverter);
   private AnomalyDetectionConfigHandler detectionConfigConverter =
-      new AnomalyDetectionConfigHandler(apiDefinitionRegistry, sessionRulesRegistry);
+      new AnomalyDetectionConfigHandler(
+          apiDefinitionRegistry, sessionRulesRegistry, volumetricRulesRegistry);
   private AnomalyDetectionConfigManager configManager;
   private final AnomalyEnvironmentScope environmentScope =
       AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
@@ -319,6 +311,7 @@ public class AnomalyDetectionConfigManagerTest {
     defaultDetectionConfigs.addAll(config.getDefaultApiDefinitionDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultSessionDefinitionDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultCustomRulesDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultVolumetricDetectionConfigs());
 
     List<AnomalyDetectionConfig> detectionConfigs =
         configManager
@@ -522,6 +515,10 @@ public class AnomalyDetectionConfigManagerTest {
         getModsecRuleConfig(scopedAnomalyDetectionConfig, "rule1");
     AnomalyDetectionConfig detectionConfig5 =
         getModsecAllDetectionConfig(scopedAnomalyDetectionConfig);
+    AnomalyDetectionConfig detectionConfig6 =
+        getVolumetricConfig(
+            scopedAnomalyDetectionConfig,
+            VolumetricAnomalyDetectionConfig.ConfigCase.API_CALL_SPIKE);
 
     deletedScopedAnomalyDetectionConfig =
         requestContext.call(
@@ -562,6 +559,12 @@ public class AnomalyDetectionConfigManagerTest {
                                 .setBlockingMetadataAnomalyDetectionConfig(
                                     BlockingMetadataAnomalyDetectionConfig.newBuilder()
                                         .setCustomIp(CustomIpAnomalyConfig.getDefaultInstance())))
+                        .addAnomalyDetectionConfigs(
+                            AnomalyDetectionConfig.newBuilder()
+                                .setVolumetricAnomalyDetectionConfig(
+                                    VolumetricAnomalyDetectionConfig.newBuilder()
+                                        .setApiCallSpike(
+                                            ApiCallSpikeAnomalyConfig.getDefaultInstance())))
                         .build(),
                     DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_DETECTION_CONFIG));
 
@@ -573,6 +576,7 @@ public class AnomalyDetectionConfigManagerTest {
             .addAnomalyDetectionConfigs(detectionConfig3)
             .addAnomalyDetectionConfigs(detectionConfig4)
             .addAnomalyDetectionConfigs(detectionConfig5)
+            .addAnomalyDetectionConfigs(detectionConfig6)
             .build();
     assertEquals(expectedConfig, deletedScopedAnomalyDetectionConfig);
 
@@ -668,6 +672,17 @@ public class AnomalyDetectionConfigManagerTest {
                 + "      }\n"
                 + "    }\n"
                 + "]\n"
+                + "volumetricDetectionConfigs = [\n"
+                + " {\n"
+                + "   configStatus = {\n"
+                + "        disabled = true\n"
+                + "        internal = true\n"
+                + "      }\n"
+                + "      volumetricAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"volumetricApiCallSpike\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "]\n"
                 + "customRulesDetectionConfigs = [\n"
                 + "    {\n"
                 + "      categoryConfig = {\n"
@@ -698,7 +713,8 @@ public class AnomalyDetectionConfigManagerTest {
                 + "    }\n"
                 + "  ]"),
         new ApiDefinitionRegistryImpl(new ConfigConverter()),
-        new SessionRulesRegistryImpl(new ConfigConverter()));
+        new SessionRulesRegistryImpl(new ConfigConverter()),
+        new VolumetricRulesRegistryImpl(new ConfigConverter()));
   }
 
   private AnomalyDetectionConfig getModsecRuleConfig(
@@ -788,5 +804,20 @@ public class AnomalyDetectionConfigManagerTest {
     return scopedAnomalyDetectionConfigs.stream()
         .map(ScopedAnomalyDetectionConfig::getConfigScope)
         .collect(Collectors.toList());
+  }
+
+  private AnomalyDetectionConfig getVolumetricConfig(
+      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
+      VolumetricAnomalyDetectionConfig.ConfigCase configCase) {
+    return scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasVolumetricAnomalyDetectionConfig)
+        .filter(
+            anomalyDetectionConfig ->
+                anomalyDetectionConfig
+                    .getVolumetricAnomalyDetectionConfig()
+                    .getConfigCase()
+                    .equals(configCase))
+        .findFirst()
+        .orElseThrow();
   }
 }

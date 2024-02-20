@@ -40,6 +40,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final List<AnomalyDetectionConfig> defaultApiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultCustomRulesDetectionConfigs;
+  private final List<AnomalyDetectionConfig> defaultVolumetricDetectionConfigs;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
@@ -60,6 +61,7 @@ public class AnomalyDetectionConfigManagerImpl
     this.defaultSessionDefinitionDetectionConfigs =
         config.getDefaultSessionDefinitionDetectionConfigs();
     this.defaultCustomRulesDetectionConfigs = config.getDefaultCustomRulesDetectionConfigs();
+    this.defaultVolumetricDetectionConfigs = config.getDefaultVolumetricDetectionConfigs();
   }
 
   @Override
@@ -139,6 +141,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultApiDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultVolumetricDetectionConfigs)
             .build());
 
     return scopedAnomalyDetectionConfigs.stream()
@@ -260,6 +263,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultApiDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultVolumetricDetectionConfigs)
             .build();
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =

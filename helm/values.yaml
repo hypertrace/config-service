@@ -25,7 +25,7 @@ image:
   tagOverride: ""
 
 imagePullSecrets:
-  - name: gcp-artifact-registry
+  - name: gcp-artifact-registry-dev
   - name: regcred
 
 internalContainerPort: 50101

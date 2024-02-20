@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.detector.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -98,6 +99,17 @@ public class DetectorConfigServiceConfigTest {
                   + "      }\n"
                   + "    }\n"
                   + "]\n"
+                  + "volumetricDetectionConfigs = [\n"
+                  + " {\n"
+                  + "   configStatus = {\n"
+                  + "        disabled = true\n"
+                  + "        internal = true\n"
+                  + "      }\n"
+                  + "      volumetricAnomalyDetectionConfig = {\n"
+                  + "        anomalyRuleId = \"volumetricApiCallSpike\"\n"
+                  + "      }\n"
+                  + "    }\n"
+                  + "]\n"
                   + "customRulesDetectionConfigs = [\n"
                   + "    {\n"
                   + "      categoryConfig = {\n"
@@ -128,7 +140,8 @@ public class DetectorConfigServiceConfigTest {
                   + "    }\n"
                   + "  ]"),
           new ApiDefinitionRegistryImpl(new ConfigConverter()),
-          new SessionRulesRegistryImpl(new ConfigConverter()));
+          new SessionRulesRegistryImpl(new ConfigConverter()),
+          new VolumetricRulesRegistryImpl(new ConfigConverter()));
 
   @Test
   void testConfig() {
@@ -190,6 +203,13 @@ public class DetectorConfigServiceConfigTest {
 
     detectionConfig = getSessionDefDetectionConfig(sessionDefinitionDetectionConfigs, "userIdBola");
     assertEquals(configStatus0, detectionConfig.getConfigStatus());
+
+    List<AnomalyDetectionConfig> volumetricDetectionConfigs =
+        CONFIG.getDefaultVolumetricDetectionConfigs();
+
+    detectionConfig =
+        getVolumetricDetectionConfig(volumetricDetectionConfigs, "volumetricApiCallSpike");
+    assertEquals(configStatus3, detectionConfig.getConfigStatus());
   }
 
   @Test
@@ -271,6 +291,16 @@ public class DetectorConfigServiceConfigTest {
           .getSessionDefinitionMetadataAnomalyDetectionConfig()
           .getAnomalyRuleId()
           .equals(ruleId)) {
+        return detectionConfig;
+      }
+    }
+    return null;
+  }
+
+  private AnomalyDetectionConfig getVolumetricDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs, String ruleId) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig.getVolumetricAnomalyDetectionConfig().getAnomalyRuleId().equals(ruleId)) {
         return detectionConfig;
       }
     }
