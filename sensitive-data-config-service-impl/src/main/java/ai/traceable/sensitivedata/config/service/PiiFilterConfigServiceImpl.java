@@ -7,7 +7,6 @@ import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.RED
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static java.util.function.Function.identity;
 
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -81,20 +80,17 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   private final InsightsServiceCoordinator insightsServiceCoordinator;
   private final PiiFilterConfig defaultPiiFilterConfig;
   private final UuidGenerator uuidGenerator;
-  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   PiiFilterConfigServiceImpl(
       SensitiveDataServiceConfig sensitiveDataServiceConfig,
       ConfigServiceCoordinator configServiceCoordinator,
       InsightsServiceCoordinator insightsServiceCoordinator,
-      UuidGenerator uuidGenerator,
-      FeatureCachingClient featureCachingClient) {
+      UuidGenerator uuidGenerator) {
     this.configServiceCoordinator = configServiceCoordinator;
     this.insightsServiceCoordinator = insightsServiceCoordinator;
     this.defaultPiiFilterConfig = sensitiveDataServiceConfig.defaultPiiFilterConfig();
     this.uuidGenerator = uuidGenerator;
-    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -103,9 +99,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       StreamObserver<GetPiiFilterConfigResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      if (request.getDataClassificationSupported()
-          && this.featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
-        // Disable this config and short circuit if RP2 enabled
+      if (request.getDataClassificationSupported()) {
         responseObserver.onNext(GetPiiFilterConfigResponse.newBuilder().setEnabled(false).build());
         responseObserver.onCompleted();
         return;
@@ -115,16 +109,8 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       Map<String, PiiElement> valueRegexToPiiElementMap = new LinkedHashMap<>();
       Map<String, ComplexData> complexDataMap = new LinkedHashMap<>();
 
-      boolean isDataClassificationRp1Enabled =
-          this.featureCachingClient.isDataClassificationRp1Enabled(requestContext);
-      List<DataSet> dataSets =
-          isDataClassificationRp1Enabled
-              ? configServiceCoordinator.getAllDataSets(requestContext)
-              : Collections.emptyList();
-      List<DataType> dataTypes =
-          isDataClassificationRp1Enabled
-              ? configServiceCoordinator.getAllDataTypes(requestContext)
-              : Collections.emptyList();
+      List<DataSet> dataSets = configServiceCoordinator.getAllDataSets(requestContext);
+      List<DataType> dataTypes = configServiceCoordinator.getAllDataTypes(requestContext);
       Map<String, DataSet> enabledDataSetMap =
           dataSets.stream()
               .filter(dataSet -> dataSet.getInfo().getEnabled())
@@ -139,7 +125,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
                   .collect(Collectors.toUnmodifiableList()));
 
       List<RedactionRule> filteredRedactionRules =
-          filterRedactionRules(isDataClassificationRp1Enabled, enabledDataSetMap, redactionRules);
+          filterRedactionRules(enabledDataSetMap, redactionRules);
 
       mergeConfigFromRedactionRules(
           filteredRedactionRules,
@@ -151,13 +137,11 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       RedactionStrategy redactionStrategy =
           configServiceCoordinator.getParamTypeRedactionStrategy(
               requestContext, ParamType.PARAM_TYPE_HEADER);
-      if (shouldSuppressSensitiveHeaders(
-          isDataClassificationRp1Enabled, enabledDataSetMap, redactionStrategy)) {
+      if (shouldSuppressSensitiveHeaders(enabledDataSetMap, redactionStrategy)) {
         List<Parameter> sensitiveHeaderParameters =
             insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
         List<PiiElement> piiElements =
-            computePiiElements(
-                sensitiveHeaderParameters, redactionStrategy, isDataClassificationRp1Enabled);
+            computePiiElements(sensitiveHeaderParameters, redactionStrategy);
         addPiiElements(keyRegexToPiiElementMap, piiElements);
       }
 
@@ -166,19 +150,13 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       addComplexDataElements(complexDataMap, defaultPiiFilterConfig.getComplexDataList());
 
       // if automatic secret redaction is enabled, merge config from default config
-      if (isAutomaticSecretRedactionEnabled(
-          requestContext, isDataClassificationRp1Enabled, enabledDataSetMap)) {
-        if (isDataClassificationRp1Enabled) {
-          addPiiElements(
-              keyRegexToPiiElementMap,
-              addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getKeyRegexsList()));
-          addPiiElements(
-              valueRegexToPiiElementMap,
-              addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getValueRegexsList()));
-        } else {
-          addPiiElements(keyRegexToPiiElementMap, defaultPiiFilterConfig.getKeyRegexsList());
-          addPiiElements(valueRegexToPiiElementMap, defaultPiiFilterConfig.getValueRegexsList());
-        }
+      if (isAutomaticSecretRedactionEnabled(requestContext, enabledDataSetMap)) {
+        addPiiElements(
+            keyRegexToPiiElementMap,
+            addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getKeyRegexsList()));
+        addPiiElements(
+            valueRegexToPiiElementMap,
+            addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getValueRegexsList()));
       }
 
       Map<DataSuppression, Set<DataType>> dataTypesMap =
@@ -217,12 +195,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   }
 
   private List<RedactionRule> filterRedactionRules(
-      boolean isDataClassificationRp1Enabled,
-      Map<String, DataSet> enabledDataSetMap,
-      List<RedactionRule> redactionRules) {
-    if (!isDataClassificationRp1Enabled) {
-      return redactionRules;
-    }
+      Map<String, DataSet> enabledDataSetMap, List<RedactionRule> redactionRules) {
     boolean isLegacyRedactDataSetEnabled = enabledDataSetMap.containsKey(LEGACY_REDACT_DATA_SET_ID);
     boolean isLegacyObfuscateDataSetEnabled =
         enabledDataSetMap.containsKey(LEGACY_OBFUSCATE_DATA_SET_ID);
@@ -242,21 +215,15 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   }
 
   private boolean shouldSuppressSensitiveHeaders(
-      boolean isDataClassificationRp1Enabled,
-      Map<String, DataSet> enabledDataSetMap,
-      RedactionStrategy redactionStrategy) {
-    return (!isDataClassificationRp1Enabled
-            || enabledDataSetMap.containsKey(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID))
+      Map<String, DataSet> enabledDataSetMap, RedactionStrategy redactionStrategy) {
+    return enabledDataSetMap.containsKey(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)
         && (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
             || redactionStrategy.equals(REDACTION_STRATEGY_REDACT));
   }
 
   private boolean isAutomaticSecretRedactionEnabled(
-      RequestContext requestContext,
-      boolean isDataClassificationRp1Enabled,
-      Map<String, DataSet> enabledDataSetMap) {
-    return (!isDataClassificationRp1Enabled
-            || enabledDataSetMap.containsKey(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID))
+      RequestContext requestContext, Map<String, DataSet> enabledDataSetMap) {
+    return enabledDataSetMap.containsKey(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)
         && configServiceCoordinator.isAutomaticSecretRedactionStrategyEnabled(requestContext);
   }
 
@@ -278,9 +245,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   }
 
   private List<PiiElement> computePiiElements(
-      List<Parameter> sensitiveParameters,
-      RedactionStrategy redactionStrategy,
-      boolean isDataClassificationEnabled) {
+      List<Parameter> sensitiveParameters, RedactionStrategy redactionStrategy) {
     Set<String> sensitiveParameterNames =
         sensitiveParameters.stream().map(Parameter::getName).collect(Collectors.toSet());
     List<PiiElement> piiElements = new ArrayList<>();
@@ -290,9 +255,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
               .setRegex(name)
               .setRedactionStrategy(redactionStrategy)
               .setFqn(true);
-      if (isDataClassificationEnabled) {
-        piiElementBuilder.setRuleId(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID);
-      }
+      piiElementBuilder.setRuleId(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID);
       piiElements.add(piiElementBuilder.build());
     }
     return piiElements;

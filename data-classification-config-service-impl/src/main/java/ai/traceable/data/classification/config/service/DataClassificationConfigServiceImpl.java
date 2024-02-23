@@ -5,7 +5,6 @@ import static ai.traceable.data.classification.config.service.v1.SystemDataSetVe
 import static java.util.function.Function.identity;
 import static org.hypertrace.config.proto.converter.ConfigProtoConverter.convertToValue;
 
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.impl.v1.DeletedSystemDataset.DeletedSystemDataSet;
 import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideResponse;
@@ -89,7 +88,6 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private final Map<String, DataSet> systemDataSetsRp2ToIdMap;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
   private final RedactionRulesDao redactionRulesDao;
-  private final FeatureCachingClient featureCachingClient;
   private final DataTypeResolver dataTypeResolver;
 
   @Inject
@@ -105,7 +103,6 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
       RedactionRulesDao redactionRulesDao,
-      FeatureCachingClient featureCachingClient,
       DataTypeResolver dataTypeResolver) {
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
@@ -176,8 +173,6 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       systemDataTypesRp2 = Collections.emptyList();
       systemDataTypesRp2ToIdMap = Collections.emptyMap();
     }
-
-    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -663,8 +658,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
 
   private boolean useRp2SystemTypes(
       RequestContext requestContext, SystemDataSetVersion systemDataSetVersion) {
-    return systemDataSetVersion != SYSTEM_DATA_SET_VERSION_RP1
-        && featureCachingClient.isDataClassificationRp2Enabled(requestContext);
+    return systemDataSetVersion != SYSTEM_DATA_SET_VERSION_RP1;
   }
 
   private List<DataClassificationOverride> getDataClassificationOverridesListByFilter(

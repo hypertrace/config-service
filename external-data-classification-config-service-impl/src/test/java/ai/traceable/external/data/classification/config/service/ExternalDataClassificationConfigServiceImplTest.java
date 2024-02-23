@@ -120,7 +120,6 @@ public class ExternalDataClassificationConfigServiceImplTest {
                                     mockGenericConfigService.channel()));
                       }
                     }));
-    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
     when(externalDataClassificationConfig.getCacheRefreshDuration())
         .thenReturn(Duration.ofMinutes(1));
     when(externalDataClassificationConfig.getCacheThreadPoolSize()).thenReturn(1);
@@ -180,16 +179,6 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
                 .build());
     assertEquals(0, response.getDataTypesCount());
-  }
-
-  @Test
-  void returnsEmptyDisabledResponseIfDisabled() {
-    dataClassificationOverrides = new ArrayList<>();
-    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(false);
-    assertEquals(
-        GetDataClassificationConfigResponse.newBuilder().setEnabled(false).build(),
-        externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
-            GetDataClassificationConfigRequest.getDefaultInstance()));
   }
 
   @Test

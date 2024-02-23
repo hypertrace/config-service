@@ -109,9 +109,6 @@ class ExternalDataClassificationConfigServiceImpl
   private GetDataClassificationConfigResponse calculateResponse(
       ContextualKey<GetDataClassificationConfigRequest> requestKey) {
     RequestContext requestContext = requestKey.getContext();
-    if (!this.featureCachingClient.isDataClassificationRp2Enabled(requestContext)) {
-      return this.responseBuilder.buildDisabledResponse();
-    }
     GetDataClassificationConfigRequest request = requestKey.getData();
     Optional<String> requestedEnvironment =
         Optional.of(request.getEnvironmentFilter().getEnvironmentName())

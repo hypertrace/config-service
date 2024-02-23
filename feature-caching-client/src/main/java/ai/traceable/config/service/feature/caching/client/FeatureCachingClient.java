@@ -26,9 +26,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class FeatureCachingClient {
-  private static final boolean DEFAULT_DATA_CLASSIFICATION_RP1_FLAG_VALUE = true;
-
-  private static final boolean DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE = false;
   private static final boolean DEFAULT_DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG_VALUE = false;
   private static final boolean DEFAULT_DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG_VALUE = false;
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
@@ -38,8 +35,6 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
   private static final boolean DEFAULT_TPA_CORAZA_BASED_EVALUATION = true;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
-  private static final String DATA_CLASSIFICATION_RP1_FLAG = "data-classification.mvp";
-  private static final String DATA_CLASSIFICATION_RP2_FLAG = "data-classification.rp2";
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
   private static final String DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG =
@@ -55,8 +50,6 @@ public class FeatureCachingClient {
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
-          DATA_CLASSIFICATION_RP1_FLAG,
-          DATA_CLASSIFICATION_RP2_FLAG,
           DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG,
           DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG,
           IPQS_ENABLED_FLAG,
@@ -88,32 +81,6 @@ public class FeatureCachingClient {
                     CacheLoader.from(this::getFeatureFlagMap),
                     Executors.newFixedThreadPool(
                         config.getThreadPoolSize(), this.buildThreadFactory())));
-  }
-
-  public boolean isDataClassificationRp1Enabled(RequestContext requestContext) {
-    try {
-      return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(DATA_CLASSIFICATION_RP1_FLAG));
-    } catch (Exception exception) {
-      log.error(
-          "Failed to retrieve current feature flag value for Data Classification RP1", exception);
-      return DEFAULT_DATA_CLASSIFICATION_RP1_FLAG_VALUE;
-    }
-  }
-
-  public boolean isDataClassificationRp2Enabled(RequestContext requestContext) {
-    try {
-      return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(DATA_CLASSIFICATION_RP2_FLAG));
-    } catch (Exception exception) {
-      log.error(
-          "Failed to retrieve current feature flag value for Data Classification RP2", exception);
-      return DEFAULT_DATA_CLASSIFICATION_RP2_FLAG_VALUE;
-    }
   }
 
   public boolean isDataClassificationEnhancedObfuscationEnabled(RequestContext requestContext) {

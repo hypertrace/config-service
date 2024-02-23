@@ -22,6 +22,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.validation)
+  implementation(commonLibs.hypertrace.framework.metrics)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.guice)
   implementation(commonLibs.protobuf.javautil)

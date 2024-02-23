@@ -8,11 +8,8 @@ import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.RED
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideResponse;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
@@ -205,36 +202,15 @@ class DataClassificationConfigServiceImplTest {
             + "]\n"
             + "}\n"
             + "}";
-    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
-    when(featureCachingClient.isDataClassificationRp2Enabled(any()))
-        .thenReturn(false)
-        .thenReturn(true);
-    registerAndStartService(
-        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
+    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
 
     GetDataTypesRequest getRequest = GetDataTypesRequest.getDefaultInstance();
 
-    // RP1 case
+    // RP2 case
     GetDataTypesResponse response =
         dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
     assertEquals(1, response.getDataTypesCount());
     DataType actualDataType = response.getDataTypes(0);
-    assertEquals("systemdatatyperp1", actualDataType.getId());
-    assertEquals("systemdatatyperulerp1", actualDataType.getRule().getName());
-    assertEquals(
-        LOCATION_REQUEST_HEADER,
-        response
-            .getDataTypesList()
-            .get(0)
-            .getRule()
-            .getScopedPatternsList()
-            .get(0)
-            .getLocations(0));
-
-    // RP2 case
-    response = dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
-    assertEquals(1, response.getDataTypesCount());
-    actualDataType = response.getDataTypes(0);
     assertEquals("systemdatatyperp2", actualDataType.getId());
     assertEquals("systemdatatyperulerp2", actualDataType.getRule().getName());
     assertEquals(
@@ -285,30 +261,14 @@ class DataClassificationConfigServiceImplTest {
             + "  }\n"
             + "  }\n"
             + "}";
-    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
-    when(featureCachingClient.isDataClassificationRp2Enabled(any()))
-        .thenReturn(false)
-        .thenReturn(false)
-        .thenReturn(true)
-        .thenReturn(true);
-    registerAndStartService(
-        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
+    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
     GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
 
-    // RP1 case
+    // RP2 case
     GetDataSetsResponse response =
         dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
     assertEquals(1, response.getDataSetsCount());
     DataSet actualDataSet = response.getDataSets(0);
-    assertEquals("systemdatasetrp1", actualDataSet.getId());
-    assertEquals("systemdatasetinforp1", actualDataSet.getInfo().getName());
-    assertEquals(
-        List.of("datatyperp1-1", "datatyperp1-2"), actualDataSet.getInfo().getDataTypeIdsList());
-
-    // RP2 case
-    response = dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
-    assertEquals(1, response.getDataSetsCount());
-    actualDataSet = response.getDataSets(0);
     assertEquals("systemdatasetrp2", actualDataSet.getId());
     assertEquals("systemdatasetinforp2", actualDataSet.getInfo().getName());
     assertEquals(
@@ -321,7 +281,7 @@ class DataClassificationConfigServiceImplTest {
         "{\n"
             + "  \"system\": {\n"
             + "  \"datasets\": {\n"
-            + "    \"rp1\": [\n"
+            + "    \"rp2\": [\n"
             + "      {\n"
             + "        \"id\": \"systemdataset\",\n"
             + "        \"info\": {\n"
@@ -338,8 +298,7 @@ class DataClassificationConfigServiceImplTest {
             + "  }\n"
             + "  }\n"
             + "}";
-    registerAndStartService(
-        buildClassificationConfigFromJsonString(jsonString), mock(FeatureCachingClient.class));
+    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
     GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
     GetDataSetsResponse response =
         dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
@@ -375,8 +334,7 @@ class DataClassificationConfigServiceImplTest {
             + "  }\n"
             + "  }\n"
             + "}";
-    registerAndStartService(
-        buildClassificationConfigFromJsonString(jsonString), mock(FeatureCachingClient.class));
+    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
     UpdateDataSetRequest updateRequest =
         UpdateDataSetRequest.newBuilder()
             .setId("systemdataset")
@@ -511,12 +469,7 @@ class DataClassificationConfigServiceImplTest {
             + "]\n"
             + "}\n"
             + "}";
-    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
-    when(featureCachingClient.isDataClassificationRp2Enabled(any()))
-        .thenReturn(false)
-        .thenReturn(true);
-    registerAndStartService(
-        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
+    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
 
     // update rp1 system data type
     DataTypeRule updatedSystemDataTypeRule =
@@ -1008,10 +961,7 @@ class DataClassificationConfigServiceImplTest {
             + "]\n"
             + "}\n"
             + "}";
-    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
-    when(featureCachingClient.isDataClassificationRp2Enabled(any())).thenReturn(true);
-    registerAndStartService(
-        buildClassificationConfigFromJsonString(jsonString), featureCachingClient);
+    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
     GetDataTypesResponse response =
         dataClassificationConfigServiceBlockingStub.getDataTypes(
             GetDataTypesRequest.newBuilder()
@@ -1121,10 +1071,10 @@ class DataClassificationConfigServiceImplTest {
   }
 
   private void registerAndStartService() {
-    registerAndStartService(ConfigFactory.empty(), mock(FeatureCachingClient.class));
+    registerAndStartService(ConfigFactory.empty());
   }
 
-  private void registerAndStartService(Config config, FeatureCachingClient featureCachingClient) {
+  private void registerAndStartService(Config config) {
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
@@ -1148,7 +1098,6 @@ class DataClassificationConfigServiceImplTest {
                 new RedactionRulesDao(
                     sensitiveDataConfigServiceBlockingStub,
                     new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                featureCachingClient,
                 new DataTypeResolver(ownStub)))
         .start();
   }
