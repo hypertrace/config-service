@@ -18,6 +18,10 @@ service DetectorConfigService {
 
   rpc GetAllUnresolvedScopedAnomalyDetectionConfigs(GetAllUnresolvedScopedAnomalyDetectionConfigsRequest) returns (GetAllUnresolvedScopedAnomalyDetectionConfigsResponse) {}
 
+  rpc GetAllGlobalResolvedScopedAnomalyDetectionConfigs(GetAllGlobalResolvedScopedAnomalyDetectionConfigsRequest) returns (GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse) {}
+
+  rpc GetGlobalResolvedScopedAnomalyDetectionConfig(GetGlobalResolvedScopedAnomalyDetectionConfigRequest) returns (GetGlobalResolvedScopedAnomalyDetectionConfigResponse) {}
+
   rpc DeleteScopedAnomalyDetectionConfig(DeleteScopedAnomalyDetectionConfigRequest) returns (DeleteScopedAnomalyDetectionConfigResponse) {}
 
   rpc UpdateScopedAnomalyDetectionConfig(UpdateScopedAnomalyDetectionConfigRequest) returns (UpdateScopedAnomalyDetectionConfigResponse) {}

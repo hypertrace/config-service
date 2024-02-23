@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.142=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.145=compileClasspath,runtimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath
 com.google.api.grpc:proto-google-common-protos:2.22.0=compileClasspath,runtimeClasspath
@@ -24,6 +24,6 @@ javax.annotation:javax.annotation-api:1.3.2=compileClasspath,runtimeClasspath
 javax.inject:javax.inject:1=compileClasspath,runtimeClasspath
 org.checkerframework:checker-qual:3.33.0=compileClasspath,runtimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.15=compileClasspath,runtimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.16=compileClasspath,runtimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.7=compileClasspath,runtimeClasspath
 empty=annotationProcessor

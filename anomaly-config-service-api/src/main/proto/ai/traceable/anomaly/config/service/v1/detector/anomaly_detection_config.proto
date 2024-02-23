@@ -54,6 +54,15 @@ message GetScopedAnomalyDetectionConfigResponse {
   ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 1;
 }
 
+message GetGlobalResolvedScopedAnomalyDetectionConfigRequest {
+  AnomalyConfigScope config_scope = 1;
+  GetAnomalyDetectionConfigsFilter filter = 2;
+}
+
+message GetGlobalResolvedScopedAnomalyDetectionConfigResponse {
+  ScopedAnomalyDetectionConfig scoped_anomaly_detection_config = 1;
+}
+
 message GetAllScopedAnomalyDetectionConfigsRequest {
   GetAnomalyDetectionConfigsFilter filter = 1;
 }
@@ -76,6 +85,14 @@ message GetAllUnresolvedScopedAnomalyDetectionConfigsRequest {
 }
 
 message GetAllUnresolvedScopedAnomalyDetectionConfigsResponse {
+  repeated ScopedAnomalyDetectionConfig scoped_anomaly_detection_configs = 1;
+}
+
+message GetAllGlobalResolvedScopedAnomalyDetectionConfigsRequest {
+  GetAnomalyDetectionConfigsFilter filter = 1;
+}
+
+message GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse {
   repeated ScopedAnomalyDetectionConfig scoped_anomaly_detection_configs = 1;
 }
 
