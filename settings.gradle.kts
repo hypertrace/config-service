@@ -22,7 +22,7 @@ rootProject.name = "traceable-config-service-root"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 configure<DependencyPluginSettingExtension> {
-  catalogVersion.set("0.3.0")
+  catalogVersion.set("0.3.145")
 }
 
 includeBuild("./hypertrace-config-service")
