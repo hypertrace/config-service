@@ -2,6 +2,9 @@
 - ruleId: crs_101
   ruleName: Server Side Request Forgery (SSRF) Signatures
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
+  eventLabels:
+    MITRE_TACTIC: TA0006
+    MITRE_TECHNIQUE: T1552
   eventDetails:
     description: |
       SSRF is a type of attack where an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
@@ -29,6 +32,9 @@
 - ruleId: crs_913
   ruleName: Scanner Detection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SCANNER_DETECTED
+  eventLabels:
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595
   eventDetails:
     description: "Automated scanning activity is detected. Scanners are often used by attackers to discover vulnerabilities in your application."
     mitigation: |
@@ -42,6 +48,9 @@
 - ruleId: crs_941
   ruleName: Cross Site Scripting (XSS)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_XSS
+  eventLabels:
+    MITRE_TACTIC: TA0002
+    MITRE_TECHNIQUE: T1059
   eventDetails:
     description: |
       Cross-site scripting (XSS) attacks occur when untrusted user input is used by the application, usually from a web request and the web application dynamically generates a web page that contains this untrusted data. The victim visits the generated web page through a web browser where the malicious script is executed in the context of the web server's domain, effectively violating the web browser's same-origin policy. The attacker could transfer private information from the victim's browser or send malicious requests to a web site on behalf of the victim. Phishing attacks could be used to emulate trusted web sites and trick the victim into entering a password, allowing the attacker to compromise the victim's account on that web site. Finally, the script could exploit a vulnerability in the web browser itself possibly taking over the victim's machine, sometimes referred to as "drive-by hacking."
@@ -66,6 +75,9 @@
 - ruleId: crs_943
   ruleName: Session Fixation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SESSION_FIXATION
+  eventLabels:
+    MITRE_TACTIC: TA0008
+    MITRE_TECHNIQUE: T1563
   eventDetails:
     description: |
       Session Fixation is an attack that permits an attacker to hijack a valid user session. The attack explores a limitation in the way the web application manages the session ID, more specifically the vulnerable web application. When authenticating a user, it doesn’t assign a new session ID, making it possible to use an existent session ID. The attack consists of obtaining a valid session ID (e.g. by connecting to the application), inducing a user to authenticate himself with that session ID, and then hijacking the user-validated session by the knowledge of the used session ID. The attacker has to provide a legitimate Web application session ID and try to make the victim’s browser use it.
@@ -83,6 +95,9 @@
 - ruleId: crs_921
   ruleName: HTTP Protocol Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  eventLabels:
+    MITRE_TACTIC: TA0011
+    MITRE_TECHNIQUE: T1572
   eventDetails:
     description: "Anomalies are detected in the HTTP protocol usage, which may indicate an attempt to exploit HTTP protocol vulnerabilities."
     mitigation: |
@@ -98,6 +113,9 @@
 - ruleId: crs_102
   ruleName: XML External Entity Injection (XXE)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  eventLabels:
+    MITRE_TACTIC: TA0005
+    MITRE_TECHNIQUE: T1221
   eventDetails:
     description: "XML External Entity Injection (XXE) attack signatures are detected. XXE attacks exploit the way an application processes XML input with external references, potentially leading to disclosure of internal files, denial of service, or remote code execution."
     mitigation: |
@@ -111,6 +129,9 @@
 - ruleId: crs_934
   ruleName: NodeJS Injection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  eventLabels:
+    MITRE_TACTIC: TA0002
+    MITRE_TECHNIQUE: T1059
   eventDetails:
     description: "An anomaly characteristic of Node.js injection attack is detected. Node.js injection attacks occur when an attacker can control the input data that is parsed by the Node.js engine in server or client, potentially leading to arbitrary code execution."
     mitigation: "To mitigate Node.js injection attacks, avoid using the eval() function. If it's absolutely necessary, ensure that the input data is properly sanitized and validated."
@@ -122,6 +143,9 @@
 - ruleId: crs_942
   ruleName: SQL Injection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
+  eventLabels:
+    MITRE_TACTIC: TA0001
+    MITRE_TECHNIQUE: T1190
   eventDetails:
     description: |
       An anomaly characteristic of SQL injection attack is detected. SQL injection is a code injection technique that exploits a security vulnerability in an application's software.
@@ -153,6 +177,9 @@
 - ruleId: crs_930
   ruleName: Local File Inclusion
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PATH_MANIPULATION
+  eventLabels:
+    MITRE_TACTIC: TA0007
+    MITRE_TECHNIQUE: T1083
   eventDetails:
     description: "An anomaly characteristic of Local File Inclusion (LFI) attack is detected. LFI attacks occur when an attacker can manipulate a file path to access files elsewhere in the server's file system."
     mitigation: "To mitigate LFI attacks, validate and sanitize all user inputs that are used in file paths. Avoid using user input to construct file paths where possible."
@@ -230,6 +257,9 @@
 - ruleId: crs_932
   ruleName: Remote Code Execution
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  eventLabels:
+    MITRE_TACTIC: TA0002
+    MITRE_TECHNIQUE: T1059
   eventDetails:
     description: "An anomaly characteristic of Remote Code Execution (RCE) attack is detected. RCE attacks occur when an attacker can execute arbitrary commands or code on a remote server."
     mitigation: "To mitigate RCE attacks, validate and sanitize all user inputs. Avoid using user input in system commands where possible. Regularly update and patch your systems to fix known vulnerabilities."
@@ -287,6 +317,9 @@
 - ruleId: crs_944
   ruleName: Java Application Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  eventLabels:
+    MITRE_TACTIC: TA0002
+    MITRE_TECHNIQUE: T1059
   subRuleInfos:
   - ruleId: crs_944120
     eventDetails:
@@ -395,6 +428,9 @@
 - ruleId: crs_103
   ruleName: Basic Authentication Violation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS
+  eventLabels:
+    MITRE_TACTIC: TA0005
+    MITRE_TECHNIQUE: T1556
   subRuleInfos:
   - ruleId: crs_1030100
     eventDetails:

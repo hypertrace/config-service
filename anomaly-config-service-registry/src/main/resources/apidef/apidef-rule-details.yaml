@@ -1,9 +1,11 @@
 - ruleId: unknownParam
   ruleName: Mass Assignment
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 472
     OWASP_API: API6
+    MITRE_TACTIC: TA0040
+    MITRE_TECHNIQUE: T1565
   eventDetails:
     description: |
       A Mass Assignment attack is flagged when parameters that are not meant to be supported are deployed.
@@ -23,14 +25,16 @@
       - OWASP API Top 10 - 2019 - A6 Mass Assignment - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa6-mass-assignment.md
       - CWE - SANS - TOP 25 - http://cwe.mitre.org/top25/
       - Common Weakness Enumeration - Improperly Controlled Modification of Dynamically-Determined Object Attributes - https://cwe.mitre.org/data/definitions/915.html
-    
+
 - ruleId: enum
   ruleName: Invalid Enumerations
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 183
     OWASP_API_2023: API8
     OWASP_API: API7
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595
   eventDetails:
     description: "The value of an enumeration in the request does not match the expected values. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
     mitigation: "Implement input validation in your API to ensure all enumeration values are within the expected range. Consider using a schema validation library to automate this process."
@@ -38,11 +42,11 @@
     references: |
       - CWE-183: Permissive List of Allowed Inputs - https://cwe.mitre.org/data/definitions/183.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
-    
+
 - ruleId: integer
   ruleName: Value Out of Range
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 190
     OWASP_API: API8
   eventDetails:
@@ -58,11 +62,11 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-92:Forced Integer Overflow - https://capec.mitre.org/data/definitions/92.html
       - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
       - Web Application Security Consortium - WASC-03:Integer Overflows - http://projects.webappsec.org/w/page/13246946/Integer%20Overflows
-    
+
 - ruleId: type
   ruleName: Type Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 843
     OWASP_API_2023: API8
     OWASP_API: API7
@@ -73,11 +77,11 @@
     references: |
       - CWE-843: Access of Resource Using Incompatible Type ('Type Confusion') - https://cwe.mitre.org/data/definitions/843.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
-    
+
 - ruleId: missingParam
   ruleName: Missing Field
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 287
     OWASP_API_2023: API8
     OWASP_API: API7
@@ -116,11 +120,11 @@
     references: |
       - CWE-405: Asymmetric Resource Consumption (Resource Exhaustion) - https://cwe.mitre.org/data/definitions/405.html
       - OWASP Top 10 2021: A3 - Injection - https://owasp.org/Top10/A03_2021-Injection/
-    
+
 - ruleId: device
   ruleName: Unexpected User Agent
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 644
     OWASP_API: API8
   eventDetails:
@@ -130,11 +134,11 @@
     references: |
       - CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax - https://cwe.mitre.org/data/definitions/644.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
-    
+
 - ruleId: httpStatus
   ruleName: Unexpected HTTP Response Code
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 204
     OWASP_API_2023: API8
     OWASP_API: API7
@@ -145,11 +149,11 @@
     references: |
       - CWE-204: Response Discrepancy Information Leak - https://cwe.mitre.org/data/definitions/204.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
-    
+
 - ruleId: contentType
   ruleName: Content Type Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 436
     OWASP_API_2023: API8
     OWASP_API: API7
@@ -160,11 +164,11 @@
     references: |
       - CWE-436: Interpretation Conflict - https://cwe.mitre.org/data/definitions/436.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
-    
+
 - ruleId: contentSize
   ruleName: Content Size Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
-  eventLabels: 
+  eventLabels:
     CWE: 1043
     OWASP_API_2023: API8
     OWASP_API: API7
@@ -175,11 +179,11 @@
     references: |
       - CWE-1043: Insufficiently Controlled Size of Resource Requested ('Resource Exhaustion') - https://cwe.mitre.org/data/definitions/1043.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Denial of Service - https://owasp.org/API-Security/editions/2023/en/0xa8-denial-of-service/
-    
+
 - ruleId: ssrf
   ruleName: Server-Side Request Forgery (SSRF)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
-  eventLabels: 
+  eventLabels:
     CWE: 918
     OWASP_API_2023: API7
   eventDetails:
@@ -204,14 +208,16 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - https://capec.mitre.org/data/definitions/664.html
       - MITRE Attack - T1190 Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - SSRF Bible Cheatsheet - https://cheatsheetseries.owasp.org/assets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet_SSRF_Bible.pdf
-    
+
 - ruleId: bfla
   ruleName: Broken Function Level Authorization (BFLA)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
-  eventLabels: 
+  eventLabels:
     CWE: 285
     OWASP_API_2023: API5
     OWASP_API: API5
+    MITRE_TACTIC: TA0004
+    MITRE_TECHNIQUE: T1548
   eventDetails:
     description: |
       Broken Function Level Authorization attack behaviour is detected.
@@ -243,6 +249,8 @@
       CWE: 613
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134
     eventDetails:
       description: |
         JWT claims supports the field "iat" to declare the token creation timestamp, and the field "exp" to declare the token expiration timestamp. If the token is expired, it must be rejected. But sometimes, expiration is handled internally by using the "iat" claim. Absence of these checks leads to possible attacks.
@@ -263,6 +271,8 @@
       CWE: 613
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134
     eventDetails:
       description: "A JWT token is used before its 'Not Before' (nbf) claim."
       mitigation: "Ensure that the 'Not Before' (nbf) claim in JWT tokens is properly validated."
@@ -280,6 +290,8 @@
       CWE: 639
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134
     eventDetails:
       description: "A JWT token has been issued by an unknown or untrusted source."
       mitigation: "Ensure that JWT tokens are issued by a trusted source and that the issuer is validated."
@@ -297,6 +309,8 @@
       CWE: 347
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134
     eventDetails:
       description: "A JWT token has an audience (aud) claim that the server does not expect. This could indicate an attempt to use a token issued for a different service."
       mitigation: "Ensure that the server validates the 'aud' claim of the JWT token and only accepts tokens intended for itself."
@@ -314,6 +328,8 @@
       CWE: 345
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134
     eventDetails:
       description: |
         JWT declares the signing algorithm in the headers block. There are cases where the authorization code is designed to handle a single algorithm, but the JWT token is signed with a different algorithm by the attacker. This can lead to token confusion.
