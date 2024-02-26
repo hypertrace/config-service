@@ -9,6 +9,7 @@ import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.RED
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataClassificationOverrideResponse;
@@ -64,12 +65,11 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import com.google.common.collect.Iterables;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -84,8 +84,6 @@ import org.junit.jupiter.api.Test;
 class DataClassificationConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub;
-  private static final String DATA_CLASSIFICATION_CONFIG_SERVICE =
-      "data.classification.config.service";
   boolean sensitiveDataConfigServiceMockFlag;
 
   @BeforeEach
@@ -164,147 +162,20 @@ class DataClassificationConfigServiceImplTest {
   }
 
   @Test
-  void systemDataTypesTest() {
-    String jsonString =
-        "system : {\n"
-            + "datatypes : {\n"
-            + "rp1 : [\n"
-            + "{\n"
-            + "id : systemdatatyperp1,\n"
-            + "rule : {\n"
-            + "name : systemdatatyperulerp1,\n"
-            + "scoped_patterns : [\n"
-            + "{\n"
-            + "global_scope : {},\n"
-            + "locations : [LOCATION_REQUEST_HEADER],\n"
-            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
-            + "action : ACTION_MATCH\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}\n"
-            + "],\n"
-            + "rp2 : [\n"
-            + "{\n"
-            + "id : systemdatatyperp2,\n"
-            + "rule : {\n"
-            + "name : systemdatatyperulerp2,\n"
-            + "scoped_patterns : [\n"
-            + "{\n"
-            + "global_scope : {},\n"
-            + "locations : [LOCATION_REQUEST_HEADER],\n"
-            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
-            + "action : ACTION_MATCH\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}";
-    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
-
-    GetDataTypesRequest getRequest = GetDataTypesRequest.getDefaultInstance();
-
-    // RP2 case
-    GetDataTypesResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataTypes(getRequest);
-    assertEquals(1, response.getDataTypesCount());
-    DataType actualDataType = response.getDataTypes(0);
-    assertEquals("systemdatatyperp2", actualDataType.getId());
-    assertEquals("systemdatatyperulerp2", actualDataType.getRule().getName());
-    assertEquals(
-        LOCATION_REQUEST_HEADER,
-        response
-            .getDataTypesList()
-            .get(0)
-            .getRule()
-            .getScopedPatternsList()
-            .get(0)
-            .getLocations(0));
-  }
-
-  @Test
-  void systemDataSetsTest() {
-    String jsonString =
-        "{\n"
-            + "  \"system\": {\n"
-            + "    \"datasets\": {\n"
-            + "    \"rp1\": [\n"
-            + "      {\n"
-            + "        \"id\": \"systemdatasetrp1\",\n"
-            + "        \"info\": {\n"
-            + "          \"name\": \"systemdatasetinforp1\",\n"
-            + "          \"enabled\": \"true\",\n"
-            + "          \"data_type_ids\": [\n"
-            + "            \"datatyperp1-1\",\n"
-            + "            \"datatyperp1-2\"\n"
-            + "          ],\n"
-            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
-            + "        }\n"
-            + "      }\n"
-            + "    ],\n"
-            + "    \"rp2\": [\n"
-            + "      {\n"
-            + "        \"id\": \"systemdatasetrp2\",\n"
-            + "        \"info\": {\n"
-            + "          \"name\": \"systemdatasetinforp2\",\n"
-            + "          \"enabled\": \"true\",\n"
-            + "          \"data_type_ids\": [\n"
-            + "            \"datatyperp2-1\",\n"
-            + "            \"datatyperp2-2\"\n"
-            + "          ],\n"
-            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
-            + "        }\n"
-            + "      }\n"
-            + "    ]\n"
-            + "  }\n"
-            + "  }\n"
-            + "}";
-    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
-    GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
-
-    // RP2 case
-    GetDataSetsResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
-    assertEquals(1, response.getDataSetsCount());
-    DataSet actualDataSet = response.getDataSets(0);
-    assertEquals("systemdatasetrp2", actualDataSet.getId());
-    assertEquals("systemdatasetinforp2", actualDataSet.getInfo().getName());
-    assertEquals(
-        List.of("datatyperp2-1", "datatyperp2-2"), actualDataSet.getInfo().getDataTypeIdsList());
-  }
-
-  @Test
   void deleteSystemDataSetTest() {
-    String jsonString =
-        "{\n"
-            + "  \"system\": {\n"
-            + "  \"datasets\": {\n"
-            + "    \"rp2\": [\n"
-            + "      {\n"
-            + "        \"id\": \"systemdataset\",\n"
-            + "        \"info\": {\n"
-            + "          \"name\": \"systemdatasetinfo\",\n"
-            + "          \"enabled\": \"true\",\n"
-            + "          \"data_type_ids\": [\n"
-            + "            \"datatype-1\",\n"
-            + "            \"datatype-2\"\n"
-            + "          ],\n"
-            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
-            + "        }\n"
-            + "      }\n"
-            + "    ]\n"
-            + "  }\n"
-            + "  }\n"
-            + "}";
-    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
+    DataSet systemDataSet = DataSet.newBuilder().setId("systemdataset").build();
+    DataClassificationConfig mockConfig = mock(DataClassificationConfig.class);
+    when(mockConfig.isSystemDataSet(systemDataSet.getId())).thenReturn(true);
+    when(mockConfig.getSystemDataSet(systemDataSet.getId())).thenReturn(Optional.of(systemDataSet));
+    when(mockConfig.getSystemDataSets(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_UNSPECIFIED))
+        .thenReturn(List.of(systemDataSet));
+    registerAndStartService(mockConfig);
     GetDataSetsRequest getRequest = GetDataSetsRequest.getDefaultInstance();
     GetDataSetsResponse response =
         dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
-    assertEquals(1, response.getDataSetsCount());
+    assertEquals(List.of(systemDataSet), response.getDataSetsList());
     DeleteDataSetRequest deleteRequest =
-        DeleteDataSetRequest.newBuilder().setId("systemdataset").build();
+        DeleteDataSetRequest.newBuilder().setId(systemDataSet.getId()).build();
     dataClassificationConfigServiceBlockingStub.deleteDataSet(deleteRequest);
     GetDataSetsResponse responseAfterDeletion =
         dataClassificationConfigServiceBlockingStub.getDataSets(getRequest);
@@ -313,31 +184,16 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateDeletedSystemDataSetTest() {
-    String jsonString =
-        "{\n"
-            + "  \"system\": {\n"
-            + "  \"datasets\": {\n"
-            + "    \"rp1\": [\n"
-            + "      {\n"
-            + "        \"id\": \"systemdataset\",\n"
-            + "        \"info\": {\n"
-            + "          \"name\": \"systemdatasetinfo\",\n"
-            + "          \"enabled\": \"true\",\n"
-            + "          \"data_type_ids\": [\n"
-            + "            \"datatype-1\",\n"
-            + "            \"datatype-2\"\n"
-            + "          ],\n"
-            + "          \"data_suppression\": \"DATA_SUPPRESSION_RAW\"\n"
-            + "        }\n"
-            + "      }\n"
-            + "    ]\n"
-            + "  }\n"
-            + "  }\n"
-            + "}";
-    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
+    DataSet systemDataSet = DataSet.newBuilder().setId("systemdataset").build();
+    DataClassificationConfig mockConfig = mock(DataClassificationConfig.class);
+    when(mockConfig.getSystemDataSets(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_UNSPECIFIED))
+        .thenReturn(List.of(systemDataSet));
+    when(mockConfig.getSystemDataSet(systemDataSet.getId())).thenReturn(Optional.of(systemDataSet));
+    when(mockConfig.isSystemDataSet(systemDataSet.getId())).thenReturn(true);
+    registerAndStartService(mockConfig);
     UpdateDataSetRequest updateRequest =
         UpdateDataSetRequest.newBuilder()
-            .setId("systemdataset")
+            .setId(systemDataSet.getId())
             .setInfo(
                 DataSetInfo.newBuilder()
                     .setName("name-1")
@@ -347,32 +203,32 @@ class DataClassificationConfigServiceImplTest {
     UpdateDataSetResponse updateResponse =
         dataClassificationConfigServiceBlockingStub.updateDataSet(updateRequest);
     assertEquals("name-1", updateResponse.getDataSet().getInfo().getName());
+    assertEquals(
+        List.of(updateResponse.getDataSet()),
+        dataClassificationConfigServiceBlockingStub
+            .getDataSets(GetDataSetsRequest.getDefaultInstance())
+            .getDataSetsList());
     DeleteDataSetRequest deleteRequest =
-        DeleteDataSetRequest.newBuilder().setId("systemdataset").build();
+        DeleteDataSetRequest.newBuilder().setId(systemDataSet.getId()).build();
     dataClassificationConfigServiceBlockingStub.deleteDataSet(deleteRequest);
-    UpdateDataSetRequest updateRequest2 =
-        UpdateDataSetRequest.newBuilder()
-            .setId("systemdataset")
-            .setInfo(
-                DataSetInfo.newBuilder()
-                    .setName("name-2")
-                    .setEnabled(true)
-                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW))
-            .build();
-    Throwable exception =
+
+    StatusRuntimeException exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> {
-              dataClassificationConfigServiceBlockingStub.updateDataSet(updateRequest2);
-            });
-    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+            () ->
+                dataClassificationConfigServiceBlockingStub.updateDataSet(
+                    UpdateDataSetRequest.newBuilder()
+                        .setId("systemdataset")
+                        .setInfo(DataSetInfo.newBuilder().setName("name-2"))
+                        .build()));
+    assertEquals(Status.NOT_FOUND, exception.getStatus());
   }
 
   @Test
   void createDataTypeTest() {
     registerAndStartService();
 
-    DataTypeRule dataTypeRule = createDataTypeRuleForTest("data-type-rule-1", "value-1");
+    DataTypeRule dataTypeRule = createDataTypeRuleForTest("data-type-rule-1");
     CreateDataTypeRequest request =
         CreateDataTypeRequest.newBuilder().setRule(dataTypeRule).build();
     CreateDataTypeResponse response =
@@ -383,8 +239,8 @@ class DataClassificationConfigServiceImplTest {
   @Test
   void getDataTypestest() {
     registerAndStartService();
-    DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1", "value-1");
-    DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2", "value-2");
+    DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1");
+    DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2");
     CreateDataTypeRequest request =
         CreateDataTypeRequest.newBuilder().setRule(dataTypeRule1).build();
     dataClassificationConfigServiceBlockingStub.createDataType(request);
@@ -402,7 +258,7 @@ class DataClassificationConfigServiceImplTest {
   @Test
   void updateDataTypeNotExisting() {
     registerAndStartService();
-    DataTypeRule dataTypeRule = createDataTypeRuleForTest("data-type-rule-1", "value-1");
+    DataTypeRule dataTypeRule = createDataTypeRuleForTest("data-type-rule-1");
     UpdateDataTypeRequest request =
         UpdateDataTypeRequest.newBuilder().setId("random-id").setRule(dataTypeRule).build();
     Throwable exception =
@@ -417,8 +273,8 @@ class DataClassificationConfigServiceImplTest {
   @Test
   void updateDataTypeTest() {
     registerAndStartService();
-    DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1", "value-1");
-    DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2", "value-2");
+    DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1");
+    DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2");
     CreateDataTypeResponse response =
         dataClassificationConfigServiceBlockingStub.createDataType(
             CreateDataTypeRequest.newBuilder().setRule(dataTypeRule1).build());
@@ -432,64 +288,28 @@ class DataClassificationConfigServiceImplTest {
 
   @Test
   void updateSystemDataTypeTest() {
-    String jsonString =
-        "system : {\n"
-            + "datatypes : {\n"
-            + "rp1 : [\n"
-            + "{\n"
-            + "id : systemdatatyperp1,\n"
-            + "rule : {\n"
-            + "name : systemdatatyperulerp1,\n"
-            + "scoped_patterns : [\n"
-            + "{\n"
-            + "global_scope : {},\n"
-            + "locations : [LOCATION_REQUEST_HEADER],\n"
-            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
-            + "action : ACTION_MATCH\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}\n"
-            + "],\n"
-            + "rp2 : [\n"
-            + "{\n"
-            + "id : systemdatatyperp2,\n"
-            + "rule : {\n"
-            + "name : systemdatatyperulerp2,\n"
-            + "scoped_patterns : [\n"
-            + "{\n"
-            + "global_scope : {},\n"
-            + "locations : [LOCATION_REQUEST_HEADER],\n"
-            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
-            + "action : ACTION_MATCH\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}";
-    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
-
+    DataClassificationConfig mockConfig = mock(DataClassificationConfig.class);
+    registerAndStartService(mockConfig);
     // update rp1 system data type
-    DataTypeRule updatedSystemDataTypeRule =
-        createDataTypeRuleForTest("updatedsystemdatatyperp1", "value-rp1");
+    DataTypeRule updatedSystemDataTypeRule = createDataTypeRuleForTest("updatedsystemdatatyperp1");
     UpdateDataTypeRequest request =
         UpdateDataTypeRequest.newBuilder()
             .setId("systemdatatyperp1")
             .setRule(updatedSystemDataTypeRule)
             .build();
+    when(mockConfig.isSystemDataType("systemdatatyperp1")).thenReturn(true);
     UpdateDataTypeResponse updateresponse =
         dataClassificationConfigServiceBlockingStub.updateDataType(request);
     assertEquals(updatedSystemDataTypeRule, updateresponse.getDataType().getRule());
 
     // update rp2 system data type
-    updatedSystemDataTypeRule = createDataTypeRuleForTest("updatedsystemdatatyperp2", "value-rp2");
+    updatedSystemDataTypeRule = createDataTypeRuleForTest("updatedsystemdatatyperp2");
     request =
         UpdateDataTypeRequest.newBuilder()
             .setId("systemdatatyperp2")
             .setRule(updatedSystemDataTypeRule)
             .build();
+    when(mockConfig.isSystemDataType("systemdatatyperp2")).thenReturn(true);
     updateresponse = dataClassificationConfigServiceBlockingStub.updateDataType(request);
     assertEquals(updatedSystemDataTypeRule, updateresponse.getDataType().getRule());
   }
@@ -510,8 +330,8 @@ class DataClassificationConfigServiceImplTest {
   @Test
   void deleteDataTypeTest() {
     registerAndStartService();
-    DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1", "value-1");
-    DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2", "value-2");
+    DataTypeRule dataTypeRule1 = createDataTypeRuleForTest("data-type-rule-1");
+    DataTypeRule dataTypeRule2 = createDataTypeRuleForTest("data-type-rule-2");
     CreateDataTypeRequest request =
         CreateDataTypeRequest.newBuilder().setRule(dataTypeRule1).build();
     dataClassificationConfigServiceBlockingStub.createDataType(request);
@@ -548,9 +368,7 @@ class DataClassificationConfigServiceImplTest {
     Throwable exception =
         assertThrows(
             RuntimeException.class,
-            () -> {
-              dataClassificationConfigServiceBlockingStub.getDataSet(request);
-            });
+            () -> dataClassificationConfigServiceBlockingStub.getDataSet(request));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
@@ -620,9 +438,7 @@ class DataClassificationConfigServiceImplTest {
     Throwable exception =
         assertThrows(
             RuntimeException.class,
-            () -> {
-              dataClassificationConfigServiceBlockingStub.updateDataSet(request);
-            });
+            () -> dataClassificationConfigServiceBlockingStub.updateDataSet(request));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
@@ -650,9 +466,7 @@ class DataClassificationConfigServiceImplTest {
     Throwable exception =
         assertThrows(
             RuntimeException.class,
-            () -> {
-              dataClassificationConfigServiceBlockingStub.deleteDataSet(request);
-            });
+            () -> dataClassificationConfigServiceBlockingStub.deleteDataSet(request));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
@@ -792,10 +606,9 @@ class DataClassificationConfigServiceImplTest {
             .build();
     assertThrows(
         StatusRuntimeException.class,
-        () -> {
-          new DataClassificationOverrideConfigRequestValidator()
-              .validateOrThrow(requestContext, request);
-        });
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(requestContext, request));
   }
 
   @Test
@@ -932,42 +745,24 @@ class DataClassificationConfigServiceImplTest {
             .build();
     assertThrows(
         StatusRuntimeException.class,
-        () -> {
-          new DataClassificationOverrideConfigRequestValidator()
-              .validateOrThrow(requestContext, request);
-        });
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(requestContext, request));
   }
 
   @Test
-  void getRp1DataTypesRegardlessOfFeatureFlagIfRequested() {
-    String jsonString =
-        "system : {\n"
-            + "datatypes : {\n"
-            + "rp1 : [\n"
-            + "{\n"
-            + "id : systemdatatyperp1,\n"
-            + "rule : {\n"
-            + "name : systemdatatyperulerp1,\n"
-            + "scoped_patterns : [\n"
-            + "{\n"
-            + "global_scope : {},\n"
-            + "locations : [LOCATION_REQUEST_HEADER],\n"
-            + "key_pattern : {operator : OPERATOR_MATCHES_REGEX, value : systemvalue},\n"
-            + "action : ACTION_MATCH\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}\n"
-            + "]\n"
-            + "}\n"
-            + "}";
-    registerAndStartService(buildClassificationConfigFromJsonString(jsonString));
+  void getRp1DataTypesIfRequested() {
+    List<DataType> rp1DataTypes = List.of(DataType.newBuilder().setId("rp1-dataset").build());
+    DataClassificationConfig mockConfig = mock(DataClassificationConfig.class);
+    when(mockConfig.getSystemDataTypes(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1))
+        .thenReturn(rp1DataTypes);
+    registerAndStartService(mockConfig);
     GetDataTypesResponse response =
         dataClassificationConfigServiceBlockingStub.getDataTypes(
             GetDataTypesRequest.newBuilder()
                 .setSystemDataSetVersion(SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1)
                 .build());
-    assertEquals(1, response.getDataTypesCount());
+    assertEquals(rp1DataTypes, response.getDataTypesList());
   }
 
   @Test
@@ -977,7 +772,7 @@ class DataClassificationConfigServiceImplTest {
         dataClassificationConfigServiceBlockingStub
             .createDataType(
                 CreateDataTypeRequest.newBuilder()
-                    .setRule(createDataTypeRuleForTest("data-type-rule-1", "value-1"))
+                    .setRule(createDataTypeRuleForTest("data-type-rule-1"))
                     .build())
             .getDataType();
     dataClassificationConfigServiceBlockingStub.createDataSet(
@@ -1034,7 +829,7 @@ class DataClassificationConfigServiceImplTest {
         .build();
   }
 
-  private DataTypeRule createDataTypeRuleForTest(String name, String value) {
+  private DataTypeRule createDataTypeRuleForTest(String name) {
     return DataTypeRule.newBuilder()
         .setName(name)
         .addScopedPatterns(
@@ -1050,31 +845,27 @@ class DataClassificationConfigServiceImplTest {
   }
 
   private DataClassificationOverrideRule getDataClassificationOverrideRule() {
-    DataClassificationOverrideRule rule =
-        DataClassificationOverrideRule.newBuilder()
-            .setScope(
-                DataClassificationOverrideRule.DataClassificationOverrideScope.newBuilder()
-                    .setEnvironmentScope(
-                        DataClassificationOverrideRule.EnvironmentScope.newBuilder()
-                            .setEnvironmentId(
-                                new StringBuilder("Environment_")
-                                    .append(UUID.randomUUID())
-                                    .toString())
-                            .build())
-                    .build())
-            .setDataSuppressionOverride(
-                DataClassificationOverrideRule.DataSuppressionOverride.newBuilder()
-                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
-                    .build())
-            .build();
-    return rule;
+    return DataClassificationOverrideRule.newBuilder()
+        .setScope(
+            DataClassificationOverrideRule.DataClassificationOverrideScope.newBuilder()
+                .setEnvironmentScope(
+                    DataClassificationOverrideRule.EnvironmentScope.newBuilder()
+                        .setEnvironmentId(
+                            new StringBuilder("Environment_").append(UUID.randomUUID()).toString())
+                        .build())
+                .build())
+        .setDataSuppressionOverride(
+            DataClassificationOverrideRule.DataSuppressionOverride.newBuilder()
+                .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+                .build())
+        .build();
   }
 
   private void registerAndStartService() {
-    registerAndStartService(ConfigFactory.empty());
+    registerAndStartService(mock(DataClassificationConfig.class));
   }
 
-  private void registerAndStartService(Config config) {
+  private void registerAndStartService(DataClassificationConfig config) {
     ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub =
@@ -1083,29 +874,26 @@ class DataClassificationConfigServiceImplTest {
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    DataTypeStore dataTypeStore = new DataTypeStore(genericStub, configChangeEventGenerator);
+    RedactionRulesDao redactionRulesDao =
+        new RedactionRulesDao(
+            sensitiveDataConfigServiceBlockingStub,
+            new LegacyDataSetStore(genericStub, configChangeEventGenerator));
     mockGenericConfigService
         .addService(
             new DataClassificationConfigServiceImpl(
                 new DataSetStore(genericStub, configChangeEventGenerator),
-                new DataTypeStore(genericStub, configChangeEventGenerator),
+                dataTypeStore,
                 new DeletedDataSetStore(genericStub),
                 new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
                 new DataSetConfigRequestValidator(),
                 new DataTypeConfigRequestValidator(),
                 new DataClassificationOverrideConfigRequestValidator(),
-                config,
                 null,
-                new RedactionRulesDao(
-                    sensitiveDataConfigServiceBlockingStub,
-                    new LegacyDataSetStore(genericStub, configChangeEventGenerator)),
-                new DataTypeResolver(ownStub)))
+                redactionRulesDao,
+                new DataTypeResolver(ownStub),
+                config))
         .start();
-  }
-
-  private Config buildClassificationConfigFromJsonString(String jsonString) {
-    return ConfigFactory.empty()
-        .withValue(
-            DATA_CLASSIFICATION_CONFIG_SERVICE, ConfigFactory.parseString(jsonString).root());
   }
 
   private class MockSensitiveDataConfigService

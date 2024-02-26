@@ -18,7 +18,7 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 class DataClassificationConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
-  private final Config config;
+  private final DataClassificationConfig config;
   private final FeatureCachingClient featureCachingClient;
 
   DataClassificationConfigServiceModule(
@@ -28,7 +28,7 @@ class DataClassificationConfigServiceModule extends AbstractModule {
       FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.configChangeEventGenerator = configChangeEventGenerator;
-    this.config = config;
+    this.config = new DataClassificationConfig(config);
     this.featureCachingClient = featureCachingClient;
   }
 
@@ -36,8 +36,8 @@ class DataClassificationConfigServiceModule extends AbstractModule {
   protected void configure() {
     bind(BindableService.class).to(DataClassificationConfigServiceImpl.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
-    bind(Config.class).toInstance(config);
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
+    bind(DataClassificationConfig.class).toInstance(this.config);
   }
 
   @Provides
