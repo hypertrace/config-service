@@ -44,6 +44,7 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -175,7 +176,9 @@ public class WafIntegrationConfigRequestValidator {
         break;
       case UPDATED_GCP_INTEGRATION_PARAMS:
         validateUpdatedGcpIntegrationParams(
-            updatedWafIntegrationDetails.getUpdatedGcpIntegrationParams());
+            id,
+            updatedWafIntegrationDetails.getUpdatedGcpIntegrationParams(),
+            existingWafIntegrations);
         break;
       case UPDATED_F5_INTEGRATION_PARAMS:
         validateUpdatedF5IntegrationParams(
@@ -196,17 +199,46 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdatedGcpIntegrationParams(
-      GcpIntegrationUpdateParams gcpIntegrationUpdateParams) {
-    validateUpdatedGcpIntegrationDetails(gcpIntegrationUpdateParams.getGcpIntegrationDetails());
+      String id,
+      GcpIntegrationUpdateParams gcpIntegrationUpdateParams,
+      List<WafIntegration> existingWafIntegrations) {
+    validateUpdatedGcpIntegrationDetails(
+        id, gcpIntegrationUpdateParams.getGcpIntegrationDetails(), existingWafIntegrations);
   }
 
-  private void validateUpdatedGcpIntegrationDetails(GcpIntegrationDetails gcpIntegrationDetails) {
+  private void validateUpdatedGcpIntegrationDetails(
+      String id,
+      GcpIntegrationDetails gcpIntegrationDetails,
+      List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateUpdatedGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
     validateSecurityPolicyScope(gcpIntegrationDetails);
+    validateUpdatedGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
+        id, gcpIntegrationDetails.getSecurityPolicyName(), existingWafIntegrations);
+  }
+
+  private void validateUpdatedGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
+      String id, String securityPolicyName, List<WafIntegration> existingWafIntegrations) {
+    boolean securityPolicyNameExists =
+        existingWafIntegrations.stream()
+            .filter(
+                wafIntegration ->
+                    wafIntegration.getWafIntegrationDetails().hasGcpIntegrationParams()
+                        && !wafIntegration.getId().equals(id))
+            .anyMatch(
+                wafIntegration ->
+                    wafIntegration
+                        .getWafIntegrationDetails()
+                        .getGcpIntegrationParams()
+                        .getGcpIntegrationDetails()
+                        .getSecurityPolicyName()
+                        .equals(securityPolicyName));
+    if (securityPolicyNameExists) {
+      throw buildGcpPolicyNameAlreadyExistsException(securityPolicyName);
+    }
   }
 
   private void validateUpdatedF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
@@ -245,7 +277,8 @@ public class WafIntegrationConfigRequestValidator {
         validateAzureIntegrationParam(wafIntegrationDetails.getAzureIntegrationParams());
         break;
       case GCP_INTEGRATION_PARAMS:
-        validateGcpIntegrationParams(wafIntegrationDetails.getGcpIntegrationParams());
+        validateGcpIntegrationParams(
+            wafIntegrationDetails.getGcpIntegrationParams(), existingWafIntegrations);
         break;
       case F5_INTEGRATION_PARAMS:
         validateF5IntegrationParams(wafIntegrationDetails.getF5IntegrationParams());
@@ -259,21 +292,56 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
-  private void validateGcpIntegrationParams(GcpIntegrationParams gcpIntegrationParams) {
-    validateGcpIntegrationDetails(gcpIntegrationParams.getGcpIntegrationDetails());
+  private void validateGcpIntegrationParams(
+      GcpIntegrationParams gcpIntegrationParams, List<WafIntegration> existingWafIntegrations) {
+    validateGcpIntegrationDetails(
+        gcpIntegrationParams.getGcpIntegrationDetails(), existingWafIntegrations);
   }
 
   private void validateF5IntegrationParams(F5IntegrationParams f5IntegrationParams) {
     validateF5IntegrationDetails(f5IntegrationParams.getF5IntegrationDetails());
   }
 
-  private void validateGcpIntegrationDetails(GcpIntegrationDetails gcpIntegrationDetails) {
+  private void validateGcpIntegrationDetails(
+      GcpIntegrationDetails gcpIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
     validateSecurityPolicyScope(gcpIntegrationDetails);
+    validateGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
+        gcpIntegrationDetails.getSecurityPolicyName(), existingWafIntegrations);
+  }
+
+  private void validateGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
+      String securityPolicyName, List<WafIntegration> existingWafIntegrations) {
+    boolean securityPolicyNameExists =
+        existingWafIntegrations.stream()
+            .filter(
+                wafIntegration ->
+                    wafIntegration.getWafIntegrationDetails().hasGcpIntegrationParams())
+            .anyMatch(
+                wafIntegration ->
+                    wafIntegration
+                        .getWafIntegrationDetails()
+                        .getGcpIntegrationParams()
+                        .getGcpIntegrationDetails()
+                        .getSecurityPolicyName()
+                        .equals(securityPolicyName));
+    if (securityPolicyNameExists) {
+      throw buildGcpPolicyNameAlreadyExistsException(securityPolicyName);
+    }
+  }
+
+  private StatusRuntimeException buildGcpPolicyNameAlreadyExistsException(
+      String securityPolicyName) {
+    return Status.ALREADY_EXISTS
+        .withDescription(
+            "Security policy name "
+                + securityPolicyName
+                + " is already linked to an existing GCP WAF integration.")
+        .asRuntimeException();
   }
 
   private void validateF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {

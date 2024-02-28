@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 
 class WafIntegrationConfigRequestValidatorTest {
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId("test-tenant");
+  public static final String EXISTING_SECURITY_POLICY_NAME = "existingSecurityPolicyName";
   private final WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator;
   private List<WafIntegration> existingWafIntegrations = List.of();
 
@@ -1315,6 +1316,37 @@ class WafIntegrationConfigRequestValidatorTest {
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request containing an existing security policy name should throw
+    WafIntegration existingGcpWafIntegration = getExistingGcpWafIntegration();
+
+    CreateWafIntegrationRequest invalidRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setGcpIntegrationParams(
+                        GcpIntegrationParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-1")
+                                    .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME)
+                                    .setDenyActionResponseCodeValue(502)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setValue("secret")
+                                                    .setKeyId("key-id")
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingGcpWafIntegration)));
   }
 
   @Test
@@ -1536,6 +1568,40 @@ class WafIntegrationConfigRequestValidatorTest {
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request containing an existing security policy name should throw
+    WafIntegration existingGcpWafIntegration = getExistingGcpWafIntegration();
+
+    UpdateWafIntegrationRequest invalidRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedGcpIntegrationParams(
+                        GcpIntegrationUpdateParams.newBuilder()
+                            .setGcpIntegrationDetails(
+                                GcpIntegrationDetails.newBuilder()
+                                    .setProjectId("project-id")
+                                    .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME)
+                                    .setDenyActionResponseCode(
+                                        GcpIntegrationDetails.DenyActionResponseCode
+                                            .DENY_ACTION_RESPONSE_CODE_403)
+                                    .setAuthCredentials(
+                                        GcpAuthCredentials.newBuilder()
+                                            .setEncryptedServiceAccountKey(
+                                                GcpAuthCredentials.EncryptedText.newBuilder()
+                                                    .setKeyId("key-id")
+                                                    .setValue("secret")
+                                                    .build()))
+                                    .setGlobalSecurityPolicyScope(
+                                        GlobalSecurityPolicyScope.getDefaultInstance()))))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingGcpWafIntegration)));
   }
 
   @Test
@@ -1688,5 +1754,18 @@ class WafIntegrationConfigRequestValidatorTest {
               REQUEST_CONTEXT,
               existingWafIntegrations);
         });
+  }
+
+  private WafIntegration getExistingGcpWafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setGcpIntegrationParams(
+                    GcpIntegrationParams.newBuilder()
+                        .setGcpIntegrationDetails(
+                            GcpIntegrationDetails.newBuilder()
+                                .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME))))
+        .build();
   }
 }
