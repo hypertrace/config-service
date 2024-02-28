@@ -5,7 +5,7 @@
     CWE: 472
     OWASP_API: API6
     MITRE_TACTIC: TA0040
-    MITRE_TECHNIQUE: T1565
+    MITRE_TECHNIQUE: T1565.001
   eventDetails:
     description: |
       A Mass Assignment attack is flagged when parameters that are not meant to be supported are deployed.
@@ -34,7 +34,7 @@
     OWASP_API_2023: API8
     OWASP_API: API7
     MITRE_TACTIC: TA0043
-    MITRE_TECHNIQUE: T1595
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The value of an enumeration in the request does not match the expected values. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
     mitigation: "Implement input validation in your API to ensure all enumeration values are within the expected range. Consider using a schema validation library to automate this process."
@@ -217,7 +217,7 @@
     OWASP_API_2023: API5
     OWASP_API: API5
     MITRE_TACTIC: TA0004
-    MITRE_TECHNIQUE: T1548
+    MITRE_TECHNIQUE: T1548.002
   eventDetails:
     description: |
       Broken Function Level Authorization attack behaviour is detected.
@@ -250,7 +250,7 @@
       OWASP_API_2023: API2
       OWASP_API: API2
       MITRE_TACTIC: TA0005
-      MITRE_TECHNIQUE: T1134
+      MITRE_TECHNIQUE: T1134.001
     eventDetails:
       description: |
         JWT claims supports the field "iat" to declare the token creation timestamp, and the field "exp" to declare the token expiration timestamp. If the token is expired, it must be rejected. But sometimes, expiration is handled internally by using the "iat" claim. Absence of these checks leads to possible attacks.
@@ -272,7 +272,7 @@
       OWASP_API_2023: API2
       OWASP_API: API2
       MITRE_TACTIC: TA0005
-      MITRE_TECHNIQUE: T1134
+      MITRE_TECHNIQUE: T1134.001
     eventDetails:
       description: "A JWT token is used before its 'Not Before' (nbf) claim."
       mitigation: "Ensure that the 'Not Before' (nbf) claim in JWT tokens is properly validated."
@@ -291,7 +291,7 @@
       OWASP_API_2023: API2
       OWASP_API: API2
       MITRE_TACTIC: TA0005
-      MITRE_TECHNIQUE: T1134
+      MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: "A JWT token has been issued by an unknown or untrusted source."
       mitigation: "Ensure that JWT tokens are issued by a trusted source and that the issuer is validated."
@@ -310,7 +310,7 @@
       OWASP_API_2023: API2
       OWASP_API: API2
       MITRE_TACTIC: TA0005
-      MITRE_TECHNIQUE: T1134
+      MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: "A JWT token has an audience (aud) claim that the server does not expect. This could indicate an attempt to use a token issued for a different service."
       mitigation: "Ensure that the server validates the 'aud' claim of the JWT token and only accepts tokens intended for itself."
@@ -329,7 +329,7 @@
       OWASP_API_2023: API2
       OWASP_API: API2
       MITRE_TACTIC: TA0005
-      MITRE_TECHNIQUE: T1134
+      MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: |
         JWT declares the signing algorithm in the headers block. There are cases where the authorization code is designed to handle a single algorithm, but the JWT token is signed with a different algorithm by the attacker. This can lead to token confusion.

@@ -5,6 +5,8 @@
     CWE: 285
     OWASP_API_2023: API1
     OWASP_API: API1
+    MITRE_TACTIC: TA0004
+    MITRE_TECHNIQUE: T1548.002
   eventDetails:
     description: |
       An anomaly characteristic of Broken Object Level Authorization (BOLA) attack is detected by flagging the deviation from the baseline of the API sequences and the data flow between them.
@@ -41,10 +43,12 @@
 - ruleId: userIdBola
   ruleName: Authorization Bypass - User Level
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
-  eventLabels: 
+  eventLabels:
     CWE: 285
     OWASP_API_2023: API1
     OWASP_API: API1
+    MITRE_TACTIC: TA0004
+    MITRE_TECHNIQUE: T1548.002
   eventDetails:
     description: |
         An anomaly characteristic is detected for Authorization Bypass at User Level, by building a baseline of API parameter values with user metadata, and flagging any deviation from the baseline.
@@ -56,7 +60,7 @@
         - The application grants attacker the access to the internal object without checking if the user is authorized.
     mitigation: |
       The best way to protect your code against Authorization Bypass is to implement authorization checks on APIs and parameters in request as well as responses.
-      
+
       To protect in Traceable:
       - Add an enumeration policy on the API endpoint to restrict the number of objects that can be accessed.
       - Add a data protection policy on the API endpoint to restrict the number of sensitive data that can be exposed.
@@ -76,7 +80,7 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-1:Accessing Functionality Not Properly Constrained by ACLs - https://capec.mitre.org/data/definitions/1.html
       - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - Web Application Security Consortium - WASC-02:Insufficient Authorization - http://projects.webappsec.org/w/page/13246940/Insufficient%20Authorization
-    
+
 - ruleId: sessionv
   ruleName: Session Violation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
@@ -88,6 +92,8 @@
       CWE: 501
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0009
+      MITRE_TECHNIQUE: T1185
     eventDetails:
       description: "A series of requests from the same session are originating from geographically distant locations in a short time span, which is physically impossible, indicating that the session might be hijacked."
       mitigation: "Implement session management best practices, such as session timeout, session invalidation after logout, and IP binding. Consider using multi-factor authentication for added security."
@@ -104,6 +110,8 @@
       CWE: 613
       OWASP_API_2023: API2
       OWASP_API: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134.001
     eventDetails:
       description: "A request is made with an expired session token. This could indicate a delayed or replayed request."
       mitigation: "Implement session management best practices, such as session timeout and session invalidation after logout. Ensure that your application checks the validity of session tokens with each request."
