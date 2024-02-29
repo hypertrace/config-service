@@ -62,6 +62,17 @@ message CreateDataTypeResponse {
 message GetDataTypesRequest {
   optional SystemDataSetVersion system_data_set_version = 1;
   bool resolve_inherited_details = 2;
+  DataTypeFilter filter = 3;
+  DataTypeOrdering ordering = 4;
+
+  message DataTypeFilter {
+    optional bool enabled = 1;
+    optional bool legacy_types = 2;
+  }
+  enum DataTypeOrdering {
+    DATA_TYPE_ORDERING_UNSPECIFIED = 0;
+    DATA_TYPE_ORDERING_EVALUATION_PRIORITY = 1;
+  }
 }
 
 message GetDataTypesResponse {

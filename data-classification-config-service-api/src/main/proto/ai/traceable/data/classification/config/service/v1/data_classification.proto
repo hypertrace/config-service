@@ -18,6 +18,7 @@ message DataTypeRule {
   DataSetInfo.DataSuppression data_suppression = 6;
   DataSetInfo.Sensitivity sensitivity = 7;
   optional string color = 8;
+  repeated string data_set_id = 9;
 
   message ScopedPattern {
     oneof scope {
@@ -89,11 +90,11 @@ message DataSet {
 message DataSetInfo {
   string name = 1;
   optional string description = 2;
-  bool enabled = 3;
-  repeated string data_type_ids = 4;
-  DataSuppression data_suppression = 5;
-  Sensitivity sensitivity = 6;
-  optional string color = 7;
+  bool enabled = 3 [deprecated = true];
+  repeated string data_type_ids = 4 [deprecated = true];
+  DataSuppression data_suppression = 5 [deprecated = true];
+  Sensitivity sensitivity = 6 [deprecated = true];
+  optional string color = 7 [deprecated = true];
 
   enum DataSuppression {
     DATA_SUPPRESSION_UNSPECIFIED = 0;

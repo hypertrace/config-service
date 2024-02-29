@@ -54,6 +54,13 @@ class DataTypeConfigRequestValidator {
               "suppression pattern cannot be empty if specified: " + printMessage(rule))
           .asRuntimeException();
     }
+    if (rule.getDataSetIdCount() > 0) {
+      // If it contains its own data set id references, it's been migrated and should have all
+      // optional fields inherited from data set assigned
+      validateNonDefaultPresenceOrThrow(rule, DataTypeRule.SENSITIVITY_FIELD_NUMBER);
+      validateNonDefaultPresenceOrThrow(rule, DataTypeRule.ENABLED_FIELD_NUMBER);
+      validateNonDefaultPresenceOrThrow(rule, DataTypeRule.DATA_SUPPRESSION_FIELD_NUMBER);
+    }
   }
 
   private void validateScopedPatternList(DataTypeRule rule) {

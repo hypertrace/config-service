@@ -1,5 +1,6 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_ANY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_UNSPECIFIED;
@@ -7,8 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ApiScope;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.GlobalScope;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValuePattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
@@ -353,6 +358,62 @@ class DataTypeConfigRequestValidatorTest {
     CreateDataTypeRequest request1 = CreateDataTypeRequest.newBuilder().setRule(rule).build();
     assertDoesNotThrow(
         () -> dataTypeConfigRequestValidator.validateOrThrow(REQUEST_CONTEXT, request1));
+  }
+
+  @Test
+  void testDataTypeWithDataSetRefRequiredFields() {
+    DataTypeRule ruleInputWithoutRef =
+        DataTypeRule.newBuilder()
+            .setName("name-1")
+            .addScopedPatterns(
+                ScopedPattern.newBuilder()
+                    .setGlobalScope(GlobalScope.getDefaultInstance())
+                    .addLocations(LOCATION_ANY)
+                    .setKeyValuePattern(createKeyValuePattern())
+                    .setAction(Action.ACTION_MATCH))
+            .build();
+    DataTypeRule ruleInputWithRef =
+        ruleInputWithoutRef.toBuilder()
+            .addDataSetId("data-set-id")
+            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+            .setEnabled(true)
+            .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
+            .build();
+
+    assertDoesNotThrow(
+        () ->
+            dataTypeConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                CreateDataTypeRequest.newBuilder().setRule(ruleInputWithoutRef).build()));
+    assertDoesNotThrow(
+        () ->
+            dataTypeConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                CreateDataTypeRequest.newBuilder().setRule(ruleInputWithRef).build()));
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            dataTypeConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(ruleInputWithRef.toBuilder().clearDataSuppression().build())
+                    .build()));
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            dataTypeConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(ruleInputWithRef.toBuilder().clearEnabled().build())
+                    .build()));
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            dataTypeConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(ruleInputWithRef.toBuilder().clearSensitivity().build())
+                    .build()));
   }
 
   private ApiScope createApiScope() {

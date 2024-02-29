@@ -38,7 +38,6 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -68,7 +67,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       dataClassificationOverrideConfigRequestValidator;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
   private final RedactionRulesDao redactionRulesDao;
-  private final DataTypeResolver dataTypeResolver;
+  private final DataTypeManager dataTypeManager;
   private final DataClassificationConfig config;
 
   @Inject
@@ -83,7 +82,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           dataClassificationOverrideConfigRequestValidator,
       ConfigChangeEventGenerator configChangeEventGenerator,
       RedactionRulesDao redactionRulesDao,
-      DataTypeResolver dataTypeResolver,
+      DataTypeManager dataTypeManager,
       DataClassificationConfig config) {
     this.dataSetStore = dataSetStore;
     this.dataTypeStore = dataTypeStore;
@@ -95,7 +94,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
         dataClassificationOverrideConfigRequestValidator;
     this.configChangeEventGenerator = Optional.ofNullable(configChangeEventGenerator);
     this.redactionRulesDao = redactionRulesDao;
-    this.dataTypeResolver = dataTypeResolver;
+    this.dataTypeManager = dataTypeManager;
     this.config = config;
   }
 
@@ -127,32 +126,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
-      List<DataType> tenantDataTypes =
-          this.dataTypeStore.getAllObjects(requestContext).stream()
-              .map(ConfigObject::getData)
-              .collect(Collectors.toUnmodifiableList());
-      Set<String> tenantDataTypeIds =
-          tenantDataTypes.stream().map(DataType::getId).collect(Collectors.toUnmodifiableSet());
-      List<DataType> filteredSystemDataTypes =
-          this.config.getSystemDataTypes(request.getSystemDataSetVersion()).stream()
-              .filter(dataType -> !tenantDataTypeIds.contains(dataType.getId()))
-              .collect(Collectors.toUnmodifiableList());
-      List<DataType> convertedRedactionRules =
-          redactionRulesDao.getAllDataTypesFromRedactionRules(requestContext);
-
-      List<DataType> collectedDataTypes =
-          ImmutableList.<DataType>builder()
-              .addAll(tenantDataTypes)
-              .addAll(filteredSystemDataTypes)
-              .addAll(convertedRedactionRules)
-              .build();
-      if (request.getResolveInheritedDetails()) {
-        collectedDataTypes =
-            this.dataTypeResolver.resolveInheritedDataTypeFields(
-                requestContext, collectedDataTypes);
-      }
       responseObserver.onNext(
-          GetDataTypesResponse.newBuilder().addAllDataTypes(collectedDataTypes).build());
+          GetDataTypesResponse.newBuilder()
+              .addAllDataTypes(
+                  this.dataTypeManager.getDataTypesMatchingRequest(requestContext, request))
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get data types - {}", request, e);

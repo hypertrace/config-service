@@ -1,23 +1,18 @@
 package ai.traceable.data.classification.config.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
+import java.util.Collections;
 import java.util.List;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,101 +55,109 @@ class DataTypeResolverTest {
                   .addDataTypeIds(DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getId()))
           .build();
 
-  RequestContext testContext = RequestContext.forTenantId("test-tenant");
-
-  @Mock DataClassificationConfigServiceBlockingStub mockStub;
   @InjectMocks DataTypeResolver dataTypeResolver;
 
   @Test
   void testResolveWithNoDataSet() {
-    when(mockStub.getDataSets(any())).thenReturn(GetDataSetsResponse.getDefaultInstance());
     assertEquals(
-        List.of(DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS),
-        this.dataTypeResolver.resolveInheritedDataTypeFields(
-            testContext,
-            List.of(
-                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS)));
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .setEnabled(false) // With no data set references, its treated as an orphan
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+                    .setSensitivity(Sensitivity.SENSITIVITY_LOW))
+            .build(),
+        this.dataTypeResolver.resolve(
+            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, Collections.emptyList()));
+    assertEquals(
+        DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS,
+        this.dataTypeResolver.resolve(
+            DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS, Collections.emptyList()));
   }
 
   @Test
   void testResolveWithSingleDataSet() {
-    when(mockStub.getDataSets(any()))
-        .thenReturn(GetDataSetsResponse.newBuilder().addDataSets(DATA_SET_2).build());
     assertEquals(
-        List.of(
-            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
-                .setRule(
-                    DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
-                        .setDataSuppression(DATA_SET_2.getInfo().getDataSuppression())
-                        .setSensitivity(DATA_SET_2.getInfo().getSensitivity())
-                        .setEnabled(DATA_SET_2.getInfo().getEnabled()))
-                .build(),
-            DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS),
-        this.dataTypeResolver.resolveInheritedDataTypeFields(
-            testContext,
-            List.of(
-                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS)));
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .setDataSuppression(DATA_SET_2.getInfo().getDataSuppression())
+                    .setSensitivity(DATA_SET_2.getInfo().getSensitivity())
+                    .setEnabled(DATA_SET_2.getInfo().getEnabled())
+                    .addDataSetId(DATA_SET_2.getId()))
+            .build(),
+        this.dataTypeResolver.resolve(DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, List.of(DATA_SET_2)));
+
+    assertEquals(
+        DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS.getRule().toBuilder()
+                    .addDataSetId(DATA_SET_1.getId()))
+            .build(),
+        this.dataTypeResolver.resolve(
+            DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS, List.of(DATA_SET_1)));
   }
 
   @Test
   void testEnabledDataSetsGivenResolutionPrecedence() {
     // Dataset 1 should have precedence since it is enabled
-    when(mockStub.getDataSets(any()))
-        .thenReturn(
-            GetDataSetsResponse.newBuilder()
-                .addDataSets(DATA_SET_1)
-                .addDataSets(DATA_SET_2)
-                .build());
     assertEquals(
-        List.of(
-            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
-                .setRule(
-                    DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
-                        .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
-                        .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
-                        .setColor(DATA_SET_1.getInfo().getColor())
-                        .setEnabled(DATA_SET_1.getInfo().getEnabled()))
-                .build(),
-            DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS.toBuilder()
-                .setRule(
-                    DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS.getRule().toBuilder()
-                        .setColor(DATA_SET_1.getInfo().getColor()))
-                .build()),
-        this.dataTypeResolver.resolveInheritedDataTypeFields(
-            testContext,
-            List.of(
-                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS)));
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
+                    .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
+                    .setColor(DATA_SET_1.getInfo().getColor())
+                    .setEnabled(DATA_SET_1.getInfo().getEnabled())
+                    .addDataSetId(DATA_SET_1.getId())
+                    .addDataSetId(DATA_SET_2.getId()))
+            .build(),
+        this.dataTypeResolver.resolve(
+            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, List.of(DATA_SET_1, DATA_SET_2)));
   }
 
   @Test
   void testRedactedDataSetsGivenPrecedence() {
-    // Dataset 2 should have precedence once we enable it since it's redacting, but it only contains
-    // one data type - DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS
-    when(mockStub.getDataSets(any()))
-        .thenReturn(
-            GetDataSetsResponse.newBuilder()
-                .addDataSets(DATA_SET_1)
-                .addDataSets(
-                    DATA_SET_2.toBuilder()
-                        .setInfo(DATA_SET_2.getInfo().toBuilder().setEnabled(true)))
-                .build());
+    // Dataset 2 should have precedence once we enable it since it's redacting
     assertEquals(
-        List.of(
-            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
-                .setRule(
-                    DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
-                        .setDataSuppression(DATA_SET_2.getInfo().getDataSuppression())
-                        .setSensitivity(DATA_SET_2.getInfo().getSensitivity())
-                        .setEnabled(true)) // enabled overridden in this test
-                .build(),
-            DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS.toBuilder()
-                .setRule(
-                    DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS.getRule().toBuilder()
-                        .setColor(DATA_SET_1.getInfo().getColor()))
-                .build()),
-        this.dataTypeResolver.resolveInheritedDataTypeFields(
-            testContext,
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .setDataSuppression(DATA_SET_2.getInfo().getDataSuppression())
+                    .setSensitivity(DATA_SET_2.getInfo().getSensitivity())
+                    .addDataSetId(DATA_SET_1.getId())
+                    .addDataSetId(DATA_SET_2.getId())
+                    .setEnabled(true))
+            .build(),
+        this.dataTypeResolver.resolve(
+            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS,
             List.of(
-                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, DATA_TYPE_WITH_ASSIGNED_RESOLVED_FIELDS)));
+                DATA_SET_1,
+                DATA_SET_2.toBuilder()
+                    .setInfo(DATA_SET_2.getInfo().toBuilder().setEnabled(true))
+                    .build())));
+  }
+
+  @Test
+  void testDataTypeSetRelationshipsAreMerged() {
+    // DS2 has a ref to the DT, and the DT has a ref to DS1
+    DataType dataTypeWithRef =
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .addDataSetId(DATA_SET_1.getId()))
+            .build();
+    assertEquals(
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
+                    .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
+                    .setEnabled(DATA_SET_1.getInfo().getEnabled())
+                    .setColor(DATA_SET_1.getInfo().getColor())
+                    .addDataSetId(DATA_SET_1.getId())
+                    .addDataSetId(DATA_SET_2.getId()))
+            .build(),
+        this.dataTypeResolver.resolve(dataTypeWithRef, List.of(DATA_SET_1, DATA_SET_2)));
   }
 }

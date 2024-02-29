@@ -42,6 +42,7 @@ import ai.traceable.data.classification.config.service.v1.GetDataSetResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.data.classification.config.service.v1.IdFilter;
 import ai.traceable.data.classification.config.service.v1.ScopeFilter;
@@ -775,17 +776,20 @@ class DataClassificationConfigServiceImplTest {
                     .setRule(createDataTypeRuleForTest("data-type-rule-1"))
                     .build())
             .getDataType();
-    dataClassificationConfigServiceBlockingStub.createDataSet(
-        CreateDataSetRequest.newBuilder()
-            .setInfo(
-                DataSetInfo.newBuilder()
-                    .setName("data-set-1")
-                    .setEnabled(false)
-                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
-                    .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
-                    .setColor("blue")
-                    .addDataTypeIds(createdDataType.getId()))
-            .build());
+    DataSet createdDataSet =
+        dataClassificationConfigServiceBlockingStub
+            .createDataSet(
+                CreateDataSetRequest.newBuilder()
+                    .setInfo(
+                        DataSetInfo.newBuilder()
+                            .setName("data-set-1")
+                            .setEnabled(false)
+                            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                            .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
+                            .setColor("blue")
+                            .addDataTypeIds(createdDataType.getId()))
+                    .build())
+            .getDataSet();
 
     // Default fetch should match the created type
     assertEquals(
@@ -803,7 +807,8 @@ class DataClassificationConfigServiceImplTest {
                     .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
                     .setEnabled(false)
                     .setColor("blue")
-                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE))
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                    .addDataSetId(createdDataSet.getId()))
             .build();
     assertEquals(
         expectedResolvedType,
@@ -812,6 +817,103 @@ class DataClassificationConfigServiceImplTest {
                 .getDataTypes(
                     GetDataTypesRequest.newBuilder().setResolveInheritedDetails(true).build())
                 .getDataTypesList()));
+  }
+
+  @Test
+  void testEvaluationOrdering() {
+    registerAndStartService();
+    DataType createdStandAloneDataType =
+        dataClassificationConfigServiceBlockingStub
+            .createDataType(
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(
+                        createDataTypeRuleForTest("data-type-rule-1").toBuilder()
+                            .setSensitivity(Sensitivity.SENSITIVITY_MEDIUM)
+                            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                            .setEnabled(true))
+                    .build())
+            .getDataType();
+    DataType createdBasicDataType1 =
+        dataClassificationConfigServiceBlockingStub
+            .createDataType(
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(createDataTypeRuleForTest("data-type-rule-1"))
+                    .build())
+            .getDataType();
+    DataType createdBasicDataType2 =
+        dataClassificationConfigServiceBlockingStub
+            .createDataType(
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(createDataTypeRuleForTest("data-type-rule-2"))
+                    .build())
+            .getDataType();
+    DataSet createdObfuscatedDataSet =
+        dataClassificationConfigServiceBlockingStub
+            .createDataSet(
+                CreateDataSetRequest.newBuilder()
+                    .setInfo(
+                        DataSetInfo.newBuilder()
+                            .setName("data-set-obfuscate")
+                            .setEnabled(true)
+                            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                            .setSensitivity(Sensitivity.SENSITIVITY_HIGH)
+                            .addDataTypeIds(createdBasicDataType1.getId())
+                            .addDataTypeIds(createdBasicDataType2.getId()))
+                    .build())
+            .getDataSet();
+    DataSet createdRedactedDataSet =
+        dataClassificationConfigServiceBlockingStub
+            .createDataSet(
+                CreateDataSetRequest.newBuilder()
+                    .setInfo(
+                        DataSetInfo.newBuilder()
+                            .setName("data-set-redact")
+                            .setEnabled(true)
+                            .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                            .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
+                            .addDataTypeIds(createdBasicDataType2.getId()))
+                    .build())
+            .getDataSet();
+
+    // Default fetch should be in most recent creation order
+    assertEquals(
+        List.of(createdBasicDataType2, createdBasicDataType1, createdStandAloneDataType),
+        dataClassificationConfigServiceBlockingStub
+            .getDataTypes(GetDataTypesRequest.getDefaultInstance())
+            .getDataTypesList());
+
+    DataType expectedMergedDataType1 =
+        createdBasicDataType1.toBuilder()
+            .setRule(
+                createdBasicDataType1.getRule().toBuilder()
+                    .setSensitivity(Sensitivity.SENSITIVITY_HIGH)
+                    .setEnabled(true)
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                    .addDataSetId(createdObfuscatedDataSet.getId()))
+            .build();
+    ;
+    DataType expectedMergedDataType2 =
+        createdBasicDataType2.toBuilder()
+            .setRule(
+                createdBasicDataType2.getRule().toBuilder()
+                    .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
+                    .setEnabled(true)
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .addDataSetId(createdRedactedDataSet.getId())
+                    .addDataSetId(createdObfuscatedDataSet.getId()))
+            .build();
+
+    // Resolved and ordered fetch should merge data set fields in.
+    // Redaacted will have precedence, then stand alone obfuscated, then other obfuscated
+    assertEquals(
+        List.of(expectedMergedDataType2, createdStandAloneDataType, expectedMergedDataType1),
+        dataClassificationConfigServiceBlockingStub
+            .getDataTypes(
+                GetDataTypesRequest.newBuilder()
+                    .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
+                    .setResolveInheritedDetails(true)
+                    .build())
+            .getDataTypesList());
   }
 
   private DataSetInfo createDataSetInfoForTest(
@@ -891,7 +993,12 @@ class DataClassificationConfigServiceImplTest {
                 new DataClassificationOverrideConfigRequestValidator(),
                 null,
                 redactionRulesDao,
-                new DataTypeResolver(ownStub),
+                new DataTypeManager(
+                    dataTypeStore,
+                    redactionRulesDao,
+                    config,
+                    new DataClassificationResolutionCache(ownStub, new DataTypeResolver()),
+                    new DataTypeResolutionContextComparator()),
                 config))
         .start();
   }

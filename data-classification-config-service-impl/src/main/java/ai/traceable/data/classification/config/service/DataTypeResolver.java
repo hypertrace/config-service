@@ -1,140 +1,78 @@
 package ai.traceable.data.classification.config.service;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static ai.traceable.data.classification.config.service.DataTypeResolutionContextComparator.DATA_SUPPRESSION_COMPARATOR;
 
-import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity;
 import ai.traceable.data.classification.config.service.v1.DataType;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.time.Duration;
-import java.util.Collection;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import org.hypertrace.core.grpcutils.context.ContextualKey;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
-@Singleton
-@RequiredArgsConstructor(onConstructor_ = @Inject)
 class DataTypeResolver {
-  private static final int THREAD_POOL_SIZE = 1;
-  private static final int MAX_CACHE_SIZE = 100;
-  private static final Duration REFRESH_DURATION = Duration.ofMinutes(2);
-  private static final Duration EXPIRATION_DURATION = Duration.ofMinutes(10);
-
-  private static final Comparator<DataSet> DATA_SET_PRECEDENCE_COMPARATOR =
+  static final Comparator<DataSet> DATA_SET_RESOLUTION_PRECEDENCE_COMPARATOR =
       Comparator.comparing((DataSet dataSet) -> dataSet.getInfo().getEnabled())
-          .reversed() // true values then false
-          .thenComparing(DataTypeResolver::calculateDataSetPrecedence);
+          .reversed() // enabled, then disabled
+          .thenComparing(
+              dataSet -> dataSet.getInfo().getDataSuppression(), DATA_SUPPRESSION_COMPARATOR);
 
-  private final DataClassificationConfigServiceBlockingStub stub;
-
-  private final LoadingCache<ContextualKey<Void>, Map<String, DataSet>>
-      primaryDataSetByDataTypeIdCache =
-          CacheBuilder.newBuilder()
-              .refreshAfterWrite(REFRESH_DURATION)
-              .expireAfterAccess(EXPIRATION_DURATION)
-              .maximumSize(MAX_CACHE_SIZE)
-              .recordStats()
-              .build(
-                  CacheLoader.asyncReloading(
-                      CacheLoader.from(this::resolvePrimaryDataSetForEachDataTypeId),
-                      this.buildExecutor()));
-
-  List<DataType> resolveInheritedDataTypeFields(
-      RequestContext requestContext, List<DataType> dataTypeList) {
-    Map<String, DataSet> primaryDataSetByDataTypeId =
-        this.primaryDataSetByDataTypeIdCache.getUnchecked(
-            requestContext.buildInternalContextualKey());
-
-    return dataTypeList.stream()
-        .map(
-            dataType ->
-                Optional.ofNullable(primaryDataSetByDataTypeId.get(dataType.getId()))
-                    .map(dataSet -> this.resolveDataTypeWithDataSet(dataType, dataSet))
-                    .orElse(dataType))
-        .collect(toUnmodifiableList());
-  }
-
-  private Map<String, DataSet> resolvePrimaryDataSetForEachDataTypeId(ContextualKey<Void> key) {
-    return key
-        .callInContext(() -> this.stub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
-        .getDataSetsList()
-        .stream()
-        .sorted(DATA_SET_PRECEDENCE_COMPARATOR)
-        .map(this::flattenToDataTypeRelationships)
-        .flatMap(Collection::stream)
-        .collect(
-            Collectors.toUnmodifiableMap(
-                DataTypeDataSetRelationship::getDataTypeId,
-                DataTypeDataSetRelationship::getDataSet,
-                (first, second) -> first));
-  }
-
-  private DataType resolveDataTypeWithDataSet(DataType dataType, DataSet dataSet) {
-    DataType.Builder builder = dataType.toBuilder();
+  @SuppressWarnings("deprecation")
+  DataType resolve(DataType dataType, List<DataSet> dataSets) {
+    if (dataSets.isEmpty()) {
+      // If no data set relationship, we have nothing to resolve. However, if the data type was not
+      // defined with all the necessary fields to operate on its own (an orphan created before data
+      // type owned these fields), we'll set defaults (including disabling it).
+      return this.isStandAloneDataType(dataType)
+          ? dataType
+          : this.assignDefaultsForOrphanDataType(dataType);
+    }
+    DataTypeRule.Builder ruleBuilder = dataType.getRule().toBuilder();
+    // clear data set refs first to use the resolved result (which took these values as input)
+    ruleBuilder.clearDataSetId();
+    // Then add all references back and use the highest precedence (first) one to resolve any
+    // missing fields
+    dataSets.stream().map(DataSet::getId).forEach(ruleBuilder::addDataSetId);
+    DataSet dataSetToInherit =
+        dataSets.stream()
+            .min(DATA_SET_RESOLUTION_PRECEDENCE_COMPARATOR) // first value
+            .orElseThrow(); // already checked data sets isn't empty.
     if (!dataType.getRule().hasEnabled()) {
-      builder.getRuleBuilder().setEnabled(dataSet.getInfo().getEnabled());
+      ruleBuilder.setEnabled(dataSetToInherit.getInfo().getEnabled());
     }
     if (dataType.getRule().getDataSuppression() == DataSuppression.DATA_SUPPRESSION_UNSPECIFIED) {
-      builder.getRuleBuilder().setDataSuppression(dataSet.getInfo().getDataSuppression());
+      ruleBuilder.setDataSuppression(dataSetToInherit.getInfo().getDataSuppression());
     }
     if (dataType.getRule().getSensitivity() == Sensitivity.SENSITIVITY_UNSPECIFIED) {
-      builder.getRuleBuilder().setSensitivity(dataSet.getInfo().getSensitivity());
+      ruleBuilder.setSensitivity(dataSetToInherit.getInfo().getSensitivity());
     }
-    if (!dataType.getRule().hasColor() && dataSet.getInfo().hasColor()) {
-      builder.getRuleBuilder().setColor(dataSet.getInfo().getColor());
+    // Since this is optional, stand alone data types do not inherit it.
+    if (!this.isStandAloneDataType(dataType)
+        && !dataType.getRule().hasColor()
+        && dataSetToInherit.getInfo().hasColor()) {
+      ruleBuilder.setColor(dataSetToInherit.getInfo().getColor());
     }
-    return builder.build();
+    return dataType.toBuilder().setRule(ruleBuilder).build();
   }
 
-  private List<DataTypeDataSetRelationship> flattenToDataTypeRelationships(DataSet dataSet) {
-    return dataSet.getInfo().getDataTypeIdsList().stream()
-        .map(id -> new DataTypeDataSetRelationship(id, dataSet))
-        .collect(toUnmodifiableList());
+  boolean isStandAloneDataType(DataType dataType) {
+    return dataType.getRule().getSensitivity() != Sensitivity.SENSITIVITY_UNSPECIFIED
+        && dataType.getRule().getDataSuppression() != DataSuppression.DATA_SUPPRESSION_UNSPECIFIED
+        && dataType.getRule().hasEnabled();
   }
 
-  private ExecutorService buildExecutor() {
-    return Executors.newFixedThreadPool(
-        THREAD_POOL_SIZE,
-        new ThreadFactoryBuilder()
-            .setDaemon(true)
-            .setNameFormat("data-type-resolver-data-set-cache-%d")
-            .build());
+  boolean isLegacyDataType(DataType dataType) {
+    // Legacy data types are informational only, they don't contain any patterns
+    return dataType.getRule().getScopedPatternsList().isEmpty();
   }
 
-  private static int calculateDataSetPrecedence(DataSet dataSet) {
-    switch (dataSet.getInfo().getDataSuppression()) {
-      case DATA_SUPPRESSION_REDACT:
-        return 0;
-      case DATA_SUPPRESSION_OBFUSCATE:
-        return 1;
-      case DATA_SUPPRESSION_RAW:
-        return 2;
-      case UNRECOGNIZED:
-      case DATA_SUPPRESSION_UNSPECIFIED:
-      default:
-        return Integer.MAX_VALUE;
-    }
-  }
-
-  @Value
-  private static class DataTypeDataSetRelationship {
-    String dataTypeId;
-    DataSet dataSet;
+  private DataType assignDefaultsForOrphanDataType(DataType dataType) {
+    return dataType.toBuilder()
+        .setRule(
+            dataType.getRule().toBuilder()
+                .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+                .setSensitivity(Sensitivity.SENSITIVITY_LOW)
+                .setEnabled(false))
+        .build();
   }
 }
