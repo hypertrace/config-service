@@ -46,6 +46,7 @@ import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCred
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class WafIntegrationConfigRequestValidator {
@@ -182,7 +183,9 @@ public class WafIntegrationConfigRequestValidator {
         break;
       case UPDATED_F5_INTEGRATION_PARAMS:
         validateUpdatedF5IntegrationParams(
-            updatedWafIntegrationDetails.getUpdatedF5IntegrationParams());
+            id,
+            updatedWafIntegrationDetails.getUpdatedF5IntegrationParams(),
+            existingWafIntegrations);
         break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
@@ -194,8 +197,13 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdatedF5IntegrationParams(
-      F5IntegrationUpdateParams updatedF5IntegrationParams) {
-    validateUpdatedF5IntegrationDetails(updatedF5IntegrationParams.getF5IntegrationDetails());
+      String wafIntegrationId,
+      F5IntegrationUpdateParams updatedF5IntegrationParams,
+      List<WafIntegration> existingWafIntegrations) {
+    validateUpdatedF5IntegrationDetails(
+        wafIntegrationId,
+        updatedF5IntegrationParams.getF5IntegrationDetails(),
+        existingWafIntegrations);
   }
 
   private void validateUpdatedGcpIntegrationParams(
@@ -241,9 +249,13 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
-  private void validateUpdatedF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
+  private void validateUpdatedF5IntegrationDetails(
+      String wafIntegrationId,
+      F5IntegrationDetails f5IntegrationDetails,
+      List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
-    validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
+    validateF5SecurityPolicyDetails(
+        wafIntegrationId, f5IntegrationDetails.getF5PolicyDetails(), existingWafIntegrations);
     if (f5IntegrationDetails.hasF5AuthCredentials()) {
       validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
     }
@@ -281,7 +293,8 @@ public class WafIntegrationConfigRequestValidator {
             wafIntegrationDetails.getGcpIntegrationParams(), existingWafIntegrations);
         break;
       case F5_INTEGRATION_PARAMS:
-        validateF5IntegrationParams(wafIntegrationDetails.getF5IntegrationParams());
+        validateF5IntegrationParams(
+            wafIntegrationDetails.getF5IntegrationParams(), existingWafIntegrations);
         break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
@@ -298,8 +311,10 @@ public class WafIntegrationConfigRequestValidator {
         gcpIntegrationParams.getGcpIntegrationDetails(), existingWafIntegrations);
   }
 
-  private void validateF5IntegrationParams(F5IntegrationParams f5IntegrationParams) {
-    validateF5IntegrationDetails(f5IntegrationParams.getF5IntegrationDetails());
+  private void validateF5IntegrationParams(
+      F5IntegrationParams f5IntegrationParams, List<WafIntegration> existingWafIntegrations) {
+    validateF5IntegrationDetails(
+        f5IntegrationParams.getF5IntegrationDetails(), existingWafIntegrations);
   }
 
   private void validateGcpIntegrationDetails(
@@ -344,15 +359,52 @@ public class WafIntegrationConfigRequestValidator {
         .asRuntimeException();
   }
 
-  private void validateF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
+  private void validateF5IntegrationDetails(
+      F5IntegrationDetails f5IntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
-    validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
+    validateF5SecurityPolicyDetails(
+        null, f5IntegrationDetails.getF5PolicyDetails(), existingWafIntegrations);
     validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
   }
 
-  private void validateF5SecurityPolicyDetails(F5PolicyDetails f5PolicyDetails) {
+  /** wafIntegrationId can be null while validating policy details for a creation request */
+  private void validateF5SecurityPolicyDetails(
+      @Nullable String wafIntegrationId,
+      F5PolicyDetails f5PolicyDetails,
+      List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_NAME_FIELD_NUMBER);
+    validateF5SecurityPolicyNameNotAlreadyExistsOrThrow(
+        wafIntegrationId, f5PolicyDetails.getPolicyName(), existingWafIntegrations);
+  }
+
+  private void validateF5SecurityPolicyNameNotAlreadyExistsOrThrow(
+      @Nullable String id,
+      String f5SecurityPolicyName,
+      List<WafIntegration> existingWafIntegrations) {
+    boolean securityPolicyNameExists =
+        existingWafIntegrations.stream()
+            .filter(
+                wafIntegration ->
+                    wafIntegration.getWafIntegrationDetails().hasF5IntegrationParams()
+                        && !wafIntegration.getId().equals(id))
+            .anyMatch(
+                wafIntegration ->
+                    wafIntegration
+                        .getWafIntegrationDetails()
+                        .getF5IntegrationParams()
+                        .getF5IntegrationDetails()
+                        .getF5PolicyDetails()
+                        .getPolicyName()
+                        .equals(f5SecurityPolicyName));
+    if (securityPolicyNameExists) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              "Security policy name "
+                  + f5SecurityPolicyName
+                  + " is already linked to an existing F5 WAF integration.")
+          .asRuntimeException();
+    }
   }
 
   private void validateSecurityPolicyScope(GcpIntegrationDetails gcpIntegrationDetails) {

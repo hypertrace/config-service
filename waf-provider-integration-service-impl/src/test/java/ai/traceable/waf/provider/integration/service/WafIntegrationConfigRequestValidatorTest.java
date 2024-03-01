@@ -1468,6 +1468,36 @@ class WafIntegrationConfigRequestValidatorTest {
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request creating integration for which the policy-name already exists should throw
+    WafIntegration existingF5WafIntegration = getExistingF5WafIntegration();
+    CreateWafIntegrationRequest invalidRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setF5IntegrationParams(
+                        F5IntegrationParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName(EXISTING_SECURITY_POLICY_NAME)
+                                            .build())
+                                    .setF5AuthCredentials(
+                                        F5AuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingF5WafIntegration)));
   }
 
   @Test
@@ -1673,6 +1703,37 @@ class WafIntegrationConfigRequestValidatorTest {
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request updating policy name to an already existing one should throw
+    WafIntegration existingF5WafIntegration = getExistingF5WafIntegration();
+    UpdateWafIntegrationRequest invalidRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedF5IntegrationParams(
+                        F5IntegrationUpdateParams.newBuilder()
+                            .setF5IntegrationDetails(
+                                F5IntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setF5PolicyDetails(
+                                        F5PolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setPolicyName(EXISTING_SECURITY_POLICY_NAME)
+                                            .build())
+                                    .setF5AuthCredentials(
+                                        F5AuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id")))
+                            .build()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingF5WafIntegration)));
   }
 
   private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {
@@ -1766,6 +1827,21 @@ class WafIntegrationConfigRequestValidatorTest {
                         .setGcpIntegrationDetails(
                             GcpIntegrationDetails.newBuilder()
                                 .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME))))
+        .build();
+  }
+
+  private WafIntegration getExistingF5WafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setF5IntegrationParams(
+                    F5IntegrationParams.newBuilder()
+                        .setF5IntegrationDetails(
+                            F5IntegrationDetails.newBuilder()
+                                .setF5PolicyDetails(
+                                    F5PolicyDetails.newBuilder()
+                                        .setPolicyName(EXISTING_SECURITY_POLICY_NAME)))))
         .build();
   }
 }
