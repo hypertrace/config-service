@@ -45,6 +45,8 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -367,9 +369,26 @@ public class WafIntegrationConfigRequestValidator {
   private void validateF5IntegrationDetails(
       F5IntegrationDetails f5IntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
+    validateUrlOrThrow(f5IntegrationDetails.getUrl());
     validateF5SecurityPolicyDetails(
         null, f5IntegrationDetails.getF5PolicyDetails(), existingWafIntegrations);
     validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
+  }
+
+  private void validateUrlOrThrow(String urlString) {
+    try {
+      URL url = new URL(urlString);
+      String protocol = url.getProtocol();
+      if (!protocol.equals("https")) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("URL configured is not https.")
+            .asRuntimeException();
+      }
+    } catch (MalformedURLException e) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("URL configured is malformed.")
+          .asRuntimeException();
+    }
   }
 
   /** wafIntegrationId can be null while validating policy details for a creation request */
