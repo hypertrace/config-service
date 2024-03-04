@@ -46,6 +46,8 @@ import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCred
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -159,7 +161,9 @@ public class WafIntegrationConfigRequestValidator {
     switch (updatedWafIntegrationDetails.getIntegrationParamsCase()) {
       case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
         validateUpdatedCloudFlareIntegrationParams(
-            updatedWafIntegrationDetails.getUpdatedCloudflareIntegrationParams());
+            id,
+            updatedWafIntegrationDetails.getUpdatedCloudflareIntegrationParams(),
+            existingWafIntegrations);
         break;
       case UPDATED_AWS_INTEGRATION_PARAMS:
         validateUpdatedAwsIntegrationParams(
@@ -276,7 +280,8 @@ public class WafIntegrationConfigRequestValidator {
       WafIntegrationDetails wafIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     switch (wafIntegrationDetails.getIntegrationParamsCase()) {
       case CLOUDFLARE_INTEGRATION_PARAMS:
-        validateCloudFlareIntegrationParams(wafIntegrationDetails.getCloudflareIntegrationParams());
+        validateCloudFlareIntegrationParams(
+            wafIntegrationDetails.getCloudflareIntegrationParams(), existingWafIntegrations);
         break;
       case AWS_INTEGRATION_PARAMS:
         validateAwsIntegrationParams(
@@ -439,20 +444,22 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdatedCloudFlareIntegrationParams(
-      UpdatedCloudflareIntegrationParams cloudflareIntegrationParams) {
+      String id,
+      UpdatedCloudflareIntegrationParams cloudflareIntegrationParams,
+      List<WafIntegration> existingIntegrations) {
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
-    if (cloudflareIntegrationParams.hasApiToken()
-        && cloudflareIntegrationParams.getApiToken().isEmpty()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Api token is empty! " + printMessage(cloudflareIntegrationParams))
-          .asRuntimeException();
-    }
     if (cloudflareIntegrationParams.hasEncryptedApiToken()) {
       this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
     }
+    List<WafIntegration> otherIntegrations =
+        existingIntegrations.stream()
+            .filter(Predicate.not(integration -> integration.getId().equals(id)))
+            .collect(Collectors.toUnmodifiableList());
+
+    validateZoneDoesntExist(cloudflareIntegrationParams.getZone(), otherIntegrations);
   }
 
   private void validateEncryptedData(EncryptedData encryptedData) {
@@ -554,17 +561,25 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateCloudFlareIntegrationParams(
-      CloudflareIntegrationParams cloudflareIntegrationParams) {
+      CloudflareIntegrationParams cloudflareIntegrationParams,
+      List<WafIntegration> existingWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
-    if (cloudflareIntegrationParams.hasEncryptedApiToken()) {
-      // TODO: remove deprecated field, and add unconditional validation on new field
-      this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
-    } else {
-      validateNonDefaultPresenceOrThrow(
-          cloudflareIntegrationParams, CloudflareIntegrationParams.API_TOKEN_FIELD_NUMBER);
+    this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
+    validateZoneDoesntExist(cloudflareIntegrationParams.getZone(), existingWafIntegrations);
+  }
+
+  private void validateZoneDoesntExist(String zone, List<WafIntegration> existingIntegrations) {
+    if (existingIntegrations.stream()
+        .map(
+            integration ->
+                integration.getWafIntegrationDetails().getCloudflareIntegrationParams().getZone())
+        .anyMatch(existingZone -> existingZone.equals(zone))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("integration with the given zone already exists")
+          .asRuntimeException();
     }
   }
 

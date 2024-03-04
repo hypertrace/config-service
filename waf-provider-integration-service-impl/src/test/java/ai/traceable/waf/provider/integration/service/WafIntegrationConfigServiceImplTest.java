@@ -19,6 +19,7 @@ import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
+import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.EncryptedText;
 import ai.traceable.waf.integration.service.api.v1.EnvironmentScope;
 import ai.traceable.waf.integration.service.api.v1.F5AuthCredentials;
@@ -1126,7 +1127,11 @@ class WafIntegrationConfigServiceImplTest {
                     .build())
             .setCloudflareIntegrationParams(
                 CloudflareIntegrationParams.newBuilder()
-                    .setApiToken("apitoken")
+                    .setEncryptedApiToken(
+                        EncryptedData.newBuilder()
+                            .setKeyId("keyId")
+                            .setBase64EncryptedData("apitoken")
+                            .build())
                     .setEmail(email)
                     .setZone("zone"))
             .build();
