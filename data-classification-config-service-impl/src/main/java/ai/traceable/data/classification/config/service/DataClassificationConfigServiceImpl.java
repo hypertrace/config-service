@@ -127,10 +127,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
-          GetDataTypesResponse.newBuilder()
-              .addAllDataTypes(
-                  this.dataTypeManager.getDataTypesMatchingRequest(requestContext, request))
-              .build());
+          this.dataTypeManager.getDataTypesMatchingRequest(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get data types - {}", request, e);

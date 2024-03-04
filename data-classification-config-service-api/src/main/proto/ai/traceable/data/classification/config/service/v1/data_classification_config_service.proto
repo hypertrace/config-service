@@ -77,6 +77,7 @@ message GetDataTypesRequest {
 
 message GetDataTypesResponse {
   repeated DataType data_types = 1;
+  map<string, DataSet> referenced_data_sets_by_id = 2;
 }
 
 message UpdateDataTypeRequest {

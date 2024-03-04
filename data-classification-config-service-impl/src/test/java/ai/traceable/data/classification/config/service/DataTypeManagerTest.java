@@ -5,11 +5,13 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeProvenance;
 import ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeResolutionContext;
+import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeFilter;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.data.classification.config.service.v1.SystemDataSetVersion;
 import java.util.List;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -24,6 +26,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class DataTypeManagerTest {
+
+  private static final DataSet TEST_DATA_SET = DataSet.newBuilder().setId("dataset").build();
   private static final DataType TEST_LEGACY_DATA_TYPE =
       DataType.newBuilder()
           .setId("legacy")
@@ -45,7 +49,7 @@ class DataTypeManagerTest {
       new DataTypeResolutionContext(
           TEST_SYSTEM_DATA_TYPE,
           TEST_SYSTEM_DATA_TYPE.toBuilder().setId("system-resolved").build(),
-          List.of(),
+          List.of(TEST_DATA_SET),
           DataTypeProvenance.RESOLVED_FROM_DATA_SET,
           1);
 
@@ -58,17 +62,18 @@ class DataTypeManagerTest {
           List.of(),
           DataTypeProvenance.ORPHAN_DATA_TYPE,
           2);
+
   private static final DataType TEST_REGULAR_DATA_TYPE =
       DataType.newBuilder()
           .setId("regular")
-          .setRule(DataTypeRule.newBuilder().setEnabled(true))
+          .setRule(DataTypeRule.newBuilder().setEnabled(true).addDataSetId(TEST_DATA_SET.getId()))
           .build();
 
   private static final DataTypeResolutionContext TEST_REGULAR_RESOLUTION_CONTEXT =
       new DataTypeResolutionContext(
           TEST_REGULAR_DATA_TYPE,
           TEST_REGULAR_DATA_TYPE.toBuilder().setId("regular-resolved").build(),
-          List.of(),
+          List.of(TEST_DATA_SET),
           DataTypeProvenance.STANDALONE_DATA_TYPE,
           3);
 
@@ -115,11 +120,13 @@ class DataTypeManagerTest {
   @Test
   void doesNotApplyFilterSortAndResolutionIfNotRequested() {
     assertEquals(
-        List.of(
-            TEST_ORPHAN_DATA_TYPE,
-            TEST_REGULAR_DATA_TYPE,
-            TEST_SYSTEM_DATA_TYPE,
-            TEST_LEGACY_DATA_TYPE),
+        GetDataTypesResponse.newBuilder()
+            .addDataTypes(TEST_ORPHAN_DATA_TYPE)
+            .addDataTypes(TEST_REGULAR_DATA_TYPE)
+            .addDataTypes(TEST_SYSTEM_DATA_TYPE)
+            .addDataTypes(TEST_LEGACY_DATA_TYPE)
+            .putReferencedDataSetsById(TEST_DATA_SET.getId(), TEST_DATA_SET)
+            .build(),
         this.dataTypeManager.getDataTypesMatchingRequest(
             mockRequestContext, GetDataTypesRequest.getDefaultInstance()));
   }
@@ -127,10 +134,12 @@ class DataTypeManagerTest {
   @Test
   void appliesFilterSortAndResolutionIfRequested() {
     assertEquals(
-        List.of(
-            TEST_ORPHAN_RESOLUTION_CONTEXT.getResolvedDataType(),
-            TEST_REGULAR_RESOLUTION_CONTEXT.getResolvedDataType(),
-            TEST_SYSTEM_RESOLUTION_CONTEXT.getResolvedDataType()),
+        GetDataTypesResponse.newBuilder()
+            .addDataTypes(TEST_ORPHAN_RESOLUTION_CONTEXT.getResolvedDataType())
+            .addDataTypes(TEST_REGULAR_RESOLUTION_CONTEXT.getResolvedDataType())
+            .addDataTypes(TEST_SYSTEM_RESOLUTION_CONTEXT.getResolvedDataType())
+            .putReferencedDataSetsById(TEST_DATA_SET.getId(), TEST_DATA_SET)
+            .build(),
         this.dataTypeManager.getDataTypesMatchingRequest(
             mockRequestContext,
             GetDataTypesRequest.newBuilder()
@@ -139,7 +148,23 @@ class DataTypeManagerTest {
                 .build()));
 
     assertEquals(
-        List.of(TEST_REGULAR_DATA_TYPE),
+        GetDataTypesResponse.newBuilder()
+            .addDataTypes(TEST_ORPHAN_RESOLUTION_CONTEXT.getResolvedDataType())
+            .addDataTypes(TEST_SYSTEM_RESOLUTION_CONTEXT.getResolvedDataType())
+            .putReferencedDataSetsById(TEST_DATA_SET.getId(), TEST_DATA_SET)
+            .build(),
+        this.dataTypeManager.getDataTypesMatchingRequest(
+            mockRequestContext,
+            GetDataTypesRequest.newBuilder()
+                .setFilter(DataTypeFilter.newBuilder().setEnabled(false))
+                .setResolveInheritedDetails(true)
+                .build()));
+
+    assertEquals(
+        GetDataTypesResponse.newBuilder()
+            .addDataTypes(TEST_REGULAR_DATA_TYPE)
+            .putReferencedDataSetsById(TEST_DATA_SET.getId(), TEST_DATA_SET)
+            .build(),
         this.dataTypeManager.getDataTypesMatchingRequest(
             mockRequestContext,
             GetDataTypesRequest.newBuilder()
@@ -147,11 +172,13 @@ class DataTypeManagerTest {
                 .build()));
 
     assertEquals(
-        List.of(
-            TEST_REGULAR_DATA_TYPE,
-            TEST_SYSTEM_DATA_TYPE,
-            TEST_LEGACY_DATA_TYPE,
-            TEST_ORPHAN_DATA_TYPE),
+        GetDataTypesResponse.newBuilder()
+            .addDataTypes(TEST_REGULAR_DATA_TYPE)
+            .addDataTypes(TEST_SYSTEM_DATA_TYPE)
+            .addDataTypes(TEST_LEGACY_DATA_TYPE)
+            .addDataTypes(TEST_ORPHAN_DATA_TYPE)
+            .putReferencedDataSetsById(TEST_DATA_SET.getId(), TEST_DATA_SET)
+            .build(),
         this.dataTypeManager.getDataTypesMatchingRequest(
             mockRequestContext,
             GetDataTypesRequest.newBuilder()
