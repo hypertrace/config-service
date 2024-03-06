@@ -30,6 +30,7 @@ dependencies {
   compileOnly(commonLibs.lombok)
 
   testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(commonLibs.mockito.core)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
   testImplementation(testFixtures(projects.traceableConfigService))

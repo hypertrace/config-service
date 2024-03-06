@@ -5,7 +5,6 @@ import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Dat
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_REDACT;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_UNSPECIFIED;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
-import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_RAW;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 
 import ai.traceable.data.classification.config.service.v1.DataSet;
@@ -41,15 +40,13 @@ public class RedactionRulesDao {
   static final String LEGACY_REDACT_DATA_SET_DESCRIPTION =
       "Legacy dataset containing redaction rules with redacted strategy";
   // this should be in sync with id in LegacyRuleManager in external data
-  // classification config service impl and with id in PiiFilterConfigServiceImpl in sensitive data
-  // config service impl
+  // classification config service impl
   static final String LEGACY_REDACT_DATA_SET_ID = "legacy-dataset-redacted-id";
   static final String LEGACY_OBFUSCATE_DATA_SET_NAME = "Legacy Dataset - Obfuscated";
   static final String LEGACY_OBFUSCATE_DATA_SET_DESCRIPTION =
       "Legacy dataset containing redaction rules with obfuscated strategy";
   // this should be in sync with id in LegacyRuleManager in external data
-  // classification config service impl and with id in PiiFilterConfigServiceImpl in sensitive data
-  // config service impl
+  // classification config service impl
   static final String LEGACY_OBFUSCATE_DATA_SET_ID = "legacy-dataset-obfuscated-id";
   static final String LEGACY_RAW_DATA_SET_NAME = "Legacy Dataset - Unsuppressed";
   static final String LEGACY_RAW_DATA_SET_DESCRIPTION =
@@ -60,8 +57,7 @@ public class RedactionRulesDao {
   static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_DESCRIPTION =
       "Legacy dataset containing redaction rules for sensitive headers";
   // this should be in sync with id in LegacyRuleManager in external data
-  // classification config service impl and with id in PiiFilterConfigServiceImpl in sensitive data
-  // config service impl
+  // classification config service impl
   static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID = "legacy-dataset-sensitive-headers-id";
   static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_NAME =
       "Legacy Datatype - Sensitive Headers";
@@ -84,8 +80,6 @@ public class RedactionRulesDao {
       "Legacy Dataset - Automatic Secret Redaction";
   static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_DESCRIPTION =
       "Legacy dataset representing automatic secret redaction redaction";
-  // this should be in sync with id in PiiFilterConfigServiceImpl in sensitive data config service
-  // impl
   static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID =
       "legacy-dataset-automatic-secret-redaction-id";
   static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_NAME =

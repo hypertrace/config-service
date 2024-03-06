@@ -1,6 +1,5 @@
 package ai.traceable.sensitivedata.config.service;
 
-import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
@@ -10,6 +9,8 @@ import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import java.util.List;
+import java.util.Set;
+import lombok.Value;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 interface ConfigServiceCoordinator {
@@ -50,7 +51,13 @@ interface ConfigServiceCoordinator {
   void upsertFullPrivacyModeConfig(
       RequestContext requestContext, FullPrivacyModeConfig fullPrivacyModeConfig);
 
-  List<DataType> getAllDataTypes(RequestContext requestContext);
+  DataClassificationRuleState getDataClassificationRuleState(RequestContext requestContext);
 
-  List<DataSet> getAllDataSets(RequestContext requestContext);
+  @Value
+  class DataClassificationRuleState {
+    List<DataType> enabledNonLegacyDataTypes;
+    Set<String> enabledLegacyRedactionRuleIds;
+    boolean legacySensitiveHeadersEnabled;
+    boolean legacyAutoRedactionEnabled;
+  }
 }

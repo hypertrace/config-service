@@ -1,13 +1,18 @@
 package ai.traceable.sensitivedata.config.service;
 
 import static ai.traceable.data.classification.config.service.v1.SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_RP1;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID;
+import static ai.traceable.sensitivedata.config.service.PiiFilterConfigServiceImpl.LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID;
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.CORE_MODE_RULE_CATEGORY;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
-import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeFilter;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.sensitivedata.config.service.v1.FullPrivacyModeConfig;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest.RedactionRuleFilter;
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
@@ -20,6 +25,7 @@ import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -229,6 +235,32 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.fullPrivacyModeConfigStore.upsertObject(requestContext, fullPrivacyModeConfig);
   }
 
+  @Override
+  public DataClassificationRuleState getDataClassificationRuleState(RequestContext requestContext) {
+    Map<DataTypeVariant, List<DataType>> enabledDataTypes =
+        requestContext
+            .call(
+                () ->
+                    dataClassificationConfigServiceBlockingStub.getDataTypes(
+                        GetDataTypesRequest.newBuilder()
+                            .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
+                            .setResolveInheritedDetails(true)
+                            .setFilter(DataTypeFilter.newBuilder().setEnabled(true))
+                            .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
+                            .build()))
+            .getDataTypesList()
+            .stream()
+            .collect(groupingBy(this::getDataTypeVariant));
+
+    return new DataClassificationRuleState(
+        enabledDataTypes.getOrDefault(DataTypeVariant.NON_LEGACY, emptyList()),
+        enabledDataTypes.getOrDefault(DataTypeVariant.FROM_REDACTION_RULE, emptyList()).stream()
+            .map(DataType::getId)
+            .collect(toUnmodifiableSet()),
+        enabledDataTypes.containsKey(DataTypeVariant.FROM_SENSITIVE_HEADERS),
+        enabledDataTypes.containsKey(DataTypeVariant.FROM_AUTO_REDACTION));
+  }
+
   private List<RedactionRule> getUnpersistedDefaultRules(RequestContext requestContext) {
     return this.defaultRedactionRules.getUnpersistedRules(
         this.getDefaultRulePersistence(requestContext));
@@ -326,35 +358,24 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     }
   }
 
-  public List<DataType> getAllDataTypes(RequestContext requestContext) {
-    return requestContext
-        .call(
-            () ->
-                dataClassificationConfigServiceBlockingStub.getDataTypes(
-                    GetDataTypesRequest.newBuilder()
-                        .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
-                        .build()))
-        .getDataTypesList()
-        .stream()
-        .filter(this::isNotLegacyDataType)
-        .collect(Collectors.toUnmodifiableList());
+  private DataTypeVariant getDataTypeVariant(DataType dataType) {
+    if (dataType.getId().equals(LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID)) {
+      return DataTypeVariant.FROM_SENSITIVE_HEADERS;
+    }
+    if (dataType.getId().equals(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID)) {
+      return DataTypeVariant.FROM_AUTO_REDACTION;
+    }
+    if (dataType.getRule().getScopedPatternsList().isEmpty()) {
+      return DataTypeVariant.FROM_REDACTION_RULE;
+    } else {
+      return DataTypeVariant.NON_LEGACY;
+    }
   }
 
-  public List<DataSet> getAllDataSets(RequestContext requestContext) {
-    return requestContext
-        .call(
-            () ->
-                dataClassificationConfigServiceBlockingStub.getDataSets(
-                    GetDataSetsRequest.newBuilder()
-                        .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
-                        .build()))
-        .getDataSetsList()
-        .stream()
-        .filter(dataSet -> dataSet.getInfo().getEnabled())
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private boolean isNotLegacyDataType(DataType dataType) {
-    return !dataType.getRule().getScopedPatternsList().isEmpty();
+  private enum DataTypeVariant {
+    FROM_REDACTION_RULE,
+    FROM_AUTO_REDACTION,
+    FROM_SENSITIVE_HEADERS,
+    NON_LEGACY
   }
 }

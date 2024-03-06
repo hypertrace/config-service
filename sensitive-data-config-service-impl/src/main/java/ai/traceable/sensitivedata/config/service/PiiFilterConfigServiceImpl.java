@@ -5,14 +5,14 @@ import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Dat
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Action.ACTION_MATCH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_HASH;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
-import static java.util.function.Function.identity;
+import static java.util.Collections.emptyList;
 
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
+import ai.traceable.sensitivedata.config.service.ConfigServiceCoordinator.DataClassificationRuleState;
 import ai.traceable.sensitivedata.config.service.v1.ComplexData;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigResponse;
@@ -26,12 +26,9 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import com.google.common.collect.Lists;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -53,28 +50,11 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   private static final List<String> EMPTY_PREFIXES_LIST = List.of("");
   // this should be in sync with id in RedactionRulesDao in data classification config service impl
   // and id in RedactionRulesTranslator in external data classification config service impl
-  private static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
+  static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
       "legacy-datatype-sensitive-headers-id";
   // this should be in sync with id in RedactionRulesDao in data classification config service impl
   static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_TYPE_ID =
       "legacy-datatype-automatic-secret-redaction-id";
-
-  private static final String LEGACY_DATASET_ID_PREFIX = "legacy-";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  // and with id in ExternalDataClassificationConfigServiceImpl in external data classification
-  // config service impl
-  static final String LEGACY_REDACT_DATA_SET_ID = "legacy-dataset-redacted-id";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  // and with id in ExternalDataClassificationConfigServiceImpl in external data classification
-  // config service impl
-  static final String LEGACY_OBFUSCATE_DATA_SET_ID = "legacy-dataset-obfuscated-id";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  // and with id in ExternalDataClassificationConfigServiceImpl in external data classification
-  // config service impl
-  static final String LEGACY_SENSITIVE_HEADERS_DATA_SET_ID = "legacy-dataset-sensitive-headers-id";
-  // this should be in sync with id in RedactionRulesDao in data classification config service impl
-  static final String LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID =
-      "legacy-dataset-automatic-secret-redaction-id";
 
   private final ConfigServiceCoordinator configServiceCoordinator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
@@ -109,13 +89,8 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       Map<String, PiiElement> valueRegexToPiiElementMap = new LinkedHashMap<>();
       Map<String, ComplexData> complexDataMap = new LinkedHashMap<>();
 
-      List<DataSet> dataSets = configServiceCoordinator.getAllDataSets(requestContext);
-      List<DataType> dataTypes = configServiceCoordinator.getAllDataTypes(requestContext);
-      Map<String, DataSet> enabledDataSetMap =
-          dataSets.stream()
-              .filter(dataSet -> dataSet.getInfo().getEnabled())
-              .collect(Collectors.toUnmodifiableMap(DataSet::getId, identity()));
-
+      DataClassificationRuleState ruleState =
+          configServiceCoordinator.getDataClassificationRuleState(requestContext);
       List<RedactionRule> redactionRules =
           Lists.reverse(
               configServiceCoordinator
@@ -124,8 +99,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
                   .filter(rule -> !rule.getDisabled())
                   .collect(Collectors.toUnmodifiableList()));
 
-      List<RedactionRule> filteredRedactionRules =
-          filterRedactionRules(enabledDataSetMap, redactionRules);
+      List<RedactionRule> filteredRedactionRules = filterRedactionRules(ruleState, redactionRules);
 
       mergeConfigFromRedactionRules(
           filteredRedactionRules,
@@ -137,7 +111,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       RedactionStrategy redactionStrategy =
           configServiceCoordinator.getParamTypeRedactionStrategy(
               requestContext, ParamType.PARAM_TYPE_HEADER);
-      if (shouldSuppressSensitiveHeaders(enabledDataSetMap, redactionStrategy)) {
+      if (shouldSuppressSensitiveHeaders(ruleState, redactionStrategy)) {
         List<Parameter> sensitiveHeaderParameters =
             insightsServiceCoordinator.getSensitiveHeaderParameters(requestContext);
         List<PiiElement> piiElements =
@@ -150,7 +124,7 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
       addComplexDataElements(complexDataMap, defaultPiiFilterConfig.getComplexDataList());
 
       // if automatic secret redaction is enabled, merge config from default config
-      if (isAutomaticSecretRedactionEnabled(requestContext, enabledDataSetMap)) {
+      if (isAutomaticSecretRedactionEnabled(requestContext, ruleState)) {
         addPiiElements(
             keyRegexToPiiElementMap,
             addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getKeyRegexsList()));
@@ -159,16 +133,16 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
             addRuleIdToDefaultRegexes(defaultPiiFilterConfig.getValueRegexsList()));
       }
 
-      Map<DataSuppression, Set<DataType>> dataTypesMap =
-          getDataTypesForRedactionOrObfuscation(dataSets, dataTypes);
-      Set<DataType> dataTypesForRedaction =
-          dataTypesMap.getOrDefault(DATA_SUPPRESSION_REDACT, Collections.emptySet());
-      Set<DataType> dataTypesForObfuscation =
-          dataTypesMap.getOrDefault(DATA_SUPPRESSION_OBFUSCATE, Collections.emptySet());
+      Map<DataSuppression, List<DataType>> dataTypesBySuppression =
+          getDataTypesForRedactionOrObfuscation(ruleState.getEnabledNonLegacyDataTypes());
       mergeConfigFromDataTypes(
-          dataTypesForRedaction, REDACTION_STRATEGY_REDACT, keyRegexToPiiElementMap);
+          dataTypesBySuppression.getOrDefault(DATA_SUPPRESSION_REDACT, emptyList()),
+          REDACTION_STRATEGY_REDACT,
+          keyRegexToPiiElementMap);
       mergeConfigFromDataTypes(
-          dataTypesForObfuscation, REDACTION_STRATEGY_HASH, keyRegexToPiiElementMap);
+          dataTypesBySuppression.getOrDefault(DATA_SUPPRESSION_OBFUSCATE, emptyList()),
+          REDACTION_STRATEGY_HASH,
+          keyRegexToPiiElementMap);
 
       PiiFilterConfig resultingPiiFilterConfig =
           PiiFilterConfig.newBuilder()
@@ -195,35 +169,35 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
   }
 
   private List<RedactionRule> filterRedactionRules(
-      Map<String, DataSet> enabledDataSetMap, List<RedactionRule> redactionRules) {
-    boolean isLegacyRedactDataSetEnabled = enabledDataSetMap.containsKey(LEGACY_REDACT_DATA_SET_ID);
-    boolean isLegacyObfuscateDataSetEnabled =
-        enabledDataSetMap.containsKey(LEGACY_OBFUSCATE_DATA_SET_ID);
+      DataClassificationRuleState ruleState, List<RedactionRule> redactionRules) {
+
     // Filter redaction rules as follows :
     // 1. All session identification rules are always allowed
-    // 2. All redaction rules only if redact data set is enabled
-    // 3. All obfuscation rules only if obfuscate data set is enabled
+    // 2. All other rules only if data classification state marks as enabled and the rule hashes or
+    // redacts
     return redactionRules.stream()
         .filter(
             rule ->
                 rule.getSessionIdentifier()
-                    || (isLegacyRedactDataSetEnabled
-                        && rule.getRedactionStrategy().equals(REDACTION_STRATEGY_REDACT))
-                    || (isLegacyObfuscateDataSetEnabled
-                        && rule.getRedactionStrategy().equals(REDACTION_STRATEGY_HASH)))
+                    || (this.isStrategySuppressing(rule.getRedactionStrategy())
+                        && ruleState.getEnabledLegacyRedactionRuleIds().contains(rule.getId())))
         .collect(Collectors.toUnmodifiableList());
   }
 
   private boolean shouldSuppressSensitiveHeaders(
-      Map<String, DataSet> enabledDataSetMap, RedactionStrategy redactionStrategy) {
-    return enabledDataSetMap.containsKey(LEGACY_SENSITIVE_HEADERS_DATA_SET_ID)
-        && (redactionStrategy.equals(REDACTION_STRATEGY_HASH)
-            || redactionStrategy.equals(REDACTION_STRATEGY_REDACT));
+      DataClassificationRuleState ruleState, RedactionStrategy redactionStrategy) {
+    return ruleState.isLegacySensitiveHeadersEnabled()
+        && this.isStrategySuppressing(redactionStrategy);
+  }
+
+  private boolean isStrategySuppressing(RedactionStrategy redactionStrategy) {
+    return redactionStrategy.equals(REDACTION_STRATEGY_HASH)
+        || redactionStrategy.equals(REDACTION_STRATEGY_REDACT);
   }
 
   private boolean isAutomaticSecretRedactionEnabled(
-      RequestContext requestContext, Map<String, DataSet> enabledDataSetMap) {
-    return enabledDataSetMap.containsKey(LEGACY_AUTOMATIC_SECRET_REDACTION_DATA_SET_ID)
+      RequestContext requestContext, DataClassificationRuleState ruleState) {
+    return ruleState.isLegacyAutoRedactionEnabled()
         && configServiceCoordinator.isAutomaticSecretRedactionStrategyEnabled(requestContext);
   }
 
@@ -302,45 +276,18 @@ class PiiFilterConfigServiceImpl extends PiiFilterConfigServiceGrpc.PiiFilterCon
     }
   }
 
-  private Map<DataSuppression, Set<DataType>> getDataTypesForRedactionOrObfuscation(
-      List<DataSet> dataSets, List<DataType> dataTypes) {
-    List<DataSet> filteredDataSets =
-        dataSets.stream()
-            .filter(
-                dataSet ->
-                    dataSet.getInfo().getEnabled()
-                        && !dataSet.getId().startsWith(LEGACY_DATASET_ID_PREFIX))
-            .collect(Collectors.toList());
-    Map<String, DataType> dataTypeToIdMap =
-        dataTypes.stream().collect(Collectors.toUnmodifiableMap(DataType::getId, identity()));
-    Map<String, DataType> redactedDataTypesMap =
-        filteredDataSets.stream()
-            .filter(
-                dataSet -> dataSet.getInfo().getDataSuppression().equals(DATA_SUPPRESSION_REDACT))
-            .flatMap(dataSet -> dataSet.getInfo().getDataTypeIdsList().stream())
-            .map(dataTypeToIdMap::get)
-            .filter(Objects::nonNull)
-            .collect(
-                Collectors.toMap(DataType::getId, identity(), (x, y) -> y, LinkedHashMap::new));
-    Set<DataType> obfuscatedDataTypes =
-        filteredDataSets.stream()
-            .filter(
-                dataSet ->
-                    dataSet.getInfo().getDataSuppression().equals(DATA_SUPPRESSION_OBFUSCATE))
-            .flatMap(dataSet -> dataSet.getInfo().getDataTypeIdsList().stream())
-            .filter(id -> !redactedDataTypesMap.containsKey(id))
-            .map(dataTypeToIdMap::get)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    return Map.of(
-        DATA_SUPPRESSION_REDACT,
-        new LinkedHashSet<>(redactedDataTypesMap.values()),
-        DATA_SUPPRESSION_OBFUSCATE,
-        obfuscatedDataTypes);
+  private Map<DataSuppression, List<DataType>> getDataTypesForRedactionOrObfuscation(
+      List<DataType> dataTypes) {
+    return dataTypes.stream()
+        .filter(
+            dataType ->
+                dataType.getRule().getDataSuppression().equals(DATA_SUPPRESSION_REDACT)
+                    || dataType.getRule().getDataSuppression().equals(DATA_SUPPRESSION_OBFUSCATE))
+        .collect(Collectors.groupingBy(dataType -> dataType.getRule().getDataSuppression()));
   }
 
   private void mergeConfigFromDataTypes(
-      Set<DataType> dataTypes,
+      List<DataType> dataTypes,
       RedactionStrategy strategy,
       Map<String, PiiElement> keyRegexToPiiElementMap) {
     dataTypes.stream()
