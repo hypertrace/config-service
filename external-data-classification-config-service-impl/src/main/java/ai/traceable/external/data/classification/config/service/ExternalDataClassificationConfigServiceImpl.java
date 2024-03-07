@@ -2,7 +2,6 @@ package ai.traceable.external.data.classification.config.service;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
-import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.external.data.classification.config.service.legacy.LegacyRuleManager;
 import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesDao;
 import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesTranslator;
@@ -20,6 +19,7 @@ import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.inject.Inject;
@@ -43,6 +43,7 @@ class ExternalDataClassificationConfigServiceImpl
   private final DataParsingRuleManager dataParsingRuleManager;
   private final ExternalDataClassificationRuleResponseBuilder responseBuilder;
   private final FeatureCachingClient featureCachingClient;
+  private final DataClassificationRulesDao dataClassificationRulesDao;
 
   private final LoadingCache<
           ContextualKey<GetDataClassificationConfigRequest>, GetDataClassificationConfigResponse>
@@ -60,7 +61,8 @@ class ExternalDataClassificationConfigServiceImpl
       OverrideRuleManager overrideRuleManager,
       DataParsingRuleManager dataParsingRuleManager,
       ExternalDataClassificationRuleResponseBuilder responseBuilder,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      DataClassificationRulesDao dataClassificationRulesDao) {
     this.externalDataClassificationConfig = externalDataClassificationConfig;
     this.externalDataClassificationConfigRequestValidator =
         externalDataClassificationConfigRequestValidator;
@@ -72,6 +74,7 @@ class ExternalDataClassificationConfigServiceImpl
     this.dataParsingRuleManager = dataParsingRuleManager;
     this.responseBuilder = responseBuilder;
     this.featureCachingClient = featureCachingClient;
+    this.dataClassificationRulesDao = dataClassificationRulesDao;
 
     this.responseCache =
         CacheBuilder.newBuilder()
@@ -115,19 +118,16 @@ class ExternalDataClassificationConfigServiceImpl
             .filter(envName -> !envName.isBlank());
     List<DataClassificationOverride> overrides =
         overrideRuleManager.getOverrides(requestContext, request.getEnvironmentFilter());
-    List<DataSet> enabledDataSets = this.platformDataTypeManager.getEnabledDataSets(requestContext);
     ImmutableList.Builder<DataType> customDataTypes = ImmutableList.builder();
-
+    Set<String> enabledLegacyDataTypeIds =
+        this.dataClassificationRulesDao.getEnabledLegacyDataTypeIds(requestContext);
     customDataTypes
         .addAll(
             this.legacyRuleManager.getDataTypesFromLegacyRedactionRules(
-                requestContext, enabledDataSets))
+                requestContext, enabledLegacyDataTypeIds))
         .addAll(
             this.platformDataTypeManager.getDataTypes(
-                requestContext,
-                enabledDataSets,
-                requestedEnvironment,
-                request.getPredicateSupportLevel()));
+                requestContext, requestedEnvironment, request.getPredicateSupportLevel()));
     if (featureCachingClient.isSessionIdentificationV2EnabledForTenant(requestContext)) {
       customDataTypes.addAll(
           this.sessionIdentificationRulesTranslator.translateSessionIdentificationRules(
@@ -136,7 +136,7 @@ class ExternalDataClassificationConfigServiceImpl
     }
     customDataTypes.addAll(
         this.legacyRuleManager.getDataTypesFromLegacySensitiveHeaders(
-            requestContext, enabledDataSets));
+            requestContext, enabledLegacyDataTypeIds));
 
     List<DataType> externalDataTypes =
         ImmutableList.<DataType>builder()

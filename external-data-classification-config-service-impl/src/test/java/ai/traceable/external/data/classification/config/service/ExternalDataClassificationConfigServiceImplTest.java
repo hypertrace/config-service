@@ -10,8 +10,6 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationConf
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
-import ai.traceable.data.classification.config.service.v1.DataSet;
-import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity;
 import ai.traceable.data.classification.config.service.v1.DataType;
@@ -26,8 +24,6 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPat
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesResponse;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
@@ -337,60 +333,6 @@ public class ExternalDataClassificationConfigServiceImplTest {
 
   class MockDataClassificationConfigService
       extends DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase {
-    @Override
-    public void getDataSets(
-        GetDataSetsRequest request, StreamObserver<GetDataSetsResponse> responseObserver) {
-      DataSet dataSet1 =
-          DataSet.newBuilder()
-              .setId("dataset-1")
-              .setInfo(
-                  DataSetInfo.newBuilder()
-                      .setName("datasetname-1")
-                      .setEnabled(true)
-                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
-                      .setSensitivity(Sensitivity.SENSITIVITY_MEDIUM)
-                      .addDataTypeIds("datatype-1"))
-              .build();
-      DataSet dataSet2 =
-          DataSet.newBuilder()
-              .setId("dataset-2")
-              .setInfo(
-                  DataSetInfo.newBuilder()
-                      .setName("datasetname-2")
-                      .setEnabled(true)
-                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
-                      .setSensitivity(Sensitivity.SENSITIVITY_HIGH)
-                      .addDataTypeIds("datatype-2"))
-              .build();
-      DataSet dataSet3 =
-          DataSet.newBuilder()
-              .setId("dataset-3")
-              .setInfo(
-                  DataSetInfo.newBuilder()
-                      .setName("datatsetname-3")
-                      .setEnabled(true)
-                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
-                      .setSensitivity(Sensitivity.SENSITIVITY_LOW)
-                      .addDataTypeIds("datatype-3"))
-              .build();
-      DataSet legacyDataSet =
-          DataSet.newBuilder()
-              .setId("legacy-dataset")
-              .setInfo(
-                  DataSetInfo.newBuilder()
-                      .setName("legacy-dataset-1")
-                      .setEnabled(false)
-                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
-                      .setSensitivity(Sensitivity.SENSITIVITY_LOW)
-                      .addDataTypeIds("datatype-3"))
-              .build();
-
-      responseObserver.onNext(
-          GetDataSetsResponse.newBuilder()
-              .addAllDataSets(List.of(dataSet1, dataSet2, dataSet3, legacyDataSet))
-              .build());
-      responseObserver.onCompleted();
-    }
 
     @Override
     public void getDataTypes(
@@ -401,6 +343,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
               .setRule(
                   DataTypeRule.newBuilder()
                       .setName("datatypename-1")
+                      .setEnabled(true)
+                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
+                      .setSensitivity(Sensitivity.SENSITIVITY_HIGH)
+                      .addDataSetId("dataset-2")
                       .addScopedPatterns(
                           ScopedPattern.newBuilder()
                               .setGlobalScope(GlobalScope.newBuilder())
@@ -418,6 +364,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
               .setRule(
                   DataTypeRule.newBuilder()
                       .setName("datatypename-2")
+                      .setEnabled(true)
+                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                      .setSensitivity(Sensitivity.SENSITIVITY_MEDIUM)
+                      .addDataSetId("dataset-1")
                       .addScopedPatterns(
                           ScopedPattern.newBuilder()
                               .setEnvironmentScope(
@@ -436,6 +386,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
               .setRule(
                   DataTypeRule.newBuilder()
                       .setName("datatypename-3")
+                      .setEnabled(true)
+                      .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                      .setSensitivity(Sensitivity.SENSITIVITY_LOW)
+                      .addDataSetId("dataset-3")
                       .addScopedPatterns(
                           ScopedPattern.newBuilder()
                               .setEnvironmentScope(
@@ -456,7 +410,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
 
       responseObserver.onNext(
           GetDataTypesResponse.newBuilder()
-              .addAllDataTypes(List.of(dataType1, dataType2, dataType3))
+              .addAllDataTypes(List.of(dataType2, dataType3, dataType1))
               .build());
       responseObserver.onCompleted();
     }

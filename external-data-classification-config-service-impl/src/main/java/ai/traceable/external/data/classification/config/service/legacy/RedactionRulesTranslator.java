@@ -1,5 +1,6 @@
 package ai.traceable.external.data.classification.config.service.legacy;
 
+import static ai.traceable.external.data.classification.config.service.legacy.LegacyRuleManager.LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID;
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS;
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_MATCHES_REGEX;
 
@@ -28,11 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class RedactionRulesTranslator {
-
-  // this should be in sync with id in PiiFilterConfigServiceImpl in sensitive data config service
-  // impl and id in RedactionRulesDao in data classification config service impl
-  static final String LEGACY_SENSITIVE_HEADERS_DATA_TYPE_ID =
-      "legacy-datatype-sensitive-headers-id";
   private static final List<String> SENSITIVE_HEADERS_PREFIXES_LIST =
       List.of(
           "rpc.response.metadata",

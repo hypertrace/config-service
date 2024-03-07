@@ -5,15 +5,16 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationOver
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideFilter;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataClassificationOverrideScope;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.EnvironmentScope;
-import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesRequest;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeFilter;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.data.classification.config.service.v1.ScopeFilter;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -29,24 +30,37 @@ class DataClassificationRulesDao {
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
   }
 
-  public List<DataType> getAllDataTypes(RequestContext requestContext) {
-    return requestContext.call(
-        () ->
-            dataClassificationConfigServiceBlockingStub
-                .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                .getDataTypes(GetDataTypesRequest.getDefaultInstance())
-                .getDataTypesList()
-                .stream()
-                .collect(Collectors.toUnmodifiableList()));
+  public List<DataType> getResolvedDataTypesInEvaluationOrder(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                dataClassificationConfigServiceBlockingStub
+                    .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .getDataTypes(
+                        GetDataTypesRequest.newBuilder()
+                            .setResolveInheritedDetails(true)
+                            .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
+                            .setFilter(
+                                DataTypeFilter.newBuilder().setEnabled(true).setLegacyTypes(false))
+                            .build()))
+        .getDataTypesList();
   }
 
-  public List<DataSet> getAllDataSets(RequestContext requestContext) {
-    return requestContext.call(
-        () ->
-            dataClassificationConfigServiceBlockingStub
-                .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-                .getDataSets(GetDataSetsRequest.getDefaultInstance())
-                .getDataSetsList());
+  public Set<String> getEnabledLegacyDataTypeIds(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                dataClassificationConfigServiceBlockingStub
+                    .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .getDataTypes(
+                        GetDataTypesRequest.newBuilder()
+                            .setFilter(
+                                DataTypeFilter.newBuilder().setEnabled(true).setLegacyTypes(true))
+                            .build()))
+        .getDataTypesList()
+        .stream()
+        .map(DataType::getId)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   public List<DataClassificationOverride> getUnscopedDataSuppressionOverrideRules(

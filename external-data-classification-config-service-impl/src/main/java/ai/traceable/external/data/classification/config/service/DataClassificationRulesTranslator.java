@@ -66,28 +66,23 @@ class DataClassificationRulesTranslator {
   private static final List<String> EMPTY_PREFIXES_LIST = List.of();
 
   List<DataType> translateDataTypes(
-      List<ResolvedPlatformDataType> resolvedPlatformDataTypes,
+      List<ai.traceable.data.classification.config.service.v1.DataType> resolvedDataTypes,
       Optional<String> environmentName,
       PredicateSupportLevel predicateSupportLevel) {
-    return resolvedPlatformDataTypes.stream()
+    return resolvedDataTypes.stream()
         .map(
-            resolvedType ->
-                translateDataType(
-                    resolvedType.getDataType(),
-                    resolvedType.getSuppression(),
-                    environmentName,
-                    predicateSupportLevel))
+            resolvedDataType ->
+                translateDataType(resolvedDataType, environmentName, predicateSupportLevel))
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
   private Optional<DataType> translateDataType(
-      ai.traceable.data.classification.config.service.v1.DataType dataType,
-      DataSuppression dataSuppression,
+      ai.traceable.data.classification.config.service.v1.DataType resolvedDataType,
       Optional<String> environmentName,
       PredicateSupportLevel predicateSupportLevel) {
     List<DataTypeMatchRule> matchRules =
-        dataType.getRule().getScopedPatternsList().stream()
+        resolvedDataType.getRule().getScopedPatternsList().stream()
             .filter(scopedPattern -> matchScope(scopedPattern, environmentName))
             .map(scopedPattern -> translateScopedPattern(scopedPattern, predicateSupportLevel))
             .flatMap(Optional::stream)
@@ -96,13 +91,14 @@ class DataClassificationRulesTranslator {
       return Optional.empty();
     }
     DataType.Builder dataTypeBuilder = DataType.newBuilder();
-    dataTypeBuilder.setDataTypeId(dataType.getId());
-    DataTransformation transformation = translateDataSuppression(dataSuppression);
+    dataTypeBuilder.setDataTypeId(resolvedDataType.getId());
+    DataTransformation transformation =
+        translateDataSuppression(resolvedDataType.getRule().getDataSuppression());
     if (shouldDataTransformationBeSetOnDataType(transformation)) {
       dataTypeBuilder.setTransformation(transformation);
     }
-    if (dataType.getRule().hasSuppressionPattern()) {
-      dataTypeBuilder.setSuppressionPattern(dataType.getRule().getSuppressionPattern());
+    if (resolvedDataType.getRule().hasSuppressionPattern()) {
+      dataTypeBuilder.setSuppressionPattern(resolvedDataType.getRule().getSuppressionPattern());
     }
     dataTypeBuilder.addAllMatchRules(matchRules);
     return Optional.of(dataTypeBuilder.build());
