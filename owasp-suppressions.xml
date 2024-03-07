@@ -64,4 +64,11 @@
     <packageUrl regex="true">^pkg:maven/com\.jayway\.jsonpath/json\-path@.*$</packageUrl>
     <vulnerabilityName>CVE-2023-51074</vulnerabilityName>
   </suppress>
+  <suppress>
+    <notes><![CDATA[
+   Wire android app not a match for squareup's wire packages
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/com\.squareup\.wire/wire\-.*@.*$</packageUrl>
+    <cpe>cpe:/a:wire:wire</cpe>
+  </suppress>
 </suppressions>
