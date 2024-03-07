@@ -1,13 +1,11 @@
 package ai.traceable.ratelimiting.service.v2.rules.modsec.datatype;
 
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
-import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
-import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
-import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +27,27 @@ public class DataClassificationInfoProvider {
   }
 
   public DataClassificationInfo fetchDataClassificationInfo(RequestContext requestContext) {
-    return new DataClassificationInfo(
-        fetchDataTypes(requestContext), fetchDatasets(requestContext));
+    List<DataType> dataTypes = this.fetchDataTypes(requestContext);
+    Map<String, DataTypeRule> dataTypeRuleMap =
+        dataTypes.stream()
+            .collect(Collectors.toUnmodifiableMap(DataType::getId, DataType::getRule));
+    ListMultimap<String, String> dataTypeIdsByDataSetId =
+        dataTypes.stream()
+            .collect(
+                ImmutableListMultimap.flatteningToImmutableListMultimap(
+                    DataType::getId, dataType -> dataType.getRule().getDataSetIdList().stream()))
+            .inverse(); // collector is going data type id -> data set ids
+
+    return new DataClassificationInfo(dataTypeRuleMap, dataTypeIdsByDataSetId);
+  }
+
+  private List<DataType> fetchDataTypes(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                dataClassificationConfigServiceBlockingStub.getDataTypes(
+                    GetDataTypesRequest.newBuilder().setResolveInheritedDetails(true).build()))
+        .getDataTypesList();
   }
 
   @Value
@@ -38,17 +55,10 @@ public class DataClassificationInfoProvider {
   @Getter(AccessLevel.NONE)
   public static class DataClassificationInfo {
     Map<String, DataTypeRule> dataTypeRuleMap;
-    Map<String, List<String>> dataSetToDataTypeMap;
+    ListMultimap<String, String> dataTypeIdsByDataSetId;
 
     public List<String> getDataTypeIdsForDataSet(String datasetId) {
-      try {
-        return dataSetToDataTypeMap.get(datasetId);
-      } catch (Exception e) {
-        log.warn(
-            "Error in finding the resolving the data types for data set id: {}. Skipping",
-            datasetId);
-      }
-      return List.of();
+      return dataTypeIdsByDataSetId.get(datasetId);
     }
 
     public DataTypeRule getDataTypeRule(String dataTypeId) {
@@ -61,26 +71,5 @@ public class DataClassificationInfoProvider {
       }
       return null;
     }
-  }
-
-  private Map<String, List<String>> fetchDatasets(RequestContext requestContext) {
-    GetDataSetsResponse response =
-        requestContext.call(
-            () ->
-                dataClassificationConfigServiceBlockingStub.getDataSets(
-                    GetDataSetsRequest.getDefaultInstance()));
-    return response.getDataSetsList().stream()
-        .collect(
-            Collectors.toMap(DataSet::getId, dataSet -> dataSet.getInfo().getDataTypeIdsList()));
-  }
-
-  private Map<String, DataTypeRule> fetchDataTypes(RequestContext requestContext) {
-    GetDataTypesResponse response =
-        requestContext.call(
-            () ->
-                dataClassificationConfigServiceBlockingStub.getDataTypes(
-                    GetDataTypesRequest.getDefaultInstance()));
-    return response.getDataTypesList().stream()
-        .collect(Collectors.toMap(DataType::getId, DataType::getRule));
   }
 }
