@@ -15,18 +15,22 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.typesafe.config.Config;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
+import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class DataClassificationCachingClientImpl implements DataClassificationClient {
@@ -37,31 +41,49 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
       dataClassificationConfigServiceBlockingStub;
 
   public DataClassificationCachingClientImpl(
+      Config config,
       DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
           dataClassificationConfigServiceBlockingStub,
-      ConfigChangeEventListener configChangeEventListener,
       DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
     this.dataClassificationInfoCachingClientConfig = dataClassificationInfoCachingClientConfig;
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
-    this.dataClassificationInfoCache =
-        CacheBuilder.newBuilder()
-            .maximumSize(this.dataClassificationInfoCachingClientConfig.getMaxSize())
-            .refreshAfterWrite(this.dataClassificationInfoCachingClientConfig.getRefreshDuration())
-            .expireAfterAccess(
-                this.dataClassificationInfoCachingClientConfig.getExpirationDuration())
-            .recordStats()
-            .build(
-                CacheLoader.asyncReloading(
-                    CacheLoader.from(this::fetchDataClassificationInfo),
-                    Executors.newFixedThreadPool(
-                        this.dataClassificationInfoCachingClientConfig.getMaxThreadPoolSize(),
-                        this.buildDataClassificationThreadFactory())));
+    this.dataClassificationInfoCache = buildCache();
+    registerCacheMetrices();
+    addKafkaEventListener(config, this::updateCacheBasedOnEvent);
+  }
+
+  public DataClassificationCachingClientImpl(
+      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+          dataClassificationConfigServiceBlockingStub,
+      DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
+    this.dataClassificationInfoCachingClientConfig = dataClassificationInfoCachingClientConfig;
+    this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
+    this.dataClassificationInfoCache = buildCache();
+    registerCacheMetrices();
+  }
+
+  @NotNull
+  private LoadingCache<ContextualKey<Optional<DataTypeFilter>>, DataClassificationInfo>
+      buildCache() {
+    return CacheBuilder.newBuilder()
+        .maximumSize(this.dataClassificationInfoCachingClientConfig.getMaxSize())
+        .refreshAfterWrite(this.dataClassificationInfoCachingClientConfig.getRefreshDuration())
+        .expireAfterAccess(this.dataClassificationInfoCachingClientConfig.getExpirationDuration())
+        .recordStats()
+        .build(
+            CacheLoader.asyncReloading(
+                CacheLoader.from(this::fetchDataClassificationInfo),
+                Executors.newFixedThreadPool(
+                    this.dataClassificationInfoCachingClientConfig.getMaxThreadPoolSize(),
+                    this.buildDataClassificationThreadFactory())));
+  }
+
+  private void registerCacheMetrices() {
     PlatformMetricsRegistry.registerCacheTrackingOccupancy(
         this.dataClassificationInfoCachingClientConfig.getDataClassificationInfoCacheName(),
         this.dataClassificationInfoCache,
         Collections.emptyMap(),
         this.dataClassificationInfoCachingClientConfig.getMaxSize());
-    configChangeEventListener.addKafkaEventListener(this::updateCacheBasedOnEvent);
   }
 
   @Override
@@ -122,5 +144,17 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
         break;
       default:
     }
+  }
+
+  private KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>
+      addKafkaEventListener(
+          Config config, BiConsumer<ConfigChangeEventKey, ConfigChangeEventValue> callback) {
+    return new KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>()
+        .registerCallback(callback)
+        .build(
+            this.dataClassificationInfoCachingClientConfig.getConsumerName(),
+            config,
+            new KafkaConsumerBuilder(config, this.dataClassificationInfoCachingClientConfig)
+                .buildKafkaConsumer());
   }
 }

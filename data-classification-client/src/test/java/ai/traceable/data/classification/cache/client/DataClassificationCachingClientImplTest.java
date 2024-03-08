@@ -26,7 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class DataClassificationCachingClientImplTest {
   @Mock DataClassificationConfigServiceBlockingStub mockStub;
   @Mock DataClassificationConfigServiceBlockingStub ongoingStub;
-  @Mock ConfigChangeEventListener configChangeEventListener;
   RequestContext testRequestContext = RequestContext.forTenantId("DataClassificationInfoCacheTest");
   DataClassificationCachingClientImpl cache;
 
@@ -74,9 +73,7 @@ class DataClassificationCachingClientImplTest {
                 .build());
     this.cache =
         new DataClassificationCachingClientImpl(
-            this.mockStub,
-            this.configChangeEventListener,
-            dataClassificationInfoCachingClientConfig);
+            this.mockStub, dataClassificationInfoCachingClientConfig);
     DataClassificationInfo dataClassificationInfo =
         this.cache.getDataClassificationInfo(testRequestContext);
     Map<String, DataType> dataTypeIdToDataTypeMap = Map.of("datatypeId", dataType);

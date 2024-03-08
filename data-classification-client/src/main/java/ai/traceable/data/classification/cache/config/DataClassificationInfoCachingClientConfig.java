@@ -18,6 +18,8 @@ public class DataClassificationInfoCachingClientConfig {
       "data.classification.info.cache.expiration.duration";
   private static final String DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION =
       "data.classification.info.cache.timeout.duration";
+  private static final String DATA_CLASSIFICATION_INFO_CACHE_NAME =
+      "data.classification.info.cache.name";
   private static final String CONSUMER_NAME_PATH = "data.classification.info.cache.consumer.name";
   private static final String SCHEMA_REGISTRY_URL_PATH =
       "data.classification.info.cache.schema.registry.url";
@@ -30,10 +32,9 @@ public class DataClassificationInfoCachingClientConfig {
       Duration.ofMinutes(20);
   private static final Duration DEFAULT_DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION =
       Duration.ofSeconds(10);
-  private static final String DATA_CLASSIFICATION_INFO_CACHE_NAME =
-      "TraceEnricherDataClassificationInfoCache";
-  private static final String DATA_CLASSIFICATION_INFO_CACHE_THREAD_FACTORY_NAME =
-      "data-classification-info-cache-%d";
+  private static final String DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_NAME =
+      "data-classification-info-cache";
+
   private int maxSize;
   private int maxThreadPoolSize;
   private Duration timeoutDuration;
@@ -45,6 +46,10 @@ public class DataClassificationInfoCachingClientConfig {
   private String schemaRegistryUrl;
 
   public static DataClassificationInfoCachingClientConfig from(Config config) {
+    String dataClassificationInfoCacheName =
+        config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_NAME)
+            ? config.getString(DATA_CLASSIFICATION_INFO_CACHE_NAME)
+            : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_NAME;
     return new DataClassificationInfoCachingClientConfig(
         config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             ? config.getInt(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
@@ -61,9 +66,13 @@ public class DataClassificationInfoCachingClientConfig {
         config.hasPath(DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION)
             ? config.getDuration(DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION)
             : DEFAULT_DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION,
-        DATA_CLASSIFICATION_INFO_CACHE_THREAD_FACTORY_NAME,
-        DATA_CLASSIFICATION_INFO_CACHE_NAME,
+        dataClassificationInfoCacheName,
+        getThreadFactoryName(dataClassificationInfoCacheName),
         config.getString(CONSUMER_NAME_PATH),
         config.getString(SCHEMA_REGISTRY_URL_PATH));
+  }
+
+  private static String getThreadFactoryName(String dataClassificationInfoCacheName) {
+    return dataClassificationInfoCacheName + "-%d";
   }
 }
