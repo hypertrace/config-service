@@ -42,6 +42,7 @@ import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesResponse;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.GetRedactionStrategyForTypeResponse;
+import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
@@ -74,6 +75,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class ExternalDataClassificationConfigServiceImplTest {
+  private static final ai.traceable.external.data.classification.config.service.v1.DataType
+      EXPECTED_SESSION_ID_DATA_TYPE =
+          ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+              .setDataTypeId("old-session-rule")
+              .addMatchRules(
+                  DataTypeMatchRule.newBuilder()
+                      .setResult(Result.RESULT_MATCH)
+                      .setPathPredicate(
+                          PathPredicate.newBuilder()
+                              .setPathSegmentPredicate(
+                                  StringPredicate.newBuilder()
+                                      .setOperator(
+                                          ai.traceable.external.data.classification.config.service
+                                              .v1.Operator.OPERATOR_MATCHES_REGEX)
+                                      .setValue("session"))))
+              .setSessionIdentifier(true)
+              .build();
   MockGenericConfigService mockGenericConfigService;
   ExternalDataClassificationServiceBlockingStub externalDataClassificationServiceBlockingStub;
   @Mock FeatureCachingClient featureCachingClient;
@@ -146,7 +164,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
     GetDataClassificationConfigResponse response =
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
             GetDataClassificationConfigRequest.getDefaultInstance());
-    assertEquals(1, response.getDataTypesCount());
+    assertEquals(2, response.getDataTypesCount());
 
     response =
         externalDataClassificationServiceBlockingStub.getDataClassificationConfig(
@@ -154,7 +172,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 .setChangeFilter(OnlyIfChangedFilter.getDefaultInstance())
                 .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("env-1"))
                 .build());
-    assertEquals(3, response.getDataTypesCount());
+    assertEquals(4, response.getDataTypesCount());
   }
 
   @Test
@@ -174,7 +192,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
                 .setChangeFilter(OnlyIfChangedFilter.getDefaultInstance())
                 .setEnvironmentFilter(EnvironmentFilter.newBuilder().setEnvironmentName("random"))
                 .build());
-    assertEquals(0, response.getDataTypesCount());
+    assertEquals(List.of(EXPECTED_SESSION_ID_DATA_TYPE), response.getDataTypesList());
   }
 
   @Test
@@ -227,6 +245,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
                     .build()));
     assertEquals(
         List.of(
+            EXPECTED_SESSION_ID_DATA_TYPE,
             ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
                 .setDataTypeId("default-rule")
                 .build()),
@@ -435,7 +454,13 @@ public class ExternalDataClassificationConfigServiceImplTest {
         GetAllRedactionRulesRequest request,
         StreamObserver<GetAllRedactionRulesResponse> responseObserver) {
       GetAllRedactionRulesResponse.Builder responseBuilder =
-          GetAllRedactionRulesResponse.newBuilder();
+          GetAllRedactionRulesResponse.newBuilder()
+              .addRedactionRules(
+                  RedactionRule.newBuilder()
+                      .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_RAW)
+                      .setId("old-session-rule")
+                      .setRegex("session")
+                      .setSessionIdentifier(true));
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     }

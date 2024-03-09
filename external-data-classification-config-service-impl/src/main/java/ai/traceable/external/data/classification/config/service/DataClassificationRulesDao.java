@@ -56,6 +56,7 @@ class DataClassificationRulesDao {
                         GetDataTypesRequest.newBuilder()
                             .setFilter(
                                 DataTypeFilter.newBuilder().setEnabled(true).setLegacyTypes(true))
+                            .setResolveInheritedDetails(true)
                             .build()))
         .getDataTypesList()
         .stream()

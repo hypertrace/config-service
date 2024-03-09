@@ -26,7 +26,7 @@ class RedactionRulesDao {
                 .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
                 .getRedactionRulesList()
                 .stream()
-                .filter(rule -> filter.getEnabledRuleIds().contains(rule.getId()))
+                .filter(rule -> this.checkFilter(rule, filter))
                 .collect(Collectors.toUnmodifiableList()));
   }
 
@@ -41,8 +41,20 @@ class RedactionRulesDao {
                 .getRedactionStrategy());
   }
 
+  private boolean checkFilter(RedactionRule rule, RedactionRuleFilter filter) {
+    if (rule.getDisabled()) {
+      return false; // If the source rule is disabled, we should never use it
+    }
+    // Otherwise, we grab the session rules and those that have a corresponding enabled data type
+    if (filter.isAlwaysIncludeSessionIdentifier() && rule.getSessionIdentifier()) {
+      return true;
+    }
+    return filter.getEnabledLegacyDataTypeIds().contains(rule.getId());
+  }
+
   @Value
   static class RedactionRuleFilter {
-    Set<String> enabledRuleIds;
+    Set<String> enabledLegacyDataTypeIds;
+    boolean alwaysIncludeSessionIdentifier = true;
   }
 }

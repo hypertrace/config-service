@@ -96,7 +96,6 @@ public class RedactionRulesTranslatorTest {
                                             .setOperator(OPERATOR_MATCHES_REGEX)
                                             .setValue("reg-1"))))
                     .setResult(Result.RESULT_MATCH)
-                    .setAttributeFilter(AttributeFilter.getDefaultInstance())
                     .setPathPredicate(
                         PathPredicate.newBuilder()
                             .setPathSegmentPredicate(
@@ -153,7 +152,6 @@ public class RedactionRulesTranslatorTest {
                                             .setOperator(OPERATOR_MATCHES_REGEX)
                                             .setValue("reg-3"))))
                     .setResult(Result.RESULT_MATCH)
-                    .setAttributeFilter(AttributeFilter.getDefaultInstance())
                     .setPathPredicate(
                         PathPredicate.newBuilder()
                             .setPathSegmentPredicate(

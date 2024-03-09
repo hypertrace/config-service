@@ -144,10 +144,14 @@ class RedactionRulesTranslator {
                   buildStringPredicate(OPERATOR_MATCHES_REGEX, attributeRegexMatch.getRegex())));
     }
     attributeFilterBuilder.addAllPrefixes(this.getLocationPrefixes(redactionRule));
-    return dataTypeMatchRuleBuilder
-        .setSpanFilter(spanFilterBuilder)
-        .setAttributeFilter(attributeFilterBuilder)
-        .build();
+    if (spanFilterBuilder.getRequiredMatchingAttributesCount() > 0) {
+      dataTypeMatchRuleBuilder.setSpanFilter(spanFilterBuilder);
+    }
+    if (attributeFilterBuilder.getPrefixesCount() > 0) {
+      dataTypeMatchRuleBuilder.setAttributeFilter(attributeFilterBuilder);
+    }
+
+    return dataTypeMatchRuleBuilder.build();
   }
 
   private List<String> getLocationPrefixes(RedactionRule redactionRule) {
