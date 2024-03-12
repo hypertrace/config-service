@@ -12,7 +12,6 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
-import java.awt.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
