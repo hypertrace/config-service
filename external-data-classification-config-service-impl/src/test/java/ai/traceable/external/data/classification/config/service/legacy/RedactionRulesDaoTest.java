@@ -72,7 +72,13 @@ class RedactionRulesDaoTest {
     assertEquals(
         List.of(ENABLED_SESSION_ID_RULE),
         this.redactionRulesDao.getRulesMatchFilter(
-            TEST_CONTEXT, new RedactionRuleFilter(Set.of())));
+            TEST_CONTEXT, new RedactionRuleFilter(Set.of(), true)));
+
+    // If no data types enabled, only expect the enabled session id rule
+    assertEquals(
+        List.of(),
+        this.redactionRulesDao.getRulesMatchFilter(
+            TEST_CONTEXT, new RedactionRuleFilter(Set.of(), false)));
 
     // If all are, we should return them - raw included (these are filtered later)
     assertEquals(
@@ -86,6 +92,7 @@ class RedactionRulesDaoTest {
                 Set.of(
                     ENABLED_SESSION_ID_RULE.getId(),
                     ENABLED_OBFUSCATING_REDACTION_RULE.getId(),
-                    ENABLED_RAW_REDACTION_RULE.getId()))));
+                    ENABLED_RAW_REDACTION_RULE.getId()),
+                true)));
   }
 }

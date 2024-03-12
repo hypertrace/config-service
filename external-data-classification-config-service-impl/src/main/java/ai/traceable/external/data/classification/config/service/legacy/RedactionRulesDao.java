@@ -46,7 +46,7 @@ class RedactionRulesDao {
       return false; // If the source rule is disabled, we should never use it
     }
     // Otherwise, we grab the session rules and those that have a corresponding enabled data type
-    if (filter.isAlwaysIncludeSessionIdentifier() && rule.getSessionIdentifier()) {
+    if (filter.isIncludeSessionIdentifier() && rule.getSessionIdentifier()) {
       return true;
     }
     return filter.getEnabledLegacyDataTypeIds().contains(rule.getId());
@@ -55,6 +55,6 @@ class RedactionRulesDao {
   @Value
   static class RedactionRuleFilter {
     Set<String> enabledLegacyDataTypeIds;
-    boolean alwaysIncludeSessionIdentifier = true;
+    boolean includeSessionIdentifier;
   }
 }

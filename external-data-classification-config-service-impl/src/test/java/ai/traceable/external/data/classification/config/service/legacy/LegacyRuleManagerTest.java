@@ -1,10 +1,14 @@
 package ai.traceable.external.data.classification.config.service.legacy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.external.data.classification.config.service.legacy.RedactionRulesDao.RedactionRuleFilter;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
+import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
@@ -24,6 +28,8 @@ class LegacyRuleManagerTest {
   @Mock RedactionRulesDao redactionRulesDao;
   @Mock RedactionRulesTranslator redactionRulesTranslator;
   @Mock InsightsServiceCoordinator insightsServiceCoordinator;
+  @Mock FeatureCachingClient featureCachingClient;
+  @Mock SemanticVersioningComparator semanticVersioningComparator;
   @InjectMocks LegacyRuleManager legacyRuleManager;
 
   @Test
@@ -33,7 +39,9 @@ class LegacyRuleManagerTest {
     List<DataType> expectedResults =
         List.of(DataType.newBuilder().setDataTypeId("test-rule").build());
     Set<String> enabledDataTypeIds = Set.of("test-rule");
-    RedactionRuleFilter expectedRuleFilter = new RedactionRuleFilter(enabledDataTypeIds);
+    when(this.featureCachingClient.isSessionIdentificationV2EnabledForTenant(testContext))
+        .thenReturn(true);
+    RedactionRuleFilter expectedRuleFilter = new RedactionRuleFilter(enabledDataTypeIds, false);
     when(this.redactionRulesDao.getRulesMatchFilter(testContext, expectedRuleFilter))
         .thenReturn(testRules);
     when(this.redactionRulesTranslator.translateRedactionRules(testRules))
@@ -42,7 +50,60 @@ class LegacyRuleManagerTest {
     assertEquals(
         expectedResults,
         this.legacyRuleManager.getDataTypesFromLegacyRedactionRules(
-            testContext, enabledDataTypeIds));
+            testContext,
+            enabledDataTypeIds,
+            GetDataClassificationConfigRequest.AgentCapabilities.newBuilder().build()));
+  }
+
+  @Test
+  void testSessionIdRedactionRules() {
+    RequestContext testContext = RequestContext.forTenantId("testSessionIdRedactionRules");
+    List<RedactionRule> testRules =
+        List.of(RedactionRule.newBuilder().setId("test-rule").setSessionIdentifier(true).build());
+    List<DataType> expectedResults =
+        List.of(DataType.newBuilder().setDataTypeId("test-rule").build());
+    Set<String> enabledDataTypeIds = Set.of("test-rule");
+    when(this.featureCachingClient.isSessionIdentificationV2EnabledForTenant(testContext))
+        .thenReturn(false);
+    when(this.semanticVersioningComparator.isVersionSupported(any(), any())).thenReturn(false);
+    RedactionRuleFilter expectedRuleFilter = new RedactionRuleFilter(enabledDataTypeIds, true);
+    when(this.redactionRulesDao.getRulesMatchFilter(testContext, expectedRuleFilter))
+        .thenReturn(testRules);
+    when(this.redactionRulesTranslator.translateRedactionRules(testRules))
+        .thenReturn(expectedResults);
+
+    assertEquals(
+        expectedResults,
+        this.legacyRuleManager.getDataTypesFromLegacyRedactionRules(
+            testContext,
+            enabledDataTypeIds,
+            GetDataClassificationConfigRequest.AgentCapabilities.newBuilder()
+                .addComponents(
+                    GetDataClassificationConfigRequest.Component.newBuilder()
+                        .setTraceablePlatformAgentVersion("1.2.3")
+                        .build())
+                .build()));
+
+    enabledDataTypeIds = Set.of("test-rule");
+    when(this.featureCachingClient.isSessionIdentificationV2EnabledForTenant(testContext))
+        .thenReturn(true);
+    when(this.semanticVersioningComparator.isVersionSupported(any(), any())).thenReturn(true);
+    expectedRuleFilter = new RedactionRuleFilter(enabledDataTypeIds, false);
+    when(this.redactionRulesDao.getRulesMatchFilter(testContext, expectedRuleFilter))
+        .thenReturn(List.of());
+    when(this.redactionRulesTranslator.translateRedactionRules(List.of())).thenReturn(List.of());
+
+    assertEquals(
+        List.of(),
+        this.legacyRuleManager.getDataTypesFromLegacyRedactionRules(
+            testContext,
+            enabledDataTypeIds,
+            GetDataClassificationConfigRequest.AgentCapabilities.newBuilder()
+                .addComponents(
+                    GetDataClassificationConfigRequest.Component.newBuilder()
+                        .setTraceablePlatformAgentVersion("1.2.3")
+                        .build())
+                .build()));
   }
 
   @Test
