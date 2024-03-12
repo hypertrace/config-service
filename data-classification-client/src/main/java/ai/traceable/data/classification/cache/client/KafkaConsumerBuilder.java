@@ -20,8 +20,7 @@ class KafkaConsumerBuilder {
       DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
     Map<String, Object> deserConfig =
         Collections.singletonMap(
-            SCHEMA_REGISTRY_URL_PATH,
-            dataClassificationInfoCachingClientConfig.getSchemaRegistryUrl());
+            SCHEMA_REGISTRY_URL_PATH, config.getConfig(SCHEMA_REGISTRY_URL_PATH));
     this.kafkaConsumer =
         org.hypertrace.core.kafka.event.listener.KafkaConsumerUtils.getKafkaConsumer(
             config,

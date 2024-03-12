@@ -2,6 +2,7 @@ package ai.traceable.data.classification.cache.config;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -20,9 +21,6 @@ public class DataClassificationInfoCachingClientConfig {
       "data.classification.info.cache.timeout.duration";
   private static final String DATA_CLASSIFICATION_INFO_CACHE_NAME =
       "data.classification.info.cache.name";
-  private static final String CONSUMER_NAME_PATH = "data.classification.info.cache.consumer.name";
-  private static final String SCHEMA_REGISTRY_URL_PATH =
-      "data.classification.info.cache.schema.registry.url";
 
   private static final int DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE = 1000;
   private static final int DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_THREAD_POOL_SIZE = 1;
@@ -32,9 +30,8 @@ public class DataClassificationInfoCachingClientConfig {
       Duration.ofMinutes(20);
   private static final Duration DEFAULT_DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION =
       Duration.ofSeconds(10);
-  private static final String DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_NAME =
-      "data-classification-info-cache";
 
+  private Optional<Config> kafkaConfig;
   private int maxSize;
   private int maxThreadPoolSize;
   private Duration timeoutDuration;
@@ -42,15 +39,11 @@ public class DataClassificationInfoCachingClientConfig {
   private Duration expirationDuration;
   private String dataClassificationInfoCacheName;
   private String dataClassificationInfoCacheThreadFactoryName;
-  private String consumerName;
-  private String schemaRegistryUrl;
 
-  public static DataClassificationInfoCachingClientConfig from(Config config) {
-    String dataClassificationInfoCacheName =
-        config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_NAME)
-            ? config.getString(DATA_CLASSIFICATION_INFO_CACHE_NAME)
-            : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_NAME;
+  public static DataClassificationInfoCachingClientConfig from(Config config, Config kafkaConfig) {
+    String dataClassificationInfoCacheName = config.getString(DATA_CLASSIFICATION_INFO_CACHE_NAME);
     return new DataClassificationInfoCachingClientConfig(
+        Optional.ofNullable(kafkaConfig),
         config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             ? config.getInt(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE,
@@ -67,9 +60,30 @@ public class DataClassificationInfoCachingClientConfig {
             ? config.getDuration(DATA_CLASSIFICATION_INFO_CACHE_EXPIRATION_DURATION)
             : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_EXPIRATION_DURATION,
         dataClassificationInfoCacheName,
-        getThreadFactoryName(dataClassificationInfoCacheName),
-        config.getString(CONSUMER_NAME_PATH),
-        config.getString(SCHEMA_REGISTRY_URL_PATH));
+        getThreadFactoryName(dataClassificationInfoCacheName));
+  }
+
+  public static DataClassificationInfoCachingClientConfig from(Config config) {
+    String dataClassificationInfoCacheName = config.getString(DATA_CLASSIFICATION_INFO_CACHE_NAME);
+    return new DataClassificationInfoCachingClientConfig(
+        Optional.empty(),
+        config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
+            ? config.getInt(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
+            : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE,
+        config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_MAX_THREAD_POOL_SIZE)
+            ? config.getInt(DATA_CLASSIFICATION_INFO_CACHE_MAX_THREAD_POOL_SIZE)
+            : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_THREAD_POOL_SIZE,
+        config.hasPath(DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION)
+            ? config.getDuration(DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION)
+            : DEFAULT_DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION,
+        config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_REFRESH_DURATION)
+            ? config.getDuration(DATA_CLASSIFICATION_INFO_CACHE_REFRESH_DURATION)
+            : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_REFRESH_DURATION,
+        config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_EXPIRATION_DURATION)
+            ? config.getDuration(DATA_CLASSIFICATION_INFO_CACHE_EXPIRATION_DURATION)
+            : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_EXPIRATION_DURATION,
+        dataClassificationInfoCacheName,
+        getThreadFactoryName(dataClassificationInfoCacheName));
   }
 
   private static String getThreadFactoryName(String dataClassificationInfoCacheName) {

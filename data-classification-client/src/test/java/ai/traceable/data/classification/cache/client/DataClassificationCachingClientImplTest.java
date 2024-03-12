@@ -36,15 +36,22 @@ class DataClassificationCachingClientImplTest {
         DataClassificationInfoCachingClientConfig.from(
             ConfigFactory.parseMap(
                 Map.of(
-                    "data.classification.info.cache.max.size", 1000,
-                    "data.classification.info.cache.max.thread.pool.size", 2,
-                    "data.classification.info.cache.refresh.duration", 10,
-                    "data.classification.info.cache.expiration.duration", 20,
-                    "data.classification.info.cache.timeout.duration", 5,
+                    "data.classification.info.cache.name",
+                    "dataClassificationInfoCache",
+                    "data.classification.info.cache.max.size",
+                    1000,
+                    "data.classification.info.cache.max.thread.pool.size",
+                    2,
+                    "data.classification.info.cache.refresh.duration",
+                    10,
+                    "data.classification.info.cache.expiration.duration",
+                    20,
+                    "data.classification.info.cache.timeout.duration",
+                    5,
                     "data.classification.info.cache.consumer.name",
-                        "data-classification-info-cache",
+                    "data-classification-info-cache",
                     "data.classification.info.cache.schema.registry.url",
-                        "http://schema-registry-service:8081")));
+                    "http://schema-registry-service:8081")));
 
     DataType dataType =
         DataType.newBuilder()

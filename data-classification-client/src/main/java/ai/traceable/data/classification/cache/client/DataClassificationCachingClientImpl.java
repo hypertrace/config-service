@@ -34,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class DataClassificationCachingClientImpl implements DataClassificationClient {
+  private static final String CONSUMER_NAME_PATH = "consumer.name";
   private final DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig;
   private final LoadingCache<ContextualKey<Optional<DataTypeFilter>>, DataClassificationInfo>
       dataClassificationInfoCache;
@@ -41,25 +42,17 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
       dataClassificationConfigServiceBlockingStub;
 
   public DataClassificationCachingClientImpl(
-      Config config,
       DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
           dataClassificationConfigServiceBlockingStub,
       DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
     this.dataClassificationInfoCachingClientConfig = dataClassificationInfoCachingClientConfig;
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
     this.dataClassificationInfoCache = buildCache();
-    registerCacheMetrices();
-    addKafkaEventListener(config, this::updateCacheBasedOnEvent);
-  }
-
-  public DataClassificationCachingClientImpl(
-      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
-          dataClassificationConfigServiceBlockingStub,
-      DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
-    this.dataClassificationInfoCachingClientConfig = dataClassificationInfoCachingClientConfig;
-    this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
-    this.dataClassificationInfoCache = buildCache();
-    registerCacheMetrices();
+    registerCacheMetrics();
+    this.dataClassificationInfoCachingClientConfig
+        .getKafkaConfig()
+        .ifPresent(
+            kafkaConfig -> addKafkaEventListener(kafkaConfig, this::updateCacheBasedOnEvent));
   }
 
   @NotNull
@@ -78,7 +71,7 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
                     this.buildDataClassificationThreadFactory())));
   }
 
-  private void registerCacheMetrices() {
+  private void registerCacheMetrics() {
     PlatformMetricsRegistry.registerCacheTrackingOccupancy(
         this.dataClassificationInfoCachingClientConfig.getDataClassificationInfoCacheName(),
         this.dataClassificationInfoCache,
@@ -152,7 +145,7 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
     return new KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>()
         .registerCallback(callback)
         .build(
-            this.dataClassificationInfoCachingClientConfig.getConsumerName(),
+            config.getString(CONSUMER_NAME_PATH),
             config,
             new KafkaConsumerBuilder(config, this.dataClassificationInfoCachingClientConfig)
                 .buildKafkaConsumer());
