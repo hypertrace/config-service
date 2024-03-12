@@ -12,6 +12,7 @@ import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.awt.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -53,14 +54,10 @@ public class LabelApplicationRuleConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    Config config =
-        ConfigFactory.parseMap(
-            Map.of(
-                LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG,
-                Map.of(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT, 2)));
     mockGenericConfigService
         .addService(
-            new LabelApplicationRuleConfigServiceImpl(channel, config, configChangeEventGenerator))
+            new LabelApplicationRuleConfigServiceImpl(
+                channel, buildMockConfig(), configChangeEventGenerator))
         .start();
     labelApplicationRuleConfigServiceBlockingStub =
         LabelApplicationRuleConfigServiceGrpc.newBlockingStub(channel);
@@ -109,7 +106,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
   void getLabelApplicationRules() {
     LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
     LabelApplicationRule compositeRule = createCompositeRule();
-    Set<LabelApplicationRule> expectedRules = Set.of(simpleRule, compositeRule);
+    LabelApplicationRule mockLabelRule = buildMockLabelRule();
+    Set<LabelApplicationRule> expectedRules = Set.of(simpleRule, compositeRule, mockLabelRule);
     GetLabelApplicationRulesResponse response =
         labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRules(
             GetLabelApplicationRulesRequest.getDefaultInstance());
@@ -146,6 +144,19 @@ public class LabelApplicationRuleConfigServiceImplTest {
               labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(request);
             });
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+
+    // throw exception if we try to update any system rule
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(
+                  UpdateLabelApplicationRuleRequest.newBuilder()
+                      .setId("70d6b39a-dca7-4bf0-b98c-d5c5d7ff0a3a")
+                      .setData(expectedData)
+                      .build());
+            });
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
   @Test
@@ -177,6 +188,18 @@ public class LabelApplicationRuleConfigServiceImplTest {
               labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
             });
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+
+    // throw exception if we try to delete a system label application rule
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(
+                  DeleteLabelApplicationRuleRequest.newBuilder()
+                      .setId("70d6b39a-dca7-4bf0-b98c-d5c5d7ff0a3a")
+                      .build());
+            });
+    assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
   }
 
   private LabelApplicationRuleData buildCompositeRuleData() {
@@ -300,6 +323,69 @@ public class LabelApplicationRuleConfigServiceImplTest {
         .addEntityTypes("API")
         .setOperation(Operation.OPERATION_MERGE)
         .setDynamicLabelKey("key")
+        .build();
+  }
+
+  private Config buildMockConfig() {
+    return ConfigFactory.parseMap(
+        Map.of(
+            LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG,
+            Map.of(
+                MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT,
+                2,
+                "system.label.application.rules",
+                List.of(
+                    Map.of(
+                        "id",
+                        "70d6b39a-dca7-4bf0-b98c-d5c5d7ff0a3a",
+                        "data",
+                        Map.of(
+                            "name",
+                            "System label rule",
+                            "enabled",
+                            true,
+                            "matching_condition",
+                            Map.of(
+                                "leaf_condition",
+                                Map.of(
+                                    "key_condition",
+                                    Map.of("operator", "OPERATOR_EQUALS", "value", "key"),
+                                    "string_condition",
+                                    Map.of("operator", "OPERATOR_EQUALS", "value", "value"))),
+                            "label_action",
+                            Map.of(
+                                "entity_types",
+                                List.of("API"),
+                                "operation",
+                                "OPERATION_MERGE",
+                                "static_labels",
+                                Map.of("ids", List.of("labelId")))))))));
+  }
+
+  private LabelApplicationRule buildMockLabelRule() {
+    return LabelApplicationRule.newBuilder()
+        .setId("70d6b39a-dca7-4bf0-b98c-d5c5d7ff0a3a")
+        .setData(
+            LabelApplicationRuleData.newBuilder()
+                .setName("System label rule")
+                .setEnabled(true)
+                .setMatchingCondition(
+                    Condition.newBuilder()
+                        .setLeafCondition(
+                            LeafCondition.newBuilder()
+                                .setKeyCondition(
+                                    StringCondition.newBuilder()
+                                        .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+                                        .setValue("key"))
+                                .setStringCondition(
+                                    StringCondition.newBuilder()
+                                        .setOperator(StringCondition.Operator.OPERATOR_EQUALS)
+                                        .setValue("value"))))
+                .setLabelAction(
+                    Action.newBuilder()
+                        .addEntityTypes("API")
+                        .setOperation(Operation.OPERATION_MERGE)
+                        .setStaticLabels(Action.StaticLabels.newBuilder().addIds("labelId"))))
         .build();
   }
 }
