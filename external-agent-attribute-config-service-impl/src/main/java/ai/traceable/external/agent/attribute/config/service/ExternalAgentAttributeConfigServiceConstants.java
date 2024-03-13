@@ -1,4 +1,4 @@
-package ai.traceable.config.utils;
+package ai.traceable.external.agent.attribute.config.service;
 
 public class ExternalAgentAttributeConfigServiceConstants {
   public static final String PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION =

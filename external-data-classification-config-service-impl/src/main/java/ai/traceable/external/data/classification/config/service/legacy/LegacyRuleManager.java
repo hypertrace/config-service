@@ -1,12 +1,7 @@
 package ai.traceable.external.data.classification.config.service.legacy;
 
-import static ai.traceable.config.utils.ExternalAgentAttributeConfigServiceConstants.JSON_PATH_EXTRACTION_FIX_MIN_TPA_VERSION;
-
-import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
-import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.external.data.classification.config.service.legacy.RedactionRulesDao.RedactionRuleFilter;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
-import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import ai.traceable.sensitivedata.config.service.v1.RedactionRule;
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
@@ -25,21 +20,14 @@ public class LegacyRuleManager {
       "legacy-datatype-sensitive-headers-id";
 
   private final RedactionRulesDao redactionRulesDao;
-  private final FeatureCachingClient featureCachingClient;
-  private final SemanticVersioningComparator semanticVersioningComparator;
   private final RedactionRulesTranslator redactionRulesTranslator;
   private final InsightsServiceCoordinator insightsServiceCoordinator;
 
   public List<DataType> getDataTypesFromLegacyRedactionRules(
-      RequestContext requestContext,
-      Set<String> enabledLegacyDataTypeIds,
-      GetDataClassificationConfigRequest.AgentCapabilities agentCapabilities) {
+      RequestContext requestContext, Set<String> enabledLegacyDataTypeIds) {
     List<RedactionRule> redactionRules =
         this.redactionRulesDao.getRulesMatchFilter(
-            requestContext,
-            new RedactionRuleFilter(
-                enabledLegacyDataTypeIds,
-                !isSessionIdentificationV2SupportedByAgent(requestContext, agentCapabilities)));
+            requestContext, new RedactionRuleFilter(enabledLegacyDataTypeIds));
 
     return this.redactionRulesTranslator.translateRedactionRules(redactionRules);
   }
@@ -58,17 +46,5 @@ public class LegacyRuleManager {
         .translateDataTypeForSensitiveHeaders(sensitiveHeaderParameters, redactionStrategy)
         .map(List::of)
         .orElseGet(Collections::emptyList);
-  }
-
-  public boolean isSessionIdentificationV2SupportedByAgent(
-      RequestContext requestContext,
-      GetDataClassificationConfigRequest.AgentCapabilities agentCapabilities) {
-    return featureCachingClient.isSessionIdentificationV2EnabledForTenant(requestContext)
-        && agentCapabilities.getComponentsList().stream()
-            .map(GetDataClassificationConfigRequest.Component::getTraceablePlatformAgentVersion)
-            .allMatch(
-                tpaVersion ->
-                    semanticVersioningComparator.isVersionSupported(
-                        tpaVersion, JSON_PATH_EXTRACTION_FIX_MIN_TPA_VERSION));
   }
 }

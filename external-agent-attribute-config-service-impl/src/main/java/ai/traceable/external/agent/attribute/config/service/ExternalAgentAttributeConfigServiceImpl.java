@@ -1,7 +1,7 @@
 package ai.traceable.external.agent.attribute.config.service;
 
-import static ai.traceable.config.utils.ExternalAgentAttributeConfigServiceConstants.JSON_PATH_EXTRACTION_FIX_MIN_TPA_VERSION;
-import static ai.traceable.config.utils.ExternalAgentAttributeConfigServiceConstants.PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION;
+import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.JSON_PATH_EXTRACTION_FIX_MIN_TPA_VERSION;
+import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceBlockingStub;

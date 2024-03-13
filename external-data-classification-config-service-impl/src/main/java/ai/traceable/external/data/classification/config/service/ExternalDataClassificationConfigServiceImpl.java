@@ -124,9 +124,7 @@ class ExternalDataClassificationConfigServiceImpl
     customDataTypes
         .addAll(
             this.legacyRuleManager.getDataTypesFromLegacyRedactionRules(
-                requestContext,
-                enabledLegacyDataTypeIds,
-                requestKey.getData().getAgentCapabilities()))
+                requestContext, enabledLegacyDataTypeIds))
         .addAll(
             this.platformDataTypeManager.getDataTypes(
                 requestContext, requestedEnvironment, request.getPredicateSupportLevel()));
