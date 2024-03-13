@@ -13,6 +13,14 @@ public interface AnomalyDetectionConfigManager {
       AnomalyConfigScope configScope,
       GetAnomalyDetectionConfigsFilter filter);
 
+  ScopedAnomalyDetectionConfig getGlobalResolvedScopedAnomalyDetectionConfig(
+      RequestContext requestContext,
+      AnomalyConfigScope configScope,
+      GetAnomalyDetectionConfigsFilter filter);
+
+  List<ScopedAnomalyDetectionConfig> getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+      RequestContext requestContext, GetAnomalyDetectionConfigsFilter filter);
+
   ScopedAnomalyDetectionConfig updateScopedAnomalyDetectionConfig(
       RequestContext requestContext, ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig);
 

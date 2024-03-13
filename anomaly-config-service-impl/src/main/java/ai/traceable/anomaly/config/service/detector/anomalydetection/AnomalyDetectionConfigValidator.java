@@ -17,6 +17,7 @@ import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetGlobalResolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
@@ -62,6 +63,14 @@ public class AnomalyDetectionConfigValidator {
     if (!request.hasConfigScope()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "GetScopedAnomalyDetectionConfigRequest should have a valid config scope.");
+    }
+    return anomalyConfigValidator.validate(request.getConfigScope(), true);
+  }
+
+  public Status validate(GetGlobalResolvedScopedAnomalyDetectionConfigRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GetGlobalResolvedScopedAnomalyDetectionConfigRequest should have a valid config scope.");
     }
     return anomalyConfigValidator.validate(request.getConfigScope(), true);
   }

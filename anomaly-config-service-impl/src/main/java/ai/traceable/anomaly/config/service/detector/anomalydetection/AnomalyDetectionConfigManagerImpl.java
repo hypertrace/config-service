@@ -6,12 +6,15 @@ import static ai.traceable.anomaly.config.service.detector.anomalydetection.Anom
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +40,7 @@ public class AnomalyDetectionConfigManagerImpl
 
   private final AnomalyDetectionConfigHandler anomalyDetectionConfigHandler;
   private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
+  private final GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private final List<AnomalyDetectionConfig> defaultModsecConfigs;
   private final List<AnomalyDetectionConfig> defaultApiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
@@ -48,7 +53,8 @@ public class AnomalyDetectionConfigManagerImpl
       AnomalyDetectionConfigHandler anomalyDetectionConfigHandler,
       AnomalyConfigScopeUtils anomalyConfigScopeUtils,
       DetectorConfigServiceConfig config,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      GlobalAnomalyConfigStatusManager anomalyConfigStatusManager) {
     super(
         configServiceBlockingStub,
         ANOMALY_DETECTION_CONFIG_NAMESPACE,
@@ -62,6 +68,7 @@ public class AnomalyDetectionConfigManagerImpl
         config.getDefaultSessionDefinitionDetectionConfigs();
     this.defaultCustomRulesDetectionConfigs = config.getDefaultCustomRulesDetectionConfigs();
     this.defaultVolumetricDetectionConfigs = config.getDefaultVolumetricDetectionConfigs();
+    this.globalAnomalyConfigStatusManager = anomalyConfigStatusManager;
   }
 
   @Override
@@ -76,6 +83,50 @@ public class AnomalyDetectionConfigManagerImpl
         anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
             getTenantId(requestContext), configScope),
         filter);
+  }
+
+  @Override
+  public ScopedAnomalyDetectionConfig getGlobalResolvedScopedAnomalyDetectionConfig(
+      RequestContext requestContext,
+      AnomalyConfigScope configScope,
+      GetAnomalyDetectionConfigsFilter filter) {
+    Map<String, ScopedAnomalyDetectionConfig> configMap = fetchConfigMap(requestContext);
+    ScopedAnomalyDetectionConfig resolvedConfig =
+        getResolvedConfig(
+            configMap,
+            configScope,
+            anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+                getTenantId(requestContext), configScope),
+            filter);
+
+    Optional<ScopedAnomalyConfigStatus> globalConfigStatus =
+        Optional.ofNullable(
+            globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+                requestContext, configScope));
+
+    return getResolvedConfig(resolvedConfig, globalConfigStatus);
+  }
+
+  @Override
+  public List<ScopedAnomalyDetectionConfig> getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+      RequestContext requestContext, GetAnomalyDetectionConfigsFilter filter) {
+    List<ScopedAnomalyConfigStatus> globalConfigStatuses =
+        globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext);
+
+    Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> globalConfigStatusMap =
+        globalConfigStatuses.stream()
+            .collect(
+                Collectors.toMap(ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
+
+    return getResolvedConfigs(fetchConfigMap(requestContext), getTenantId(requestContext), filter)
+        .stream()
+        .map(
+            resolvedConfig ->
+                getResolvedConfig(
+                    resolvedConfig,
+                    Optional.ofNullable(
+                        globalConfigStatusMap.get(resolvedConfig.getConfigScope()))))
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -280,5 +331,45 @@ public class AnomalyDetectionConfigManagerImpl
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get tenant id from request context"));
+  }
+
+  /**
+   * This method is used to get the global resolved configurations for anomaly detection configs.
+   * For more details, refer to the wiki:
+   * https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1812234269/Internal+Excluded+Security+events
+   */
+  public ScopedAnomalyDetectionConfig getResolvedConfig(
+      ScopedAnomalyDetectionConfig resolvedConfig,
+      Optional<ScopedAnomalyConfigStatus> globalConfigStatus) {
+
+    // If global config is disabled, then disable all the individual anomaly detection configs.
+    if (globalConfigStatus
+        .flatMap(status -> Optional.of(status.getConfigStatus().getDisabled()))
+        .orElse(false)) {
+      List<AnomalyDetectionConfig> resolvedAnomalyDetectionConfigs =
+          disableAnomalyDetectionConfigs(resolvedConfig.getAnomalyDetectionConfigsList());
+
+      return resolvedConfig.toBuilder()
+          .clearAnomalyDetectionConfigs()
+          .addAllAnomalyDetectionConfigs(resolvedAnomalyDetectionConfigs)
+          .build();
+    }
+
+    return resolvedConfig;
+  }
+
+  private List<AnomalyDetectionConfig> disableAnomalyDetectionConfigs(
+      List<AnomalyDetectionConfig> detectionConfigs) {
+    return detectionConfigs.stream()
+        .map(
+            config -> {
+              if (!config.getConfigStatus().getDisabled()) {
+                AnomalyConfigStatusChange disableConfigStatus =
+                    config.getConfigStatus().toBuilder().setDisabled(true).build();
+                return config.toBuilder().setConfigStatus(disableConfigStatus).build();
+              }
+              return config;
+            })
+        .collect(Collectors.toList());
   }
 }

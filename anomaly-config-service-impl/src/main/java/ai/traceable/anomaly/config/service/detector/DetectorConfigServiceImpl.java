@@ -5,10 +5,14 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDete
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.DeleteScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.detector.GetAllGlobalResolvedScopedAnomalyDetectionConfigsRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetectionConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetectionConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllUnresolvedScopedAnomalyDetectionConfigsRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetAllUnresolvedScopedAnomalyDetectionConfigsResponse;
+import ai.traceable.anomaly.config.service.v1.detector.GetGlobalResolvedScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.detector.GetGlobalResolvedScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigResponse;
 import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
@@ -54,6 +58,54 @@ public class DetectorConfigServiceImpl
               .setScopedAnomalyDetectionConfig(
                   anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
                       RequestContext.CURRENT.get(), request.getConfigScope(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getGlobalResolvedScopedAnomalyDetectionConfig(
+      GetGlobalResolvedScopedAnomalyDetectionConfigRequest request,
+      StreamObserver<GetGlobalResolvedScopedAnomalyDetectionConfigResponse> responseObserver) {
+    Status status = configValidator.validate(request);
+
+    if (!status.isOk()) {
+      log.error(
+          "GetGlobalResolvedScopedAnomalyDetectionConfigRequest is not valid: {}",
+          status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    try {
+      GetGlobalResolvedScopedAnomalyDetectionConfigResponse response =
+          GetGlobalResolvedScopedAnomalyDetectionConfigResponse.newBuilder()
+              .setScopedAnomalyDetectionConfig(
+                  anomalyDetectionConfigManager.getGlobalResolvedScopedAnomalyDetectionConfig(
+                      RequestContext.CURRENT.get(), request.getConfigScope(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+      GetAllGlobalResolvedScopedAnomalyDetectionConfigsRequest request,
+      StreamObserver<GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse> responseObserver) {
+    try {
+      GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse response =
+          GetAllGlobalResolvedScopedAnomalyDetectionConfigsResponse.newBuilder()
+              .addAllScopedAnomalyDetectionConfigs(
+                  anomalyDetectionConfigManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(
+                      RequestContext.CURRENT.get(), request.getFilter()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

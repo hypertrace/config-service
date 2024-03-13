@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -17,13 +19,9 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
-import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.*;
 import ai.traceable.anomaly.config.service.v1.detector.*;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -35,6 +33,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -86,6 +85,9 @@ public class AnomalyDetectionConfigManagerTest {
   private static final String RESOLVED_DETECTION_CONFIGS_FILE_PATH =
       DETECTOR_CONFIG_DIRECTORY + "resolved-detection-configs.conf";
 
+  private static final String GLOBAL_RESOLVED_DETECTION_CONFIGS_FILE_PATH =
+      DETECTOR_CONFIG_DIRECTORY + "global-resolved-detection-configs.conf";
+
   private static final String CUSTOMER_SCOPE_CONFIG = "customerScopeConfig";
   private static final String ENVIRONMENT_SCOPE_CONFIG = "environmentScopeConfig";
   private static final String SERVICE_SCOPE_CONFIG = "serviceScopeConfig";
@@ -95,8 +97,12 @@ public class AnomalyDetectionConfigManagerTest {
       ConfigFactory.parseResources(SCOPED_DETECTION_CONFIGS_FILE_PATH);
   private static final Config resolvedDetectionConfigs =
       ConfigFactory.parseResources(RESOLVED_DETECTION_CONFIGS_FILE_PATH);
+  private static final Config globalResolvedDetectionConfigs =
+      ConfigFactory.parseResources(GLOBAL_RESOLVED_DETECTION_CONFIGS_FILE_PATH);
   private DetectorConfigServiceConfig detectorConfigServiceConfig;
   private AnomalyConfigScopeUtils anomalyConfigScopeUtils;
+
+  private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
 
   @BeforeEach
   public void setup() throws IOException {
@@ -112,6 +118,7 @@ public class AnomalyDetectionConfigManagerTest {
     when(detectorConfigServiceConfig.getDefaultModsecDetectionConfigs()).thenReturn(List.of());
     when(detectorConfigServiceConfig.getDefaultApiDefinitionDetectionConfigs())
         .thenReturn(List.of());
+    globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
@@ -119,7 +126,8 @@ public class AnomalyDetectionConfigManagerTest {
                 detectionConfigConverter,
                 anomalyConfigScopeUtils,
                 detectorConfigServiceConfig,
-                mock(ConfigChangeEventGenerator.class)));
+                mock(ConfigChangeEventGenerator.class),
+                globalAnomalyConfigStatusManager));
   }
 
   @AfterEach
@@ -220,6 +228,152 @@ public class AnomalyDetectionConfigManagerTest {
   }
 
   @Test
+  void testGetGlobalResolvedScopedAnomalyDetection() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig;
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus =
+        ScopedAnomalyConfigStatus.newBuilder()
+            .setConfigStatus(
+                AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(true).build())
+            .build();
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            any(RequestContext.class), any(AnomalyConfigScope.class)))
+        .thenReturn(scopedAnomalyConfigStatus);
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            configManager.getGlobalResolvedScopedAnomalyDetectionConfig(
+                requestContext,
+                AnomalyConfigScope.newBuilder()
+                    .setParamScope(AnomalyParamScope.getDefaultInstance())
+                    .build(),
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance()));
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    ScopedAnomalyDetectionConfig customerScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            globalResolvedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig environmentScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            globalResolvedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig serviceScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            globalResolvedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig apiScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(globalResolvedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+
+    scopedAnomalyDetectionConfig =
+        configManager.getGlobalResolvedScopedAnomalyDetectionConfig(
+            requestContext,
+            customerConfigScope,
+            GetAnomalyDetectionConfigsFilter.getDefaultInstance());
+    assertEquals(customerScopeResolvedConfig, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        configManager.getGlobalResolvedScopedAnomalyDetectionConfig(
+            requestContext,
+            environmentConfigScope,
+            GetAnomalyDetectionConfigsFilter.getDefaultInstance());
+    assertEquals(environmentScopeResolvedConfig, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        configManager.getGlobalResolvedScopedAnomalyDetectionConfig(
+            requestContext,
+            serviceConfigScope,
+            GetAnomalyDetectionConfigsFilter.getDefaultInstance());
+    assertEquals(serviceScopeResolvedConfig, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        configManager.getGlobalResolvedScopedAnomalyDetectionConfig(
+            requestContext, apiConfigScope, GetAnomalyDetectionConfigsFilter.getDefaultInstance());
+    assertEquals(apiScopeResolvedConfig, scopedAnomalyDetectionConfig);
+  }
+
+  @Test
+  void testGetAllGlobalResolvedScopedAnomalyDetection() throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    List<ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigs;
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig;
+    GetAnomalyDetectionConfigsFilter filter = GetAnomalyDetectionConfigsFilter.getDefaultInstance();
+    when(globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
+            any(RequestContext.class)))
+        .thenReturn(createScopedAnomalyConfigStatusList());
+
+    scopedAnomalyDetectionConfigs =
+        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
+    assertEquals(1, scopedAnomalyDetectionConfigs.size());
+    assertEquals(customerConfigScope, scopedAnomalyDetectionConfigs.get(0).getConfigScope());
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    scopedAnomalyDetectionConfigs =
+        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
+    List<AnomalyConfigScope> configScopes =
+        scopedAnomalyDetectionConfigs.stream()
+            .map(ScopedAnomalyDetectionConfig::getConfigScope)
+            .collect(Collectors.toList());
+
+    assertEquals(4, scopedAnomalyDetectionConfigs.size());
+    assertTrue(configScopes.contains(customerConfigScope));
+
+    scopedAnomalyDetectionConfig =
+        getScopedAnomalyDetectionConfig(scopedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
+
+    ScopedAnomalyDetectionConfig customerScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            globalResolvedDetectionConfigs.getConfig(CUSTOMER_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig environmentScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            globalResolvedDetectionConfigs.getConfig(ENVIRONMENT_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig serviceScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(
+            globalResolvedDetectionConfigs.getConfig(SERVICE_SCOPE_CONFIG));
+    ScopedAnomalyDetectionConfig apiScopeResolvedConfig =
+        getScopedAnomalyDetectionConfig(globalResolvedDetectionConfigs.getConfig(API_SCOPE_CONFIG));
+
+    scopedAnomalyDetectionConfigs =
+        configManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(requestContext, filter);
+    assertEquals(4, scopedAnomalyDetectionConfigs.size());
+
+    assertEquals(
+        customerScopeResolvedConfig, getConfig(customerConfigScope, scopedAnomalyDetectionConfigs));
+    assertEquals(
+        environmentScopeResolvedConfig,
+        getConfig(environmentConfigScope, scopedAnomalyDetectionConfigs));
+    assertEquals(
+        serviceScopeResolvedConfig, getConfig(serviceConfigScope, scopedAnomalyDetectionConfigs));
+    assertEquals(apiScopeResolvedConfig, getConfig(apiConfigScope, scopedAnomalyDetectionConfigs));
+  }
+
+  @Test
   void testGetAllDetectionConfigs() throws InvalidProtocolBufferException {
     String tenantId = "tenant";
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
@@ -304,7 +458,8 @@ public class AnomalyDetectionConfigManagerTest {
             detectionConfigConverter,
             anomalyConfigScopeUtils,
             config,
-            mock(ConfigChangeEventGenerator.class));
+            mock(ConfigChangeEventGenerator.class),
+            globalAnomalyConfigStatusManager);
 
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());
@@ -819,5 +974,34 @@ public class AnomalyDetectionConfigManagerTest {
                     .equals(configCase))
         .findFirst()
         .orElseThrow();
+  }
+
+  public List<ScopedAnomalyConfigStatus> createScopedAnomalyConfigStatusList() {
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus1 =
+        ScopedAnomalyConfigStatus.newBuilder()
+            .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setConfigScope(apiConfigScope)
+            .build();
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus2 =
+        ScopedAnomalyConfigStatus.newBuilder()
+            .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setConfigScope(serviceConfigScope)
+            .build();
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus3 =
+        ScopedAnomalyConfigStatus.newBuilder()
+            .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setConfigScope(environmentConfigScope)
+            .build();
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus4 =
+        ScopedAnomalyConfigStatus.newBuilder()
+            .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setConfigScope(customerConfigScope)
+            .build();
+
+    return Arrays.asList(
+        scopedAnomalyConfigStatus1,
+        scopedAnomalyConfigStatus2,
+        scopedAnomalyConfigStatus3,
+        scopedAnomalyConfigStatus4);
   }
 }
