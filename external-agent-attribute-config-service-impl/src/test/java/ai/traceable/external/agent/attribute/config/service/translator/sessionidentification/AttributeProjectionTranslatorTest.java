@@ -7,6 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.translator.TestUtils
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.EachMatchingProjector;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import com.google.inject.Guice;
 import com.google.protobuf.util.JsonFormat;
@@ -27,7 +28,9 @@ class AttributeProjectionTranslatorTest {
     SessionIdentificationRule rule =
         TestUtils.getSessionIdentificationRule(
             "session_identification/attribute_projection/partial_input_for_request.json");
-    List<Projector> projectors = translator.translateForRequest(rule.getTokenRules(0));
+    List<Projector> projectors =
+        translator.translateForRequest(
+            rule.getTokenRules(0), RuleCreationSource.RULE_CREATION_SOURCE_UNSPECIFIED);
 
     EachMatchingProjector.Builder eachMatchingProjector = EachMatchingProjector.newBuilder();
     PARSER.merge(

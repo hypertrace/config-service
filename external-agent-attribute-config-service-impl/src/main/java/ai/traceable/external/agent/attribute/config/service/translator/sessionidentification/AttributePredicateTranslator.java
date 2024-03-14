@@ -8,6 +8,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
 import ai.traceable.sessionidentification.config.service.v1.Predicate.AttributePredicate;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import io.grpc.Status;
 import java.util.List;
 import javax.inject.Inject;
@@ -30,7 +31,8 @@ public class AttributePredicateTranslator {
                 attributeProjection.getAttributeKeyMatchCondition(),
                 valueProjectionsTranslator.translateValueProjections(
                     attributeProjection.getValueProjectionsInOrderList(),
-                    addMatchConditionForPredicate(attributePredicate)));
+                    addMatchConditionForPredicate(attributePredicate)),
+                RuleCreationSource.RULE_CREATION_SOURCE_UNSPECIFIED);
 
       case RESPONSE:
         return responseLocationTranslatorLookup

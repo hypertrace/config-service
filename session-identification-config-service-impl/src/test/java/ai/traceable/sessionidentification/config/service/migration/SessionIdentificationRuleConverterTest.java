@@ -15,6 +15,7 @@ import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyL
 import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleScope;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleStatus;
@@ -44,7 +45,9 @@ class SessionIdentificationRuleConverterTest {
         SessionIdentificationRule.newBuilder()
             .setId("old-rule-id")
             .setName("old rule")
-            .setStatus(SessionIdentificationRuleStatus.getDefaultInstance())
+            .setStatus(
+                SessionIdentificationRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleCreationSource.RULE_CREATION_SOURCE_OLD_API))
             .addTokenRules(
                 SessionTokenRule.newBuilder()
                     .setRequestSessionTokenDetails(
@@ -87,7 +90,9 @@ class SessionIdentificationRuleConverterTest {
         SessionIdentificationRule.newBuilder()
             .setId("old-rule-id")
             .setName("old rule")
-            .setStatus(SessionIdentificationRuleStatus.getDefaultInstance())
+            .setStatus(
+                SessionIdentificationRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleCreationSource.RULE_CREATION_SOURCE_OLD_API))
             .addTokenRules(
                 SessionTokenRule.newBuilder()
                     .setRequestSessionTokenDetails(
@@ -134,7 +139,9 @@ class SessionIdentificationRuleConverterTest {
         SessionIdentificationRule.newBuilder()
             .setId("old-rule-id")
             .setName("old rule")
-            .setStatus(SessionIdentificationRuleStatus.getDefaultInstance())
+            .setStatus(
+                SessionIdentificationRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleCreationSource.RULE_CREATION_SOURCE_OLD_API))
             .setScope(SessionIdentificationRuleScope.newBuilder().addUrlMatchRegexes("url-1"))
             .addTokenRules(
                 SessionTokenRule.newBuilder()

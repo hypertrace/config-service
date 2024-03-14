@@ -10,6 +10,8 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
 import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -19,6 +21,7 @@ import lombok.AllArgsConstructor;
 public class HeaderLocationTranslator
     implements ResponseLocationTranslator, RequestLocationTranslator {
   private final MatchConditionTranslator matchConditionTranslator;
+  private final CookieLocationTranslator cookieLocationTranslator;
 
   @Override
   public List<Projector> translateForRequest(
@@ -26,6 +29,21 @@ public class HeaderLocationTranslator
     return REQUEST_HEADER_KEY_FORMAT_STRINGS.stream()
         .map(formatHeaderValue -> translate(matchCondition, attributeValue, formatHeaderValue))
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  public List<Projector> translateForRequest(
+      MatchCondition matchCondition,
+      AttributeRule attributeValue,
+      RuleCreationSource ruleCreationSource) {
+    List<Projector> projectors = new ArrayList<>();
+    // adding cookie projection for V1 migration case, as V1 previously handled the cookie case via
+    // request header
+    if (ruleCreationSource == RuleCreationSource.RULE_CREATION_SOURCE_OLD_API) {
+      projectors.addAll(
+          cookieLocationTranslator.translateForRequest(matchCondition, attributeValue));
+    }
+    projectors.addAll(this.translateForRequest(matchCondition, attributeValue));
+    return projectors;
   }
 
   @Override

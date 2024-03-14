@@ -4,6 +4,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action.AttributeAddition;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,9 +19,13 @@ class SessionTokenRuleTranslator {
   private final SessionIdentificationConstants sessionIdentificationConstants;
 
   AttributeRule translateSessionTokenRule(
-      SessionTokenRule tokenRule, int ruleIndex, String ruleId) {
+      SessionTokenRule tokenRule,
+      int ruleIndex,
+      String ruleId,
+      RuleCreationSource ruleCreationSource) {
 
-    List<Projector> projectors = projectionRootTranslator.translateForTokenValue(tokenRule);
+    List<Projector> projectors =
+        projectionRootTranslator.translateForTokenValue(tokenRule, ruleCreationSource);
     switch (tokenRule.getTokenTypeCase()) {
       case RESPONSE_SESSION_TOKEN_DETAILS:
         if (tokenRule.getResponseSessionTokenDetails().hasResponseAttributeExpiration()

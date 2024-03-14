@@ -7,6 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
 import ai.traceable.sessionidentification.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
 import ai.traceable.sessionidentification.config.service.v1.ValueProjection;
 import io.grpc.Status;
@@ -22,7 +23,8 @@ public class ProjectionRootTranslator {
   private final ResponseLocationTranslatorLookup responseLocationTranslatorLookup;
   private final ValueProjectionsTranslator valueProjectionsTranslator;
 
-  List<Projector> translateForTokenValue(SessionTokenRule tokenRule) {
+  List<Projector> translateForTokenValue(
+      SessionTokenRule tokenRule, RuleCreationSource ruleCreationSource) {
     ProjectionRoot projectionRoot = tokenRule.getTokenValueRule().getTokenValueProjection();
     if (projectionRoot.hasCustomProjection()) {
       return List.of(
@@ -31,7 +33,7 @@ public class ProjectionRootTranslator {
     }
     switch (tokenRule.getTokenTypeCase()) {
       case REQUEST_SESSION_TOKEN_DETAILS:
-        return attributeProjectionTranslator.translateForRequest(tokenRule);
+        return attributeProjectionTranslator.translateForRequest(tokenRule, ruleCreationSource);
       case RESPONSE_SESSION_TOKEN_DETAILS:
         return attributeProjectionTranslator.translateForResponse(tokenRule);
       default:

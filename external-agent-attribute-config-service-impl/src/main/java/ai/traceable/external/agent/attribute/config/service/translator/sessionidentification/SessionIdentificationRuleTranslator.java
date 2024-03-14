@@ -27,7 +27,8 @@ public class SessionIdentificationRuleTranslator {
         Projector.EachMatchingProjector.newBuilder();
     for (SessionTokenRule tokenRule : rule.getTokenRulesList()) {
       projector.addAttributeRules(
-          sessionTokenRuleTranslator.translateSessionTokenRule(tokenRule, ruleIndex, rule.getId()));
+          sessionTokenRuleTranslator.translateSessionTokenRule(
+              tokenRule, ruleIndex, rule.getId(), rule.getStatus().getRuleCreationSource()));
       ruleIndex++;
     }
     return predicateTranslator.addScopePredicatesIfSet(
