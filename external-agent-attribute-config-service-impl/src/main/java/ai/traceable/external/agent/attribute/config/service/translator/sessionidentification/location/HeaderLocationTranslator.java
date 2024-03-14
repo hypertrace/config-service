@@ -7,7 +7,9 @@ import ai.traceable.external.agent.attribute.config.service.translator.sessionid
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.AttributeProjector;
+import ai.traceable.sessionidentification.config.service.v1.LiteralValue;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
+import ai.traceable.sessionidentification.config.service.v1.MatchOperator;
 import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
@@ -70,9 +72,30 @@ public class HeaderLocationTranslator
         .setAttributeProjector(
             AttributeProjector.newBuilder()
                 .setAttributeKeyPredicate(
-                    matchConditionTranslator.translateConditionWithValueTemplate(
-                        matchCondition, location))
+                    matchConditionTranslator.translate(addLocation(matchCondition, location)))
                 .setAttributeRule(attributeValue))
         .build();
+  }
+
+  private MatchCondition addLocation(MatchCondition matchCondition, String location) {
+    if (matchCondition.getMatchValue().getValueCase() != LiteralValue.ValueCase.STRING_VALUE) {
+      return matchCondition;
+    }
+    String value = matchCondition.getMatchValue().getStringValue();
+    if (matchCondition.getOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX) {
+      value = removeStartsWithIfPresent(value);
+    }
+    return MatchCondition.newBuilder(matchCondition)
+        .setMatchValue(
+            LiteralValue.newBuilder().setStringValue(String.format(location, value)).build())
+        .build();
+  }
+
+  private String removeStartsWithIfPresent(String value) {
+
+    if (value.startsWith("^")) {
+      return value.substring(1);
+    }
+    return value;
   }
 }

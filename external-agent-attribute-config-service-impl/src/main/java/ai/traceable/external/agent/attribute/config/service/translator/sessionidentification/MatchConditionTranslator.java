@@ -27,26 +27,6 @@ public class MatchConditionTranslator {
     }
   }
 
-  public StringPredicate translateConditionWithValueTemplate(
-      MatchCondition matchCondition, String location) {
-    switch (matchCondition.getMatchValue().getValueCase()) {
-      case STRING_VALUE:
-        return buildStringPredicate(
-            matchCondition.getOperator(),
-            String.format(location, matchCondition.getMatchValue().getStringValue()));
-      case VALUE_NOT_SET:
-        return buildStringPredicateForUnsetValue(matchCondition.getOperator());
-
-      default:
-        throw Status.INVALID_ARGUMENT
-            .withDescription(
-                String.format(
-                    "Invalid match value present %s for name predicate",
-                    matchCondition.getMatchValue()))
-            .asRuntimeException();
-    }
-  }
-
   private StringPredicate buildStringPredicate(MatchOperator operator, String value) {
     switch (operator) {
       case MATCH_OPERATOR_EQUALS:
