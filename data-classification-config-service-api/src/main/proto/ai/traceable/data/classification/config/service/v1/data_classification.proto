@@ -17,7 +17,7 @@ message DataTypeRule {
   optional bool enabled = 5;
   DataSetInfo.DataSuppression data_suppression = 6;
   DataSetInfo.Sensitivity sensitivity = 7;
-  optional string color = 8;
+  reserved 8;
   repeated string data_set_id = 9;
 
   message ScopedPattern {

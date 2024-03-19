@@ -806,7 +806,6 @@ class DataClassificationConfigServiceImplTest {
                 createdDataType.getRule().toBuilder()
                     .setSensitivity(Sensitivity.SENSITIVITY_CRITICAL)
                     .setEnabled(false)
-                    .setColor("blue")
                     .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE)
                     .addDataSetId(createdDataSet.getId()))
             .build();

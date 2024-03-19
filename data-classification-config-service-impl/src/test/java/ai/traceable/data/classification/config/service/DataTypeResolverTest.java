@@ -107,7 +107,6 @@ class DataTypeResolverTest {
                 DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
                     .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
                     .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
-                    .setColor(DATA_SET_1.getInfo().getColor())
                     .setEnabled(DATA_SET_1.getInfo().getEnabled())
                     .addDataSetId(DATA_SET_1.getId())
                     .addDataSetId(DATA_SET_2.getId()))
@@ -154,10 +153,26 @@ class DataTypeResolverTest {
                     .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
                     .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
                     .setEnabled(DATA_SET_1.getInfo().getEnabled())
-                    .setColor(DATA_SET_1.getInfo().getColor())
                     .addDataSetId(DATA_SET_1.getId())
                     .addDataSetId(DATA_SET_2.getId()))
             .build(),
         this.dataTypeResolver.resolve(dataTypeWithRef, List.of(DATA_SET_1, DATA_SET_2)));
+  }
+
+  @Test
+  void testResolvingWithDatasetMissingFields() {
+    DataSet dataSetMissingFields =
+        DATA_SET_2.toBuilder().setInfo(DATA_SET_2.getInfo().toBuilder().clearSensitivity()).build();
+    assertEquals(
+        DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.toBuilder()
+            .setRule(
+                DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
+                    .setDataSuppression(DATA_SET_2.getInfo().getDataSuppression())
+                    .setSensitivity(Sensitivity.SENSITIVITY_LOW) // default
+                    .setEnabled(DATA_SET_2.getInfo().getEnabled())
+                    .addDataSetId(DATA_SET_2.getId()))
+            .build(),
+        this.dataTypeResolver.resolve(
+            DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS, List.of(dataSetMissingFields)));
   }
 }

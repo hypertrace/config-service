@@ -68,6 +68,7 @@ message GetDataTypesRequest {
   message DataTypeFilter {
     optional bool enabled = 1;
     optional bool legacy_types = 2;
+    optional bool orphan_types = 3;
   }
   enum DataTypeOrdering {
     DATA_TYPE_ORDERING_UNSPECIFIED = 0;

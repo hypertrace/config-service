@@ -17,6 +17,13 @@ class DataTypeResolver {
           .thenComparing(
               dataSet -> dataSet.getInfo().getDataSuppression(), DATA_SUPPRESSION_COMPARATOR);
 
+  private static final DataTypeRule DEFAULT_RULE_VALUES =
+      DataTypeRule.newBuilder()
+          .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
+          .setSensitivity(Sensitivity.SENSITIVITY_LOW)
+          .setEnabled(false)
+          .build();
+
   @SuppressWarnings("deprecation")
   DataType resolve(DataType dataType, List<DataSet> dataSets) {
     if (dataSets.isEmpty()) {
@@ -46,13 +53,10 @@ class DataTypeResolver {
     if (dataType.getRule().getSensitivity() == Sensitivity.SENSITIVITY_UNSPECIFIED) {
       ruleBuilder.setSensitivity(dataSetToInherit.getInfo().getSensitivity());
     }
-    // Since this is optional, stand alone data types do not inherit it.
-    if (!this.isStandAloneDataType(dataType)
-        && !dataType.getRule().hasColor()
-        && dataSetToInherit.getInfo().hasColor()) {
-      ruleBuilder.setColor(dataSetToInherit.getInfo().getColor());
-    }
-    return dataType.toBuilder().setRule(ruleBuilder).build();
+    // Finally, assign defaults for any fields that could not be inherited
+    return dataType.toBuilder()
+        .setRule(DEFAULT_RULE_VALUES.toBuilder().mergeFrom(ruleBuilder.build()))
+        .build();
   }
 
   boolean isStandAloneDataType(DataType dataType) {
@@ -68,11 +72,7 @@ class DataTypeResolver {
 
   private DataType assignDefaultsForOrphanDataType(DataType dataType) {
     return dataType.toBuilder()
-        .setRule(
-            dataType.getRule().toBuilder()
-                .setDataSuppression(DataSuppression.DATA_SUPPRESSION_RAW)
-                .setSensitivity(Sensitivity.SENSITIVITY_LOW)
-                .setEnabled(false))
+        .setRule(DEFAULT_RULE_VALUES.toBuilder().mergeFrom(dataType.getRule()))
         .build();
   }
 }

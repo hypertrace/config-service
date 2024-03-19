@@ -1,6 +1,7 @@
 package ai.traceable.data.classification.config.service;
 
 import static ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeProvenance.FROM_LEGACY_REDACTION_RULE;
+import static ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeProvenance.ORPHAN_DATA_TYPE;
 
 import ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeResolutionContext;
 import ai.traceable.data.classification.config.service.v1.DataSet;
@@ -83,6 +84,10 @@ class DataTypeManager {
       filterResult &=
           filter.getLegacyTypes()
               == resolutionContext.getProvenance().equals(FROM_LEGACY_REDACTION_RULE);
+    }
+    if (filter.hasOrphanTypes()) {
+      filterResult &=
+          filter.getOrphanTypes() == resolutionContext.getProvenance().equals(ORPHAN_DATA_TYPE);
     }
     return filterResult;
   }

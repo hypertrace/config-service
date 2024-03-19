@@ -185,4 +185,28 @@ class DataTypeManagerTest {
                 .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
                 .build()));
   }
+
+  @Test
+  void appliesOrphanFilter() {
+    assertEquals(
+        GetDataTypesResponse.newBuilder().addDataTypes(TEST_ORPHAN_DATA_TYPE).build(),
+        this.dataTypeManager.getDataTypesMatchingRequest(
+            mockRequestContext,
+            GetDataTypesRequest.newBuilder()
+                .setFilter(DataTypeFilter.newBuilder().setOrphanTypes(true))
+                .build()));
+
+    assertEquals(
+        GetDataTypesResponse.newBuilder()
+            .addDataTypes(TEST_REGULAR_DATA_TYPE)
+            .addDataTypes(TEST_SYSTEM_DATA_TYPE)
+            .addDataTypes(TEST_LEGACY_DATA_TYPE)
+            .putReferencedDataSetsById(TEST_DATA_SET.getId(), TEST_DATA_SET)
+            .build(),
+        this.dataTypeManager.getDataTypesMatchingRequest(
+            mockRequestContext,
+            GetDataTypesRequest.newBuilder()
+                .setFilter(DataTypeFilter.newBuilder().setOrphanTypes(false))
+                .build()));
+  }
 }
