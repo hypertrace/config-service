@@ -18,8 +18,42 @@ message AstDisabledConfig {
 message AstEnabledConfig {
   AstReplayConfig replay_config = 1;
 }
+
 message AstReplayConfig {
   bool replay_enabled = 1;
+  SpanFilters span_filters = 2;
+}
+
+message SpanFilters {
+  repeated KeyValuePredicateWithLocation conditions = 1;
+}
+
+message KeyValuePredicateWithLocation {
+  Location location = 1;
+  KeyValuePredicate key_value_predicate = 2;
+}
+
+message KeyValuePredicate {
+  StringPredicate key_predicate = 1;
+  StringPredicate value_predicate = 2;
+}
+
+message StringPredicate {
+  RelationalOperator operator = 1;
+  string value = 2;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  RELATIONAL_OPERATOR_MATCHES_REGEX = 2;
+}
+
+enum Location {
+  LOCATION_UNSPECIFIED = 0;
+  LOCATION_REQUEST_HEADER = 1;
+  LOCATION_REQUEST_COOKIE = 2;
+  LOCATION_ATTRIBUTE = 3;
 }
 
 message ScanPurgeConfig {
