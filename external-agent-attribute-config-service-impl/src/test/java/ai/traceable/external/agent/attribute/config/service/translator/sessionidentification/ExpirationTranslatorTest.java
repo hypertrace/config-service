@@ -51,6 +51,41 @@ class ExpirationTranslatorTest {
   }
 
   @Test
+  void test_requestJwtExpiration() {
+    SessionIdentificationRule rule =
+        TestUtils.getSessionIdentificationRule(
+            "session_identification/expiration/partial_input_for_request_jwt_expiration.json");
+    AttributeRule attributeRule =
+        AttributeRule.newBuilder()
+            .setProjector(
+                AttributeRule.Projector.newBuilder()
+                    .setFirstMatchingProjector(
+                        AttributeRule.Projector.FirstMatchingProjector.newBuilder()
+                            .addAllAttributeRules(
+                                translator
+                                    .translateExpiration(
+                                        rule.getTokenRules(0).getRequestSessionTokenDetails(),
+                                        0,
+                                        rule.getId(),
+                                        rule.getTokenRules(0)
+                                            .getTokenValueRule()
+                                            .getTokenValueProjection()
+                                            .getAttributeProjection())
+                                    .stream()
+                                    .map(
+                                        action ->
+                                            AttributeRule.newBuilder()
+                                                .addInitialActions(action)
+                                                .build())
+                                    .collect(Collectors.toUnmodifiableList()))))
+            .build();
+    AttributeRule expectedAttributeRule =
+        TestUtils.getExpectedAttributeRule(
+            "session_identification/expiration/partial_output_for_request_jwt_expiration.json");
+    Assertions.assertEquals(expectedAttributeRule, attributeRule);
+  }
+
+  @Test
   void test_jwtExpiration_with_jwt_claim_for_session_id() {
     SessionIdentificationRule rule =
         TestUtils.getSessionIdentificationRule(

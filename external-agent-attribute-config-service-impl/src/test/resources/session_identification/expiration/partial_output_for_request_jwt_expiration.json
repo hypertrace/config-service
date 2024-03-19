@@ -1,0 +1,93 @@
+{
+  "projector": {
+    "firstMatchingProjector": {
+      "attributeRules": [{
+        "initialActions": [{
+          "attributeAddition": {
+            "attributeKey": "traceableai.session.rule-id.0.expiration.value",
+            "valueProjectionRule": {
+              "projector": {
+                "conditionalProjector": {
+                  "predicate": {
+                    "attributePredicate": {
+                      "namePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "traceableai.session.rule-id.0.id"
+                      }
+                    }
+                  },
+                  "attributeRule": {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "http.request.body",
+                        "attributeRule": {
+                          "projector": {
+                            "regexCaptureGroupProjector": {
+                              "regexCaptureGroup": "a.*bcd",
+                              "attributeRule": {
+                                "projector": {
+                                  "jwtProjector": {
+                                    "claimRule": {
+                                      "key": "exp"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }, {
+        "initialActions": [{
+          "attributeAddition": {
+            "attributeKey": "traceableai.session.rule-id.0.expiration.value",
+            "valueProjectionRule": {
+              "projector": {
+                "conditionalProjector": {
+                  "predicate": {
+                    "attributePredicate": {
+                      "namePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "traceableai.session.rule-id.0.id"
+                      }
+                    }
+                  },
+                  "attributeRule": {
+                    "projector": {
+                      "attributeProjector": {
+                        "attributeKey": "rpc.request.body",
+                        "attributeRule": {
+                          "projector": {
+                            "regexCaptureGroupProjector": {
+                              "regexCaptureGroup": "a.*bcd",
+                              "attributeRule": {
+                                "projector": {
+                                  "jwtProjector": {
+                                    "claimRule": {
+                                      "key": "exp"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }]
+      }]
+    }
+  }
+}

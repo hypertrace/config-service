@@ -10,6 +10,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
+import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
 import io.grpc.Status;
 import java.util.List;
@@ -30,15 +31,17 @@ class ExpirationTranslator {
     switch (responseSessionTokenDetails.getExpirationCase()) {
       case JWT_EXPIRATION:
         return addExpirationValueAttributeAndProject(
-            ruleId,
-            ruleIndex,
             projectionRootTranslator.translateForJwtExpiration(
-                responseSessionTokenDetails, attributeProjection));
+                responseSessionTokenDetails, attributeProjection),
+            sessionIdentificationConstants.buildKeyForExpirationValue(
+                ruleId, ruleIndex, SessionIdentificationConstants.SESSION_NEW_PREFIX_KEY),
+            sessionIdentificationConstants.buildKeyForNewSessionId(ruleId, ruleIndex));
       case RESPONSE_ATTRIBUTE_EXPIRATION:
         return addExpirationValueAttributeAndProject(
-            ruleId,
-            ruleIndex,
-            projectionRootTranslator.translateForAttributeExpiration(responseSessionTokenDetails));
+            projectionRootTranslator.translateForAttributeExpiration(responseSessionTokenDetails),
+            sessionIdentificationConstants.buildKeyForExpirationValue(
+                ruleId, ruleIndex, SessionIdentificationConstants.SESSION_NEW_PREFIX_KEY),
+            sessionIdentificationConstants.buildKeyForNewSessionId(ruleId, ruleIndex));
 
       default:
         throw Status.INVALID_ARGUMENT
@@ -49,17 +52,37 @@ class ExpirationTranslator {
     }
   }
 
+  List<Action> translateExpiration(
+      RequestSessionTokenDetails requestSessionTokenDetails,
+      int ruleIndex,
+      String ruleId,
+      AttributeProjection attributeProjection) {
+    switch (requestSessionTokenDetails.getExpirationCase()) {
+      case JWT_EXPIRATION:
+        return addExpirationValueAttributeAndProject(
+            projectionRootTranslator.translateForJwtExpiration(
+                requestSessionTokenDetails, attributeProjection),
+            sessionIdentificationConstants.buildKeyForExpirationValue(
+                ruleId, ruleIndex, SessionIdentificationConstants.SESSION_PREFIX_KEY),
+            sessionIdentificationConstants.buildKeyForSessionId(ruleId, ruleIndex));
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format(
+                    "Invalid expiration type %s", requestSessionTokenDetails.getExpirationCase()))
+            .asRuntimeException();
+    }
+  }
+
   private List<Action> addExpirationValueAttributeAndProject(
-      String ruleId, int ruleIndex, List<Projector> projectors) {
+      List<Projector> projectors, String expirationKey, String sessionIdAttr) {
     return projectors.stream()
         .map(
             projector ->
                 Action.newBuilder()
                     .setAttributeAddition(
                         AttributeAddition.newBuilder()
-                            .setAttributeKey(
-                                sessionIdentificationConstants.buildKeyForExpirationValue(
-                                    ruleId, ruleIndex))
+                            .setAttributeKey(expirationKey)
                             .setValueProjectionRule(
                                 AttributeRule.newBuilder()
                                     .setProjector(
@@ -76,10 +99,7 @@ class ExpirationTranslator {
                                                                                 ComparisonOperator
                                                                                     .COMPARISON_OPERATOR_EQUALS)
                                                                             .setValue(
-                                                                                sessionIdentificationConstants
-                                                                                    .buildKeyForNewSessionId(
-                                                                                        ruleId,
-                                                                                        ruleIndex)))))
+                                                                                sessionIdAttr))))
                                                     .setAttributeRule(
                                                         AttributeRule.newBuilder()
                                                             .setProjector(projector))))))

@@ -73,5 +73,24 @@
         "expirationFormat": "EXPIRATION_FORMAT_DURATION_MILLIS"
       }
     }
-  }]
+  },
+    {
+      "tokenValueRule": {
+        "tokenValueProjection": {
+          "attributeProjection": {
+            "valueProjectionsInOrder": [{
+              "regexCaptureGroup": {
+                "regexCaptureGroup": "a.*bcd"
+              }
+            }]
+          }
+        }
+      },
+      "requestSessionTokenDetails": {
+        "tokenLocation": "REQUEST_ATTRIBUTE_KEY_LOCATION_BODY",
+        "jwtExpiration": {
+        }
+      }
+    }
+  ]
 }

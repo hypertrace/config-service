@@ -42,6 +42,9 @@ message SessionTokenRule {
 
 message RequestSessionTokenDetails {
   RequestAttributeKeyLocation token_location = 1;
+  oneof expiration {
+    JwtExpiration jwt_expiration = 2;
+  }
 }
 
 message ResponseSessionTokenDetails {
