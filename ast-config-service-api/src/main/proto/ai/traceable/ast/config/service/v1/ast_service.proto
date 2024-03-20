@@ -5,6 +5,7 @@ package ai.traceable.ast.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/ast/config/service/v1/ast.proto";
+import "ai/traceable/ast/config/service/v1/ast_custom_test_plugins.proto";
 
 service AstConfigService {
   // read api
@@ -25,6 +26,14 @@ service AstConfigService {
   rpc GetAstFeatureConfigs(GetAstFeatureConfigsRequest) returns (GetAstFeatureConfigsResponse);
 
   rpc UpdateAstFeatureConfig(UpdateAstFeatureConfigRequest) returns (UpdateAstFeatureConfigResponse);
+
+  rpc GetAllCustomTestPlugins(GetAllCustomTestPluginsRequest) returns (GetAllCustomTestPluginsResponse);
+
+  rpc CreateCustomTestPlugin(CreateCustomTestPluginRequest) returns (CreateCustomTestPluginResponse);
+
+  rpc UpdateCustomTestPlugin(UpdateCustomTestPluginRequest) returns (UpdateCustomTestPluginResponse);
+
+  rpc DeleteCustomTestPlugin(DeleteCustomTestPluginRequest) returns (DeleteCustomTestPluginResponse);
 }
 
 message UpdateScanPurgeConfigRequest {

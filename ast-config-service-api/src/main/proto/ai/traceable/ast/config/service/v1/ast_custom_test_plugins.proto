@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+message GetAllCustomTestPluginsRequest {}
+
+message GetAllCustomTestPluginsResponse {
+  repeated CustomTestPlugin custom_test_plugins = 1;
+}
+
+message CreateCustomTestPluginRequest {
+  CreateCustomPlugin create_custom_plugin = 1;
+}
+
+message CreateCustomPlugin {
+  string id = 1;
+  string name = 2;
+  CodeSnippetDetails code_snippet_details = 3;
+}
+
+message CodeSnippetDetails {
+  string code_snippet = 1;
+  CodeSnippetType code_snippet_type = 2;
+}
+
+message CreateCustomTestPluginResponse {
+  CustomTestPlugin custom_test_plugin = 1;
+}
+
+message UpdateCustomTestPluginRequest {
+  UpdateCustomPlugin update_custom_plugin = 1;
+}
+
+message UpdateCustomPlugin {
+  string id = 1;
+  optional string name = 2;
+  CodeSnippetDetails code_snippet_details = 3;
+}
+
+message UpdateCustomTestPluginResponse {
+  CustomTestPlugin custom_test_plugin = 1;
+}
+
+message DeleteCustomTestPluginRequest {
+  string id = 1;
+}
+
+message DeleteCustomTestPluginResponse {}
+
+message CustomTestPlugin {
+  string id = 1;
+  string name = 2;
+  CodeSnippetDetails code_snippet_details = 3;
+}
+
+enum CodeSnippetType {
+  CODE_SNIPPET_TYPE_UNSPECIFIED = 0;
+  CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT = 1;
+}
