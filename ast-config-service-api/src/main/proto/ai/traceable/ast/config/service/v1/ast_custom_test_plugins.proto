@@ -15,9 +15,8 @@ message CreateCustomTestPluginRequest {
 }
 
 message CreateCustomPlugin {
-  string id = 1;
-  string name = 2;
-  CodeSnippetDetails code_snippet_details = 3;
+  string name = 1;
+  CodeSnippetDetails code_snippet_details = 2;
 }
 
 message CodeSnippetDetails {
