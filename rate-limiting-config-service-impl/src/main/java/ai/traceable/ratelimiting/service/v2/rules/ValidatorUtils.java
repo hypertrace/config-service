@@ -25,6 +25,7 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
@@ -83,10 +84,24 @@ public class ValidatorUtils {
       case IP_ABUSE_VELOCITY_CONDITION:
         validateIpAbuseVelocityCondition(leafCondition.getIpAbuseVelocityCondition());
         break;
+      case IP_SCANNER_TYPE_CONDITION:
+        validateIpScannerTypeCondition(leafCondition.getIpScannerTypeCondition());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
                 "Invalid Case in %s:%n %s", getName(leafCondition), printMessage(leafCondition)));
+    }
+  }
+
+  private void validateIpScannerTypeCondition(IpScannerTypeCondition ipScannerTypeCondition) {
+    validateNonDefaultPresenceOrThrow(
+        ipScannerTypeCondition, IpScannerTypeCondition.IP_SCANNER_TYPES_FIELD_NUMBER);
+    if (ipScannerTypeCondition.getIpScannerTypesList().stream().anyMatch(String::isBlank)) {
+      throwInvalidArgumentException(
+          String.format(
+              "IpScannerTypeCondition should not contain blank string : {}",
+              ipScannerTypeCondition));
     }
   }
 

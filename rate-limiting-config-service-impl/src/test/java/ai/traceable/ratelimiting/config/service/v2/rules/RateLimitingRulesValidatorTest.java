@@ -30,6 +30,7 @@ import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
+import ai.traceable.ratelimiting.config.service.v2.IpScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
@@ -2628,6 +2629,74 @@ public class RateLimitingRulesValidatorTest {
     CreateRateLimitingRuleRequest request1 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+  }
+
+  @Test
+  void testIpScannerTypeCondition() {
+    Condition ipScannerTypeCondition =
+        Condition.newBuilder()
+            .setLeafCondition(
+                LeafCondition.newBuilder()
+                    .setIpScannerTypeCondition(
+                        IpScannerTypeCondition.newBuilder()
+                            .addAllIpScannerTypes(List.of("Scanner1", "Scanner2"))))
+            .build();
+    RateLimitingRuleData ruleData = getRateLimitingRule(ipScannerTypeCondition);
+    CreateRateLimitingRuleRequest request =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
+
+    ipScannerTypeCondition =
+        Condition.newBuilder()
+            .setLeafCondition(
+                LeafCondition.newBuilder()
+                    .setIpScannerTypeCondition(IpScannerTypeCondition.getDefaultInstance()))
+            .build();
+    ruleData = getRateLimitingRule(ipScannerTypeCondition);
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+
+    ipScannerTypeCondition =
+        Condition.newBuilder()
+            .setLeafCondition(
+                LeafCondition.newBuilder()
+                    .setIpScannerTypeCondition(
+                        IpScannerTypeCondition.newBuilder()
+                            .addAllIpScannerTypes(List.of("", "Scanner1"))))
+            .build();
+    ruleData = getRateLimitingRule(ipScannerTypeCondition);
+    CreateRateLimitingRuleRequest request2 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
+  }
+
+  private RateLimitingRuleData getRateLimitingRule(Condition condition) {
+    return RateLimitingRuleData.newBuilder()
+        .setName("rule")
+        .setCategory(Category.CATEGORY_RATE_LIMITING)
+        .setEnabled(true)
+        .addThresholdActionConfigs(
+            ThresholdActionConfig.newBuilder()
+                .addActions(
+                    Action.newBuilder()
+                        .setBlock(
+                            Block.newBuilder().setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)))
+                .addResourceAccessThresholdConfigs(
+                    ResourceAccessThresholdConfig.newBuilder()
+                        .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                        .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                        .setRollingWindowThresholdConfig(
+                            RollingWindowThresholdConfig.newBuilder()
+                                .setCountAllowed(1000)
+                                .setDurationIso("P3Y6M4DT12H30M5S"))))
+        .setRuleConfigScope(RuleConfigScope.newBuilder())
+        .setCondition(condition)
+        .build();
   }
 
   private RegionCondition buildRegionCondition(List<String> regions) {
