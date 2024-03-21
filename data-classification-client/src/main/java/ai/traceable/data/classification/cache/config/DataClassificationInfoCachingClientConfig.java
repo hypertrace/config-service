@@ -2,7 +2,6 @@ package ai.traceable.data.classification.cache.config;
 
 import com.typesafe.config.Config;
 import java.time.Duration;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -31,7 +30,6 @@ public class DataClassificationInfoCachingClientConfig {
   private static final Duration DEFAULT_DATA_CLASSIFICATION_CLIENT_TIMEOUT_DURATION =
       Duration.ofSeconds(10);
 
-  private Optional<Config> kafkaConfig;
   private int maxSize;
   private int maxThreadPoolSize;
   private Duration timeoutDuration;
@@ -43,7 +41,6 @@ public class DataClassificationInfoCachingClientConfig {
   public static DataClassificationInfoCachingClientConfig from(Config config, Config kafkaConfig) {
     String dataClassificationInfoCacheName = config.getString(DATA_CLASSIFICATION_INFO_CACHE_NAME);
     return new DataClassificationInfoCachingClientConfig(
-        Optional.ofNullable(kafkaConfig),
         config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             ? config.getInt(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE,
@@ -66,7 +63,6 @@ public class DataClassificationInfoCachingClientConfig {
   public static DataClassificationInfoCachingClientConfig from(Config config) {
     String dataClassificationInfoCacheName = config.getString(DATA_CLASSIFICATION_INFO_CACHE_NAME);
     return new DataClassificationInfoCachingClientConfig(
-        Optional.empty(),
         config.hasPath(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             ? config.getInt(DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE)
             : DEFAULT_DATA_CLASSIFICATION_INFO_CACHE_MAX_SIZE,

@@ -13,10 +13,18 @@ import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import com.google.protobuf.Value;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.MockConsumer;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
+import org.hypertrace.config.change.event.v1.ConfigChangeEventValue;
+import org.hypertrace.config.change.event.v1.ConfigDeleteEvent;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
+import org.hypertrace.core.kafka.event.listener.KafkaMockConsumerTestUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -30,7 +38,7 @@ class DataClassificationCachingClientImplTest {
   DataClassificationCachingClientImpl cache;
 
   @Test
-  void test_getDataClassificationInfoMap() {
+  void test_getDataClassificationInfoMap() throws Exception {
 
     DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig =
         DataClassificationInfoCachingClientConfig.from(
@@ -47,11 +55,7 @@ class DataClassificationCachingClientImplTest {
                     "data.classification.info.cache.expiration.duration",
                     20,
                     "data.classification.info.cache.timeout.duration",
-                    5,
-                    "data.classification.info.cache.consumer.name",
-                    "data-classification-info-cache",
-                    "data.classification.info.cache.schema.registry.url",
-                    "http://schema-registry-service:8081")));
+                    5)));
 
     DataType dataType =
         DataType.newBuilder()
@@ -78,9 +82,14 @@ class DataClassificationCachingClientImplTest {
                 .addDataTypes(dataType)
                 .putAllReferencedDataSetsById(dataSetIdToDataSetMap)
                 .build());
+    KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>
+        kafkaLiveEventListenerBuilder =
+            new KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>();
     this.cache =
         new DataClassificationCachingClientImpl(
-            this.mockStub, dataClassificationInfoCachingClientConfig);
+            kafkaLiveEventListenerBuilder,
+            this.mockStub,
+            dataClassificationInfoCachingClientConfig);
     DataClassificationInfo dataClassificationInfo =
         this.cache.getDataClassificationInfo(testRequestContext);
     Map<String, DataType> dataTypeIdToDataTypeMap = Map.of("datatypeId", dataType);
@@ -99,10 +108,76 @@ class DataClassificationCachingClientImplTest {
                 .addDataTypes(dataType)
                 .putAllReferencedDataSetsById(dataSetIdToDataSetMap)
                 .build());
-    this.cache.getDataClassificationInfo(testRequestContext, dataTypeFilter);
     dataClassificationInfo =
         this.cache.getDataClassificationInfo(testRequestContext, dataTypeFilter);
     assertEquals(dataTypeIdToDataTypeMap, dataClassificationInfo.getDataTypeIdToDataTypeMap());
     assertEquals(dataSetIdToDataSetMap, dataClassificationInfo.getDataSetIdToDataSetMap());
+
+    DataType dataTypeAfterInvalidation =
+        DataType.newBuilder()
+            .setId("datatypeIdAfterInvalidation")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatypeAfterInvalidation")
+                    .addAllDataSetId(
+                        List.of("datasetIdAfterInvalidation1", "datasetIdInvalidation2")))
+            .build();
+
+    Map<String, DataSet> dataSetIdToDataSetMapAfterInvalidation =
+        Map.of(
+            "datasetIdAfterInvalidation1",
+            DataSet.newBuilder()
+                .setInfo(DataSetInfo.newBuilder().setName("datasetAfterInvalidation1"))
+                .build(),
+            "datasetIdAfterInvalidation2",
+            DataSet.newBuilder()
+                .setInfo(DataSetInfo.newBuilder().setName("datasetAfterInvalidation2"))
+                .build());
+    Config kafkaConfig =
+        ConfigFactory.parseMap(
+            Map.of(
+                "topic.name",
+                "mock-config-change-event",
+                "poll.timeout",
+                "5ms",
+                "consumer.name",
+                "mock-config-change-event-consumer",
+                "schema.registry.url",
+                "http://schema-registry-service:8081"));
+    when(this.ongoingStub.getDataTypes(
+            GetDataTypesRequest.newBuilder()
+                .setFilter(dataTypeFilter)
+                .setResolveInheritedDetails(true)
+                .build()))
+        .thenReturn(
+            GetDataTypesResponse.newBuilder()
+                .addDataTypes(dataTypeAfterInvalidation)
+                .putAllReferencedDataSetsById(dataSetIdToDataSetMapAfterInvalidation)
+                .build());
+    KafkaMockConsumerTestUtil<ConfigChangeEventKey, ConfigChangeEventValue> mockConsumerTestUtil =
+        new KafkaMockConsumerTestUtil<>("mock-config-change-event", 1);
+    MockConsumer<ConfigChangeEventKey, ConfigChangeEventValue> mockConsumer =
+        mockConsumerTestUtil.getMockConsumer();
+    kafkaLiveEventListenerBuilder.build(
+        "mock-config-change-event-consumer", kafkaConfig, mockConsumer);
+    mockConsumerTestUtil.addRecord(
+        ConfigChangeEventKey.newBuilder()
+            .setTenantId("DataClassificationInfoCacheTest")
+            .setConfigType(DataType.class.getName())
+            .build(),
+        ConfigChangeEventValue.newBuilder()
+            .setDeleteEvent(ConfigDeleteEvent.newBuilder().build())
+            .build());
+    DataClassificationInfo dataClassificationInfo1 =
+        this.cache.getDataClassificationInfo(testRequestContext, dataTypeFilter);
+    assertEquals(
+        Map.of("datatypeIdAfterInvalidation", dataTypeAfterInvalidation),
+        dataClassificationInfo1.getDataTypeIdToDataTypeMap());
+    assertEquals(
+        dataSetIdToDataSetMapAfterInvalidation, dataClassificationInfo1.getDataSetIdToDataSetMap());
+  }
+
+  private Value createStringValue(String value) {
+    return Value.newBuilder().setStringValue(value).build();
   }
 }

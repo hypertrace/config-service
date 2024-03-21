@@ -15,13 +15,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.typesafe.config.Config;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.change.event.v1.ConfigChangeEventKey;
@@ -30,11 +28,9 @@ import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.kafka.event.listener.KafkaLiveEventListener;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
-import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 public class DataClassificationCachingClientImpl implements DataClassificationClient {
-  private static final String CONSUMER_NAME_PATH = "consumer.name";
   private final DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig;
   private final LoadingCache<ContextualKey<Optional<DataTypeFilter>>, DataClassificationInfo>
       dataClassificationInfoCache;
@@ -49,13 +45,18 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
     this.dataClassificationInfoCache = buildCache();
     registerCacheMetrics();
-    this.dataClassificationInfoCachingClientConfig
-        .getKafkaConfig()
-        .ifPresent(
-            kafkaConfig -> addKafkaEventListener(kafkaConfig, this::updateCacheBasedOnEvent));
   }
 
-  @NotNull
+  public DataClassificationCachingClientImpl(
+      KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>
+          kafkaLiveEventListenerBuilder,
+      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+          dataClassificationConfigServiceBlockingStub,
+      DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
+    this(dataClassificationConfigServiceBlockingStub, dataClassificationInfoCachingClientConfig);
+    kafkaLiveEventListenerBuilder.registerCallback(this::updateCacheBasedOnEvent);
+  }
+
   private LoadingCache<ContextualKey<Optional<DataTypeFilter>>, DataClassificationInfo>
       buildCache() {
     return CacheBuilder.newBuilder()
@@ -137,17 +138,5 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
         break;
       default:
     }
-  }
-
-  private KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>
-      addKafkaEventListener(
-          Config config, BiConsumer<ConfigChangeEventKey, ConfigChangeEventValue> callback) {
-    return new KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>()
-        .registerCallback(callback)
-        .build(
-            config.getString(CONSUMER_NAME_PATH),
-            config,
-            new KafkaConsumerBuilder(config, this.dataClassificationInfoCachingClientConfig)
-                .buildKafkaConsumer());
   }
 }

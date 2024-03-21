@@ -16,7 +16,6 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
   implementation(localLibs.hypertrace.configservice.changeeventapi)
-  implementation(commonLibs.kafka.streams.protobuf.serde)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
@@ -24,6 +23,7 @@ dependencies {
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.mockito.junit)
+  testImplementation(testFixtures(commonLibs.hypertrace.kafkaStreams.eventListener))
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 

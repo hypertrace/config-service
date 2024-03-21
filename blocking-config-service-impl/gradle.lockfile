@@ -1,8 +1,8 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.184=compileClasspath,runtimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.18=compileClasspath,runtimeClasspath
+ai.traceable.bom:traceable-bom:0.3.196=compileClasspath,runtimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.20=compileClasspath,runtimeClasspath
 ai.traceable.platform:actor-service-api:0.2.125=compileClasspath,runtimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.49=compileClasspath,runtimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath
