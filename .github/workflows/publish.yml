@@ -94,12 +94,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish Service Docker Image
-        uses: ./.github/actions/docker-publish
+        uses: ./.github/actions/docker-build-sign-publish
         with:
           image: traceable/traceable-config-service
-          tag: ${{ steps.tag.outputs.tag }}
+          tags: ${{ steps.tag.outputs.tag }}
           context: traceable-config-service/build/docker
-          cache-type: registry
 
   publish-charts:
     needs: [ create-release, publish-artifacts ]
