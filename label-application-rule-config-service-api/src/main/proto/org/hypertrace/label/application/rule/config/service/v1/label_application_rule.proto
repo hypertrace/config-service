@@ -85,7 +85,7 @@ message LabelApplicationRuleData {
   }
 
   message Action {
-    repeated string entity_types = 1; // captures the entity type - "API", "Service"
+    repeated string entity_types = 1; // captures the entity type - "API", "Service", "Backend"
     Operation operation = 2;
     oneof value {
       StaticLabels static_labels = 3;
