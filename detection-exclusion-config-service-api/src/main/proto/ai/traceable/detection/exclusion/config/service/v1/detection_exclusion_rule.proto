@@ -56,6 +56,17 @@ message DetectionExclusionRuleStatus {
   optional bool generate_internal_events = 3;
   RuleChangeSource change_source = 4 [deprecated = true];
   RuleSource rule_creation_source = 5;
+  RuleIntent rule_intent = 6;
+  ExpirationDetails expiration_details = 7;
+}
+
+message ExpirationDetails {
+  // Expiration duration represented in ISO 8601 duration format.
+  // If expiration_duration is not set and expiration_timestamp_millis is set, the value gets derived from the expiration_timestamp_millis field
+  optional string expiration_duration = 1;
+  // Timestamp at which the blocking expires.
+  // If expiration_timestamp_millis is not set and expiration_duration is set, the value gets derived from the expiration_duration field
+  optional int64 expiration_timestamp_millis = 2;
 }
 
 enum RuleSource{
@@ -64,6 +75,7 @@ enum RuleSource{
   RULE_SOURCE_CUSTOMER = 2;
   RULE_SOURCE_TRACEABLE = 3;
   RULE_SOURCE_OLD_API = 4;
+  RULE_SOURCE_SYSTEM = 5;
 }
 
 enum RuleChangeSource {
@@ -73,4 +85,10 @@ enum RuleChangeSource {
   RULE_CHANGE_SOURCE_CUSTOMER = 2;
   RULE_CHANGE_SOURCE_TRACEABLE = 3;
   RULE_CHANGE_SOURCE_SYSTEM = 4;
+}
+
+enum RuleIntent {
+  RULE_INTENT_UNSPECIFIED = 0;
+  RULE_INTENT_FALSE_POSITIVE = 1;
+  RULE_INTENT_INTERNAL_TO_EXTERNAL = 2;
 }

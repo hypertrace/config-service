@@ -8,12 +8,14 @@ import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusi
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -94,6 +96,7 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
   @VisibleForTesting
   public void validateRuleInfo(DetectionExclusionRuleInfo ruleInfo) {
     validateNonDefaultPresenceOrThrow(ruleInfo, DetectionExclusionRuleInfo.NAME_FIELD_NUMBER);
+    validateRuleStatus(ruleInfo.getRuleStatus());
     if (ruleInfo.getConditionsList().isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("DetectionExclusionRule has no specified conditions")
@@ -109,6 +112,26 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
       if (scope.getEnvironmentScope().getEnvironmentIdsList().stream().anyMatch(String::isEmpty)) {
         throw Status.INVALID_ARGUMENT
             .withDescription("Environment id should not be an empty string")
+            .asRuntimeException();
+      }
+    }
+  }
+
+  private void validateRuleStatus(DetectionExclusionRuleStatus status) {
+    if (status.hasExpirationDetails()
+        && !status.getExpirationDetails().hasExpirationTimestampMillis()
+        && !status.getExpirationDetails().hasExpirationDuration()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Expiration details should have expiration timestamp or expiration duration")
+          .asRuntimeException();
+    }
+    if (status.getExpirationDetails().hasExpirationDuration()) {
+      try {
+        java.time.Duration.parse(status.getExpirationDetails().getExpirationDuration());
+      } catch (DateTimeParseException iae) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Expiration duration should be in valid ISO 8601 format")
             .asRuntimeException();
       }
     }

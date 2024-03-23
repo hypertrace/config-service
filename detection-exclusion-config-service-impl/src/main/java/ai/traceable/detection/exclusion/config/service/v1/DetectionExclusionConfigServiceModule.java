@@ -11,6 +11,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
@@ -38,6 +39,7 @@ class DetectionExclusionConfigServiceModule extends AbstractModule {
 
   @Override
   public void configure() {
+    bind(Clock.class).toInstance(Clock.systemUTC());
     bind(BindableService.class).to(DetectionExclusionConfigServiceImpl.class);
     bind(RulesManager.class).to(DetectionExclusionRulesManager.class);
     bind(RulesValidator.class).to(DetectionExclusionRulesValidator.class);

@@ -45,6 +45,7 @@ message GetRulesFilter {
   optional bool hidden = 4;
   repeated RuleChangeSource rule_change_sources = 5 [deprecated = true];
   repeated RuleSource rule_creation_sources = 6;
+  repeated RuleIntent rule_intents = 7;
 }
 
 message DetectionExclusionMigrationConfig {

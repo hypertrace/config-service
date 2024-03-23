@@ -13,6 +13,8 @@ import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import io.grpc.Status;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -22,15 +24,18 @@ public class DetectionExclusionRulesManager implements RulesManager {
   private final DetectionExclusionRulesStore rulesStore;
   private final UuidGenerator uuidGenerator;
   private final RulesMigrationManager rulesMigrationManager;
+  private final Clock clock;
 
   @Inject
   public DetectionExclusionRulesManager(
       DetectionExclusionRulesStore rulesStore,
       UuidGenerator uuidGenerator,
-      RulesMigrationManager rulesMigrationManager) {
+      RulesMigrationManager rulesMigrationManager,
+      Clock clock) {
     this.rulesStore = rulesStore;
     this.uuidGenerator = uuidGenerator;
     this.rulesMigrationManager = rulesMigrationManager;
+    this.clock = clock;
   }
 
   @Override
@@ -71,7 +76,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
     DetectionExclusionRule rule =
         DetectionExclusionRule.newBuilder()
             .setId(uuidGenerator.generateRandomId())
-            .setRuleInfo(processIpAddressCondition(ruleInfo))
+            .setRuleInfo(processDetectionExclusionRuleInfo(ruleInfo))
             .setRuleScope(ruleScope)
             .build();
     return rulesStore.upsertObject(requestContext, rule).getData();
@@ -87,14 +92,21 @@ public class DetectionExclusionRulesManager implements RulesManager {
   private DetectionExclusionRule processDetectionExclusionRule(
       DetectionExclusionRule rule, DetectionExclusionRuleStatus originalRuleStatus) {
     DetectionExclusionRuleInfo processedDetectionExclusionRuleInfo =
-        processIpAddressCondition(rule.getRuleInfo());
+        processDetectionExclusionRuleInfo(rule.getRuleInfo());
     rule = rule.toBuilder().setRuleInfo(processedDetectionExclusionRuleInfo).build();
     return getModifiedRule(rule, originalRuleStatus);
   }
 
-  private DetectionExclusionRuleInfo processIpAddressCondition(
+  private DetectionExclusionRuleInfo processDetectionExclusionRuleInfo(
       DetectionExclusionRuleInfo ruleInfo) {
     DetectionExclusionRuleInfo.Builder builder = ruleInfo.toBuilder();
+    processIpAddressCondition(ruleInfo, builder);
+    processRuleExpiration(ruleInfo, builder);
+    return builder.build();
+  }
+
+  private void processIpAddressCondition(
+      DetectionExclusionRuleInfo ruleInfo, DetectionExclusionRuleInfo.Builder builder) {
     List<DetectionExclusionCondition> detectionExclusionConditions =
         ruleInfo.getConditionsList().stream()
             .map(
@@ -117,7 +129,22 @@ public class DetectionExclusionRulesManager implements RulesManager {
                 })
             .collect(Collectors.toUnmodifiableList());
     builder.clearConditions();
-    return builder.addAllConditions(detectionExclusionConditions).build();
+    builder.addAllConditions(detectionExclusionConditions);
+  }
+
+  private void processRuleExpiration(
+      DetectionExclusionRuleInfo ruleInfo, DetectionExclusionRuleInfo.Builder builder) {
+    DetectionExclusionRuleStatus ruleStatus = ruleInfo.getRuleStatus();
+    if (ruleStatus.hasExpirationDetails()
+        && !ruleStatus.getExpirationDetails().hasExpirationTimestampMillis()) {
+      builder
+          .getRuleStatusBuilder()
+          .getExpirationDetailsBuilder()
+          .setExpirationTimestampMillis(
+              clock.millis()
+                  + Duration.parse(ruleStatus.getExpirationDetails().getExpirationDuration())
+                      .toMillis());
+    }
   }
 
   private DetectionExclusionRuleStatus getMergeRuleStatus(

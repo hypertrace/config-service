@@ -23,6 +23,7 @@ import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import com.typesafe.config.ConfigFactory;
+import java.time.Clock;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -56,7 +57,8 @@ class DetectionExclusionRulesManagerTest {
         mock(DetectionExclusionRulesMigrationManager.class);
     when(rulesMigrationManager.shouldMigrateFromOldStore(any())).thenReturn(false);
     rulesManager =
-        new DetectionExclusionRulesManager(rulesStore, uuidGenerator, rulesMigrationManager);
+        new DetectionExclusionRulesManager(
+            rulesStore, uuidGenerator, rulesMigrationManager, mock(Clock.class));
   }
 
   @Test

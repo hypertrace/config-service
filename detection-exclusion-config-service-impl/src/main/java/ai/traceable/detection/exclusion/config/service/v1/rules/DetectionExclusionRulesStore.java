@@ -131,6 +131,12 @@ public class DetectionExclusionRulesStore
                     || filter
                         .getRuleCreationSourcesList()
                         .contains(rule.getRuleInfo().getRuleStatus().getRuleCreationSource()))
+        .filter(
+            rule ->
+                filter.getRuleIntentsList().isEmpty()
+                    || filter
+                        .getRuleIntentsList()
+                        .contains(rule.getRuleInfo().getRuleStatus().getRuleIntent()))
         .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
   }
 
