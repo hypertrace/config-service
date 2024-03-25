@@ -10,12 +10,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
+import ai.traceable.ast.config.service.rules.AstConfigServiceRequestValidator;
+import ai.traceable.ast.config.service.rules.CustomTestPluginManager;
+import ai.traceable.ast.config.service.rules.CustomTestPluginStore;
 import ai.traceable.ast.config.service.rules.RulesManager;
-import ai.traceable.ast.config.service.rules.RulesValidator;
+import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
+import ai.traceable.ast.config.service.v1.CodeSnippetType;
+import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPluginResponse;
+import ai.traceable.ast.config.service.v1.CustomTestPlugin;
+import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
+import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigResponse;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
+import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsResponse;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
@@ -24,6 +36,9 @@ import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesReque
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
+import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
@@ -33,6 +48,8 @@ import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,17 +58,22 @@ import org.junit.jupiter.api.Test;
 
 class AstConfigServiceImplTest {
   private static final String TENANT_ID = "default-tenant";
-  private RulesValidator rulesValidator;
+  private AstConfigServiceRequestValidator requestValidator;
   private RulesManager rulesManager;
   private AstConfigServiceConfig config;
   private AstConfigServiceImpl astConfigService;
+  private CustomTestPluginStore customTestPluginStore;
 
   @BeforeEach
   void setup() {
-    rulesValidator = mock(RulesValidator.class);
+    requestValidator = mock(AstConfigServiceRequestValidator.class);
     rulesManager = mock(RulesManager.class);
     config = mock(AstConfigServiceConfig.class);
-    astConfigService = new AstConfigServiceImpl(rulesValidator, rulesManager, config);
+    customTestPluginStore = mock(CustomTestPluginStore.class);
+    CustomTestPluginManager customTestPluginManager =
+        new CustomTestPluginManager(customTestPluginStore);
+    astConfigService =
+        new AstConfigServiceImpl(requestValidator, rulesManager, config, customTestPluginManager);
   }
 
   @Nested
@@ -62,7 +84,7 @@ class AstConfigServiceImplTest {
       UpdateScanPurgeConfigRequest request = UpdateScanPurgeConfigRequest.getDefaultInstance();
 
       doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
-          .when(rulesValidator)
+          .when(requestValidator)
           .validateOrThrow(any(), eq(request));
 
       StreamObserver<UpdateScanPurgeConfigResponse> responseStreamObserver =
@@ -126,7 +148,7 @@ class AstConfigServiceImplTest {
       GetScanPurgeConfigRequest request = GetScanPurgeConfigRequest.getDefaultInstance();
 
       doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
-          .when(rulesValidator)
+          .when(requestValidator)
           .validateOrThrow(any(), eq(request));
 
       StreamObserver<GetScanPurgeConfigResponse> responseStreamObserver =
@@ -251,7 +273,7 @@ class AstConfigServiceImplTest {
               .build();
 
       doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
-          .when(rulesValidator)
+          .when(requestValidator)
           .validateOrThrow(any(), eq(request));
 
       StreamObserver<EditVulnerabilityMetadataOverridesResponse> responseStreamObserver =
@@ -301,7 +323,7 @@ class AstConfigServiceImplTest {
           DeleteVulnerabilityMetadataOverridesConfigRequest.newBuilder().build();
 
       doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
-          .when(rulesValidator)
+          .when(requestValidator)
           .validateOrThrow(any(), eq(request));
 
       StreamObserver<DeleteVulnerabilityMetadataOverridesConfigResponse> responseStreamObserver =
@@ -364,7 +386,7 @@ class AstConfigServiceImplTest {
           GetVulnerabilityMetadataOverridesRequest.newBuilder().build();
 
       doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
-          .when(rulesValidator)
+          .when(requestValidator)
           .validateOrThrow(any(), eq(request));
 
       StreamObserver<GetVulnerabilityMetadataOverridesResponse> responseStreamObserver =
@@ -417,6 +439,276 @@ class AstConfigServiceImplTest {
                               .setIdentifyingAttributes(identifyingAttributes)
                               .build()))
                   .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+  }
+
+  @Nested
+  class GetAllCustomTestPlugin {
+    @Test
+    @DisplayName("Should get all custom test plugin on valid request")
+    void should_get_all_custom_test_plugin() {
+      GetAllCustomTestPluginsRequest request = GetAllCustomTestPluginsRequest.newBuilder().build();
+      when(customTestPluginStore.getAllConfigData(any()))
+          .thenReturn(
+              List.of(
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build()));
+
+      StreamObserver<GetAllCustomTestPluginsResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.getAllCustomTestPlugins(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              GetAllCustomTestPluginsResponse.newBuilder()
+                  .addAllCustomTestPlugins(
+                      List.of(
+                          CustomTestPlugin.newBuilder()
+                              .setName("custom-test")
+                              .setCodeSnippetDetails(
+                                  CodeSnippetDetails.newBuilder()
+                                      .setCodeSnippet("code-snippet")
+                                      .setCodeSnippetType(
+                                          CodeSnippetType
+                                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .build()))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should fail on invalid request")
+    void should_fail_on_invalid_request() {
+      GetAllCustomTestPluginsRequest request = GetAllCustomTestPluginsRequest.newBuilder().build();
+
+      doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+          .when(requestValidator)
+          .validateOrThrow(any(), eq(request));
+
+      StreamObserver<GetAllCustomTestPluginsResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () -> astConfigService.getAllCustomTestPlugins(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class CreateCustomTestPlugin {
+    @Test
+    @DisplayName("Should create custom test plugin on valid request")
+    void should_create_custom_test_plugin() {
+      CreateCustomTestPluginRequest request =
+          CreateCustomTestPluginRequest.newBuilder()
+              .setCreateCustomPlugin(
+                  CreateCustomPlugin.newBuilder()
+                      .setName("custom-test")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+              .build();
+
+      CustomTestPlugin customTestPlugin =
+          CustomTestPlugin.newBuilder()
+              .setName("custom-test")
+              .setId("test-Id")
+              .setCodeSnippetDetails(
+                  CodeSnippetDetails.newBuilder()
+                      .setCodeSnippet("code-snippet")
+                      .setCodeSnippetType(
+                          CodeSnippetType
+                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+              .build();
+
+      ContextualConfigObject<CustomTestPlugin> contextualConfigObject =
+          mock(ContextualConfigObject.class);
+      when(contextualConfigObject.getContext()).thenReturn("context");
+      when(contextualConfigObject.getData()).thenReturn(customTestPlugin);
+
+      when(customTestPluginStore.upsertObject(any(), any())).thenReturn(contextualConfigObject);
+
+      StreamObserver<CreateCustomTestPluginResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.createCustomTestPlugin(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              CreateCustomTestPluginResponse.newBuilder()
+                  .setCustomTestPlugin(
+                      CustomTestPlugin.newBuilder()
+                          .setName("custom-test")
+                          .setId("test-Id")
+                          .setCodeSnippetDetails(
+                              CodeSnippetDetails.newBuilder()
+                                  .setCodeSnippet("code-snippet")
+                                  .setCodeSnippetType(
+                                      CodeSnippetType
+                                          .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should fail on invalid request")
+    void should_fail_on_invalid_request() {
+      CreateCustomTestPluginRequest request =
+          CreateCustomTestPluginRequest.newBuilder()
+              .setCreateCustomPlugin(
+                  CreateCustomPlugin.newBuilder()
+                      .setName("test-name")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(CodeSnippetType.CODE_SNIPPET_TYPE_UNSPECIFIED)))
+              .build();
+
+      doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+          .when(requestValidator)
+          .validateOrThrow(any(), eq(request));
+
+      StreamObserver<CreateCustomTestPluginResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () -> astConfigService.createCustomTestPlugin(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class UpdateCustomTestPlugin {
+    @Test
+    @DisplayName("Should update custom test plugin on valid request")
+    void should_update_custom_test_plugin() {
+      UpdateCustomTestPluginRequest request =
+          UpdateCustomTestPluginRequest.newBuilder()
+              .setUpdateCustomPlugin(
+                  UpdateCustomPlugin.newBuilder()
+                      .setId("test-id")
+                      .setName("test-name")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+              .build();
+
+      CustomTestPlugin customTestPlugin =
+          CustomTestPlugin.newBuilder()
+              .setName("custom-test")
+              .setId("test-Id")
+              .setCodeSnippetDetails(
+                  CodeSnippetDetails.newBuilder()
+                      .setCodeSnippet("code-snippet")
+                      .setCodeSnippetType(
+                          CodeSnippetType
+                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+              .build();
+
+      ContextualConfigObject<CustomTestPlugin> contextualConfigObject =
+          mock(ContextualConfigObject.class);
+      when(contextualConfigObject.getContext()).thenReturn("context");
+      when(contextualConfigObject.getData()).thenReturn(customTestPlugin);
+
+      when(customTestPluginStore.getData(any(), any())).thenReturn(Optional.of(customTestPlugin));
+      when(customTestPluginStore.upsertObject(any(), any())).thenReturn(contextualConfigObject);
+
+      StreamObserver<UpdateCustomTestPluginResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.updateCustomTestPlugin(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              UpdateCustomTestPluginResponse.newBuilder()
+                  .setCustomTestPlugin(
+                      CustomTestPlugin.newBuilder()
+                          .setName("custom-test")
+                          .setId("test-Id")
+                          .setCodeSnippetDetails(
+                              CodeSnippetDetails.newBuilder()
+                                  .setCodeSnippet("code-snippet")
+                                  .setCodeSnippetType(
+                                      CodeSnippetType
+                                          .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should fail on invalid request")
+    void should_fail_on_invalid_request() {
+      UpdateCustomTestPluginRequest request =
+          UpdateCustomTestPluginRequest.newBuilder()
+              .setUpdateCustomPlugin(UpdateCustomPlugin.newBuilder().setName(""))
+              .build();
+      doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
+          .when(requestValidator)
+          .validateOrThrow(any(), eq(request));
+
+      StreamObserver<UpdateCustomTestPluginResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+      Runnable runnable =
+          () -> astConfigService.updateCustomTestPlugin(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onError(
+              argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
+    }
+  }
+
+  @Nested
+  class DeleteCustomTestPlugin {
+    @Test
+    @DisplayName("Should delete custom test plugin with given id on valid request")
+    void should_delete_custom_test_plugin() {
+      DeleteCustomTestPluginRequest request =
+          DeleteCustomTestPluginRequest.newBuilder().setId("test-id").build();
+
+      DeletedContextualConfigObject<CustomTestPlugin> deletedContextualConfigObject =
+          mock(DeletedContextualConfigObject.class);
+
+      when(customTestPluginStore.deleteObject(any(), eq("test-id")))
+          .thenReturn(Optional.ofNullable(deletedContextualConfigObject));
+
+      StreamObserver<DeleteCustomTestPluginResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.deleteCustomTestPlugin(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(DeleteCustomTestPluginResponse.getDefaultInstance());
+
       verify(responseStreamObserver, times(1)).onCompleted();
     }
   }

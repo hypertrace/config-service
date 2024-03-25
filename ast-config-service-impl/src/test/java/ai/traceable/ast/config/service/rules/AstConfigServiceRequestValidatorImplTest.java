@@ -6,15 +6,23 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
+import ai.traceable.ast.config.service.v1.CodeSnippetType;
+import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
+import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.TagValue;
+import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.protobuf.Duration;
@@ -23,9 +31,10 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-class AstRulesValidatorTest {
+class AstConfigServiceRequestValidatorImplTest {
   private static final String TENANT_ID = "default-tenant";
-  private AstRulesValidator rulesValidator = new AstRulesValidator();
+  private AstConfigServiceRequestValidatorImpl rulesValidator =
+      new AstConfigServiceRequestValidatorImpl();
   private RequestContext mockRequestContext = Mockito.mock(RequestContext.class);
 
   @Test
@@ -290,5 +299,145 @@ class AstRulesValidatorTest {
             rulesValidator.validateOrThrow(
                 mockRequestContext,
                 GetAllVulnerabilityMetadataOverridesRequest.getDefaultInstance()));
+  }
+
+  @Test
+  void validateUpdateCustomTestPluginRequest() {
+
+    // invalid request context
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, UpdateCustomTestPluginRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    // no code snippet details
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                UpdateCustomTestPluginRequest.newBuilder()
+                    .setUpdateCustomPlugin(
+                        UpdateCustomPlugin.newBuilder()
+                            .setId("test-id")
+                            .setName("test-name")
+                            .setCodeSnippetDetails(
+                                CodeSnippetDetails.newBuilder()
+                                    .setCodeSnippetType(
+                                        CodeSnippetType.CODE_SNIPPET_TYPE_UNSPECIFIED)))
+                    .build()));
+
+    // valid request
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                UpdateCustomTestPluginRequest.newBuilder()
+                    .setUpdateCustomPlugin(
+                        UpdateCustomPlugin.newBuilder()
+                            .setId("test-id")
+                            .setName("test-name")
+                            .setCodeSnippetDetails(
+                                CodeSnippetDetails.newBuilder()
+                                    .setCodeSnippet("dummy-code-snippet")
+                                    .setCodeSnippetType(
+                                        CodeSnippetType
+                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                    .build()));
+  }
+
+  @Test
+  void validateCreateCustomTestPluginRequest() {
+
+    // invalid request context
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, UpdateCustomTestPluginRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    // no code snippet details
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                CreateCustomTestPluginRequest.newBuilder()
+                    .setCreateCustomPlugin(
+                        CreateCustomPlugin.newBuilder()
+                            .setName("test-name")
+                            .setCodeSnippetDetails(
+                                CodeSnippetDetails.newBuilder()
+                                    .setCodeSnippetType(
+                                        CodeSnippetType.CODE_SNIPPET_TYPE_UNSPECIFIED)))
+                    .build()));
+
+    // valid request
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                CreateCustomTestPluginRequest.newBuilder()
+                    .setCreateCustomPlugin(
+                        CreateCustomPlugin.newBuilder()
+                            .setName("test-name")
+                            .setCodeSnippetDetails(
+                                CodeSnippetDetails.newBuilder()
+                                    .setCodeSnippet("dummy-code-snippet")
+                                    .setCodeSnippetType(
+                                        CodeSnippetType
+                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                    .build()));
+  }
+
+  @Test
+  void validateDeleteCustomTestPluginRequest() {
+
+    // invalid request context
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, DeleteCustomTestPluginRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    // no id
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, DeleteCustomTestPluginRequest.newBuilder().build()));
+
+    // valid request
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                DeleteCustomTestPluginRequest.newBuilder().setId("id").build()));
+  }
+
+  @Test
+  void validateGetAllCustomTestPluginsRequest() {
+
+    // invalid request context
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, GetAllCustomTestPluginsRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    // valid request
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, GetAllCustomTestPluginsRequest.newBuilder().build()));
   }
 }

@@ -1,9 +1,15 @@
 package ai.traceable.ast.config.service.rules;
 
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
+import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
+import ai.traceable.ast.config.service.v1.CodeSnippetType;
+import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
+import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
@@ -11,6 +17,8 @@ import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesReque
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
+import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import ai.traceable.ast.config.service.v1.VulnerabilitySeverity;
@@ -19,7 +27,7 @@ import io.grpc.Status;
 import org.hypertrace.config.validation.GrpcValidatorUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-class AstRulesValidator implements RulesValidator {
+class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestValidator {
 
   @Override
   public void validateOrThrow(RequestContext requestContext, UpdateScanPurgeConfigRequest request) {
@@ -33,6 +41,12 @@ class AstRulesValidator implements RulesValidator {
 
   @Override
   public void validateOrThrow(RequestContext requestContext, GetScanPurgeConfigRequest request) {
+    validateOrThrow(requestContext);
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, GetAllCustomTestPluginsRequest request) {
     validateOrThrow(requestContext);
   }
 
@@ -155,6 +169,53 @@ class AstRulesValidator implements RulesValidator {
 
   @Override
   public void validateOrThrow(
+      RequestContext requestContext, UpdateCustomTestPluginRequest request) {
+    UpdateCustomPlugin updateCustomPlugin = request.getUpdateCustomPlugin();
+    validateOrThrow(requestContext);
+
+    if (updateCustomPlugin.hasCodeSnippetDetails()) {
+      validateCodeSnippetDetails(requestContext, updateCustomPlugin.getCodeSnippetDetails());
+    }
+
+    if (updateCustomPlugin.getId().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have custom plugin id to update the Custom Plugin")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    if (updateCustomPlugin.hasName() && updateCustomPlugin.getName().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have custom plugin name to update the Custom Plugin")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, DeleteCustomTestPluginRequest request) {
+    validateOrThrow(requestContext);
+    if (request.getId().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have custom plugin id to delete the Custom Plugin")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, CreateCustomTestPluginRequest request) {
+    CreateCustomPlugin createCustomPlugin = request.getCreateCustomPlugin();
+    validateOrThrow(requestContext);
+    validateCodeSnippetDetails(requestContext, createCustomPlugin.getCodeSnippetDetails());
+    if (createCustomPlugin.getName().isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have custom plugin name to create the Custom Plugin")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
       RequestContext requestContext, GetAllVulnerabilityMetadataOverridesRequest request) {
     validateOrThrow(requestContext);
   }
@@ -198,6 +259,22 @@ class AstRulesValidator implements RulesValidator {
     if (environmentId.isBlank()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Request should have an environment_id to update the Ast Feature Config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateCodeSnippetDetails(
+      RequestContext requestContext, CodeSnippetDetails snippetDetails) {
+    String codeSnippet = snippetDetails.getCodeSnippet();
+    if (codeSnippet.isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have code snippet")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
+    if (CodeSnippetType.CODE_SNIPPET_TYPE_UNSPECIFIED.equals(snippetDetails.getCodeSnippetType())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have specified code snippet type")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

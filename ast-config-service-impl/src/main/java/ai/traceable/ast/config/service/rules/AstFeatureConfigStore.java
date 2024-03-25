@@ -1,5 +1,7 @@
 package ai.traceable.ast.config.service.rules;
 
+import static ai.traceable.ast.config.service.constants.AstConfigConstants.AST_CONFIG_NAMESPACE;
+
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
 import com.google.inject.Inject;
@@ -15,8 +17,6 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingS
 @Slf4j
 public class AstFeatureConfigStore
     extends IdentifiedObjectStoreWithFilter<AstFeatureConfig, AstFeatureConfigFilter> {
-
-  private static final String AST_FEATURE_CONFIG_NAMESPACE = "ast-config";
   private static final String AST_FEATURE_CONFIG_RESOURCE_NAME = "ast-feature-config";
 
   @Inject
@@ -25,7 +25,7 @@ public class AstFeatureConfigStore
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
-        AST_FEATURE_CONFIG_NAMESPACE,
+        AST_CONFIG_NAMESPACE,
         AST_FEATURE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
   }
