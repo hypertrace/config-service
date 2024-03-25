@@ -44,7 +44,8 @@ class DataClassificationResolutionCache {
   private static final Duration EXPIRATION_DURATION = Duration.ofMinutes(30);
   private final DataClassificationConfigServiceBlockingStub stub;
   private final DataTypeResolver dataTypeResolver;
-  private final LoadingCache<ContextualKey<List<DataType>>, List<DataTypeResolutionContext>>
+  private final LoadingCache<
+          ContextualKey<DataClassificationUnresolvedConfig>, List<DataTypeResolutionContext>>
       dataTypeResolutionContextCache;
 
   @Inject
@@ -71,8 +72,17 @@ class DataClassificationResolutionCache {
 
   List<DataTypeResolutionContext> getDataTypeResolutions(
       RequestContext requestContext, List<DataType> dataTypes) {
+    List<DataSet> orderedDataSets =
+        requestContext
+            .call(() -> this.stub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
+            .getDataSetsList()
+            .stream()
+            .sorted(DATA_SET_RESOLUTION_PRECEDENCE_COMPARATOR)
+            .collect(toUnmodifiableList());
+
     return this.dataTypeResolutionContextCache.getUnchecked(
-        requestContext.buildInternalContextualKey(dataTypes));
+        requestContext.buildInternalContextualKey(
+            new DataClassificationUnresolvedConfig(dataTypes, orderedDataSets)));
   }
 
   private ExecutorService buildExecutor() {
@@ -85,19 +95,13 @@ class DataClassificationResolutionCache {
   }
 
   private List<DataTypeResolutionContext> buildResolutionContexts(
-      ContextualKey<List<DataType>> key) {
-    List<DataSet> orderedDataSets =
-        key
-            .callInContext(() -> this.stub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
-            .getDataSetsList()
-            .stream()
-            .sorted(DATA_SET_RESOLUTION_PRECEDENCE_COMPARATOR)
-            .collect(toUnmodifiableList());
-    Map<String, DataType> dataTypeMap = Maps.uniqueIndex(key.getData(), DataType::getId);
-    Map<String, DataSet> dataSetMap = Maps.uniqueIndex(orderedDataSets, DataSet::getId);
+      ContextualKey<DataClassificationUnresolvedConfig> key) {
+    Map<String, DataType> dataTypeMap =
+        Maps.uniqueIndex(key.getData().getDatatypes(), DataType::getId);
+    Map<String, DataSet> dataSetMap = Maps.uniqueIndex(key.getData().getDatasets(), DataSet::getId);
     return Stream.of(
-            this.buildContextFragmentsFromDataTypes(key.getData(), dataSetMap),
-            this.buildContextFragmentsFromDataSets(orderedDataSets, dataTypeMap))
+            this.buildContextFragmentsFromDataTypes(key.getData().getDatatypes(), dataSetMap),
+            this.buildContextFragmentsFromDataSets(key.getData().getDatasets(), dataTypeMap))
         .flatMap(Collection::stream)
         .collect(
             Collectors.groupingBy(
@@ -204,6 +208,12 @@ class DataClassificationResolutionCache {
                     context.getProvenance(),
                     context.getEncounterOrder()))
         .orElseThrow();
+  }
+
+  @Value
+  private static class DataClassificationUnresolvedConfig {
+    List<DataType> datatypes;
+    List<DataSet> datasets;
   }
 
   @Value

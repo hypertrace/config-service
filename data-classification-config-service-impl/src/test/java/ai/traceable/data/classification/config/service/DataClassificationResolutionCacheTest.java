@@ -151,4 +151,54 @@ class DataClassificationResolutionCacheTest {
         expectedResult,
         cache.getDataTypeResolutions(testRequestContext, List.of(dataType2, dataType1)));
   }
+
+  @Test
+  void reevaluatesResolutionsOnDatasetChange() {
+    DataType datatype = DataType.newBuilder().setId("dt1").build();
+
+    // At first, return empty for datasets
+    when(this.mockStub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
+        .thenReturn(GetDataSetsResponse.getDefaultInstance());
+
+    when(this.mockResolver.isLegacyDataType(datatype)).thenReturn(false);
+    when(this.mockResolver.isStandAloneDataType(datatype)).thenReturn(false);
+    when(this.mockResolver.resolve(datatype, List.of())).thenReturn(datatype);
+
+    // They're returned in the provided order, but the encounter order is reversed when determining
+    // precedence
+    List<DataTypeResolutionContext> expectedResult =
+        List.of(
+            new DataTypeResolutionContext(
+                datatype, datatype, List.of(), DataTypeProvenance.ORPHAN_DATA_TYPE, 0));
+
+    assertEquals(
+        expectedResult, cache.getDataTypeResolutions(testRequestContext, List.of(datatype)));
+
+    DataSet newDataset =
+        DataSet.newBuilder()
+            .setId("ds1")
+            .setInfo(
+                DataSetInfo.newBuilder()
+                    .addDataTypeIds(datatype.getId())
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_OBFUSCATE))
+            .build();
+    DataType resolutionResult = DataType.newBuilder().setId("resolved-dt1").build();
+
+    // Now we update the mock to simulate a new data set being created
+    when(this.mockStub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
+        .thenReturn(GetDataSetsResponse.newBuilder().addDataSets(newDataset).build());
+    when(this.mockResolver.resolve(datatype, List.of(newDataset))).thenReturn(resolutionResult);
+
+    expectedResult =
+        List.of(
+            new DataTypeResolutionContext(
+                datatype,
+                resolutionResult,
+                List.of(newDataset),
+                DataTypeProvenance.RESOLVED_FROM_DATA_SET,
+                0));
+
+    assertEquals(
+        expectedResult, cache.getDataTypeResolutions(testRequestContext, List.of(datatype)));
+  }
 }
