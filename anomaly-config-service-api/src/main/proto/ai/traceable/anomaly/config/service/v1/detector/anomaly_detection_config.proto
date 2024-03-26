@@ -129,6 +129,7 @@ message AnomalyDetectionConfig {
     BlockingMetadataAnomalyDetectionConfig blocking_metadata_anomaly_detection_config = 9;
     CustomRulesAnomalyDetectionConfig custom_rules_anomaly_detection_config = 10;
     VolumetricAnomalyDetectionConfig volumetric_anomaly_detection_config = 11;
+    CredentialStuffingAnomalyDetectionConfig credential_anomaly_detection_config = 12;
   }
 }
 
@@ -230,6 +231,16 @@ message ApiCallSpikeAnomalyConfig {
 message IpRange {
   int64 start_ip = 1;
   int64 end_ip = 2;
+}
+
+message CredentialStuffingAnomalyDetectionConfig {
+  string anomaly_rule_id = 1;
+  oneof config {
+    CredentialStuffingAnomalyConfig credential_stuffing = 2;
+  }
+}
+
+message CredentialStuffingAnomalyConfig {
 }
 
 message ModsecurityAllDetectionConfig {
