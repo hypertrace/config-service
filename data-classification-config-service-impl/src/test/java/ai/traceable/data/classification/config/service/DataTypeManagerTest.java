@@ -1,6 +1,8 @@
 package ai.traceable.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeProvenance;
@@ -8,15 +10,25 @@ import ai.traceable.data.classification.config.service.DataClassificationResolut
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
+import ai.traceable.data.classification.config.service.v1.DeleteDataTypeRequest;
+import ai.traceable.data.classification.config.service.v1.DeleteDataTypeResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeFilter;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.data.classification.config.service.v1.SystemDataSetVersion;
+import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
+import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
+import com.google.protobuf.util.Structs;
+import com.google.protobuf.util.Values;
+import io.grpc.Status.Code;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
+import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Answers;
@@ -78,47 +90,25 @@ class DataTypeManagerTest {
           3);
 
   @Mock DataTypeStore mockDataTypeStore;
+  @Mock DeletedSystemDatatypeStore mockDeletedSystemDataTypeStore;
   @Mock RedactionRulesDao mockRulesDao;
   @Mock DataClassificationConfig mockConfig;
   @Mock DataClassificationResolutionCache mockCache;
+  @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
 
   @Mock RequestContext mockRequestContext;
   @Mock ContextualConfigObject<DataType> mockConfigObject;
   @Mock ContextualConfigObject<DataType> mockConfigObject2;
+  @Mock DeletedContextualConfigObject<DataType> mockDeletedConfigObject;
 
   @Mock(answer = Answers.CALLS_REAL_METHODS)
   DataTypeResolutionContextComparator dataTypeResolutionContextComparator;
 
   @InjectMocks DataTypeManager dataTypeManager;
 
-  @BeforeEach
-  void beforeEachSetupData() {
-    when(this.mockRulesDao.getAllDataTypesFromRedactionRules(mockRequestContext))
-        .thenReturn(List.of(TEST_LEGACY_DATA_TYPE));
-    when(this.mockConfigObject.getData()).thenReturn(TEST_ORPHAN_DATA_TYPE);
-    when(this.mockConfigObject2.getData()).thenReturn(TEST_REGULAR_DATA_TYPE);
-    when(this.mockDataTypeStore.getAllObjects(mockRequestContext))
-        .thenReturn(List.of(this.mockConfigObject, this.mockConfigObject2));
-    when(this.mockConfig.getSystemDataTypes(
-            SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_UNSPECIFIED))
-        .thenReturn(List.of(TEST_SYSTEM_DATA_TYPE));
-    when(this.mockCache.getDataTypeResolutions(
-            mockRequestContext,
-            List.of(
-                TEST_ORPHAN_DATA_TYPE,
-                TEST_REGULAR_DATA_TYPE,
-                TEST_SYSTEM_DATA_TYPE,
-                TEST_LEGACY_DATA_TYPE)))
-        .thenReturn(
-            List.of(
-                TEST_ORPHAN_RESOLUTION_CONTEXT,
-                TEST_REGULAR_RESOLUTION_CONTEXT,
-                TEST_SYSTEM_RESOLUTION_CONTEXT,
-                TEST_LEGACY_RESOLUTION_CONTEXT));
-  }
-
   @Test
   void doesNotApplyFilterSortAndResolutionIfNotRequested() {
+    this.setUpMockData();
     assertEquals(
         GetDataTypesResponse.newBuilder()
             .addDataTypes(TEST_ORPHAN_DATA_TYPE)
@@ -133,6 +123,7 @@ class DataTypeManagerTest {
 
   @Test
   void appliesFilterSortAndResolutionIfRequested() {
+    this.setUpMockData();
     assertEquals(
         GetDataTypesResponse.newBuilder()
             .addDataTypes(TEST_ORPHAN_RESOLUTION_CONTEXT.getResolvedDataType())
@@ -188,6 +179,7 @@ class DataTypeManagerTest {
 
   @Test
   void appliesOrphanFilter() {
+    this.setUpMockData();
     assertEquals(
         GetDataTypesResponse.newBuilder().addDataTypes(TEST_ORPHAN_DATA_TYPE).build(),
         this.dataTypeManager.getDataTypesMatchingRequest(
@@ -208,5 +200,113 @@ class DataTypeManagerTest {
             GetDataTypesRequest.newBuilder()
                 .setFilter(DataTypeFilter.newBuilder().setOrphanTypes(false))
                 .build()));
+  }
+
+  @Test
+  void deletesDatatype() {
+    String id = "id-to-delete";
+    when(this.mockConfig.getSystemDatatype(id)).thenReturn(Optional.empty());
+    when(this.mockDataTypeStore.deleteObject(mockRequestContext, id))
+        .thenReturn(Optional.of(mockDeletedConfigObject));
+    assertEquals(
+        DeleteDataTypeResponse.getDefaultInstance(),
+        this.dataTypeManager.deleteDatatype(
+            mockRequestContext, DeleteDataTypeRequest.newBuilder().setId(id).build()));
+  }
+
+  @Test
+  void deletesSystemDatatype() {
+    DataType datatypeToDelete = DataType.newBuilder().setId("id-to-delete").build();
+    when(this.mockConfig.getSystemDatatype(datatypeToDelete.getId()))
+        .thenReturn(Optional.of(datatypeToDelete));
+    when(this.mockDataTypeStore.deleteObject(mockRequestContext, datatypeToDelete.getId()))
+        .thenReturn(Optional.empty());
+    when(this.mockDeletedSystemDataTypeStore.getData(mockRequestContext, datatypeToDelete.getId()))
+        .thenReturn(Optional.empty());
+    assertEquals(
+        DeleteDataTypeResponse.getDefaultInstance(),
+        this.dataTypeManager.deleteDatatype(
+            mockRequestContext,
+            DeleteDataTypeRequest.newBuilder().setId(datatypeToDelete.getId()).build()));
+    verify(this.mockConfigChangeEventGenerator)
+        .sendDeleteNotification(
+            mockRequestContext,
+            DataType.class.getName(),
+            datatypeToDelete.getId(),
+            Values.of(Structs.of("id", Values.of("id-to-delete"))));
+  }
+
+  @Test
+  void throwsIfDatatypeMissing() {
+    String id = "id-to-delete";
+    when(this.mockConfig.getSystemDatatype(id)).thenReturn(Optional.empty());
+    when(this.mockDataTypeStore.deleteObject(mockRequestContext, id)).thenReturn(Optional.empty());
+    StatusRuntimeException thrownException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                this.dataTypeManager.deleteDatatype(
+                    mockRequestContext, DeleteDataTypeRequest.newBuilder().setId(id).build()));
+    assertEquals(Code.NOT_FOUND, thrownException.getStatus().getCode());
+  }
+
+  @Test
+  void updatesDatatype() {
+    UpdateDataTypeRequest inputRequest =
+        UpdateDataTypeRequest.newBuilder()
+            .setId("id-to-update")
+            .setRule(DataTypeRule.newBuilder().setName("new name"))
+            .build();
+    DataType updatedDatatype =
+        DataType.newBuilder().setId(inputRequest.getId()).setRule(inputRequest.getRule()).build();
+    when(this.mockDataTypeStore.getData(mockRequestContext, inputRequest.getId()))
+        .thenReturn(Optional.of(DataType.getDefaultInstance()));
+    when(this.mockDataTypeStore.upsertObject(mockRequestContext, updatedDatatype))
+        .thenReturn(mockConfigObject);
+    when(mockConfigObject.getData()).thenReturn(updatedDatatype);
+
+    assertEquals(
+        UpdateDataTypeResponse.newBuilder().setDataType(updatedDatatype).build(),
+        this.dataTypeManager.updateDatatype(mockRequestContext, inputRequest));
+  }
+
+  @Test
+  void throwsIfUpdateDatatypeMissing() {
+    String id = "id-to-update";
+    when(this.mockConfig.getSystemDatatype(id)).thenReturn(Optional.empty());
+    when(this.mockDataTypeStore.getData(mockRequestContext, id)).thenReturn(Optional.empty());
+
+    StatusRuntimeException thrownException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                this.dataTypeManager.updateDatatype(
+                    mockRequestContext, UpdateDataTypeRequest.newBuilder().setId(id).build()));
+    assertEquals(Code.NOT_FOUND, thrownException.getStatus().getCode());
+  }
+
+  private void setUpMockData() {
+    when(this.mockRulesDao.getAllDataTypesFromRedactionRules(mockRequestContext))
+        .thenReturn(List.of(TEST_LEGACY_DATA_TYPE));
+    when(this.mockConfigObject.getData()).thenReturn(TEST_ORPHAN_DATA_TYPE);
+    when(this.mockConfigObject2.getData()).thenReturn(TEST_REGULAR_DATA_TYPE);
+    when(this.mockDataTypeStore.getAllObjects(mockRequestContext))
+        .thenReturn(List.of(this.mockConfigObject, this.mockConfigObject2));
+    when(this.mockConfig.getSystemDataTypes(
+            SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_UNSPECIFIED))
+        .thenReturn(List.of(TEST_SYSTEM_DATA_TYPE));
+    when(this.mockCache.getDataTypeResolutions(
+            mockRequestContext,
+            List.of(
+                TEST_ORPHAN_DATA_TYPE,
+                TEST_REGULAR_DATA_TYPE,
+                TEST_SYSTEM_DATA_TYPE,
+                TEST_LEGACY_DATA_TYPE)))
+        .thenReturn(
+            List.of(
+                TEST_ORPHAN_RESOLUTION_CONTEXT,
+                TEST_REGULAR_RESOLUTION_CONTEXT,
+                TEST_SYSTEM_RESOLUTION_CONTEXT,
+                TEST_LEGACY_RESOLUTION_CONTEXT));
   }
 }

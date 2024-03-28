@@ -298,7 +298,8 @@ class DataClassificationConfigServiceImplTest {
             .setId("systemdatatyperp1")
             .setRule(updatedSystemDataTypeRule)
             .build();
-    when(mockConfig.isSystemDataType("systemdatatyperp1")).thenReturn(true);
+    when(mockConfig.getSystemDatatype("systemdatatyperp1"))
+        .thenReturn(Optional.of(DataType.getDefaultInstance()));
     UpdateDataTypeResponse updateresponse =
         dataClassificationConfigServiceBlockingStub.updateDataType(request);
     assertEquals(updatedSystemDataTypeRule, updateresponse.getDataType().getRule());
@@ -310,7 +311,8 @@ class DataClassificationConfigServiceImplTest {
             .setId("systemdatatyperp2")
             .setRule(updatedSystemDataTypeRule)
             .build();
-    when(mockConfig.isSystemDataType("systemdatatyperp2")).thenReturn(true);
+    when(mockConfig.getSystemDatatype("systemdatatyperp2"))
+        .thenReturn(Optional.of(DataType.getDefaultInstance()));
     updateresponse = dataClassificationConfigServiceBlockingStub.updateDataType(request);
     assertEquals(updatedSystemDataTypeRule, updateresponse.getDataType().getRule());
   }
@@ -975,7 +977,6 @@ class DataClassificationConfigServiceImplTest {
         DataClassificationConfigServiceGrpc.newBlockingStub(
             this.mockGenericConfigService.channel());
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    DataTypeStore dataTypeStore = new DataTypeStore(genericStub, configChangeEventGenerator);
     RedactionRulesDao redactionRulesDao =
         new RedactionRulesDao(
             sensitiveDataConfigServiceBlockingStub,
@@ -984,7 +985,6 @@ class DataClassificationConfigServiceImplTest {
         .addService(
             new DataClassificationConfigServiceImpl(
                 new DataSetStore(genericStub, configChangeEventGenerator),
-                dataTypeStore,
                 new DeletedDataSetStore(genericStub),
                 new DataClassificationOverrideStore(genericStub, configChangeEventGenerator),
                 new DataSetConfigRequestValidator(),
@@ -993,11 +993,13 @@ class DataClassificationConfigServiceImplTest {
                 null,
                 redactionRulesDao,
                 new DataTypeManager(
-                    dataTypeStore,
+                    new DataTypeStore(genericStub, configChangeEventGenerator),
+                    new DeletedSystemDatatypeStore(genericStub),
                     redactionRulesDao,
                     config,
                     new DataClassificationResolutionCache(ownStub, new DataTypeResolver()),
-                    new DataTypeResolutionContextComparator()),
+                    new DataTypeResolutionContextComparator(),
+                    null),
                 config))
         .start();
   }

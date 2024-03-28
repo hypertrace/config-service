@@ -45,10 +45,6 @@ class DataClassificationConfig {
             DataType::getId);
   }
 
-  boolean isSystemDataType(String dataTypeId) {
-    return systemDataTypesRp2.containsKey(dataTypeId) || systemDataTypesRp1.containsKey(dataTypeId);
-  }
-
   boolean isSystemDataSet(String dataSetId) {
     return getSystemDataSet(dataSetId).isPresent();
   }
@@ -76,6 +72,11 @@ class DataClassificationConfig {
       default:
         return List.copyOf(systemDataTypesRp2.values());
     }
+  }
+
+  Optional<DataType> getSystemDatatype(String dataTypeId) {
+    return Optional.ofNullable(systemDataTypesRp2.get(dataTypeId))
+        .or(() -> Optional.ofNullable(systemDataTypesRp1.get(dataTypeId)));
   }
 
   private List<DataSet> buildDataSetsList(

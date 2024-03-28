@@ -17,7 +17,6 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationOver
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataClassificationOverrideScope;
 import ai.traceable.data.classification.config.service.v1.DataSet;
-import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesRequest;
 import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesResponse;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
@@ -58,8 +57,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 class DataClassificationConfigServiceImpl extends DataClassificationConfigServiceImplBase {
   private final IdentifiedObjectStore<DataSet> dataSetStore;
-  private final IdentifiedObjectStore<DataType> dataTypeStore;
-  private final IdentifiedObjectStore<DeletedSystemDataSet> deletedDataSetStore;
+  private final IdentifiedObjectStore<DeletedSystemDataSet> deletedSystemDatasetStore;
   private final IdentifiedObjectStore<DataClassificationOverride> dataClassificationOverrideStore;
   private final DataSetConfigRequestValidator dataSetConfigRequestValidator;
   private final DataTypeConfigRequestValidator dataTypeConfigRequestValidator;
@@ -73,8 +71,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   @Inject
   public DataClassificationConfigServiceImpl(
       DataSetStore dataSetStore,
-      DataTypeStore dataTypeStore,
-      DeletedDataSetStore deletedDataSetStore,
+      DeletedDataSetStore deletedSystemDatasetStore,
       DataClassificationOverrideStore dataClassificationOverrideStore,
       DataSetConfigRequestValidator dataSetConfigRequestValidator,
       DataTypeConfigRequestValidator dataTypeConfigRequestValidator,
@@ -85,8 +82,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       DataTypeManager dataTypeManager,
       DataClassificationConfig config) {
     this.dataSetStore = dataSetStore;
-    this.dataTypeStore = dataTypeStore;
-    this.deletedDataSetStore = deletedDataSetStore;
+    this.deletedSystemDatasetStore = deletedSystemDatasetStore;
     this.dataClassificationOverrideStore = dataClassificationOverrideStore;
     this.dataSetConfigRequestValidator = dataSetConfigRequestValidator;
     this.dataTypeConfigRequestValidator = dataTypeConfigRequestValidator;
@@ -104,15 +100,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
-      DataType dataType =
-          DataType.newBuilder()
-              .setId(UUID.randomUUID().toString())
-              .setRule(request.getRule())
-              .build();
-      DataType createdDataType =
-          this.dataTypeStore.upsertObject(requestContext, dataType).getData();
-      responseObserver.onNext(
-          CreateDataTypeResponse.newBuilder().setDataType(createdDataType).build());
+      responseObserver.onNext(this.dataTypeManager.createDatatype(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to create data type - {}", request, e);
@@ -141,16 +129,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
-      if (!this.config.isSystemDataType(request.getId())
-          && this.dataTypeStore.getData(requestContext, request.getId()).isEmpty()) {
-        throw Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers());
-      }
-      DataType dataTypeToUpdate =
-          DataType.newBuilder().setId(request.getId()).setRule(request.getRule()).build();
-      DataType upsertedDataType =
-          this.dataTypeStore.upsertObject(requestContext, dataTypeToUpdate).getData();
-      responseObserver.onNext(
-          UpdateDataTypeResponse.newBuilder().setDataType(upsertedDataType).build());
+      responseObserver.onNext(this.dataTypeManager.updateDatatype(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to update data type - {}", request, e);
@@ -164,12 +143,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataTypeConfigRequestValidator.validateOrThrow(requestContext, request);
-      // Need to check deletion of system datatype. Currently we are not checking system datatypes
-      // for deletion of datatype
-      this.dataTypeStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      responseObserver.onNext(DeleteDataTypeResponse.getDefaultInstance());
+      responseObserver.onNext(this.dataTypeManager.deleteDatatype(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to delete data type - {}", request, e);
@@ -318,7 +292,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
         if (systemDataSetOptional.isPresent()) {
           DeletedSystemDataSet deletedSystemDataSet =
               DeletedSystemDataSet.newBuilder().setId(dataSetId).build();
-          this.deletedDataSetStore.upsertObject(requestContext, deletedSystemDataSet);
+          this.deletedSystemDatasetStore.upsertObject(requestContext, deletedSystemDataSet);
           sendSystemDataSetDeletionEvent(
               requestContext,
               optionalDeletedContextualConfigObject.isEmpty(),
@@ -465,7 +439,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   private Optional<DataSet> getSystemDataSet(RequestContext requestContext, String id) {
     if (this.config.isSystemDataSet(id)) {
       Optional<DeletedSystemDataSet> isSystemDataSetDeleted =
-          this.deletedDataSetStore.getData(requestContext, id);
+          this.deletedSystemDatasetStore.getData(requestContext, id);
       if (isSystemDataSetDeleted.isEmpty()) {
         return this.config.getSystemDataSet(id);
       }
@@ -474,7 +448,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
   }
 
   private List<String> getDeletedSystemDataSets(RequestContext requestContext) {
-    return this.deletedDataSetStore.getAllObjects(requestContext).stream()
+    return this.deletedSystemDatasetStore.getAllObjects(requestContext).stream()
         .map(ConfigObject::getData)
         .map(DeletedSystemDataSet::getId)
         .collect(Collectors.toList());
