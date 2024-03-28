@@ -13,7 +13,6 @@ import ai.traceable.data.classification.config.service.v1.DataType;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
-import com.google.protobuf.Value;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
@@ -38,7 +37,7 @@ class DataClassificationCachingClientImplTest {
   DataClassificationCachingClientImpl cache;
 
   @Test
-  void test_getDataClassificationInfoMap() throws Exception {
+  void test_getDataClassificationInfoMap() {
 
     DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig =
         DataClassificationInfoCachingClientConfig.from(
@@ -82,9 +81,23 @@ class DataClassificationCachingClientImplTest {
                 .addDataTypes(dataType)
                 .putAllReferencedDataSetsById(dataSetIdToDataSetMap)
                 .build());
-    KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>
+    Config kafkaConfig =
+        ConfigFactory.parseMap(
+            Map.of(
+                "topic.name",
+                "mock-config-change-event",
+                "poll.timeout",
+                "5ms",
+                "consumer.name",
+                "mock-config-change-event-consumer"));
+    KafkaMockConsumerTestUtil<ConfigChangeEventKey, ConfigChangeEventValue> mockConsumerTestUtil =
+        new KafkaMockConsumerTestUtil<>("mock-config-change-event", 1);
+    MockConsumer<ConfigChangeEventKey, ConfigChangeEventValue> mockConsumer =
+        mockConsumerTestUtil.getMockConsumer();
+    KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue>
         kafkaLiveEventListenerBuilder =
-            new KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>();
+            new KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>()
+                .build("mock-config-change-event-consumer", kafkaConfig, mockConsumer);
     this.cache =
         new DataClassificationCachingClientImpl(
             kafkaLiveEventListenerBuilder,
@@ -133,17 +146,6 @@ class DataClassificationCachingClientImplTest {
             DataSet.newBuilder()
                 .setInfo(DataSetInfo.newBuilder().setName("datasetAfterInvalidation2"))
                 .build());
-    Config kafkaConfig =
-        ConfigFactory.parseMap(
-            Map.of(
-                "topic.name",
-                "mock-config-change-event",
-                "poll.timeout",
-                "5ms",
-                "consumer.name",
-                "mock-config-change-event-consumer",
-                "schema.registry.url",
-                "http://schema-registry-service:8081"));
     when(this.ongoingStub.getDataTypes(
             GetDataTypesRequest.newBuilder()
                 .setFilter(dataTypeFilter)
@@ -154,12 +156,6 @@ class DataClassificationCachingClientImplTest {
                 .addDataTypes(dataTypeAfterInvalidation)
                 .putAllReferencedDataSetsById(dataSetIdToDataSetMapAfterInvalidation)
                 .build());
-    KafkaMockConsumerTestUtil<ConfigChangeEventKey, ConfigChangeEventValue> mockConsumerTestUtil =
-        new KafkaMockConsumerTestUtil<>("mock-config-change-event", 1);
-    MockConsumer<ConfigChangeEventKey, ConfigChangeEventValue> mockConsumer =
-        mockConsumerTestUtil.getMockConsumer();
-    kafkaLiveEventListenerBuilder.build(
-        "mock-config-change-event-consumer", kafkaConfig, mockConsumer);
     mockConsumerTestUtil.addRecord(
         ConfigChangeEventKey.newBuilder()
             .setTenantId("DataClassificationInfoCacheTest")
@@ -175,9 +171,5 @@ class DataClassificationCachingClientImplTest {
         dataClassificationInfo1.getDataTypeIdToDataTypeMap());
     assertEquals(
         dataSetIdToDataSetMapAfterInvalidation, dataClassificationInfo1.getDataSetIdToDataSetMap());
-  }
-
-  private Value createStringValue(String value) {
-    return Value.newBuilder().setStringValue(value).build();
   }
 }

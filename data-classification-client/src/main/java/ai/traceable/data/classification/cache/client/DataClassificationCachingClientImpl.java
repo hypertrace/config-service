@@ -47,6 +47,7 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
     registerCacheMetrics();
   }
 
+  @Deprecated(forRemoval = true)
   public DataClassificationCachingClientImpl(
       KafkaLiveEventListener.Builder<ConfigChangeEventKey, ConfigChangeEventValue>
           kafkaLiveEventListenerBuilder,
@@ -55,6 +56,15 @@ public class DataClassificationCachingClientImpl implements DataClassificationCl
       DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
     this(dataClassificationConfigServiceBlockingStub, dataClassificationInfoCachingClientConfig);
     kafkaLiveEventListenerBuilder.registerCallback(this::updateCacheBasedOnEvent);
+  }
+
+  public DataClassificationCachingClientImpl(
+      KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener,
+      DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub
+          dataClassificationConfigServiceBlockingStub,
+      DataClassificationInfoCachingClientConfig dataClassificationInfoCachingClientConfig) {
+    this(dataClassificationConfigServiceBlockingStub, dataClassificationInfoCachingClientConfig);
+    kafkaLiveEventListener.registerCallback(this::updateCacheBasedOnEvent);
   }
 
   private LoadingCache<ContextualKey<Optional<DataTypeFilter>>, DataClassificationInfo>
