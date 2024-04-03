@@ -67,7 +67,7 @@ crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155)
 crs_932180 :: Restricted File Upload Attempt
 crs_9410170 :: NoScript XSS InjectionChecker: Attribute Injection (T170)
 crs_941260 :: IE XSS Filters - Attack (Meta charset)
-crs_9420190 :: MSSQL code execution and information gathering attempts
+crs_9420190 :: DB code execution and information gathering attempts
 crs_9420230 :: Conditional SQL injection attempts (T230)
 crs_9420291 :: Basic MongoDB SQL injection attempts (Nested JSON)
 crs_942240 :: MySQL charset switch and MSSQL DoS attempts
