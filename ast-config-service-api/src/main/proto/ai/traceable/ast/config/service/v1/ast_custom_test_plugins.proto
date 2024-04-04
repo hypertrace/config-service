@@ -4,7 +4,19 @@ package ai.traceable.ast.config.service.v1;
 
 option java_multiple_files = true;
 
-message GetAllCustomTestPluginsRequest {}
+message GetAllCustomTestPluginsRequest {
+  CustomTestPluginFilter filter = 1;
+}
+
+message CustomTestPluginFilter {
+  oneof type {
+    StringList id_filter = 1;
+  }
+}
+
+message StringList {
+  repeated string values = 1;
+}
 
 message GetAllCustomTestPluginsResponse {
   repeated CustomTestPlugin custom_test_plugins = 1;
