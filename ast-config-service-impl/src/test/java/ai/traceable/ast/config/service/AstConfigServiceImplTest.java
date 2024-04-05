@@ -20,6 +20,7 @@ import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.CustomTestPlugin;
+import ai.traceable.ast.config.service.v1.CustomTestPluginFilter;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
@@ -36,6 +37,7 @@ import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesReque
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
+import ai.traceable.ast.config.service.v1.StringList;
 import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginResponse;
@@ -446,8 +448,8 @@ class AstConfigServiceImplTest {
   @Nested
   class GetAllCustomTestPlugin {
     @Test
-    @DisplayName("Should get all custom test plugin on valid request")
-    void should_get_all_custom_test_plugin() {
+    @DisplayName("Should get all custom test plugin without filter on valid request")
+    void should_get_all_custom_test_plugin_without_filter() {
       GetAllCustomTestPluginsRequest request = GetAllCustomTestPluginsRequest.newBuilder().build();
       when(customTestPluginStore.getAllConfigData(any()))
           .thenReturn(
@@ -475,6 +477,66 @@ class AstConfigServiceImplTest {
                   .addAllCustomTestPlugins(
                       List.of(
                           CustomTestPlugin.newBuilder()
+                              .setName("custom-test")
+                              .setCodeSnippetDetails(
+                                  CodeSnippetDetails.newBuilder()
+                                      .setCodeSnippet("code-snippet")
+                                      .setCodeSnippetType(
+                                          CodeSnippetType
+                                              .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .build()))
+                  .build());
+      verify(responseStreamObserver, times(1)).onCompleted();
+    }
+
+    @Test
+    @DisplayName("Should get all custom test plugin with filter on valid request")
+    void should_get_all_custom_test_plugin_with_filter() {
+      GetAllCustomTestPluginsRequest request =
+          GetAllCustomTestPluginsRequest.newBuilder()
+              .setFilter(
+                  CustomTestPluginFilter.newBuilder()
+                      .setIdFilter(StringList.newBuilder().addAllValues(List.of("id1"))))
+              .build();
+
+      when(customTestPluginStore.getAllConfigData(any()))
+          .thenReturn(
+              List.of(
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test")
+                      .setId("id1")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build(),
+                  CustomTestPlugin.newBuilder()
+                      .setName("custom-test")
+                      .setId("id2")
+                      .setCodeSnippetDetails(
+                          CodeSnippetDetails.newBuilder()
+                              .setCodeSnippet("code-snippet")
+                              .setCodeSnippetType(
+                                  CodeSnippetType
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .build()));
+
+      StreamObserver<GetAllCustomTestPluginsResponse> responseStreamObserver =
+          mock(StreamObserver.class);
+
+      Runnable runnable =
+          () -> astConfigService.getAllCustomTestPlugins(request, responseStreamObserver);
+      GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+
+      verify(responseStreamObserver, times(1))
+          .onNext(
+              GetAllCustomTestPluginsResponse.newBuilder()
+                  .addAllCustomTestPlugins(
+                      List.of(
+                          CustomTestPlugin.newBuilder()
+                              .setId("id1")
                               .setName("custom-test")
                               .setCodeSnippetDetails(
                                   CodeSnippetDetails.newBuilder()
