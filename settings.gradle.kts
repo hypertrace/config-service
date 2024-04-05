@@ -13,8 +13,8 @@ pluginManagement {
 }
 
 plugins {
-  id("org.hypertrace.version-settings") version "0.2.0"
-  id("ai.traceable.dependency-settings") version "1.6.2"
+  id("org.hypertrace.version-settings") version "0.2.1"
+  id("ai.traceable.dependency-settings") version "1.6.3"
 }
 
 rootProject.name = "traceable-config-service-root"
@@ -22,7 +22,7 @@ rootProject.name = "traceable-config-service-root"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 configure<DependencyPluginSettingExtension> {
-  catalogVersion.set("0.3.145")
+  catalogVersion.set("0.3.215")
 }
 
 includeBuild("./hypertrace-config-service")

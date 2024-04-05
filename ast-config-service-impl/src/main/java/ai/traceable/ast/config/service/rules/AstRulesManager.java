@@ -34,11 +34,15 @@ class AstRulesManager implements RulesManager {
   @Override
   public ScanPurgeConfig updateScanPurgeConfig(
       RequestContext requestContext, UpdateScanPurgeConfigRequest request) {
-    ScanPurgeConfig scanPurgeConfig =
-        ScanPurgeConfig.newBuilder()
-            .setPurgeDuration(request.getPurgeConfig().getPurgeDuration())
-            .build();
-    return scanPurgeConfigStore.upsertObject(requestContext, scanPurgeConfig).getData();
+    ScanPurgeConfig.Builder scanPurgeConfigBuilder =
+        ScanPurgeConfig.newBuilder().setPurgeDuration(request.getPurgeConfig().getPurgeDuration());
+    if (request.getPurgeConfig().hasScanRetentionLimitPerSuite()) {
+      scanPurgeConfigBuilder.setScanRetentionLimitPerSuite(
+          request.getPurgeConfig().getScanRetentionLimitPerSuite());
+    }
+    return scanPurgeConfigStore
+        .upsertObject(requestContext, scanPurgeConfigBuilder.build())
+        .getData();
   }
 
   @Override

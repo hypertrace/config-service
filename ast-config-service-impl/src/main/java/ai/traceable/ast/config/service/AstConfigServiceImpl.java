@@ -94,7 +94,10 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
   }
 
   private ScanPurgeConfig getDefaultScanPurgeConfig() {
-    return ScanPurgeConfig.newBuilder().setPurgeDuration(config.getDefaultPurgeDuration()).build();
+    return ScanPurgeConfig.newBuilder()
+        .setPurgeDuration(config.getDefaultPurgeDuration())
+        .setScanRetentionLimitPerSuite(config.getDefaultScanRetentionLimitPerSuite())
+        .build();
   }
 
   @Override

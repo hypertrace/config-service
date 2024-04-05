@@ -207,12 +207,16 @@ class AstConfigServiceImplTest {
     @DisplayName("Should get config from default value on valid request")
     void should_get_config_from_default_valid_request() {
       Duration duration = Duration.newBuilder().setSeconds(1234).build();
-      ScanPurgeConfig purgeConfig = ScanPurgeConfig.newBuilder().setPurgeDuration(duration).build();
+      ScanPurgeConfig purgeConfig =
+          ScanPurgeConfig.newBuilder()
+              .setPurgeDuration(duration)
+              .setScanRetentionLimitPerSuite(10)
+              .build();
       GetScanPurgeConfigRequest request = GetScanPurgeConfigRequest.getDefaultInstance();
 
       when(rulesManager.getScanPurgeConfig(any())).thenReturn(Optional.empty());
       when(config.getDefaultPurgeDuration()).thenReturn(duration);
-
+      when(config.getDefaultScanRetentionLimitPerSuite()).thenReturn(10);
       StreamObserver<GetScanPurgeConfigResponse> responseStreamObserver =
           mock(StreamObserver.class);
       Runnable runnable =

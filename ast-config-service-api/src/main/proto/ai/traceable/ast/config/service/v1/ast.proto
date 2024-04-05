@@ -58,6 +58,7 @@ enum Location {
 
 message ScanPurgeConfig {
   google.protobuf.Duration purge_duration = 1;
+  optional int64 scan_retention_limit_per_suite = 2;
 }
 
 message VulnerabilityMetadataOverrides {
