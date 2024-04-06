@@ -15,6 +15,10 @@ import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
+import ai.traceable.ast.config.service.v1.Location;
+import ai.traceable.ast.config.service.v1.RelationalOperator;
+import ai.traceable.ast.config.service.v1.SpanFilters;
+import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
@@ -22,11 +26,16 @@ import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import ai.traceable.ast.config.service.v1.VulnerabilitySeverity;
+import com.google.common.base.Preconditions;
 import com.google.protobuf.Duration;
 import io.grpc.Status;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.validation.GrpcValidatorUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestValidator {
 
   @Override
@@ -248,6 +257,55 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
       throw Status.INVALID_ARGUMENT
           .withDescription("Update Ast feature config status not set.")
           .asRuntimeException(requestContext.buildTrailers());
+    }
+    if (request.getEnabledConfig().getReplayConfig().hasSpanFilters()) {
+      validateSpanFilters(request.getEnabledConfig().getReplayConfig().getSpanFilters());
+    }
+  }
+
+  private void validateSpanFilters(SpanFilters spanFilters) {
+    spanFilters
+        .getConditionsList()
+        .forEach(
+            condition -> {
+              Preconditions.checkArgument(
+                  condition.hasKeyValuePredicate(),
+                  "Key Value Predicate in Span Filters Not Present");
+              Preconditions.checkArgument(
+                  condition.getKeyValuePredicate().hasKeyPredicate(),
+                  "Key Predicate in Span Filters Not Present");
+              Preconditions.checkArgument(
+                  !condition.getLocation().equals(Location.LOCATION_UNSPECIFIED),
+                  "Location for Span Filters is Not Specified");
+              StringPredicate keyPredicate = condition.getKeyValuePredicate().getKeyPredicate();
+              validateStringPredicate(keyPredicate);
+              if (condition.getKeyValuePredicate().hasValuePredicate()) {
+                StringPredicate valuePredicate =
+                    condition.getKeyValuePredicate().getValuePredicate();
+                validateStringPredicate(valuePredicate);
+              }
+            });
+  }
+
+  private void validateStringPredicate(StringPredicate stringPredicate) {
+    Preconditions.checkArgument(
+        !stringPredicate.getOperator().equals(RelationalOperator.RELATIONAL_OPERATOR_UNSPECIFIED),
+        "Relational Operator in Predicate for Span Filters is Not Specified");
+    if (stringPredicate
+        .getOperator()
+        .equals(RelationalOperator.RELATIONAL_OPERATOR_MATCHES_REGEX)) {
+      Preconditions.checkArgument(
+          isValidRegex(stringPredicate.getValue()),
+          "Regex provided in value for Span Filters is invalid");
+    }
+  }
+
+  private boolean isValidRegex(final String regex) {
+    try {
+      Pattern.compile(regex);
+      return true;
+    } catch (PatternSyntaxException e) {
+      return false;
     }
   }
 

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.ast.config.service.v1.AstEnabledConfig;
+import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
 import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
@@ -19,15 +21,24 @@ import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRe
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
+import ai.traceable.ast.config.service.v1.KeyValuePredicate;
+import ai.traceable.ast.config.service.v1.KeyValuePredicateWithLocation;
+import ai.traceable.ast.config.service.v1.Location;
+import ai.traceable.ast.config.service.v1.RelationalOperator;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
+import ai.traceable.ast.config.service.v1.SpanFilters;
+import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
+import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.protobuf.Duration;
+import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -439,5 +450,120 @@ class AstConfigServiceRequestValidatorImplTest {
         () ->
             rulesValidator.validateOrThrow(
                 mockRequestContext, GetAllCustomTestPluginsRequest.newBuilder().build()));
+  }
+
+  @Test
+  @DisplayName("Invalid key regex request for Span Filters")
+  void validateKeyRegexSpanFilters() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+    UpdateAstFeatureConfigRequest request =
+        UpdateAstFeatureConfigRequest.newBuilder()
+            .setEnvironmentId("env_id")
+            .setEnabledConfig(
+                AstEnabledConfig.newBuilder()
+                    .setReplayConfig(
+                        AstReplayConfig.newBuilder()
+                            .setSpanFilters(
+                                SpanFilters.newBuilder()
+                                    .addAllConditions(
+                                        List.of(
+                                            KeyValuePredicateWithLocation.newBuilder()
+                                                .setLocation(Location.LOCATION_REQUEST_HEADER)
+                                                .setKeyValuePredicate(
+                                                    KeyValuePredicate.newBuilder()
+                                                        .setKeyPredicate(
+                                                            StringPredicate.newBuilder()
+                                                                .setOperator(
+                                                                    RelationalOperator
+                                                                        .RELATIONAL_OPERATOR_MATCHES_REGEX)
+                                                                .setValue("*")
+                                                                .build())
+                                                        .build())
+                                                .build()))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> rulesValidator.validateOrThrow(mockRequestContext, request));
+  }
+
+  @Test
+  @DisplayName("Invalid value regex request for Span Filters")
+  void validateValueRegexSpanFilters() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+    UpdateAstFeatureConfigRequest request =
+        UpdateAstFeatureConfigRequest.newBuilder()
+            .setEnvironmentId("env_id")
+            .setEnabledConfig(
+                AstEnabledConfig.newBuilder()
+                    .setReplayConfig(
+                        AstReplayConfig.newBuilder()
+                            .setSpanFilters(
+                                SpanFilters.newBuilder()
+                                    .addAllConditions(
+                                        List.of(
+                                            KeyValuePredicateWithLocation.newBuilder()
+                                                .setLocation(Location.LOCATION_REQUEST_HEADER)
+                                                .setKeyValuePredicate(
+                                                    KeyValuePredicate.newBuilder()
+                                                        .setKeyPredicate(
+                                                            StringPredicate.newBuilder()
+                                                                .setOperator(
+                                                                    RelationalOperator
+                                                                        .RELATIONAL_OPERATOR_EQUALS)
+                                                                .build())
+                                                        .setValuePredicate(
+                                                            StringPredicate.newBuilder()
+                                                                .setOperator(
+                                                                    RelationalOperator
+                                                                        .RELATIONAL_OPERATOR_MATCHES_REGEX)
+                                                                .setValue("*")
+                                                                .build())
+                                                        .build())
+                                                .build()))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> rulesValidator.validateOrThrow(mockRequestContext, request));
+  }
+
+  @Test
+  @DisplayName("Invalid location missing request for Span Filters")
+  void validateLocationSpanFilters() {
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+    UpdateAstFeatureConfigRequest request =
+        UpdateAstFeatureConfigRequest.newBuilder()
+            .setEnvironmentId("env_id")
+            .setEnabledConfig(
+                AstEnabledConfig.newBuilder()
+                    .setReplayConfig(
+                        AstReplayConfig.newBuilder()
+                            .setSpanFilters(
+                                SpanFilters.newBuilder()
+                                    .addAllConditions(
+                                        List.of(
+                                            KeyValuePredicateWithLocation.newBuilder()
+                                                .setKeyValuePredicate(
+                                                    KeyValuePredicate.newBuilder()
+                                                        .setKeyPredicate(
+                                                            StringPredicate.newBuilder()
+                                                                .setOperator(
+                                                                    RelationalOperator
+                                                                        .RELATIONAL_OPERATOR_EQUALS)
+                                                                .build())
+                                                        .build())
+                                                .build()))
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> rulesValidator.validateOrThrow(mockRequestContext, request));
   }
 }
