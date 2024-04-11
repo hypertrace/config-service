@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.217=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.222=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:cache-provider:0.8.21=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:event-invalidation-cache:0.8.21=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -88,11 +88,11 @@ org.eclipse.jetty:jetty-util-ajax:9.4.53.v20231009=runtimeClasspath,testRuntimeC
 org.eclipse.jetty:jetty-util:9.4.53.v20231009=runtimeClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hdrhistogram:HdrHistogram:2.1.12=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.18=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.19=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.9=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.serviceframework:platform-metrics:0.1.70=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:platform-metrics:0.1.71=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.entity.service:entity-service-api:0.8.90=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.0=testCompileClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.1=testRuntimeClasspath
