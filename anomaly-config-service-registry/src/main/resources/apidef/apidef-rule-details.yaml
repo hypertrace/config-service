@@ -3,7 +3,7 @@
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
   eventLabels:
     CWE: 472
-    OWASP_API: API6
+    OWASP_API_2019: API6
     MITRE_TACTIC: TA0040
     MITRE_TECHNIQUE: T1565.001
   eventDetails:
@@ -32,7 +32,7 @@
   eventLabels:
     CWE: 183
     OWASP_API_2023: API8
-    OWASP_API: API7
+    OWASP_API_2019: API7
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
@@ -48,7 +48,7 @@
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
   eventLabels:
     CWE: 190
-    OWASP_API: API8
+    OWASP_API_2019: API8
   eventDetails:
     description: |
       A Value Out of Range attack is flagged when the attacker tries to assign an integer value outside than range which the memory assigned to the variable can hold.
@@ -69,7 +69,7 @@
   eventLabels:
     CWE: 843
     OWASP_API_2023: API8
-    OWASP_API: API7
+    OWASP_API_2019: API7
   eventDetails:
     description: "The type of a parameter in the request does not match the expected type. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
     mitigation: "Implement input validation in your API to ensure all parameters are of the correct type. Consider using a schema validation library to automate this process."
@@ -84,7 +84,7 @@
   eventLabels:
     CWE: 287
     OWASP_API_2023: API8
-    OWASP_API: API7
+    OWASP_API_2019: API7
   eventDetails:
     description: "A required field is missing in the request parameters. This could indicate a malformed request or an attempt to bypass security controls."
     mitigation: "Implement input validation in your API to ensure all required fields are present in the request. Consider using a schema validation library to automate this process."
@@ -126,7 +126,7 @@
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
   eventLabels:
     CWE: 644
-    OWASP_API: API8
+    OWASP_API_2019: API8
   eventDetails:
     description: "The User Agent in the request headers is significantly different from the expected values."
     mitigation: "Ensure that your API is expecting the correct User Agents for each operation. Consider implementing checks in your API to validate the User Agents."
@@ -141,7 +141,7 @@
   eventLabels:
     CWE: 204
     OWASP_API_2023: API8
-    OWASP_API: API7
+    OWASP_API_2019: API7
   eventDetails:
     description: "The HTTP response code of a request is significantly different from the expected values."
     mitigation: "Ensure that your API is returning the correct HTTP response codes for each operation. Consider implementing checks in your API to validate the response codes."
@@ -156,7 +156,7 @@
   eventLabels:
     CWE: 436
     OWASP_API_2023: API8
-    OWASP_API: API7
+    OWASP_API_2019: API7
   eventDetails:
     description: "The content type of a request or response is significantly different from the norm or expected value."
     mitigation: "Ensure that the content type of requests and responses is within expected values. Consider implementing content type checks in your API."
@@ -171,7 +171,7 @@
   eventLabels:
     CWE: 1043
     OWASP_API_2023: API8
-    OWASP_API: API7
+    OWASP_API_2019: API7
   eventDetails:
     description: "The size of the content in a request or response is significantly different from the norm."
     mitigation: "Ensure that the size of the content in requests and responses is within expected limits. Consider implementing rate limiting and data size checks in your API."
@@ -215,7 +215,7 @@
   eventLabels:
     CWE: 285
     OWASP_API_2023: API5
-    OWASP_API: API5
+    OWASP_API_2019: API5
     MITRE_TACTIC: TA0004
     MITRE_TECHNIQUE: T1548.002
   eventDetails:
@@ -248,7 +248,7 @@
     eventLabels:
       CWE: 613
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.001
     eventDetails:
@@ -270,7 +270,7 @@
     eventLabels:
       CWE: 613
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.001
     eventDetails:
@@ -289,7 +289,7 @@
     eventLabels:
       CWE: 639
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
@@ -308,7 +308,7 @@
     eventLabels:
       CWE: 347
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
@@ -327,7 +327,7 @@
     eventLabels:
       CWE: 345
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.003
     eventDetails:

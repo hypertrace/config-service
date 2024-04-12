@@ -4,7 +4,7 @@
   eventLabels:
     CWE: 285
     OWASP_API_2023: API1
-    OWASP_API: API1
+    OWASP_API_2019: API1
     MITRE_TACTIC: TA0004
     MITRE_TECHNIQUE: T1548.002
   eventDetails:
@@ -46,7 +46,7 @@
   eventLabels:
     CWE: 285
     OWASP_API_2023: API1
-    OWASP_API: API1
+    OWASP_API_2019: API1
     MITRE_TACTIC: TA0004
     MITRE_TECHNIQUE: T1548.002
   eventDetails:
@@ -91,7 +91,7 @@
     eventLabels:
       CWE: 501
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0009
       MITRE_TECHNIQUE: T1185
     eventDetails:
@@ -109,7 +109,7 @@
     eventLabels:
       CWE: 613
       OWASP_API_2023: API2
-      OWASP_API: API2
+      OWASP_API_2019: API2
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.001
     eventDetails:
