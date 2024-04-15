@@ -22,6 +22,7 @@ public class JiraIntegrationCoordinator {
 
   public CreateJiraIntegrationResponse createJiraIntegration(
       CreateJiraIntegrationRequest request, RequestContext requestContext) {
+    // populating the deprecated fields for backward compatibility
     JiraIntegration.Builder jiraIntegration =
         JiraIntegration.newBuilder()
             .setId(UUID.randomUUID().toString())
@@ -34,6 +35,9 @@ public class JiraIntegrationCoordinator {
     }
     if (request.hasDescription()) {
       jiraIntegration.setDescription(request.getDescription());
+    }
+    if (request.hasJiraIntegrationDetails()) {
+      jiraIntegration.setJiraIntegrationDetails(request.getJiraIntegrationDetails());
     }
     jiraIntegrationStore.upsertObject(requestContext, jiraIntegration.build());
     return CreateJiraIntegrationResponse.newBuilder().setIntegration(jiraIntegration).build();

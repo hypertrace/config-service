@@ -12,10 +12,11 @@ service JiraIntegrationConfigService {
 message CreateJiraIntegrationRequest {
   string name = 1;
   optional string description = 2;
-  string consumer_key = 3;
+  string consumer_key = 3 [deprecated=true];
   string base_url = 4;
-  EncryptedData encrypted_access_token = 5;
+  EncryptedData encrypted_access_token = 5 [deprecated=true];
   Scope scope = 6;
+  JiraIntegrationDetails jira_integration_details = 7;
 }
 
 message CreateJiraIntegrationResponse {
@@ -52,10 +53,37 @@ message JiraIntegration {
   string id = 1;
   string name = 2;
   string description = 3;
-  string consumer_key = 4;
+  string consumer_key = 4 [deprecated=true];
   string base_url = 5;
   Scope scope = 6;
-  EncryptedData encrypted_access_token = 7;
+  EncryptedData encrypted_access_token = 7 [deprecated=true];
+  JiraIntegrationDetails jira_integration_details = 8;
+}
+
+message JiraIntegrationDetails {
+  oneof integration_details {
+    JiraCloudIntegrationDetails jira_cloud_integration_details = 1;
+    JiraDataCenterIntegrationDetails jira_data_center_integration_details = 2;
+  }
+}
+
+message JiraCloudIntegrationDetails {
+  JiraCloudAuthCredentials jira_cloud_auth_credentials = 1;
+}
+
+message JiraCloudAuthCredentials {
+  string consumer_key = 1;
+  EncryptedData encrypted_access_token = 2;
+}
+
+message JiraDataCenterIntegrationDetails {
+  JiraDataCenterAuthCredentials jira_data_center_auth_credentials = 1;
+}
+
+message JiraDataCenterAuthCredentials {
+  oneof auth_credentials {
+    EncryptedData encrypted_personal_access_token = 1;
+  }
 }
 
 message JiraIntegrationFilter {
