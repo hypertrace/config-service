@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package ai.traceable.data.protection.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/data/protection/config/service/v1/data_protection_config.proto";
+
+service DataClassificationConfigService {
+
+  rpc GetResolvedScopedDataProtectionConfig(GetResolvedScopedDataProtectionConfigRequest) returns (GetResolvedScopedDataProtectionConfigResponse) {}
+
+  rpc GetScopedDataProtectionConfigs(GetScopedDataProtectionConfigsRequest) returns (GetScopedDataProtectionConfigsResponse) {}
+
+  rpc UpsertScopedDataProtectionConfig(UpsertScopedDataProtectionConfigRequest) returns (UpsertScopedDataProtectionConfigResponse) {}
+}
+
+message GetResolvedScopedDataProtectionConfigRequest {
+  DataProtectionScope scope = 1;
+}
+
+message GetResolvedScopedDataProtectionConfigResponse {
+  ScopedDataProtectionConfig config = 1;
+}
+
+message GetScopedDataProtectionConfigsRequest {
+}
+
+message GetScopedDataProtectionConfigsResponse {
+  repeated ScopedDataProtectionConfig configs = 1;
+}
+
+message UpsertScopedDataProtectionConfigRequest {
+  DataProtectionScope scope = 1;
+  DataProtectionConfig config = 2;
+}
+
+message UpsertScopedDataProtectionConfigResponse {
+  ScopedDataProtectionConfig config = 1;
+}

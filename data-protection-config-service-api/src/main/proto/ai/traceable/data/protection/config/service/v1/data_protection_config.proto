@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package ai.traceable.data.protection.config.service.v1;
+
+option java_multiple_files = true;
+
+message ScopedDataProtectionConfig {
+  DataProtectionScope scope = 1;
+  DataProtectionConfig config = 2;
+}
+
+message DataProtectionScope {
+  oneof scope {
+    string environment_id = 1;
+  }
+}
+
+message DataProtectionConfig {
+  DataSensitivity min_data_sensitivity = 1;
+  repeated DataProtectionExclusion exclusions = 2;
+}
+
+enum DataSensitivity {
+  DATA_SENSITIVITY_UNSPECIFIED = 0;
+  DATA_SENSITIVITY_LOW = 1;
+  DATA_SENSITIVITY_MEDIUM = 2;
+  DATA_SENSITIVITY_HIGH = 3;
+  DATA_SENSITIVITY_CRITICAL = 4;
+}
+
+message DataProtectionExclusion {
+  repeated DataProtectionExclusionCondition conditions = 1; //ANDed
+}
+
+message DataProtectionExclusionCondition {
+  oneof condition {
+    DataClassifierCondition data_classifier_condition = 1;
+    EntityCondition entity_condition = 2;
+    ParameterNameCondition param_name_condition = 3;
+  }
+}
+
+message DataClassifierCondition {
+  repeated string datatype_ids = 1;
+  repeated string dataset_ids = 2;
+}
+
+message EntityCondition {
+  EntityType entity_type = 1;
+  repeated string entity_ids = 2;
+}
+
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_API = 1;
+  ENTITY_TYPE_SERVICE = 2;
+}
+
+message ParameterNameCondition {
+  repeated string param_names = 1;
+  repeated string param_name_regexes = 2;
+}
