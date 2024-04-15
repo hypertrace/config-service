@@ -10,6 +10,7 @@ import ai.traceable.localprocessing.config.service.v1.RateLimitStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
+import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import com.google.inject.Inject;
 import java.util.HashSet;
@@ -59,9 +60,8 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       Optional<String> environment) {
     return samplingConfigs.stream()
         .map(samplingConfig -> convertSamplingConfig(samplingConfig, serviceName, environment))
-        .filter(Optional::isPresent)
-        .findFirst()
-        .map(Optional::get);
+        .flatMap(Optional::stream)
+        .findFirst();
   }
 
   private Optional<RateLimitConfig> convertSamplingConfig(
@@ -75,15 +75,25 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       return Optional.empty();
     }
 
+    SpanFilter spanFilter = samplingConfig.getSamplingConfigInfo().getFilter();
+
+    /**
+     * If the sampling config has any span filters other than environment and service name filters,
+     * not passing anything to the agent as the matched sampling config might not be correct given
+     * that we are considering only service and environment filters ignoring the rest. Leaving these
+     * out allows for them to get applied on the platform which will ensure correctness
+     */
+    if (!spanFilterMatcher.hasOnlyEnvironmentAndServiceNameFilters(spanFilter)) {
+      return Optional.empty();
+    }
+
     // apply environment filters if any
-    if (!spanFilterMatcher.matchesEnvironment(
-        samplingConfig.getSamplingConfigInfo().getFilter(), environment)) {
+    if (!spanFilterMatcher.matchesEnvironment(spanFilter, environment)) {
       return Optional.empty();
     }
 
     // apply service name filters if any
-    if (!spanFilterMatcher.matchesServiceName(
-        samplingConfig.getSamplingConfigInfo().getFilter(), serviceName)) {
+    if (!spanFilterMatcher.matchesServiceName(spanFilter, serviceName)) {
       return Optional.empty();
     }
 

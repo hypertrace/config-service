@@ -26,10 +26,10 @@ public class FilterConverter {
         return this.convertLogicalFilter(filter.getLogicalSpanFilter());
       case RELATIONAL_SPAN_FILTER:
         return this.convertRelationalFilter(filter.getRelationalSpanFilter());
+      case SPANFILTEREXPRESSION_NOT_SET:
+        return Optional.empty();
       default:
         log.warn("Unsupported filter case: {}", filter);
-        return Optional.empty();
-      case SPANFILTEREXPRESSION_NOT_SET:
         return Optional.empty();
     }
   }

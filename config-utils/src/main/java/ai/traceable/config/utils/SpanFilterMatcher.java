@@ -4,7 +4,9 @@ import ai.traceable.span.processing.config.service.v1.Field;
 import ai.traceable.span.processing.config.service.v1.ListValue;
 import ai.traceable.span.processing.config.service.v1.LogicalOperator;
 import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpression;
+import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import com.google.re2j.Pattern;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +14,42 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SpanFilterMatcher {
 
-  public boolean matchesEnvironment(
-      ai.traceable.span.processing.config.service.v1.SpanFilter spanFilter,
-      Optional<String> environment) {
+  public boolean hasOnlyEnvironmentAndServiceNameFilters(final SpanFilter spanFilter) {
+
+    if (spanFilter.hasRelationalSpanFilter()) {
+      final RelationalSpanFilterExpression relationalSpanFilter =
+          spanFilter.getRelationalSpanFilter();
+      return hasEnvironmentFilter(relationalSpanFilter)
+          || hasServiceNameFilter(relationalSpanFilter);
+    } else if (spanFilter.hasLogicalSpanFilter()) {
+      /**
+       * Since environment and service name filters are expected at the first level only, any other
+       * nested logical filter would mean presence of a span filter that contains filters other than
+       * service and environment ones
+       */
+      return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
+              .filter(SpanFilter::hasRelationalSpanFilter)
+              .allMatch(this::hasOnlyEnvironmentAndServiceNameFilters)
+          && !hasLogicalSpanFilter(spanFilter.getLogicalSpanFilter().getOperandsList());
+    }
+
+    // no presence of span filters implies filter is eligible for all environments and services
+    return true;
+  }
+
+  public boolean hasEnvironmentFilter(
+      RelationalSpanFilterExpression relationalSpanFilterExpression) {
+    return relationalSpanFilterExpression.hasField()
+        && relationalSpanFilterExpression.getField().equals(Field.FIELD_ENVIRONMENT_NAME);
+  }
+
+  public boolean hasServiceNameFilter(
+      RelationalSpanFilterExpression relationalSpanFilterExpression) {
+    return relationalSpanFilterExpression.hasField()
+        && relationalSpanFilterExpression.getField().equals(Field.FIELD_SERVICE_NAME);
+  }
+
+  public boolean matchesEnvironment(SpanFilter spanFilter, Optional<String> environment) {
     if (spanFilter.hasRelationalSpanFilter()) {
       return matchesEnvironment(spanFilter.getRelationalSpanFilter(), environment);
     } else {
@@ -23,23 +58,20 @@ public class SpanFilterMatcher {
           .getOperator()
           .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                ai.traceable.span.processing.config.service.v1.SpanFilter::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .allMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       } else {
         if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
           return true;
         }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                ai.traceable.span.processing.config.service.v1.SpanFilter::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .anyMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       }
     }
   }
 
-  public boolean matchesServiceName(
-      ai.traceable.span.processing.config.service.v1.SpanFilter spanFilter, String serviceName) {
+  public boolean matchesServiceName(SpanFilter spanFilter, String serviceName) {
     if (spanFilter.hasRelationalSpanFilter()) {
       return matchesServiceName(spanFilter.getRelationalSpanFilter(), serviceName);
     } else {
@@ -48,16 +80,14 @@ public class SpanFilterMatcher {
           .getOperator()
           .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                ai.traceable.span.processing.config.service.v1.SpanFilter::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .allMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       } else {
         if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
           return true;
         }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
-            .filter(
-                ai.traceable.span.processing.config.service.v1.SpanFilter::hasRelationalSpanFilter)
+            .filter(SpanFilter::hasRelationalSpanFilter)
             .anyMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       }
     }
@@ -150,5 +180,9 @@ public class SpanFilterMatcher {
         log.error("Unsupported relational operator for list value rhs:{}", relationalOperator);
         return false;
     }
+  }
+
+  private boolean hasLogicalSpanFilter(final List<SpanFilter> spanFilters) {
+    return spanFilters.stream().anyMatch(SpanFilter::hasLogicalSpanFilter);
   }
 }

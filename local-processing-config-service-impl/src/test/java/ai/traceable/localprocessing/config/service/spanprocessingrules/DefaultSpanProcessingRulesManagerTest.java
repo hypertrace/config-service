@@ -13,6 +13,7 @@ import static ai.traceable.localprocessing.config.service.spanprocessingrules.Sp
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedProtectionSpanRulesResponseServiceNameFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponse;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseEnvironmentFilter;
+import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseNoFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseServiceNameFilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,7 +32,6 @@ import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesRequest;
 import ai.traceable.localprocessing.config.service.v1.GetSpanProcessingRulesResponse;
 import ai.traceable.localprocessing.config.service.v1.ProtectionSpanProcessingRule;
-import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRules;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceRequest;
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
@@ -574,7 +574,7 @@ class DefaultSpanProcessingRulesManagerTest {
   }
 
   @Test
-  void testGetRateLimitConfig() {
+  void testGetRateLimitConfig_nonServiceAndEnvironmentFilters() {
     when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
         .thenReturn(buildGetAllResolvedSamplingConfigsResponse());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
@@ -591,15 +591,9 @@ class DefaultSpanProcessingRulesManagerTest {
                         .setServiceName("service1")
                         .build())
                 .build());
-    RateLimitConfig expectedRateLimitConfig = buildExpectedRateLimitConfig();
 
-    String hash =
-        uuidGenerator.generateId(
-            SpanProcessingRules.newBuilder()
-                .setRateLimitConfig(buildExpectedRateLimitConfig())
-                .build());
-    SpanProcessingRules expectedSpanProcessingRules =
-        SpanProcessingRules.newBuilder().setRateLimitConfig(expectedRateLimitConfig).build();
+    String hash = uuidGenerator.generateId(SpanProcessingRules.newBuilder().build());
+    SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
 
     assertEquals(
         GetSpanProcessingRulesResponse.newBuilder()
@@ -657,7 +651,6 @@ class DefaultSpanProcessingRulesManagerTest {
 
     SpanProcessingRules spanProcessingRules =
         spanProcessingRulesServiceResponses.get(0).getSpanProcessingRules();
-
     SpanProcessingRules expectedSpanProcessingRules = SpanProcessingRules.newBuilder().build();
     assertEquals(
         GetSpanProcessingRulesResponse.newBuilder()
@@ -746,6 +739,54 @@ class DefaultSpanProcessingRulesManagerTest {
   }
 
   @Test
+  void testGetAllSamplingConfigsFilter_noSpanFilters() {
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(buildGetAllResolvedSamplingConfigsResponseNoFilter());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.newBuilder().build());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("value")
+                        .setHash("")
+                        .build())
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("vil")
+                        .setHash("")
+                        .build())
+                .build());
+
+    SpanProcessingRules expectedSpanProcessingRulesFirst =
+        SpanProcessingRules.newBuilder().setRateLimitConfig(buildExpectedRateLimitConfig()).build();
+    SpanProcessingRules expectedSpanProcessingRulesSecond =
+        SpanProcessingRules.newBuilder().setRateLimitConfig(buildExpectedRateLimitConfig()).build();
+
+    assertEquals(
+        GetSpanProcessingRulesResponse.newBuilder()
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("value")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRulesFirst))
+                    .setSpanProcessingRules(expectedSpanProcessingRulesFirst)
+                    .build())
+            .addSpanProcessingRulesServiceResponses(
+                SpanProcessingRulesServiceResponse.newBuilder()
+                    .setServiceName("vil")
+                    .setHash(uuidGenerator.generateId(expectedSpanProcessingRulesSecond))
+                    .setSpanProcessingRules(expectedSpanProcessingRulesSecond)
+                    .build())
+            .build(),
+        getSpanProcessingRulesResponse);
+  }
+
+  @Test
   void testSpanProcessingRules() {
     when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
         .thenReturn(buildGetAllResolvedSamplingConfigsResponse());
@@ -768,18 +809,15 @@ class DefaultSpanProcessingRulesManagerTest {
         buildExpectedExcludeSpanProcessingRule();
     ProtectionSpanProcessingRule expectedProtectionSpanProcessingRule =
         buildExpectedProtectionSpanProcessingRule();
-    RateLimitConfig expectedRateLimitConfig = buildExpectedRateLimitConfig();
 
     String hash =
         uuidGenerator.generateId(
             SpanProcessingRules.newBuilder()
-                .setRateLimitConfig(expectedRateLimitConfig)
                 .addAllExcludeSpanRules(List.of(expectedExcludeSpanProcessingRule))
                 .addAllProtectionSpanRules(List.of(expectedProtectionSpanProcessingRule))
                 .build());
     SpanProcessingRules expectedSpanProcessingRules =
         SpanProcessingRules.newBuilder()
-            .setRateLimitConfig(expectedRateLimitConfig)
             .addExcludeSpanRules(expectedExcludeSpanProcessingRule)
             .addProtectionSpanRules(expectedProtectionSpanProcessingRule)
             .build();

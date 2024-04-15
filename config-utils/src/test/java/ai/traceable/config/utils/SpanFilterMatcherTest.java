@@ -321,6 +321,75 @@ class SpanFilterMatcherTest {
             buildSpanFilter(LogicalOperator.LOGICAL_OPERATOR_OR, List.of()), Optional.of("env")));
   }
 
+  @Test
+  void testHasOnlyEnvironmentAndServiceNameFilters() {
+    assertTrue(
+        this.spanFilterMatcher.hasOnlyEnvironmentAndServiceNameFilters(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_AND,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("en")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("service1")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH,
+                        buildSpanFilterValue("e"))))));
+
+    assertFalse(
+        this.spanFilterMatcher.hasOnlyEnvironmentAndServiceNameFilters(
+            buildSpanFilter(
+                LogicalOperator.LOGICAL_OPERATOR_AND,
+                List.of(
+                    buildRelationalSpanFilter(
+                        Field.FIELD_ENVIRONMENT_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                        buildSpanFilterValue("en")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_SERVICE_NAME,
+                        RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                        buildSpanFilterValue("service1")),
+                    buildRelationalSpanFilter(
+                        Field.FIELD_URL,
+                        RelationalOperator.RELATIONAL_OPERATOR_STARTS_WITH,
+                        buildSpanFilterValue("e"))))));
+
+    assertFalse(
+        this.spanFilterMatcher.hasOnlyEnvironmentAndServiceNameFilters(
+            SpanFilter.newBuilder()
+                .setLogicalSpanFilter(
+                    LogicalSpanFilterExpression.newBuilder()
+                        .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                        .addOperands(
+                            SpanFilter.newBuilder()
+                                .setRelationalSpanFilter(
+                                    buildRelationalSpanFilter(
+                                        Field.FIELD_SERVICE_NAME,
+                                        RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
+                                        buildSpanFilterValue("svc"))))
+                        .addOperands(
+                            SpanFilter.newBuilder()
+                                .setLogicalSpanFilter(
+                                    LogicalSpanFilterExpression.newBuilder()
+                                        .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                                        .addOperands(
+                                            SpanFilter.newBuilder()
+                                                .setRelationalSpanFilter(
+                                                    RelationalSpanFilterExpression.newBuilder()
+                                                        .setSpanAttributeKey("key")
+                                                        .setOperator(
+                                                            RelationalOperator
+                                                                .RELATIONAL_OPERATOR_EQUALS)
+                                                        .setRightOperand(
+                                                            buildSpanFilterValue("att_key")))))))
+                .build()));
+  }
+
   private SpanFilter buildSpanFilter(
       RelationalSpanFilterExpression relationalSpanFilterExpression) {
     return SpanFilter.newBuilder().setRelationalSpanFilter(relationalSpanFilterExpression).build();

@@ -396,24 +396,6 @@ public class SpanProcessingRulesManagerTestUtils {
                                     ai.traceable.span.processing.config.service.v1.LogicalOperator
                                         .LOGICAL_OPERATOR_AND,
                                     List.of(
-                                        buildLogicalFilterSpanProcessing(
-                                            ai.traceable.span.processing.config.service.v1
-                                                .LogicalOperator.LOGICAL_OPERATOR_OR,
-                                            List.of(
-                                                buildRelationalFilter(
-                                                    null,
-                                                    "key",
-                                                    ai.traceable.span.processing.config.service.v1
-                                                        .RelationalOperator
-                                                        .RELATIONAL_OPERATOR_CONTAINS,
-                                                    "val"),
-                                                buildRelationalFilter(
-                                                    null,
-                                                    "key",
-                                                    ai.traceable.span.processing.config.service.v1
-                                                        .RelationalOperator
-                                                        .RELATIONAL_OPERATOR_CONTAINS,
-                                                    "val"))),
                                         buildRelationalFilter(
                                             ai.traceable.span.processing.config.service.v1.Field
                                                 .FIELD_ENVIRONMENT_NAME,
@@ -441,24 +423,6 @@ public class SpanProcessingRulesManagerTestUtils {
                                     ai.traceable.span.processing.config.service.v1.LogicalOperator
                                         .LOGICAL_OPERATOR_AND,
                                     List.of(
-                                        buildLogicalFilterSpanProcessing(
-                                            ai.traceable.span.processing.config.service.v1
-                                                .LogicalOperator.LOGICAL_OPERATOR_OR,
-                                            List.of(
-                                                buildRelationalFilter(
-                                                    null,
-                                                    "key",
-                                                    ai.traceable.span.processing.config.service.v1
-                                                        .RelationalOperator
-                                                        .RELATIONAL_OPERATOR_CONTAINS,
-                                                    "val"),
-                                                buildRelationalFilter(
-                                                    null,
-                                                    "key",
-                                                    ai.traceable.span.processing.config.service.v1
-                                                        .RelationalOperator
-                                                        .RELATIONAL_OPERATOR_CONTAINS,
-                                                    "val"))),
                                         buildRelationalFilter(
                                             ai.traceable.span.processing.config.service.v1.Field
                                                 .FIELD_SERVICE_NAME,
@@ -466,6 +430,21 @@ public class SpanProcessingRulesManagerTestUtils {
                                             ai.traceable.span.processing.config.service.v1
                                                 .RelationalOperator.RELATIONAL_OPERATOR_CONTAINS,
                                             "val"))))
+                            .build())
+                    .build()))
+        .build();
+  }
+
+  public static GetAllResolvedSamplingConfigsResponse
+      buildGetAllResolvedSamplingConfigsResponseNoFilter() {
+    return GetAllResolvedSamplingConfigsResponse.newBuilder()
+        .addAllSamplingConfigs(
+            List.of(
+                SamplingConfig.newBuilder()
+                    .setId("id")
+                    .setSamplingConfigInfo(
+                        SamplingConfigInfo.newBuilder()
+                            .setRateLimitConfig(buildRateLimitConfig())
                             .build())
                     .build()))
         .build();
