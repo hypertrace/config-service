@@ -95,6 +95,7 @@ message DataSetInfo {
   DataSuppression data_suppression = 5 [deprecated = true];
   Sensitivity sensitivity = 6 [deprecated = true];
   optional string color = 7 [deprecated = true];
+  optional string icon_type = 8;
 
   enum DataSuppression {
     DATA_SUPPRESSION_UNSPECIFIED = 0;
