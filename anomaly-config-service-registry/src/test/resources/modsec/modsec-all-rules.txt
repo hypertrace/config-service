@@ -121,3 +121,4 @@ crs_9440940 :: Apache Struts path traversal to RCE vulnerability: (CVE-2023-5016
 crs_9210310 :: Server Side Template Injection (SSTI) Attempt :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_API_2019:API8' , 'CWE:1336' ]
 crs_9410160 :: XSS InjectionChecker: HTML Injection :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A7' , 'OWASP_2021:A3' , 'CWE:79' , 'OWASP_API_2019:API8' ]
 crs_9210400 :: Mail Injection Detected :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_API_2019:API8' , 'CWE:77' , 'OWASP_2021:A3' ]
+crs_9440950 :: PAN-OS GlobalProtect Portal: RCE Exploitation (CVE-2024-3400) :: ANOMALY_SEVERITY_LEVEL_CRITICAL :: [ 'CWE:77' , 'OWASP_API_2019:API8' ]

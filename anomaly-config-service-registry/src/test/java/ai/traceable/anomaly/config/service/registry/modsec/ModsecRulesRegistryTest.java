@@ -199,7 +199,7 @@ public class ModsecRulesRegistryTest {
                 verifyEventDetails(anomalyRuleInfo.getEventDetails());
               }
               if (anomalyRuleInfo.getRuleId().equals("crs_944")) {
-                assertEquals(12, anomalyRuleInfo.getSubRuleInfosCount());
+                assertEquals(13, anomalyRuleInfo.getSubRuleInfosCount());
                 anomalyRuleInfo
                     .getSubRuleInfosList()
                     .forEach(

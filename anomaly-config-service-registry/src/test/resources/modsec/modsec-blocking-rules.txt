@@ -88,3 +88,4 @@ crs_9210305 :: Null Byte Injection
 crs_941360 :: JSFuck / Hieroglyphy obfuscation
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer
 crs_9210400 :: Mail Injection Detected
+crs_9440950 :: PAN-OS GlobalProtect Portal: RCE Exploitation (CVE-2024-3400)
