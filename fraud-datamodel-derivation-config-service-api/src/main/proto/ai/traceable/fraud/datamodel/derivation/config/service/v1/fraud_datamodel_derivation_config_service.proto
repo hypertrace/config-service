@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.derivation.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/fraud/datamodel/derivation/config/service/v1/fraud_datamodel_derivation_config.proto";
+
+service FraudDataModelDerivationConfigService {
+  rpc CreateDerivationConfig(CreateDerivationConfigRequest) returns (CreateDerivationConfigResponse) {}
+  rpc UpdateDerivationConfig(UpdateDerivationConfigRequest) returns (UpdateDerivationConfigResponse) {}
+  rpc GetDerivationConfigs(GetDerivationConfigsRequest) returns (GetDerivationConfigsResponse) {}
+  rpc GetDerivationConfig(GetDerivationConfigRequest) returns (GetDerivationConfigResponse) {}
+}
+
+message CreateDerivationConfigRequest {
+  DerivationConfigType derivation_config_type = 1;
+  string name = 2;
+  map<string, string> derivation_config = 3;
+}
+
+message CreateDerivationConfigResponse {
+  DerivationConfig derivation_config = 1;
+}
+
+message UpdateDerivationConfigRequest {
+  DerivationConfig derivation_config = 1;
+}
+
+message UpdateDerivationConfigResponse {
+  DerivationConfig derivation_config = 1;
+}
+
+message GetDerivationConfigsRequest {
+  DerivationConfigType derivation_config_type = 1;
+}
+
+message GetDerivationConfigsResponse {
+  repeated DerivationConfig derivation_configs = 1;
+}
+
+message GetDerivationConfigRequest {
+  DerivationConfigType derivation_config_type = 1;
+  string derivation_config_id = 2;
+}
+
+message GetDerivationConfigResponse {
+  DerivationConfig derivation_config = 1;
+}

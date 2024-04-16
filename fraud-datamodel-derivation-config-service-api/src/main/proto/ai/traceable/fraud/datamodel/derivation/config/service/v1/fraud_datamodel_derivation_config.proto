@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.derivation.config.service.v1;
+
+option java_multiple_files = true;
+
+enum DerivationConfigType {
+  DERIVATION_CONFIG_TYPE_UNSPECIFIED = 0;
+  DERIVATION_CONFIG_TYPE_ENTITY = 1;
+  DERIVATION_CONFIG_TYPE_RELATIONSHIP = 2;
+  DERIVATION_CONFIG_TYPE_EVENT = 3;
+}
+
+message DerivationConfig {
+  string derivation_config_id = 1;
+  DerivationConfigType derivation_config_type = 2;
+  string name = 3;
+  string derivation_config = 4;
+  bool disabled = 5;
+}

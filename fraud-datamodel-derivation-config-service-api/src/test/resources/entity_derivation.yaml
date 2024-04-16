@@ -1,0 +1,14 @@
+kind: "entity_derivation_config"
+targetEntityType: "Account"
+scope: "true"
+mappings:
+  account:
+    type: "string"
+    rules:
+      - expression: "$s.response_body.account_details.account_id"
+      - expression: "$s.response_body.account.account_id"
+      - condition: "$s.response_headers.content_type.endsWith('json;')"
+        expression: "$s.response_body.account.owner_id"
+      - script: >
+          var s = $s
+          return s.response_body.account.ownerUuid

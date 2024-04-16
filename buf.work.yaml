@@ -47,3 +47,4 @@ directories:
   - modsecurity-utils/src/main/proto
   - data-protection-config-service-api/src/main/proto
   - fraud-datamodel-config-service-api/src/main/proto
+  - fraud-datamodel-derivation-config-service-api/src/main/proto

@@ -1,0 +1,18 @@
+kind: "relationship_derivation_config"
+targetRelationshipType: "account_belongs_to_bank"
+scope: "$s.api_name.endsWith('pattern3') && $s.api_id == 'id3'"
+leftEntityMappings:
+  user_id:
+    rules:
+      - expression: "$s.user_id"
+rightEntityMappings:
+  account:
+    type: "string"
+    rules:
+      - expression: "$s.response_body.account_details.account_id"
+      - expression: "$s.response_body.account.account_id"
+      - condition: "$s.response_headers.content_type.endsWith('json;')"
+        expression: "$s.response_body.account.owner_id"
+      - script: >
+          var s = $s
+          return s.response_body.account.ownerUuid

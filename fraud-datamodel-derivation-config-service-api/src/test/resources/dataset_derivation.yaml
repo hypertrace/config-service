@@ -1,0 +1,70 @@
+targetDataset: processed_span_dataset
+scope: "$s.api_name.endsWith('pattern') && $s.api_id == 'id1'"
+mappings:
+  customer_id:
+    rules:
+      - expression: "$s.customer_id"
+  span_kind:
+    rules:
+      - expression: "$s.span_kind"
+  parent_span_kind:
+    rules:
+      - expression: "$s.parent_span_kind"
+  trace_id:
+    rules:
+      - expression: "$s.trace_id"
+  service_id:
+    rules:
+      - expression: "$s.service_id"
+  span_id:
+    rules:
+      - expression: "$s.span_id"
+  api:
+    rules:
+      - expression: "$s.api_id"
+  account:
+    type: "string"
+    rules:
+      - expression: "$s.response_body.account_details.account_id"
+      - expression: "$s.response_body.account.account_id"
+      - condition: "$s.response_headers.content_type.endsWith('json;')"
+        expression: "$s.response_body.account.owner_id"
+      - script: >
+          var s = $s
+          return s.response_body.account.ownerUuid
+  user:
+    type: "number"
+    rules:
+      - script: >
+          var accountEntity = lookup('Account', source.response_body.account_details.account_id)
+          var userEntity = entity:traverse(accountEntity, 'knows', 'User')
+          if (userEntity) {
+            return userEntity.id
+          }
+  user_account_rel_type:
+    rules:
+      - expression: "lookup('User', source.request_body.user.id)"
+        script: >
+          var accountEntity = $expressionResult
+          var userEntity = entity:traverse(accountEntity, 'knows', 'User')
+          if (userEntity) {
+            return "knows"
+          }
+  country:
+    rules:
+      - expression: "$s.country"
+  state:
+    rules:
+      - expression: "$s.state"
+  city:
+    rules:
+      - expression: "$s.city"
+  ip:
+    rules:
+      - expression: "$s.ip"
+  ip_asn:
+    rules:
+      - expression: "$s.ip_asn"
+  ip_org:
+    rules:
+      - expression: "$s.ip_organisation"
