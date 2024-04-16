@@ -7,7 +7,9 @@ import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegration
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
@@ -28,14 +30,38 @@ public class JiraIntegrationConfigServiceValidator {
       CreateJiraIntegrationRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, CreateJiraIntegrationRequest.NAME_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        request, CreateJiraIntegrationRequest.CONSUMER_KEY_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(request, CreateJiraIntegrationRequest.BASE_URL_FIELD_NUMBER);
-    validateEncryptedDataOrThrow(request.getEncryptedAccessToken());
+    if (request.hasJiraIntegrationDetails()) {
+      validateJiraIntegrationDetailsOrThrow(request.getJiraIntegrationDetails());
+    } else {
+      validateNonDefaultPresenceOrThrow(
+          request, CreateJiraIntegrationRequest.CONSUMER_KEY_FIELD_NUMBER);
+      validateEncryptedDataOrThrow(request.getEncryptedAccessToken());
+    }
     if (request.hasScope()) {
       validateScopeForMutationOrThrow(request.getScope(), requestContext, Collections.emptySet());
     } else {
       validateUnscopedForMutationOrThrow(requestContext, Collections.emptySet());
+    }
+  }
+
+  private void validateJiraIntegrationDetailsOrThrow(
+      JiraIntegrationDetails jiraIntegrationDetails) {
+    if (jiraIntegrationDetails.hasJiraDataCenterIntegrationDetails()) {
+      validateEncryptedDataOrThrow(
+          jiraIntegrationDetails
+              .getJiraDataCenterIntegrationDetails()
+              .getJiraDataCenterAuthCredentials()
+              .getEncryptedPersonalAccessToken());
+    } else if (jiraIntegrationDetails.hasJiraCloudIntegrationDetails()) {
+      validateNonDefaultPresenceOrThrow(
+          jiraIntegrationDetails.getJiraCloudIntegrationDetails().getJiraCloudAuthCredentials(),
+          JiraCloudAuthCredentials.CONSUMER_KEY_FIELD_NUMBER);
+      validateEncryptedDataOrThrow(
+          jiraIntegrationDetails
+              .getJiraCloudIntegrationDetails()
+              .getJiraCloudAuthCredentials()
+              .getEncryptedAccessToken());
     }
   }
 

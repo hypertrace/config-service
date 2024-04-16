@@ -6,7 +6,10 @@ import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegration
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
+import ai.traceable.jira.integration.config.service.api.v1.JiraCloudIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.StringList;
@@ -97,6 +100,36 @@ class JiraIntegrationConfigServiceValidatorTest {
     Assertions.assertThrows(
         StatusRuntimeException.class,
         () -> validator.validateCreateJiraIntegration(createRequest5, requestContext2));
+
+    // should pass with valid jiraIntegrationDetials and no population of deprecated consumerKey and
+    // encryptedAccessToken
+    CreateJiraIntegrationRequest createRequest6 =
+        createRequest4.toBuilder()
+            .clearEncryptedAccessToken()
+            .clearConsumerKey()
+            .clearScope()
+            .setJiraIntegrationDetails(
+                JiraIntegrationDetails.newBuilder()
+                    .setJiraCloudIntegrationDetails(
+                        JiraCloudIntegrationDetails.newBuilder()
+                            .setJiraCloudAuthCredentials(
+                                JiraCloudAuthCredentials.newBuilder()
+                                    .setConsumerKey(TEXT)
+                                    .setEncryptedAccessToken(
+                                        EncryptedData.newBuilder()
+                                            .setBase64EncryptedValue(TEXT)
+                                            .setKeyId(TEXT)))))
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateCreateJiraIntegration(createRequest6, requestContext2));
+
+    // should fail due to existing integration with the set scope even with valid
+    // jiraIntegrationDetials and no population of deprecated consumerKey and encryptedAccessToken
+    CreateJiraIntegrationRequest createRequest7 =
+        createRequest6.toBuilder().setScope(createRequest4.getScope()).build();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateCreateJiraIntegration(createRequest7, requestContext2));
   }
 
   private CreateJiraIntegrationRequest minimalCreateJiraIntegrationRequest(
