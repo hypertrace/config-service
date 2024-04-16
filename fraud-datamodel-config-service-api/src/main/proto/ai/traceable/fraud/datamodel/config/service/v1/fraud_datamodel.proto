@@ -1,0 +1,151 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.config.service.v1;
+
+option java_multiple_files = true;
+
+enum FieldType {
+  FIELD_TYPE_UNSPECIFIED = 0;
+  FIELD_TYPE_STR = 1;
+  FIELD_TYPE_BOOL = 2;
+  FIELD_TYPE_LONG = 3;
+  FIELD_TYPE_DOUBLE = 4;
+  FIELD_TYPE_LIST = 5;
+  FIELD_TYPE_MAP = 6;
+  FIELD_TYPE_TIMESTAMP = 7;
+}
+
+enum Cardinality {
+  CARDINALITY_UNSPECIFIED = 0;
+  CARDINALITY_ONE = 1;
+  CARDINALITY_MANY = 2;
+}
+
+message EventType {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  map<string, FieldMetadata> fields_meta = 4;
+  string timestamp_field = 5;
+
+  // following are populated only if required (if we want to do column mapping)
+  ColumnMappingMeta column_mapping_meta = 6;
+}
+
+message PrimitiveFieldValue {
+  oneof primitivefield {
+    int64 long_val = 1;
+    double double_val = 2;
+    string string_val = 3;
+    bool boolean_val = 4;
+    int64 timestamp_val = 5;
+  }
+}
+
+message FieldValue {
+  oneof field {
+    ListValue list_val = 1;
+    MapValue map_val = 2;
+  }
+}
+
+message ListValue {
+  repeated PrimitiveFieldValue values = 1;
+}
+
+message MapValue {
+  map<string, PrimitiveFieldValue> entries = 1;
+}
+
+message IdFieldSet {
+  repeated string field = 1;
+}
+
+message EntityType {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  IdFieldSet id_set = 4;
+  map<string, EntityFieldMetadata> fields_meta = 5;
+  Lifecycle lifecycle = 6;
+
+  // following are populated only if required (if we want to do column mapping)
+  ColumnMappingMeta column_mapping_meta = 7;
+}
+
+message ColumnMappingMeta {
+  map<string, ColumnMapping> column_mapping = 1;
+  map<string, string> rev_column_mapping = 2;
+}
+
+message Lifecycle {
+  // Number of hours after which the entity is considered inactive (after last seen time)
+  // This is optional. If not set, it indicates its always active
+  int32 inactive_ttl_hours = 1;
+}
+
+message ColumnMapping {
+  FieldType field_type = 1;
+  string column_id = 2;
+}
+
+message EntityFieldMetadata {
+  FieldType field_type = 1;
+  bool versioned = 2;
+  bool disabled = 3;
+}
+
+message FieldMetadata {
+  FieldType field_type = 1;
+  bool versioned = 2;
+  bool disabled = 3;
+  oneof pointer {
+    string entity_type = 5;
+    string relationship_type = 6;
+  }
+}
+
+enum MetricDataType {
+  METRIC_DATA_TYPE_UNSPECIFIED = 0;
+  METRIC_DATA_TYPE_GAUGE = 1;
+  METRIC_DATA_TYPE_COUNTER = 2;
+  METRIC_DATA_TYPE_HISTO = 3;
+}
+
+enum AggregateFunction {
+  AGGREGATE_FUNCTION_UNSPECIFIED = 0;
+  AGGREGATE_FUNCTION_SUM = 1;
+  AGGREGATE_FUNCTION_AVG = 2;
+  AGGREGATE_FUNCTION_MIN = 3;
+  AGGREGATE_FUNCTION_MAX = 4;
+  AGGREGATE_FUNCTION_QUANTILE = 5;
+  AGGREGATE_FUNCTION_TOP = 6;
+}
+
+message MetricType {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  MetricDataType metric_data_type = 4;
+  map<string, FieldMetadata> fields_meta = 5;
+  string timestamp_field = 6;
+
+  // following are populated only if required (if we want to do column mapping)
+  ColumnMappingMeta column_mapping_meta = 7;
+}
+
+message RelationshipType {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string right_entity_type_id = 4;
+  string left_entity_type_id = 5;
+
+  string right_to_left_nav_name = 6;
+  string left_to_right_nav_name = 7;
+
+  Cardinality left_cardinality = 8;
+  Cardinality right_cardinality = 9;
+
+  Lifecycle lifecycle = 10;
+}

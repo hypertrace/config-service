@@ -46,3 +46,4 @@ directories:
   - runner-logs-config-service-api/src/main/proto
   - modsecurity-utils/src/main/proto
   - data-protection-config-service-api/src/main/proto
+  - fraud-datamodel-config-service-api/src/main/proto

@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+
+service FraudDataModelConfigService {
+  rpc UpsertEntityType(UpsertEntityTypeRequest) returns (UpsertEntityTypeResponse) {}
+  rpc UpsertRelationshipType(UpsertRelationshipTypeRequest) returns (UpsertRelationshipTypeResponse) {}
+  rpc UpsertEventType(UpsertEventTypeRequest) returns (UpsertEventTypeResponse) {}
+  rpc UpsertMetricType(UpsertMetricTypeRequest) returns (UpsertMetricTypeResponse) {}
+  rpc GetTypes(GetTypesRequest) returns (GetTypesResponse) {}
+  rpc GetEntityTypes(GetEntityTypesRequest) returns (GetEntityTypesResponse) {}
+  rpc GetRelationshipTypes(GetRelationshipTypesRequest) returns (GetRelationshipTypesResponse) {}
+  rpc GetEventTypes(GetEventTypesRequest) returns (GetEventTypesResponse) {}
+  rpc GetMetricTypes(GetMetricTypesRequest) returns (GetMetricTypesResponse) {}
+}
+
+message UpsertEntityTypeRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  IdFieldSet id_set = 4;
+  map<string, FieldMetadata> fields_meta = 5;
+  Lifecycle lifecycle = 6;
+}
+
+message UpsertEntityTypeResponse {
+  EntityType entity_type = 1;
+}
+
+message UpsertRelationshipTypeRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string right_entity_type_id = 4;
+  string left_entity_type_id = 5;
+
+  string right_to_left_nav_name = 6;
+  string left_to_right_nav_name = 7;
+
+  Cardinality left_cardinality = 8;
+  Cardinality right_cardinality = 9;
+
+  Lifecycle lifecycle = 10;
+}
+
+message UpsertRelationshipTypeResponse {
+  RelationshipType relationship_type = 1;
+}
+
+message UpsertEventTypeRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  map<string, FieldMetadata> fields_meta = 4;
+  string timestamp_field = 5;
+}
+
+message UpsertEventTypeResponse {
+  EventType event_type = 1;
+}
+
+message UpsertMetricTypeRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  MetricDataType metric_data_type = 4;
+  map<string, FieldMetadata> fields_meta = 5;
+  string timestamp_field = 6;
+}
+
+message UpsertMetricTypeResponse {
+  MetricType metric_type = 1;
+}
+
+message GetTypesRequest {}
+
+message GetEntityTypesRequest {}
+
+message GetRelationshipTypesRequest {}
+
+message GetEventTypesRequest {}
+
+message GetMetricTypesRequest {}
+
+message GetTypesResponse {
+  repeated EntityType entity_types = 1;
+  repeated RelationshipType relationship_types = 2;
+  repeated EventType event_types = 3;
+  repeated MetricType metric_types = 4;
+}
+
+message GetEntityTypesResponse {
+  repeated EntityType entity_types = 1;
+}
+
+message GetRelationshipTypesResponse {
+  repeated RelationshipType relationship_types = 1;
+}
+
+message GetEventTypesResponse {
+  repeated EventType event_types = 1;
+}
+
+message GetMetricTypesResponse {
+  repeated MetricType metric_types = 1;
+}
