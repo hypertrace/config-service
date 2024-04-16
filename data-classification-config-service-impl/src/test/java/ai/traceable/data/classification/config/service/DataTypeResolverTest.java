@@ -106,7 +106,10 @@ class DataTypeResolverTest {
             .setRule(
                 DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
                     .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
-                    .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
+                    .setSensitivity(
+                        DATA_SET_2
+                            .getInfo()
+                            .getSensitivity()) // Sensitivity however is inherited by the max value
                     .setEnabled(DATA_SET_1.getInfo().getEnabled())
                     .addDataSetId(DATA_SET_1.getId())
                     .addDataSetId(DATA_SET_2.getId()))
@@ -123,7 +126,7 @@ class DataTypeResolverTest {
             .setRule(
                 DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
                     .setDataSuppression(DATA_SET_2.getInfo().getDataSuppression())
-                    .setSensitivity(DATA_SET_2.getInfo().getSensitivity())
+                    .setSensitivity(DATA_SET_2.getInfo().getSensitivity()) // dataset 1 has
                     .addDataSetId(DATA_SET_1.getId())
                     .addDataSetId(DATA_SET_2.getId())
                     .setEnabled(true))
@@ -151,7 +154,7 @@ class DataTypeResolverTest {
             .setRule(
                 DATA_TYPE_WITH_UNSET_RESOLVED_FIELDS.getRule().toBuilder()
                     .setDataSuppression(DATA_SET_1.getInfo().getDataSuppression())
-                    .setSensitivity(DATA_SET_1.getInfo().getSensitivity())
+                    .setSensitivity(DATA_SET_2.getInfo().getSensitivity()) // max value
                     .setEnabled(DATA_SET_1.getInfo().getEnabled())
                     .addDataSetId(DATA_SET_1.getId())
                     .addDataSetId(DATA_SET_2.getId()))

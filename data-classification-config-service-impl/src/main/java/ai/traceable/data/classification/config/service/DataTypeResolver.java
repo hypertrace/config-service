@@ -1,5 +1,6 @@
 package ai.traceable.data.classification.config.service;
 
+import static ai.traceable.data.classification.config.service.DataTypeResolutionContextComparator.DATA_SENSITIVITY_COMPARATOR;
 import static ai.traceable.data.classification.config.service.DataTypeResolutionContextComparator.DATA_SUPPRESSION_COMPARATOR;
 
 import ai.traceable.data.classification.config.service.v1.DataSet;
@@ -15,7 +16,8 @@ class DataTypeResolver {
       Comparator.comparing((DataSet dataSet) -> dataSet.getInfo().getEnabled())
           .reversed() // enabled, then disabled
           .thenComparing(
-              dataSet -> dataSet.getInfo().getDataSuppression(), DATA_SUPPRESSION_COMPARATOR);
+              dataSet -> dataSet.getInfo().getDataSuppression(),
+              DATA_SUPPRESSION_COMPARATOR.reversed());
 
   private static final DataTypeRule DEFAULT_RULE_VALUES =
       DataTypeRule.newBuilder()
@@ -51,7 +53,13 @@ class DataTypeResolver {
       ruleBuilder.setDataSuppression(dataSetToInherit.getInfo().getDataSuppression());
     }
     if (dataType.getRule().getSensitivity() == Sensitivity.SENSITIVITY_UNSPECIFIED) {
-      ruleBuilder.setSensitivity(dataSetToInherit.getInfo().getSensitivity());
+      // For sensitivity, we take the highest even if this is not the value we'd typically inherit
+      Sensitivity maxSensitivity =
+          dataSets.stream()
+              .map(dataset -> dataset.getInfo().getSensitivity())
+              .max(DATA_SENSITIVITY_COMPARATOR)
+              .orElseThrow();
+      ruleBuilder.setSensitivity(maxSensitivity);
     }
     // Finally, assign defaults for any fields that could not be inherited
     return dataType.toBuilder()

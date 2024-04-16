@@ -4,10 +4,15 @@ import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Dat
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_RAW;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_REDACT;
 import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.DATA_SUPPRESSION_UNSPECIFIED;
-import static ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression.UNRECOGNIZED;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity.SENSITIVITY_CRITICAL;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity.SENSITIVITY_HIGH;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity.SENSITIVITY_LOW;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity.SENSITIVITY_MEDIUM;
+import static ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity.SENSITIVITY_UNSPECIFIED;
 
 import ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeResolutionContext;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
+import ai.traceable.data.classification.config.service.v1.DataSetInfo.Sensitivity;
 import com.google.common.collect.Ordering;
 import java.util.Comparator;
 import lombok.extern.slf4j.Slf4j;
@@ -30,14 +35,24 @@ class DataTypeResolutionContextComparator implements Comparator<DataTypeResoluti
 
   static final Comparator<DataSuppression> DATA_SUPPRESSION_COMPARATOR =
       Ordering.explicit(
-          DATA_SUPPRESSION_REDACT,
-          DATA_SUPPRESSION_OBFUSCATE,
-          UNRECOGNIZED,
+          DATA_SUPPRESSION_UNSPECIFIED,
           DATA_SUPPRESSION_RAW,
-          DATA_SUPPRESSION_UNSPECIFIED);
+          DataSuppression.UNRECOGNIZED,
+          DATA_SUPPRESSION_OBFUSCATE,
+          DATA_SUPPRESSION_REDACT);
+
+  static final Comparator<Sensitivity> DATA_SENSITIVITY_COMPARATOR =
+      Ordering.explicit(
+          SENSITIVITY_UNSPECIFIED,
+          Sensitivity.UNRECOGNIZED,
+          SENSITIVITY_LOW,
+          SENSITIVITY_MEDIUM,
+          SENSITIVITY_HIGH,
+          SENSITIVITY_CRITICAL);
   private static final Comparator<DataTypeResolutionContext> DELEGATE =
       Comparator.comparing(
-              DataTypeResolutionContextComparator::extractSuppression, DATA_SUPPRESSION_COMPARATOR)
+              DataTypeResolutionContextComparator::extractSuppression,
+              DATA_SUPPRESSION_COMPARATOR.reversed()) // highest to lowest
           .thenComparing(DataTypeResolutionContext::getProvenance)
           .thenComparingInt(DataTypeResolutionContext::getEncounterOrder);
 
