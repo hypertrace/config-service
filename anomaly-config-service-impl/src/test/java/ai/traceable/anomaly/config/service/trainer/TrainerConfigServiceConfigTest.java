@@ -46,7 +46,7 @@ public class TrainerConfigServiceConfigTest {
         trainingConfig -> {
           assertFalse(trainingConfig.getDisabled());
           assertTrue(trainingConfig.getVulnerabilityTrainingConfig().hasAutoResolutionConfig());
-          assertFalse(
+          assertTrue(
               trainingConfig
                   .getVulnerabilityTrainingConfig()
                   .getAutoResolutionConfig()
