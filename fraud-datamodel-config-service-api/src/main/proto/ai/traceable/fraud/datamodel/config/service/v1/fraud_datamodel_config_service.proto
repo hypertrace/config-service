@@ -23,7 +23,7 @@ message UpsertEntityTypeRequest {
   string name = 2;
   string description = 3;
   IdFieldSet id_set = 4;
-  map<string, FieldMetadata> fields_meta = 5;
+  map<string, EntityFieldMetadata> fields_meta = 5;
   Lifecycle lifecycle = 6;
 }
 
