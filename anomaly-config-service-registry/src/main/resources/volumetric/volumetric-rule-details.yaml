@@ -1,4 +1,4 @@
 - ruleId: volumetricApiCallSpike
-  ruleName: Volumetric API Call Spike
+  ruleName: Unrestricted Resource Consumption
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_VOLUMETRIC
 

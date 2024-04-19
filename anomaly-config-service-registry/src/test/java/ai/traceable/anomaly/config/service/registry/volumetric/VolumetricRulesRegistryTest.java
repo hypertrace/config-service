@@ -21,7 +21,7 @@ class VolumetricRulesRegistryTest {
         volumetricRulesRegistry.getVolumetricRuleInfos();
     assertEquals(1, anomalyRuleInfos.size());
     assertEquals(
-        "volumetricApiCallSpike :: Volumetric API Call Spike",
+        "volumetricApiCallSpike :: Unrestricted Resource Consumption",
         anomalyRuleInfos.values().stream()
             .map(
                 anomalyRuleInfo ->
