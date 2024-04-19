@@ -46,6 +46,7 @@ message FieldValue {
   oneof field {
     ListValue list_val = 1;
     MapValue map_val = 2;
+    PrimitiveFieldValue primitive_val = 3;
   }
 }
 
