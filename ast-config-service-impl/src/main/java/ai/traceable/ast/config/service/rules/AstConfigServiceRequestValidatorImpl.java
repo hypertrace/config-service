@@ -3,7 +3,7 @@ package ai.traceable.ast.config.service.rules;
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
-import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
@@ -21,7 +21,7 @@ import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
-import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
@@ -179,24 +179,20 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
   @Override
   public void validateOrThrow(
       RequestContext requestContext, UpdateCustomTestPluginRequest request) {
-    UpdateCustomPlugin updateCustomPlugin = request.getUpdateCustomPlugin();
+    UpdateCustomTestPlugin updateCustomTestPlugin = request.getUpdateCustomTestPlugin();
     validateOrThrow(requestContext);
-
-    if (updateCustomPlugin.hasCodeSnippetDetails()) {
-      validateCodeSnippetDetails(requestContext, updateCustomPlugin.getCodeSnippetDetails());
-    }
-
-    if (updateCustomPlugin.getId().isBlank()) {
+    if (updateCustomTestPlugin.getId().isBlank()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Request should have custom plugin id to update the Custom Plugin")
           .asRuntimeException(requestContext.buildTrailers());
     }
 
-    if (updateCustomPlugin.hasName() && updateCustomPlugin.getName().isBlank()) {
+    if (updateCustomTestPlugin.getName().isBlank()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Request should have custom plugin name to update the Custom Plugin")
           .asRuntimeException(requestContext.buildTrailers());
     }
+    validateCodeSnippetDetails(requestContext, updateCustomTestPlugin.getCodeSnippetDetails());
   }
 
   @Override
@@ -213,10 +209,10 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
   @Override
   public void validateOrThrow(
       RequestContext requestContext, CreateCustomTestPluginRequest request) {
-    CreateCustomPlugin createCustomPlugin = request.getCreateCustomPlugin();
+    CreateCustomTestPlugin createCustomTestPlugin = request.getCreateCustomTestPlugin();
     validateOrThrow(requestContext);
-    validateCodeSnippetDetails(requestContext, createCustomPlugin.getCodeSnippetDetails());
-    if (createCustomPlugin.getName().isBlank()) {
+    validateCodeSnippetDetails(requestContext, createCustomTestPlugin.getCodeSnippetDetails());
+    if (createCustomTestPlugin.getName().isBlank()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Request should have custom plugin name to create the Custom Plugin")
           .asRuntimeException(requestContext.buildTrailers());

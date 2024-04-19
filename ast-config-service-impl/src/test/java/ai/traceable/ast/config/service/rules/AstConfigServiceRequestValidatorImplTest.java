@@ -10,7 +10,7 @@ import ai.traceable.ast.config.service.v1.AstEnabledConfig;
 import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
-import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
@@ -30,7 +30,7 @@ import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
-import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
@@ -331,8 +331,8 @@ class AstConfigServiceRequestValidatorImplTest {
             rulesValidator.validateOrThrow(
                 mockRequestContext,
                 UpdateCustomTestPluginRequest.newBuilder()
-                    .setUpdateCustomPlugin(
-                        UpdateCustomPlugin.newBuilder()
+                    .setUpdateCustomTestPlugin(
+                        UpdateCustomTestPlugin.newBuilder()
                             .setId("test-id")
                             .setName("test-name")
                             .setCodeSnippetDetails(
@@ -347,8 +347,8 @@ class AstConfigServiceRequestValidatorImplTest {
             rulesValidator.validateOrThrow(
                 mockRequestContext,
                 UpdateCustomTestPluginRequest.newBuilder()
-                    .setUpdateCustomPlugin(
-                        UpdateCustomPlugin.newBuilder()
+                    .setUpdateCustomTestPlugin(
+                        UpdateCustomTestPlugin.newBuilder()
                             .setId("test-id")
                             .setName("test-name")
                             .setCodeSnippetDetails(
@@ -379,8 +379,8 @@ class AstConfigServiceRequestValidatorImplTest {
             rulesValidator.validateOrThrow(
                 mockRequestContext,
                 CreateCustomTestPluginRequest.newBuilder()
-                    .setCreateCustomPlugin(
-                        CreateCustomPlugin.newBuilder()
+                    .setCreateCustomTestPlugin(
+                        CreateCustomTestPlugin.newBuilder()
                             .setName("test-name")
                             .setCodeSnippetDetails(
                                 CodeSnippetDetails.newBuilder()
@@ -394,8 +394,8 @@ class AstConfigServiceRequestValidatorImplTest {
             rulesValidator.validateOrThrow(
                 mockRequestContext,
                 CreateCustomTestPluginRequest.newBuilder()
-                    .setCreateCustomPlugin(
-                        CreateCustomPlugin.newBuilder()
+                    .setCreateCustomTestPlugin(
+                        CreateCustomTestPlugin.newBuilder()
                             .setName("test-name")
                             .setCodeSnippetDetails(
                                 CodeSnippetDetails.newBuilder()

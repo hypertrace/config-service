@@ -16,7 +16,6 @@ import ai.traceable.ast.config.service.rules.CustomTestPluginStore;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
-import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.CustomTestPlugin;
@@ -38,7 +37,6 @@ import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRespo
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.StringList;
-import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
@@ -581,8 +579,8 @@ class AstConfigServiceImplTest {
     void should_create_custom_test_plugin() {
       CreateCustomTestPluginRequest request =
           CreateCustomTestPluginRequest.newBuilder()
-              .setCreateCustomPlugin(
-                  CreateCustomPlugin.newBuilder()
+              .setCreateCustomTestPlugin(
+                  ai.traceable.ast.config.service.v1.CreateCustomTestPlugin.newBuilder()
                       .setName("custom-test")
                       .setCodeSnippetDetails(
                           CodeSnippetDetails.newBuilder()
@@ -640,8 +638,8 @@ class AstConfigServiceImplTest {
     void should_fail_on_invalid_request() {
       CreateCustomTestPluginRequest request =
           CreateCustomTestPluginRequest.newBuilder()
-              .setCreateCustomPlugin(
-                  CreateCustomPlugin.newBuilder()
+              .setCreateCustomTestPlugin(
+                  ai.traceable.ast.config.service.v1.CreateCustomTestPlugin.newBuilder()
                       .setName("test-name")
                       .setCodeSnippetDetails(
                           CodeSnippetDetails.newBuilder()
@@ -672,8 +670,8 @@ class AstConfigServiceImplTest {
     void should_update_custom_test_plugin() {
       UpdateCustomTestPluginRequest request =
           UpdateCustomTestPluginRequest.newBuilder()
-              .setUpdateCustomPlugin(
-                  UpdateCustomPlugin.newBuilder()
+              .setUpdateCustomTestPlugin(
+                  ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin.newBuilder()
                       .setId("test-id")
                       .setName("test-name")
                       .setCodeSnippetDetails(
@@ -733,7 +731,9 @@ class AstConfigServiceImplTest {
     void should_fail_on_invalid_request() {
       UpdateCustomTestPluginRequest request =
           UpdateCustomTestPluginRequest.newBuilder()
-              .setUpdateCustomPlugin(UpdateCustomPlugin.newBuilder().setName(""))
+              .setUpdateCustomTestPlugin(
+                  ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin.newBuilder()
+                      .setName(""))
               .build();
       doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
           .when(requestValidator)

@@ -1,13 +1,13 @@
 package ai.traceable.ast.config.service.rules;
 
-import ai.traceable.ast.config.service.v1.CreateCustomPlugin;
+import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CustomTestPluginFilter;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.StringList;
-import ai.traceable.ast.config.service.v1.UpdateCustomPlugin;
+import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -55,13 +55,13 @@ public class CustomTestPluginManager {
       RequestContext requestContext, CreateCustomTestPluginRequest request) {
 
     String id = UUID.randomUUID().toString();
-    CreateCustomPlugin createCustomPlugin = request.getCreateCustomPlugin();
+    CreateCustomTestPlugin createCustomTestPlugin = request.getCreateCustomTestPlugin();
 
     CustomTestPlugin createdCustomTestPlugin =
         CustomTestPlugin.newBuilder()
             .setId(id)
-            .setName(createCustomPlugin.getName())
-            .setCodeSnippetDetails(createCustomPlugin.getCodeSnippetDetails())
+            .setName(createCustomTestPlugin.getName())
+            .setCodeSnippetDetails(createCustomTestPlugin.getCodeSnippetDetails())
             .build();
 
     return customTestPluginStore.upsertObject(requestContext, createdCustomTestPlugin).getData();
@@ -72,27 +72,20 @@ public class CustomTestPluginManager {
     CustomTestPlugin newCustomTestPlugin =
         CustomTestPlugin.newBuilder(
                 customTestPluginStore
-                    .getData(requestContext, request.getUpdateCustomPlugin().getId())
+                    .getData(requestContext, request.getUpdateCustomTestPlugin().getId())
                     .orElseThrow())
             .build();
     CustomTestPlugin updatedCustomtestPlugin =
-        buildUpdatedCustomTestPlugin(newCustomTestPlugin, request.getUpdateCustomPlugin());
+        buildUpdatedCustomTestPlugin(newCustomTestPlugin, request.getUpdateCustomTestPlugin());
     return customTestPluginStore.upsertObject(requestContext, updatedCustomtestPlugin).getData();
   }
 
   private CustomTestPlugin buildUpdatedCustomTestPlugin(
-      CustomTestPlugin existingCustomTestPlugin, UpdateCustomPlugin updatedCustomPlugin) {
-
-    CustomTestPlugin.Builder builder = CustomTestPlugin.newBuilder(existingCustomTestPlugin);
-
-    if (updatedCustomPlugin.hasName()) {
-      builder.setName(updatedCustomPlugin.getName());
-    }
-    if (updatedCustomPlugin.hasCodeSnippetDetails()) {
-      builder.setCodeSnippetDetails(updatedCustomPlugin.getCodeSnippetDetails());
-    }
-
-    return builder.build();
+      CustomTestPlugin existingCustomTestPlugin, UpdateCustomTestPlugin updatedCustomTestPlugin) {
+    return CustomTestPlugin.newBuilder(existingCustomTestPlugin)
+        .setName(updatedCustomTestPlugin.getName())
+        .setCodeSnippetDetails(updatedCustomTestPlugin.getCodeSnippetDetails())
+        .build();
   }
 
   private List<CustomTestPlugin> getIdFilteredCustomTestPlugins(
