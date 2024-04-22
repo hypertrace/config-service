@@ -6,6 +6,7 @@ package ai.traceable.anomaly.config.service.v1.aggregator;
 option java_multiple_files = true;
 
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+import "google/protobuf/duration.proto";
 
 message UpdateScopedAnomalyEventAggregationConfigRequest {
   ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;
@@ -93,5 +94,5 @@ message TaggedEventsConfig {
 
 message DetectionExclusionCreationConfig {
   bool enabled = 1;
-  optional string expiration_duration = 2;
+  google.protobuf.Duration expiration_duration = 2;
 }
