@@ -131,6 +131,7 @@ message Clause {
   oneof clause {
     MatchExpression match_expression = 1;
     KeyValueExpression key_value_expression = 2;
+    AttributeKeyValueExpression attribute_key_value_expression = 3;
   }
 }
 
@@ -149,6 +150,13 @@ message KeyValueExpression {
   MatchOperator value_match_operator = 4;
   string match_value = 5;
   MatchCategory match_category  = 6;
+}
+
+message AttributeKeyValueExpression {
+  MatchOperator key_match_operator = 1;
+  string match_key = 2;
+  MatchOperator value_match_operator = 3;
+  string match_value = 4;
 }
 
 message ExpiryDetails {

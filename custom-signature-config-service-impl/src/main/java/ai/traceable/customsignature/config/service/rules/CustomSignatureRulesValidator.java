@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.rules;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -181,14 +182,17 @@ class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateClause(Clause clause) {
-    if (clause.hasMatchExpression()) {
-      return validateMatchExpression(clause.getMatchExpression());
+    switch (clause.getClauseCase()) {
+      case MATCH_EXPRESSION:
+        return validateMatchExpression(clause.getMatchExpression());
+      case KEY_VALUE_EXPRESSION:
+        return validateKeyValueExpression(clause.getKeyValueExpression());
+      case ATTRIBUTE_KEY_VALUE_EXPRESSION:
+        return validateAttributeKeyValueExpression(clause.getAttributeKeyValueExpression());
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Custom Signature Rule Clause should have a valid expression");
     }
-    if (clause.hasKeyValueExpression()) {
-      return validateKeyValueExpression(clause.getKeyValueExpression());
-    }
-    return Status.INVALID_ARGUMENT.withDescription(
-        "Custom Signature Rule Clause should have a valid expression");
   }
 
   private Status validateMatchExpression(MatchExpression matchExpression) {
@@ -212,26 +216,46 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule key-value expression should have a valid tag.");
     }
-    if (keyValueExpression.getMatchKey().isEmpty()) {
+    return validateExpression(
+        keyValueExpression.getMatchKey(),
+        keyValueExpression.getKeyMatchOperator(),
+        keyValueExpression.getMatchValue(),
+        keyValueExpression.getValueMatchOperator());
+  }
+
+  private Status validateAttributeKeyValueExpression(
+      AttributeKeyValueExpression attributeKeyValueExpression) {
+    return validateExpression(
+        attributeKeyValueExpression.getMatchKey(),
+        attributeKeyValueExpression.getKeyMatchOperator(),
+        attributeKeyValueExpression.getMatchValue(),
+        attributeKeyValueExpression.getValueMatchOperator());
+  }
+
+  private Status validateExpression(
+      String matchKey,
+      MatchOperator keyMatchOperator,
+      String matchValue,
+      MatchOperator valueMatchOperator) {
+    if (matchKey.isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule key-value expression should have a valid match key.");
+          "Custom Signature Rule expression should have a valid match key.");
     }
-    if (keyValueExpression.getKeyMatchOperator() == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
+    if (keyMatchOperator == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule key-value expression should have a valid key match operator.");
+          "Custom Signature Rule expression should have a valid key match operator.");
     }
-    if (keyValueExpression.getMatchValue().isEmpty()) {
+    if (matchValue.isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule key-value expression should have a valid match value.");
+          "Custom Signature Rule expression should have a valid match value.");
     }
-    if (keyValueExpression.getValueMatchOperator() == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
+    if (valueMatchOperator == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule key-value expression should have a valid value match operator.");
+          "Custom Signature Rule expression should have a valid value match operator.");
     }
-    if (keyValueExpression.getValueMatchOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
-        || keyValueExpression.getValueMatchOperator()
-            == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
-      return validateRegex(keyValueExpression.getMatchValue());
+    if (valueMatchOperator == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
+        || valueMatchOperator == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      return validateRegex(matchValue);
     }
     return Status.OK;
   }
