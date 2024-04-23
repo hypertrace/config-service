@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -110,6 +111,17 @@ public class DetectorConfigServiceConfigTest {
                   + "      }\n"
                   + "    }\n"
                   + "]\n"
+                  + "credentialStuffingDetectionConfigs = [\n"
+                  + " {\n"
+                  + "   configStatus = {\n"
+                  + "        disabled = true\n"
+                  + "        internal = true\n"
+                  + "      }\n"
+                  + "      credentialAnomalyDetectionConfig = {\n"
+                  + "        anomalyRuleId = \"credentialStuffing\"\n"
+                  + "      }\n"
+                  + "    }\n"
+                  + "]\n"
                   + "customRulesDetectionConfigs = [\n"
                   + "    {\n"
                   + "      categoryConfig = {\n"
@@ -141,7 +153,8 @@ public class DetectorConfigServiceConfigTest {
                   + "  ]"),
           new ApiDefinitionRegistryImpl(new ConfigConverter()),
           new SessionRulesRegistryImpl(new ConfigConverter()),
-          new VolumetricRulesRegistryImpl(new ConfigConverter()));
+          new VolumetricRulesRegistryImpl(new ConfigConverter()),
+          new CredentialStuffingRulesRegistryImpl(new ConfigConverter()));
 
   @Test
   void testConfig() {
@@ -209,6 +222,14 @@ public class DetectorConfigServiceConfigTest {
 
     detectionConfig =
         getVolumetricDetectionConfig(volumetricDetectionConfigs, "volumetricApiCallSpike");
+    assertEquals(configStatus3, detectionConfig.getConfigStatus());
+
+    List<AnomalyDetectionConfig> credentialStuffingDetectionConfigs =
+        CONFIG.getDefaultCredentialStuffingDetectionConfigs();
+
+    detectionConfig =
+        getCredentialStuffingDetectionConfig(
+            credentialStuffingDetectionConfigs, "credentialStuffing");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
   }
 
@@ -301,6 +322,16 @@ public class DetectorConfigServiceConfigTest {
       List<AnomalyDetectionConfig> detectionConfigs, String ruleId) {
     for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
       if (detectionConfig.getVolumetricAnomalyDetectionConfig().getAnomalyRuleId().equals(ruleId)) {
+        return detectionConfig;
+      }
+    }
+    return null;
+  }
+
+  private AnomalyDetectionConfig getCredentialStuffingDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs, String ruleId) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig.getCredentialAnomalyDetectionConfig().getAnomalyRuleId().equals(ruleId)) {
         return detectionConfig;
       }
     }

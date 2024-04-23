@@ -8,6 +8,8 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.Ano
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
@@ -36,9 +38,14 @@ public class AnomalyDetectionConfigHandlerTest {
       new SessionRulesRegistryImpl(configConverter);
   private final VolumetricRulesRegistry volumetricRulesRegistry =
       new VolumetricRulesRegistryImpl(configConverter);
+  private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry =
+      new CredentialStuffingRulesRegistryImpl(configConverter);
   private final AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
-          apiDefinitionRegistry, sessionRulesRegistry, volumetricRulesRegistry);
+          apiDefinitionRegistry,
+          sessionRulesRegistry,
+          volumetricRulesRegistry,
+          credentialStuffingRulesRegistry);
 
   @Test
   void testModsecConfigConvert() throws InvalidProtocolBufferException {
@@ -850,9 +857,85 @@ public class AnomalyDetectionConfigHandlerTest {
     assertEquals(0, deleteConfig.getAnomalyDetectionConfigsList().size());
 
     ScopedAnomalyDetectionConfig mergedConfig2 = detectionConfigConverter.merge(config3, config1);
-    AnomalyDetectionConfig detectionConfig2 = mergedConfig1.getAnomalyDetectionConfigsList().get(0);
-    assertTrue(detectionConfig1.getConfigStatus().getDisabled());
-    assertTrue(detectionConfig1.getConfigStatus().getInternal());
+    AnomalyDetectionConfig detectionConfig2 = mergedConfig2.getAnomalyDetectionConfigsList().get(0);
+    assertTrue(detectionConfig2.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig2.getConfigStatus().getInternal());
+  }
+
+  @Test
+  void testCredentialStuffingDetectionConfigsConvert() throws InvalidProtocolBufferException {
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setCredentialAnomalyDetectionConfig(
+                        CredentialStuffingAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("credentialstuffing")
+                            .setCredentialStuffing(
+                                CredentialStuffingAnomalyConfig.getDefaultInstance())))
+            .build();
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setCredentialAnomalyDetectionConfig(
+                        CredentialStuffingAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("credentialstuffing")
+                            .setCredentialStuffing(
+                                CredentialStuffingAnomalyConfig.getDefaultInstance()))
+                    .build())
+            .build();
+
+    ScopedAnomalyDetectionConfig config3 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setCredentialAnomalyDetectionConfig(
+                        CredentialStuffingAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("credentialstuffing")
+                            .build())
+                    .build())
+            .build();
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+    AnomalyDetectionConfig detectionConfig = mergedConfig.getAnomalyDetectionConfigsList().get(0);
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
+        ScopedAnomalyDetectionConfig.newBuilder();
+
+    deletedConfigBuilder.setConfigScope(config1.getConfigScope());
+    List<AnomalyDetectionConfig> detectionConfigsToDelete = new ArrayList<>();
+    detectionConfigsToDelete.add(config1.getAnomalyDetectionConfigsList().get(0));
+    ScopedAnomalyDetectionConfig deleteConfig =
+        detectionConfigConverter.deleteWholeAnomalyDetectionConfigs(
+            config1, detectionConfigsToDelete, deletedConfigBuilder);
+    assertEquals(0, deleteConfig.getAnomalyDetectionConfigsList().size());
+
+    ScopedAnomalyDetectionConfig mergedConfig2 = detectionConfigConverter.merge(config3, config1);
+    AnomalyDetectionConfig detectionConfig2 = mergedConfig2.getAnomalyDetectionConfigsList().get(0);
+    assertTrue(detectionConfig2.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig2.getConfigStatus().getInternal());
   }
 
   private AnomalyDetectionConfig getAnomalyDetectionConfig(

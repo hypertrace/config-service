@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -27,11 +28,14 @@ public class AnomalyDetectionConfigHandler {
 
   private final VolumetricDetectionConfigHandler volumetricDetectionConfigHandler;
 
+  private final CredentialStuffingDetectionConfigHandler credentialStuffingDetectionConfigHandler;
+
   @Inject
   public AnomalyDetectionConfigHandler(
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionRulesRegistry,
-      VolumetricRulesRegistry volumetricRulesRegistry) {
+      VolumetricRulesRegistry volumetricRulesRegistry,
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
     this.apiDefinitionConfigHandler = new ApiDefinitionConfigHandler(apiDefinitionRegistry);
     this.sessionDefinitionConfigHandler = new SessionDefinitionConfigHandler(sessionRulesRegistry);
     this.apiStateBasedConfigHandler = new ApiStateBasedConfigHandler();
@@ -40,6 +44,8 @@ public class AnomalyDetectionConfigHandler {
     this.customRulesConfigHandler = new CustomRulesConfigHandler();
     this.volumetricDetectionConfigHandler =
         new VolumetricDetectionConfigHandler(volumetricRulesRegistry);
+    this.credentialStuffingDetectionConfigHandler =
+        new CredentialStuffingDetectionConfigHandler(credentialStuffingRulesRegistry);
   }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
@@ -100,6 +106,11 @@ public class AnomalyDetectionConfigHandler {
                   builder.addAllAnomalyDetectionConfigs(
                       volumetricDetectionConfigHandler.merge(preferredConfig, fallbackConfig));
                   break;
+                case ANOMALY_DETECTION_CONFIG_TYPE_CREDENTIAL_STUFFING:
+                  builder.addAllAnomalyDetectionConfigs(
+                      credentialStuffingDetectionConfigHandler.merge(
+                          preferredConfig, fallbackConfig));
+                  break;
                 default:
                   LOGGER.error(
                       "Invalid configType {} in anomalyDetectionConfigsFilter", configType);
@@ -128,6 +139,8 @@ public class AnomalyDetectionConfigHandler {
             customRulesConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             volumetricDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            credentialStuffingDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -164,6 +177,9 @@ public class AnomalyDetectionConfigHandler {
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     anomalyDetectionConfigs =
         volumetricDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
+            anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
+    anomalyDetectionConfigs =
+        credentialStuffingDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
 
     filteredConfigBuilder.addAllAnomalyDetectionConfigs(anomalyDetectionConfigs);

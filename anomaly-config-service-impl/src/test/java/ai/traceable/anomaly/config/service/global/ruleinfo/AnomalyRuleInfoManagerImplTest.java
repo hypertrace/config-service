@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -25,6 +26,7 @@ class AnomalyRuleInfoManagerImplTest {
   private ModsecRulesRegistry modsecRulesRegistry;
   private SessionRulesRegistry sessionRulesRegistry;
   private VolumetricRulesRegistryImpl volumetricRulesRegistry;
+  private CredentialStuffingRulesRegistryImpl credentialStuffingRulesRegistry;
   private RuleInfoManager ruleInfoManager;
   private RequestContext requestContext;
 
@@ -34,12 +36,14 @@ class AnomalyRuleInfoManagerImplTest {
     modsecRulesRegistry = mock(ModsecRulesRegistryImpl.class);
     sessionRulesRegistry = mock(SessionRulesRegistryImpl.class);
     volumetricRulesRegistry = mock(VolumetricRulesRegistryImpl.class);
+    credentialStuffingRulesRegistry = mock(CredentialStuffingRulesRegistryImpl.class);
     ruleInfoManager =
         new AnomalyRuleInfoManagerImpl(
             apiDefinitionRegistry,
             modsecRulesRegistry,
             sessionRulesRegistry,
-            volumetricRulesRegistry);
+            volumetricRulesRegistry,
+            credentialStuffingRulesRegistry);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -58,6 +62,8 @@ class AnomalyRuleInfoManagerImplTest {
                 "id-3", buildAnomalyRuleInfo("id-3")));
     when(volumetricRulesRegistry.getVolumetricRuleInfos())
         .thenReturn(Map.of("id-1", buildAnomalyRuleInfo("id-1")));
+    when(credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos())
+        .thenReturn(Map.of("id-2", buildAnomalyRuleInfo("id-4")));
     List<AnomalyRuleInfo> response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
@@ -70,6 +76,10 @@ class AnomalyRuleInfoManagerImplTest {
     response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC));
+    assertEquals(1, response.size());
+    response =
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING));
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
@@ -86,9 +96,10 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
-                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC));
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING));
     // Common rules are not duplicated
-    assertEquals(4, response.size());
+    assertEquals(5, response.size());
 
     assertThrows(
         IllegalArgumentException.class,

@@ -2,6 +2,8 @@ package ai.traceable.anomaly.config.service.registry;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -17,5 +19,6 @@ public class AnomalyConfigRegistryModule extends AbstractModule {
     bind(ModsecRulesRegistry.class).to(ModsecRulesRegistryImpl.class);
     bind(SessionRulesRegistry.class).to(SessionRulesRegistryImpl.class);
     bind(VolumetricRulesRegistry.class).to(VolumetricRulesRegistryImpl.class);
+    bind(CredentialStuffingRulesRegistry.class).to(CredentialStuffingRulesRegistryImpl.class);
   }
 }

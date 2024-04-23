@@ -46,6 +46,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final List<AnomalyDetectionConfig> defaultSessionDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultCustomRulesDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultVolumetricDetectionConfigs;
+  private final List<AnomalyDetectionConfig> defaultCredentialStuffingDetectionConfigs;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
@@ -68,6 +69,8 @@ public class AnomalyDetectionConfigManagerImpl
         config.getDefaultSessionDefinitionDetectionConfigs();
     this.defaultCustomRulesDetectionConfigs = config.getDefaultCustomRulesDetectionConfigs();
     this.defaultVolumetricDetectionConfigs = config.getDefaultVolumetricDetectionConfigs();
+    this.defaultCredentialStuffingDetectionConfigs =
+        config.getDefaultCredentialStuffingDetectionConfigs();
     this.globalAnomalyConfigStatusManager = anomalyConfigStatusManager;
   }
 
@@ -193,6 +196,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultVolumetricDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultCredentialStuffingDetectionConfigs)
             .build());
 
     return scopedAnomalyDetectionConfigs.stream()
@@ -315,6 +319,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultSessionDefinitionDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultVolumetricDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultCredentialStuffingDetectionConfigs)
             .build();
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =

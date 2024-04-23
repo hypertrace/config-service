@@ -15,6 +15,8 @@ import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStat
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
@@ -57,9 +59,14 @@ public class AnomalyDetectionConfigManagerTest {
       new SessionRulesRegistryImpl(configConverter);
   private final VolumetricRulesRegistry volumetricRulesRegistry =
       new VolumetricRulesRegistryImpl(configConverter);
+  private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry =
+      new CredentialStuffingRulesRegistryImpl(configConverter);
   private AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
-          apiDefinitionRegistry, sessionRulesRegistry, volumetricRulesRegistry);
+          apiDefinitionRegistry,
+          sessionRulesRegistry,
+          volumetricRulesRegistry,
+          credentialStuffingRulesRegistry);
   private AnomalyDetectionConfigManager configManager;
   private final AnomalyEnvironmentScope environmentScope =
       AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
@@ -467,6 +474,7 @@ public class AnomalyDetectionConfigManagerTest {
     defaultDetectionConfigs.addAll(config.getDefaultSessionDefinitionDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultCustomRulesDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultVolumetricDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultCredentialStuffingDetectionConfigs());
 
     List<AnomalyDetectionConfig> detectionConfigs =
         configManager
@@ -838,6 +846,17 @@ public class AnomalyDetectionConfigManagerTest {
                 + "      }\n"
                 + "    }\n"
                 + "]\n"
+                + "credentialStuffingDetectionConfigs = [\n"
+                + " {\n"
+                + "   configStatus = {\n"
+                + "        disabled = true\n"
+                + "        internal = true\n"
+                + "      }\n"
+                + "      credentialAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"credentialStuffing\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "]\n"
                 + "customRulesDetectionConfigs = [\n"
                 + "    {\n"
                 + "      categoryConfig = {\n"
@@ -869,7 +888,8 @@ public class AnomalyDetectionConfigManagerTest {
                 + "  ]"),
         new ApiDefinitionRegistryImpl(new ConfigConverter()),
         new SessionRulesRegistryImpl(new ConfigConverter()),
-        new VolumetricRulesRegistryImpl(new ConfigConverter()));
+        new VolumetricRulesRegistryImpl(new ConfigConverter()),
+        new CredentialStuffingRulesRegistryImpl(new ConfigConverter()));
   }
 
   private AnomalyDetectionConfig getModsecRuleConfig(

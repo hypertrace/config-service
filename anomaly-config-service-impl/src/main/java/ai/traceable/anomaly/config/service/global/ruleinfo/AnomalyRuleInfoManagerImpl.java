@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.global.ruleinfo;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
@@ -17,17 +18,20 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final SessionRulesRegistry sessionRulesRegistry;
   private final VolumetricRulesRegistry volumetricRulesRegistry;
+  private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry;
 
   @Inject
   AnomalyRuleInfoManagerImpl(
       ApiDefinitionRegistry apiDefinitionRegistry,
       ModsecRulesRegistry modsecRulesRegistry,
       SessionRulesRegistry sessionRulesRegistry,
-      VolumetricRulesRegistry volumetricRulesRegistry) {
+      VolumetricRulesRegistry volumetricRulesRegistry,
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
     this.apiDefinitionRegistry = apiDefinitionRegistry;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.sessionRulesRegistry = sessionRulesRegistry;
     this.volumetricRulesRegistry = volumetricRulesRegistry;
+    this.credentialStuffingRulesRegistry = credentialStuffingRulesRegistry;
   }
 
   @Override
@@ -50,6 +54,10 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                   break;
                 case ANOMALY_EVENT_FAMILY_VOLUMETRIC:
                   ruleInfos.addAll(volumetricRulesRegistry.getVolumetricRuleInfos().values());
+                  break;
+                case ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING:
+                  ruleInfos.addAll(
+                      credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos().values());
                   break;
                 default:
                   throw new IllegalArgumentException(

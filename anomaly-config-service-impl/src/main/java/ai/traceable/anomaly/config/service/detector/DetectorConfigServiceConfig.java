@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector;
 
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
+import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -18,12 +19,15 @@ public class DetectorConfigServiceConfig {
       "sessionDefinitionDetectionConfigs";
   private static final String CUSTOM_RULES_DETECTION_CONFIGS_PATH = "customRulesDetectionConfigs";
   private static final String VOLUMETRIC_DETECTION_CONFIGS_PATH = "volumetricDetectionConfigs";
+  private static final String CREDENTIAL_STUFFING_DETECTION_CONFIGS_PATH =
+      "credentialStuffingDetectionConfigs";
 
   private final List<AnomalyDetectionConfig> modsecDetectionConfigs;
   private final List<AnomalyDetectionConfig> apiDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> sessionDefinitionDetectionConfigs;
   private final List<AnomalyDetectionConfig> customRulesDetectionConfigs;
   private final List<AnomalyDetectionConfig> volumetricDetectionConfigs;
+  private final List<AnomalyDetectionConfig> credentialStuffingDetectionConfigs;
 
   private final ConfigConverter configConverter = new ConfigConverter();
 
@@ -31,7 +35,8 @@ public class DetectorConfigServiceConfig {
       Config config,
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionDefinitionRegistry,
-      VolumetricRulesRegistry volumetricRulesRegistry) {
+      VolumetricRulesRegistry volumetricRulesRegistry,
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
     this.modsecDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
@@ -69,6 +74,19 @@ public class DetectorConfigServiceConfig {
                             .setVolumetricAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList()));
+    this.credentialStuffingDetectionConfigs =
+        loadDefaultCredentialStuffingDetectionConfigs(
+            config,
+            credentialStuffingRulesRegistry
+                .getCredentialStuffingRuleIdToConfigMap()
+                .values()
+                .stream()
+                .map(
+                    detectionConfig ->
+                        AnomalyDetectionConfig.newBuilder()
+                            .setCredentialAnomalyDetectionConfig(detectionConfig)
+                            .build())
+                .collect(Collectors.toList()));
   }
 
   public List<AnomalyDetectionConfig> getDefaultModsecDetectionConfigs() {
@@ -89,6 +107,10 @@ public class DetectorConfigServiceConfig {
 
   public List<AnomalyDetectionConfig> getDefaultVolumetricDetectionConfigs() {
     return volumetricDetectionConfigs;
+  }
+
+  public List<AnomalyDetectionConfig> getDefaultCredentialStuffingDetectionConfigs() {
+    return credentialStuffingDetectionConfigs;
   }
 
   private List<AnomalyDetectionConfig> loadDefaultApiDefinitionDetectionConfigs(
@@ -174,6 +196,35 @@ public class DetectorConfigServiceConfig {
             detectionConfig -> {
               String ruleId =
                   detectionConfig.getVolumetricAnomalyDetectionConfig().getAnomalyRuleId();
+              if (configMap.containsKey(ruleId)) {
+                return detectionConfig.toBuilder().mergeFrom(configMap.get(ruleId)).build();
+              }
+              return detectionConfig;
+            })
+        .collect(Collectors.toList());
+  }
+
+  private List<AnomalyDetectionConfig> loadDefaultCredentialStuffingDetectionConfigs(
+      Config config, List<AnomalyDetectionConfig> credentialStuffingDetectionRegistryConfigs) {
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configConverter.convertToAnomalyDetectionConfigs(
+            config.getConfigList(CREDENTIAL_STUFFING_DETECTION_CONFIGS_PATH));
+
+    Map<String, AnomalyDetectionConfig> configMap =
+        detectionConfigs.stream()
+            .collect(
+                Collectors.toMap(
+                    anomalyDetectionConfig ->
+                        anomalyDetectionConfig
+                            .getCredentialAnomalyDetectionConfig()
+                            .getAnomalyRuleId(),
+                    anomalyDetectionConfig -> anomalyDetectionConfig));
+
+    return credentialStuffingDetectionRegistryConfigs.stream()
+        .map(
+            detectionConfig -> {
+              String ruleId =
+                  detectionConfig.getCredentialAnomalyDetectionConfig().getAnomalyRuleId();
               if (configMap.containsKey(ruleId)) {
                 return detectionConfig.toBuilder().mergeFrom(configMap.get(ruleId)).build();
               }
