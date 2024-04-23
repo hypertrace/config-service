@@ -28,7 +28,13 @@ public class NotificationRuleConfigServiceRequestValidator {
 
   private void validateNotificationRuleMutableData(NotificationRuleMutableData data) {
     validateNonDefaultPresenceOrThrow(data, NotificationRuleMutableData.RULE_NAME_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(data, NotificationRuleMutableData.CHANNEL_ID_FIELD_NUMBER);
+    if (data.getSinkId().isEmpty()) {
+      // backward compatibility
+      validateNonDefaultPresenceOrThrow(data, NotificationRuleMutableData.CHANNEL_ID_FIELD_NUMBER);
+    } else {
+      // if sink_id is present then the type should also be present
+      validateNonDefaultPresenceOrThrow(data, NotificationRuleMutableData.SINK_TYPE_FIELD_NUMBER);
+    }
     validateNonDefaultPresenceOrThrow(
         data, NotificationRuleMutableData.EVENT_CONDITION_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(

@@ -16,6 +16,15 @@ message NotificationRuleMutableData {
   string event_condition_id = 3;
   string event_condition_type = 4;
 
-  string channel_id = 5;
+  string channel_id = 5 [deprecated=true];
   string rate_limit_interval_duration = 6;
+
+  string sink_id = 7;
+  SinkType sink_type = 8;
+}
+
+enum SinkType {
+  SINK_TYPE_UNSPECIFIED = 0;
+  SINK_TYPE_CHANNEL = 1;
+  SINK_TYPE_WIZ_INTEGRATION = 2;
 }

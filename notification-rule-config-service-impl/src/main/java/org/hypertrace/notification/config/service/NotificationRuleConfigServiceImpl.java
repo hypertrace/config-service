@@ -19,6 +19,7 @@ import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleResponse;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
+import org.hypertrace.notification.config.service.v1.SinkType;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleResponse;
 
@@ -137,11 +138,24 @@ public class NotificationRuleConfigServiceImpl
               .getData(requestContext, request.getNotificationRuleId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
-          GetNotificationRuleResponse.newBuilder().setNotificationRule(notificationRule).build());
+          GetNotificationRuleResponse.newBuilder()
+              .setNotificationRule(makeBackwardCompatible(notificationRule))
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Notification Rule by id RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
+  }
+
+  private NotificationRule makeBackwardCompatible(NotificationRule rule) {
+    if (rule.getNotificationRuleMutableData().getSinkType().equals(SinkType.SINK_TYPE_CHANNEL)) {
+      return rule.toBuilder()
+          .setNotificationRuleMutableData(
+              rule.getNotificationRuleMutableData().toBuilder()
+                  .setChannelId(rule.getNotificationRuleMutableData().getSinkId()))
+          .build();
+    }
+    return rule;
   }
 }
