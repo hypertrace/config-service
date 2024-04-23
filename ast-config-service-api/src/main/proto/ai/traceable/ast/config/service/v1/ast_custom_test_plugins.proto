@@ -68,7 +68,7 @@ message UpdateCustomTestPlugin {
   string id = 1;
   string name = 2;
   CodeSnippetDetails code_snippet_details = 3;
-  optional string description = 4;
+  string description = 4;
   TestPluginType plugin_type = 5;
   TestPluginSafetyType plugin_safety_type = 6;
   string plugin_details = 7;

@@ -20,6 +20,8 @@ import ai.traceable.ast.config.service.v1.RelationalOperator;
 import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
+import ai.traceable.ast.config.service.v1.TestPluginSafetyType;
+import ai.traceable.ast.config.service.v1.TestPluginType;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
@@ -29,6 +31,7 @@ import ai.traceable.ast.config.service.v1.VulnerabilitySeverity;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.Duration;
 import io.grpc.Status;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import lombok.extern.slf4j.Slf4j;
@@ -193,6 +196,12 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
           .asRuntimeException(requestContext.buildTrailers());
     }
     validateCodeSnippetDetails(requestContext, updateCustomTestPlugin.getCodeSnippetDetails());
+    validateStringBlankness(requestContext, updateCustomTestPlugin.getDescription());
+    validateStringBlankness(requestContext, updateCustomTestPlugin.getPluginDetails());
+    validateStringList(
+        requestContext, updateCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList());
+    validateTestPluginType(requestContext, updateCustomTestPlugin.getPluginType());
+    validateTestPluginSafetyType(requestContext, updateCustomTestPlugin.getPluginSafetyType());
   }
 
   @Override
@@ -217,6 +226,13 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
           .withDescription("Request should have custom plugin name to create the Custom Plugin")
           .asRuntimeException(requestContext.buildTrailers());
     }
+    validateCodeSnippetDetails(requestContext, createCustomTestPlugin.getCodeSnippetDetails());
+    validateStringBlankness(requestContext, createCustomTestPlugin.getDescription());
+    validateStringBlankness(requestContext, createCustomTestPlugin.getPluginDetails());
+    validateStringList(
+        requestContext, createCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList());
+    validateTestPluginType(requestContext, createCustomTestPlugin.getPluginType());
+    validateTestPluginSafetyType(requestContext, createCustomTestPlugin.getPluginSafetyType());
   }
 
   @Override
@@ -329,6 +345,40 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
     if (CodeSnippetType.CODE_SNIPPET_TYPE_UNSPECIFIED.equals(snippetDetails.getCodeSnippetType())) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Request should have specified code snippet type")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateStringBlankness(RequestContext requestContext, String stringsField) {
+    if (stringsField.isBlank()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have a non-blank string")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateStringList(RequestContext requestContext, List<String> stringsFieldList) {
+    if (stringsFieldList.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have a non-empty list of strings")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    stringsFieldList.forEach(string -> validateStringBlankness(requestContext, string));
+  }
+
+  private void validateTestPluginType(RequestContext requestContext, TestPluginType pluginType) {
+    if (TestPluginType.TEST_PLUGIN_TYPE_UNSPECIFIED.equals(pluginType)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have a specified plugin type")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateTestPluginSafetyType(
+      RequestContext requestContext, TestPluginSafetyType pluginSafetyType) {
+    if (TestPluginSafetyType.TEST_PLUGIN_SAFETY_TYPE_UNSPECIFIED.equals(pluginSafetyType)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have a specified plugin safety type")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

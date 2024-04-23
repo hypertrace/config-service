@@ -29,6 +29,8 @@ import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
+import ai.traceable.ast.config.service.v1.TestPluginSafetyType;
+import ai.traceable.ast.config.service.v1.TestPluginType;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
@@ -36,6 +38,7 @@ import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.protobuf.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +50,8 @@ class AstConfigServiceRequestValidatorImplTest {
   private AstConfigServiceRequestValidatorImpl rulesValidator =
       new AstConfigServiceRequestValidatorImpl();
   private RequestContext mockRequestContext = Mockito.mock(RequestContext.class);
+  private Map<String, TagValue> tags =
+      Map.of("key1", TagValue.newBuilder().addValue("value1").build());
 
   @Test
   void validateUpdateScanPurgeConfigRequest() {
@@ -356,7 +361,14 @@ class AstConfigServiceRequestValidatorImplTest {
                                     .setCodeSnippet("dummy-code-snippet")
                                     .setCodeSnippetType(
                                         CodeSnippetType
-                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                            .setPluginType(TestPluginType.TEST_PLUGIN_TYPE_ACTIVE)
+                            .setPluginSafetyType(TestPluginSafetyType.TEST_PLUGIN_SAFETY_TYPE_SAFE)
+                            .setPluginDetails("plugin-details")
+                            .setDescription("description")
+                            .putTags("key1", TagValue.newBuilder().addValue("value1").build())
+                            .addAllPotentialGeneratedVulnerabilityTypes(
+                                List.of("Rate Limiting", "SQL Injection")))
                     .build()));
   }
 
@@ -402,7 +414,14 @@ class AstConfigServiceRequestValidatorImplTest {
                                     .setCodeSnippet("dummy-code-snippet")
                                     .setCodeSnippetType(
                                         CodeSnippetType
-                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                            .setPluginType(TestPluginType.TEST_PLUGIN_TYPE_ACTIVE)
+                            .setPluginSafetyType(TestPluginSafetyType.TEST_PLUGIN_SAFETY_TYPE_SAFE)
+                            .setPluginDetails("plugin-details")
+                            .setDescription("description")
+                            .putTags("key1", TagValue.newBuilder().addValue("value1").build())
+                            .addAllPotentialGeneratedVulnerabilityTypes(
+                                List.of("Rate Limiting", "SQL Injection")))
                     .build()));
   }
 

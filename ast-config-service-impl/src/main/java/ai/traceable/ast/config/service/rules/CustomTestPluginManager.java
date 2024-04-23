@@ -62,6 +62,13 @@ public class CustomTestPluginManager {
             .setId(id)
             .setName(createCustomTestPlugin.getName())
             .setCodeSnippetDetails(createCustomTestPlugin.getCodeSnippetDetails())
+            .setDescription(createCustomTestPlugin.getDescription())
+            .setPluginType(createCustomTestPlugin.getPluginType())
+            .setPluginSafetyType(createCustomTestPlugin.getPluginSafetyType())
+            .setPluginDetails(createCustomTestPlugin.getPluginDetails())
+            .putAllTags(createCustomTestPlugin.getTagsMap())
+            .addAllPotentialGeneratedVulnerabilityTypes(
+                createCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList())
             .build();
 
     return customTestPluginStore.upsertObject(requestContext, createdCustomTestPlugin).getData();
@@ -85,6 +92,15 @@ public class CustomTestPluginManager {
     return CustomTestPlugin.newBuilder(existingCustomTestPlugin)
         .setName(updatedCustomTestPlugin.getName())
         .setCodeSnippetDetails(updatedCustomTestPlugin.getCodeSnippetDetails())
+        .setDescription(updatedCustomTestPlugin.getDescription())
+        .setPluginType(updatedCustomTestPlugin.getPluginType())
+        .setPluginSafetyType(updatedCustomTestPlugin.getPluginSafetyType())
+        .setPluginDetails(updatedCustomTestPlugin.getPluginDetails())
+        .clearPotentialGeneratedVulnerabilityTypes()
+        .addAllPotentialGeneratedVulnerabilityTypes(
+            updatedCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList())
+        .clearTags()
+        .putAllTags(updatedCustomTestPlugin.getTagsMap())
         .build();
   }
 
