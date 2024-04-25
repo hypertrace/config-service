@@ -139,6 +139,7 @@ message MetadataTrainingConfig {
     ParamExclusionsConfig param_exclusions = 25;
     NumericSignTrainingConfig numeric_sign = 26;
     StructuredContentDepthTrainingConfig structured_content_depth = 27;
+    IsEncryptedApiTrainingConfig is_encrypted_api = 28;
   }
 }
 
@@ -268,6 +269,8 @@ message ContentTypeTrainingConfig {}
 message CountTrainingConfig {}
 
 message IsExternalApiTrainingConfig {}
+
+message IsEncryptedApiTrainingConfig {}
 
 message MessagePartStatsTrainingConfig {}
 
