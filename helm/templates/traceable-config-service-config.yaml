@@ -313,9 +313,14 @@ data:
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
       licenseTiers = {{ .Values.anomalyConfigServiceConfig.global.licenseTiers | nindent 6 }}
     }
-    {{- if .Values.defaultApiNamingTrainerConfig }}
-    trainer.config.service = {{ .Values.defaultApiNamingTrainerConfig | nindent 4 }}
-    {{- end }}
+    trainer.config.service = {
+      {{- if .Values.defaultApiNamingTrainerConfigs }}
+      apiNamingTrainingConfigs = {{ .Values.defaultApiNamingTrainerConfigs | nindent 6 }}
+      {{- end }}
+      {{- if .Values.defaultVulnerabilityTrainingConfigs }}
+      vulnerabilityTrainingConfigs = {{ .Values.defaultVulnerabilityTrainingConfigs | nindent 6 }}
+      {{- end }}
+    }
 
   risk.conf: |-
     {{- if hasKey .Values "riskConfigServiceConfig" }}
