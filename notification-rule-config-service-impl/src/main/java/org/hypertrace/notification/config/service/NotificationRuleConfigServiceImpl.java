@@ -17,7 +17,6 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequ
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleResponse;
-import org.hypertrace.notification.config.service.v1.NotificationChannelTarget;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
@@ -52,9 +51,7 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore
-                      .upsertObject(requestContext, makeBackwardCompatible(notificationRule))
-                      .getData())
+                  notificationRuleStore.upsertObject(requestContext, notificationRule).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -78,9 +75,7 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore
-                      .upsertObject(requestContext, makeBackwardCompatible(notificationRule))
-                      .getData())
+                  notificationRuleStore.upsertObject(requestContext, notificationRule).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -101,7 +96,6 @@ public class NotificationRuleConfigServiceImpl
               .addAllNotificationRules(
                   notificationRuleStore.getAllObjects(requestContext).stream()
                       .map(ConfigObject::getData)
-                      .map(this::makeBackwardCompatible)
                       .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
@@ -141,35 +135,11 @@ public class NotificationRuleConfigServiceImpl
               .getData(requestContext, request.getNotificationRuleId())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
-          GetNotificationRuleResponse.newBuilder()
-              .setNotificationRule(makeBackwardCompatible(notificationRule))
-              .build());
+          GetNotificationRuleResponse.newBuilder().setNotificationRule(notificationRule).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get Notification Rule by id RPC failed for request:{}", request, e);
       responseObserver.onError(e);
     }
-  }
-
-  private NotificationRule makeBackwardCompatible(NotificationRule rule) {
-    if (rule.getNotificationRuleMutableData().hasChannelTarget()) {
-      // makes the rules backward compatible
-      return rule.toBuilder()
-          .setNotificationRuleMutableData(
-              rule.getNotificationRuleMutableData().toBuilder()
-                  .setChannelId(
-                      rule.getNotificationRuleMutableData().getChannelTarget().getChannelId()))
-          .build();
-    } else if (!rule.getNotificationRuleMutableData().getChannelId().isEmpty()) {
-      // makes old notification rules compatible with new logic
-      return rule.toBuilder()
-          .setNotificationRuleMutableData(
-              rule.getNotificationRuleMutableData().toBuilder()
-                  .setChannelTarget(
-                      NotificationChannelTarget.newBuilder()
-                          .setChannelId(rule.getNotificationRuleMutableData().getChannelId())))
-          .build();
-    }
-    return rule;
   }
 }
