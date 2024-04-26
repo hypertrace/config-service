@@ -47,8 +47,8 @@ class NotificationRuleConfigServiceImplTest {
         getNotificationRuleMutableData("rule2", "channel1");
 
     // should return a compatible rule with notification target populated
-    NotificationRuleMutableData oldNotificationRuleMutableData = notificationRuleMutableData1
-            .toBuilder().clearChannelTarget().build();
+    NotificationRuleMutableData oldNotificationRuleMutableData =
+        notificationRuleMutableData1.toBuilder().clearChannelTarget().build();
     NotificationRule notificationRule1 =
         notificationStub
             .createNotificationRule(
