@@ -10,9 +10,9 @@ service DataProtectionConfigService {
 
   rpc GetResolvedScopedDataProtectionConfig(GetResolvedScopedDataProtectionConfigRequest) returns (GetResolvedScopedDataProtectionConfigResponse) {}
 
-  rpc GetScopedDataProtectionConfigs(GetScopedDataProtectionConfigsRequest) returns (GetScopedDataProtectionConfigsResponse) {}
-
   rpc UpsertScopedDataProtectionConfig(UpsertScopedDataProtectionConfigRequest) returns (UpsertScopedDataProtectionConfigResponse) {}
+
+  rpc DeleteScopedDataProtectionConfig(DeleteScopedDataProtectionConfigRequest) returns (DeleteScopedDataProtectionConfigResponse) {}
 }
 
 message GetResolvedScopedDataProtectionConfigRequest {
@@ -23,11 +23,11 @@ message GetResolvedScopedDataProtectionConfigResponse {
   ScopedDataProtectionConfig config = 1;
 }
 
-message GetScopedDataProtectionConfigsRequest {
+message DeleteScopedDataProtectionConfigRequest {
+  DataProtectionScope scope = 1;
 }
 
-message GetScopedDataProtectionConfigsResponse {
-  repeated ScopedDataProtectionConfig configs = 1;
+message DeleteScopedDataProtectionConfigResponse {
 }
 
 message UpsertScopedDataProtectionConfigRequest {
