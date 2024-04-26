@@ -13,58 +13,36 @@ public class ModsecCrsConfig {
   String rulesFilePath;
 
   private static final String MODSEC_CRS_RULES_DIRECTORY = "modsec/crs/";
-
-  public static final ModsecCrsConfig MODSEC_CRS_V3_CONFIG =
-      ModsecCrsConfig.builder()
-          .directivesFilePath(MODSEC_CRS_RULES_DIRECTORY + "directives/modsec-directives-v3.conf")
-          .initializationRulesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
-          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
-          .build();
-  public static final ModsecCrsConfig MODSEC_CRS_V3_SECARG_LIMITS_CONFIG =
-      ModsecCrsConfig.builder()
-          .directivesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY + "directives/modsec-directives-v3-secarglimits.conf")
-          .initializationRulesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
-          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
-          .build();
-  public static final ModsecCrsConfig MODSEC_CRS_V3_SECARG_LIMITS_DETECTION_ONLY_MODE_CONFIG =
-      ModsecCrsConfig.builder()
-          .directivesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY
-                  + "directives/modsec-directives-v3-secarglimits-detectiononly-mode.conf")
-          .initializationRulesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
-          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
-          .build();
-  public static final ModsecCrsConfig CORAZA_V3_CONFIG =
-      ModsecCrsConfig.builder()
-          .directivesFilePath(MODSEC_CRS_RULES_DIRECTORY + "directives/coraza-v3-directives.conf")
-          .initializationRulesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
-          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
-          .build();
-  public static final ModsecCrsConfig CORAZA_V3_DETECTION_ONLY_MODE_CONFIG =
-      ModsecCrsConfig.builder()
-          .directivesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY
-                  + "directives/coraza-v3-detectiononly-mode-directives.conf")
-          .initializationRulesFilePath(
-              MODSEC_CRS_RULES_DIRECTORY + "modsec-initialization-901-rules.conf")
-          .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + "modsec-crs-rules.conf")
-          .build();
+  private static final String DIRECTIVES_DIRECTORY = "directives/";
+  private static final String INITIALIZATION_RULES_FILE = "modsec-initialization-901-rules.conf";
+  private static final String MODSEC_CRS_RULES_FILE = "modsec-crs-rules.conf";
+  private static final String MODSEC_CRS_TEST_RULES_FILE = "modsec-crs-test-rules.conf";
 
   public static final Map<ModsecRuleVersion, ModsecCrsConfig> ruleVersionToConfigMap =
       Map.of(
           ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-          MODSEC_CRS_V3_CONFIG,
+          getModsecCrsConfig("modsec-directives-v3.conf", MODSEC_CRS_RULES_FILE),
           ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
-          MODSEC_CRS_V3_SECARG_LIMITS_CONFIG,
+          getModsecCrsConfig("modsec-directives-v3-secarglimits.conf", MODSEC_CRS_RULES_FILE),
           ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
-          MODSEC_CRS_V3_SECARG_LIMITS_DETECTION_ONLY_MODE_CONFIG,
+          getModsecCrsConfig(
+              "modsec-directives-v3-secarglimits-detectiononly-mode.conf", MODSEC_CRS_RULES_FILE),
           ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
-          CORAZA_V3_CONFIG,
+          getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_RULES_FILE),
           ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE,
-          CORAZA_V3_DETECTION_ONLY_MODE_CONFIG);
+          getModsecCrsConfig("coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_RULES_FILE),
+          ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3,
+          getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_TEST_RULES_FILE),
+          ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE,
+          getModsecCrsConfig(
+              "coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_TEST_RULES_FILE));
+
+  private static ModsecCrsConfig getModsecCrsConfig(
+      String directivesFile, String modsecCrsRulesFile) {
+    return ModsecCrsConfig.builder()
+        .directivesFilePath(MODSEC_CRS_RULES_DIRECTORY + DIRECTIVES_DIRECTORY + directivesFile)
+        .initializationRulesFilePath(MODSEC_CRS_RULES_DIRECTORY + INITIALIZATION_RULES_FILE)
+        .rulesFilePath(MODSEC_CRS_RULES_DIRECTORY + modsecCrsRulesFile)
+        .build();
+  }
 }

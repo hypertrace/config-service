@@ -3,6 +3,7 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.detector;
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
 
 option java_multiple_files = true;
 
@@ -248,6 +249,7 @@ message ModsecurityAllDetectionConfig {
   StringList excluded_params = 1;
   optional bool enabled_on_all_entry_spans = 2;
   repeated ParamValueTypeModsecExclude param_value_type_modsec_excludes = 3;
+  ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion modsec_rule_version = 4;
 }
 
 message ModsecurityAnomalyRuleConfig {

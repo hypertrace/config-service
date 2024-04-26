@@ -87,7 +87,7 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
             "Cannot get modsec crs configs for requested version : {}, defaulting to MODSEC_CRS_V3_CONFIG",
             ruleVersion);
       }
-      return ModsecCrsConfig.MODSEC_CRS_V3_CONFIG;
+      return ModsecCrsConfig.ruleVersionToConfigMap.get(ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
     }
     return crsConfig;
   }
