@@ -30,11 +30,6 @@ message NotificationChannelTarget {
 }
 
 message NotificationIntegrationTarget {
-  IntegrationType type = 1;
+  string type = 1;
   string integration_id = 2;
-}
-
-enum IntegrationType {
-  INTEGRATION_TYPE_UNSPECIFIED = 0;
-  INTEGRATION_TYPE_WIZ = 1;
 }
