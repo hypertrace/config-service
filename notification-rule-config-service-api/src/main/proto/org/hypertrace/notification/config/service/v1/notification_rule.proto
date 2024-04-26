@@ -19,12 +19,22 @@ message NotificationRuleMutableData {
   string channel_id = 5 [deprecated=true];
   string rate_limit_interval_duration = 6;
 
-  string sink_id = 7;
-  SinkType sink_type = 8;
+  oneof notification_target {
+    NotificationChannelTarget channel_target = 7;
+    NotificationIntegrationTarget integration_target = 8;
+  }
 }
 
-enum SinkType {
-  SINK_TYPE_UNSPECIFIED = 0;
-  SINK_TYPE_CHANNEL = 1;
-  SINK_TYPE_WIZ_INTEGRATION = 2;
+message NotificationChannelTarget {
+  string channel_id = 1;
+}
+
+message NotificationIntegrationTarget {
+  IntegrationType type = 1;
+  string integration_id = 2;
+}
+
+enum IntegrationType {
+  INTEGRATION_TYPE_UNSPECIFIED = 0;
+  INTEGRATION_TYPE_WIZ = 1;
 }

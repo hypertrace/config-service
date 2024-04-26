@@ -10,6 +10,7 @@ import org.hypertrace.notification.config.service.v1.CreateNotificationRuleReque
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
+import org.hypertrace.notification.config.service.v1.NotificationChannelTarget;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
 import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
@@ -44,11 +45,15 @@ class NotificationRuleConfigServiceImplTest {
         getNotificationRuleMutableData("rule1", "channel1");
     NotificationRuleMutableData notificationRuleMutableData2 =
         getNotificationRuleMutableData("rule2", "channel1");
+
+    // should return a compatible rule with notification target populated
+    NotificationRuleMutableData oldNotificationRuleMutableData = notificationRuleMutableData1
+            .toBuilder().clearChannelTarget().build();
     NotificationRule notificationRule1 =
         notificationStub
             .createNotificationRule(
                 CreateNotificationRuleRequest.newBuilder()
-                    .setNotificationRuleMutableData(notificationRuleMutableData1)
+                    .setNotificationRuleMutableData(oldNotificationRuleMutableData)
                     .build())
             .getNotificationRule();
     assertEquals(
@@ -127,6 +132,7 @@ class NotificationRuleConfigServiceImplTest {
         .setChannelId(channelId)
         .setEventConditionType("metricAnomalyEventCondition")
         .setEventConditionId("rule-1")
+        .setChannelTarget(NotificationChannelTarget.newBuilder().setChannelId(channelId))
         .build();
   }
 

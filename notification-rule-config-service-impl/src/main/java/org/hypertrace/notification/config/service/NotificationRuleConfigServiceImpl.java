@@ -17,9 +17,9 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequ
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesResponse;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleResponse;
+import org.hypertrace.notification.config.service.v1.NotificationChannelTarget;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
-import org.hypertrace.notification.config.service.v1.SinkType;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleResponse;
 
@@ -43,15 +43,18 @@ public class NotificationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateCreateNotificationRuleRequest(requestContext, request);
-      NotificationRule.Builder builder =
+      NotificationRule notificationRule =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationRuleMutableData(request.getNotificationRuleMutableData());
+              .setNotificationRuleMutableData(request.getNotificationRuleMutableData())
+              .build();
 
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(requestContext, builder.build()).getData())
+                  notificationRuleStore
+                      .upsertObject(requestContext, makeBackwardCompatible(notificationRule))
+                      .getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -67,17 +70,16 @@ public class NotificationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateUpdateNotificationRuleRequest(requestContext, request);
+      NotificationRule notificationRule =
+          NotificationRule.newBuilder()
+              .setId(request.getId())
+              .setNotificationRuleMutableData(request.getNotificationRuleMutableData())
+              .build();
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
                   notificationRuleStore
-                      .upsertObject(
-                          requestContext,
-                          NotificationRule.newBuilder()
-                              .setId(request.getId())
-                              .setNotificationRuleMutableData(
-                                  request.getNotificationRuleMutableData())
-                              .build())
+                      .upsertObject(requestContext, makeBackwardCompatible(notificationRule))
                       .getData())
               .build());
       responseObserver.onCompleted();
@@ -99,6 +101,7 @@ public class NotificationRuleConfigServiceImpl
               .addAllNotificationRules(
                   notificationRuleStore.getAllObjects(requestContext).stream()
                       .map(ConfigObject::getData)
+                      .map(this::makeBackwardCompatible)
                       .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
@@ -149,11 +152,22 @@ public class NotificationRuleConfigServiceImpl
   }
 
   private NotificationRule makeBackwardCompatible(NotificationRule rule) {
-    if (rule.getNotificationRuleMutableData().getSinkType().equals(SinkType.SINK_TYPE_CHANNEL)) {
+    if (rule.getNotificationRuleMutableData().hasChannelTarget()) {
+      // makes the rules backward compatible
       return rule.toBuilder()
           .setNotificationRuleMutableData(
               rule.getNotificationRuleMutableData().toBuilder()
-                  .setChannelId(rule.getNotificationRuleMutableData().getSinkId()))
+                  .setChannelId(
+                      rule.getNotificationRuleMutableData().getChannelTarget().getChannelId()))
+          .build();
+    } else if (!rule.getNotificationRuleMutableData().getChannelId().isEmpty()) {
+      // makes old notification rules compatible with new logic
+      return rule.toBuilder()
+          .setNotificationRuleMutableData(
+              rule.getNotificationRuleMutableData().toBuilder()
+                  .setChannelTarget(
+                      NotificationChannelTarget.newBuilder()
+                          .setChannelId(rule.getNotificationRuleMutableData().getChannelId())))
           .build();
     }
     return rule;
