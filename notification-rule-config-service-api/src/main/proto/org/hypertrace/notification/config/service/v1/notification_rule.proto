@@ -16,6 +16,13 @@ message NotificationRuleMutableData {
   string event_condition_id = 3;
   string event_condition_type = 4;
 
-  string channel_id = 5;
+  optional string channel_id = 5;
   string rate_limit_interval_duration = 6;
+
+  NotificationIntegrationTarget integration_target = 7;
+}
+
+message NotificationIntegrationTarget {
+  string type = 1;
+  string integration_id = 2;
 }

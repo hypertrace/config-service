@@ -42,15 +42,16 @@ public class NotificationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateCreateNotificationRuleRequest(requestContext, request);
-      NotificationRule.Builder builder =
+      NotificationRule notificationRule =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
-              .setNotificationRuleMutableData(request.getNotificationRuleMutableData());
+              .setNotificationRuleMutableData(request.getNotificationRuleMutableData())
+              .build();
 
       responseObserver.onNext(
           CreateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore.upsertObject(requestContext, builder.build()).getData())
+                  notificationRuleStore.upsertObject(requestContext, notificationRule).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -66,18 +67,15 @@ public class NotificationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateUpdateNotificationRuleRequest(requestContext, request);
+      NotificationRule notificationRule =
+          NotificationRule.newBuilder()
+              .setId(request.getId())
+              .setNotificationRuleMutableData(request.getNotificationRuleMutableData())
+              .build();
       responseObserver.onNext(
           UpdateNotificationRuleResponse.newBuilder()
               .setNotificationRule(
-                  notificationRuleStore
-                      .upsertObject(
-                          requestContext,
-                          NotificationRule.newBuilder()
-                              .setId(request.getId())
-                              .setNotificationRuleMutableData(
-                                  request.getNotificationRuleMutableData())
-                              .build())
-                      .getData())
+                  notificationRuleStore.upsertObject(requestContext, notificationRule).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

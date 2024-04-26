@@ -44,6 +44,7 @@ class NotificationRuleConfigServiceImplTest {
         getNotificationRuleMutableData("rule1", "channel1");
     NotificationRuleMutableData notificationRuleMutableData2 =
         getNotificationRuleMutableData("rule2", "channel1");
+
     NotificationRule notificationRule1 =
         notificationStub
             .createNotificationRule(
