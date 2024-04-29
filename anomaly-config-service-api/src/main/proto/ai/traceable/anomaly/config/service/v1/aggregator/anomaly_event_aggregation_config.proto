@@ -93,6 +93,6 @@ message TaggedEventsConfig {
 }
 
 message DetectionExclusionCreationConfig {
-  bool enabled = 1;
+  optional bool enabled = 1;
   google.protobuf.Duration expiration_duration = 2;
 }
