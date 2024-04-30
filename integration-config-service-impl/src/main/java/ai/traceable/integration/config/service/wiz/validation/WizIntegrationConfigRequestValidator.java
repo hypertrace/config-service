@@ -10,7 +10,9 @@ import ai.traceable.integration.config.service.wiz.v1.EncryptedText;
 import ai.traceable.integration.config.service.wiz.v1.GetWizIntegrationSummariesRequest;
 import ai.traceable.integration.config.service.wiz.v1.GetWizIntegrationsRequest;
 import ai.traceable.integration.config.service.wiz.v1.UpdateWizIntegrationRequest;
+import ai.traceable.integration.config.service.wiz.v1.WizEventPushConfiguration;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationFilter;
+import ai.traceable.integration.config.service.wiz.v1.WizIntegrationPreferences;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import lombok.AllArgsConstructor;
@@ -27,6 +29,9 @@ public class WizIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(request, CreateWizIntegrationRequest.CLIENT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(request, UpdateWizIntegrationRequest.CLIENT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(request, UpdateWizIntegrationRequest.TOKEN_URL_FIELD_NUMBER);
+    if (request.hasWizIntegrationPreferences()) {
+      validateWizIntegrationPreferencesOrThrow(request.getWizIntegrationPreferences());
+    }
 
     validateEncryptedText(request.getClientSecret());
   }
@@ -56,6 +61,9 @@ public class WizIntegrationConfigRequestValidator {
         request, UpdateWizIntegrationRequest.API_ENDPOINT_URL_FIELD_NUMBER);
     if (request.hasClientSecret()) {
       validateEncryptedText(request.getClientSecret());
+    }
+    if (request.hasWizIntegrationPreferences()) {
+      validateWizIntegrationPreferencesOrThrow(request.getWizIntegrationPreferences());
     }
 
     // check if id exists in the db
@@ -91,5 +99,21 @@ public class WizIntegrationConfigRequestValidator {
   public void validateEncryptedText(EncryptedText encryptedText) {
     validateNonDefaultPresenceOrThrow(encryptedText, EncryptedText.KEY_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(encryptedText, EncryptedText.VALUE_FIELD_NUMBER);
+  }
+
+  private void validateWizIntegrationPreferencesOrThrow(WizIntegrationPreferences preferences) {
+    if (!(preferences.hasWizIssuePullConfiguration()
+        || preferences.hasWizEventPushConfiguration())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("At least one configuration must be present.")
+          .asRuntimeException();
+    }
+
+    if (preferences.hasWizEventPushConfiguration()) {
+      validateNonDefaultPresenceOrThrow(
+          preferences.getWizEventPushConfiguration(),
+          WizEventPushConfiguration.WIZ_INTEGRATION_ID_FIELD_NUMBER);
+    }
+    // nothing in WizIssuePullConfiguration to validate
   }
 }

@@ -37,6 +37,7 @@ message CreateWizIntegrationRequest {
   string client_id = 4;
   string token_url = 5;
   string api_endpoint_url = 6;
+  WizIntegrationPreferences wiz_integration_preferences = 7;
 }
 
 message CreateWizIntegrationResponse {
@@ -55,6 +56,7 @@ message UpdateWizIntegrationRequest {
   string client_id = 5;
   string token_url = 6;
   string api_endpoint_url = 7;
+  WizIntegrationPreferences wiz_integration_preferences = 8;
 }
 
 message UpdateWizIntegrationResponse {

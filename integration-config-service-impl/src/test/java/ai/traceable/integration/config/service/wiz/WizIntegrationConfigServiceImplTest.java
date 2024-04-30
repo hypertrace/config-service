@@ -17,7 +17,9 @@ import ai.traceable.integration.config.service.wiz.v1.WizIntegration;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationConfigServiceGrpc;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationFilter;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationInfo;
+import ai.traceable.integration.config.service.wiz.v1.WizIntegrationPreferences;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationSummary;
+import ai.traceable.integration.config.service.wiz.v1.WizIssuePullConfiguration;
 import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigRequestValidator;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -97,6 +99,10 @@ class WizIntegrationConfigServiceImplTest {
                     .setClientId(existing.getInfo().getClientId())
                     .setApiEndpointUrl(existing.getInfo().getApiEndpointUrl())
                     .setTokenUrl(existing.getInfo().getTokenUrl())
+                    .setWizIntegrationPreferences(
+                        WizIntegrationPreferences.newBuilder()
+                            .setWizIssuePullConfiguration(
+                                WizIssuePullConfiguration.newBuilder().setEnabled(true)))
                     .build())
             .build();
 

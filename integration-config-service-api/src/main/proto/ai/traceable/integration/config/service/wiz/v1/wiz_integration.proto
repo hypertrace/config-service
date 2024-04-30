@@ -26,4 +26,19 @@ message WizIntegrationInfo {
   string client_id = 3;
   string token_url = 4;
   string api_endpoint_url = 5;
+  WizIntegrationPreferences wiz_integration_preferences = 6;
+}
+
+message WizIntegrationPreferences {
+  WizIssuePullConfiguration wiz_issue_pull_configuration = 1;
+  WizEventPushConfiguration wiz_event_push_configuration = 2;
+}
+
+message WizIssuePullConfiguration {
+  bool enabled = 1;
+}
+
+message WizEventPushConfiguration {
+  bool enabled = 1;
+  string wiz_integration_id = 2;
 }

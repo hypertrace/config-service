@@ -16,7 +16,9 @@ import ai.traceable.integration.config.service.wiz.v1.UpdateWizIntegrationRespon
 import ai.traceable.integration.config.service.wiz.v1.WizIntegration;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationConfigServiceGrpc.WizIntegrationConfigServiceImplBase;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationInfo;
+import ai.traceable.integration.config.service.wiz.v1.WizIntegrationPreferences;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationSummary;
+import ai.traceable.integration.config.service.wiz.v1.WizIssuePullConfiguration;
 import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigRequestValidator;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
@@ -52,6 +54,10 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
                       .setTokenUrl(request.getTokenUrl())
                       .setDescription(request.getDescription())
                       .setApiEndpointUrl(request.getApiEndpointUrl())
+                      .setWizIntegrationPreferences(
+                          request.hasWizIntegrationPreferences()
+                              ? request.getWizIntegrationPreferences()
+                              : getDefaultWizIntegrationPreferences())
                       .build())
               .build();
       WizIntegration createdWizIntegrationConfig =
@@ -86,6 +92,7 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
 
       List<WizIntegrationSummary> integrationSummaries =
           integrations.stream()
+              .map(this::asBackwardCompatible)
               .map(
                   integration ->
                       WizIntegrationSummary.newBuilder()
@@ -117,9 +124,10 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
     try {
       requestValidator.validateOrThrow(requestContext, request);
       List<WizIntegration> integrations =
-          request.hasFilter()
-              ? wizIntegrationConfigStore.getAllConfigData(requestContext, request.getFilter())
-              : wizIntegrationConfigStore.getAllConfigData(requestContext);
+          (request.hasFilter()
+                  ? wizIntegrationConfigStore.getAllConfigData(requestContext, request.getFilter())
+                  : wizIntegrationConfigStore.getAllConfigData(requestContext))
+              .stream().map(this::asBackwardCompatible).collect(Collectors.toUnmodifiableList());
       responseStreamObserver.onNext(
           GetWizIntegrationsResponse.newBuilder().addAllIntegrations(integrations).build());
       responseStreamObserver.onCompleted();
@@ -149,6 +157,10 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
       infoBuilder.setClientId(request.getClientId());
       infoBuilder.setTokenUrl(request.getTokenUrl());
       infoBuilder.setApiEndpointUrl(request.getApiEndpointUrl());
+      infoBuilder.setWizIntegrationPreferences(
+          request.hasWizIntegrationPreferences()
+              ? request.getWizIntegrationPreferences()
+              : this.getDefaultWizIntegrationPreferences());
 
       EncryptedText clientSecret =
           request.hasClientSecret()
@@ -193,5 +205,23 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
           throwable);
       responseStreamObserver.onError(throwable);
     }
+  }
+
+  private WizIntegration asBackwardCompatible(WizIntegration integration) {
+    // older integrations will not have the preferences, they default to pulling wiz issues
+    if (integration.getInfo().hasWizIntegrationPreferences()) {
+      return integration;
+    }
+    return integration.toBuilder()
+        .setInfo(
+            integration.getInfo().toBuilder()
+                .setWizIntegrationPreferences(getDefaultWizIntegrationPreferences()))
+        .build();
+  }
+
+  private WizIntegrationPreferences getDefaultWizIntegrationPreferences() {
+    return WizIntegrationPreferences.newBuilder()
+        .setWizIssuePullConfiguration(WizIssuePullConfiguration.newBuilder().setEnabled(true))
+        .build();
   }
 }
