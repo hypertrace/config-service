@@ -1,4 +1,8 @@
 - ruleId: volumetricApiCallSpike
   ruleName: Unrestricted Resource Consumption
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_VOLUMETRIC
-
+  eventDetails:
+    description: |
+      Multiple concurrent requests can be performed from a single local server or by using cloud computing resources. Most of the automated tools available are designed to cause volumetric spikes via high loads of traffic, impacting APIs’ service rate. The underlying effectiveness of most DDoS attacks comes from the disparity between the amount of resources it takes to launch an attack relative to the amount of resources it takes to absorb or mitigate one. Exploitation can lead to Denial of Service due to resource starvation, but it can also lead to operational costs increase such as those related to the infrastructure due to higher CPU demand, increasing cloud storage needs, etc.
+    mitigation: |
+      Crafted API requests, such as those including parameters that control the number of resources to be returned and performing response status/time/length analysis should allow identification of the issue. Filter, monitor, and block malicious traffic that may be part of a volumetric attack. Limiting the number of requests a server can accept over a certain time period can help to prevent volumetric attacks by protecting API's from being overwhelmed by a deluge of requests.
