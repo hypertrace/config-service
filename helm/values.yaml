@@ -192,10 +192,17 @@ traceableConfigServiceConfig:
       maxCacheSize: 10000
       refreshAfterWriteDuration: 10m
       expireAfterWriteDuration: 12h
+  entityFetcherCache:
+    serviceMappingCache:
+      maxSize: 1000
+      refreshAfterWriteDuration: 6h
+      expireAfterWriteDuration: 24h
+  regexPatternCacheSize: 10000
   licenseMeteringServiceConfig:
     host: license-metering-service
     port: 51018
     cacheExpiryDuration: 5m
+    cacheMaxSize: 5000
   regionConfigService:
     neustar:
       mode: VERSIONS_DIR
@@ -267,6 +274,10 @@ traceableConfigServiceConfig:
     port: 50888
     request:
       timeout: 1m
+  externalDataClassificationServiceConfig:
+    cache:
+      refresh: 1m
+      maxSize: 1000
   spanProcessingConfig:
     defaultRequestHeaderRetentionRules: |-
       [

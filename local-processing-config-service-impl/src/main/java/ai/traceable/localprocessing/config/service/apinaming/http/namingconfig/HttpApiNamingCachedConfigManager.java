@@ -64,7 +64,8 @@ public class HttpApiNamingCachedConfigManager {
             .maximumSize(maximumCacheSize)
             .recordStats()
             .build(CacheLoader.from(this::loadScopedTrainingConfigs));
-    PlatformMetricsRegistry.registerCache(CACHE_NAME, trainingConfigCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        CACHE_NAME, trainingConfigCache, Collections.emptyMap(), maximumCacheSize);
   }
 
   private List<ScopedTrainingConfig> loadScopedTrainingConfigs(@Nonnull ContextualKey<Void> key) {

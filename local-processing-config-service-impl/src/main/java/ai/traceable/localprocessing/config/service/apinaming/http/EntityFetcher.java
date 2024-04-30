@@ -60,8 +60,11 @@ public class EntityFetcher {
             .recordStats()
             .build(delegateEntityCacheLoader);
 
-    PlatformMetricsRegistry.registerCache(
-        DELEGATE_SERVICE_ENTITY_CACHE_NAME, delegateServiceEntityCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        DELEGATE_SERVICE_ENTITY_CACHE_NAME,
+        delegateServiceEntityCache,
+        Collections.emptyMap(),
+        maximumCacheSize);
   }
 
   public Map<ServiceRequest, Optional<String>> getServiceIds(

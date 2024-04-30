@@ -65,8 +65,11 @@ public class ActorBasedRulesCache {
             .build(
                 CacheLoader.asyncReloading(
                     CacheLoader.from(this::loadValue), Executors.newSingleThreadExecutor()));
-    PlatformMetricsRegistry.registerCache(
-        ACTOR_BASED_RULES_CACHE, actorCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        ACTOR_BASED_RULES_CACHE,
+        actorCache,
+        Collections.emptyMap(),
+        blockingDataCacheConfig.getMaxCacheSize());
   }
 
   public List<BlockingPolicyData> getActorBasedRules(

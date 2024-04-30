@@ -22,12 +22,14 @@ class ExternalDataClassificationConfig {
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".cache.thread.pool.size";
   private static final String CACHE_REFRESH =
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".cache.refresh";
+  private static final String CACHE_MAX_SIZE =
+      EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".cache.maxSize";
 
   @Getter List<DataParsingRule> defaultDataParsingRules;
   @Getter List<DataType> defaultExternalDataTypes;
   @Getter int cacheThreadPoolSize;
   @Getter Duration cacheRefreshDuration;
-  @Getter int cacheMaxSize = 10_000;
+  @Getter int cacheMaxSize;
 
   ExternalDataClassificationConfig(Config config) {
     this.defaultDataParsingRules =
@@ -40,6 +42,7 @@ class ExternalDataClassificationConfig {
             .collect(Collectors.toUnmodifiableList());
     this.cacheThreadPoolSize = config.getInt(CACHE_THREAD_POOL_SIZE);
     this.cacheRefreshDuration = config.getDuration(CACHE_REFRESH);
+    this.cacheMaxSize = config.getInt(CACHE_MAX_SIZE);
   }
 
   @SneakyThrows

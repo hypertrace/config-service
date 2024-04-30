@@ -40,6 +40,16 @@ class RateLimitingConfigServiceFactoryTest {
                     + "    service.name = \"SERVICE.name\"\n"
                     + "    service.environment = \"SERVICE.environment\"\n"
                     + "  }"));
+    when(mockConfig.getConfig("entity.fetcher.cache.service.mapping.cache"))
+        .thenReturn(
+            ConfigFactory.parseString(
+                "entity.fetcher.cache = {\n"
+                    + "  service.mapping.cache = {\n"
+                    + "    maxSize = 1000\n"
+                    + "    refreshAfterWriteDuration = 10m\n"
+                    + "    expireAfterWriteDuration = 1h\n"
+                    + "  }\n"
+                    + "}\n"));
     doReturn(mock(ManagedChannel.class))
         .when(mockGrpcChannelRegistry)
         .forPlaintextAddress("localhost", 50061);

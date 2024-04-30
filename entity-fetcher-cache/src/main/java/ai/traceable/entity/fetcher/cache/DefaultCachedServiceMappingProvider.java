@@ -1,8 +1,7 @@
 package ai.traceable.entity.fetcher.cache;
 
-import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
-import ai.traceable.platform.cache.TimedCacheConfig;
+import ai.traceable.entity.fetcher.cache.config.CachedEntityFetcherConfig;
 import ai.traceable.platform.cache.TimedCacheValueProvider;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,9 +25,8 @@ class DefaultCachedServiceMappingProvider
       @Named(CachedServiceMappingProviderModule.SERVICE_MAPPING_CACHE_NAME) String cacheName,
       EntityQueryServiceClient entityQueryServiceClient,
       Clock clock,
-      TimedCacheConfig cacheConfig,
-      UuidGenerator uuidGenerator) {
-    super(cacheName + "-" + uuidGenerator.generateRandomId(), clock, cacheConfig);
+      CachedEntityFetcherConfig cachedEntityFetcherConfig) {
+    super(cacheName, clock, cachedEntityFetcherConfig.getServiceMappingCacheConfig());
     this.entityQueryServiceClient = entityQueryServiceClient;
   }
 

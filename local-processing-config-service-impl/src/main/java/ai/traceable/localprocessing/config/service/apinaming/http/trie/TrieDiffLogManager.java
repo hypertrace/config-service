@@ -110,7 +110,8 @@ public class TrieDiffLogManager {
                     CacheLoader.from(this::loadTrieDiffLogModels),
                     Executors.newFixedThreadPool(
                         diffLogCacheThreadPoolSize, this.buildDiffLogCacheThreadFactory())));
-    PlatformMetricsRegistry.registerCache(CACHE_NAME, diffLogsCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        CACHE_NAME, diffLogsCache, Collections.emptyMap(), maximumCacheSize);
   }
 
   private List<PersistedModel<TrieDiffLogModel>> loadTrieDiffLogModels(

@@ -56,8 +56,8 @@ public class DelegateEntityCacheLoader
             .recordStats()
             .build(entityCacheLoader);
 
-    PlatformMetricsRegistry.registerCache(
-        SERVICE_ENTITY_CACHE_NAME, serviceEntityCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        SERVICE_ENTITY_CACHE_NAME, serviceEntityCache, Collections.emptyMap(), maximumCacheSize);
   }
 
   @Override

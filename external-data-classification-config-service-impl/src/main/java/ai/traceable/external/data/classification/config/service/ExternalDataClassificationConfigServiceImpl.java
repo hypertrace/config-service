@@ -86,10 +86,11 @@ class ExternalDataClassificationConfigServiceImpl
                 CacheLoader.asyncReloading(
                     CacheLoader.from(this::calculateResponse), this.buildExecutor()));
 
-    PlatformMetricsRegistry.registerCache(
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
         "ExternalDataClassificationConfigServiceImplResponseCache",
         this.responseCache,
-        Collections.emptyMap());
+        Collections.emptyMap(),
+        this.externalDataClassificationConfig.getCacheMaxSize());
   }
 
   @Override

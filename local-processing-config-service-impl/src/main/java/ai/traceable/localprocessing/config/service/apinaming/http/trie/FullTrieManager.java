@@ -102,7 +102,8 @@ public class FullTrieManager {
                     Executors.newFixedThreadPool(
                         fullTrieCacheThreadPoolSize, this.buildFullTrieCacheThreadFactory())));
     this.regexPatternCachingClient = regexPatternCachingClient;
-    PlatformMetricsRegistry.registerCache(CACHE_NAME, trieModelCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        CACHE_NAME, trieModelCache, Collections.emptyMap(), maximumCacheSize);
   }
 
   private FullTrieData loadTrieModelData(@Nonnull ContextualKey<FullTrieIdentifier> key) {

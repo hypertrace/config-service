@@ -45,14 +45,15 @@ public class LicenseProvider {
     this.licenseMeteringServiceBlockingStub = licenseMeteringServiceBlockingStub;
     this.requestTimeout = licenseConfig.getDuration(CALL_TIMEOUT_CONFIG_NAME);
 
+    int maxCacheSize = licenseConfig.getInt(CACHE_MAX_SIZE_CONFIG_NAME);
     this.licenseCache =
         CacheBuilder.newBuilder()
             .expireAfterWrite(licenseConfig.getDuration(CACHE_EXPIRATION_DURATION_CONFIG_NAME))
-            .maximumSize(licenseConfig.getInt(CACHE_MAX_SIZE_CONFIG_NAME))
+            .maximumSize(maxCacheSize)
             .recordStats()
             .build(CacheLoader.from(this::loadLicense));
-    PlatformMetricsRegistry.registerCache(
-        LICENSE_PROVIDER_CACHE_NAME, licenseCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        LICENSE_PROVIDER_CACHE_NAME, licenseCache, Collections.emptyMap(), maxCacheSize);
   }
 
   private Licenses loadLicense(ContextualKey<Void> contextualKey) {

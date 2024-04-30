@@ -71,7 +71,8 @@ public class HttpCustomApiNamingRulesManager {
             .maximumSize(maximumCacheSize)
             .recordStats()
             .build(CacheLoader.from(this::loadApiNamingRules));
-    PlatformMetricsRegistry.registerCache(CACHE_NAME, apiNamingRulesCache, Collections.emptyMap());
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        CACHE_NAME, apiNamingRulesCache, Collections.emptyMap(), maximumCacheSize);
   }
 
   private List<ApiNamingRule> loadApiNamingRules(@Nonnull ContextualKey<ServiceIdentifier> key) {

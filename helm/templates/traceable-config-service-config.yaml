@@ -72,10 +72,19 @@ data:
         expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.entityServiceConfig.cache.expireAfterWriteDuration }}
       }
     }
+    entity.fetcher.cache = {
+      service.mapping.cache = {
+        maxSize = {{ .Values.traceableConfigServiceConfig.entityFetcherCache.serviceMappingCache.maxSize }}
+        refreshAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.entityFetcherCache.serviceMappingCache.refreshAfterWriteDuration }}
+        expireAfterWriteDuration = {{ .Values.traceableConfigServiceConfig.entityFetcherCache.serviceMappingCache.expireAfterWriteDuration }}
+      }
+    }
+    regex.pattern.cache.size = {{ .Values.traceableConfigServiceConfig.regexPatternCacheSize }}
     license.metering.service = {
       host = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.host }}
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
       cache.expiration.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
+      cache.max.size = {{ int .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheMaxSize }}
     }
     region.config.service {
       neustar.countries.data {
@@ -304,6 +313,12 @@ data:
         {{- end }}
       }
       {{- end }}
+    }
+    external.data.classification.config.service = {
+      cache {
+        refresh = {{ .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.cache.refresh }}
+        maxSize = {{ int .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.cache.maxSize }}
+      }
     }
 
   anomaly.conf: |-
