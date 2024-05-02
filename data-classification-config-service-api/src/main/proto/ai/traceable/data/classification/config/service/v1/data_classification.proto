@@ -33,6 +33,8 @@ message DataTypeRule {
       KeyValuePattern leaf_key_value_pattern = 9;
     }
     Action action = 8;
+    optional string name = 10;
+    UrlMatchScope url_match_scope = 11;
   }
 
   message GlobalScope {
@@ -44,6 +46,10 @@ message DataTypeRule {
 
   message ApiScope {
     repeated string api_ids = 1;
+  }
+
+  message UrlMatchScope {
+    repeated string url_regex_matches = 1;
   }
 
   message StringPattern {

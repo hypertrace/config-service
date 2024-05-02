@@ -14,12 +14,15 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.UrlMatchScope;
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
+import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
 import ai.traceable.external.data.classification.config.service.v1.DataType.Result;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
+import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import java.util.List;
 import java.util.Optional;
@@ -379,5 +382,80 @@ public class DataClassificationRulesTranslatorTest {
             PREDICATE_SUPPORT_LEVEL_LEAF_PATH_SEGMENT);
     expectedDataTypes = List.of(expectedDataType2, expectedDataType5);
     assertEquals(expectedDataTypes, translatedDataTypes);
+  }
+
+  @Test
+  void testTranslateUrlScope() {
+    DataType inputType =
+        DataType.newBuilder()
+            .setId("id-1")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("datatype-1")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setUrlMatchScope(
+                                UrlMatchScope.newBuilder()
+                                    .addUrlRegexMatches("/example-url/.*")
+                                    .addUrlRegexMatches("/other"))
+                            .addAllLocations(
+                                List.of(Location.LOCATION_REQUEST_HEADER, Location.LOCATION_QUERY))
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setValue("value-1")
+                                    .setOperator(Operator.OPERATOR_EQUALS))
+                            .setAction(Action.ACTION_MATCH)))
+            .build();
+
+    ai.traceable.external.data.classification.config.service.v1.DataType expectedOutput =
+        ai.traceable.external.data.classification.config.service.v1.DataType.newBuilder()
+            .setDataTypeId("id-1")
+            .setTransformation(DataTransformation.DATA_TRANSFORMATION_REDACT)
+            .addMatchRules(
+                DataTypeMatchRule.newBuilder()
+                    .setAttributeFilter(
+                        AttributeFilter.newBuilder()
+                            .addAllPrefixes(
+                                List.of(
+                                    "http.request.header",
+                                    "rpc.request.metadata",
+                                    "http.url",
+                                    "http.target",
+                                    "http.path",
+                                    "url.full",
+                                    "url.query")))
+                    .setSpanFilter(
+                        SpanFilter.newBuilder()
+                            .addRequiredMatchingAttributes(
+                                AttributePredicate.newBuilder()
+                                    .setNamePredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue(
+                                                "http\\.url|http\\.target|http\\.path|url\\.full"))
+                                    .setValuePredicate(
+                                        StringPredicate.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.external.data.classification.config
+                                                    .service.v1.Operator.OPERATOR_MATCHES_REGEX)
+                                            .setValue("/example-url/.*|/other"))))
+                    .setResult(Result.RESULT_MATCH)
+                    .setPathPredicate(
+                        PathPredicate.newBuilder()
+                            .setPathSegmentPredicate(
+                                StringPredicate.newBuilder()
+                                    .setValue("value-1")
+                                    .setOperator(
+                                        ai.traceable.external.data.classification.config.service.v1
+                                            .Operator.OPERATOR_EQUALS))))
+            .build();
+
+    assertEquals(
+        List.of(expectedOutput),
+        dataClassificationRulesTranslator.translateDataTypes(
+            List.of(inputType), Optional.empty(), PREDICATE_SUPPORT_LEVEL_UNSPECIFIED));
   }
 }

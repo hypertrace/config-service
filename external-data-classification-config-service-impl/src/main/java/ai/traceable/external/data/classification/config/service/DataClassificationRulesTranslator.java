@@ -10,6 +10,7 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
+import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation;
 import ai.traceable.external.data.classification.config.service.v1.DataType.DataTypeMatchRule;
@@ -18,6 +19,7 @@ import ai.traceable.external.data.classification.config.service.v1.GetDataClassi
 import ai.traceable.external.data.classification.config.service.v1.Operator;
 import ai.traceable.external.data.classification.config.service.v1.PathPredicate;
 import ai.traceable.external.data.classification.config.service.v1.PathValuePredicate;
+import ai.traceable.external.data.classification.config.service.v1.SpanFilter;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -51,6 +53,11 @@ class DataClassificationRulesTranslator {
   // matched by a data parsing rule which breaks down the query params into child keys
   private static final List<String> HTTP_URL_QUERY_LIST =
       List.of("http.url", "http.target", "http.path", "url.full", "url.query");
+  private static final StringPredicate URL_KEY_PREDICATE =
+      StringPredicate.newBuilder()
+          .setOperator(Operator.OPERATOR_MATCHES_REGEX)
+          .setValue("http\\.url|http\\.target|http\\.path|url\\.full")
+          .build();
 
   // Any location really means any of the other defined locations rather than any possible location
   private static final List<String> ANY_LOCATION_PREFIXES_LIST =
@@ -105,20 +112,30 @@ class DataClassificationRulesTranslator {
   }
 
   private boolean matchScope(ScopedPattern scopedPattern, Optional<String> environmentName) {
-    return scopedPattern.hasGlobalScope()
-        || (environmentName.isEmpty() && !scopedPattern.hasEnvironmentScope())
-        || (environmentName.isPresent()
-            && scopedPattern
-                .getEnvironmentScope()
-                .getEnvironmentIdsList()
-                .contains(environmentName.get()));
+    switch (scopedPattern.getScopeCase()) {
+      case ENVIRONMENT_SCOPE:
+        return environmentName
+            .map(
+                actualName ->
+                    scopedPattern
+                        .getEnvironmentScope()
+                        .getEnvironmentIdsList()
+                        .contains(actualName))
+            .orElse(false);
+      case API_SCOPE:
+        // unsupported, so never send these rules to prevent incorrect matches
+        return false;
+      case GLOBAL_SCOPE:
+      case SCOPE_NOT_SET:
+      default:
+        return true;
+    }
   }
 
   private Optional<DataTypeMatchRule> translateScopedPattern(
       ScopedPattern scopedPattern, PredicateSupportLevel predicateSupportLevel) {
     DataTypeMatchRule.Builder dataTypeMatchRuleBuilder = DataTypeMatchRule.newBuilder();
-    // environment filter is already taken care of.
-    // TODO may need to support API scope in the future.
+    translateSpanFilters(scopedPattern).ifPresent(dataTypeMatchRuleBuilder::setSpanFilter);
     translateLocations(scopedPattern.getLocationsList())
         .ifPresent(dataTypeMatchRuleBuilder::setAttributeFilter);
     dataTypeMatchRuleBuilder.setResult(translateAction(scopedPattern.getAction()));
@@ -152,6 +169,24 @@ class DataClassificationRulesTranslator {
         log.error("Unsupported scoped pattern type: {}", scopedPattern);
         return Optional.empty();
     }
+  }
+
+  private Optional<SpanFilter> translateSpanFilters(ScopedPattern pattern) {
+    if (pattern.getUrlMatchScope().getUrlRegexMatchesCount() > 0) {
+      return Optional.of(
+          SpanFilter.newBuilder()
+              .addRequiredMatchingAttributes(
+                  AttributePredicate.newBuilder()
+                      .setNamePredicate(URL_KEY_PREDICATE)
+                      .setValuePredicate(
+                          StringPredicate.newBuilder()
+                              .setOperator(Operator.OPERATOR_MATCHES_REGEX)
+                              .setValue(
+                                  String.join(
+                                      "|", pattern.getUrlMatchScope().getUrlRegexMatchesList()))))
+              .build());
+    }
+    return Optional.empty();
   }
 
   private boolean isLeafKeyValuePatternSupported(PredicateSupportLevel predicateSupportLevel) {

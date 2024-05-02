@@ -6,7 +6,6 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
-import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Action;
@@ -16,11 +15,13 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.KeyValueP
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.data.classification.config.service.v1.DataTypeRule.UrlMatchScope;
 import ai.traceable.data.classification.config.service.v1.DeleteDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import io.grpc.Status;
 import java.util.List;
+import org.hypertrace.config.validation.RegexValidator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DataTypeConfigRequestValidator {
@@ -171,5 +172,10 @@ class DataTypeConfigRequestValidator {
 
   private void validateEnvironmentScope(EnvironmentScope scope) {
     validateNonDefaultPresenceOrThrow(scope, EnvironmentScope.ENVIRONMENT_IDS_FIELD_NUMBER);
+  }
+
+  private void validateUrlMatchScope(UrlMatchScope scope) {
+    validateNonDefaultPresenceOrThrow(scope, UrlMatchScope.URL_REGEX_MATCHES_FIELD_NUMBER);
+    scope.getUrlRegexMatchesList().forEach(RegexValidator::validate);
   }
 }
