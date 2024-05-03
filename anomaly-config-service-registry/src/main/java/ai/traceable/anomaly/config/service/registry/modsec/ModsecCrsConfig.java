@@ -17,6 +17,8 @@ public class ModsecCrsConfig {
   private static final String INITIALIZATION_RULES_FILE = "modsec-initialization-901-rules.conf";
   private static final String MODSEC_CRS_RULES_FILE = "modsec-crs-rules.conf";
   private static final String MODSEC_CRS_TEST_RULES_FILE = "modsec-crs-test-rules.conf";
+  private static final String MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE =
+      "modsec-crs-sensitive-agent-rules.conf";
 
   public static final Map<ModsecRuleVersion, ModsecCrsConfig> ruleVersionToConfigMap =
       Map.of(
@@ -35,7 +37,11 @@ public class ModsecCrsConfig {
           getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_TEST_RULES_FILE),
           ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE,
           getModsecCrsConfig(
-              "coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_TEST_RULES_FILE));
+              "coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_TEST_RULES_FILE),
+          ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3,
+          getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE),
+          ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3,
+          getModsecCrsConfig("modsec-directives-v3.conf", MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE));
 
   private static ModsecCrsConfig getModsecCrsConfig(
       String directivesFile, String modsecCrsRulesFile) {

@@ -93,6 +93,7 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
                     requestContext,
                     request.getRegularModsecDetectionRulesHash(),
                     shouldUseCoraza,
+                    featureCachingClient.isTpaCrsMsgHideMatchValueEnabled(requestContext),
                     request.getEnvironment()));
       }
       responseObserver.onNext(responseBuilder.build());

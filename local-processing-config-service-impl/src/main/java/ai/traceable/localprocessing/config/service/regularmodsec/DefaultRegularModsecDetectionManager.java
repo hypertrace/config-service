@@ -41,11 +41,24 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
       RequestContext requestContext,
       String requestHash,
       boolean shouldUseCoraza,
+      boolean shouldHideMatchValueInCrsMsg,
       String environmentId) {
     // https://traceableai.atlassian.net/browse/ENG-15496
     // Only Safe CRS rules will be evaluated on sensitive params on Traceable Platform Agent due
     // to perf constraints
-    String regularCrsRulesBlob;
+    ModsecRuleVersion version;
+    if (shouldHideMatchValueInCrsMsg) {
+      version =
+          shouldUseCoraza
+              ? ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3
+              : ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3;
+    } else {
+      version =
+          shouldUseCoraza
+              ? ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3
+              : ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED;
+    }
+
     GetModsecCrsRulesResponse response =
         requestContext.call(
             () ->
@@ -53,10 +66,7 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
                     GetModsecCrsRulesRequest.newBuilder()
                         .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                         .setRemoveDisabledRules(true)
-                        .setRuleVersion(
-                            shouldUseCoraza
-                                ? ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3
-                                : ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+                        .setRuleVersion(version)
                         .setConfigScope(
                             environmentId.isBlank()
                                 ? CUSTOMER_CONFIG_SCOPE
@@ -66,6 +76,8 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
                                             .setEnvironmentId(environmentId))
                                     .build())
                         .build()));
+
+    String regularCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1
         && response.getModsecCrsRulesList().get(0).getSubRuleType()
             == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE) {

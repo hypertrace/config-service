@@ -8,6 +8,7 @@ public interface RegularModsecDetectionManager {
       RequestContext requestContext,
       String requestHash,
       boolean shouldUseCoraza,
+      boolean shouldHideMatchValueInCrsMsg,
       String environmentId);
 
   RegularModsecDetectionRules getEmptyRules();

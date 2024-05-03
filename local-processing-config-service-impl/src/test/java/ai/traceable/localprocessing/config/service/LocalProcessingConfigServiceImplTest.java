@@ -215,7 +215,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), eq(false), any());
+        .getDetectionRules(any(), any(), eq(false), eq(false), any());
     GetLocalProcessingConfigResponse localProcessingConfigResponse =
         localProcessingConfigStub.getLocalProcessingConfig(
             GetLocalProcessingConfigRequest.newBuilder()
@@ -247,7 +247,7 @@ class LocalProcessingConfigServiceImplTest {
             .build();
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), eq(true), eq("environmentId"));
+        .getDetectionRules(any(), any(), eq(true), eq(false), eq("environmentId"));
     GetLocalProcessingConfigResponse localProcessingConfigResponse =
         localProcessingConfigStub.getLocalProcessingConfig(
             GetLocalProcessingConfigRequest.newBuilder()
@@ -323,7 +323,8 @@ class LocalProcessingConfigServiceImplTest {
         .getEnabledRules(any(RequestContext.class), eq("Custom"), anyBoolean(), any());
     doReturn(expectedRegularModsecDetectionRules)
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(RequestContext.class), eq("Regular"), anyBoolean(), any());
+        .getDetectionRules(
+            any(RequestContext.class), eq("Regular"), anyBoolean(), anyBoolean(), any());
 
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -348,7 +349,7 @@ class LocalProcessingConfigServiceImplTest {
         .getEnabledRules(any(), any(), anyBoolean(), any());
     doReturn(RegularModsecDetectionRules.getDefaultInstance())
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), anyBoolean(), any());
+        .getDetectionRules(any(), any(), anyBoolean(), anyBoolean(), any());
 
     createLocalProcessingRule("/checkout/*", "abc.com", ProtectionMode.PROTECTION_MODE_CORE);
     createLocalProcessingRule("/orders/**", "xyz.com", ProtectionMode.PROTECTION_MODE_ADVANCED);
@@ -407,7 +408,7 @@ class LocalProcessingConfigServiceImplTest {
         .getEnabledRules(any(), any(), anyBoolean(), any());
     doReturn(RegularModsecDetectionRules.getDefaultInstance())
         .when(regularModsecDetectionManager)
-        .getDetectionRules(any(), any(), anyBoolean(), any());
+        .getDetectionRules(any(), any(), anyBoolean(), anyBoolean(), any());
 
     SamplingPolicies samplingPolicies =
         localProcessingConfigStub

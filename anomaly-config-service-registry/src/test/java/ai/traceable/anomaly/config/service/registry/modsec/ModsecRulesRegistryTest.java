@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
@@ -38,28 +40,46 @@ public class ModsecRulesRegistryTest {
       new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
 
   @Test
-  public void testModsecCrsRules() throws IOException {
+  public void testModsecCrsRuleEngine() throws IOException {
     if (SystemUtils.IS_OS_LINUX) {
       RuleEngine.loadNativeLibrary();
-      assertNotNull(
-          RuleEngine.create(
-              modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
-                  ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-                  Set.of())));
-      assertNotNull(
-          RuleEngine.create(
-              modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
-                  ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-                  Set.of())));
-      assertNotNull(
-          RuleEngine.create(
-              modsecRulesRegistry.getModsecCrsRulesBlob(
-                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
-                  ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-                  Set.of())));
+      for (ModsecRuleVersion version : ModsecRuleVersion.values()) {
+        // TODO: Add support for verifying coraza blob too..
+        if (version.name().contains("CORAZA")) {
+          continue;
+        }
+        for (AnomalySubRuleType subRuleType : AnomalySubRuleType.values()) {
+          try {
+            if (subRuleType.equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED)
+                || subRuleType.equals(AnomalySubRuleType.UNRECOGNIZED)) {
+              assertThrows(
+                  IllegalArgumentException.class,
+                  () ->
+                      RuleEngine.create(
+                          modsecRulesRegistry.getModsecCrsRulesBlob(
+                              subRuleType, version, Set.of())));
+            } else {
+              assertNotNull(
+                  RuleEngine.create(
+                      modsecRulesRegistry.getModsecCrsRulesBlob(subRuleType, version, Set.of())),
+                  "Failed for version:" + version + " subRuleType:" + subRuleType);
+            }
+          } catch (Exception e) {
+            fail("Failed for version:" + version + " subRuleType:" + subRuleType, e);
+          }
+        }
+      }
     }
+  }
+
+  @Test
+  public void testModsecCrsRules() throws IOException {
+    for (ModsecRuleVersion version : ModsecRuleVersion.values()) {
+      testModsecCrsRules(version);
+    }
+  }
+
+  private void testModsecCrsRules(ModsecRuleVersion version) throws IOException {
 
     String secRuleRemoveByIdKeyword = "SecRuleRemoveById";
     List<AnomalySubRuleInfo> subRules =
@@ -80,9 +100,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
-              ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-              Set.of());
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, version, Set.of());
       assertEquals(
           allRulesCount - regularRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
@@ -90,9 +108,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
-              ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-              Set.of());
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, version, Set.of());
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - safeRulesCount, crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
@@ -101,9 +117,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
-              ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-              Set.of());
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, version, Set.of());
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - blockingRulesCount,
@@ -115,9 +129,7 @@ public class ModsecRulesRegistryTest {
       // crs_913100 is disabled
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
-              ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-              Set.of("crs_913100"));
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, version, Set.of("crs_913100"));
       assertTrue(crsRulesBlob.contains("SecRuleRemoveById 913100"));
     }
     {
@@ -362,6 +374,28 @@ public class ModsecRulesRegistryTest {
           subRulesRead.get(i), subRulesCollected.get(i), "Blocking rule mismatch at index " + i);
     }
     assertEquals(subRulesRead.size(), subRulesCollected.size(), "Blocking rule count mismatch");
+  }
+
+  @Test
+  public void testModsecCrsSensitiveAgentRules() {
+    String[] modsecCrsAllRules =
+        loadModsecFileContents("modsec/crs/modsec-crs-rules.conf").split("\n\n");
+    String[] modsecCrsSensitiveAgentRules =
+        loadModsecFileContents("modsec/crs/modsec-crs-sensitive-agent-rules.conf").split("\n\n");
+
+    int j = 0;
+    for (int i = 0; i < modsecCrsAllRules.length; i++) {
+      if (!modsecCrsAllRules[i].startsWith("SecRule")) {
+        assertEquals(modsecCrsAllRules[i], modsecCrsSensitiveAgentRules[j++]);
+      } else if (!modsecCrsAllRules[i].contains("tag:'traceable/type/regular'")) {
+        String sanitizedString =
+            modsecCrsAllRules[i].replace(
+                "found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}",
+                "found within %{MATCHED_VAR_NAME}");
+        assertEquals(sanitizedString, modsecCrsSensitiveAgentRules[j++]);
+      }
+    }
+    assertEquals(modsecCrsSensitiveAgentRules.length, j);
   }
 
   private Set<String> getIdMatches(String text) {

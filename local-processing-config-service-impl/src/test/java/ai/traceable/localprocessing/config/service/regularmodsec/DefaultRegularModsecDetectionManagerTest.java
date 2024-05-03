@@ -43,27 +43,62 @@ class DefaultRegularModsecDetectionManagerTest {
 
   @Test
   void testDetectionRules() {
+    // customer scope
+    verifyDetectionRules(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED, false, false, "");
+    verifyDetectionRules(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3, true, false, "");
+    verifyDetectionRules(ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3, false, true, "");
+    verifyDetectionRules(
+        ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3, true, true, "");
+    // environment scope
+    verifyDetectionRules(
+        ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED, false, false, "environmentId");
+    verifyDetectionRules(
+        ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3, true, false, "environmentId");
+    verifyDetectionRules(
+        ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3, false, true, "environmentId");
+    verifyDetectionRules(
+        ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3,
+        true,
+        true,
+        "environmentId");
+  }
+
+  private void verifyDetectionRules(
+      ModsecRuleVersion version,
+      boolean shouldUseCoraza,
+      boolean shouldHideMatchValueInCrsMsg,
+      String environmentId) {
+    String blob = version + " blob";
+    String hash = uuidGenerator.generateId(blob);
     RegularModsecDetectionRules expectedModsecDetectionRules =
         RegularModsecDetectionRules.newBuilder()
-            .setRegularModsecDetectionRulesBlob("Tester rule blob")
-            .setHash(uuidGenerator.generateId("Tester rule blob"))
+            .setRegularModsecDetectionRulesBlob(blob)
+            .setHash(hash)
             .build();
+    RequestContext requestContext = RequestContext.forTenantId("test");
+    AnomalyConfigScope configScope =
+        environmentId.isEmpty()
+            ? AnomalyConfigScope.newBuilder()
+                .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                .build()
+            : AnomalyConfigScope.newBuilder()
+                .setEnvironmentScope(
+                    AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))
+                .build();
 
     when(configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
                 .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                 .setRemoveDisabledRules(true)
-                .setRuleVersion(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
-                .setConfigScope(
-                    AnomalyConfigScope.newBuilder()
-                        .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
+                .setRuleVersion(version)
+                .setConfigScope(configScope)
                 .build()))
         .thenReturn(
             GetModsecCrsRulesResponse.newBuilder()
                 .addAllModsecCrsRules(
                     List.of(
                         ModsecCrsRulesData.newBuilder()
-                            .setModsecCrsRulesBlob("Tester rule blob")
+                            .setModsecCrsRulesBlob(blob)
                             .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                             .build()))
                 .build());
@@ -72,53 +107,13 @@ class DefaultRegularModsecDetectionManagerTest {
     assertEquals(
         expectedModsecDetectionRules,
         regularModsecDetectionManager.getDetectionRules(
-            RequestContext.forTenantId("test"), "", false, ""));
+            requestContext, "", shouldUseCoraza, shouldHideMatchValueInCrsMsg, environmentId));
 
     // When hash matches we don't expect the blob
     assertEquals(
-        RegularModsecDetectionRules.newBuilder()
-            .setHash(uuidGenerator.generateId("Tester rule blob"))
-            .build(),
+        expectedModsecDetectionRules.toBuilder().clearRegularModsecDetectionRulesBlob().build(),
         regularModsecDetectionManager.getDetectionRules(
-            RequestContext.forTenantId("test"),
-            uuidGenerator.generateId("Tester rule blob"),
-            false,
-            ""));
-  }
-
-  @Test
-  void testDetectionRulesWithCoraza() {
-    RegularModsecDetectionRules expectedModsecDetectionRules =
-        RegularModsecDetectionRules.newBuilder()
-            .setRegularModsecDetectionRulesBlob("Tester rule blob")
-            .setHash(uuidGenerator.generateId("Tester rule blob"))
-            .build();
-
-    when(configServiceBlockingStub.getModsecCrsRules(
-            GetModsecCrsRulesRequest.newBuilder()
-                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
-                .setRemoveDisabledRules(true)
-                .setRuleVersion(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3)
-                .setConfigScope(
-                    AnomalyConfigScope.newBuilder()
-                        .setEnvironmentScope(
-                            AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environmentId")))
-                .build()))
-        .thenReturn(
-            GetModsecCrsRulesResponse.newBuilder()
-                .addAllModsecCrsRules(
-                    List.of(
-                        ModsecCrsRulesData.newBuilder()
-                            .setModsecCrsRulesBlob("Tester rule blob")
-                            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
-                            .build()))
-                .build());
-
-    // When coraza was enabled, only then we expect the blob
-    assertEquals(
-        expectedModsecDetectionRules,
-        regularModsecDetectionManager.getDetectionRules(
-            RequestContext.forTenantId("test"), "", true, "environmentId"));
+            requestContext, hash, shouldUseCoraza, shouldHideMatchValueInCrsMsg, environmentId));
   }
 
   @Test
@@ -128,6 +123,6 @@ class DefaultRegularModsecDetectionManagerTest {
         RuntimeException.class,
         () ->
             regularModsecDetectionManager.getDetectionRules(
-                RequestContext.forTenantId("test"), "", false, "environmentId"));
+                RequestContext.forTenantId("test"), "", false, false, "environmentId"));
   }
 }
