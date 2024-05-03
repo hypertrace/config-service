@@ -24,6 +24,8 @@ message CreateSavedQueryRequest {
   string scope = 2;
   // Saved query clauses
   QueryClauses query_clauses = 3;
+  // comments for the saved query
+  optional string comments = 4;
 }
 
 message CreateSavedQueryResponse {
@@ -37,6 +39,8 @@ message UpdateSavedQueryRequest {
   string name = 2;
   // Saved query clauses
   QueryClauses query_clauses = 3;
+  // comments for the saved query
+  optional string comments = 4;
 }
 
 message UpdateSavedQueryResponse {

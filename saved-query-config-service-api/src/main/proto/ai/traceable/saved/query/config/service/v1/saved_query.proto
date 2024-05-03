@@ -16,11 +16,15 @@ message SavedQuery {
   // Saved query clauses
   QueryClauses query_clauses = 4;
   // ID of the user who created the saved query
-  string created_by_user_id = 5;
+  string created_by_user_id = 5 [deprecated = true];
   // Creation timestamp of the saved query
   google.protobuf.Timestamp created_timestamp = 6;
   // Last updated timestamp of the saved query
   google.protobuf.Timestamp updated_timestamp = 7;
+  // comments for saved query
+  optional string comments = 8;
+  // Saved query user details
+  User author = 9;
 }
 
 message QueryClauses {
@@ -40,4 +44,9 @@ message QueryClauses {
   optional string interval = 7;
   // Time range to query
   optional string time_range = 8;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
 }
