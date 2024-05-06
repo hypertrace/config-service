@@ -12,6 +12,7 @@ import ai.traceable.saved.query.config.service.v1.GetSavedQueriesResponse;
 import ai.traceable.saved.query.config.service.v1.SavedQuery;
 import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryResponse;
+import ai.traceable.saved.query.config.service.v1.User;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.List;
@@ -45,16 +46,21 @@ public class SavedQueryStoreManager {
 
   public CreateSavedQueryResponse createSavedQuery(
       RequestContext requestContext, CreateSavedQueryRequest request) {
-    SavedQuery newSavedQuery =
+    User.Builder userBuilder = User.newBuilder().setId(requestContext.getUserId().orElseThrow());
+    requestContext.getName().or(requestContext::getEmail).ifPresent(userBuilder::setName);
+    SavedQuery.Builder newSavedQueryBuilder =
         SavedQuery.newBuilder()
             .setId(uuidGenerator.generateRandomId())
             .setName(request.getName())
             .setScope(request.getScope())
             .setQueryClauses(request.getQueryClauses())
             .setCreatedByUserId(requestContext.getUserId().orElseThrow())
-            .build();
+            .setAuthor(userBuilder.build());
+    if (request.hasComments()) {
+      newSavedQueryBuilder.setComments(request.getComments());
+    }
     ContextualConfigObject<SavedQuery> configObject =
-        savedQueryConfigStore.upsertObject(requestContext, newSavedQuery);
+        savedQueryConfigStore.upsertObject(requestContext, newSavedQueryBuilder.build());
     SavedQuery savedQuery = buildSavedQueryFromConfigObject(configObject);
     return CreateSavedQueryResponse.newBuilder().setSavedQuery(savedQuery).build();
   }
@@ -65,13 +71,15 @@ public class SavedQueryStoreManager {
     if (defaultSavedQueryConfig.isDefaultQuery(request.getId())) {
       deletedSavedQueryStore.markDefaultIdDeleted(requestContext, request.getId());
     }
-    SavedQuery updatedSavedQuery =
+    SavedQuery.Builder updatedSavedQueryBuilder =
         SavedQuery.newBuilder(existingSavedQuery)
             .setName(request.getName())
-            .setQueryClauses(request.getQueryClauses())
-            .build();
+            .setQueryClauses(request.getQueryClauses());
+    if (request.hasComments()) {
+      updatedSavedQueryBuilder.setComments(request.getComments());
+    }
     ContextualConfigObject<SavedQuery> configObject =
-        savedQueryConfigStore.upsertObject(requestContext, updatedSavedQuery);
+        savedQueryConfigStore.upsertObject(requestContext, updatedSavedQueryBuilder.build());
     SavedQuery savedQuery = buildSavedQueryFromConfigObject(configObject);
     return UpdateSavedQueryResponse.newBuilder().setSavedQuery(savedQuery).build();
   }
