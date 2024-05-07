@@ -163,6 +163,8 @@ dependencies {
   integrationTestImplementation(projects.maliciousSourcesConfigServiceApi)
   integrationTestImplementation(projects.detectionExclusionConfigServiceApi)
   integrationTestImplementation(projects.splunkIntegrationConfigServiceApi)
+  integrationTestImplementation(testFixtures(projects.fraudDatamodelConfigServiceApi))
+  integrationTestImplementation(projects.fraudDatamodelConfigServiceImpl)
   integrationTestImplementation(commonLibs.traceable.opadistributor.api)
   integrationTestImplementation(localLibs.hypertrace.configservice.partitioner.config.impl)
 }

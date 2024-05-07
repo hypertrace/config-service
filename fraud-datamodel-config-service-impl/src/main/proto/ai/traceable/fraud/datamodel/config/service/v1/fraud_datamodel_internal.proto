@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.datamodel.config.service.v1;
+
+option java_package = "ai.traceable.fraud.datamodel.config.service.v1.internal";
+option java_multiple_files = true;
+
+
+import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+
+enum ObjectKind {
+  OBJECT_KIND_UNSPECIFIED = 0;
+  OBJECT_KIND_ENTITY = 1;
+  OBJECT_KIND_RELATIONSHIP = 2;
+  OBJECT_KIND_EVENT = 3;
+  OBJECT_KIND_METRIC = 4;
+}
+
+message ObjectTypeReference {
+  ObjectKind objectKind = 1;
+  string id = 2;
+}
+
+// this is primarily used for storing the doc in the store.
+message ObjectType {
+  oneof object {
+    EntityType entity_type = 1;
+    RelationshipType relationship_type = 2;
+    EventType event_type = 3;
+    MetricType metric_type = 4;
+  }
+}

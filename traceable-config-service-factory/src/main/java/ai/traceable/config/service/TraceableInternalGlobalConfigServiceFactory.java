@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import ai.traceable.fraud.datamodel.config.service.FraudDataModelConfigServiceFactory;
 import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class TraceableInternalGlobalConfigServiceFactory implements GrpcPlatform
     SharedConfigServiceProviders providers =
         providersFactory.getProvidersForEnvironment(grpcServiceContainerEnvironment);
     return List.of(
-        new GrpcPlatformService(PartitionerConfigServiceFactory.build(providers.getConfig())));
+        new GrpcPlatformService(PartitionerConfigServiceFactory.build(providers.getConfig())),
+        new GrpcPlatformService(FraudDataModelConfigServiceFactory.build(providers.getConfig())));
   }
 }

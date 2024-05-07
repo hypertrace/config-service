@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service;
 
+import ai.traceable.fraud.datamodel.config.service.v1.Cardinality;
 import ai.traceable.fraud.datamodel.config.service.v1.EntityFieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.config.service.v1.EventType;
@@ -212,7 +213,9 @@ public class FraudDataModelTestUtils {
             .setLeftEntityTypeId(leftTypeId)
             .setRightEntityTypeId(rightTypeId)
             .setLeftToRightNavName(leftTypeId)
-            .setRightToLeftNavName(rightTypeId);
+            .setRightToLeftNavName(rightTypeId)
+            .setLeftCardinality(Cardinality.CARDINALITY_MANY)
+            .setRightCardinality(Cardinality.CARDINALITY_MANY);
     return relationshipTypeBuilder.build();
   }
 
@@ -220,12 +223,20 @@ public class FraudDataModelTestUtils {
     MetricType.Builder metricTypeBuilder =
         MetricType.newBuilder()
             .setId(id)
+            .setTimestampField("ts")
+            .putFieldsMeta(
+                "ts", FieldMetadata.newBuilder().setFieldType(FieldType.FIELD_TYPE_LONG).build())
             .setMetricDataType(MetricDataType.METRIC_DATA_TYPE_COUNTER);
     return metricTypeBuilder.build();
   }
 
   public static EventType eventType(String id) {
-    EventType.Builder eventTypeBuilder = EventType.newBuilder().setId(id);
+    EventType.Builder eventTypeBuilder =
+        EventType.newBuilder()
+            .setId(id)
+            .setTimestampField("ts")
+            .putFieldsMeta(
+                "ts", FieldMetadata.newBuilder().setFieldType(FieldType.FIELD_TYPE_LONG).build());
     return eventTypeBuilder.build();
   }
 

@@ -56,6 +56,7 @@ dependencies {
   implementation(projects.dashboardConfigServiceImpl)
   implementation(projects.jiraIntegrationConfigServiceImpl)
   implementation(projects.runnerLogsConfigServiceImpl)
+  implementation(projects.fraudDatamodelConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
