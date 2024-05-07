@@ -27,13 +27,14 @@ import io.grpc.Status;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
 import javax.inject.Inject;
 
 class CustomSignatureRulesValidator implements RulesValidator {
 
   private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
-  private static final List<EventType> INVALID_RESPONSE_EVENT_TYPES =
-      List.of(EventType.EVENT_TYPE_ALLOW, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+  private static final Set<EventType> INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES =
+      Set.of(EventType.EVENT_TYPE_ALLOW, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
 
   private final ModsecRulesManager modsecRulesManager;
 
@@ -51,13 +52,13 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
     Status status;
 
-    boolean responseCategory =
-        hasMatchCategoryResponse(request.getDefinition().getClauseGroup().getClausesList());
+    boolean hasResponseOrAttribute =
+        hasResponseOrAttribute(request.getDefinition().getClauseGroup().getClausesList());
     if (!request.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
-    if ((status = validateRuleEffect(request.getEffect(), responseCategory)) != Status.OK) {
+    if ((status = validateRuleEffect(request.getEffect(), hasResponseOrAttribute)) != Status.OK) {
       return status;
     }
 
@@ -76,8 +77,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
       return status;
     }
-
-    return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
+    if (INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(request.getEffect().getEventType())) {
+      return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
+    }
+    return Status.OK;
   }
 
   @Override
@@ -94,13 +97,13 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
     Status status;
 
-    boolean responseCategory =
-        hasMatchCategoryResponse(rule.getDefinition().getClauseGroup().getClausesList());
+    boolean hasResponseOrAttribute =
+        hasResponseOrAttribute(rule.getDefinition().getClauseGroup().getClausesList());
     if (!rule.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
-    if ((status = validateRuleEffect(rule.getEffect(), responseCategory)) != Status.OK) {
+    if ((status = validateRuleEffect(rule.getEffect(), hasResponseOrAttribute)) != Status.OK) {
       return status;
     }
 
@@ -119,8 +122,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(rule.getRuleScope())) != Status.OK) {
       return status;
     }
-
-    return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
+    if (INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(rule.getEffect().getEventType())) {
+      return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
+    }
+    return Status.OK;
   }
 
   @Override
@@ -134,7 +139,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
     return Status.OK;
   }
 
-  private Status validateRuleEffect(RuleEffect ruleEffect, boolean responseCategory) {
+  private Status validateRuleEffect(
+      RuleEffect ruleEffect, boolean hasMatchCategoryResponseOrAttributeKeyValueExpression) {
     EventType eventType = ruleEffect.getEventType();
     if (eventType == EventType.EVENT_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
@@ -146,10 +152,11 @@ class CustomSignatureRulesValidator implements RulesValidator {
           "Custom Signature Rule Effect with alert action should have a valid event severity.");
     }
 
-    if (responseCategory && INVALID_RESPONSE_EVENT_TYPES.contains(ruleEffect.getEventType())) {
+    if (hasMatchCategoryResponseOrAttributeKeyValueExpression
+        && INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(ruleEffect.getEventType())) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
-              "Custom signature rule with a response category is not compatible with the specified event type %s.",
+              "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type %s.",
               ruleEffect.getEventType()));
     }
     return Status.OK;
@@ -286,7 +293,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
   }
 
-  private boolean hasMatchCategoryResponse(List<Clause> clauses) {
+  private boolean hasResponseOrAttribute(List<Clause> clauses) {
     return clauses.stream()
         .anyMatch(
             clause ->
@@ -297,7 +304,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
                     || clause
                         .getKeyValueExpression()
                         .getMatchCategory()
-                        .equals(MatchCategory.MATCH_CATEGORY_RESPONSE));
+                        .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                    || clause.hasAttributeKeyValueExpression());
   }
 
   private Status validateRuleScope(RuleScope scope) {

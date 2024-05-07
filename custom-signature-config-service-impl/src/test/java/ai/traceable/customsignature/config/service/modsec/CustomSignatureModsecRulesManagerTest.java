@@ -409,6 +409,10 @@ public class CustomSignatureModsecRulesManagerTest {
                                                             .build())
                                                     .build())
                                             .build())
+                                    .setEffect(
+                                        RuleEffect.newBuilder()
+                                            .setEventType(
+                                                EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
                                     .setBlockingExpiryDetails(
                                         ExpiryDetails.newBuilder()
                                             .setExpiryDuration(EXPIRY_DURATION)
@@ -456,7 +460,7 @@ public class CustomSignatureModsecRulesManagerTest {
 
   private RuleEffect getRuleEffect() {
     return RuleEffect.newBuilder()
-        .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+        .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
         .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
         .build();
   }

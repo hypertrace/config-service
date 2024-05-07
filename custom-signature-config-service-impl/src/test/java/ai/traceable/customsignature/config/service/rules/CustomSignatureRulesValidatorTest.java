@@ -104,7 +104,7 @@ public class CustomSignatureRulesValidatorTest {
         status
             .getDescription()
             .contains(
-                "Custom signature rule with a response category is not compatible with the specified event type"));
+                "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type"));
 
     RuleEffect ruleEffect =
         RuleEffect.newBuilder()
@@ -689,7 +689,7 @@ public class CustomSignatureRulesValidatorTest {
         status
             .getDescription()
             .contains(
-                "Custom signature rule with a response category is not compatible with the specified event type"));
+                "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type"));
 
     RuleEffect ruleEffect =
         RuleEffect.newBuilder()
