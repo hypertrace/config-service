@@ -275,6 +275,43 @@ traceableConfigServiceConfig:
     request:
       timeout: 1m
   externalDataClassificationServiceConfig:
+#    defaultExternalDataTypes: |-
+#      {
+#        "data_type_id": "db_query_attributes"
+#        "match_rules": [
+#          {
+#            "attribute_filter": {
+#              "prefixes": ["sql.query", "db.statement"]
+#            }
+#            "result": RESULT_MATCH
+#            "path_predicate": {
+#              "path_segment_predicate": {
+#                "operator": OPERATOR_MATCHES_REGEX,
+#                "value": ".*"
+#              }
+#            }
+#          }
+#        ]
+#        "transformation": DATA_TRANSFORMATION_REDACT
+#      },
+#      {
+#        "data_type_id": "new_session_attribute"
+#        "match_rules": [
+#          {
+#            "attribute_filter": {
+#              "prefixes": ["session.new"]
+#            }
+#            "result": RESULT_MATCH
+#            "path_predicate": {
+#              "path_segment_predicate": {
+#                "operator": OPERATOR_MATCHES_REGEX,
+#                "value": ".*\\.id"
+#              }
+#            }
+#          }
+#        ]
+#        "transformation": DATA_TRANSFORMATION_OBFUSCATE
+#      }
     cache:
       refresh: 1m
       maxSize: 1000

@@ -315,6 +315,11 @@ data:
       {{- end }}
     }
     external.data.classification.config.service = {
+      {{- if .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.defaultExternalDataTypes }}
+      default.external.data.types = [
+        {{- .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.defaultExternalDataTypes | nindent 8 }}
+      ]
+      {{- end }}
       cache {
         refresh = {{ .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.cache.refresh }}
         maxSize = {{ int .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.cache.maxSize }}
