@@ -249,6 +249,7 @@ message AccessorsTrainingConfig {
   ThresholdFamilyConfig param_type_threshold_family_config = 4;
   ThresholdFamilyConfig request_header_threshold_family_config = 5;
   ThresholdFamilyConfig request_cookie_threshold_family_config = 6;
+  ApiAccessorOverrideConfig api_accessor_override_config = 7;
 }
 
 message SsrfTrainingConfig {
@@ -447,6 +448,12 @@ message ThresholdCountConfig {
   optional int32 required_calls_count = 1;
   optional int32 required_unique_user_ids_count = 2;
   optional int32 required_unique_ips_count = 3;
+}
+
+message ApiAccessorOverrideConfig {
+  oneof config {
+    int32 required_calls_count = 1;
+  }
 }
 
 message ThresholdFamilyConfig {
