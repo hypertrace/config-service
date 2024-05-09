@@ -30,3 +30,9 @@ message ObjectType {
     MetricType metric_type = 4;
   }
 }
+
+message ObjectTypeColumnMappings {
+  map<string, FieldMetadata> fields_meta = 1;
+  map<string, EntityFieldMetadata> entity_fields_meta = 2;
+  ColumnMappingMeta column_mapping_meta = 3;
+}

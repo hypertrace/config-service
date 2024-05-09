@@ -1,8 +1,22 @@
 package ai.traceable.fraud.datamodel.config.service;
 
+import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapper;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperDelegate;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperDelegateImpl;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMappingsDocumentStore;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMappingsStore;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.EntityTypeColumnMapper;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.EventTypeColumnMapper;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.MetricTypeColumnMapper;
+import ai.traceable.fraud.datamodel.config.service.column.mapping.RelationshipTypeColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesDocumentStore;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesStore;
+import ai.traceable.fraud.datamodel.config.service.v1.EntityType;
+import ai.traceable.fraud.datamodel.config.service.v1.EventType;
+import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
+import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
 import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import org.hypertrace.core.documentstore.Datastore;
@@ -21,15 +35,31 @@ public class FraudDataModelConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(BindableService.class).to(FraudDataModelConfigServiceImpl.class);
-    bind(FraudObjectTypesStore.class).toInstance(getDocumentStore(config));
+    bind(FraudObjectTypesStore.class).toInstance(getFraudObjectTypesDocumentStore(config));
+    bind(ColumnMappingsStore.class).toInstance(getColumnMappingsDocumentStore(config));
+    bind(ColumnMapperDelegate.class).to(ColumnMapperDelegateImpl.class);
+    bind(new TypeLiteral<ColumnMapper<EntityType>>() {}).to(EntityTypeColumnMapper.class);
+    bind(new TypeLiteral<ColumnMapper<RelationshipType>>() {})
+        .to(RelationshipTypeColumnMapper.class);
+    bind(new TypeLiteral<ColumnMapper<EventType>>() {}).to(EventTypeColumnMapper.class);
+    bind(new TypeLiteral<ColumnMapper<MetricType>>() {}).to(MetricTypeColumnMapper.class);
   }
 
-  private FraudObjectTypesDocumentStore getDocumentStore(Config config) {
+  private FraudObjectTypesDocumentStore getFraudObjectTypesDocumentStore(Config config) {
     Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE);
     Config docStoreConfig = genericConfig.getConfig(DOC_STORE_CONFIG_KEY);
     String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
     Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
     Datastore datastore = DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
     return new FraudObjectTypesDocumentStore(datastore);
+  }
+
+  private ColumnMappingsDocumentStore getColumnMappingsDocumentStore(Config config) {
+    Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE);
+    Config docStoreConfig = genericConfig.getConfig(DOC_STORE_CONFIG_KEY);
+    String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
+    Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
+    Datastore datastore = DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
+    return new ColumnMappingsDocumentStore(datastore);
   }
 }

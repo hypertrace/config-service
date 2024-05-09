@@ -1,0 +1,149 @@
+package ai.traceable.fraud.datamodel.config.service.column.mapping;
+
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.DEFAULT_FIELD_MAP;
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.TYPE_TO_COLUMN_LOOKUP_MAP;
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getColumnPrefix;
+
+import ai.traceable.fraud.datamodel.config.service.v1.ColumnMapping;
+import ai.traceable.fraud.datamodel.config.service.v1.ColumnMappingMeta;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
+import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
+import com.google.inject.Inject;
+import io.grpc.Status;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.documentstore.model.exception.DuplicateDocumentException;
+import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
+
+@Slf4j
+public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
+  private final ColumnMappingsStore columnMappingsStore;
+
+  @Inject
+  public ColumnMapperDelegateImpl(ColumnMappingsStore columnMappingsStore) {
+    this.columnMappingsStore = columnMappingsStore;
+  }
+
+  @Override
+  public List<ColumnMappingsDocument> mapProperties(
+      String tenantId, ObjectKind kind, String typeId, ObjectTypeColumnMappings fields)
+      throws IOException {
+    int attempts = 0;
+    while (attempts++ <= 10) {
+      try {
+        return doMapProperties(tenantId, kind, typeId, fields);
+      } catch (DuplicateDocumentException e) {
+        log.warn(
+            "There was a duplicate key conflict while mapping for ["
+                + typeId
+                + "] for properties "
+                + fields
+                + ". The mapping will be attempted again");
+      }
+    }
+    throw ContextualStatusExceptionBuilder.from(
+            Status.INTERNAL.withDescription(
+                "All attempts to create mapping for tenant: "
+                    + tenantId
+                    + ", type:"
+                    + typeId
+                    + " exhausted"))
+        .useStatusDescriptionAsExternalMessage()
+        .buildRuntimeException();
+  }
+
+  @Override
+  public ObjectTypeColumnMappings buildObjectTypeColumnMappings(
+      List<ColumnMappingsDocument> mappings) {
+    ObjectTypeColumnMappings.Builder builder = ObjectTypeColumnMappings.newBuilder();
+    ColumnMappingMeta.Builder columnMappingBuilder = ColumnMappingMeta.newBuilder();
+    for (var mapping : mappings) {
+      FieldMetadata fieldMeta = mapping.getFieldMeta();
+      builder.putFieldsMeta(mapping.getFieldName(), fieldMeta);
+      columnMappingBuilder.putColumnMapping(
+          mapping.getFieldName(),
+          ColumnMapping.newBuilder()
+              .setColumnId(mapping.getColumnId())
+              .setFieldType(fieldMeta.getFieldType())
+              .build());
+      columnMappingBuilder.putRevColumnMapping(mapping.getColumnId(), mapping.getFieldName());
+    }
+    return builder.setColumnMappingMeta(columnMappingBuilder).build();
+  }
+
+  private List<ColumnMappingsDocument> doMapProperties(
+      String tenantId, ObjectKind kind, String typeId, ObjectTypeColumnMappings fields)
+      throws IOException {
+    List<ColumnMappingsDocument> currMappings =
+        columnMappingsStore.getColumnMappings(tenantId, kind, typeId);
+    Map<String, ColumnMappingsDocument> fieldMap = new HashMap<>();
+    Map<String, ColumnMappingsDocument> colMap = new HashMap<>();
+    for (ColumnMappingsDocument currMapping : currMappings) {
+      fieldMap.put(currMapping.getFieldName(), currMapping);
+      colMap.put(currMapping.getColumnId(), currMapping);
+    }
+    List<ColumnMappingsDocument> newMappings = new ArrayList<>();
+    for (Map.Entry<String, FieldMetadata> entry : fields.getFieldsMetaMap().entrySet()) {
+      String fieldName = entry.getKey();
+      FieldMetadata fieldMeta = entry.getValue();
+      ColumnMappingsDocument columnMappingsDocument =
+          buildObjectTypeColumnMappings(tenantId, kind, typeId, fieldName, fieldMeta, colMap);
+      // todo: check if existing mappings already are correct.
+      newMappings.add(columnMappingsDocument);
+    }
+    if (!newMappings.isEmpty()) {
+      columnMappingsStore.addColumnMappings(tenantId, newMappings);
+    }
+    return columnMappingsStore.getColumnMappings(tenantId, kind, typeId);
+  }
+
+  private ColumnMappingsDocument buildObjectTypeColumnMappings(
+      String tenantId,
+      ObjectKind objectKind,
+      String typeId,
+      String propName,
+      FieldMetadata fieldMeta,
+      Map<String, ColumnMappingsDocument> colMap) {
+    String colPrefix = getColumnPrefix();
+    String colName = createNewMapping(colPrefix, colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
+    ColumnMappingsDocument columnMappingsDocument =
+        new ColumnMappingsDocument(tenantId, objectKind, typeId, propName, colName, fieldMeta);
+    colMap.put(colName, columnMappingsDocument);
+    return columnMappingsDocument;
+  }
+
+  private static String getKeyPrefix(FieldType fieldType) {
+    return TYPE_TO_COLUMN_LOOKUP_MAP.get(fieldType);
+  }
+
+  private String createNewMapping(
+      String colPrefix,
+      Map<String, ColumnMappingsDocument> colMap,
+      FieldMetadata fieldMetadata,
+      String typeId,
+      Map<String, Integer> fieldCountMap) {
+    String keyPrefix = getKeyPrefix(fieldMetadata.getFieldType());
+    for (int i = 0; i < fieldCountMap.get(keyPrefix); i++) {
+      String possibleKey = colPrefix + keyPrefix + i;
+      if (!colMap.containsKey(possibleKey)) {
+        return possibleKey;
+      }
+    }
+    throw ContextualStatusExceptionBuilder.from(
+            Status.INTERNAL.withDescription(
+                "Column limit reached for "
+                    + fieldMetadata.getFieldType()
+                    + " for type "
+                    + typeId
+                    + " while mapping the property "
+                    + fieldMetadata))
+        .useStatusDescriptionAsExternalMessage()
+        .buildRuntimeException();
+  }
+}

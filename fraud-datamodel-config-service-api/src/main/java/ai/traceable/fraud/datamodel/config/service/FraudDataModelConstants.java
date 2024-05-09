@@ -11,7 +11,7 @@ public abstract class FraudDataModelConstants {
   public static final String COL_LIST_PREFIX = "list";
   public static final String COL_MAP_PREFIX = "map";
   public static final String COL_TIMESTAMP_PREFIX = "timestamp";
-  private static final String COL_SEGMENT = ".col.";
+  private static final String COL_SEGMENT = "col.";
 
   public static final Map<FieldType, String> TYPE_TO_COLUMN_LOOKUP_MAP =
       Map.of(

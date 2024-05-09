@@ -2,6 +2,7 @@ package ai.traceable.fraud.datamodel.config.service.store;
 
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
 
+import ai.traceable.fraud.datamodel.config.service.Utils;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
