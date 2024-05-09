@@ -12,7 +12,7 @@ enum DerivationConfigType {
 }
 
 message DerivationConfig {
-  string derivation_config_id = 1;
+  string id = 1;
   DerivationConfigType derivation_config_type = 2;
   string name = 3;
   string derivation_config = 4;

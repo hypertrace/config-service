@@ -62,7 +62,7 @@ public class FraudDataModelDerivationConfigTest {
     URL resource = Resources.getResource(yamlResourcePath);
     String yamlPayload = Resources.toString(resource, Charset.defaultCharset());
     return DerivationConfig.newBuilder()
-        .setDerivationConfigId(configId)
+        .setId(configId)
         .setName(configId)
         .setDerivationConfig(yamlPayload)
         .build();

@@ -16,7 +16,7 @@ service FraudDataModelDerivationConfigService {
 message CreateDerivationConfigRequest {
   DerivationConfigType derivation_config_type = 1;
   string name = 2;
-  map<string, string> derivation_config = 3;
+  string derivation_config = 3;
 }
 
 message CreateDerivationConfigResponse {
