@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.query.model.v1;
+option java_multiple_files = true;
+
+import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+import "ai/traceable/fraud/query/model/v1/fraud_entity_graph_query.proto";
+
+// this is the building block for fetching data from the underlying stores.
+message DataQuery {
+  oneof data_provider {
+    EntityGraphDataQuery entity_graph_data_query = 1;
+    EntityMetricDataQuery entity_metric_data_query = 2;
+    MetricDataQuery metric_data_query = 3;
+  }
+}
+
+message EntityGraphDataQuery {
+  oneof entity_source {
+    EntityGraphQuery entity_graph_query = 1;
+    string raw_sql_query = 2;
+  }
+}
+
+message EntityMetricDataQuery {
+  oneof entity_metric_source {
+    EntityMetricQuery entity_metric_query = 1;
+    string raw_sql_query = 2;
+  }
+}
+
+message MetricDataQuery {
+  oneof metric_source {
+    MetricQuery metric_query = 1;
+    string raw_sql_query = 2;
+  }
+}
+
+message CountRelatedEntities {
+  string rel_type = 1;
+}
+
+message CountFieldVersions {
+  string field_name = 1;
+}
+
+// aggregations over the entity graph. # of entities, # of relations, # of versions
+message EntityMetricQuery {
+  // select entities
+  EntityQuery entity_query = 1;
+
+  oneof aggregation {
+    // for ex: count of IPs accessing an account. returns (account, rel_type, #count)
+    CountRelatedEntities count_related_entities = 6;
+    // for ex: count of # of address change on an account. returns (account, field_name, #count)
+    CountFieldVersions count_field_versions = 7;
+  }
+
+  // what is the granularity of each data point?
+  oneof downsample {
+    TimeObj granularity = 3;
+    bool single_aggregate_value = 4;
+  }
+
+  // what is the time frame for which data points are generated?
+  TimeFrame time_frame = 5;
+}
+
+message MetricQuery {
+  // what field are we aggregating?
+  string field_to_aggregate = 1;
+
+  // what are the slices? determines the cardinality of the output.
+  repeated string group_by = 2;
+
+  // what is the granularity of each data point?
+  oneof downsample {
+    TimeObj granularity = 3;
+    bool single_aggregate_value = 4;
+  }
+
+  // what is the time frame for which data points are to be generated?
+  TimeFrame time_frame = 5;
+}
+
+message TimeFrame {
+  int64 start_time = 1;
+  int64 end_time = 2;
+}
+
+enum TimeUnit {
+  TIME_UNIT_UNSPECIFIED = 0;
+  TIME_UNIT_HOURS = 1;
+  TIME_UNIT_DAYS = 2;
+  TIME_UNIT_WEEKS = 3;
+}
+
+message TimeObj {
+  int32 value = 1;
+  TimeUnit unit = 2;
+}
+
+message EntityGraphQuery {
+  // select entities and their projections
+  EntityQuery entity_query = 1;
+  // (optional) from the selected entities, traverse relationships and get projections from related entities
+  repeated RelationshipQuery relationship_navs = 2;
+  SortAndLimit sort_and_limit = 3;
+}
+
+message EntityResult {
+  ai.traceable.fraud.query.model.v1.Entity entity = 1;
+  map<string, EntityResultList> relations = 2;
+}
+
+message EntityResultList {
+  repeated EntityResult results = 1;
+}
+
+enum Operation {
+  OPERATION_UNSPECIFIED = 0;
+  OPERATION_EQ = 1;
+  OPERATION_LT = 2;
+  OPERATION_GT = 3;
+  OPERATION_CONTAINS = 4;
+  OPERATION_STARTS_WITH = 5;
+  OPERATION_EXISTS = 6;
+  OPERATION_DOES_NOT_EXIST = 7;
+  OPERATION_REGEX = 8;
+  OPERATION_NEQ = 9;
+  OPERATION_GTE = 10;
+  OPERATION_LTE = 11;
+  OPERATION_NOT_CONTAINS = 12;
+  OPERATION_NOT_REGEX = 13;
+  // check if a relationship or attribute has more than N versions
+  OPERATION_GTE_NUM_VERSIONS = 14;
+}
+
+enum EntityFieldType {
+  ENTITY_FIELD_TYPE_UNSPECIFIED = 0;
+  // field declared in datamodel
+  ENTITY_FIELD_TYPE_FIELD = 1;
+  // tag is embedded within a map of a field declared in datamodel
+  ENTITY_FIELD_TYPE_TAG = 2;
+}
+
+message EntityQuery {
+  // (required) entity type id
+  string type_id = 1;
+  // (optional) specific entities
+  repeated string entity_ids = 2;
+  // (optional) specify predicates (AND by default)
+  repeated EntityQueryPredicate predicates = 3;
+  // (optional) specify what to project
+  repeated EntityQueryProjection projections = 4;
+  // (optional) specify relationship based predicates
+  repeated RelationshipPredicate rel_predicates = 5;
+}
+
+message RelationshipQuery {
+  string type_id = 1;
+  Operation op = 2;
+  repeated EntityQueryPredicate predicates = 4;
+  repeated EntityQueryProjection projections = 5;
+  string entity_type_id = 6;
+  string nav_name = 7;
+}
+
+message RelationshipPredicate {
+  string type_id = 1;
+  Operation op = 2;
+  repeated EntityQueryPredicate predicates = 3;
+  string nav_name = 5;
+  string entity_type_id = 6;
+  repeated string entity_ids = 8;
+}
+
+message EntityQueryPredicate {
+  EntityFieldType field_type = 1;
+  string key = 2;
+  // if the field type is a map
+  string map_key = 3;
+  Operation op = 4;
+  ai.traceable.fraud.datamodel.config.service.v1.FieldValue value = 5;
+  // for IN, NOT_IN
+  repeated ai.traceable.fraud.datamodel.config.service.v1.FieldValue range_values = 6;
+}
+
+message EntityQueryProjection {
+  EntityFieldType field_type = 1;
+  string name = 2;
+}
+
+message SortAndLimit {
+  enum SortOrder { SORT_ORDER_UNSPECIFIED = 0; SORT_ORDER_ASC = 1; SORT_ORDER_DESC = 2; }
+  enum SortOptions { SORT_OPTIONS_UNSPECIFIED = 0; SORT_OPTIONS_NUMERIC = 1; SORT_OPTIONS_IGNORE_CASE = 2; }
+  string field_name = 1;
+  SortOrder sort_order = 2;
+  SortOptions sort_options = 3;
+  int32 limit = 4;
+}

@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
+
+service FraudPolicyConfigService {
+  rpc CreateFraudPolicy(CreateFraudPolicyRequest) returns (CreateFraudPolicyResponse) {}
+  rpc UpdateFraudPolicy(UpdateFraudPolicyRequest) returns (UpdateFraudPolicyResponse) {}
+  rpc GetFraudPolicyList(GetFraudPolicyListRequest) returns (GetFraudPolicyListResponse) {}
+  rpc GetFraudPolicy(GetFraudPolicyRequest) returns (GetFraudPolicyResponse) {}
+}
+
+message CreateFraudPolicyRequest {
+  FraudPolicy fraud_policy = 1;
+}
+
+message CreateFraudPolicyResponse {
+  FraudPolicy fraud_policy = 1;
+}
+
+message UpdateFraudPolicyRequest {
+  string fraud_policy_id = 1;
+  FraudPolicy fraud_policy = 2;
+}
+
+message UpdateFraudPolicyResponse {
+  FraudPolicy fraud_policy = 2;
+}
+
+message GetFraudPolicyListRequest {
+}
+
+message GetFraudPolicyListResponse {
+  repeated FraudPolicy fraud_policy_list = 1;
+}
+
+message GetFraudPolicyRequest {
+  string fraud_policy_id = 1;
+}
+
+message GetFraudPolicyResponse {
+  FraudPolicy fraud_policy = 1;
+}

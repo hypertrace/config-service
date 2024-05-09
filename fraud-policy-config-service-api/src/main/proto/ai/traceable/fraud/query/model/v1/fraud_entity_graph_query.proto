@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.query.model.v1;
+option java_multiple_files = true;
+
+import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+
+message EntityReference {
+  string type_id = 1;
+  string uid = 2;
+}
+
+message RelationshipReference {
+  string type_id = 1;
+  EntityReference left_entity_ref = 2;
+  EntityReference right_entity_ref = 3;
+}
+
+message Entity {
+  string type_id = 1;
+  string uid = 2;
+  string entity_id = 3;
+  string display_name = 4;
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldValue> fields = 6;
+  int64 discovery_ts = 7;
+  int64 last_seen_ts = 8;
+  string entity_version_hash = 9;
+}
+
+message EntityRelationship {
+  string type_id = 1;
+  oneof left {
+    EntityReference left_entity_ref = 2;
+    Entity left_entity = 3;
+  }
+  oneof right {
+    EntityReference right_entity_ref = 4;
+    Entity right_entity = 5;
+  }
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldValue> fields = 6;
+  int64 discovery_ts = 7;
+  int64 last_seen_ts = 8;
+  string relationship_version_hash = 9;
+}

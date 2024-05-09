@@ -1,0 +1,289 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+option java_multiple_files = true;
+
+import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+import "ai/traceable/fraud/query/model/v1/fraud_data_query.proto";
+
+enum FraudPolicyCategory {
+  FRAUD_POLICY_CATEGORY_UNSPECIFIED = 0;
+  FRAUD_POLICY_CATEGORY_RISK = 1;
+  FRAUD_POLICY_CATEGORY_FRAUD = 2;
+}
+
+enum FraudRuleLogicalOperator {
+  FRAUD_RULE_LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  FRAUD_RULE_LOGICAL_OPERATOR_AND = 1;
+  FRAUD_RULE_LOGICAL_OPERATOR_OR = 2;
+}
+
+message LogicalFraudRule {
+  FraudRuleLogicalOperator operator = 1;
+  repeated FraudPolicyRule rules = 2;
+}
+
+message FraudPolicyRule {
+  oneof rule {
+    FraudRule fraud_rule = 1;
+    LogicalFraudRule logical_fraud_rule = 2;
+  }
+}
+
+message FraudPolicyList {
+  repeated FraudPolicy policies = 1;
+}
+
+message TimeWindow {
+  oneof time_window {
+    TimeObj relative_time = 1;
+    ai.traceable.fraud.query.model.v1.TimeFrame time_frame = 2;
+  }
+}
+
+message TimeObj {
+  int32 value = 1;
+  TimeUnit unit = 2;
+}
+
+enum TimeUnit {
+  TIME_UNIT_UNSPECIFIED = 0;
+  TIME_UNIT_MILLIS = 1;
+  TIME_UNIT_SECONDS = 2;
+  TIME_UNIT_MINUTES = 3;
+  TIME_UNIT_HOURS = 4;
+  TIME_UNIT_DAYS = 5;
+}
+
+// policy is a set of rules
+message FraudPolicy {
+  string id = 1;
+  string name = 2;
+
+  FraudPolicyRule fraud_policy_rule = 3;
+
+  // categorize the output of the policy to risk or fraud
+  FraudPolicyCategory category = 4;
+
+  // which entity type's risk or fraud is being assessed by this policy
+  string primary_entity_type = 5;
+
+  // what is the time range we should use on the data queries in this policy when evaluating.
+  TimeWindow time_window = 6;
+
+  // policy to run on the results of this policy.
+  FraudWatcherPolicy watcher_policy = 7;
+
+  // capture the data queries that indicate biz impact. By default, these will use output of policy.
+  repeated FraudBizImpactRule biz_impact_rules = 8;
+
+  // set to true if we should not evaluate this policy.
+  bool disabled = 9;
+}
+
+message FraudWatcherPolicy {
+  // what is the policy to be evaluated
+  FraudPolicy watcher_policy = 1;
+
+  // how long should we watch the entities
+  TimeObj ttl = 2;
+}
+
+message FraudDataQuery {
+  // data query fetches one of these -
+  //  - [(entityId)] list of entity ids
+  //  - [(entityId, timestamp, metric_value)] time series of entityId and metric_value
+  // a fraud rule will combine this with threshold to fetch only entityIds that are "rule hits"
+  ai.traceable.fraud.query.model.v1.DataQuery data_query = 1;
+  // what should we summarize the results of this query as?
+  string message_format = 2;
+  // data query should return these parameters.
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldType> message_params = 3;
+}
+
+message FraudBizImpactRule {
+  // default filter for this query will be the accounts identified by the policy.
+  FraudDataQuery fraud_data_query = 2;
+}
+
+// rule uses entity predicates to select entities.
+message EntityGraphBasedFraudRule {
+  // in this case, any entity that matches this query is a "rule hit"
+  ai.traceable.fraud.query.model.v1.EntityGraphDataQuery entity_graph_data_query = 1;
+  // what should we summarize the results of this query as?
+  string message_format = 2;
+  // data query should return these parameters.
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldType> message_params = 3;
+}
+
+// rule uses entity aggregations (# of entities, # of rels, etc) against a threshold
+message EntityMetricBasedFraudRule {
+  // must return [(entityId, timestamp, entity_metric_value)]
+  ai.traceable.fraud.query.model.v1.EntityMetricDataQuery entity_metric_data_query = 1;
+  ThresholdDefinition threshold_definition = 2;
+
+  // what should we summarize the results of this query as?
+  string message_format = 3;
+  // data query should return these parameters.
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldType> message_params = 4;
+}
+
+// rule uses metric (Event aggregations) against a threshold
+message MetricBasedFraudRule {
+  ai.traceable.fraud.query.model.v1.MetricDataQuery metric_data_query = 1;
+  ThresholdDefinition threshold_definition = 2;
+
+  // what should we summarize the results of this query as?
+  string message_format = 3;
+  // data query should return these parameters.
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldType> message_params = 4;
+}
+
+message FraudRule {
+  string fraud_rule_id = 1;
+  oneof fraud_rule_type {
+    EntityGraphBasedFraudRule entity_graph_fraud_rule = 2;
+    EntityMetricBasedFraudRule entity_metric_fraud_rule = 3;
+    MetricBasedFraudRule metric_fraud_rule = 4;
+  }
+}
+
+message ThresholdDefinition {
+  enum ThresholdOperator {
+    THRESHOLD_OPERATOR_UNSPECIFIED = 0;
+    THRESHOLD_OPERATOR_ABOVE = 1;
+    THRESHOLD_OPERATOR_BELOW = 2;
+    THRESHOLD_OPERATOR_ABOVE_OR_BELOW = 3;
+  }
+  oneof threshold_type {
+    AutoThreshold auto_threshold = 1;
+    ManualThreshold manual_threshold = 2;
+  }
+  ThresholdOperator threshold_operator = 3;
+}
+
+message AutoThreshold {
+  // nothing to specify? maybe amount of data, etc. use self-determined model.
+}
+
+message QueryBasedThreshold {
+  oneof query_source {
+    bool copy_query_from_rule = 1;
+    ai.traceable.fraud.query.model.v1.DataQuery threshold_query = 2;
+  }
+  ThresholdOperation threshold_operation = 3;
+  BaselineConfig baseline_config = 4;
+}
+
+message ManualThreshold {
+  oneof manual_threshold_provider {
+    double static_value = 1;
+    QueryBasedThreshold query_based_threshold = 2;
+  }
+}
+
+message SimpleAggregationBaseline {
+  enum SimpleAggregationFunc {
+    SIMPLE_AGGREGATION_FUNC_UNSPECIFIED = 0;
+
+    // sum(n points)
+    SIMPLE_AGGREGATION_FUNC_SUM = 1;
+
+    // avg(n points)=sum(n points) / n
+    SIMPLE_AGGREGATION_FUNC_AVG = 2;
+
+    // n
+    SIMPLE_AGGREGATION_FUNC_COUNT = 3;
+
+    // min(n points)
+    SIMPLE_AGGREGATION_FUNC_MIN = 4;
+
+    // max(n points)
+    SIMPLE_AGGREGATION_FUNC_MAX = 5;
+
+    // last value of n points
+    SIMPLE_AGGREGATION_FUNC_LATEST = 6;
+  }
+  oneof agg {
+    SimpleAggregationFunc func = 1;
+    QuantileFunc quantile_func = 2;
+  }
+}
+
+message SMABaseline {
+  int32 window_size = 1;
+}
+
+message EWMABaseline {
+  double alpha = 1;
+}
+
+message BaselineDataConfig {
+  // how many historical data points are to be considered to build a baseline
+  int32 num_periods = 1;
+
+  // what seasonality to consider?
+  Seasonality seasonality = 2;
+
+  enum Seasonality {
+    // No seasonality. Use last 'n' points
+    SEASONALITY_UNSPECIFIED = 0;
+
+    // Valid ONLY if periodicity is <= 1 Hour. Use last 'n' points from 'n' hours corresponding to the eval period
+    SEASONALITY_HOURLY = 1;
+
+    // valid ONLY if periodicity is <= 1 Day. Use last 'n' points from 'n' days corresponding to the eval period
+    SEASONALITY_DAILY = 2;
+
+    // valid ONLY if periodicity is <= 1 Week. Use last 'n' points from 'n' weeks corresponding to the eval period
+    SEASONALITY_WEEKLY = 3;
+  }
+}
+
+message QuantileFunc {
+  double quantile = 1;
+}
+
+message BaselineSpec {
+  oneof algo {
+    SimpleAggregationBaseline simple_aggregation_baseline = 1;
+    SMABaseline sma_baseline = 3;
+    EWMABaseline ewma_baseline = 4;
+  }
+}
+
+message BaselineConfig {
+  BaselineSpec baseline_spec = 1;
+  BaselineDataConfig baseline_data_config = 2;
+}
+
+message ThresholdDelta {
+  // (lhs - rhs) is within delta
+  // allowed deviation = delta
+  double delta = 1;
+}
+
+message ThresholdPercent {
+  // (lhs - rhs) is within the certain %
+  // allowed deviation = percent %
+  double percent = 1;
+}
+
+message ThresholdStdDev {
+  // lhs is within std_devs of rhs
+  // allowed deviation = num_std_devs
+  double num_std_devs = 1;
+}
+
+message ThresholdAbsolute {
+  // no deviation allowed
+}
+
+message ThresholdOperation {
+  oneof threshold_op_type {
+    ThresholdDelta threshold_delta = 1;
+    ThresholdPercent threshold_percent = 2;
+    ThresholdStdDev threshold_std_dev = 3;
+    ThresholdAbsolute threshold_abs = 4;
+  }
+}

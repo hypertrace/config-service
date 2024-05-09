@@ -48,3 +48,4 @@ directories:
   - data-protection-config-service-api/src/main/proto
   - fraud-datamodel-config-service-api/src/main/proto
   - fraud-datamodel-derivation-config-service-api/src/main/proto
+  - fraud-policy-config-service-api/src/main/proto
