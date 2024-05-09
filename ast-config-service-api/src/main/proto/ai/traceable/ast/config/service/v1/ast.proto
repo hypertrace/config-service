@@ -22,6 +22,10 @@ message AstEnabledConfig {
 message AstReplayConfig {
   bool replay_enabled = 1;
   SpanFilters span_filters = 2;
+  google.protobuf.Duration api_inactivity_duration = 3;
+  optional int32 max_api_limit = 4;
+  optional bool skip_non_learnt_apis = 5;
+  optional bool skip_under_discovery_apis = 6;
 }
 
 message SpanFilters {
