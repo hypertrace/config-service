@@ -52,6 +52,30 @@ public class GrpcValidatorUtils {
     return new IPAddressString(input, ADDRESS_VALIDATION_PARAMS).getAddress() != null;
   }
 
+  /**
+   * As opposed to `validateNonDefaultPresenceOrThrow` which looks for a non default value, here
+   * defaults are allowed as long as the field has been explicitly assigned
+   */
+  public static <T extends Message> void validateFieldPresenceOrThrow(T source, int fieldNumber) {
+    FieldDescriptor descriptor = source.getDescriptorForType().findFieldByNumber(fieldNumber);
+    if (!descriptor.hasPresence()) {
+      throw Status.INTERNAL
+          .withDescription(
+              String.format(
+                  "Improper use of 'validateOptionalFieldAssignedOrThrow' field without presence: %s",
+                  descriptor.getFullName()))
+          .asRuntimeException();
+    }
+    if (!source.hasField(descriptor)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Expected field to be assigned:%n %s",
+                  descriptor.getFullName(), printMessage(source)))
+          .asRuntimeException();
+    }
+  }
+
   private static <T extends Message> void validateNonDefaultPresenceRepeatedOrThrow(
       T source, FieldDescriptor descriptor) {
     if (source.getRepeatedFieldCount(descriptor) == 0) {

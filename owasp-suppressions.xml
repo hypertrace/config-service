@@ -10,13 +10,4 @@
     <cpe>cpe:/a:utils_project:utils</cpe>
     <cpe>cpe:/a:processing:processing</cpe>
   </suppress>
-  <suppress until="2024-01-31Z">
-    <notes><![CDATA[
-   Legitimate vulnerability, but unlikely to be exploited in practice as issues are with args
-   that are not under user control like radix. Expect the severity to be revised, but revisit
-   once fix is released. Ref: https://github.com/seancfoley/IPAddress/issues/118
-   ]]></notes>
-    <packageUrl regex="true">^pkg:maven/com\.github\.seancfoley/ipaddress@.*$</packageUrl>
-    <vulnerabilityName>CVE-2023-50570</vulnerabilityName>
-  </suppress>
 </suppressions>
