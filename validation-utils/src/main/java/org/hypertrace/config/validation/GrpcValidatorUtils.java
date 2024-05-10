@@ -62,7 +62,7 @@ public class GrpcValidatorUtils {
       throw Status.INTERNAL
           .withDescription(
               String.format(
-                  "Improper use of 'validateOptionalFieldAssignedOrThrow' field without presence: %s",
+                  "Improper use of 'validateFieldPresenceOrThrow' field without detectable presence: %s",
                   descriptor.getFullName()))
           .asRuntimeException();
     }
@@ -70,7 +70,7 @@ public class GrpcValidatorUtils {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
-                  "Expected field to be assigned:%n %s",
+                  "Expected field %s to be assigned:%n %s",
                   descriptor.getFullName(), printMessage(source)))
           .asRuntimeException();
     }
