@@ -1,6 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
-import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.internal.InternalFieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,7 +34,7 @@ public class ColumnMappingsDocument implements Document {
   public static final String OBJECT_TYPE_ID_FIELD_NAME = "objectTypeId";
   public static final String FIELD_NAME = "fieldName";
   public static final String COLUMN_ID = "columnId";
-  public static final String FIELD_META = "fieldMeta";
+  public static final String FIELD_META = "internalFieldMeta";
 
   @JsonProperty(value = TENANT_ID_FIELD_NAME)
   String tenantId;
@@ -51,10 +51,10 @@ public class ColumnMappingsDocument implements Document {
   @JsonProperty(value = COLUMN_ID)
   String columnId;
 
-  @JsonSerialize(using = FieldMetaSerializer.class)
-  @JsonDeserialize(using = FieldMetaDeserializer.class)
+  @JsonSerialize(using = InternalFieldMetadataSerializer.class)
+  @JsonDeserialize(using = InternalFieldMetadataDeSerializer.class)
   @JsonProperty(value = FIELD_META)
-  FieldMetadata fieldMeta;
+  InternalFieldMetadata internalFieldMetadata;
 
   @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
   public ColumnMappingsDocument(
@@ -63,13 +63,13 @@ public class ColumnMappingsDocument implements Document {
       @JsonProperty(OBJECT_TYPE_ID_FIELD_NAME) String objectTypeId,
       @JsonProperty(FIELD_NAME) String fieldName,
       @JsonProperty(COLUMN_ID) String columnId,
-      @JsonProperty(FIELD_META) FieldMetadata fieldMeta) {
+      @JsonProperty(FIELD_META) InternalFieldMetadata internalFieldMetadata) {
     this.tenantId = tenantId;
     this.objectKind = objectKind;
     this.objectTypeId = objectTypeId;
     this.fieldName = fieldName;
     this.columnId = columnId;
-    this.fieldMeta = fieldMeta;
+    this.internalFieldMetadata = internalFieldMetadata;
   }
 
   public static ColumnMappingsDocument fromJson(String json) throws IOException {
@@ -86,28 +86,32 @@ public class ColumnMappingsDocument implements Document {
     }
   }
 
-  public static class FieldMetaSerializer extends JsonSerializer<FieldMetadata> {
+  public static class InternalFieldMetadataSerializer
+      extends JsonSerializer<InternalFieldMetadata> {
 
     @Override
-    public void serialize(FieldMetadata value, JsonGenerator gen, SerializerProvider serializers)
+    public void serialize(
+        InternalFieldMetadata value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
       gen.writeRawValue(JsonFormat.printer().print(value));
     }
   }
 
-  public static class FieldMetaDeserializer extends JsonDeserializer<FieldMetadata> {
+  public static class InternalFieldMetadataDeSerializer
+      extends JsonDeserializer<InternalFieldMetadata> {
 
     @Override
-    public FieldMetadata deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public InternalFieldMetadata deserialize(JsonParser p, DeserializationContext ctxt)
+        throws IOException {
       String jsonString = p.readValueAsTree().toString();
-      FieldMetadata.Builder fieldMetadataBuilder = FieldMetadata.newBuilder();
+      InternalFieldMetadata.Builder fieldMetadataBuilder = InternalFieldMetadata.newBuilder();
       JsonFormat.parser().merge(jsonString, fieldMetadataBuilder);
       return fieldMetadataBuilder.build();
     }
 
     @Override
-    public FieldMetadata getNullValue(DeserializationContext ctxt) {
-      return FieldMetadata.getDefaultInstance();
+    public InternalFieldMetadata getNullValue(DeserializationContext ctxt) {
+      return InternalFieldMetadata.getDefaultInstance();
     }
   }
 }

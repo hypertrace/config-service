@@ -1,13 +1,13 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
 import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.DEFAULT_FIELD_MAP;
-import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.TYPE_TO_COLUMN_LOOKUP_MAP;
-import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getColumnPrefix;
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getColumnName;
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getKeyPrefix;
 
 import ai.traceable.fraud.datamodel.config.service.v1.ColumnMapping;
 import ai.traceable.fraud.datamodel.config.service.v1.ColumnMappingMeta;
-import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
+import ai.traceable.fraud.datamodel.config.service.v1.internal.InternalFieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
 import com.google.inject.Inject;
@@ -64,7 +64,7 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
     ObjectTypeColumnMappings.Builder builder = ObjectTypeColumnMappings.newBuilder();
     ColumnMappingMeta.Builder columnMappingBuilder = ColumnMappingMeta.newBuilder();
     for (var mapping : mappings) {
-      FieldMetadata fieldMeta = mapping.getFieldMeta();
+      InternalFieldMetadata fieldMeta = mapping.getInternalFieldMetadata();
       builder.putFieldsMeta(mapping.getFieldName(), fieldMeta);
       columnMappingBuilder.putColumnMapping(
           mapping.getFieldName(),
@@ -89,9 +89,9 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
       colMap.put(currMapping.getColumnId(), currMapping);
     }
     List<ColumnMappingsDocument> newMappings = new ArrayList<>();
-    for (Map.Entry<String, FieldMetadata> entry : fields.getFieldsMetaMap().entrySet()) {
+    for (Map.Entry<String, InternalFieldMetadata> entry : fields.getFieldsMetaMap().entrySet()) {
       String fieldName = entry.getKey();
-      FieldMetadata fieldMeta = entry.getValue();
+      InternalFieldMetadata fieldMeta = entry.getValue();
       ColumnMappingsDocument columnMappingsDocument =
           buildObjectTypeColumnMappings(tenantId, kind, typeId, fieldName, fieldMeta, colMap);
       // todo: check if existing mappings already are correct.
@@ -108,29 +108,24 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
       ObjectKind objectKind,
       String typeId,
       String propName,
-      FieldMetadata fieldMeta,
+      InternalFieldMetadata fieldMeta,
       Map<String, ColumnMappingsDocument> colMap) {
-    String colPrefix = getColumnPrefix();
-    String colName = createNewMapping(colPrefix, colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
+    String colName = createNewMapping(colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
     ColumnMappingsDocument columnMappingsDocument =
         new ColumnMappingsDocument(tenantId, objectKind, typeId, propName, colName, fieldMeta);
     colMap.put(colName, columnMappingsDocument);
     return columnMappingsDocument;
   }
 
-  private static String getKeyPrefix(FieldType fieldType) {
-    return TYPE_TO_COLUMN_LOOKUP_MAP.get(fieldType);
-  }
-
   private String createNewMapping(
-      String colPrefix,
       Map<String, ColumnMappingsDocument> colMap,
-      FieldMetadata fieldMetadata,
+      InternalFieldMetadata fieldMetadata,
       String typeId,
       Map<String, Integer> fieldCountMap) {
-    String keyPrefix = getKeyPrefix(fieldMetadata.getFieldType());
+    FieldType fieldType = fieldMetadata.getFieldType();
+    String keyPrefix = getKeyPrefix(fieldType);
     for (int i = 0; i < fieldCountMap.get(keyPrefix); i++) {
-      String possibleKey = colPrefix + keyPrefix + i;
+      String possibleKey = getColumnName(fieldType, i);
       if (!colMap.containsKey(possibleKey)) {
         return possibleKey;
       }

@@ -49,7 +49,7 @@ public class ColumnMappingsDocumentStore implements ColumnMappingsStore {
               mapping.getObjectTypeId(),
               mapping.getFieldName(),
               mapping.getColumnId(),
-              mapping.getFieldMeta());
+              mapping.getInternalFieldMetadata());
       documentMap.put(key, doc);
     }
     this.collection.bulkUpsert(documentMap);
@@ -89,15 +89,14 @@ public class ColumnMappingsDocumentStore implements ColumnMappingsStore {
                     IdentifierExpression.of(ColumnMappingsDocument.OBJECT_KIND_FIELD_NAME),
                     EQ,
                     ConstantExpression.of(objectKind.name())));
-    Query.QueryBuilder queryBuilder = Query.builder();
     if (!fieldNames.isEmpty()) {
       filters.operand(
           RelationalExpression.of(
               IdentifierExpression.of(ColumnMappingsDocument.FIELD_NAME),
               IN,
               ConstantExpression.ofStrings(fieldNames)));
-      queryBuilder.setFilter(filters.build());
     }
+    Query.QueryBuilder queryBuilder = Query.builder().setFilter(filters.build());
     try (CloseableIterator<Document> it = collection.aggregate(queryBuilder.build())) {
       List<ColumnMappingsDocument> results = new ArrayList<>();
       while (it.hasNext()) {

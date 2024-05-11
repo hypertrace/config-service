@@ -71,6 +71,8 @@ public class FraudDataModelConfigServiceIntegrationTest {
     Assertions.assertNotNull(response.getEntityType());
     Assertions.assertNotNull(response.getEntityType().getColumnMappingMeta());
     Assertions.assertEquals(
+        entityType.getFieldsMetaCount(), response.getEntityType().getFieldsMetaCount());
+    Assertions.assertEquals(
         response.getEntityType().getFieldsMetaCount(),
         response.getEntityType().getColumnMappingMeta().getColumnMappingCount());
     Assertions.assertEquals(

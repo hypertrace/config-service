@@ -7,7 +7,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.internal.InternalFieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public class ColumnMappingsStoreTest {
               typeId,
               "field" + ii,
               "columnId" + ii,
-              FieldMetadata.getDefaultInstance());
+              InternalFieldMetadata.getDefaultInstance());
       mappings.add(mapping);
     }
     target.addColumnMappings(tenantId, mappings);

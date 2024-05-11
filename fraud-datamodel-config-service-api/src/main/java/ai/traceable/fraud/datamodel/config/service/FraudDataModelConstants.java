@@ -11,7 +11,7 @@ public abstract class FraudDataModelConstants {
   public static final String COL_LIST_PREFIX = "list";
   public static final String COL_MAP_PREFIX = "map";
   public static final String COL_TIMESTAMP_PREFIX = "timestamp";
-  private static final String COL_SEGMENT = "col.";
+  private static final String COL_SEGMENT = "_col";
 
   public static final Map<FieldType, String> TYPE_TO_COLUMN_LOOKUP_MAP =
       Map.of(
@@ -42,5 +42,15 @@ public abstract class FraudDataModelConstants {
 
   public static String getColumnPrefix() {
     return COL_SEGMENT;
+  }
+
+  public static String getKeyPrefix(FieldType fieldType) {
+    return TYPE_TO_COLUMN_LOOKUP_MAP.get(fieldType);
+  }
+
+  public static String getColumnName(FieldType fieldType, int index) {
+    String fieldPrefix = getKeyPrefix(fieldType);
+    String colPrefix = getColumnPrefix();
+    return fieldPrefix + colPrefix + index;
   }
 }

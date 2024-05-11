@@ -1,5 +1,8 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
+import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.entityFieldMetaToInternalFieldMetadataMap;
+import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.toEntityFieldMetadataMap;
+
 import ai.traceable.fraud.datamodel.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
@@ -19,7 +22,7 @@ public class EntityTypeColumnMapper implements ColumnMapper<EntityType> {
   @Override
   public ObjectTypeColumnMappings createColumnMapping(EntityType newType) {
     return ObjectTypeColumnMappings.newBuilder()
-        .putAllEntityFieldsMeta(newType.getFieldsMetaMap())
+        .putAllFieldsMeta(entityFieldMetaToInternalFieldMetadataMap(newType.getFieldsMetaMap()))
         // these are not allowed to change, so if user updates it this will undo that
         // todo: add default mappings here.
         .build();
@@ -54,7 +57,8 @@ public class EntityTypeColumnMapper implements ColumnMapper<EntityType> {
     var newTypeBldr = objectType.toBuilder();
     newTypeBldr.clearFieldsMeta().clearColumnMappingMeta();
     newTypeBldr.setColumnMappingMeta(typeColumnMappings.getColumnMappingMeta());
-    newTypeBldr.putAllFieldsMeta(typeColumnMappings.getEntityFieldsMetaMap());
+    var internalFieldsMetaMap = typeColumnMappings.getFieldsMetaMap();
+    newTypeBldr.putAllFieldsMeta(toEntityFieldMetadataMap(internalFieldsMetaMap));
     return newTypeBldr.build();
   }
 }

@@ -1,5 +1,8 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
+import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.fieldMetaToInternalFieldMetadataMap;
+import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.toFieldMetadataMap;
+
 import ai.traceable.fraud.datamodel.config.service.v1.EventType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
@@ -18,7 +21,7 @@ public class EventTypeColumnMapper implements ColumnMapper<EventType> {
   @Override
   public ObjectTypeColumnMappings createColumnMapping(EventType newType) {
     return ObjectTypeColumnMappings.newBuilder()
-        .putAllFieldsMeta(newType.getFieldsMetaMap())
+        .putAllFieldsMeta(fieldMetaToInternalFieldMetadataMap(newType.getFieldsMetaMap()))
         // these are not allowed to change, so if user updates it this will undo that
         // todo: add default mappings here.
         .build();
@@ -53,7 +56,7 @@ public class EventTypeColumnMapper implements ColumnMapper<EventType> {
     var newTypeBldr = objectType.toBuilder();
     newTypeBldr.clearFieldsMeta().clearColumnMappingMeta();
     newTypeBldr.setColumnMappingMeta(typeColumnMappings.getColumnMappingMeta());
-    newTypeBldr.putAllFieldsMeta(typeColumnMappings.getFieldsMetaMap());
+    newTypeBldr.putAllFieldsMeta(toFieldMetadataMap(typeColumnMappings.getFieldsMetaMap()));
     return newTypeBldr.build();
   }
 }

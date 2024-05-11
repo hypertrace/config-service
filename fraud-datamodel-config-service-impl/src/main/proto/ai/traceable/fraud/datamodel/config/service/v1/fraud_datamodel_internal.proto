@@ -32,7 +32,17 @@ message ObjectType {
 }
 
 message ObjectTypeColumnMappings {
-  map<string, FieldMetadata> fields_meta = 1;
-  map<string, EntityFieldMetadata> entity_fields_meta = 2;
-  ColumnMappingMeta column_mapping_meta = 3;
+  map<string, InternalFieldMetadata> fields_meta = 1;
+  ColumnMappingMeta column_mapping_meta = 2;
+}
+
+// a union of EntityFieldMetadata and FieldMetadata from the external api
+message InternalFieldMetadata {
+  FieldType field_type = 1;
+  bool versioned = 2;
+  bool disabled = 3;
+  oneof pointer {
+    string entity_type = 5;
+    string relationship_type = 6;
+  }
 }
