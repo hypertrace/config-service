@@ -55,7 +55,16 @@ public class FraudDataModelDerivationConfigStore
   @Override
   protected Optional<DerivationConfig> filterConfigData(
       DerivationConfig data, GetDerivationConfigsRequest request) {
-    return Optional.of(data);
+    return Optional.of(data)
+        .filter(
+            derivationConfig -> !request.getIncludeDisabled() && !derivationConfig.getDisabled())
+        .filter(
+            derivationConfig ->
+                request.getDerivationConfigType().equals(data.getDerivationConfigType()))
+        .filter(
+            derivationConfig ->
+                request.getDerivationConfigIdsCount() == 0
+                    || request.getDerivationConfigIdsList().contains(data.getId()));
   }
 
   @Override
@@ -63,9 +72,7 @@ public class FraudDataModelDerivationConfigStore
       RequestContext requestContext, GetDerivationConfigsRequest request) {
     List<DerivationConfig> derivationConfigs = super.getAllConfigData(requestContext, request);
     return derivationConfigs.stream()
-        .filter(
-            derivationConfig ->
-                derivationConfig.getDerivationConfigType() == request.getDerivationConfigType())
+        .filter(derivationConfig -> filterConfigData(derivationConfig, request).isPresent())
         .collect((Collectors.toUnmodifiableList()));
   }
 }

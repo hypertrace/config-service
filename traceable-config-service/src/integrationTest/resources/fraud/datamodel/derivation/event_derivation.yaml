@@ -1,0 +1,32 @@
+targetEventType: customer_events
+id: "order_api_derivation"
+name: "order_api_derivation"
+"scope": "$s.api_id.equals('520a07d9-4c37-3bcb-bd7f-1d29f30b25c3') || $s.api_name.equals('POST /order')"
+mappings:
+  ip:
+    rules:
+      - expression: "$s.ip_address"
+  order:
+    type: "string"
+    rules:
+      - script: >
+          var body = traceable:parseJsonAsMap($s['response_body']);
+          traceable:printValue('BODY>>>>>>>' + body);
+          traceable:printValue('ORDER_ID>>>>>>>' + body['order_id']);
+          return body['order_id'];
+  user:
+    type: "string"
+    rules:
+      - script: >
+          var body = traceable:parseJsonAsMap($s['response_body']);
+          return body['user_id'];
+  order_amount:
+    rules:
+      - script: >
+          var body = traceable:parseJsonAsMap($s['response_body']);
+          return body['total_cost.units']
+  shipping_cost:
+    rules:
+      - script: >
+          var body = traceable:parseJsonAsMap($s['response_body']);
+          return body['shipping_cost.units']

@@ -31,6 +31,8 @@ message UpdateFraudPolicyResponse {
 }
 
 message GetFraudPolicyListRequest {
+  repeated string fraud_policy_id = 1;
+  bool include_disabled = 2;
 }
 
 message GetFraudPolicyListResponse {
@@ -39,6 +41,7 @@ message GetFraudPolicyListResponse {
 
 message GetFraudPolicyRequest {
   string fraud_policy_id = 1;
+  bool include_disabled = 2;
 }
 
 message GetFraudPolicyResponse {

@@ -4,6 +4,8 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfig;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
@@ -34,6 +36,7 @@ public class FraudDataModelDerivationConfigStoreManager {
         DerivationConfig.newBuilder()
             .setId(uuidGenerator.generateRandomId())
             .setName(request.getName())
+            .setDerivationConfigType(request.getDerivationConfigType())
             .setDerivationConfig(request.getDerivationConfig())
             .build();
     ContextualConfigObject<DerivationConfig> configObject =
@@ -46,8 +49,8 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public UpdateDerivationConfigResponse updateDerivationConfig(
       RequestContext requestContext, UpdateDerivationConfigRequest request) throws StatusException {
-    DerivationConfig existingDerivationConfig =
-        fetchExistingDerivationConfigOrThrow(request.getDerivationConfig().getId(), requestContext);
+    // check if we have an existing config with the given id, before proceeding
+    fetchExistingDerivationConfigOrThrow(request.getDerivationConfig().getId(), requestContext);
     DerivationConfig updatedDerivationConfig =
         DerivationConfig.newBuilder(request.getDerivationConfig()).build();
     ContextualConfigObject<DerivationConfig> configObject =
@@ -64,6 +67,34 @@ public class FraudDataModelDerivationConfigStoreManager {
         fraudDataModelDerivationConfigStore.getAllConfigData(requestContext, request);
     return GetDerivationConfigsResponse.newBuilder()
         .addAllDerivationConfigs(derivationConfigs)
+        .build();
+  }
+
+  public GetDerivationConfigResponse fetchDerivedConfig(
+      RequestContext requestContext, GetDerivationConfigRequest request) throws StatusException {
+    GetDerivationConfigsRequest getDerivationConfigsRequest =
+        GetDerivationConfigsRequest.newBuilder()
+            .setDerivationConfigType(request.getDerivationConfigType())
+            .addDerivationConfigIds(request.getDerivationConfigId())
+            .build();
+    List<DerivationConfig> derivationConfigs =
+        fraudDataModelDerivationConfigStore.getAllConfigData(
+            requestContext, getDerivationConfigsRequest);
+    if (derivationConfigs.isEmpty()) {
+      throw Status.NOT_FOUND
+          .withDescription("No derivation config of id=" + request.getDerivationConfigId())
+          .asException();
+    }
+    if (derivationConfigs.size() > 1) {
+      throw Status.INTERNAL
+          .withDescription(
+              String.format(
+                  "%d derivation configs found with id=%s",
+                  derivationConfigs.size(), request.getDerivationConfigId()))
+          .asException();
+    }
+    return GetDerivationConfigResponse.newBuilder()
+        .setDerivationConfig(derivationConfigs.get(0))
         .build();
   }
 

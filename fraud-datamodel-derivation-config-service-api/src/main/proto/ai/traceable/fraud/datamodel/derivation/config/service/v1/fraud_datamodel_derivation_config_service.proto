@@ -33,6 +33,8 @@ message UpdateDerivationConfigResponse {
 
 message GetDerivationConfigsRequest {
   DerivationConfigType derivation_config_type = 1;
+  repeated string derivation_config_ids = 2;
+  bool include_disabled = 3;
 }
 
 message GetDerivationConfigsResponse {
@@ -42,6 +44,7 @@ message GetDerivationConfigsResponse {
 message GetDerivationConfigRequest {
   DerivationConfigType derivation_config_type = 1;
   string derivation_config_id = 2;
+  bool include_disabled = 3;
 }
 
 message GetDerivationConfigResponse {

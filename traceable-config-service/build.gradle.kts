@@ -165,6 +165,10 @@ dependencies {
   integrationTestImplementation(projects.splunkIntegrationConfigServiceApi)
   integrationTestImplementation(testFixtures(projects.fraudDatamodelConfigServiceApi))
   integrationTestImplementation(projects.fraudDatamodelConfigServiceImpl)
+  integrationTestImplementation(projects.fraudDatamodelDerivationConfigServiceApi)
+  integrationTestImplementation(projects.fraudDatamodelDerivationConfigServiceImpl)
+  integrationTestImplementation(projects.fraudPolicyConfigServiceApi)
+  integrationTestImplementation(projects.fraudPolicyConfigServiceImpl)
   integrationTestImplementation(commonLibs.traceable.opadistributor.api)
   integrationTestImplementation(localLibs.hypertrace.configservice.partitioner.config.impl)
 }

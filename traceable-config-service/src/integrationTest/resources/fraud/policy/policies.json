@@ -1,0 +1,144 @@
+{
+  "policies": [
+    {
+      "id": "id1",
+      "name": "email_domain_is_disposable_auto_threshold",
+      "fraud_policy_rule": {
+        "fraud_rule": {
+          "entity_metric_fraud_rule": {
+            "entity_metric_data_query": {
+              "raw_sql_query": "select count(*) from some_table"
+            },
+            "threshold_definition": {
+              "auto_threshold": {
+              },
+              "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
+            },
+            "messageFormat": "{$numAccounts} associated with {$numEmails} that have disposable domains",
+            "messageParams": {
+              "numAccounts": "FIELD_TYPE_LONG",
+              "numEmails": "FIELD_TYPE_LONG"
+            }
+          }
+        }
+      },
+      "category": "FRAUD_POLICY_CATEGORY_RISK",
+      "primary_entity_type": "",
+      "biz_impact_rules": [
+        {
+          "fraud_data_query": {
+            "data_query": {
+              "metric_data_query": {
+                "raw_sql_query": "select something from sometable"
+              }
+            },
+            "messageFormat": "${$amount} transferred out of {$numAccounts}",
+            "messageParams": {
+              "amount": "FIELD_TYPE_DOUBLE",
+              "numAccounts": "FIELD_TYPE_LONG"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "id2",
+      "name": "email_domain_is_disposable_manual_threshold_scalar",
+      "fraud_policy_rule": {
+        "fraud_rule": {
+          "entity_metric_fraud_rule": {
+            "entity_metric_data_query": {
+              "raw_sql_query": "select count(*) from some_table"
+            },
+            "threshold_definition": {
+              "manual_threshold": {
+                "static_value": 10.0
+              },
+              "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
+            },
+            "messageFormat": "{$numAccounts} associated with {$numEmails} that have disposable domains",
+            "messageParams": {
+              "numAccounts": "FIELD_TYPE_LONG",
+              "numEmails": "FIELD_TYPE_LONG"
+            }
+          }
+        }
+      },
+      "category": "FRAUD_POLICY_CATEGORY_FRAUD",
+      "primary_entity_type": "",
+      "biz_impact_rules": [
+        {
+          "fraud_data_query": {
+            "data_query": {
+              "metric_data_query": {
+                "raw_sql_query": "select something from sometable"
+              }
+            },
+            "messageFormat": "${$amount} transferred out of {$numAccounts}",
+            "messageParams": {
+              "amount": "FIELD_TYPE_DOUBLE",
+              "numAccounts": "FIELD_TYPE_LONG"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "id3",
+      "name": "email_domain_is_disposable_manual_threshold_baseline",
+      "fraud_policy_rule": {
+        "fraud_rule": {
+          "entity_metric_fraud_rule": {
+            "entity_metric_data_query": {
+              "raw_sql_query": "select something from sometable"
+            },
+            "threshold_definition": {
+              "manual_threshold": {
+                "query_based_threshold": {
+                  "copy_query_from_rule": true,
+                  "baseline_config": {
+                    "baseline_spec": {
+                      "simple_aggregation_baseline": {
+                        "quantile_func": {
+                          "quantile": 0.75
+                        }
+                      }
+                    },
+                    "baseline_data_config": {
+                      "numPeriods": 30,
+                      "seasonality": "SEASONALITY_DAILY"
+                    }
+                  }
+                }
+              },
+              "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
+            },
+            "messageFormat": "{$numAccounts} associated with {$numEmails} that have disposable domains",
+            "messageParams": {
+              "numAccounts": "FIELD_TYPE_LONG",
+              "numEmails": "FIELD_TYPE_LONG"
+            }
+          }
+        }
+      },
+      "category": "FRAUD_POLICY_CATEGORY_RISK",
+      "primary_entity_type": "",
+      "biz_impact_rules": [
+        {
+          "fraud_data_query": {
+            "data_query": {
+              "metric_data_query": {
+                "raw_sql_query": "select something from sometable"
+              }
+            },
+            "messageFormat": "${$amount} transferred out of {$numAccounts}",
+            "messageParams": {
+              "amount": "FIELD_TYPE_DOUBLE",
+              "numAccounts": "FIELD_TYPE_LONG"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

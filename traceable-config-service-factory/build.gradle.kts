@@ -58,6 +58,7 @@ dependencies {
   implementation(projects.runnerLogsConfigServiceImpl)
   implementation(projects.fraudDatamodelDerivationConfigServiceImpl)
   implementation(projects.fraudDatamodelConfigServiceImpl)
+  implementation(projects.fraudPolicyConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
