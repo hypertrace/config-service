@@ -269,6 +269,10 @@ traceableConfigServiceConfig:
       astEnabled: true
       astReplayConfig:
         enabled: false
+        apiInactivityDuration: 30d
+        maxApiLimit: 10000
+        skipNonLearntApis: true
+        skipUnderDiscoveryApis: true
   actorService:
     host: actor-service
     port: 50888

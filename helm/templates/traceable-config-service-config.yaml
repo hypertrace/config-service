@@ -274,6 +274,10 @@ data:
         astEnabled = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astEnabled }}
         astReplayConfig = {
           enabled = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.enabled }}
+          apiInactivityDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.apiInactivityDuration }}
+          maxApiLimit = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.maxApiLimit }}
+          skipNonLearntApis = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.skipNonLearntApis }}
+          skipUnderDiscoveryApis = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultAstFeatureConfig.astReplayConfig.skipUnderDiscoveryApis }}
         }
       }
     }

@@ -6,9 +6,7 @@ import ai.traceable.ast.config.service.rules.CustomTestPluginManager;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc.AstConfigServiceImplBase;
 import ai.traceable.ast.config.service.v1.AstDisabledConfig;
-import ai.traceable.ast.config.service.v1.AstEnabledConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
-import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
@@ -208,12 +206,7 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
               .addAllConfigs(rulesManager.getAstFeatureConfigs(requestContext, request));
       if (config.defaultIsAstEnabled()) {
         getAstFeatureConfigsResponseBuilder.setDefaultEnabledConfig(
-            AstEnabledConfig.newBuilder()
-                .setReplayConfig(
-                    AstReplayConfig.newBuilder()
-                        .setReplayEnabled(config.defaultIsAstReplayEnabled())
-                        .build())
-                .build());
+            config.getDefaultAstEnabledConfig());
       } else {
         getAstFeatureConfigsResponseBuilder.setDefaultDisabledConfig(
             AstDisabledConfig.newBuilder().build());

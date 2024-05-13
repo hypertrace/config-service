@@ -103,15 +103,13 @@ class AstRulesManager implements RulesManager {
     switch (request.getUpdateStatusCase()) {
       case ENABLED_CONFIG:
         if (request.getEnabledConfig().hasReplayConfig()) {
-          astFeatureConfigBuilder.setEnabledConfig(request.getEnabledConfig());
-        } else {
+          AstReplayConfig astReplayConfigFromRequest = request.getEnabledConfig().getReplayConfig();
+          AstReplayConfig updatedAstReplayConfig =
+              getUpdatedAstReplayConfig(astReplayConfigFromRequest);
           astFeatureConfigBuilder.setEnabledConfig(
-              AstEnabledConfig.newBuilder()
-                  .setReplayConfig(
-                      AstReplayConfig.newBuilder()
-                          .setReplayEnabled(config.defaultIsAstReplayEnabled())
-                          .build())
-                  .build());
+              AstEnabledConfig.newBuilder().setReplayConfig(updatedAstReplayConfig).build());
+        } else {
+          astFeatureConfigBuilder.setEnabledConfig(config.getDefaultAstEnabledConfig());
         }
         break;
       case DISABLED_CONFIG:
@@ -161,5 +159,34 @@ class AstRulesManager implements RulesManager {
       existingVulnerabilityMetadata.setEstimatedFixTime(
           overriddenVulnerabilityMetadata.getEstimatedFixTime());
     }
+  }
+
+  private AstReplayConfig getUpdatedAstReplayConfig(AstReplayConfig requestConfig) {
+    AstReplayConfig.Builder builder =
+        AstReplayConfig.newBuilder()
+            .setReplayEnabled(requestConfig.getReplayEnabled())
+            .setSpanFilters(requestConfig.getSpanFilters());
+
+    AstReplayConfig defaultConfig = config.getDefaultAstEnabledConfig().getReplayConfig();
+
+    if (requestConfig.hasApiInactivityDuration()) {
+      builder.setApiInactivityDuration(requestConfig.getApiInactivityDuration());
+    } else {
+      builder.setApiInactivityDuration(defaultConfig.getApiInactivityDuration());
+    }
+
+    if (requestConfig.hasSkipNonLearntApis()) {
+      builder.setSkipNonLearntApis(requestConfig.getSkipNonLearntApis());
+    } else {
+      builder.setSkipNonLearntApis(defaultConfig.getSkipNonLearntApis());
+    }
+
+    if (requestConfig.hasSkipUnderDiscoveryApis()) {
+      builder.setSkipUnderDiscoveryApis(requestConfig.getSkipUnderDiscoveryApis());
+    } else {
+      builder.setSkipUnderDiscoveryApis(defaultConfig.getSkipUnderDiscoveryApis());
+    }
+
+    return builder.build();
   }
 }
