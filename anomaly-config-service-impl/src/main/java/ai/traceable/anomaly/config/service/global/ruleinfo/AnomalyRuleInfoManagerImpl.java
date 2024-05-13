@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.HashSet;
@@ -36,7 +37,9 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
 
   @Override
   public List<AnomalyRuleInfo> getAnomalyRuleInfos(
-      RequestContext requestContext, List<AnomalyEventFamily> eventFamilies) {
+      RequestContext requestContext,
+      List<AnomalyEventFamily> eventFamilies,
+      ModsecRuleVersion ruleVersion) {
     // Duplicate entires in both request and response are removed
     HashSet<AnomalyRuleInfo> ruleInfos = new HashSet<>();
     new HashSet<>(eventFamilies)
@@ -47,7 +50,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                   ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
                   break;
                 case ANOMALY_EVENT_FAMILY_MODSEC:
-                  ruleInfos.addAll(modsecRulesRegistry.getModsecRuleInfos().values());
+                  ruleInfos.addAll(modsecRulesRegistry.getModsecRuleInfos(ruleVersion).values());
                   break;
                 case ANOMALY_EVENT_FAMILY_SESSION:
                   ruleInfos.addAll(sessionRulesRegistry.getSessionRuleInfos().values());

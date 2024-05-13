@@ -179,7 +179,9 @@ public class AnomalyGlobalConfigServiceImpl
           GetAnomalyRuleInfosResponse.newBuilder()
               .addAllRuleInfos(
                   ruleInfoManager.getAnomalyRuleInfos(
-                      RequestContext.CURRENT.get(), request.getEventFamiliesList()))
+                      RequestContext.CURRENT.get(),
+                      request.getEventFamiliesList(),
+                      request.getModsecRuleVersion()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

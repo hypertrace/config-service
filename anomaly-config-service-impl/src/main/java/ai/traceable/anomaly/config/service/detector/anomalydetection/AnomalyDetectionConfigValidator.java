@@ -24,6 +24,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.EnumMap;
@@ -56,7 +57,8 @@ public class AnomalyDetectionConfigValidator {
     this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
     this.sessionDefRuleIdToConfigMap =
         sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
-    this.modsecRuleInfoMap = modsecRulesRegistry.getModsecRuleInfos();
+    this.modsecRuleInfoMap =
+        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
   }
 
   public Status validate(GetScopedAnomalyDetectionConfigRequest request) {

@@ -133,7 +133,7 @@ class ModsecManagerImplTest {
             requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()))
         .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
 
-    when(modsecRulesRegistry.getModsecRuleInfos()).thenReturn(getModsecRuleInfoMap());
+    when(modsecRulesRegistry.getModsecRuleInfos(any())).thenReturn(getModsecRuleInfoMap());
     // config status for subRule1 and subRule4 is disabled, subRule2 is blockingDisabled
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,

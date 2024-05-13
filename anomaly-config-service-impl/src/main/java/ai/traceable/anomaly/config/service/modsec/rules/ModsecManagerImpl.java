@@ -68,7 +68,8 @@ public class ModsecManagerImpl implements ModsecManager {
           requestContext,
           configStatusDisabledModsecRuleIds,
           blockingDisabledModsecRuleIds,
-          anomalyConfigScope);
+          anomalyConfigScope,
+          modsecRuleVersion);
 
       return requestTypes.stream()
           .map(
@@ -123,13 +124,15 @@ public class ModsecManagerImpl implements ModsecManager {
       RequestContext requestContext,
       Set<String> configStatusDisabledModsecRuleIds,
       Set<String> blockingDisabledModsecRuleIds,
-      AnomalyConfigScope anomalyConfigScope) {
+      AnomalyConfigScope anomalyConfigScope,
+      ModsecRuleVersion modsecRuleVersion) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
         getAnomalyRuleConfigMap(requestContext, anomalyConfigScope);
-    Map<String, AnomalyRuleInfo> ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos();
+    Map<String, AnomalyRuleInfo> ruleInfoMap =
+        modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion);
 
     for (String ruleId : ruleInfoMap.keySet()) {
-      AnomalyRuleInfo anomalyRuleInfo = modsecRulesRegistry.getModsecRuleInfos().get(ruleId);
+      AnomalyRuleInfo anomalyRuleInfo = ruleInfoMap.get(ruleId);
       AnomalyDetectionConfig detectionConfig = anomalyRuleConfigMap.get(ruleId);
 
       Map<String, AnomalySubRuleConfig> subRuleConfigMap = getSubRuleConfigMap(detectionConfig);

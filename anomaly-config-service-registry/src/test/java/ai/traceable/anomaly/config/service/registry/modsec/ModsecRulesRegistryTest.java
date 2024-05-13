@@ -23,11 +23,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.SystemUtils;
@@ -80,10 +83,9 @@ public class ModsecRulesRegistryTest {
   }
 
   private void testModsecCrsRules(ModsecRuleVersion version) throws IOException {
-
     String secRuleRemoveByIdKeyword = "SecRuleRemoveById";
     List<AnomalySubRuleInfo> subRules =
-        modsecRulesRegistry.getModsecRuleInfos().values().stream()
+        modsecRulesRegistry.getModsecRuleInfos(version).values().stream()
             .map(AnomalyRuleInfo::getSubRuleInfosList)
             .flatMap(List::stream)
             .collect(Collectors.toList());
@@ -101,18 +103,23 @@ public class ModsecRulesRegistryTest {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, version, Set.of());
-      assertEquals(
-          allRulesCount - regularRulesCount,
-          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
+      if (regularRulesCount == 0) {
+        assertTrue(crsRulesBlob.isEmpty(), "Regular rules empty for version " + version);
+      } else {
+        assertEquals(
+            allRulesCount - regularRulesCount,
+            crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
+            "Regular rules count for version " + version);
+      }
     }
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, version, Set.of());
-      // few rules in file not marked safe
       assertEquals(
-          allRulesCount - safeRulesCount, crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length, "Non safe rules count");
+          allRulesCount - safeRulesCount,
+          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
+          "Non safe rules count for version " + version);
     }
     {
       String crsRulesBlob =
@@ -121,16 +128,8 @@ public class ModsecRulesRegistryTest {
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - blockingRulesCount,
-          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1);
-      // few rules in file not marked for blocking
-      assertEquals(34, crsRulesBlob.split(secRuleRemoveByIdKeyword).length);
-    }
-    {
-      // crs_913100 is disabled
-      String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, version, Set.of("crs_913100"));
-      assertTrue(crsRulesBlob.contains("SecRuleRemoveById 913100"));
+          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
+          "Block rules count for version " + version);
     }
     {
       // safe and regular rules are mutually exclusive sets
@@ -179,7 +178,8 @@ public class ModsecRulesRegistryTest {
 
   @Test
   public void testRules() {
-    Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleInfos();
+    Map<String, AnomalyRuleInfo> anomalyRuleInfos =
+        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     assertEquals(14, anomalyRuleInfos.size());
     assertEquals(
         "crs_101 :: Server Side Request Forgery (SSRF) Signatures\n"
@@ -234,7 +234,8 @@ public class ModsecRulesRegistryTest {
 
   @Test
   public void testSubRules() {
-    Map<String, AnomalyRuleInfo> anomalyRuleInfos = modsecRulesRegistry.getModsecRuleInfos();
+    Map<String, AnomalyRuleInfo> anomalyRuleInfos =
+        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
 
     // check correctness of sub-rules..
     anomalyRuleInfos.forEach(
@@ -374,6 +375,37 @@ public class ModsecRulesRegistryTest {
           subRulesRead.get(i), subRulesCollected.get(i), "Blocking rule mismatch at index " + i);
     }
     assertEquals(subRulesRead.size(), subRulesCollected.size(), "Blocking rule count mismatch");
+  }
+
+  @Test
+  public void testSubRuleInfoConsistencyAcrossVersions() {
+    Map<String, AnomalySubRuleInfo> anomalySubRuleInfos = new HashMap<>();
+    for (ModsecRuleVersion version : ModsecRuleVersion.values()) {
+      if (version.equals(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+          || version.equals(ModsecRuleVersion.UNRECOGNIZED)) {
+        continue;
+      }
+      Collection<AnomalyRuleInfo> rules = modsecRulesRegistry.getModsecRuleInfos(version).values();
+      assertFalse(rules.isEmpty());
+      for (AnomalyRuleInfo ruleInfo : rules) {
+        for (AnomalySubRuleInfo subRuleInfo : ruleInfo.getSubRuleInfosList()) {
+          if (anomalySubRuleInfos.containsKey(subRuleInfo.getRuleId())) {
+            assertEquals(anomalySubRuleInfos.get(subRuleInfo.getRuleId()), subRuleInfo);
+          }
+          anomalySubRuleInfos.put(subRuleInfo.getRuleId(), subRuleInfo);
+        }
+      }
+    }
+
+    Map<String, AnomalySubRuleInfo> allMergedSubRules =
+        modsecRulesRegistry
+            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+            .values()
+            .stream()
+            .map(AnomalyRuleInfo::getSubRuleInfosList)
+            .flatMap(List::stream)
+            .collect(Collectors.toMap(AnomalySubRuleInfo::getRuleId, Function.identity()));
+    assertEquals(anomalySubRuleInfos, allMergedSubRules);
   }
 
   @Test

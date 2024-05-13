@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.global.ruleinfo;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +16,7 @@ import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRe
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -52,7 +54,7 @@ class AnomalyRuleInfoManagerImplTest {
     when(apiDefinitionRegistry.getApiDefRuleInfos())
         .thenReturn(
             Map.of("id-0", buildAnomalyRuleInfo("id-0"), "id-00", buildAnomalyRuleInfo("id-0")));
-    when(modsecRulesRegistry.getModsecRuleInfos())
+    when(modsecRulesRegistry.getModsecRuleInfos(any()))
         .thenReturn(Map.of("id-1", buildAnomalyRuleInfo("id-1")));
     when(sessionRulesRegistry.getSessionRuleInfos())
         .thenReturn(
@@ -66,27 +68,36 @@ class AnomalyRuleInfoManagerImplTest {
         .thenReturn(Map.of("id-2", buildAnomalyRuleInfo("id-4")));
     List<AnomalyRuleInfo> response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
+            requestContext,
+            List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF));
+            requestContext,
+            List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     // As two are repeated
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC));
+            requestContext,
+            List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING));
+            requestContext,
+            List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext,
             List.of(
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
-                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     assertEquals(2, response.size());
 
     response =
@@ -97,7 +108,8 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
-                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING));
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
     // Common rules are not duplicated
     assertEquals(5, response.size());
 
@@ -108,7 +120,8 @@ class AnomalyRuleInfoManagerImplTest {
                 requestContext,
                 List.of(
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE,
-                    AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC)));
+                    AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
+                ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED));
   }
 
   private AnomalyRuleInfo buildAnomalyRuleInfo(String id) {

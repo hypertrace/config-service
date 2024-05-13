@@ -8,7 +8,7 @@ import java.util.Set;
 
 public interface ModsecRulesRegistry {
 
-  Map<String, AnomalyRuleInfo> getModsecRuleInfos();
+  Map<String, AnomalyRuleInfo> getModsecRuleInfos(ModsecRuleVersion modsecRuleVersion);
 
   String getModsecCrsRulesBlob(
       AnomalySubRuleType subRuleType,
