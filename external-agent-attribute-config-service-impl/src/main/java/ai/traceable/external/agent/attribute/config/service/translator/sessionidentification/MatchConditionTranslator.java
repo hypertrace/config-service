@@ -42,7 +42,7 @@ public class MatchConditionTranslator {
       case MATCH_OPERATOR_CONTAINS:
         return StringPredicate.newBuilder()
             .setOperator(ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX)
-            .setValue(escapeRegex(value))
+            .setValue(".*" + escapeRegex(value))
             .build();
       case MATCH_OPERATOR_STARTS_WITH:
         return StringPredicate.newBuilder()
