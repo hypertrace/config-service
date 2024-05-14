@@ -18,10 +18,13 @@ import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.RuleType;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.WafIntegration;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.Builder;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase;
+import ai.traceable.waf.integration.service.api.v1.WafIntegrationTarget;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
 import java.util.List;
@@ -33,21 +36,22 @@ import java.util.stream.Collectors;
 
 public class WafIntegrationBuilderUtils {
 
-  private static void updateGenericFields(
+  private static WafIntegrationDetails.Builder updateGenericFields(
       WafIntegrationDetails.Builder builder, UpdateWafIntegrationRequest request) {
     WafIntegrationDetails.Builder updatedWafIntegrationDetails =
         builder
             .setName(request.getUpdatedWafIntegrationDetails().getName())
             .setDescription(request.getUpdatedWafIntegrationDetails().getDescription());
     updateScope(updatedWafIntegrationDetails, request);
-    updateTargets(updatedWafIntegrationDetails, request);
+    return updateTargets(updatedWafIntegrationDetails, request);
   }
 
   public static WafIntegration getUpdatedIntegration(
       UpdateWafIntegrationRequest request, WafIntegration existingWafIntegration) {
     Builder updatedWafIntegrationDetailsBuilder =
         existingWafIntegration.getWafIntegrationDetails().toBuilder();
-    updateGenericFields(updatedWafIntegrationDetailsBuilder, request);
+    updatedWafIntegrationDetailsBuilder =
+        updateGenericFields(updatedWafIntegrationDetailsBuilder, request);
 
     switch (request.getUpdatedWafIntegrationDetails().getIntegrationParamsCase()) {
       case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
@@ -138,52 +142,7 @@ public class WafIntegrationBuilderUtils {
   }
 
   private static void updateCloudflareWafIntegration(
-      UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder detailsBuilder) {
-    if (!updateCloudflareWafIntegrationIfV2(request, detailsBuilder)) {
-      updateCloudflareWafIntegrationV1(request, detailsBuilder);
-    }
-  }
-
-  private static void updateCloudflareWafIntegrationV1(
-      UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder detailsBuilder) {
-    String apiToken =
-        request
-                .getUpdatedWafIntegrationDetails()
-                .getUpdatedCloudflareIntegrationParams()
-                .hasApiToken()
-            ? request
-                .getUpdatedWafIntegrationDetails()
-                .getUpdatedCloudflareIntegrationParams()
-                .getApiToken()
-            : detailsBuilder.getCloudflareIntegrationParams().getApiToken();
-
-    CloudflareIntegrationParams.Builder cloudFlareIntegrationParamsBuilder =
-        CloudflareIntegrationParams.newBuilder()
-            .setEmail(
-                request
-                    .getUpdatedWafIntegrationDetails()
-                    .getUpdatedCloudflareIntegrationParams()
-                    .getEmail())
-            .setZone(
-                request
-                    .getUpdatedWafIntegrationDetails()
-                    .getUpdatedCloudflareIntegrationParams()
-                    .getZone())
-            .setApiToken(apiToken);
-
-    detailsBuilder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
-  }
-
-  // Returns true if the integration is V2, or we are trying to update to V2
-  private static boolean updateCloudflareWafIntegrationIfV2(
       UpdateWafIntegrationRequest request, WafIntegrationDetails.Builder builder) {
-    if (!builder.getCloudflareIntegrationParams().hasEncryptedApiToken()
-        && !request
-            .getUpdatedWafIntegrationDetails()
-            .getUpdatedCloudflareIntegrationParams()
-            .hasEncryptedApiToken()) {
-      return false;
-    }
     String apiToken =
         builder.getCloudflareIntegrationParams().getEncryptedApiToken().getBase64EncryptedData();
     String keyId = builder.getCloudflareIntegrationParams().getEncryptedApiToken().getKeyId();
@@ -223,15 +182,18 @@ public class WafIntegrationBuilderUtils {
                     .build());
 
     builder.setCloudflareIntegrationParams(cloudFlareIntegrationParamsBuilder);
-    return true;
   }
 
-  private static void updateTargets(
+  private static WafIntegrationDetails.Builder updateTargets(
       WafIntegrationDetails.Builder builder, UpdateWafIntegrationRequest request) {
     builder
         .clearIntegrationTargets()
         .addAllIntegrationTargets(
             request.getUpdatedWafIntegrationDetails().getIntegrationTargetsList());
+    if (builder.getIntegrationParamsCase() != IntegrationParamsCase.AWS_INTEGRATION_PARAMS) {
+      return populateTargetsIfEmptyList(builder.build()).toBuilder();
+    }
+    return builder;
   }
 
   private static void updateScope(
@@ -424,7 +386,10 @@ public class WafIntegrationBuilderUtils {
                     .build())
             .build();
       default:
-        return wafIntegration;
+        return wafIntegration.toBuilder()
+            .setWafIntegrationDetails(
+                populateTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+            .build();
     }
   }
 
@@ -558,12 +523,34 @@ public class WafIntegrationBuilderUtils {
         return WafIntegration.newBuilder()
             .setId(wafIntegration.getId())
             .setWafIntegrationDetails(
-                wafIntegration.getWafIntegrationDetails().toBuilder()
-                    .setAzureIntegrationParams(convertedAzureIntegrationParams))
+                populateTargetsIfEmptyList(
+                    wafIntegration.getWafIntegrationDetails().toBuilder()
+                        .setAzureIntegrationParams(convertedAzureIntegrationParams)
+                        .build()))
             .build();
       default:
-        return wafIntegration;
+        return wafIntegration.toBuilder()
+            .setWafIntegrationDetails(
+                populateTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+            .build();
     }
+  }
+
+  private static WafIntegrationDetails populateTargetsIfEmptyList(
+      WafIntegrationDetails wafIntegrationDetails) {
+    // if waf-integration targets are empty then populate it with
+    // values [ip_range, threat_actor]
+    if (wafIntegrationDetails.getIntegrationTargetsList().isEmpty()) {
+      return wafIntegrationDetails.toBuilder()
+          .addIntegrationTargets(
+              WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_IP_RANGE).build())
+          .addIntegrationTargets(
+              WafIntegrationTarget.newBuilder()
+                  .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                  .build())
+          .build();
+    }
+    return wafIntegrationDetails;
   }
 
   private static AzureIntegrationParams populateAzureIntegrationDetailsId(

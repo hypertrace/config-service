@@ -120,7 +120,18 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(
-        stripGcpSecrets(expectedDetails), response.getWafIntegration().getWafIntegrationDetails());
+        stripGcpSecrets(
+            expectedDetails.toBuilder()
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                        .build())
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                        .build())
+                .build()),
+        response.getWafIntegration().getWafIntegrationDetails());
   }
 
   @Test
@@ -132,7 +143,18 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(
-        stripF5Secrets(expectedDetails), response.getWafIntegration().getWafIntegrationDetails());
+        stripF5Secrets(
+            expectedDetails.toBuilder()
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                        .build())
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                        .build())
+                .build()),
+        response.getWafIntegration().getWafIntegrationDetails());
   }
 
   @Test
@@ -644,7 +666,11 @@ class WafIntegrationConfigServiceImplTest {
         updateWafIntegrationScope,
         updateResponse.getWafIntegration().getWafIntegrationDetails().getWafIntegrationScope());
     assertEquals(
-        List.of(),
+        List.of(
+            WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_IP_RANGE).build(),
+            WafIntegrationTarget.newBuilder()
+                .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                .build()),
         updateResponse.getWafIntegration().getWafIntegrationDetails().getIntegrationTargetsList());
   }
 
