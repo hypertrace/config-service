@@ -29,6 +29,7 @@ message DataTypeRule {
     repeated Location locations = 5;
     oneof pattern {
       StringPattern key_pattern = 6;
+      StringPattern leaf_key_pattern = 12;
       KeyValuePattern key_value_pattern = 7;
       KeyValuePattern leaf_key_value_pattern = 9;
     }

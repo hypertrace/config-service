@@ -164,6 +164,17 @@ class DataClassificationRulesTranslator {
                 .setPathValuePredicate(
                     translatePathValuePattern(scopedPattern.getLeafKeyValuePattern()))
                 .build());
+      case LEAF_KEY_PATTERN:
+        if (isLeafKeyValuePatternSupported(predicateSupportLevel)) {
+          return Optional.of(
+              dataTypeMatchRuleBuilder
+                  .setPathPredicate(translateLeafPathPattern(scopedPattern.getLeafKeyPattern()))
+                  .build());
+        }
+        return Optional.of(
+            dataTypeMatchRuleBuilder
+                .setPathPredicate(translatePathPattern(scopedPattern.getLeafKeyPattern()))
+                .build());
       case PATTERN_NOT_SET:
       default:
         log.error("Unsupported scoped pattern type: {}", scopedPattern);

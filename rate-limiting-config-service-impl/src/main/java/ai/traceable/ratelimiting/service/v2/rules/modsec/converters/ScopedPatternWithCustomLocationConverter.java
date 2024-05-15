@@ -64,6 +64,8 @@ public class ScopedPatternWithCustomLocationConverter {
     switch (scopedPattern.getPatternCase()) {
       case KEY_PATTERN:
         return generateBlobRegexFromKeyPatterns(scopedPattern.getKeyPattern().getValue());
+      case LEAF_KEY_PATTERN:
+        return generateBlobRegexFromKeyPatterns(scopedPattern.getLeafKeyPattern().getValue());
       case KEY_VALUE_PATTERN:
         return generateBlobRegexFromKeyValuePatterns(
             scopedPattern.getKeyValuePattern().getKeyPattern().getValue(),

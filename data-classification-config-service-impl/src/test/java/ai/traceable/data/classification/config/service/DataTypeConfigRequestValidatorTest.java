@@ -390,6 +390,13 @@ class DataTypeConfigRequestValidatorTest {
             dataTypeConfigRequestValidator.validateOrThrow(
                 REQUEST_CONTEXT,
                 CreateDataTypeRequest.newBuilder().setRule(ruleInputWithRef).build()));
+    assertDoesNotThrow(
+        () ->
+            dataTypeConfigRequestValidator.validateOrThrow(
+                REQUEST_CONTEXT,
+                CreateDataTypeRequest.newBuilder()
+                    .setRule(ruleInputWithRef.toBuilder().setEnabled(false))
+                    .build()));
     assertThrows(
         StatusRuntimeException.class,
         () ->

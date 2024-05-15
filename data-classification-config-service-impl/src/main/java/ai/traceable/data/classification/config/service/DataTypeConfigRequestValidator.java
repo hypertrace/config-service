@@ -3,6 +3,7 @@ package ai.traceable.data.classification.config.service;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_UNSPECIFIED;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.UNRECOGNIZED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateFieldPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
@@ -59,7 +60,7 @@ class DataTypeConfigRequestValidator {
       // If it contains its own data set id references, it's been migrated and should have all
       // optional fields inherited from data set assigned
       validateNonDefaultPresenceOrThrow(rule, DataTypeRule.SENSITIVITY_FIELD_NUMBER);
-      validateNonDefaultPresenceOrThrow(rule, DataTypeRule.ENABLED_FIELD_NUMBER);
+      validateFieldPresenceOrThrow(rule, DataTypeRule.ENABLED_FIELD_NUMBER);
       validateNonDefaultPresenceOrThrow(rule, DataTypeRule.DATA_SUPPRESSION_FIELD_NUMBER);
     }
   }
@@ -121,6 +122,9 @@ class DataTypeConfigRequestValidator {
         break;
       case LEAF_KEY_VALUE_PATTERN:
         this.validateKeyValuePattern(scopedPattern.getLeafKeyValuePattern());
+        break;
+      case LEAF_KEY_PATTERN:
+        this.validateStringPattern(scopedPattern.getLeafKeyPattern());
         break;
       case PATTERN_NOT_SET:
       default:

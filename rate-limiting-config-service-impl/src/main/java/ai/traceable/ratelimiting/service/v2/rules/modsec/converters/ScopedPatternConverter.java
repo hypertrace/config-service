@@ -73,7 +73,9 @@ public class ScopedPatternConverter {
       ClauseDetails clauseDetails, ScopedPattern scopedPattern) {
     switch (scopedPattern.getPatternCase()) {
       case KEY_PATTERN:
-        return convertKeyClause(clauseDetails, scopedPattern.getKeyPattern());
+        return convertKeyClause(clauseDetails, scopedPattern.getKeyPattern(), false);
+      case LEAF_KEY_PATTERN:
+        return convertKeyClause(clauseDetails, scopedPattern.getKeyPattern(), true);
       case KEY_VALUE_PATTERN:
         return convertKeyValueClause(
             clauseDetails,
@@ -92,7 +94,8 @@ public class ScopedPatternConverter {
     }
   }
 
-  private Clause convertKeyClause(ClauseDetails clauseDetails, StringPattern keyPattern) {
+  private Clause convertKeyClause(
+      ClauseDetails clauseDetails, StringPattern keyPattern, boolean isLeaf) {
     MatchKey matchKeyType = clauseDetails.getKeyTypeOptional().orElseThrow(RuntimeException::new);
     MatchOperator matchOperator = getMatchOperator(keyPattern.getOperator());
     String matchValue = keyPattern.getValue();
@@ -100,7 +103,7 @@ public class ScopedPatternConverter {
     if (NESTED_MODSEC_KEY_TYPES.contains(matchKeyType)) {
       matchValue =
           KeyRegexConverters.transformNestedParamNameRegex(
-              matchValue, keyPattern.getOperator().equals(Operator.OPERATOR_MATCHES_REGEX), false);
+              matchValue, keyPattern.getOperator().equals(Operator.OPERATOR_MATCHES_REGEX), isLeaf);
       matchOperator = MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
     }
 
