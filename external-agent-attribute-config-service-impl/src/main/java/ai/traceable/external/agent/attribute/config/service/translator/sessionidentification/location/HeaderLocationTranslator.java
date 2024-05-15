@@ -84,6 +84,8 @@ public class HeaderLocationTranslator
     String value = matchCondition.getMatchValue().getStringValue();
     if (matchCondition.getOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX) {
       value = removeStartsWithIfPresent(value);
+    } else if (matchCondition.getOperator() == MatchOperator.MATCH_OPERATOR_CONTAINS) {
+      value = ".*" + value;
     }
     return MatchCondition.newBuilder(matchCondition)
         .setMatchValue(

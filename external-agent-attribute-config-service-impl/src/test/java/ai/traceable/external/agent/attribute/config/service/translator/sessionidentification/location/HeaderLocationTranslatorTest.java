@@ -43,6 +43,27 @@ class HeaderLocationTranslatorTest {
   }
 
   @Test
+  void testForContainsKey() throws IOException {
+
+    MatchCondition.Builder builder = MatchCondition.newBuilder();
+    PARSER.merge(
+        reader("session_identification/location/header/partial_input_for_contains_key.json"),
+        builder);
+    List<Projector> projectors =
+        translator.translateForRequest(builder.build(), AttributeRule.getDefaultInstance());
+    EachMatchingProjector.Builder eachMatchingProjector = EachMatchingProjector.newBuilder();
+    PARSER.merge(
+        reader("session_identification/location/header/partial_output_for_contains_key.json"),
+        eachMatchingProjector);
+
+    Assertions.assertEquals(
+        eachMatchingProjector.build().getAttributeRulesList().stream()
+            .map(AttributeRule::getProjector)
+            .collect(Collectors.toUnmodifiableList()),
+        projectors);
+  }
+
+  @Test
   void testForResponse() throws IOException {
     MatchCondition.Builder builder = MatchCondition.newBuilder();
     PARSER.merge(

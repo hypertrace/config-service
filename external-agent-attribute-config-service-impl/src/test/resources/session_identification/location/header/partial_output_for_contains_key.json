@@ -1,0 +1,25 @@
+{
+  "attributeRules": [{
+    "projector": {
+      "attributeProjector": {
+        "attributeRule": {
+        },
+        "attributeKeyPredicate": {
+          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+          "value": "http\\.request\\.header\\.\\.\\*auth1"
+        }
+      }
+    }
+  }, {
+    "projector": {
+      "attributeProjector": {
+        "attributeRule": {
+        },
+        "attributeKeyPredicate": {
+          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+          "value": "rpc\\.request\\.metadata\\.\\.\\*auth1"
+        }
+      }
+    }
+  }]
+}
