@@ -4,6 +4,7 @@ import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
 import ai.traceable.ast.config.service.v1.AstEnabledConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
+import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter.EnvironmentIdFilter;
 import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
@@ -105,7 +106,8 @@ class AstRulesManager implements RulesManager {
         if (request.getEnabledConfig().hasReplayConfig()) {
           AstReplayConfig astReplayConfigFromRequest = request.getEnabledConfig().getReplayConfig();
           AstReplayConfig updatedAstReplayConfig =
-              getUpdatedAstReplayConfig(astReplayConfigFromRequest);
+              getUpdatedAstReplayConfig(
+                  requestContext, astReplayConfigFromRequest, request.getEnvironmentId());
           astFeatureConfigBuilder.setEnabledConfig(
               AstEnabledConfig.newBuilder().setReplayConfig(updatedAstReplayConfig).build());
         } else {
@@ -161,7 +163,8 @@ class AstRulesManager implements RulesManager {
     }
   }
 
-  private AstReplayConfig getUpdatedAstReplayConfig(AstReplayConfig requestConfig) {
+  private AstReplayConfig getUpdatedAstReplayConfig(
+      RequestContext requestContext, AstReplayConfig requestConfig, String environmentId) {
     AstReplayConfig.Builder builder =
         AstReplayConfig.newBuilder()
             .setReplayEnabled(requestConfig.getReplayEnabled())
@@ -169,20 +172,49 @@ class AstRulesManager implements RulesManager {
 
     AstReplayConfig defaultConfig = config.getDefaultAstEnabledConfig().getReplayConfig();
 
+    Optional<AstReplayConfig> currentConfig =
+        this.getAstFeatureConfigs(
+                requestContext,
+                GetAstFeatureConfigsRequest.newBuilder()
+                    .setFilter(
+                        AstFeatureConfigFilter.newBuilder()
+                            .setEnvironmentIdFilter(
+                                EnvironmentIdFilter.newBuilder().addEnvironmentIds(environmentId))
+                            .build())
+                    .build())
+            .stream()
+            .findFirst()
+            .map(AstFeatureConfig::getEnabledConfig)
+            .map(AstEnabledConfig::getReplayConfig);
+
     if (requestConfig.hasApiInactivityDuration()) {
       builder.setApiInactivityDuration(requestConfig.getApiInactivityDuration());
+    } else if (currentConfig.isPresent() && currentConfig.get().hasApiInactivityDuration()) {
+      builder.setApiInactivityDuration(currentConfig.get().getApiInactivityDuration());
     } else {
       builder.setApiInactivityDuration(defaultConfig.getApiInactivityDuration());
     }
 
+    if (requestConfig.hasMaxApiLimit()) {
+      builder.setMaxApiLimit(requestConfig.getMaxApiLimit());
+    } else if (currentConfig.isPresent() && currentConfig.get().hasMaxApiLimit()) {
+      builder.setMaxApiLimit(currentConfig.get().getMaxApiLimit());
+    } else {
+      builder.setMaxApiLimit(defaultConfig.getMaxApiLimit());
+    }
+
     if (requestConfig.hasSkipNonLearntApis()) {
       builder.setSkipNonLearntApis(requestConfig.getSkipNonLearntApis());
+    } else if (currentConfig.isPresent() && currentConfig.get().hasSkipNonLearntApis()) {
+      builder.setSkipNonLearntApis(currentConfig.get().getSkipNonLearntApis());
     } else {
       builder.setSkipNonLearntApis(defaultConfig.getSkipNonLearntApis());
     }
 
     if (requestConfig.hasSkipUnderDiscoveryApis()) {
       builder.setSkipUnderDiscoveryApis(requestConfig.getSkipUnderDiscoveryApis());
+    } else if (currentConfig.isPresent() && currentConfig.get().hasSkipUnderDiscoveryApis()) {
+      builder.setSkipUnderDiscoveryApis(currentConfig.get().getSkipUnderDiscoveryApis());
     } else {
       builder.setSkipUnderDiscoveryApis(defaultConfig.getSkipUnderDiscoveryApis());
     }
