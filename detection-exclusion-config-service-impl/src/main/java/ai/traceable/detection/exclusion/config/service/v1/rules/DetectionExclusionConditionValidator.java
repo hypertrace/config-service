@@ -1,5 +1,7 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
+import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -319,6 +321,12 @@ public class DetectionExclusionConditionValidator {
         throwInvalidArgumentException(
             "Match condition value should be string or list of strings for regex matching");
       }
+      if (isInvalidMathematicalOperation(matchCondition)) {
+        throwInvalidArgumentException(
+            String.format(
+                "Numerical value should be present for match operator : %s",
+                matchCondition.getOperator()));
+      }
       if (value.hasStringValue()) {
         validateRegex(matchCondition.getValue().getStringValue());
       }
@@ -391,5 +399,11 @@ public class DetectionExclusionConditionValidator {
 
   private void throwInvalidArgumentException(String description) {
     throw Status.INVALID_ARGUMENT.withDescription(description).asRuntimeException();
+  }
+
+  private boolean isInvalidMathematicalOperation(MatchCondition matchCondition) {
+    return (matchCondition.getOperator().equals(MATCH_OPERATOR_GREATER_THAN)
+            || matchCondition.getOperator().equals(MATCH_OPERATOR_LESS_THAN))
+        && !matchCondition.getValue().hasNumberValue();
   }
 }
