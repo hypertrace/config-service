@@ -1,5 +1,10 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
+
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
@@ -211,11 +216,28 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule match expression should have a valid match operator.");
     }
-    if (matchExpression.getMatchOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
-        || matchExpression.getMatchOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+    if (matchExpression.getMatchKey().equals(MatchKey.MATCH_KEY_BODY_SIZE)
+        && !matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule match expression supports body size for only response");
+    }
+    if (isInvalidMathematicalOperation(matchExpression)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Custom Signature Rule match expression should have numerical value for match operator : %s",
+              matchExpression.getMatchOperator()));
+    }
+    if (matchExpression.getMatchOperator() == MATCH_OPERATOR_MATCHES_REGEX
+        || matchExpression.getMatchOperator() == MATCH_OPERATOR_NOT_MATCH_REGEX) {
       return validateRegex(matchExpression.getMatchValue());
     }
     return Status.OK;
+  }
+
+  private boolean isInvalidMathematicalOperation(MatchExpression matchExpression) {
+    return (matchExpression.getMatchOperator().equals(MATCH_OPERATOR_GREATER_THAN)
+            || matchExpression.getMatchOperator().equals(MATCH_OPERATOR_LESS_THAN))
+        && !isNumber(matchExpression.getMatchValue());
   }
 
   private Status validateKeyValueExpression(KeyValueExpression keyValueExpression) {
@@ -260,8 +282,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule expression should have a valid value match operator.");
     }
-    if (valueMatchOperator == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX
-        || valueMatchOperator == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+    if (valueMatchOperator == MATCH_OPERATOR_MATCHES_REGEX
+        || valueMatchOperator == MATCH_OPERATOR_NOT_MATCH_REGEX) {
       return validateRegex(matchValue);
     }
     return Status.OK;
@@ -321,6 +343,15 @@ class CustomSignatureRulesValidator implements RulesValidator {
       }
     } else {
       return Status.OK;
+    }
+  }
+
+  private boolean isNumber(String value) {
+    try {
+      Double.parseDouble(value);
+      return true;
+    } catch (Exception e) {
+      return false;
     }
   }
 }

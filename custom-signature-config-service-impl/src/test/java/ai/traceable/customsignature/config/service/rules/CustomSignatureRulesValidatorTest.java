@@ -493,6 +493,66 @@ public class CustomSignatureRulesValidatorTest {
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     assertTrue(status.getDescription().contains("Invalid Regex Value"));
 
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                            .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
+                                            .setMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(
+        status.getDescription().contains("match expression supports body size for only response"));
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                                            .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
+                                            .setMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+                                            .setMatchValue("value")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("numerical value for match operator"));
+
     // valid Cyrillic regex
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -514,6 +574,35 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchValue("(*UTF8)or\\p{Cyrillic}something")
                                             .setValueMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                                            .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
+                                            .setMatchOperator(
+                                                MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+                                            .setMatchValue("100.1")
                                             .build())
                                     .build())
                             .build())
