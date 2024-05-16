@@ -1240,6 +1240,47 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_RESPONSE_BODY_SIZE)
+                                    .setValueCondition(
+                                        StringCondition.newBuilder()
+                                            .setValue("value")
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_LESS_THAN)))))
+            .build();
+    CreateRateLimitingRuleRequest request6 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request6, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(Type.TYPE_RESPONSE_BODY_SIZE)
+                                    .setValueCondition(
+                                        StringCondition.newBuilder()
+                                            .setValue("1000")
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_LESS_THAN)))))
+            .build();
+    CreateRateLimitingRuleRequest request7 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request7, List.of()));
   }
 
   @Test

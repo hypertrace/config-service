@@ -5,6 +5,7 @@ import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Matc
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HOST;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HTTP_METHOD;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_BODY_SIZE;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_URL;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_USER_AGENT;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
@@ -38,7 +39,13 @@ import java.util.List;
 
 public class ValidatorUtils {
   private static List<KeyValueCondition.Type> KEY_NULL_CONDITION_TYPES =
-      List.of(TYPE_URL, TYPE_HOST, TYPE_HTTP_METHOD, TYPE_USER_AGENT, TYPE_REQUEST_BODY);
+      List.of(
+          TYPE_URL,
+          TYPE_HOST,
+          TYPE_HTTP_METHOD,
+          TYPE_USER_AGENT,
+          TYPE_REQUEST_BODY,
+          TYPE_RESPONSE_BODY_SIZE);
 
   public void validateLeafCondition(LeafCondition leafCondition) {
     switch (leafCondition.getConditionCase()) {
@@ -234,11 +241,28 @@ public class ValidatorUtils {
         stringCondition, KeyValueCondition.StringCondition.OPERATOR_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         stringCondition, KeyValueCondition.StringCondition.VALUE_FIELD_NUMBER);
+    if (isInvalidMathematicalOperation(stringCondition)) {
+      throwInvalidArgumentException(
+          String.format(
+              "Numerical value should be present for match operator : %s",
+              stringCondition.getOperator()));
+    }
     if (stringCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
         || stringCondition.getOperator()
             == KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
       validateRegex(stringCondition.getValue());
     }
+  }
+
+  private boolean isInvalidMathematicalOperation(
+      KeyValueCondition.StringCondition stringCondition) {
+    return (stringCondition
+                .getOperator()
+                .equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+            || stringCondition
+                .getOperator()
+                .equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_LESS_THAN))
+        && !isNumber(stringCondition.getValue());
   }
 
   private void validateScopeCondition(ScopeCondition scopeCondition) {
@@ -394,5 +418,14 @@ public class ValidatorUtils {
   private void validateIpAbuseVelocityCondition(IpAbuseVelocityCondition ipAbuseVelocityCondition) {
     validateNonDefaultPresenceOrThrow(
         ipAbuseVelocityCondition, IpAbuseVelocityCondition.MIN_IP_ABUSE_VELOCITY_FIELD_NUMBER);
+  }
+
+  private boolean isNumber(String value) {
+    try {
+      Double.parseDouble(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }
