@@ -73,7 +73,7 @@ public class CredentialStuffingDetectionConfigHandler {
               if (configCaseMap.containsKey(configCase)) {
                 AnomalyDetectionConfig mergedDetectionConfig =
                     (AnomalyDetectionConfig)
-                        mergeConfigs(configCaseMap.get(configCase), detectionConfig);
+                        mergeConfigs(detectionConfig, configCaseMap.get(configCase));
                 configCaseMap.put(configCase, mergedDetectionConfig);
               } else {
                 configCaseMap.put(configCase, detectionConfig);
