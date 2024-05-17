@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:3.0.41=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.297=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.300=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath
@@ -214,7 +214,6 @@ org.apache.httpcomponents:httpcore:4.4.16=runtimeClasspath,testRuntimeClasspath
 org.apache.kafka:kafka-clients:7.5.2-ccs=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-api:2.20.0=runtimeClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-core:2.20.0=runtimeClasspath,testRuntimeClasspath
-org.apache.logging.log4j:log4j-slf4j-impl:2.19.0=runtimeClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0=runtimeClasspath,testRuntimeClasspath
 org.apache.yetus:audience-annotations:0.12.0=runtimeClasspath,testRuntimeClasspath
 org.apache.zookeeper:zookeeper-jute:3.8.4=runtimeClasspath,testRuntimeClasspath
@@ -245,10 +244,10 @@ org.hypertrace.core.grpcutils:grpc-context-utils:0.13.2=runtimeClasspath,testRun
 org.hypertrace.core.grpcutils:grpc-server-rx-utils:0.13.1=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-server-utils:0.13.2=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.10=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.serviceframework:platform-grpc-service-framework:0.1.71=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.serviceframework:platform-metrics:0.1.71=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.core.serviceframework:platform-service-framework:0.1.71=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.serviceframework:service-framework-spi:0.1.71=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:platform-grpc-service-framework:0.1.72=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:platform-metrics:0.1.72=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:platform-service-framework:0.1.72=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:service-framework-spi:0.1.72=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:raw-span-constants:2.0.4=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:2.0.4=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:2.0.4=runtimeClasspath,testRuntimeClasspath
