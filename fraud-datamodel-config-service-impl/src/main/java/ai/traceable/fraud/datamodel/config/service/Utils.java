@@ -16,17 +16,17 @@ public abstract class Utils {
       case RELATIONSHIP_TYPE:
         return ObjectTypeReference.newBuilder()
             .setObjectKind(ObjectKind.OBJECT_KIND_RELATIONSHIP)
-            .setId(objectType.getEntityType().getId())
+            .setId(objectType.getRelationshipType().getId())
             .build();
       case EVENT_TYPE:
         return ObjectTypeReference.newBuilder()
             .setObjectKind(ObjectKind.OBJECT_KIND_EVENT)
-            .setId(objectType.getEntityType().getId())
+            .setId(objectType.getEventType().getId())
             .build();
       case METRIC_TYPE:
         return ObjectTypeReference.newBuilder()
             .setObjectKind(ObjectKind.OBJECT_KIND_METRIC)
-            .setId(objectType.getEntityType().getId())
+            .setId(objectType.getMetricType().getId())
             .build();
     }
     throw Status.INVALID_ARGUMENT.asRuntimeException();
