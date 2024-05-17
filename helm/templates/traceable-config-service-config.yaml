@@ -345,6 +345,11 @@ data:
       vulnerabilityTrainingConfigs = {{ .Values.defaultVulnerabilityTrainingConfigs | nindent 6 }}
       {{- end }}
     }
+    detector.config.service = {
+      {{- if .Values.defaultModsecDetectionConfigs }}
+      modsecDetectionConfigs = {{ .Values.defaultModsecDetectionConfigs | nindent 6 }}
+      {{- end }}
+    }
 
   risk.conf: |-
     {{- if hasKey .Values "riskConfigServiceConfig" }}
