@@ -7,14 +7,18 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
+@Singleton
 public class LicenseInfoLoader {
 
   private final Duration callTimeout;
@@ -36,11 +40,18 @@ public class LicenseInfoLoader {
         CacheBuilder.newBuilder()
             .expireAfterWrite(config.getCacheExpiryDuration())
             .maximumSize(config.getCacheMaxSize())
+            .recordStats()
             .build(CacheLoader.from(this::loadLicenseInfo));
+
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        this.getClass().getName() + ".licenseTierCache",
+        licenseTierCache,
+        Collections.emptyMap(),
+        config.getCacheMaxSize());
   }
 
   public LicenseInfo.Tier getLicenseTier(RequestContext requestContext) throws ExecutionException {
-    return licenseTierCache.get(requestContext.buildContextualKey());
+    return licenseTierCache.get(requestContext.buildInternalContextualKey());
   }
 
   private LicenseInfo.Tier loadLicenseInfo(ContextualKey<Void> contextKey) {

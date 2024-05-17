@@ -24,6 +24,7 @@ dependencies {
 
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.framework.metrics)
   // https://traceableai.atlassian.net/browse/ENG-10685
   // anomaly-config-service should be carved out soon to avoid chances of dependency loop..
   implementation(commonLibs.traceable.licensemetering.api)

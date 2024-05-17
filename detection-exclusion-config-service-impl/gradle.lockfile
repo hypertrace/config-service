@@ -1,12 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.294=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:api-attribute-override-service-api:0.36.28=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:data-classification-config-service-api:0.36.28=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:iprange-config-service-api:0.36.28=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.36.28=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:rate-limiting-config-service-api:0.36.28=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.297=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:api-attribute-override-service-api:0.36.33=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:data-classification-config-service-api:0.36.33=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:iprange-config-service-api:0.36.33=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.36.33=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:rate-limiting-config-service-api:0.36.33=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath

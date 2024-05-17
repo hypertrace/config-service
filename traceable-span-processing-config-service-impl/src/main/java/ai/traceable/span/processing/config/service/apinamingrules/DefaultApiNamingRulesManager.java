@@ -2,7 +2,6 @@ package ai.traceable.span.processing.config.service.apinamingrules;
 
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 import static java.util.stream.Stream.empty;
 
 import ai.traceable.config.utils.TimestampConverter;
@@ -268,7 +267,8 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
                                                   .getApiSpecIdsList()
                                                   .stream(),
                                               apiSpecBasedConfig.getApiSpecIdsList().stream())
-                                          .collect(toUnmodifiableSet()))
+                                          .distinct()
+                                          .collect(toUnmodifiableList()))
                                   .addAllRegexes(apiSpecBasedConfig.getRegexesList())
                                   .addAllValues(apiSpecBasedConfig.getValuesList())
                                   .build())
