@@ -40,6 +40,7 @@ dependencies {
   implementation(projects.reportingConfigServiceImpl)
   implementation(projects.apiSpecConfigServiceImpl)
   implementation(projects.maliciousSourcesConfigServiceImpl)
+  implementation(projects.dataProtectionConfigServiceImpl)
   implementation(projects.authDetectionConfigServiceImpl)
   implementation(projects.jwtExtractionConfigServiceImpl)
   implementation(projects.astScanProfileConfigServiceImpl)

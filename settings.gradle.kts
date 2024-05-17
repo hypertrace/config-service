@@ -22,7 +22,7 @@ rootProject.name = "traceable-config-service-root"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 configure<DependencyPluginSettingExtension> {
-  catalogVersion.set("0.3.215")
+  catalogVersion.set("0.3.283")
 }
 
 includeBuild("./hypertrace-config-service")
@@ -129,6 +129,7 @@ include(":runner-logs-config-service-api")
 include(":runner-logs-config-service-impl")
 include(":data-classification-client")
 include(":data-protection-config-service-api")
+include(":data-protection-config-service-impl")
 include(":fraud-datamodel-config-service-api")
 include(":fraud-datamodel-config-service-impl")
 include(":fraud-datamodel-derivation-config-service-api")
