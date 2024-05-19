@@ -6,7 +6,7 @@
         },
         "attributeKeyPredicate": {
           "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-          "value": "http\\.request\\.header\\.\\.\\*auth1"
+          "value": "http\\.request\\.header\\..*auth1\\*"
         }
       }
     }
@@ -17,7 +17,7 @@
         },
         "attributeKeyPredicate": {
           "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-          "value": "rpc\\.request\\.metadata\\.\\.\\*auth1"
+          "value": "rpc\\.request\\.metadata\\..*auth1\\*"
         }
       }
     }

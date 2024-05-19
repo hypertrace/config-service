@@ -9,7 +9,6 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.AttributeProjector;
 import ai.traceable.sessionidentification.config.service.v1.LiteralValue;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
-import ai.traceable.sessionidentification.config.service.v1.MatchOperator;
 import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
@@ -72,25 +71,43 @@ public class HeaderLocationTranslator
         .setAttributeProjector(
             AttributeProjector.newBuilder()
                 .setAttributeKeyPredicate(
-                    matchConditionTranslator.translate(addLocation(matchCondition, location)))
+                    addLocation(
+                        matchCondition,
+                        matchConditionTranslator.translate(matchCondition),
+                        location))
                 .setAttributeRule(attributeValue))
         .build();
   }
 
-  private MatchCondition addLocation(MatchCondition matchCondition, String location) {
+  private Projector.ConditionalProjector.Predicate.StringPredicate addLocation(
+      MatchCondition matchCondition,
+      Projector.ConditionalProjector.Predicate.StringPredicate predicate,
+      String location) {
     if (matchCondition.getMatchValue().getValueCase() != LiteralValue.ValueCase.STRING_VALUE) {
-      return matchCondition;
+      return predicate;
     }
-    String value = matchCondition.getMatchValue().getStringValue();
-    if (matchCondition.getOperator() == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX) {
-      value = removeStartsWithIfPresent(value);
-    } else if (matchCondition.getOperator() == MatchOperator.MATCH_OPERATOR_CONTAINS) {
-      value = ".*" + value;
+    String escapedRegexLocation =
+        this.escapeRegex(location.substring(0, location.indexOf("%s"))) + "%s";
+    Projector.ConditionalProjector.Predicate.StringPredicate.Builder modifiedPredicate =
+        predicate.toBuilder();
+    switch (matchCondition.getOperator()) {
+      case MATCH_OPERATOR_MATCHES_REGEX:
+        return modifiedPredicate
+            .setValue(
+                String.format(
+                    escapedRegexLocation, removeStartsWithIfPresent(predicate.getValue())))
+            .build();
+      case MATCH_OPERATOR_CONTAINS:
+        return modifiedPredicate
+            .setValue(String.format(escapedRegexLocation, ".*" + predicate.getValue()))
+            .build();
+      case MATCH_OPERATOR_STARTS_WITH:
+        return modifiedPredicate
+            .setValue(String.format(escapedRegexLocation, predicate.getValue()))
+            .build();
+      default:
+        return modifiedPredicate.setValue(String.format(location, predicate.getValue())).build();
     }
-    return MatchCondition.newBuilder(matchCondition)
-        .setMatchValue(
-            LiteralValue.newBuilder().setStringValue(String.format(location, value)).build())
-        .build();
   }
 
   private String removeStartsWithIfPresent(String value) {
@@ -99,5 +116,9 @@ public class HeaderLocationTranslator
       return value.substring(1);
     }
     return value;
+  }
+
+  private String escapeRegex(String value) {
+    return value.replaceAll("\\W", "\\\\$0");
   }
 }

@@ -1,6 +1,6 @@
 {
   "operator": "MATCH_OPERATOR_CONTAINS",
   "matchValue": {
-    "stringValue": "auth1"
+    "stringValue": "auth1*"
   }
 }
