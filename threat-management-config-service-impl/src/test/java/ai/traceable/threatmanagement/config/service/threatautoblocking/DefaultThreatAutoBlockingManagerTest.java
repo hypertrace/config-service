@@ -3,6 +3,7 @@ package ai.traceable.threatmanagement.config.service.threatautoblocking;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -193,6 +194,7 @@ class DefaultThreatAutoBlockingManagerTest {
             UpsertConfigResponse.newBuilder()
                 .setConfig(THREAT_AUTO_BLOCKING_ACTION_CONFIG_2_VALUE)
                 .build());
+    when(configServiceStub.getConfig(any())).thenReturn(GetConfigResponse.getDefaultInstance());
 
     UpdateThreatAutoBlockingConfigRequest updateThreatAutoBlockingConfigRequest =
         UpdateThreatAutoBlockingConfigRequest.newBuilder()

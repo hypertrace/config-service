@@ -46,8 +46,24 @@ class DefaultThreatAutoBlockingManager
   @Override
   public ThreatAutoBlockingActionConfig upsertThreatAutoBlockingAction(
       RequestContext requestContext, UpdateThreatAutoBlockingConfigRequest request) {
-    return upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request))
-        .getData();
+    ThreatAutoBlockingActionConfig existingConfig = getThreatAutoBlockingAction(requestContext);
+    ThreatAutoBlockingActionConfig upsertedConfig =
+        upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request))
+            .getData();
+    if (!existingConfig.getActionType().equals(upsertedConfig.getActionType())) {
+      String status =
+          upsertedConfig
+                  .getActionType()
+                  .equals(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+              ? "ENABLED"
+              : "DISABLED";
+      log.info(
+          "Threat AUTO-BLOCKING has been {} by user-email:{} in tenant:{}",
+          status,
+          requestContext.getEmail().orElse("UNKNOWN"),
+          requestContext.getTenantId().get());
+    }
+    return upsertedConfig;
   }
 
   private ThreatAutoBlockingActionConfig getDefaultThreatAutoBlockingActionConfig() {
