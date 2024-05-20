@@ -20,6 +20,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  implementation(commonLibs.hypertrace.framework.metrics)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

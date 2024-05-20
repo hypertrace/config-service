@@ -8,6 +8,7 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionT
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.Map;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -15,11 +16,17 @@ import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 class DefaultThreatAutoBlockingManager
     extends ContextuallyIdentifiedObjectStore<ThreatAutoBlockingActionConfig>
     implements ThreatAutoBlockingManager {
+
+  private static final String THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE =
+      "config.threat.autoblocking.action.gauge";
+  private static final String TENANT_ID_TAG = "tenantId";
+
   private final ThreatAutoBlockingActionConfigConverter threatAutoBlockingActionConfigConverter;
   private final ThreatAutoBlockingConverter threatAutoBlockingConverter;
 
@@ -50,18 +57,23 @@ class DefaultThreatAutoBlockingManager
     ThreatAutoBlockingActionConfig upsertedConfig =
         upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request))
             .getData();
+
     if (!existingConfig.getActionType().equals(upsertedConfig.getActionType())) {
-      String status =
+      String tenantId = requestContext.getTenantId().get();
+      boolean enabled =
           upsertedConfig
-                  .getActionType()
-                  .equals(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
-              ? "ENABLED"
-              : "DISABLED";
+              .getActionType()
+              .equals(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK);
       log.info(
           "Threat AUTO-BLOCKING has been {} by user-email:{} in tenant:{}",
-          status,
+          enabled ? "ENABLED" : "DISABLED",
           requestContext.getEmail().orElse("UNKNOWN"),
-          requestContext.getTenantId().get());
+          tenantId);
+      // register +1 for enabled action and -1 for disabled action
+      PlatformMetricsRegistry.registerGauge(
+          THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE,
+          Map.of(TENANT_ID_TAG, tenantId),
+          enabled ? 1 : -1);
     }
     return upsertedConfig;
   }
