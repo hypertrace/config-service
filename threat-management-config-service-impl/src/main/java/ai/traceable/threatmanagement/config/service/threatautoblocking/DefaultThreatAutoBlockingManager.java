@@ -10,6 +10,8 @@ import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
@@ -26,6 +28,7 @@ class DefaultThreatAutoBlockingManager
   private static final String THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE =
       "config.threat.autoblocking.action.gauge";
   private static final String TENANT_ID_TAG = "tenantId";
+  private static final Map<String, AtomicInteger> GAUGE_MAP = new ConcurrentHashMap<>();
 
   private final ThreatAutoBlockingActionConfigConverter threatAutoBlockingActionConfigConverter;
   private final ThreatAutoBlockingConverter threatAutoBlockingConverter;
@@ -69,11 +72,7 @@ class DefaultThreatAutoBlockingManager
           enabled ? "ENABLED" : "DISABLED",
           requestContext.getEmail().orElse("UNKNOWN"),
           tenantId);
-      // register +1 for enabled action and -1 for disabled action
-      PlatformMetricsRegistry.registerGauge(
-          THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE,
-          Map.of(TENANT_ID_TAG, tenantId),
-          enabled ? 1 : -1);
+      setGaugeMetric(tenantId, enabled);
     }
     return upsertedConfig;
   }
@@ -104,5 +103,18 @@ class DefaultThreatAutoBlockingManager
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get config id from request context"));
+  }
+
+  private void setGaugeMetric(String tenantId, boolean enabled) {
+    AtomicInteger gaugeValue =
+        GAUGE_MAP.computeIfAbsent(
+            tenantId,
+            id ->
+                PlatformMetricsRegistry.registerGauge(
+                    THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE,
+                    Map.of(TENANT_ID_TAG, tenantId),
+                    new AtomicInteger(0)));
+    // register +1 for enabled action and -1 for disabled action
+    gaugeValue.set(enabled ? 1 : -1);
   }
 }
