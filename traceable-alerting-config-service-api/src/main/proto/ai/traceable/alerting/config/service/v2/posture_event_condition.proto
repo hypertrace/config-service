@@ -16,6 +16,10 @@ message PostureEventType {
     SensitiveDataSharedWithThirdParty sensitive_data_shared_with_third_party = 4;
     ServiceDiscovery service_discovery = 5;
     VulnerabilityDiscovery vulnerability_discovery = 6;
+    BackendDiscovery backend_discovery = 7;
+    ThirdPartyApiDiscovery third_party_api_discovery = 8;
+    DomainDiscovery domain_discovery = 9;
+    ThirdPartyDiscovery third_party_discovery = 10;
   }
 }
 
@@ -43,4 +47,16 @@ enum RiskDelta {
   RISK_DELTA_UNSPECIFIED = 0;
   RISK_DELTA_INCREASE = 1;
   RISK_DELTA_DECREASE = 2;
+}
+
+message BackendDiscovery {
+}
+
+message ThirdPartyDiscovery {
+}
+
+message ThirdPartyApiDiscovery {
+}
+
+message DomainDiscovery {
 }
