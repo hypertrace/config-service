@@ -1,0 +1,25 @@
+{{- if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/PrometheusRule" }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: traceable-config-service-prometheus-rule
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    monitoring: shared
+    app: {{ .Values.service.name }}
+spec:
+  groups:
+    - name: traceable-config-service
+      rules:
+        - alert: ThreatAutoBlockingConfigurationChange
+          annotations:
+            summary: 'Threat Auto Blocking Configuration Change'
+            message: 'Threat Auto Blocking Configuration changed to {{`{{ $labels.operation}}`}} for customer:{{`{{ $labels.tenantId }}`}}'
+          expr: sum(config_threat_autoblocking_action_timer_seconds_max) by (tenantId, operation) > 0
+          for: 0m
+          labels:
+            severity: critical
+            productgroup: security-detection
+  {{- end }}
