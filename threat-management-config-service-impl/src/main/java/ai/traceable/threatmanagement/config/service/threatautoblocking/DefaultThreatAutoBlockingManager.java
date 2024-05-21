@@ -8,10 +8,13 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionT
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
@@ -32,7 +35,7 @@ class DefaultThreatAutoBlockingManager
   private static final String ENABLED_TAG_VALUE = "enabled";
   private static final String DISABLED_TAG_VALUE = "disabled";
   private static final String DEFAULT_UPDATED_TAG_VALUE = "updated";
-  private static final Map<String, Timer> TIMER_MAP = new ConcurrentHashMap<>();
+  private static final Map<Tags, Timer> TIMER_MAP = new ConcurrentHashMap<>();
 
   private final ThreatAutoBlockingActionConfigConverter threatAutoBlockingActionConfigConverter;
   private final ThreatAutoBlockingConverter threatAutoBlockingConverter;
@@ -74,13 +77,7 @@ class DefaultThreatAutoBlockingManager
       operation = DEFAULT_UPDATED_TAG_VALUE;
     }
 
-    return TIMER_MAP
-        .computeIfAbsent(
-            tenantId,
-            id ->
-                PlatformMetricsRegistry.registerTimer(
-                    THREAT_AUTO_BLOCKING_ACTION_CONFIG_TIMER,
-                    Map.of(TENANT_ID_TAG, tenantId, OPERATION_TAG, operation)))
+    return getTimer(tenantId, operation)
         .record(
             () -> {
               ThreatAutoBlockingActionConfig upsertedConfig =
@@ -122,5 +119,15 @@ class DefaultThreatAutoBlockingManager
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get config id from request context"));
+  }
+
+  private Timer getTimer(String tenantId, String operation) {
+    Tags metricTags = Tags.of(TENANT_ID_TAG, tenantId, OPERATION_TAG, operation);
+    return TIMER_MAP.computeIfAbsent(
+        metricTags,
+        id ->
+            PlatformMetricsRegistry.registerTimer(
+                THREAT_AUTO_BLOCKING_ACTION_CONFIG_TIMER,
+                metricTags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue))));
   }
 }
