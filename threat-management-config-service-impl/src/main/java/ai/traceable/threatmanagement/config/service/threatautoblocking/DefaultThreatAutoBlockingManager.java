@@ -8,10 +8,10 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionT
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import io.micrometer.core.instrument.Timer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
@@ -25,10 +25,14 @@ class DefaultThreatAutoBlockingManager
     extends ContextuallyIdentifiedObjectStore<ThreatAutoBlockingActionConfig>
     implements ThreatAutoBlockingManager {
 
-  private static final String THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE =
-      "config.threat.autoblocking.action.gauge";
+  private static final String THREAT_AUTO_BLOCKING_ACTION_CONFIG_TIMER =
+      "config.threat.autoblocking.action.timer";
   private static final String TENANT_ID_TAG = "tenantId";
-  private static final Map<String, AtomicInteger> GAUGE_MAP = new ConcurrentHashMap<>();
+  private static final String OPERATION_TAG = "operation";
+  private static final String ENABLED_TAG_VALUE = "enabled";
+  private static final String DISABLED_TAG_VALUE = "disabled";
+  private static final String DEFAULT_UPDATED_TAG_VALUE = "updated";
+  private static final Map<String, Timer> TIMER_MAP = new ConcurrentHashMap<>();
 
   private final ThreatAutoBlockingActionConfigConverter threatAutoBlockingActionConfigConverter;
   private final ThreatAutoBlockingConverter threatAutoBlockingConverter;
@@ -57,24 +61,39 @@ class DefaultThreatAutoBlockingManager
   public ThreatAutoBlockingActionConfig upsertThreatAutoBlockingAction(
       RequestContext requestContext, UpdateThreatAutoBlockingConfigRequest request) {
     ThreatAutoBlockingActionConfig existingConfig = getThreatAutoBlockingAction(requestContext);
-    ThreatAutoBlockingActionConfig upsertedConfig =
-        upsertObject(requestContext, threatAutoBlockingActionConfigConverter.convert(request))
-            .getData();
+    String tenantId = requestContext.getTenantId().get();
 
-    if (!existingConfig.getActionType().equals(upsertedConfig.getActionType())) {
-      String tenantId = requestContext.getTenantId().get();
-      boolean enabled =
-          upsertedConfig
-              .getActionType()
-              .equals(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK);
-      log.info(
-          "Threat AUTO-BLOCKING has been {} by user-email:{} in tenant:{}",
-          enabled ? "ENABLED" : "DISABLED",
-          requestContext.getEmail().orElse("UNKNOWN"),
-          tenantId);
-      setGaugeMetric(tenantId, enabled);
+    String operation;
+    if (!existingConfig.getActionType().equals(request.getActionType())) {
+      operation =
+          ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK.equals(
+                  request.getActionType())
+              ? ENABLED_TAG_VALUE
+              : DISABLED_TAG_VALUE;
+    } else {
+      operation = DEFAULT_UPDATED_TAG_VALUE;
     }
-    return upsertedConfig;
+
+    return TIMER_MAP
+        .computeIfAbsent(
+            tenantId,
+            id ->
+                PlatformMetricsRegistry.registerTimer(
+                    THREAT_AUTO_BLOCKING_ACTION_CONFIG_TIMER,
+                    Map.of(TENANT_ID_TAG, tenantId, OPERATION_TAG, operation)))
+        .record(
+            () -> {
+              ThreatAutoBlockingActionConfig upsertedConfig =
+                  upsertObject(
+                          requestContext, threatAutoBlockingActionConfigConverter.convert(request))
+                      .getData();
+              log.info(
+                  "Threat AUTO-BLOCKING has been {} by user-email:{} in tenant:{}",
+                  operation,
+                  requestContext.getEmail().orElse("UNKNOWN"),
+                  tenantId);
+              return upsertedConfig;
+            });
   }
 
   private ThreatAutoBlockingActionConfig getDefaultThreatAutoBlockingActionConfig() {
@@ -103,18 +122,5 @@ class DefaultThreatAutoBlockingManager
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get config id from request context"));
-  }
-
-  private void setGaugeMetric(String tenantId, boolean enabled) {
-    AtomicInteger gaugeValue =
-        GAUGE_MAP.computeIfAbsent(
-            tenantId,
-            id ->
-                PlatformMetricsRegistry.registerGauge(
-                    THREAT_AUTO_BLOCKING_ACTION_CONFIG_GAUGE,
-                    Map.of(TENANT_ID_TAG, tenantId),
-                    new AtomicInteger(0)));
-    // register +1 for enabled action and -1 for disabled action
-    gaugeValue.set(enabled ? 1 : -1);
   }
 }
