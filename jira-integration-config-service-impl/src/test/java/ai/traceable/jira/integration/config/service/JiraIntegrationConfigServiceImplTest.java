@@ -181,12 +181,21 @@ class JiraIntegrationConfigServiceImplTest {
         StatusRuntimeException.class,
         () -> stub.createJiraIntegration(createJiraIntegrationRequest2));
 
-    // this creation request should succeed - there is no overlap with environments of an existing
-    // integration
+    // this creation request shouldn't still succeed - there is no overlap with environments of an
+    // existing
+    // integration but the name of the integration already exists
     CreateJiraIntegrationRequest createJiraIntegrationRequest3 =
         dummyCreateJiraIntegrationRequest(1, "env2", "env3");
-    JiraIntegration expectedJiraIntegration = dummyJiraIntegration(1, "env2", "env3");
-    assertDoesNotThrow(() -> stub.createJiraIntegration(createJiraIntegrationRequest3));
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> stub.createJiraIntegration(createJiraIntegrationRequest3));
+
+    // this creation request should succeed - there is no overlap with environments of an existing
+    // integration and the name is unique
+    CreateJiraIntegrationRequest createJiraIntegrationRequest4 =
+        dummyCreateJiraIntegrationRequest(2, "env2", "env3");
+    JiraIntegration expectedJiraIntegration = dummyJiraIntegration(2, "env2", "env3");
+    assertDoesNotThrow(() -> stub.createJiraIntegration(createJiraIntegrationRequest4));
     assertEquals(
         expectedJiraIntegration.toBuilder().clearId().build(),
         jiraIntegrationStore

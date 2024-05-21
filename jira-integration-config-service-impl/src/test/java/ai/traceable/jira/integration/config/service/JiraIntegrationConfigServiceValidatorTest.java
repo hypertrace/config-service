@@ -60,6 +60,8 @@ class JiraIntegrationConfigServiceValidatorTest {
         StatusRuntimeException.class,
         () -> validator.validateCreateJiraIntegration(createRequest1, requestContext2));
 
+    when(jiraIntegrationStore.getAllConfigData(requestContext2)).thenReturn(List.of());
+
     // should pass with all required fields declared
     CreateJiraIntegrationRequest createRequest2 =
         minimalCreateJiraIntegrationRequest(createJiraIntegrationRequest);
@@ -130,6 +132,13 @@ class JiraIntegrationConfigServiceValidatorTest {
     Assertions.assertThrows(
         StatusRuntimeException.class,
         () -> validator.validateCreateJiraIntegration(createRequest7, requestContext2));
+
+    // should fail due to non unique naming of integration
+    when(jiraIntegrationStore.getAllConfigData(requestContext2))
+        .thenReturn(List.of(JiraIntegration.newBuilder().setName(TEXT).build()));
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateCreateJiraIntegration(createRequest6, requestContext2));
   }
 
   private CreateJiraIntegrationRequest minimalCreateJiraIntegrationRequest(
@@ -199,13 +208,44 @@ class JiraIntegrationConfigServiceValidatorTest {
             validator.validateUpdateJiraIntegration(
                 updateJiraIntegrationRequest1, requestContext1));
 
-    // should pass with integrationId and any one of name, description, update-scope present
+    when(jiraIntegrationStore.getAllConfigData(
+            requestContext1,
+            JiraIntegrationFilter.newBuilder()
+                .setFilterScope(
+                    Scope.newBuilder().setEnvironmentIds(StringList.newBuilder().addValues(TEXT)))
+                .build()))
+        .thenReturn(
+            List.of(
+                JiraIntegration.newBuilder()
+                    .setId(updateJiraIntegrationRequest1.getJiraIntegrationId())
+                    .setName(TEXT)
+                    .build()));
+
+    // should pass with integrationId and any one of name, update-scope present
     UpdateJiraIntegrationRequest updateJiraIntegrationRequest2 =
         updateJiraIntegrationRequest1.toBuilder()
             .setName(TEXT)
             .setScope(Scope.newBuilder().setEnvironmentIds(StringList.newBuilder().addValues(TEXT)))
             .build();
+    when(jiraIntegrationStore.getAllConfigData(requestContext1))
+        .thenReturn(
+            List.of(
+                JiraIntegration.newBuilder()
+                    .setId(updateJiraIntegrationRequest2.getJiraIntegrationId())
+                    .setName(TEXT)
+                    .build()));
     Assertions.assertDoesNotThrow(
+        () ->
+            validator.validateUpdateJiraIntegration(
+                updateJiraIntegrationRequest2, requestContext1));
+
+    // will fail because the name in update request already exists
+    when(jiraIntegrationStore.getAllConfigData(requestContext1))
+        .thenReturn(
+            List.of(
+                JiraIntegration.newBuilder().setId("otherIntegrationId").setName(TEXT).build()));
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
         () ->
             validator.validateUpdateJiraIntegration(
                 updateJiraIntegrationRequest2, requestContext1));

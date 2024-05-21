@@ -15,6 +15,7 @@ import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +39,7 @@ public class JiraIntegrationConfigServiceValidator {
           request, CreateJiraIntegrationRequest.CONSUMER_KEY_FIELD_NUMBER);
       validateEncryptedDataOrThrow(request.getEncryptedAccessToken());
     }
+    validateUniqueNameOrThrow(requestContext, request.getName());
     if (request.hasScope()) {
       validateScopeForMutationOrThrow(request.getScope(), requestContext, Collections.emptySet());
     } else {
@@ -142,6 +144,7 @@ public class JiraIntegrationConfigServiceValidator {
     } else {
       validateUnscopedForMutationOrThrow(requestContext, Set.of(request.getJiraIntegrationId()));
     }
+    validateUniqueNameOrThrow(requestContext, request.getName(), request.getJiraIntegrationId());
   }
 
   public void validateDeleteJiraIntegration(
@@ -149,5 +152,27 @@ public class JiraIntegrationConfigServiceValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(
         request, DeleteJiraIntegrationRequest.JIRA_INTEGRATION_ID_FIELD_NUMBER);
+  }
+
+  private void validateUniqueNameOrThrow(RequestContext requestContext, String name) {
+    if (jiraIntegrationStore.getAllConfigData(requestContext).stream()
+        .anyMatch(integration -> integration.getName().equals(name))) {
+      throw getDuplicateNameStatusRuntimeException();
+    }
+  }
+
+  private void validateUniqueNameOrThrow(
+      RequestContext requestContext, String name, String jiraIntegrationId) {
+    if (jiraIntegrationStore.getAllConfigData(requestContext).stream()
+        .filter(integration -> !jiraIntegrationId.equals(integration.getId()))
+        .anyMatch(integration -> integration.getName().equals(name))) {
+      throw getDuplicateNameStatusRuntimeException();
+    }
+  }
+
+  private StatusRuntimeException getDuplicateNameStatusRuntimeException() {
+    return Status.INVALID_ARGUMENT
+        .withDescription("Already an existing jira integration with the same name")
+        .asRuntimeException();
   }
 }
