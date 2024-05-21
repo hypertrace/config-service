@@ -20,6 +20,7 @@ import ai.traceable.integration.config.service.wiz.v1.WizIntegrationPreferences;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationSummary;
 import ai.traceable.integration.config.service.wiz.v1.WizIssuePullConfiguration;
 import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigRequestValidator;
+import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigServiceStateValidator;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -33,6 +34,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigServiceImplBase {
 
   private final WizIntegrationConfigRequestValidator requestValidator;
+  private final WizIntegrationConfigServiceStateValidator serviceStateValidator;
   private final WizIntegrationConfigStore wizIntegrationConfigStore;
   private final UuidGenerator uuidGenerator;
 
@@ -43,6 +45,8 @@ public class WizIntegrationConfigServiceImpl extends WizIntegrationConfigService
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       requestValidator.validateOrThrow(requestContext, request);
+      serviceStateValidator.validateNoExistingWizIntegration(requestContext);
+
       final WizIntegration wizIntegration =
           WizIntegration.newBuilder()
               .setId(uuidGenerator.generateRandomId())

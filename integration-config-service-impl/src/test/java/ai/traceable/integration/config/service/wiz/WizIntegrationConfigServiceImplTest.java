@@ -1,8 +1,8 @@
 package ai.traceable.integration.config.service.wiz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -21,6 +21,7 @@ import ai.traceable.integration.config.service.wiz.v1.WizIntegrationPreferences;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationSummary;
 import ai.traceable.integration.config.service.wiz.v1.WizIssuePullConfiguration;
 import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigRequestValidator;
+import ai.traceable.integration.config.service.wiz.validation.WizIntegrationConfigServiceStateValidator;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -40,7 +41,7 @@ class WizIntegrationConfigServiceImplTest {
 
   @Test
   void testCreateWizIntegration() {
-    setupMocks(new MockGenericConfigService().mockUpsert());
+    setupMocks(new MockGenericConfigService().mockUpsert().mockGetAll());
 
     CreateWizIntegrationRequest expected =
         CreateWizIntegrationRequest.newBuilder()
@@ -65,6 +66,10 @@ class WizIntegrationConfigServiceImplTest {
     assertEquals(expected.getClientId(), actual.getInfo().getClientId());
     assertEquals(expected.getTokenUrl(), actual.getInfo().getTokenUrl());
     assertEquals(expected.getApiEndpointUrl(), actual.getInfo().getApiEndpointUrl());
+
+    assertThrows(
+        RuntimeException.class,
+        () -> this.wizIntegrationConfigServiceBlockingStub.createWizIntegration(expected));
   }
 
   @Test
@@ -149,23 +154,6 @@ class WizIntegrationConfigServiceImplTest {
                     .build())
             .getIntegration();
 
-    WizIntegration existing2 =
-        wizIntegrationConfigServiceBlockingStub
-            .createWizIntegration(
-                CreateWizIntegrationRequest.newBuilder()
-                    .setName("wiz integration 2")
-                    .setDescription("wiz integration for unit test")
-                    .setClientSecret(
-                        EncryptedText.newBuilder()
-                            .setKeyId("keyid")
-                            .setValue("cipher text")
-                            .build())
-                    .setClientId("test customer")
-                    .setTokenUrl("http://getToken.wiz")
-                    .setApiEndpointUrl("http://us1-test.wiz")
-                    .build())
-            .getIntegration();
-
     wizIntegrationConfigServiceBlockingStub.deleteWizIntegration(
         DeleteWizIntegrationRequest.newBuilder().setId(existing1.getId()).build());
 
@@ -174,12 +162,7 @@ class WizIntegrationConfigServiceImplTest {
             .getWizIntegrations(GetWizIntegrationsRequest.newBuilder().build())
             .getIntegrationsList();
 
-    assertEquals(1, integrations.size());
-    assertFalse(
-        integrations.stream()
-            .anyMatch(
-                wizIntegration ->
-                    wizIntegration.getInfo().getName().equals(existing1.getInfo().getName())));
+    assertEquals(0, integrations.size());
   }
 
   @Test
@@ -237,63 +220,21 @@ class WizIntegrationConfigServiceImplTest {
                     .build())
             .getIntegration();
 
-    WizIntegration integration2 =
-        wizIntegrationConfigServiceBlockingStub
-            .createWizIntegration(
-                CreateWizIntegrationRequest.newBuilder()
-                    .setName("wiz integration 2")
-                    .setDescription("wiz integration for unit test")
-                    .setClientSecret(
-                        EncryptedText.newBuilder()
-                            .setKeyId("keyid")
-                            .setValue("cipher text")
-                            .build())
-                    .setClientId("test customer")
-                    .setTokenUrl("http://getToken.wiz")
-                    .setApiEndpointUrl("http://us1-test.wiz")
-                    .build())
-            .getIntegration();
-
-    WizIntegration integration3 =
-        wizIntegrationConfigServiceBlockingStub
-            .createWizIntegration(
-                CreateWizIntegrationRequest.newBuilder()
-                    .setName("wiz integration 3")
-                    .setDescription("wiz integration for unit test")
-                    .setClientSecret(
-                        EncryptedText.newBuilder()
-                            .setKeyId("keyid")
-                            .setValue("cipher text")
-                            .build())
-                    .setClientId("test customer")
-                    .setTokenUrl("http://getToken.wiz")
-                    .setApiEndpointUrl("http://us1-test.wiz")
-                    .build())
-            .getIntegration();
-
     List<WizIntegration> integrations =
         wizIntegrationConfigServiceBlockingStub
             .getWizIntegrations(
                 GetWizIntegrationsRequest.newBuilder()
                     .setFilter(
-                        WizIntegrationFilter.newBuilder()
-                            .addIds(integration1.getId())
-                            .addIds(integration2.getId())
-                            .build())
+                        WizIntegrationFilter.newBuilder().addIds(integration1.getId()).build())
                     .build())
             .getIntegrationsList();
 
-    assertEquals(2, integrations.size());
+    assertEquals(1, integrations.size());
     assertTrue(
         integrations.stream()
             .anyMatch(
                 wizIntegration ->
                     wizIntegration.getInfo().getName().equals(integration1.getInfo().getName())));
-    assertFalse(
-        integrations.stream()
-            .anyMatch(
-                wizIntegration ->
-                    wizIntegration.getInfo().getName().equals(integration3.getInfo().getName())));
   }
 
   private void setupMocks(MockGenericConfigService mockGenericConfigService) {
@@ -306,6 +247,7 @@ class WizIntegrationConfigServiceImplTest {
         .addService(
             new WizIntegrationConfigServiceImpl(
                 wizIntegrationConfigRequestValidator,
+                new WizIntegrationConfigServiceStateValidator(wizIntegrationConfigStore),
                 wizIntegrationConfigStore,
                 new UuidGenerator()))
         .start();
