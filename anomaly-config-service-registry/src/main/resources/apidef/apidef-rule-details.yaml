@@ -49,6 +49,8 @@
   eventLabels:
     CWE: 190
     OWASP_API_2019: API8
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: |
       A Value Out of Range attack is flagged when the attacker tries to assign an integer value outside than range which the memory assigned to the variable can hold.
@@ -70,6 +72,8 @@
     CWE: 843
     OWASP_API_2023: API8
     OWASP_API_2019: API7
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The type of a parameter in the request does not match the expected type. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
     mitigation: "Implement input validation in your API to ensure all parameters are of the correct type. Consider using a schema validation library to automate this process."
@@ -85,6 +89,8 @@
     CWE: 287
     OWASP_API_2023: API8
     OWASP_API_2019: API7
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "A required field is missing in the request parameters. This could indicate a malformed request or an attempt to bypass security controls."
     mitigation: "Implement input validation in your API to ensure all required fields are present in the request. Consider using a schema validation library to automate this process."
@@ -99,6 +105,8 @@
   eventLabels:
     CWE: 159
     OWASP_2021: A3
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "A special characters in the request parameters are being tampered beyond the learnt normal characters, which may indicate an attempt to exploit a security vulnerability."
     mitigation: "Implement input validation and sanitization in your API. Ensure that special characters in request parameters are handled safely."
@@ -113,6 +121,8 @@
   eventLabels:
     CWE: 405
     OWASP_2021: A3
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The size of the content in a request or response significantly increases due to nested references, which may indicate an attempt to overload the system (a type of Denial of Service attack)."
     mitigation: "Implement rate limiting and data size checks in your API. Disable reference expansion by default and limit depth of request structures being processed. Monitor the size of requests and responses and set reasonable limits."
@@ -127,6 +137,8 @@
   eventLabels:
     CWE: 644
     OWASP_API_2019: API8
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The User Agent in the request headers is significantly different from the expected values."
     mitigation: "Ensure that your API is expecting the correct User Agents for each operation. Consider implementing checks in your API to validate the User Agents."
@@ -142,6 +154,8 @@
     CWE: 204
     OWASP_API_2023: API8
     OWASP_API_2019: API7
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The HTTP response code of a request is significantly different from the expected values."
     mitigation: "Ensure that your API is returning the correct HTTP response codes for each operation. Consider implementing checks in your API to validate the response codes."
@@ -157,6 +171,8 @@
     CWE: 436
     OWASP_API_2023: API8
     OWASP_API_2019: API7
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The content type of a request or response is significantly different from the norm or expected value."
     mitigation: "Ensure that the content type of requests and responses is within expected values. Consider implementing content type checks in your API."
@@ -172,6 +188,8 @@
     CWE: 1043
     OWASP_API_2023: API8
     OWASP_API_2019: API7
+    MITRE_TACTIC: TA0043
+    MITRE_TECHNIQUE: T1595.002
   eventDetails:
     description: "The size of the content in a request or response is significantly different from the norm."
     mitigation: "Ensure that the size of the content in requests and responses is within expected limits. Consider implementing rate limiting and data size checks in your API."
@@ -186,6 +204,8 @@
   eventLabels:
     CWE: 918
     OWASP_API_2023: API7
+    MITRE_TACTIC: TA0006
+    MITRE_TECHNIQUE: T1552.005
   eventDetails:
     description: |
       SSRF is a type of attack where an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
