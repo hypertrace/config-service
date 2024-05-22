@@ -11,6 +11,8 @@ import ai.traceable.saved.query.config.service.store.SavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryStoreManager;
 import ai.traceable.saved.query.config.service.v1.CreateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.DeleteSavedQueryRequest;
+import ai.traceable.saved.query.config.service.v1.GetAllSavedQueryUsersRequest;
+import ai.traceable.saved.query.config.service.v1.GetAllSavedQueryUsersResponse;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesFilter;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesRequest;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesResponse;
@@ -123,6 +125,13 @@ class SavedQueryConfigServiceImplTest {
     Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
     assertEquals(expectedTimestamp, createdSavedQuery.getCreatedTimestamp());
     assertEquals(expectedTimestamp, createdSavedQuery.getUpdatedTimestamp());
+
+    GetAllSavedQueryUsersResponse getAllSavedQueryUsersResponse =
+        requestContext.call(
+            () ->
+                this.savedQueryServiceBlockingStub.getAllSavedQueryUsers(
+                    GetAllSavedQueryUsersRequest.newBuilder().build()));
+    assertEquals(1, getAllSavedQueryUsersResponse.getUsersCount());
 
     QueryClauses queryClauses2 =
         QueryClauses.newBuilder()

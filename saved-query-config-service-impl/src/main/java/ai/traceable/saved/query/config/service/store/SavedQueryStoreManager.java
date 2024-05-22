@@ -7,6 +7,7 @@ import ai.traceable.saved.query.config.service.v1.CreateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.CreateSavedQueryResponse;
 import ai.traceable.saved.query.config.service.v1.DeleteSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.DeleteSavedQueryResponse;
+import ai.traceable.saved.query.config.service.v1.GetAllSavedQueryUsersResponse;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesRequest;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesResponse;
 import ai.traceable.saved.query.config.service.v1.SavedQuery;
@@ -110,6 +111,19 @@ public class SavedQueryStoreManager {
     return GetSavedQueriesResponse.newBuilder()
         .addAllSavedQueries(undeletedDefaultQueries)
         .addAllSavedQueries(storedSavedQueries)
+        .build();
+  }
+
+  public GetAllSavedQueryUsersResponse getAllSavedQueryUsers(RequestContext requestContext) {
+    return GetAllSavedQueryUsersResponse.newBuilder()
+        .addAllUsers(
+            savedQueryConfigStore.getAllConfigData(requestContext).stream()
+                .map(
+                    data ->
+                        data.hasAuthor()
+                            ? data.getAuthor()
+                            : User.newBuilder().setId(data.getCreatedByUserId()).build())
+                .collect(Collectors.toUnmodifiableSet()))
         .build();
   }
 

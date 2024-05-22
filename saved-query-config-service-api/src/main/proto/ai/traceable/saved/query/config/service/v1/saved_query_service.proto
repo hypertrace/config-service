@@ -15,6 +15,8 @@ service SavedQueryService {
   rpc DeleteSavedQuery(DeleteSavedQueryRequest) returns (DeleteSavedQueryResponse);
   // Get saved queries based on the specified fields
   rpc GetSavedQueries(GetSavedQueriesRequest) returns (GetSavedQueriesResponse);
+  // Get all users who created saved queries
+  rpc GetAllSavedQueryUsers(GetAllSavedQueryUsersRequest) returns (GetAllSavedQueryUsersResponse);
 }
 
 message CreateSavedQueryRequest {
@@ -52,8 +54,8 @@ message GetSavedQueriesRequest {
 }
 
 message GetSavedQueriesFilter {
-  // user_id will be extracted from the request context and applied as a default filter
   optional string scope = 1;
+  repeated string user_ids = 2;
 }
 
 message GetSavedQueriesResponse {
@@ -65,4 +67,11 @@ message DeleteSavedQueryRequest {
 }
 
 message DeleteSavedQueryResponse {
+}
+
+message GetAllSavedQueryUsersRequest {
+}
+
+message GetAllSavedQueryUsersResponse {
+  repeated User users = 1;
 }

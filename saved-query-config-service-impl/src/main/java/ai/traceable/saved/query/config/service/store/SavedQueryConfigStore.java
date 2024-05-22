@@ -49,8 +49,12 @@ public class SavedQueryConfigStore
 
   @Override
   protected Optional<SavedQuery> filterConfigData(SavedQuery data, GetSavedQueriesRequest request) {
-    if (request.getFilter().hasScope()) {
-      return request.getFilter().getScope().equals(data.getScope())
+    if (request.getFilter().hasScope() && !request.getFilter().getScope().equals(data.getScope())) {
+      return Optional.empty();
+    }
+    if (!request.getFilter().getUserIdsList().isEmpty()) {
+      String userId = data.hasAuthor() ? data.getAuthor().getId() : data.getCreatedByUserId();
+      return request.getFilter().getUserIdsList().contains(userId)
           ? Optional.of(data)
           : Optional.empty();
     }

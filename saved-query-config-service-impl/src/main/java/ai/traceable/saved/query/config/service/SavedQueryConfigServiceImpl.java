@@ -5,6 +5,8 @@ import ai.traceable.saved.query.config.service.v1.CreateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.CreateSavedQueryResponse;
 import ai.traceable.saved.query.config.service.v1.DeleteSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.DeleteSavedQueryResponse;
+import ai.traceable.saved.query.config.service.v1.GetAllSavedQueryUsersRequest;
+import ai.traceable.saved.query.config.service.v1.GetAllSavedQueryUsersResponse;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesRequest;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesResponse;
 import ai.traceable.saved.query.config.service.v1.SavedQueryServiceGrpc;
@@ -100,6 +102,24 @@ class SavedQueryConfigServiceImpl extends SavedQueryServiceGrpc.SavedQueryServic
       log.warn(
           "Error while fetching saved queries for request: {} with context {}",
           request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void getAllSavedQueryUsers(
+      GetAllSavedQueryUsersRequest request,
+      StreamObserver<GetAllSavedQueryUsersResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(savedQueryStoreManager.getAllSavedQueryUsers(requestContext));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.error(
+          "Error while fetching list of saved query users with request context {}",
           requestContext,
           decoratedException);
       responseObserver.onError(decoratedException);
