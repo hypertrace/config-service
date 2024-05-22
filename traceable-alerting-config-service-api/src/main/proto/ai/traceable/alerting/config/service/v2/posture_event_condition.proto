@@ -20,10 +20,14 @@ message PostureEventType {
     ThirdPartyApiDiscovery third_party_api_discovery = 8;
     DomainDiscovery domain_discovery = 9;
     ThirdPartyDiscovery third_party_discovery = 10;
+    VulnerabilityStatusChange vulnerability_status_change = 11;
   }
 }
 
 message SensitiveDataDiscovery {
+}
+
+message VulnerabilityStatusChange {
 }
 
 message SensitiveDataSharedWithThirdParty {
