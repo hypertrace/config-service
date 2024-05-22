@@ -1,0 +1,75 @@
+{
+  "id": "customer_events",
+  "name": "",
+  "description": "",
+  "fieldsMeta": {
+    "Account": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "amount_transferred": {
+      "fieldType": "FIELD_TYPE_DOUBLE",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "shipping_cost": {
+      "fieldType": "FIELD_TYPE_DOUBLE",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "order_amount": {
+      "fieldType": "FIELD_TYPE_DOUBLE",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "accountType": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "IP": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "user_has_account": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": "user_has_account"
+    },
+    "ip_address": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "ip_accessed_account": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": "ip_accessed_account"
+    },
+    "start_time_millis_ts": {
+      "fieldType": "FIELD_TYPE_TIMESTAMP",
+      "versioned": false,
+      "disabled": false,
+      "relationshipType": ""
+    },
+    "session_id": {
+      "fieldType": "FIELD_TYPE_STR"
+    },"user_identifier": {
+      "fieldType": "FIELD_TYPE_STR"
+    }, "environment": {
+      "fieldType": "FIELD_TYPE_STR"
+    }
+  },
+  "timestampField": "start_time_millis_ts"
+}

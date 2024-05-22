@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils.getTenantId;
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.IN;
 
@@ -21,6 +22,7 @@ import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
 import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
 import org.hypertrace.core.documentstore.expression.operators.LogicalOperator;
 import org.hypertrace.core.documentstore.query.Query;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ColumnMappingsDocumentStore implements ColumnMappingsStore {
   public static final String FRAUD_OBJECT_TYPES_COLUMN_MAPPINGS =
@@ -32,8 +34,10 @@ public class ColumnMappingsDocumentStore implements ColumnMappingsStore {
   }
 
   @Override
-  public void addColumnMappings(String tenantId, List<ColumnMappingsDocument> mappings) {
+  public void addColumnMappings(
+      RequestContext requestContext, List<ColumnMappingsDocument> mappings) {
     Map<Key, Document> documentMap = new HashMap<>(mappings.size());
+    String tenantId = getTenantId(requestContext);
     for (ColumnMappingsDocument mapping : mappings) {
       ColumnMappingsKey key =
           new ColumnMappingsKey(
@@ -57,20 +61,29 @@ public class ColumnMappingsDocumentStore implements ColumnMappingsStore {
 
   @Override
   public List<ColumnMappingsDocument> getColumnMappings(
-      String tenantId, ObjectKind objectKind, String objectTypeId) throws IOException {
-    return getColumnMappingsInternal(tenantId, objectKind, objectTypeId, Collections.emptyList());
+      RequestContext requestContext, ObjectKind objectKind, String objectTypeId)
+      throws IOException {
+    return getColumnMappingsInternal(
+        requestContext, objectKind, objectTypeId, Collections.emptyList());
   }
 
   @Override
   public List<ColumnMappingsDocument> getColumnMappings(
-      String tenantId, ObjectKind objectKind, String objectTypeId, List<String> fieldNames)
+      RequestContext requestContext,
+      ObjectKind objectKind,
+      String objectTypeId,
+      List<String> fieldNames)
       throws IOException {
-    return getColumnMappingsInternal(tenantId, objectKind, objectTypeId, fieldNames);
+    return getColumnMappingsInternal(requestContext, objectKind, objectTypeId, fieldNames);
   }
 
   private List<ColumnMappingsDocument> getColumnMappingsInternal(
-      String tenantId, ObjectKind objectKind, String objectTypeId, List<String> fieldNames)
+      RequestContext requestContext,
+      ObjectKind objectKind,
+      String objectTypeId,
+      List<String> fieldNames)
       throws IOException {
+    String tenantId = getTenantId(requestContext);
     LogicalExpression.LogicalExpressionBuilder filters =
         LogicalExpression.builder()
             .operator(LogicalOperator.AND)

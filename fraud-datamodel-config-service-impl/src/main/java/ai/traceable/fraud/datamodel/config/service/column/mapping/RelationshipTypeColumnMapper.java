@@ -6,6 +6,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnM
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RelationshipTypeColumnMapper implements ColumnMapper<RelationshipType> {
 
@@ -22,25 +23,32 @@ public class RelationshipTypeColumnMapper implements ColumnMapper<RelationshipTy
   }
 
   @Override
-  public RelationshipType forCreate(String tenantId, RelationshipType inputType)
+  public RelationshipType forCreate(RequestContext requestContext, RelationshipType inputType)
       throws IOException {
     String typeId = inputType.getId();
     RelationshipType.Builder newTypeBldr = inputType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            tenantId, ObjectKind.OBJECT_KIND_RELATIONSHIP, typeId, createColumnMapping(inputType));
+            requestContext,
+            ObjectKind.OBJECT_KIND_RELATIONSHIP,
+            typeId,
+            createColumnMapping(inputType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
   @Override
   public RelationshipType forUpdate(
-      String tenantId, RelationshipType currType, RelationshipType newType) throws IOException {
+      RequestContext requestContext, RelationshipType currType, RelationshipType newType)
+      throws IOException {
     // assumes that the type validator is invoked beforehand
     String typeId = newType.getId();
     RelationshipType.Builder newTypeBldr = newType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            tenantId, ObjectKind.OBJECT_KIND_RELATIONSHIP, typeId, createColumnMapping(newType));
+            requestContext,
+            ObjectKind.OBJECT_KIND_RELATIONSHIP,
+            typeId,
+            createColumnMapping(newType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 

@@ -9,6 +9,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnM
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class EntityTypeColumnMapper implements ColumnMapper<EntityType> {
 
@@ -29,24 +30,25 @@ public class EntityTypeColumnMapper implements ColumnMapper<EntityType> {
   }
 
   @Override
-  public EntityType forCreate(String tenantId, EntityType inputType) throws IOException {
+  public EntityType forCreate(RequestContext requestContext, EntityType inputType)
+      throws IOException {
     String typeId = inputType.getId();
     EntityType.Builder newTypeBldr = inputType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            tenantId, ObjectKind.OBJECT_KIND_ENTITY, typeId, createColumnMapping(inputType));
+            requestContext, ObjectKind.OBJECT_KIND_ENTITY, typeId, createColumnMapping(inputType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
   @Override
-  public EntityType forUpdate(String tenantId, EntityType currType, EntityType newType)
-      throws IOException {
+  public EntityType forUpdate(
+      RequestContext requestContext, EntityType currType, EntityType newType) throws IOException {
     // assumes that the type validator is invoked beforehand
     String typeId = newType.getId();
     EntityType.Builder newTypeBldr = newType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            tenantId, ObjectKind.OBJECT_KIND_ENTITY, typeId, createColumnMapping(newType));
+            requestContext, ObjectKind.OBJECT_KIND_ENTITY, typeId, createColumnMapping(newType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 

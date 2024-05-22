@@ -1,0 +1,58 @@
+{
+  "id": "Account",
+  "name": "",
+  "description": "",
+  "idSet": {
+    "field": [
+      "accountType",
+      "accountId"
+    ]
+  },
+  "fieldsMeta": {
+    "accountStatus": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "accountId": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "productCode": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "accountType": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "accountNickname": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "displayAccountNumber": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "currencyCode": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "productName": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    },
+    "accountClassification": {
+      "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false
+    }
+  }
+}

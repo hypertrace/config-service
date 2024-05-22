@@ -28,7 +28,6 @@ import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeResp
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
 import com.google.inject.Inject;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
@@ -66,7 +65,8 @@ public class FraudDataModelConfigServiceImpl
   public void upsertEntityType(
       UpsertEntityTypeRequest request, StreamObserver<UpsertEntityTypeResponse> responseObserver) {
     try {
-      validator.validateOrThrow(request);
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateOrThrow(requestContext, request);
       EntityType entityType =
           EntityType.newBuilder()
               .setId(request.getId())
@@ -74,9 +74,9 @@ public class FraudDataModelConfigServiceImpl
               .setLifecycle(request.getLifecycle())
               .putAllFieldsMeta(request.getFieldsMetaMap())
               .build();
-      String tenantId = getTenantId();
-      ObjectType finalTypeForUpsert = generateMappings(tenantId, entityType);
-      fraudObjectTypesStore.putObjectTypes(tenantId, Collections.singletonList(finalTypeForUpsert));
+      ObjectType finalTypeForUpsert = generateMappings(requestContext, entityType);
+      fraudObjectTypesStore.putObjectTypes(
+          requestContext, Collections.singletonList(finalTypeForUpsert));
       responseObserver.onNext(
           UpsertEntityTypeResponse.newBuilder()
               .setEntityType(finalTypeForUpsert.getEntityType())
@@ -93,7 +93,8 @@ public class FraudDataModelConfigServiceImpl
       UpsertRelationshipTypeRequest request,
       StreamObserver<UpsertRelationshipTypeResponse> responseObserver) {
     try {
-      validator.validateOrThrow(request);
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateOrThrow(requestContext, request);
       RelationshipType relationshipType =
           RelationshipType.newBuilder()
               .setId(request.getId())
@@ -106,10 +107,9 @@ public class FraudDataModelConfigServiceImpl
               .setRightToLeftNavName(request.getRightToLeftNavName())
               .addAllTags(FraudDataModelUtils.getDefaultTagsForRelationshipType())
               .build();
-      String tenantId = getTenantId();
-      ObjectType finalTypeForUpsert = generateMappings(tenantId, relationshipType);
+      ObjectType finalTypeForUpsert = generateMappings(requestContext, relationshipType);
       fraudObjectTypesStore.putObjectTypes(
-          getTenantId(),
+          requestContext,
           Collections.singletonList(
               ObjectType.newBuilder()
                   .setRelationshipType(finalTypeForUpsert.getRelationshipType())
@@ -129,17 +129,17 @@ public class FraudDataModelConfigServiceImpl
   public void upsertEventType(
       UpsertEventTypeRequest request, StreamObserver<UpsertEventTypeResponse> responseObserver) {
     try {
-      validator.validateOrThrow(request);
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateOrThrow(requestContext, request);
       EventType eventType =
           EventType.newBuilder()
               .setId(request.getId())
               .putAllFieldsMeta(request.getFieldsMetaMap())
               .setTimestampField(request.getTimestampField())
               .build();
-      String tenantId = getTenantId();
-      ObjectType finalTypeForUpsert = generateMappings(tenantId, eventType);
+      ObjectType finalTypeForUpsert = generateMappings(requestContext, eventType);
       fraudObjectTypesStore.putObjectTypes(
-          getTenantId(),
+          requestContext,
           Collections.singletonList(
               ObjectType.newBuilder().setEventType(finalTypeForUpsert.getEventType()).build()));
       responseObserver.onNext(
@@ -157,7 +157,8 @@ public class FraudDataModelConfigServiceImpl
   public void upsertMetricType(
       UpsertMetricTypeRequest request, StreamObserver<UpsertMetricTypeResponse> responseObserver) {
     try {
-      validator.validateOrThrow(request);
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateOrThrow(requestContext, request);
       MetricType metricType =
           MetricType.newBuilder()
               .setId(request.getId())
@@ -165,10 +166,9 @@ public class FraudDataModelConfigServiceImpl
               .setTimestampField(request.getTimestampField())
               .putAllFieldsMeta(request.getFieldsMetaMap())
               .build();
-      String tenantId = getTenantId();
-      ObjectType finalTypeForUpsert = generateMappings(tenantId, metricType);
+      ObjectType finalTypeForUpsert = generateMappings(requestContext, metricType);
       fraudObjectTypesStore.putObjectTypes(
-          getTenantId(),
+          requestContext,
           Collections.singletonList(
               ObjectType.newBuilder().setMetricType(finalTypeForUpsert.getMetricType()).build()));
       responseObserver.onNext(
@@ -185,9 +185,11 @@ public class FraudDataModelConfigServiceImpl
   @Override
   public void getTypes(GetTypesRequest request, StreamObserver<GetTypesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(
-              getTenantId(), ObjectKind.OBJECT_KIND_UNSPECIFIED);
+              requestContext, ObjectKind.OBJECT_KIND_UNSPECIFIED);
       GetTypesResponse.Builder response = GetTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
         if (type.hasEntityType()) {
@@ -212,8 +214,10 @@ public class FraudDataModelConfigServiceImpl
   public void getEntityTypes(
       GetEntityTypesRequest request, StreamObserver<GetEntityTypesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
       List<ObjectType> allTypes =
-          fraudObjectTypesStore.getAllObjectTypes(getTenantId(), ObjectKind.OBJECT_KIND_ENTITY);
+          fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_ENTITY);
       GetEntityTypesResponse.Builder entitiesResponse = GetEntityTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
         entitiesResponse.addEntityTypes(type.getEntityType());
@@ -231,9 +235,11 @@ public class FraudDataModelConfigServiceImpl
       GetRelationshipTypesRequest request,
       StreamObserver<GetRelationshipTypesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
       List<ObjectType> allTypes =
           fraudObjectTypesStore.getAllObjectTypes(
-              getTenantId(), ObjectKind.OBJECT_KIND_RELATIONSHIP);
+              requestContext, ObjectKind.OBJECT_KIND_RELATIONSHIP);
       GetRelationshipTypesResponse.Builder relationshipsResponse =
           GetRelationshipTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
@@ -251,8 +257,10 @@ public class FraudDataModelConfigServiceImpl
   public void getEventTypes(
       GetEventTypesRequest request, StreamObserver<GetEventTypesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
       List<ObjectType> allTypes =
-          fraudObjectTypesStore.getAllObjectTypes(getTenantId(), ObjectKind.OBJECT_KIND_EVENT);
+          fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_EVENT);
       GetEventTypesResponse.Builder eventTypesResponse = GetEventTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
         eventTypesResponse.addEventTypes(type.getEventType());
@@ -269,8 +277,10 @@ public class FraudDataModelConfigServiceImpl
   public void getMetricTypes(
       GetMetricTypesRequest request, StreamObserver<GetMetricTypesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
       List<ObjectType> allTypes =
-          fraudObjectTypesStore.getAllObjectTypes(getTenantId(), ObjectKind.OBJECT_KIND_METRIC);
+          fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_METRIC);
       GetMetricTypesResponse.Builder metricsResponse = GetMetricTypesResponse.newBuilder();
       for (ObjectType type : allTypes) {
         metricsResponse.addMetricTypes(type.getMetricType());
@@ -283,111 +293,112 @@ public class FraudDataModelConfigServiceImpl
     }
   }
 
-  private ObjectType generateMappings(String tenantId, EntityType entityType) throws Exception {
-    return fraudObjectTypesStore
-        .getObjectType(
-            tenantId,
-            FraudDataModelUtils.getObjectTypeReference(
-                ObjectKind.OBJECT_KIND_ENTITY, entityType.getId()))
-        .map(objectType -> this.updateAndGetObjectType(tenantId, entityType, objectType))
-        .orElseGet(() -> createAndGetObjectType(tenantId, entityType));
-  }
-
-  @SneakyThrows
-  private ObjectType createAndGetObjectType(String tenantId, EntityType entityType) {
-    EntityType mappedEntityType = entityTypeColumnMapper.forCreate(tenantId, entityType);
-    return ObjectType.newBuilder().setEntityType(mappedEntityType).build();
-  }
-
-  @SneakyThrows
-  private ObjectType updateAndGetObjectType(
-      String tenantId, EntityType entityType, ObjectType existingObjectType) {
-    EntityType mappedEntityType =
-        entityTypeColumnMapper.forUpdate(tenantId, existingObjectType.getEntityType(), entityType);
-    return ObjectType.newBuilder().setEntityType(mappedEntityType).build();
-  }
-
-  private ObjectType generateMappings(String tenantId, RelationshipType relationshipType)
+  private ObjectType generateMappings(RequestContext requestContext, EntityType entityType)
       throws Exception {
     return fraudObjectTypesStore
         .getObjectType(
-            tenantId,
+            requestContext,
+            FraudDataModelUtils.getObjectTypeReference(
+                ObjectKind.OBJECT_KIND_ENTITY, entityType.getId()))
+        .map(objectType -> this.updateAndGetObjectType(requestContext, entityType, objectType))
+        .orElseGet(() -> createAndGetObjectType(requestContext, entityType));
+  }
+
+  @SneakyThrows
+  private ObjectType createAndGetObjectType(RequestContext requestContext, EntityType entityType) {
+    EntityType mappedEntityType = entityTypeColumnMapper.forCreate(requestContext, entityType);
+    return ObjectType.newBuilder().setEntityType(mappedEntityType).build();
+  }
+
+  @SneakyThrows
+  private ObjectType updateAndGetObjectType(
+      RequestContext requestContext, EntityType entityType, ObjectType existingObjectType) {
+    EntityType mappedEntityType =
+        entityTypeColumnMapper.forUpdate(
+            requestContext, existingObjectType.getEntityType(), entityType);
+    return ObjectType.newBuilder().setEntityType(mappedEntityType).build();
+  }
+
+  private ObjectType generateMappings(
+      RequestContext requestContext, RelationshipType relationshipType) throws Exception {
+    return fraudObjectTypesStore
+        .getObjectType(
+            requestContext,
             FraudDataModelUtils.getObjectTypeReference(
                 ObjectKind.OBJECT_KIND_RELATIONSHIP, relationshipType.getId()))
-        .map(objectType -> this.updateAndGetObjectType(tenantId, relationshipType, objectType))
-        .orElseGet(() -> createAndGetObjectType(tenantId, relationshipType));
+        .map(
+            objectType -> this.updateAndGetObjectType(requestContext, relationshipType, objectType))
+        .orElseGet(() -> createAndGetObjectType(requestContext, relationshipType));
   }
 
   @SneakyThrows
-  private ObjectType createAndGetObjectType(String tenantId, RelationshipType relationshipType) {
+  private ObjectType createAndGetObjectType(
+      RequestContext requestContext, RelationshipType relationshipType) {
     RelationshipType mappedRelationshipType =
-        relationshipTypeColumnMapper.forCreate(tenantId, relationshipType);
+        relationshipTypeColumnMapper.forCreate(requestContext, relationshipType);
     return ObjectType.newBuilder().setRelationshipType(mappedRelationshipType).build();
   }
 
   @SneakyThrows
   private ObjectType updateAndGetObjectType(
-      String tenantId, RelationshipType relationshipType, ObjectType existingObjectType) {
+      RequestContext requestContext,
+      RelationshipType relationshipType,
+      ObjectType existingObjectType) {
     RelationshipType mappedRelationshipType =
         relationshipTypeColumnMapper.forUpdate(
-            tenantId, existingObjectType.getRelationshipType(), relationshipType);
+            requestContext, existingObjectType.getRelationshipType(), relationshipType);
     return ObjectType.newBuilder().setRelationshipType(mappedRelationshipType).build();
   }
 
-  private ObjectType generateMappings(String tenantId, EventType eventType) throws Exception {
+  private ObjectType generateMappings(RequestContext requestContext, EventType eventType)
+      throws Exception {
     return fraudObjectTypesStore
         .getObjectType(
-            tenantId,
+            requestContext,
             FraudDataModelUtils.getObjectTypeReference(
                 ObjectKind.OBJECT_KIND_RELATIONSHIP, eventType.getId()))
-        .map(objectType -> this.updateAndGetObjectType(tenantId, eventType, objectType))
-        .orElseGet(() -> createAndGetObjectType(tenantId, eventType));
+        .map(objectType -> this.updateAndGetObjectType(requestContext, eventType, objectType))
+        .orElseGet(() -> createAndGetObjectType(requestContext, eventType));
   }
 
   @SneakyThrows
-  private ObjectType createAndGetObjectType(String tenantId, EventType eventType) {
-    EventType mappedEventType = eventTypeColumnMapper.forCreate(tenantId, eventType);
+  private ObjectType createAndGetObjectType(RequestContext requestContext, EventType eventType) {
+    EventType mappedEventType = eventTypeColumnMapper.forCreate(requestContext, eventType);
     return ObjectType.newBuilder().setEventType(mappedEventType).build();
   }
 
   @SneakyThrows
   private ObjectType updateAndGetObjectType(
-      String tenantId, EventType eventType, ObjectType existingObjectType) {
+      RequestContext requestContext, EventType eventType, ObjectType existingObjectType) {
     EventType mappedEventType =
-        eventTypeColumnMapper.forUpdate(tenantId, existingObjectType.getEventType(), eventType);
+        eventTypeColumnMapper.forUpdate(
+            requestContext, existingObjectType.getEventType(), eventType);
     return ObjectType.newBuilder().setEventType(mappedEventType).build();
   }
 
-  private ObjectType generateMappings(String tenantId, MetricType metricType) throws Exception {
+  private ObjectType generateMappings(RequestContext requestContext, MetricType metricType)
+      throws Exception {
     return fraudObjectTypesStore
         .getObjectType(
-            tenantId,
+            requestContext,
             FraudDataModelUtils.getObjectTypeReference(
                 ObjectKind.OBJECT_KIND_RELATIONSHIP, metricType.getId()))
-        .map(objectType -> this.updateAndGetObjectType(tenantId, metricType, objectType))
-        .orElseGet(() -> createAndGetObjectType(tenantId, metricType));
+        .map(objectType -> this.updateAndGetObjectType(requestContext, metricType, objectType))
+        .orElseGet(() -> createAndGetObjectType(requestContext, metricType));
   }
 
   @SneakyThrows
-  private ObjectType createAndGetObjectType(String tenantId, MetricType metricType) {
-    MetricType mappedMetricType = metricTypeColumnMapper.forCreate(tenantId, metricType);
+  private ObjectType createAndGetObjectType(RequestContext requestContext, MetricType metricType) {
+    MetricType mappedMetricType = metricTypeColumnMapper.forCreate(requestContext, metricType);
     return ObjectType.newBuilder().setMetricType(mappedMetricType).build();
   }
 
   @SneakyThrows
   private ObjectType updateAndGetObjectType(
-      String tenantId, MetricType metricType, ObjectType existingObjectType) {
+      RequestContext requestContext, MetricType metricType, ObjectType existingObjectType) {
     MetricType mappedMetricType =
-        metricTypeColumnMapper.forUpdate(tenantId, existingObjectType.getMetricType(), metricType);
+        metricTypeColumnMapper.forUpdate(
+            requestContext, existingObjectType.getMetricType(), metricType);
     return ObjectType.newBuilder().setMetricType(mappedMetricType).build();
-  }
-
-  private String getTenantId() {
-    return RequestContext.CURRENT
-        .get()
-        .getTenantId()
-        .orElseThrow(
-            Status.INVALID_ARGUMENT.withDescription("Tenant ID is missing in the request")
-                ::asRuntimeException);
   }
 }

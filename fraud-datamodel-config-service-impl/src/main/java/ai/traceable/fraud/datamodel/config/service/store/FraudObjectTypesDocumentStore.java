@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.store;
 
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils.getTenantId;
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
 
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils;
@@ -26,6 +27,7 @@ import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
 import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
 import org.hypertrace.core.documentstore.expression.operators.LogicalOperator;
 import org.hypertrace.core.documentstore.query.Query;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
   public static final String FRAUD_OBJECT_TYPES = "fraud_object_types";
@@ -42,7 +44,8 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
 
   @Override
   public Optional<ObjectType> getObjectType(
-      String tenantId, ObjectTypeReference objectTypeReference) throws Exception {
+      RequestContext requestContext, ObjectTypeReference objectTypeReference) throws Exception {
+    String tenantId = getTenantId(requestContext);
     org.hypertrace.core.documentstore.query.Query query = getQuery(tenantId, objectTypeReference);
     try (CloseableIterator<Document> it = collection.aggregate(query)) {
       List<Document> list = ImmutableList.copyOf(it);
@@ -86,8 +89,9 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
   }
 
   @Override
-  public List<ObjectType> getAllObjectTypes(String tenantId, ObjectKind objectKind)
+  public List<ObjectType> getAllObjectTypes(RequestContext requestContext, ObjectKind objectKind)
       throws Exception {
+    String tenantId = getTenantId(requestContext);
     Query.QueryBuilder queryBuilder = Query.builder();
 
     if (objectKind != null
@@ -117,7 +121,9 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
   }
 
   @Override
-  public void putObjectTypes(String tenantId, List<ObjectType> objectTypes) throws Exception {
+  public void putObjectTypes(RequestContext requestContext, List<ObjectType> objectTypes)
+      throws Exception {
+    String tenantId = getTenantId(requestContext);
     Map<Key, Document> documentMap = new HashMap<>(objectTypes.size());
     var timestamp = System.currentTimeMillis();
     for (var objectType : objectTypes) {
@@ -132,7 +138,9 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
   }
 
   @Override
-  public void deleteObjectTypes(String tenantId, List<ObjectTypeReference> objectTypeReferences) {
+  public void deleteObjectTypes(
+      RequestContext requestContext, List<ObjectTypeReference> objectTypeReferences) {
+    String tenantId = getTenantId(requestContext);
     this.collection.delete(
         objectTypeReferences.stream()
             .map(o -> new FraudObjectTypeKey(tenantId, o))

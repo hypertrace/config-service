@@ -20,6 +20,7 @@ import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.query.Query;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,10 +88,13 @@ public class ColumnMappingsStoreTest {
               InternalFieldMetadata.getDefaultInstance());
       mappings.add(mapping);
     }
-    target.addColumnMappings(tenantId, mappings);
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    target.addColumnMappings(requestContext, mappings);
 
     // query them now.
-    var outputMappings = target.getColumnMappings(tenantId, kind, typeId);
+    var outputMappings =
+        RequestContext.forTenantId(tenantId)
+            .call(() -> target.getColumnMappings(requestContext, kind, typeId));
     Assertions.assertEquals(mappings.size(), outputMappings.size());
   }
 }

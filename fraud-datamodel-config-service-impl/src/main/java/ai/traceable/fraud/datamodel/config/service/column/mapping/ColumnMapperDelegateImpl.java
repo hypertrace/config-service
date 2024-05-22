@@ -4,6 +4,7 @@ import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstant
 import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getColumnName;
 import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getKeyPrefix;
 
+import ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils;
 import ai.traceable.fraud.datamodel.config.service.v1.ColumnMapping;
 import ai.traceable.fraud.datamodel.config.service.v1.ColumnMappingMeta;
 import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
@@ -20,6 +21,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.documentstore.model.exception.DuplicateDocumentException;
 import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
@@ -32,12 +34,16 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
 
   @Override
   public List<ColumnMappingsDocument> mapProperties(
-      String tenantId, ObjectKind kind, String typeId, ObjectTypeColumnMappings fields)
+      RequestContext requestContext,
+      ObjectKind kind,
+      String typeId,
+      ObjectTypeColumnMappings fields)
       throws IOException {
     int attempts = 0;
+    String tenantId = FraudDataModelUtils.getTenantId(requestContext);
     while (attempts++ <= 10) {
       try {
-        return doMapProperties(tenantId, kind, typeId, fields);
+        return doMapProperties(requestContext, kind, typeId, fields);
       } catch (DuplicateDocumentException e) {
         log.warn(
             "There was a duplicate key conflict while mapping for ["
@@ -78,10 +84,13 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
   }
 
   private List<ColumnMappingsDocument> doMapProperties(
-      String tenantId, ObjectKind kind, String typeId, ObjectTypeColumnMappings fields)
+      RequestContext requestContext,
+      ObjectKind kind,
+      String typeId,
+      ObjectTypeColumnMappings fields)
       throws IOException {
     List<ColumnMappingsDocument> currMappings =
-        columnMappingsStore.getColumnMappings(tenantId, kind, typeId);
+        columnMappingsStore.getColumnMappings(requestContext, kind, typeId);
     Map<String, ColumnMappingsDocument> fieldMap = new HashMap<>();
     Map<String, ColumnMappingsDocument> colMap = new HashMap<>();
     for (ColumnMappingsDocument currMapping : currMappings) {
@@ -91,26 +100,30 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
     List<ColumnMappingsDocument> newMappings = new ArrayList<>();
     for (Map.Entry<String, InternalFieldMetadata> entry : fields.getFieldsMetaMap().entrySet()) {
       String fieldName = entry.getKey();
+      // first, check if this key is already mapped
+      if (fieldMap.containsKey(fieldName)) {
+        continue;
+      }
       InternalFieldMetadata fieldMeta = entry.getValue();
       ColumnMappingsDocument columnMappingsDocument =
-          buildObjectTypeColumnMappings(tenantId, kind, typeId, fieldName, fieldMeta, colMap);
-      // todo: check if existing mappings already are correct.
+          buildObjectTypeColumnMappings(requestContext, kind, typeId, fieldName, fieldMeta, colMap);
       newMappings.add(columnMappingsDocument);
     }
     if (!newMappings.isEmpty()) {
-      columnMappingsStore.addColumnMappings(tenantId, newMappings);
+      columnMappingsStore.addColumnMappings(requestContext, newMappings);
     }
-    return columnMappingsStore.getColumnMappings(tenantId, kind, typeId);
+    return columnMappingsStore.getColumnMappings(requestContext, kind, typeId);
   }
 
   private ColumnMappingsDocument buildObjectTypeColumnMappings(
-      String tenantId,
+      RequestContext requestContext,
       ObjectKind objectKind,
       String typeId,
       String propName,
       InternalFieldMetadata fieldMeta,
       Map<String, ColumnMappingsDocument> colMap) {
     String colName = createNewMapping(colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
+    String tenantId = FraudDataModelUtils.getTenantId(requestContext);
     ColumnMappingsDocument columnMappingsDocument =
         new ColumnMappingsDocument(tenantId, objectKind, typeId, propName, colName, fieldMeta);
     colMap.put(colName, columnMappingsDocument);

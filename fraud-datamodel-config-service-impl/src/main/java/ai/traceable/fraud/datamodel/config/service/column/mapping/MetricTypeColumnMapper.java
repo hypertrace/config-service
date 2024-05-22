@@ -9,6 +9,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnM
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
   private final ColumnMapperDelegate delegate;
@@ -28,24 +29,25 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
   }
 
   @Override
-  public MetricType forCreate(String tenantId, MetricType inputType) throws IOException {
+  public MetricType forCreate(RequestContext requestContext, MetricType inputType)
+      throws IOException {
     String typeId = inputType.getId();
     MetricType.Builder newTypeBldr = inputType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            tenantId, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(inputType));
+            requestContext, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(inputType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
   @Override
-  public MetricType forUpdate(String tenantId, MetricType currType, MetricType newType)
-      throws IOException {
+  public MetricType forUpdate(
+      RequestContext requestContext, MetricType currType, MetricType newType) throws IOException {
     // assumes that the type validator is invoked beforehand
     String typeId = newType.getId();
     MetricType.Builder newTypeBldr = newType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            tenantId, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(newType));
+            requestContext, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(newType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 

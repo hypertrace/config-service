@@ -5,6 +5,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
 import io.grpc.Status;
 import java.util.Map;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class FraudDataModelConfigServiceRequestValidator {
 
@@ -80,7 +81,15 @@ public class FraudDataModelConfigServiceRequestValidator {
     }
   }
 
-  public void validateOrThrow(UpsertEntityTypeRequest upsertEntityTypeRequest) {
+  public void validateRequestContext(RequestContext requestContext) {
+    if (requestContext.getTenantId().isEmpty()) {
+      throw new IllegalArgumentException("Missing expected Tenant ID in request");
+    }
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, UpsertEntityTypeRequest upsertEntityTypeRequest) {
+    validateRequestContext(requestContext);
     validateOrThrow(upsertEntityTypeRequest.getId());
     var idFieldSet = upsertEntityTypeRequest.getIdSet();
     if (idFieldSet.getFieldCount() == 0) {
@@ -99,7 +108,9 @@ public class FraudDataModelConfigServiceRequestValidator {
     }
   }
 
-  public void validateOrThrow(UpsertRelationshipTypeRequest upsertRelationshipTypeRequest) {
+  public void validateOrThrow(
+      RequestContext requestContext, UpsertRelationshipTypeRequest upsertRelationshipTypeRequest) {
+    validateRequestContext(requestContext);
     validateOrThrow(upsertRelationshipTypeRequest.getId());
     if (upsertRelationshipTypeRequest.getLeftEntityTypeId().isBlank()) {
       throw Status.INVALID_ARGUMENT
@@ -125,7 +136,9 @@ public class FraudDataModelConfigServiceRequestValidator {
     }
   }
 
-  public void validateOrThrow(UpsertEventTypeRequest upsertEventTypeRequest) {
+  public void validateOrThrow(
+      RequestContext requestContext, UpsertEventTypeRequest upsertEventTypeRequest) {
+    validateRequestContext(requestContext);
     validateOrThrow(upsertEventTypeRequest.getId());
     if (upsertEventTypeRequest.getTimestampField().isBlank()) {
       throw Status.INVALID_ARGUMENT
@@ -137,7 +150,9 @@ public class FraudDataModelConfigServiceRequestValidator {
         upsertEventTypeRequest.getTimestampField(), upsertEventTypeRequest.getFieldsMetaMap());
   }
 
-  public void validateOrThrow(UpsertMetricTypeRequest upsertMetricTypeRequest) {
+  public void validateOrThrow(
+      RequestContext requestContext, UpsertMetricTypeRequest upsertMetricTypeRequest) {
+    validateRequestContext(requestContext);
     validateOrThrow(upsertMetricTypeRequest.getId());
     if (upsertMetricTypeRequest.getTimestampField().isBlank()) {
       throw Status.INVALID_ARGUMENT
