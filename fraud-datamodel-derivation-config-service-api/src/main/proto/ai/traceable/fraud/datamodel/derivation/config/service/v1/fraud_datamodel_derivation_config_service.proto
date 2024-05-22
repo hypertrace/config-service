@@ -9,8 +9,10 @@ import "ai/traceable/fraud/datamodel/derivation/config/service/v1/fraud_datamode
 service FraudDataModelDerivationConfigService {
   rpc CreateDerivationConfig(CreateDerivationConfigRequest) returns (CreateDerivationConfigResponse) {}
   rpc UpdateDerivationConfig(UpdateDerivationConfigRequest) returns (UpdateDerivationConfigResponse) {}
+  rpc UpsertDerivationConfig(UpsertDerivationConfigRequest) returns (UpsertDerivationConfigResponse) {}
   rpc GetDerivationConfigs(GetDerivationConfigsRequest) returns (GetDerivationConfigsResponse) {}
   rpc GetDerivationConfig(GetDerivationConfigRequest) returns (GetDerivationConfigResponse) {}
+  rpc DeleteDerivationConfigs(DeleteDerivationConfigsRequest) returns (DeleteDerivationConfigsResponse) {}
 }
 
 message CreateDerivationConfigRequest {
@@ -28,6 +30,14 @@ message UpdateDerivationConfigRequest {
 }
 
 message UpdateDerivationConfigResponse {
+  DerivationConfig derivation_config = 1;
+}
+
+message UpsertDerivationConfigRequest {
+  DerivationConfig derivation_config = 1;
+}
+
+message UpsertDerivationConfigResponse {
   DerivationConfig derivation_config = 1;
 }
 
@@ -49,4 +59,12 @@ message GetDerivationConfigRequest {
 
 message GetDerivationConfigResponse {
   DerivationConfig derivation_config = 1;
+}
+
+message DeleteDerivationConfigsRequest {
+  bool dry_run = 1;
+}
+
+message DeleteDerivationConfigsResponse {
+
 }

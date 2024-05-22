@@ -1,7 +1,6 @@
 package ai.traceable.fraud.datamodel.derivation.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStore;
@@ -10,6 +9,8 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivatio
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfig;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfigType;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.FraudDataModelDerivationConfigServiceGrpc;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
@@ -20,6 +21,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,19 +30,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class FraudDataModelDerivationConfigServiceImplTest {
-
-  private static final String UUID_1 = "uuid-1";
-
   private FraudDataModelDerivationConfigServiceGrpc
           .FraudDataModelDerivationConfigServiceBlockingStub
       fraudDataModelDerivationConfigServiceBlockingStub;
   private FraudDataModelDerivationConfigStoreManager storeManager;
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
-  @Mock private UuidGenerator uuidGenerator;
 
   @BeforeEach
   void beforeEach() {
+    UuidGenerator uuidGenerator = new UuidGenerator();
     this.mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
@@ -59,8 +58,6 @@ class FraudDataModelDerivationConfigServiceImplTest {
                 this.mockGenericConfigService.channel())
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-
-    when(uuidGenerator.generateRandomId()).thenReturn(UUID_1);
   }
 
   @AfterEach
@@ -84,7 +81,8 @@ class FraudDataModelDerivationConfigServiceImplTest {
                             .build())
                     .getDerivationConfig());
 
-    assertEquals(UUID_1, createdDerivationConfig.getId());
+    Assertions.assertNotNull(createdDerivationConfig.getId());
+    String uuid = createdDerivationConfig.getId();
 
     DerivationConfig updatedDerivationConfig =
         requestContext.call(
@@ -94,7 +92,7 @@ class FraudDataModelDerivationConfigServiceImplTest {
                         UpdateDerivationConfigRequest.newBuilder()
                             .setDerivationConfig(
                                 DerivationConfig.newBuilder()
-                                    .setId(UUID_1)
+                                    .setId(uuid)
                                     .setDerivationConfigType(
                                         DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                                     .setName("derivation_config_updated")
@@ -104,6 +102,17 @@ class FraudDataModelDerivationConfigServiceImplTest {
 
     assertEquals("derivation_config_updated", updatedDerivationConfig.getName());
     assertEquals("yaml_config_updated", updatedDerivationConfig.getDerivationConfig());
+
+    GetDerivationConfigResponse getDerivationConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfig(
+                    GetDerivationConfigRequest.newBuilder()
+                        .setDerivationConfigId(uuid)
+                        .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+                        .build()));
+    Assertions.assertNotNull(getDerivationConfigResponse.getDerivationConfig());
+    Assertions.assertEquals(uuid, getDerivationConfigResponse.getDerivationConfig().getId());
 
     GetDerivationConfigsResponse getDerivationConfigsResponse =
         requestContext.call(
@@ -123,7 +132,7 @@ class FraudDataModelDerivationConfigServiceImplTest {
                         .build()));
     assertEquals(0, getDerivationConfigsResponse.getDerivationConfigsCount());
 
-    storeManager.deleteDerivedConfig(requestContext, UUID_1);
+    storeManager.deleteDerivedConfig(requestContext, uuid);
 
     getDerivationConfigsResponse =
         requestContext.call(

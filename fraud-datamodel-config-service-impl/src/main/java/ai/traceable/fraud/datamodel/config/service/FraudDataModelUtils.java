@@ -4,8 +4,13 @@ import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
 import io.grpc.Status;
+import java.util.Collections;
+import java.util.List;
 
-public abstract class Utils {
+public abstract class FraudDataModelUtils {
+  private static final List<String> DEFAULT_RELATIONSHIP_TYPE_TAGS =
+      Collections.singletonList("api_id");
+
   public static ObjectTypeReference getObjectTypeReference(ObjectType objectType) {
     switch (objectType.getObjectCase()) {
       case ENTITY_TYPE:
@@ -34,5 +39,9 @@ public abstract class Utils {
 
   public static ObjectTypeReference getObjectTypeReference(ObjectKind objectKind, String typeId) {
     return ObjectTypeReference.newBuilder().setObjectKind(objectKind).setId(typeId).build();
+  }
+
+  public static List<String> getDefaultTagsForRelationshipType() {
+    return DEFAULT_RELATIONSHIP_TYPE_TAGS;
   }
 }

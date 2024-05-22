@@ -16,6 +16,7 @@ service FraudDataModelConfigService {
   rpc GetRelationshipTypes(GetRelationshipTypesRequest) returns (GetRelationshipTypesResponse) {}
   rpc GetEventTypes(GetEventTypesRequest) returns (GetEventTypesResponse) {}
   rpc GetMetricTypes(GetMetricTypesRequest) returns (GetMetricTypesResponse) {}
+  rpc DeleteDataModel(DeleteDataModelRequest) returns (DeleteDataModelResponse) {}
 }
 
 message UpsertEntityTypeRequest {
@@ -107,4 +108,15 @@ message GetEventTypesResponse {
 
 message GetMetricTypesResponse {
   repeated MetricType metric_types = 1;
+}
+
+message DeleteDataModelRequest {
+  bool dry_run = 1;
+}
+
+message DeleteDataModelResponse {
+  int32 num_entity_types = 1;
+  int32 num_relationship_types = 2;
+  int32 num_event_types = 3;
+  int32 num_metric_types = 4;
 }

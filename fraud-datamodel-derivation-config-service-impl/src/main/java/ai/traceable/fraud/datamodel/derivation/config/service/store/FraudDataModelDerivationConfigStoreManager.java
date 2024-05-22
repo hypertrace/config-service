@@ -10,6 +10,8 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationCo
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigResponse;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.List;
@@ -57,6 +59,18 @@ public class FraudDataModelDerivationConfigStoreManager {
         fraudDataModelDerivationConfigStore.upsertObject(requestContext, updatedDerivationConfig);
     DerivationConfig derivationConfig = buildDerivationConfig(configObject);
     return UpdateDerivationConfigResponse.newBuilder()
+        .setDerivationConfig(derivationConfig)
+        .build();
+  }
+
+  public UpsertDerivationConfigResponse upsertDerivationConfig(
+      RequestContext requestContext, UpsertDerivationConfigRequest request) throws StatusException {
+    DerivationConfig updatedDerivationConfig =
+        DerivationConfig.newBuilder(request.getDerivationConfig()).build();
+    ContextualConfigObject<DerivationConfig> configObject =
+        fraudDataModelDerivationConfigStore.upsertObject(requestContext, updatedDerivationConfig);
+    DerivationConfig derivationConfig = buildDerivationConfig(configObject);
+    return UpsertDerivationConfigResponse.newBuilder()
         .setDerivationConfig(derivationConfig)
         .build();
   }

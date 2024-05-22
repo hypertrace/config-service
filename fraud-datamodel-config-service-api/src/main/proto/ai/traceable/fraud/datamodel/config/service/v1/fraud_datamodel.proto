@@ -111,18 +111,12 @@ enum MetricDataType {
   METRIC_DATA_TYPE_GAUGE = 1;
   METRIC_DATA_TYPE_COUNTER = 2;
   METRIC_DATA_TYPE_HISTO = 3;
+  METRIC_DATA_TYPE_RATE = 4;
 }
 
-enum AggregateFunction {
-  AGGREGATE_FUNCTION_UNSPECIFIED = 0;
-  AGGREGATE_FUNCTION_SUM = 1;
-  AGGREGATE_FUNCTION_AVG = 2;
-  AGGREGATE_FUNCTION_MIN = 3;
-  AGGREGATE_FUNCTION_MAX = 4;
-  AGGREGATE_FUNCTION_QUANTILE = 5;
-  AGGREGATE_FUNCTION_TOP = 6;
-}
-
+// In the data model, define a metric as an aggregate on a set of processed spans (events)
+// Granularity is not configurable intentionally. The lowest granularity that system can support
+// will be chosen by platform.
 message MetricType {
   string id = 1;
   string name = 2;
@@ -130,6 +124,34 @@ message MetricType {
   MetricDataType metric_data_type = 4;
   map<string, FieldMetadata> fields_meta = 5;
   string timestamp_field = 6;
+
+  // following are populated only if required (if we want to do column mapping)
+  ColumnMappingMeta column_mapping_meta = 7;
+}
+
+enum BaselineAlgo {
+  BASELINE_ALGO_UNSPECIFIED = 0;
+  // simple moving average
+  BASELINE_ALGO_SMA = 1;
+  // exponentially weighted moving average
+  BASELINE_ALGO_EWMA = 2;
+  // linear regression
+  BASELINE_ALGO_LR = 3;
+  // Prophet
+  BASELINE_ALGO_PROPHET = 4;
+}
+
+// In the data model, define a baseline for a metric. Defining a baseline allows the rest of the consumers
+// know that a specific metric_id has forecasts available.
+message BaselineType {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  BaselineAlgo baseline_algo = 4;
+
+  // the set of slices in a baseline must be a subset of slices on the metric.
+  string metric_type_id = 5;
+  map<string, FieldMetadata> fields_meta = 6;
 
   // following are populated only if required (if we want to do column mapping)
   ColumnMappingMeta column_mapping_meta = 7;
@@ -149,4 +171,18 @@ message RelationshipType {
   Cardinality right_cardinality = 9;
 
   Lifecycle lifecycle = 10;
+
+  // Default tags available on the relationship, no column mapping.
+  repeated string tags = 11;
+}
+
+// Unused right now, but adding back to avoid breaking proto changes.
+enum AggregateFunction {
+  AGGREGATE_FUNCTION_UNSPECIFIED = 0;
+  AGGREGATE_FUNCTION_SUM = 1;
+  AGGREGATE_FUNCTION_AVG = 2;
+  AGGREGATE_FUNCTION_MIN = 3;
+  AGGREGATE_FUNCTION_MAX = 4;
+  AGGREGATE_FUNCTION_QUANTILE = 5;
+  AGGREGATE_FUNCTION_TOP = 6;
 }

@@ -10,6 +10,8 @@ import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyResponse;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.List;
@@ -50,6 +52,15 @@ public class FraudPolicyConfigStoreManager {
         fraudPolicyConfigStore.upsertObject(requestContext, updatedFraudPolicy);
     FraudPolicy updated = buildFraudPolicy(configObject);
     return UpdateFraudPolicyResponse.newBuilder().setFraudPolicy(updated).build();
+  }
+
+  public UpsertFraudPolicyResponse upsertFraudPolicy(
+      RequestContext requestContext, UpsertFraudPolicyRequest request) throws StatusException {
+    FraudPolicy fraudPolicy = request.getFraudPolicy();
+    ContextualConfigObject<FraudPolicy> configObject =
+        fraudPolicyConfigStore.upsertObject(requestContext, fraudPolicy);
+    FraudPolicy upserted = buildFraudPolicy(configObject);
+    return UpsertFraudPolicyResponse.newBuilder().setFraudPolicy(upserted).build();
   }
 
   public GetFraudPolicyListResponse fetchFraudPolicyList(

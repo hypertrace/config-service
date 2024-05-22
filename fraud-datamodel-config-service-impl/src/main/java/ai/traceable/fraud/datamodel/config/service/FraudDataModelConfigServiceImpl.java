@@ -104,6 +104,7 @@ public class FraudDataModelConfigServiceImpl
               .setRightCardinality(request.getRightCardinality())
               .setLeftToRightNavName(request.getLeftToRightNavName())
               .setRightToLeftNavName(request.getRightToLeftNavName())
+              .addAllTags(FraudDataModelUtils.getDefaultTagsForRelationshipType())
               .build();
       String tenantId = getTenantId();
       ObjectType finalTypeForUpsert = generateMappings(tenantId, relationshipType);
@@ -286,7 +287,8 @@ public class FraudDataModelConfigServiceImpl
     return fraudObjectTypesStore
         .getObjectType(
             tenantId,
-            Utils.getObjectTypeReference(ObjectKind.OBJECT_KIND_ENTITY, entityType.getId()))
+            FraudDataModelUtils.getObjectTypeReference(
+                ObjectKind.OBJECT_KIND_ENTITY, entityType.getId()))
         .map(objectType -> this.updateAndGetObjectType(tenantId, entityType, objectType))
         .orElseGet(() -> createAndGetObjectType(tenantId, entityType));
   }
@@ -310,7 +312,7 @@ public class FraudDataModelConfigServiceImpl
     return fraudObjectTypesStore
         .getObjectType(
             tenantId,
-            Utils.getObjectTypeReference(
+            FraudDataModelUtils.getObjectTypeReference(
                 ObjectKind.OBJECT_KIND_RELATIONSHIP, relationshipType.getId()))
         .map(objectType -> this.updateAndGetObjectType(tenantId, relationshipType, objectType))
         .orElseGet(() -> createAndGetObjectType(tenantId, relationshipType));
@@ -336,7 +338,8 @@ public class FraudDataModelConfigServiceImpl
     return fraudObjectTypesStore
         .getObjectType(
             tenantId,
-            Utils.getObjectTypeReference(ObjectKind.OBJECT_KIND_RELATIONSHIP, eventType.getId()))
+            FraudDataModelUtils.getObjectTypeReference(
+                ObjectKind.OBJECT_KIND_RELATIONSHIP, eventType.getId()))
         .map(objectType -> this.updateAndGetObjectType(tenantId, eventType, objectType))
         .orElseGet(() -> createAndGetObjectType(tenantId, eventType));
   }
@@ -359,7 +362,8 @@ public class FraudDataModelConfigServiceImpl
     return fraudObjectTypesStore
         .getObjectType(
             tenantId,
-            Utils.getObjectTypeReference(ObjectKind.OBJECT_KIND_RELATIONSHIP, metricType.getId()))
+            FraudDataModelUtils.getObjectTypeReference(
+                ObjectKind.OBJECT_KIND_RELATIONSHIP, metricType.getId()))
         .map(objectType -> this.updateAndGetObjectType(tenantId, metricType, objectType))
         .orElseGet(() -> createAndGetObjectType(tenantId, metricType));
   }

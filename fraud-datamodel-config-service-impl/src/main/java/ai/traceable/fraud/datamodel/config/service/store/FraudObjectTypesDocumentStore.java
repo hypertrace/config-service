@@ -2,7 +2,7 @@ package ai.traceable.fraud.datamodel.config.service.store;
 
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
 
-import ai.traceable.fraud.datamodel.config.service.Utils;
+import ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
@@ -121,7 +121,7 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
     Map<Key, Document> documentMap = new HashMap<>(objectTypes.size());
     var timestamp = System.currentTimeMillis();
     for (var objectType : objectTypes) {
-      var typeRef = Utils.getObjectTypeReference(objectType);
+      var typeRef = FraudDataModelUtils.getObjectTypeReference(objectType);
       var key = new FraudObjectTypeKey(tenantId, typeRef);
       var doc =
           new FraudObjectTypeDocument(

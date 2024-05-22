@@ -35,8 +35,7 @@ public class FraudDataModelDerivationConfigTest {
 
   @Test
   public void testSerDe() throws IOException {
-    var datasetDerivationConfig =
-        derivationConfig("dataset_derivation_1", "dataset_derivation.yaml");
+    var datasetDerivationConfig = derivationConfig("event_derivation_1", "event_derivation.yaml");
     var entityDerivationConfig = derivationConfig("entity_derivation_1", "entity_derivation.yaml");
     var relationshipDerivationConfig =
         derivationConfig("relationship_derivation_1", "relationship_derivation.yaml");
