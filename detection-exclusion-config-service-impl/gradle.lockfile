@@ -1,12 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.302=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:api-attribute-override-service-api:0.36.35=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:data-classification-config-service-api:0.36.35=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:iprange-config-service-api:0.36.35=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.36.35=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:rate-limiting-config-service-api:0.36.35=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.311=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:api-attribute-override-service-api:0.36.57=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:data-classification-config-service-api:0.36.57=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:iprange-config-service-api:0.36.57=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.36.57=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:rate-limiting-config-service-api:0.36.57=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath
@@ -24,7 +24,7 @@ ai.traceable.platform-gateway:xml-utils:0.8.24=runtimeClasspath,testRuntimeClass
 ai.traceable.platform:actor-service-api:0.2.135=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:3.0.9=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:1.0.188=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-constants:3.1.64=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-constants:3.1.66=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:conditions-matcher:1.0.188=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:config-providers:1.0.188=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.15=runtimeClasspath,testRuntimeClasspath
