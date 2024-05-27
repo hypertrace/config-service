@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+enum IntegrationEventType {
+  INTEGRATION_EVENT_TYPE_UNSPECIFIED = 0;
+  INTEGRATION_EVENT_TYPE_CREATE_CONFIG = 1;
+  INTEGRATION_EVENT_TYPE_UPDATE_CONFIG = 2;
+  INTEGRATION_EVENT_TYPE_DELETE_CONFIG = 3;
+}
+
+enum IntegrationType {
+  INTEGRATION_TYPE_UNSPECIFIED = 0;
+  INTEGRATION_TYPE_CLOUDFLARE_WAF = 1;
+  INTEGRATION_TYPE_AWS_WAF = 2;
+  INTEGRATION_TYPE_IMPERVA_WAF = 3;
+  INTEGRATION_TYPE_AZURE_WAF = 4;
+  INTEGRATION_TYPE_GCP_WAF = 5;
+  INTEGRATION_TYPE_F5_WAF = 6;
+  INTEGRATION_TYPE_SPLUNK = 7;
+  INTEGRATION_TYPE_SYSLOG = 8;
+  INTEGRATION_TYPE_JIRA = 9;
+  INTEGRATION_TYPE_SNYK = 10;
+  INTEGRATION_TYPE_WIZ = 11;
+}
+
+message IntegrationEventCondition {
+  repeated IntegrationType integration_types = 1;
+  repeated IntegrationEventType integration_event_types = 2;
+}
