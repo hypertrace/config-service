@@ -365,6 +365,7 @@ traceableConfigServiceConfig:
                     "x-scheme",
                     "x-tenant-id",
                     "x-traceable-ast",
+                    "x-traceable-ast-plugin",
                     "x-user-eid",
                     "x-user-id",
                     "x-content-type-options"
@@ -435,6 +436,7 @@ traceableConfigServiceConfig:
                   "x-scheme",
                   "x-tenant-id",
                   "x-traceable-ast",
+                  "x-traceable-ast-plugin",
                   "x-user-eid",
                   "x-user-id",
                   "x-content-type-options"
@@ -504,6 +506,7 @@ traceableConfigServiceConfig:
                   "x-real-ip",
                   "x-scheme",
                   "x-tenant-id",
+                  "x-traceable-ast-plugin",
                   "x-traceable-ast",
                   "x-user-eid",
                   "x-user-id",
