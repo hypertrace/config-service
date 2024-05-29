@@ -36,6 +36,7 @@ import ai.traceable.waf.integration.service.api.v1.GetWafIntegrationsRequest;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
+import ai.traceable.waf.integration.service.api.v1.RuleType;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
@@ -119,6 +120,20 @@ public class WafIntegrationConfigRequestValidator {
         wafIntegrationDetails, WafIntegrationDetails.NAME_FIELD_NUMBER);
     validateIntegrationParams(wafIntegrationDetails, existingWafIntegrations);
     this.validateWafIntegrationScope(wafIntegrationDetails.getWafIntegrationScope());
+  }
+
+  private void validateNonCustomSignatureIntegrationTargets(
+      WafIntegrationDetails wafIntegrationDetails,
+      WafIntegrationDetails.IntegrationParamsCase integrationParamsCase) {
+    if (wafIntegrationDetails.getIntegrationTargetsList().stream()
+        .anyMatch(
+            wafIntegrationTarget ->
+                wafIntegrationTarget.getRuleTarget() == RuleType.RULE_TYPE_CUSTOM_SIGNATURE)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Custom signature rules not supported for waf type " + integrationParamsCase.name())
+          .asRuntimeException();
+    }
   }
 
   private void validateWafIntegrationScope(WafIntegrationScope wafConfigScope) {
@@ -291,13 +306,22 @@ public class WafIntegrationConfigRequestValidator {
         break;
       case IMPERVA_INTEGRATION_PARAMS:
         validateImpervaIntegrationParam(wafIntegrationDetails.getImpervaIntegrationParams());
+        validateNonCustomSignatureIntegrationTargets(
+            wafIntegrationDetails,
+            WafIntegrationDetails.IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
         break;
       case AZURE_INTEGRATION_PARAMS:
         validateAzureIntegrationParam(wafIntegrationDetails.getAzureIntegrationParams());
+        validateNonCustomSignatureIntegrationTargets(
+            wafIntegrationDetails,
+            WafIntegrationDetails.IntegrationParamsCase.AZURE_INTEGRATION_PARAMS);
         break;
       case GCP_INTEGRATION_PARAMS:
         validateGcpIntegrationParams(
             wafIntegrationDetails.getGcpIntegrationParams(), existingWafIntegrations);
+        validateNonCustomSignatureIntegrationTargets(
+            wafIntegrationDetails,
+            WafIntegrationDetails.IntegrationParamsCase.GCP_INTEGRATION_PARAMS);
         break;
       case F5_INTEGRATION_PARAMS:
         validateF5IntegrationParams(

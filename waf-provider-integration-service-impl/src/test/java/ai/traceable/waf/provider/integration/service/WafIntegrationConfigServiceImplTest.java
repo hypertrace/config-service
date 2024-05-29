@@ -1195,10 +1195,6 @@ class WafIntegrationConfigServiceImplTest {
             .setWafIntegrationScope(wafConfigScope)
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
-                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
-                    .build())
-            .addIntegrationTargets(
-                WafIntegrationTarget.newBuilder()
                     .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
                     .build())
             .setImpervaIntegrationParams(
@@ -1216,10 +1212,6 @@ class WafIntegrationConfigServiceImplTest {
             .setName(name)
             .setDescription("des")
             .setWafIntegrationScope(wafConfigScope)
-            .addIntegrationTargets(
-                WafIntegrationTarget.newBuilder()
-                    .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
-                    .build())
             .addIntegrationTargets(
                 WafIntegrationTarget.newBuilder()
                     .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
