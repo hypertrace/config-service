@@ -160,7 +160,7 @@ message UpsertAllConfigsResponse {
   repeated UpsertedConfig upserted_configs = 1;
   UserDetails user_details = 2;
 
-  message  UpsertedConfig {
+  message UpsertedConfig {
     string context = 1;
     google.protobuf.Value config = 2;
     int64 creation_timestamp = 3;
