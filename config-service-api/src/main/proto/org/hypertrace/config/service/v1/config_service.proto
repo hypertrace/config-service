@@ -38,6 +38,8 @@ message UpsertConfigRequest {
   // optional - only required if config applies to a specific context.
   // If empty, specified config is associated with a default context.
   string context = 4;
+
+  UserDetails user_details = 5;
 }
 
 message UpsertConfigResponse {
@@ -52,6 +54,8 @@ message UpsertConfigResponse {
 
   // prev version of config value in the store
   optional google.protobuf.Value prev_config = 4;
+
+  UserDetails user_details = 5;
 }
 
 message GetConfigRequest {
@@ -141,7 +145,7 @@ message DeleteConfigsResponse {
 
 message UpsertAllConfigsRequest {
   repeated ConfigToUpsert configs = 1;
-
+  UserDetails user_details = 2;
   message ConfigToUpsert {
     string resource_name = 1;
     string resource_namespace = 2;
@@ -152,12 +156,16 @@ message UpsertAllConfigsRequest {
 
 message UpsertAllConfigsResponse {
   repeated UpsertedConfig upserted_configs = 1;
-
-  message UpsertedConfig {
+  UserDetails user_details = 2;
+  message  UpsertedConfig {
     string context = 1;
     google.protobuf.Value config = 2;
     int64 creation_timestamp = 3;
     int64 update_timestamp = 4;
     optional google.protobuf.Value prev_config = 5;
   }
+}
+
+message UserDetails {
+  string userEmail = 1;
 }

@@ -27,6 +27,7 @@ public class ConfigDocumentTest {
             "context",
             15,
             "user1",
+            "user1@email.com",
             getConfig1(),
             timestamp,
             timestamp);
@@ -45,6 +46,7 @@ public class ConfigDocumentTest {
             "context",
             15,
             "user1",
+            "user1@email.com",
             nullValue,
             timestamp,
             timestamp);

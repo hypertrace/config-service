@@ -45,12 +45,14 @@ import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
+import org.hypertrace.config.service.v1.UserDetails;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class ConfigServiceGrpcImplTest {
 
+  private static final String USER_EMAIL = "user@email.com";
   private static Value config1 = getConfig1();
   private static Value config2 = getConfig2();
   private static Value mergedConfig = getExpectedMergedConfig();
@@ -61,7 +63,11 @@ class ConfigServiceGrpcImplTest {
   @Test
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
-    when(configStore.writeConfig(any(ConfigResourceContext.class), anyString(), any(Value.class)))
+    when(configStore.writeConfig(
+            any(ConfigResourceContext.class),
+            anyString(),
+            any(Value.class),
+            any(UserDetails.class)))
         .thenAnswer(
             invocation -> {
               Value config = invocation.getArgument(2, Value.class);
@@ -293,7 +299,11 @@ class ConfigServiceGrpcImplTest {
     assertEquals(Status.NOT_FOUND, ((StatusException) throwable).getStatus());
 
     verify(configStore, never())
-        .writeConfig(any(ConfigResourceContext.class), anyString(), any(Value.class));
+        .writeConfig(
+            any(ConfigResourceContext.class),
+            anyString(),
+            any(Value.class),
+            any(UserDetails.class));
     verify(responseObserver, never()).onNext(any(DeleteConfigResponse.class));
     verify(responseObserver, never()).onCompleted();
   }
@@ -304,6 +314,7 @@ class ConfigServiceGrpcImplTest {
         .setResourceNamespace(RESOURCE_NAMESPACE)
         .setContext(context)
         .setConfig(config)
+        .setUserDetails(UserDetails.newBuilder().setUserEmail(USER_EMAIL).build())
         .build();
   }
 

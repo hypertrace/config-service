@@ -37,6 +37,7 @@ public class ConfigDocument implements Document {
   public static final String CONTEXT_FIELD_NAME = "context";
   public static final String VERSION_FIELD_NAME = "configVersion";
   public static final String USER_ID_FIELD_NAME = "userId";
+  public static final String USER_EMAIL_FIELD_NAME = "userEmail";
   public static final String CONFIG_FIELD_NAME = "config";
   public static final String CREATION_TIMESTAMP_FIELD_NAME = "creationTimestamp";
   public static final String UPDATE_TIMESTAMP_FIELD_NAME = "updateTimestamp";
@@ -59,6 +60,9 @@ public class ConfigDocument implements Document {
   @JsonProperty(value = USER_ID_FIELD_NAME)
   String userId;
 
+  @JsonProperty(value = USER_EMAIL_FIELD_NAME)
+  String userEmail;
+
   @JsonSerialize(using = ValueSerializer.class)
   @JsonDeserialize(using = ValueDeserializer.class)
   @JsonProperty(value = CONFIG_FIELD_NAME)
@@ -78,6 +82,7 @@ public class ConfigDocument implements Document {
       @JsonProperty(CONTEXT_FIELD_NAME) String context,
       @JsonProperty(VERSION_FIELD_NAME) long configVersion,
       @JsonProperty(USER_ID_FIELD_NAME) String userId,
+      @JsonProperty(USER_EMAIL_FIELD_NAME) String userEmail,
       @JsonProperty(CONFIG_FIELD_NAME) Value config,
       @JsonProperty(CREATION_TIMESTAMP_FIELD_NAME) long creationTimestamp,
       @JsonProperty(UPDATE_TIMESTAMP_FIELD_NAME) long updateTimestamp) {
@@ -87,6 +92,7 @@ public class ConfigDocument implements Document {
     this.context = context;
     this.configVersion = configVersion;
     this.userId = userId;
+    this.userEmail = userEmail;
     this.config = config;
     this.creationTimestamp = creationTimestamp;
     this.updateTimestamp = updateTimestamp;

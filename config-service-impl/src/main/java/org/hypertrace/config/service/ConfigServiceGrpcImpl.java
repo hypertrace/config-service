@@ -51,9 +51,11 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
       UpsertedConfig upsertedConfig =
-          configStore.writeConfig(configResourceContext, getUserId(), request.getConfig());
+          configStore.writeConfig(
+              configResourceContext, getUserId(), request.getConfig(), request.getUserDetails());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
+      builder.setUserDetails(request.getUserDetails());
       builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
       builder.setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
       if (upsertedConfig.hasPrevConfig()) {
@@ -201,9 +203,12 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                           requestedUpsert.getConfig()))
               .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
       List<UpsertedConfig> upsertedConfigs =
-          configStore.writeAllConfigs(valuesByContext, getUserId());
+          configStore.writeAllConfigs(valuesByContext, getUserId(), request.getUserDetails());
       responseObserver.onNext(
-          UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(upsertedConfigs).build());
+          UpsertAllConfigsResponse.newBuilder()
+              .addAllUpsertedConfigs(upsertedConfigs)
+              .setUserDetails(request.getUserDetails())
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Upsert all failed for request:{}", request, e);

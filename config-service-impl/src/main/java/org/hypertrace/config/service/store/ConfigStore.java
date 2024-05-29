@@ -10,6 +10,7 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
+import org.hypertrace.config.service.v1.UserDetails;
 
 /**
  * Abstraction for the backend which stores and serves the configuration data for multiple
@@ -20,12 +21,16 @@ public interface ConfigStore {
    * Write the config value associated with the specified config resource to the store.
    *
    * @param configResourceContext
-   * @param userId
    * @param config
+   * @param userDetails
    * @return the config written to the store
    */
   UpsertedConfig writeConfig(
-      ConfigResourceContext configResourceContext, String userId, Value config) throws IOException;
+      ConfigResourceContext configResourceContext,
+      String userId,
+      Value config,
+      UserDetails userDetails)
+      throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.
@@ -63,10 +68,14 @@ public interface ConfigStore {
    *
    * @param resourceContextValueMap
    * @param userId
+   * @param userDetails
    * @return the upserted configs
    */
   List<UpsertedConfig> writeAllConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException;
+      Map<ConfigResourceContext, Value> resourceContextValueMap,
+      String userId,
+      UserDetails userDetails)
+      throws IOException;
 
   /**
    * delete the config values associated with the specified config resources.
