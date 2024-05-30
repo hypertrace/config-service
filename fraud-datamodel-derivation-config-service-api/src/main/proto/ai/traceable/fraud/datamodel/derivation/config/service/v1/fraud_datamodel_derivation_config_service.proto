@@ -63,6 +63,7 @@ message GetDerivationConfigResponse {
 
 message DeleteDerivationConfigsRequest {
   bool dry_run = 1;
+  string derivation_config_id = 2;
 }
 
 message DeleteDerivationConfigsResponse {

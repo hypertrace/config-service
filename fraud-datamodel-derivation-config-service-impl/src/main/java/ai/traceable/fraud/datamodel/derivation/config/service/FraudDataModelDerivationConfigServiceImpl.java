@@ -3,6 +3,8 @@ package ai.traceable.fraud.datamodel.derivation.config.service;
 import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStoreManager;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteDerivationConfigsRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.FraudDataModelDerivationConfigServiceGrpc;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigResponse;
@@ -10,6 +12,8 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationCo
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.validation.FraudDataModelDerivationConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -49,6 +53,28 @@ class FraudDataModelDerivationConfigServiceImpl
       Exception decoratedException = decorateException(requestContext, exception);
       log.warn(
           "Error while creating derivation config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void upsertDerivationConfig(
+      UpsertDerivationConfigRequest request,
+      StreamObserver<UpsertDerivationConfigResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          fraudDataModelDerivationConfigStoreManager.upsertDerivationConfig(
+              requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while upserting derivation config for request: {} with context: {}",
           request,
           requestContext,
           decoratedException);
@@ -111,6 +137,27 @@ class FraudDataModelDerivationConfigServiceImpl
       Exception decoratedException = decorateException(requestContext, exception);
       log.warn(
           "Error while fetching fraud datamodel derivation configs for request: {} with context {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void deleteDerivationConfigs(
+      DeleteDerivationConfigsRequest request,
+      StreamObserver<DeleteDerivationConfigsResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      fraudDataModelDerivationConfigStoreManager.deleteDerivedConfig(
+          requestContext, request.getDerivationConfigId());
+      responseObserver.onNext(DeleteDerivationConfigsResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while deleting fraud datamodel derivation configs for request: {} with context {}",
           request,
           requestContext,
           decoratedException);

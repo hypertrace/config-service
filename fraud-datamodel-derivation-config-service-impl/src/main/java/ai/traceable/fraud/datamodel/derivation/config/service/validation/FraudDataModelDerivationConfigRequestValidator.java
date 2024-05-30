@@ -3,7 +3,9 @@ package ai.traceable.fraud.datamodel.derivation.config.service.validation;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigRequest;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -15,7 +17,17 @@ public class FraudDataModelDerivationConfigRequestValidator {
   }
 
   public void validateOrThrow(
+      RequestContext requestContext, UpsertDerivationConfigRequest request) {
+    validateRequestContext(requestContext);
+  }
+
+  public void validateOrThrow(
       RequestContext requestContext, UpdateDerivationConfigRequest request) {
+    validateRequestContext(requestContext);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, DeleteDerivationConfigsRequest request) {
     validateRequestContext(requestContext);
   }
 
