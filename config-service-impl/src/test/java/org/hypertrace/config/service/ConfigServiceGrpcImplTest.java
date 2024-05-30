@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,13 +46,13 @@ import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
-import org.hypertrace.config.service.v1.UserDetails;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 class ConfigServiceGrpcImplTest {
 
+  private static final String USER_ID = "userId";
   private static final String USER_EMAIL = "user@email.com";
   private static Value config1 = getConfig1();
   private static Value config2 = getConfig2();
@@ -64,10 +65,7 @@ class ConfigServiceGrpcImplTest {
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.writeConfig(
-            any(ConfigResourceContext.class),
-            anyString(),
-            any(Value.class),
-            any(UserDetails.class)))
+            any(ConfigResourceContext.class), anyString(), any(Value.class), anyString()))
         .thenAnswer(
             invocation -> {
               Value config = invocation.getArgument(2, Value.class);
@@ -85,14 +83,17 @@ class ConfigServiceGrpcImplTest {
         () -> configServiceGrpc.upsertConfig(getUpsertConfigRequest("", config1), responseObserver);
     Runnable runnableWithoutContext2 =
         () -> configServiceGrpc.upsertConfig(getUpsertConfigRequest("", config2), responseObserver);
-    RequestContext.forTenantId(TENANT_ID).run(runnableWithoutContext1);
-    RequestContext.forTenantId(TENANT_ID).run(runnableWithoutContext2);
+    RequestContext requestContext = spy(RequestContext.forTenantId(TENANT_ID));
+    when(requestContext.getUserId()).thenReturn(Optional.of(USER_ID));
+    when(requestContext.getEmail()).thenReturn(Optional.of(USER_EMAIL));
+    requestContext.run(runnableWithoutContext1);
+    requestContext.run(runnableWithoutContext2);
 
     Runnable runnableWithContext =
         () ->
             configServiceGrpc.upsertConfig(
                 getUpsertConfigRequest(CONTEXT1, config2), responseObserver);
-    RequestContext.forTenantId(TENANT_ID).run(runnableWithContext);
+    requestContext.run(runnableWithContext);
 
     ArgumentCaptor<UpsertConfigResponse> upsertConfigResponseCaptor =
         ArgumentCaptor.forClass(UpsertConfigResponse.class);
@@ -299,11 +300,7 @@ class ConfigServiceGrpcImplTest {
     assertEquals(Status.NOT_FOUND, ((StatusException) throwable).getStatus());
 
     verify(configStore, never())
-        .writeConfig(
-            any(ConfigResourceContext.class),
-            anyString(),
-            any(Value.class),
-            any(UserDetails.class));
+        .writeConfig(any(ConfigResourceContext.class), anyString(), any(Value.class), anyString());
     verify(responseObserver, never()).onNext(any(DeleteConfigResponse.class));
     verify(responseObserver, never()).onCompleted();
   }
@@ -314,7 +311,6 @@ class ConfigServiceGrpcImplTest {
         .setResourceNamespace(RESOURCE_NAMESPACE)
         .setContext(context)
         .setConfig(config)
-        .setUserDetails(UserDetails.newBuilder().setUserEmail(USER_EMAIL).build())
         .build();
   }
 

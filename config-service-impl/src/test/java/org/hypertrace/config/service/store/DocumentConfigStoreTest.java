@@ -29,7 +29,6 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
-import org.hypertrace.config.service.v1.UserDetails;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -77,11 +76,7 @@ class DocumentConfigStoreTest {
     when(collection.search(any(Query.class))).thenReturn(iterator);
 
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(
-            configResourceContext,
-            USER_ID,
-            config1,
-            UserDetails.newBuilder().setUserEmail(USER_EMAIL).build());
+        configStore.writeConfig(configResourceContext, USER_ID, config1, USER_EMAIL);
     assertEquals(config1, upsertedConfig.getConfig());
     assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
 
@@ -199,7 +194,7 @@ class DocumentConfigStoreTest {
         configStore.writeAllConfigs(
             ImmutableMap.of(resourceContext1, config2, resourceContext2, config1),
             USER_ID,
-            UserDetails.newBuilder().setUserEmail(USER_EMAIL).build());
+            USER_EMAIL);
 
     assertEquals(
         List.of(

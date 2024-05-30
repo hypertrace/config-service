@@ -29,7 +29,6 @@ import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
-import org.hypertrace.config.service.v1.UserDetails;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -59,7 +58,7 @@ public class DocumentConfigStore implements ConfigStore {
       ConfigResourceContext configResourceContext,
       String userId,
       Value latestConfig,
-      UserDetails userDetails)
+      String userEmail)
       throws IOException {
     Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
@@ -68,7 +67,7 @@ public class DocumentConfigStore implements ConfigStore {
     Key latestDocKey = new ConfigDocumentKey(configResourceContext);
     ConfigDocument latestConfigDocument =
         buildConfigDocument(
-            configResourceContext, latestConfig, userId, previousConfigDoc, userDetails);
+            configResourceContext, latestConfig, userId, previousConfigDoc, userEmail);
 
     collection.upsert(latestDocKey, latestConfigDocument);
     return optionalPreviousConfig
@@ -77,9 +76,7 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   private List<UpsertedConfig> writeConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap,
-      String userId,
-      UserDetails userDetails)
+      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId, String userEmail)
       throws IOException {
     Map<ConfigResourceContext, Optional<ConfigDocument>> previousConfigDocs =
         getLatestVersionConfigDocs(resourceContextValueMap.keySet());
@@ -91,8 +88,7 @@ public class DocumentConfigStore implements ConfigStore {
           }
           documentsToBeUpserted.put(
               new ConfigDocumentKey(key),
-              buildConfigDocument(
-                  key, resourceContextValueMap.get(key), userId, value, userDetails));
+              buildConfigDocument(key, resourceContextValueMap.get(key), userId, value, userEmail));
         });
 
     boolean successfulBulkUpsertDocuments = collection.bulkUpsert(documentsToBeUpserted);
@@ -119,7 +115,7 @@ public class DocumentConfigStore implements ConfigStore {
       Value latestConfig,
       String userId,
       Optional<ConfigDocument> previousConfigDoc,
-      UserDetails userDetails) {
+      String userEmail) {
     long updateTimestamp = clock.millis();
     long creationTimestamp =
         previousConfigDoc
@@ -138,7 +134,7 @@ public class DocumentConfigStore implements ConfigStore {
         configResourceContext.getContext(),
         newVersion,
         userId,
-        userDetails.getUserEmail(),
+        userEmail,
         latestConfig,
         creationTimestamp,
         updateTimestamp);
@@ -146,11 +142,9 @@ public class DocumentConfigStore implements ConfigStore {
 
   @Override
   public List<UpsertedConfig> writeAllConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap,
-      String userId,
-      UserDetails userDetails)
+      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId, String userEmail)
       throws IOException {
-    return this.writeConfigs(resourceContextValueMap, userId, userDetails);
+    return this.writeConfigs(resourceContextValueMap, userId, userEmail);
   }
 
   @Override

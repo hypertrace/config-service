@@ -52,10 +52,9 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
       UpsertedConfig upsertedConfig =
           configStore.writeConfig(
-              configResourceContext, getUserId(), request.getConfig(), request.getUserDetails());
+              configResourceContext, getUserId(), request.getConfig(), getUserEmail());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
-      builder.setUserDetails(request.getUserDetails());
       builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
       builder.setUpdateTimestamp(upsertedConfig.getUpdateTimestamp());
       if (upsertedConfig.hasPrevConfig()) {
@@ -203,12 +202,9 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                           requestedUpsert.getConfig()))
               .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
       List<UpsertedConfig> upsertedConfigs =
-          configStore.writeAllConfigs(valuesByContext, getUserId(), request.getUserDetails());
+          configStore.writeAllConfigs(valuesByContext, getUserId(), getUserEmail());
       responseObserver.onNext(
-          UpsertAllConfigsResponse.newBuilder()
-              .addAllUpsertedConfigs(upsertedConfigs)
-              .setUserDetails(request.getUserDetails())
-              .build());
+          UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(upsertedConfigs).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Upsert all failed for request:{}", request, e);
@@ -275,8 +271,21 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                 ::asRuntimeException);
   }
 
-  // TODO : get the userId from the context
+  private String getUserEmail() {
+    return RequestContext.CURRENT
+        .get()
+        .getEmail()
+        .orElseThrow(
+            Status.INVALID_ARGUMENT.withDescription("Email ID is missing in the request")
+                ::asRuntimeException);
+  }
+
   private String getUserId() {
-    return "";
+    return RequestContext.CURRENT
+        .get()
+        .getUserId()
+        .orElseThrow(
+            Status.INVALID_ARGUMENT.withDescription("User ID is missing in the request")
+                ::asRuntimeException);
   }
 }
