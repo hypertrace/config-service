@@ -4,6 +4,7 @@ syntax = "proto3";
 package ai.traceable.anomaly.config.service.v1.detector;
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
+import "google/protobuf/duration.proto";
 
 option java_multiple_files = true;
 
@@ -227,12 +228,24 @@ message VolumetricAnomalyDetectionConfig {
 }
 
 message ApiCallSpikeAnomalyConfig {
-  repeated IpRange excluded_ip_ranges = 1;
+  repeated ApiCallSpikeTuningConfig api_call_spike_tuning_configs = 1;
 }
 
-message IpRange {
-  int64 start_ip = 1;
-  int64 end_ip = 2;
+message ApiCallSpikeTuningConfig {
+  // the below detection config would be applied on the endpoints identified by this config
+  DetectionScopeConfig detection_scope_config = 1;
+  // detection specific threshold (int); it specifies the minimum span count
+  // for the API to be present during the detection run for the API data to be
+  // qualified to be run through the detector
+  int64 endpoint_span_count_detection_threshold = 5;
+}
+
+message DetectionScopeConfig {
+  // there is an implicit OR between the below fields
+  // the priority(in case of conflicting scopes) is: endpoint_ids > url_regexes > endpoint_labels
+  StringList endpoint_ids = 1;
+  StringList url_regexes = 2;
+  StringList endpoint_labels = 3;
 }
 
 message CredentialStuffingAnomalyDetectionConfig {
@@ -243,6 +256,27 @@ message CredentialStuffingAnomalyDetectionConfig {
 }
 
 message CredentialStuffingAnomalyConfig {
+  // the detection would be applied on the endpoints (along with username extraction) identified by this config
+  repeated CredentialStuffingTuningConfig credential_stuffing_tuning_configs = 1;
+}
+
+message ParameterExtractionConfig {
+  oneof parameter_extraction_config {
+    // extract the parameter labelled with one of the specified data_type (priority will be given to the data_type_id appearing first in the list), as per the data classification rules
+    StringList data_type_ids = 2;
+    // example: "get_json_object(request_body, '$.email')".
+    // This doesn't have any checks - whether the syntax is correct, the function is supported, etc.
+    string extraction_logic = 3;
+  }
+}
+
+message CredentialStuffingTuningConfig {
+  // // the below detection config would be applied on the endpoints identified by this config
+  DetectionScopeConfig detection_scope_config = 1;
+  ParameterExtractionConfig username_extraction_config = 2;
+  google.protobuf.Duration look_back_duration = 3;
+  int64 unique_users_threshold = 4;
+  int64 failed_login_percentage_threshold = 5;
 }
 
 message ModsecurityAllDetectionConfig {

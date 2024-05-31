@@ -14,6 +14,7 @@ enum TrainingConfigType {
   TRAINING_CONFIG_TYPE_API_NAMING = 4;
   TRAINING_CONFIG_TYPE_SENSITIVE_DATA = 5;
   TRAINING_CONFIG_TYPE_LOCAL_TRAINING = 6;
+  TRAINING_CONFIG_TYPE_VOLUMETRIC_TRAINING = 7;
 }
 
 message GetTrainingConfigsFilter {
@@ -90,7 +91,49 @@ message TrainingConfig {
     ApiNamingTrainingConfig api_naming_training_config = 5;
     SensitiveDataTrainingConfig sensitive_data_training_config = 6;
     LocalTrainingConfig local_training_config = 7;
+    VolumetricTrainingConfig volumetric_training_config = 8;
   }
+}
+
+message VolumetricTrainingConfig {
+  oneof config {
+    ApiCallSpikeTrainingConfig api_call_spike_config = 1;
+  }
+}
+
+message ApiCallSpikeTrainingConfig {
+  repeated ApiCallSpikeTuningConfig api_call_spike_tuning_configs = 1;
+}
+
+message ApiCallSpikeTuningConfig {
+  // the below training config would be applied on the endpoints identified by this config
+  TrainingScopeConfig training_scope_config = 1;
+  // training specific threshold; it specifies that we should have seen this
+  // atleast 'x' spans for the endpoint within the training window atleast once
+  int64 endpoint_span_count_threshold = 2;
+  // training specific threshold (between 0-1); it specifies that the PX
+  // value (percentile value like P95) for the span count within the training
+  // data samples should be greater than 0. For example, if the value = 0.25,
+  // that means the P25(training data samples) > 0 or we should have atleast
+  // 75% legitimate training data points.
+  float endpoint_span_count_percentile_threshold = 3;
+  // training specific threshold (between 0-1); it specifies what the
+  // maximum permissible time duration between the first and last time sorted
+  // data points should be as a fraction of the training data window. If the
+  // duration between first and last seen data points > time_fraction_training_window_threshold * training window,
+  // then only we consider the API data for training. For example, if the
+  // value = 0.5 and the training duration is 14 days. 0.5 * 14 = 7 days should
+  // be the minimum duration between first and last seen data points for the API
+  // to be considered for training.
+  float time_fraction_training_window_threshold = 4;
+}
+
+message TrainingScopeConfig {
+  // there is an implicit OR between the below fields
+  // the priority(in case of conflicting scopes) is: endpoint_ids > url_regexes > endpoint_labels
+  StringList endpoint_ids = 1;
+  StringList url_regexes = 2;
+  StringList endpoint_labels = 3;
 }
 
 message LocalTrainingConfig {

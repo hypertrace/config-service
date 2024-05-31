@@ -768,10 +768,6 @@ public class AnomalyDetectionConfigHandlerTest {
 
   @Test
   void testVolumetricDetectionConfigConvert() throws InvalidProtocolBufferException {
-    ArrayList<IpRange> ipRangesList = new ArrayList<>();
-    ipRangesList.add(IpRange.newBuilder().setStartIp(1000).setEndIp(2000).build());
-    ipRangesList.add(IpRange.newBuilder().setStartIp(3000).setEndIp(4000).build());
-
     ScopedAnomalyDetectionConfig config1 =
         ScopedAnomalyDetectionConfig.newBuilder()
             .addAnomalyDetectionConfigs(
@@ -783,10 +779,7 @@ public class AnomalyDetectionConfigHandlerTest {
                             .build())
                     .setVolumetricAnomalyDetectionConfig(
                         VolumetricAnomalyDetectionConfig.newBuilder()
-                            .setApiCallSpike(
-                                ApiCallSpikeAnomalyConfig.newBuilder()
-                                    .addExcludedIpRanges(IpRange.getDefaultInstance())
-                                    .build()))
+                            .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder().build()))
                     .build())
             .build();
 
@@ -801,10 +794,7 @@ public class AnomalyDetectionConfigHandlerTest {
                                 AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
                     .setVolumetricAnomalyDetectionConfig(
                         VolumetricAnomalyDetectionConfig.newBuilder()
-                            .setApiCallSpike(
-                                ApiCallSpikeAnomalyConfig.newBuilder()
-                                    .addAllExcludedIpRanges(ipRangesList)
-                                    .build()))
+                            .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder().build()))
                     .build())
             .build();
 
@@ -837,12 +827,6 @@ public class AnomalyDetectionConfigHandlerTest {
     assertEquals(
         AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
         detectionConfig1.getCategoryConfig().getEventScoreCategory());
-    assertEquals(
-        ipRangesList,
-        detectionConfig1
-            .getVolumetricAnomalyDetectionConfig()
-            .getApiCallSpike()
-            .getExcludedIpRangesList());
 
     ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
         ScopedAnomalyDetectionConfig.newBuilder();

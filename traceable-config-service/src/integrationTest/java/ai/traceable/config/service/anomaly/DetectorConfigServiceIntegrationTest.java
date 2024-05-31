@@ -25,7 +25,6 @@ import ai.traceable.anomaly.config.service.v1.detector.GetAllScopedAnomalyDetect
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.GetGlobalResolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
-import ai.traceable.anomaly.config.service.v1.detector.IpRange;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
@@ -505,13 +504,7 @@ public class DetectorConfigServiceIntegrationTest
                               .build())
                       .setVolumetricAnomalyDetectionConfig(
                           VolumetricAnomalyDetectionConfig.newBuilder()
-                              .setApiCallSpike(
-                                  ApiCallSpikeAnomalyConfig.newBuilder()
-                                      .addExcludedIpRanges(
-                                          IpRange.newBuilder()
-                                              .setStartIp(100)
-                                              .setEndIp(200)
-                                              .build()))
+                              .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder())
                               .build()))
               .build();
 
@@ -524,28 +517,6 @@ public class DetectorConfigServiceIntegrationTest
           Optional.empty());
 
       detectionConfig1 = fetchGlobalResolvedDetectorConfig(customerConfigScope);
-
-      assertEquals(
-          100,
-          detectionConfig1
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getStartIp());
-
-      assertEquals(
-          200,
-          detectionConfig1
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getEndIp());
 
       assertEquals(
           AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build(),
@@ -564,13 +535,7 @@ public class DetectorConfigServiceIntegrationTest
                               .build())
                       .setVolumetricAnomalyDetectionConfig(
                           VolumetricAnomalyDetectionConfig.newBuilder()
-                              .setApiCallSpike(
-                                  ApiCallSpikeAnomalyConfig.newBuilder()
-                                      .addExcludedIpRanges(
-                                          IpRange.newBuilder()
-                                              .setStartIp(100)
-                                              .setEndIp(200)
-                                              .build()))
+                              .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder())
                               .build()))
               .build();
 
@@ -600,13 +565,7 @@ public class DetectorConfigServiceIntegrationTest
                               .build())
                       .setVolumetricAnomalyDetectionConfig(
                           VolumetricAnomalyDetectionConfig.newBuilder()
-                              .setApiCallSpike(
-                                  ApiCallSpikeAnomalyConfig.newBuilder()
-                                      .addExcludedIpRanges(
-                                          IpRange.newBuilder()
-                                              .setStartIp(100)
-                                              .setEndIp(200)
-                                              .build()))
+                              .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder())
                               .build()))
               .build();
 
@@ -618,28 +577,6 @@ public class DetectorConfigServiceIntegrationTest
           Optional.empty());
 
       detectionConfig3 = fetchGlobalResolvedDetectorConfig(customerConfigScope);
-
-      assertEquals(
-          100,
-          detectionConfig3
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getStartIp());
-
-      assertEquals(
-          200,
-          detectionConfig3
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getEndIp());
 
       assertEquals(
           AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(false).build(),
@@ -674,13 +611,7 @@ public class DetectorConfigServiceIntegrationTest
                               .build())
                       .setVolumetricAnomalyDetectionConfig(
                           VolumetricAnomalyDetectionConfig.newBuilder()
-                              .setApiCallSpike(
-                                  ApiCallSpikeAnomalyConfig.newBuilder()
-                                      .addExcludedIpRanges(
-                                          IpRange.newBuilder()
-                                              .setStartIp(100)
-                                              .setEndIp(200)
-                                              .build()))
+                              .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder())
                               .build()))
               .build();
 
@@ -703,28 +634,6 @@ public class DetectorConfigServiceIntegrationTest
       detectionConfig1 = getScopedAnomalyDetectionConfig(detectionConfigs1, customerConfigScope);
 
       assertEquals(
-          100,
-          detectionConfig1
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getStartIp());
-
-      assertEquals(
-          200,
-          detectionConfig1
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getEndIp());
-
-      assertEquals(
           AnomalyConfigStatusChange.newBuilder().setDisabled(false).setInternal(true).build(),
           detectionConfig1.getAnomalyDetectionConfigsList().get(0).getConfigStatus());
     }
@@ -741,13 +650,7 @@ public class DetectorConfigServiceIntegrationTest
                               .build())
                       .setVolumetricAnomalyDetectionConfig(
                           VolumetricAnomalyDetectionConfig.newBuilder()
-                              .setApiCallSpike(
-                                  ApiCallSpikeAnomalyConfig.newBuilder()
-                                      .addExcludedIpRanges(
-                                          IpRange.newBuilder()
-                                              .setStartIp(100)
-                                              .setEndIp(200)
-                                              .build()))
+                              .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder())
                               .build()))
               .build();
 
@@ -785,13 +688,7 @@ public class DetectorConfigServiceIntegrationTest
                               .build())
                       .setVolumetricAnomalyDetectionConfig(
                           VolumetricAnomalyDetectionConfig.newBuilder()
-                              .setApiCallSpike(
-                                  ApiCallSpikeAnomalyConfig.newBuilder()
-                                      .addExcludedIpRanges(
-                                          IpRange.newBuilder()
-                                              .setStartIp(300)
-                                              .setEndIp(400)
-                                              .build()))
+                              .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder())
                               .build()))
               .build();
 
@@ -811,28 +708,6 @@ public class DetectorConfigServiceIntegrationTest
           fetchAllGlobalResolvedDetectorConfig(filter);
       assertEquals(1, detectionConfigs3.size());
       detectionConfig3 = getScopedAnomalyDetectionConfig(detectionConfigs3, customerConfigScope);
-
-      assertEquals(
-          300,
-          detectionConfig3
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getStartIp());
-
-      assertEquals(
-          400,
-          detectionConfig3
-              .getAnomalyDetectionConfigsList()
-              .get(0)
-              .getVolumetricAnomalyDetectionConfig()
-              .getApiCallSpike()
-              .getExcludedIpRangesList()
-              .get(0)
-              .getEndIp());
 
       assertEquals(
           AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build(),
