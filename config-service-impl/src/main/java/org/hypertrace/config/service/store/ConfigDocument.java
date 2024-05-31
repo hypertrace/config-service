@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
+import java.util.Optional;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.core.documentstore.Document;
@@ -26,11 +28,14 @@ import org.hypertrace.core.documentstore.Document;
  */
 @lombok.Value
 @Slf4j
+@Builder
 public class ConfigDocument implements Document {
 
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+  public static final String DEFAULT_LATEST_UPDATED_USER_ID = "Unknown";
+  public static final String DEFAULT_LATEST_UPDATED_USER_EMAIL = "Unknown";
   public static final String RESOURCE_FIELD_NAME = "resourceName";
   public static final String RESOURCE_NAMESPACE_FIELD_NAME = "resourceNamespace";
   public static final String TENANT_ID_FIELD_NAME = "tenantId";
@@ -91,8 +96,10 @@ public class ConfigDocument implements Document {
     this.tenantId = tenantId;
     this.context = context;
     this.configVersion = configVersion;
-    this.lastUpdatedUserId = lastUpdatedUserId;
-    this.lastUpdatedUserEmail = lastUpdatedUserEmail;
+    this.lastUpdatedUserId =
+        Optional.ofNullable(lastUpdatedUserId).orElse(DEFAULT_LATEST_UPDATED_USER_ID);
+    this.lastUpdatedUserEmail =
+        Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_LATEST_UPDATED_USER_EMAIL);
     this.config = config;
     this.creationTimestamp = creationTimestamp;
     this.updateTimestamp = updateTimestamp;
