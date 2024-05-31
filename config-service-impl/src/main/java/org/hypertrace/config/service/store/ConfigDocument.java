@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.core.documentstore.Document;
@@ -31,12 +32,15 @@ public class ConfigDocument implements Document {
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+  public static final String DEFAULT_LATEST_UPDATED_USER_ID = "Unknown";
+  public static final String DEFAULT_LATEST_UPDATED_USER_EMAIL = "Unknown";
   public static final String RESOURCE_FIELD_NAME = "resourceName";
   public static final String RESOURCE_NAMESPACE_FIELD_NAME = "resourceNamespace";
   public static final String TENANT_ID_FIELD_NAME = "tenantId";
   public static final String CONTEXT_FIELD_NAME = "context";
   public static final String VERSION_FIELD_NAME = "configVersion";
-  public static final String USER_ID_FIELD_NAME = "userId";
+  public static final String LAST_UPDATED_USER_ID_FIELD_NAME = "lastUpdateUserId";
+  public static final String LAST_UPDATED_USER_EMAIL_FIELD_NAME = "lastUpdatedUserEmail";
   public static final String CONFIG_FIELD_NAME = "config";
   public static final String CREATION_TIMESTAMP_FIELD_NAME = "creationTimestamp";
   public static final String UPDATE_TIMESTAMP_FIELD_NAME = "updateTimestamp";
@@ -56,8 +60,11 @@ public class ConfigDocument implements Document {
   @JsonProperty(value = VERSION_FIELD_NAME)
   long configVersion;
 
-  @JsonProperty(value = USER_ID_FIELD_NAME)
-  String userId;
+  @JsonProperty(value = LAST_UPDATED_USER_ID_FIELD_NAME)
+  String lastUpdatedUserId;
+
+  @JsonProperty(value = LAST_UPDATED_USER_EMAIL_FIELD_NAME)
+  String lastUpdatedUserEmail;
 
   @JsonSerialize(using = ValueSerializer.class)
   @JsonDeserialize(using = ValueDeserializer.class)
@@ -77,7 +84,8 @@ public class ConfigDocument implements Document {
       @JsonProperty(TENANT_ID_FIELD_NAME) String tenantId,
       @JsonProperty(CONTEXT_FIELD_NAME) String context,
       @JsonProperty(VERSION_FIELD_NAME) long configVersion,
-      @JsonProperty(USER_ID_FIELD_NAME) String userId,
+      @JsonProperty(LAST_UPDATED_USER_ID_FIELD_NAME) String lastUpdatedUserId,
+      @JsonProperty(LAST_UPDATED_USER_EMAIL_FIELD_NAME) String lastUpdatedUserEmail,
       @JsonProperty(CONFIG_FIELD_NAME) Value config,
       @JsonProperty(CREATION_TIMESTAMP_FIELD_NAME) long creationTimestamp,
       @JsonProperty(UPDATE_TIMESTAMP_FIELD_NAME) long updateTimestamp) {
@@ -86,7 +94,10 @@ public class ConfigDocument implements Document {
     this.tenantId = tenantId;
     this.context = context;
     this.configVersion = configVersion;
-    this.userId = userId;
+    this.lastUpdatedUserId =
+        Optional.ofNullable(lastUpdatedUserId).orElse(DEFAULT_LATEST_UPDATED_USER_ID);
+    this.lastUpdatedUserEmail =
+        Optional.ofNullable(lastUpdatedUserEmail).orElse(DEFAULT_LATEST_UPDATED_USER_EMAIL);
     this.config = config;
     this.creationTimestamp = creationTimestamp;
     this.updateTimestamp = updateTimestamp;

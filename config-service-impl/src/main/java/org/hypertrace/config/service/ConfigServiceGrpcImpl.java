@@ -39,6 +39,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBase {
 
+  private static String DEFAULT_USER_ID = "Unknown";
+  private static String DEFAULT_USER_EMAIL = "Unknown";
   private final ConfigStore configStore;
 
   public ConfigServiceGrpcImpl(ConfigStore configStore) {
@@ -51,7 +53,8 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
       UpsertedConfig upsertedConfig =
-          configStore.writeConfig(configResourceContext, getUserId(), request.getConfig());
+          configStore.writeConfig(
+              configResourceContext, getUserId(), request.getConfig(), getUserEmail());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
       builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
@@ -201,7 +204,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                           requestedUpsert.getConfig()))
               .collect(ImmutableMap.toImmutableMap(Entry::getKey, Entry::getValue));
       List<UpsertedConfig> upsertedConfigs =
-          configStore.writeAllConfigs(valuesByContext, getUserId());
+          configStore.writeAllConfigs(valuesByContext, getUserId(), getUserEmail());
       responseObserver.onNext(
           UpsertAllConfigsResponse.newBuilder().addAllUpsertedConfigs(upsertedConfigs).build());
       responseObserver.onCompleted();
@@ -270,8 +273,11 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                 ::asRuntimeException);
   }
 
-  // TODO : get the userId from the context
+  private String getUserEmail() {
+    return RequestContext.CURRENT.get().getEmail().orElse(DEFAULT_USER_EMAIL);
+  }
+
   private String getUserId() {
-    return "";
+    return RequestContext.CURRENT.get().getUserId().orElse(DEFAULT_USER_ID);
   }
 }

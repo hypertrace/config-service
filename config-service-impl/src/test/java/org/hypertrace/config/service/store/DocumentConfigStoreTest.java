@@ -44,6 +44,7 @@ class DocumentConfigStoreTest {
 
   private static final long CONFIG_VERSION = 5;
   private static final String USER_ID = "user1";
+  private static final String USER_EMAIL = "user@email.com";
   private static final long TIMESTAMP1 = 100L;
   private static final long TIMESTAMP2 = 200L;
   private static final long TIMESTAMP3 = 300L;
@@ -75,7 +76,7 @@ class DocumentConfigStoreTest {
     when(collection.search(any(Query.class))).thenReturn(iterator);
 
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, config1);
+        configStore.writeConfig(configResourceContext, USER_ID, config1, USER_EMAIL);
     assertEquals(config1, upsertedConfig.getConfig());
     assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
 
@@ -191,7 +192,9 @@ class DocumentConfigStoreTest {
     List<UpsertedConfig> upsertedConfigs =
         // Swap configs between contexts as an update
         configStore.writeAllConfigs(
-            ImmutableMap.of(resourceContext1, config2, resourceContext2, config1), USER_ID);
+            ImmutableMap.of(resourceContext1, config2, resourceContext2, config1),
+            USER_ID,
+            USER_EMAIL);
 
     assertEquals(
         List.of(
@@ -239,6 +242,7 @@ class DocumentConfigStoreTest {
         context,
         version,
         USER_ID,
+        USER_EMAIL,
         config,
         creationTimestamp,
         updateTimestamp);

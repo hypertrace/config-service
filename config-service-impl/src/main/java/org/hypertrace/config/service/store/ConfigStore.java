@@ -20,12 +20,13 @@ public interface ConfigStore {
    * Write the config value associated with the specified config resource to the store.
    *
    * @param configResourceContext
-   * @param userId
    * @param config
+   * @param userEmail
    * @return the config written to the store
    */
   UpsertedConfig writeConfig(
-      ConfigResourceContext configResourceContext, String userId, Value config) throws IOException;
+      ConfigResourceContext configResourceContext, String userId, Value config, String userEmail)
+      throws IOException;
 
   /**
    * Get the config with the latest version for the specified resource.
@@ -63,10 +64,12 @@ public interface ConfigStore {
    *
    * @param resourceContextValueMap
    * @param userId
+   * @param userEmail
    * @return the upserted configs
    */
   List<UpsertedConfig> writeAllConfigs(
-      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId) throws IOException;
+      Map<ConfigResourceContext, Value> resourceContextValueMap, String userId, String userEmail)
+      throws IOException;
 
   /**
    * delete the config values associated with the specified config resources.

@@ -4,6 +4,7 @@ import static org.hypertrace.config.service.TestUtils.RESOURCE_NAME;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAMESPACE;
 import static org.hypertrace.config.service.TestUtils.TENANT_ID;
 import static org.hypertrace.config.service.TestUtils.getConfig1;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.io.Resources;
@@ -27,6 +28,7 @@ public class ConfigDocumentTest {
             "context",
             15,
             "user1",
+            "user1@email.com",
             getConfig1(),
             timestamp,
             timestamp);
@@ -45,6 +47,7 @@ public class ConfigDocumentTest {
             "context",
             15,
             "user1",
+            "user1@email.com",
             nullValue,
             timestamp,
             timestamp);
@@ -67,5 +70,42 @@ public class ConfigDocumentTest {
     assertEquals(getConfig1(), configDocument.getConfig());
     assertEquals(0, configDocument.getCreationTimestamp());
     assertEquals(0, configDocument.getUpdateTimestamp());
+  }
+
+  @Test
+  @DisplayName("Test compatibility of json string when new field is added to ConfigDocument")
+  void testConfigDocumentCompatibility() throws IOException {
+    ConfigDocument configDocument =
+        new ConfigDocument(
+            "exampleResourceName",
+            "exampleResourceNamespace",
+            "exampleTenantId",
+            "exampleContext",
+            1,
+            null,
+            null,
+            Value.newBuilder().build(),
+            1622547800000L,
+            1625149800000L);
+    assertDoesNotThrow(() -> configDocument.toJson());
+    assertEquals("Unknown", configDocument.getLastUpdatedUserId());
+    assertEquals("Unknown", configDocument.getLastUpdatedUserEmail());
+
+    String jsonString =
+        "{"
+            + "\"resourceName\":\"exampleResourceName\","
+            + "\"userId\":\"userId\","
+            + "\"resourceNamespace\":\"exampleResourceNamespace\","
+            + "\"tenantId\":\"exampleTenantId\","
+            + "\"context\":\"exampleContext\","
+            + "\"configVersion\":1,"
+            + "\"config\":null,"
+            + "\"creationTimestamp\":1622547800000,"
+            + "\"updateTimestamp\":1625149800000}";
+
+    ConfigDocument configDocument1 = ConfigDocument.fromJson(jsonString);
+
+    assertEquals("Unknown", configDocument1.getLastUpdatedUserId());
+    assertEquals("Unknown", configDocument1.getLastUpdatedUserEmail());
   }
 }
