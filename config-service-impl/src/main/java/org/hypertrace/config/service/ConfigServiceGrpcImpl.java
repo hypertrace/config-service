@@ -39,6 +39,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBase {
 
+  private static String DEFAULT_USER_ID = "Unknown";
+  private static String DEFAULT_USER_EMAIL = "Unknown";
   private final ConfigStore configStore;
 
   public ConfigServiceGrpcImpl(ConfigStore configStore) {
@@ -272,20 +274,10 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   }
 
   private String getUserEmail() {
-    return RequestContext.CURRENT
-        .get()
-        .getEmail()
-        .orElseThrow(
-            Status.INVALID_ARGUMENT.withDescription("Email ID is missing in the request")
-                ::asRuntimeException);
+    return RequestContext.CURRENT.get().getEmail().orElse(DEFAULT_USER_EMAIL);
   }
 
   private String getUserId() {
-    return RequestContext.CURRENT
-        .get()
-        .getUserId()
-        .orElseThrow(
-            Status.INVALID_ARGUMENT.withDescription("User ID is missing in the request")
-                ::asRuntimeException);
+    return RequestContext.CURRENT.get().getUserId().orElse(DEFAULT_USER_ID);
   }
 }

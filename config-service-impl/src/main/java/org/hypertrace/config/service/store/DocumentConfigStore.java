@@ -56,9 +56,9 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public UpsertedConfig writeConfig(
       ConfigResourceContext configResourceContext,
-      String userId,
+      String lastUpdatedUserId,
       Value latestConfig,
-      String userEmail)
+      String lastUpdatedUserEmail)
       throws IOException {
     Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
@@ -67,7 +67,11 @@ public class DocumentConfigStore implements ConfigStore {
     Key latestDocKey = new ConfigDocumentKey(configResourceContext);
     ConfigDocument latestConfigDocument =
         buildConfigDocument(
-            configResourceContext, latestConfig, userId, previousConfigDoc, userEmail);
+            configResourceContext,
+            latestConfig,
+            lastUpdatedUserId,
+            previousConfigDoc,
+            lastUpdatedUserEmail);
 
     collection.upsert(latestDocKey, latestConfigDocument);
     return optionalPreviousConfig
@@ -113,9 +117,9 @@ public class DocumentConfigStore implements ConfigStore {
   private ConfigDocument buildConfigDocument(
       ConfigResourceContext configResourceContext,
       Value latestConfig,
-      String userId,
+      String lastUpdatedUserId,
       Optional<ConfigDocument> previousConfigDoc,
-      String userEmail) {
+      String lastUpdatedUserEmail) {
     long updateTimestamp = clock.millis();
     long creationTimestamp =
         previousConfigDoc
@@ -133,8 +137,8 @@ public class DocumentConfigStore implements ConfigStore {
         configResourceContext.getConfigResource().getTenantId(),
         configResourceContext.getContext(),
         newVersion,
-        userId,
-        userEmail,
+        lastUpdatedUserId,
+        lastUpdatedUserEmail,
         latestConfig,
         creationTimestamp,
         updateTimestamp);
