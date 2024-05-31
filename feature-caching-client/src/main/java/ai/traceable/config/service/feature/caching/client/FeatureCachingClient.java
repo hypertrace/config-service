@@ -208,10 +208,11 @@ public class FeatureCachingClient {
 
   public boolean isSessionIdentificationV2EnabledForTenant(RequestContext requestContext) {
     try {
-      return requireNonNull(
-          this.featureFlagCache
-              .get(requestContext.buildInternalContextualKey())
-              .get(SESSION_IDENTIFICATION_V2_FLAG));
+      return this.isUserAttributionV2Enabled(requestContext)
+          && requireNonNull(
+              this.featureFlagCache
+                  .get(requestContext.buildInternalContextualKey())
+                  .get(SESSION_IDENTIFICATION_V2_FLAG));
     } catch (Exception exception) {
       log.warn(
           "Failed to retrieve current feature flag value for Session Identification V2", exception);
