@@ -2,7 +2,9 @@ package ai.traceable.data.classification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.data.classification.config.service.DataClassificationResolutionCache.DataTypeProvenance;
@@ -283,6 +285,26 @@ class DataTypeManagerTest {
                 this.dataTypeManager.updateDatatype(
                     mockRequestContext, UpdateDataTypeRequest.newBuilder().setId(id).build()));
     assertEquals(Code.NOT_FOUND, thrownException.getStatus().getCode());
+  }
+
+  @Test
+  void supportsUpdatingImpactedDatatypesOnDatasetDelete() {
+    when(this.mockConfigObject.getData()).thenReturn(TEST_ORPHAN_DATA_TYPE);
+    when(this.mockConfigObject2.getData()).thenReturn(TEST_REGULAR_DATA_TYPE);
+    when(this.mockDataTypeStore.getAllObjects(mockRequestContext))
+        .thenReturn(List.of(this.mockConfigObject, this.mockConfigObject2));
+    when(this.mockDataTypeStore.getData(mockRequestContext, TEST_REGULAR_DATA_TYPE.getId()))
+        .thenReturn(Optional.of(TEST_REGULAR_DATA_TYPE));
+    this.dataTypeManager.tryRemoveDatasetFromAllDatatypes(
+        mockRequestContext, TEST_DATA_SET.getId());
+
+    verify(this.mockDataTypeStore, times(1))
+        .upsertObject(
+            mockRequestContext,
+            TEST_REGULAR_DATA_TYPE.toBuilder()
+                .setRule(TEST_REGULAR_DATA_TYPE.getRule().toBuilder().clearDataSetId())
+                .build());
+    verifyNoMoreInteractions(this.mockDataTypeStore);
   }
 
   private void setUpMockData() {

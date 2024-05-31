@@ -301,6 +301,7 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
           throw Status.NOT_FOUND.asRuntimeException();
         }
       }
+      this.dataTypeManager.tryRemoveDatasetFromAllDatatypes(requestContext, dataSetId);
       responseObserver.onNext(DeleteDataSetResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {

@@ -33,10 +33,12 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 class DataTypeManager {
   private final DataTypeStore dataTypeStore;
@@ -82,6 +84,39 @@ class DataTypeManager {
     return GetDataTypesResponse.newBuilder()
         .addAllDataTypes(dataTypes)
         .putAllReferencedDataSetsById(dataSetsById)
+        .build();
+  }
+
+  void tryRemoveDatasetFromAllDatatypes(RequestContext requestContext, String datasetId) {
+    this.gatherDataTypes(requestContext, SystemDataSetVersion.SYSTEM_DATA_SET_VERSION_UNSPECIFIED)
+        .stream()
+        .filter(datatype -> datatype.getRule().getDataSetIdList().contains(datasetId))
+        .map(datatype -> this.buildUpdateRequestToRemoveDataset(datatype, datasetId))
+        .forEach(
+            updateRequest -> {
+              try {
+                this.updateDatatype(requestContext, updateRequest);
+              } catch (Exception exception) {
+                log.error(
+                    "Skipping datatype update due to failure during deletion of dataset: {}. Failing request: {}. Request Context: {}.",
+                    datasetId,
+                    updateRequest,
+                    requestContext,
+                    exception);
+              }
+            });
+  }
+
+  private UpdateDataTypeRequest buildUpdateRequestToRemoveDataset(
+      DataType datatype, String datasetIdToRemove) {
+    List<String> newDatasetIdList =
+        datatype.getRule().getDataSetIdList().stream()
+            .filter(id -> !id.equals(datasetIdToRemove))
+            .collect(Collectors.toUnmodifiableList());
+
+    return UpdateDataTypeRequest.newBuilder()
+        .setId(datatype.getId())
+        .setRule(datatype.getRule().toBuilder().clearDataSetId().addAllDataSetId(newDatasetIdList))
         .build();
   }
 
