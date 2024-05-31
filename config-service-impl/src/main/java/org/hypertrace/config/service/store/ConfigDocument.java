@@ -18,7 +18,6 @@ import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
 import java.util.Optional;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.core.documentstore.Document;
@@ -28,7 +27,6 @@ import org.hypertrace.core.documentstore.Document;
  */
 @lombok.Value
 @Slf4j
-@Builder
 public class ConfigDocument implements Document {
 
   private static final ObjectMapper OBJECT_MAPPER =
