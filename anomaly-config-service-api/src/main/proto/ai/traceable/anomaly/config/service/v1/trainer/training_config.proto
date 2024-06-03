@@ -209,6 +209,7 @@ message VulnerabilityTrainingConfig {
     JwtExpiryIssueAtTrainingConfig jwt_expiry_and_issue_at_not_set = 20;
     JwtAlgoWeaknessTrainingConfig jwt_algo_weakness = 19;
     MissingGatewayPoliciesTrainingConfig missing_gateway_policies = 21;
+    SensitiveDataInErrorMessageTrainingConfig sensitive_data_in_error_message = 22;
   }
 }
 
@@ -238,6 +239,8 @@ message PiiTrainingConfig {
 }
 
 message DataClassificationTrainingConfig {}
+
+message SensitiveDataInErrorMessageTrainingConfig {}
 
 message EnumerationsTrainingConfig {
   optional int32 max_enumerations = 1;
