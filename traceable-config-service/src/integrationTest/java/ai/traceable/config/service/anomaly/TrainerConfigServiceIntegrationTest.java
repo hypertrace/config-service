@@ -962,7 +962,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(36, trainingConfigs.size());
+    assertEquals(37, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG
           && trainingConfig.getMetadataTrainingConfig().getConfigCase()

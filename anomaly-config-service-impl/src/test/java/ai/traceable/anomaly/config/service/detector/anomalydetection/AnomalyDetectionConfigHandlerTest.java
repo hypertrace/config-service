@@ -23,6 +23,7 @@ import ai.traceable.anomaly.config.service.v1.detector.*;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.MaliciousSourcesRulesAnomalyConfig;
+import com.google.protobuf.Duration;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
@@ -783,6 +784,13 @@ public class AnomalyDetectionConfigHandlerTest {
                     .build())
             .build();
 
+    ApiCallSpikeTuningConfig apiCallSpikeTuningConfig =
+        ApiCallSpikeTuningConfig.newBuilder()
+            .setDetectionScopeConfig(
+                DetectionScopeConfig.newBuilder()
+                    .setEndpointLabels(StringList.newBuilder().addValues("volumetric-label")))
+            .setEndpointSpanCountDetectionThreshold(100)
+            .build();
     ScopedAnomalyDetectionConfig config2 =
         ScopedAnomalyDetectionConfig.newBuilder()
             .addAnomalyDetectionConfigs(
@@ -794,8 +802,9 @@ public class AnomalyDetectionConfigHandlerTest {
                                 AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
                     .setVolumetricAnomalyDetectionConfig(
                         VolumetricAnomalyDetectionConfig.newBuilder()
-                            .setApiCallSpike(ApiCallSpikeAnomalyConfig.newBuilder().build()))
-                    .build())
+                            .setApiCallSpike(
+                                ApiCallSpikeAnomalyConfig.newBuilder()
+                                    .addApiCallSpikeTuningConfigs(apiCallSpikeTuningConfig))))
             .build();
 
     ScopedAnomalyDetectionConfig config3 =
@@ -827,6 +836,13 @@ public class AnomalyDetectionConfigHandlerTest {
     assertEquals(
         AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
         detectionConfig1.getCategoryConfig().getEventScoreCategory());
+    List<ApiCallSpikeTuningConfig> apiCallSpikeTuningConfigs =
+        detectionConfig1
+            .getVolumetricAnomalyDetectionConfig()
+            .getApiCallSpike()
+            .getApiCallSpikeTuningConfigsList();
+    assertEquals(1, apiCallSpikeTuningConfigs.size());
+    assertEquals(apiCallSpikeTuningConfig, apiCallSpikeTuningConfigs.get(0));
 
     ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
         ScopedAnomalyDetectionConfig.newBuilder();
@@ -863,6 +879,22 @@ public class AnomalyDetectionConfigHandlerTest {
                             .setCredentialStuffing(
                                 CredentialStuffingAnomalyConfig.getDefaultInstance())))
             .build();
+
+    CredentialStuffingTuningConfig credentialStuffingTuningConfig =
+        CredentialStuffingTuningConfig.newBuilder()
+            .setDetectionScopeConfig(
+                DetectionScopeConfig.newBuilder()
+                    .setUrlRegexes(StringList.newBuilder().addValues(".*(?i)(login|signin).*")))
+            .setUsernameExtractionConfig(
+                ParameterExtractionConfig.newBuilder()
+                    .setDataTypeIds(
+                        StringList.newBuilder()
+                            .addValues("data-type-id-1")
+                            .addValues("data-type-id-2")))
+            .setLookBackDuration(Duration.newBuilder().setSeconds(1000))
+            .setUniqueUsersThreshold(5)
+            .setFailedLoginPercentageThreshold(99)
+            .build();
     ScopedAnomalyDetectionConfig config2 =
         ScopedAnomalyDetectionConfig.newBuilder()
             .addAnomalyDetectionConfigs(
@@ -876,7 +908,9 @@ public class AnomalyDetectionConfigHandlerTest {
                         CredentialStuffingAnomalyDetectionConfig.newBuilder()
                             .setAnomalyRuleId("credentialstuffing")
                             .setCredentialStuffing(
-                                CredentialStuffingAnomalyConfig.getDefaultInstance()))
+                                CredentialStuffingAnomalyConfig.newBuilder()
+                                    .addCredentialStuffingTuningConfigs(
+                                        credentialStuffingTuningConfig)))
                     .build())
             .build();
 
@@ -901,13 +935,19 @@ public class AnomalyDetectionConfigHandlerTest {
     AnomalyDetectionConfig detectionConfig = mergedConfig.getAnomalyDetectionConfigsList().get(0);
     assertTrue(detectionConfig.getConfigStatus().getDisabled());
     assertTrue(detectionConfig.getConfigStatus().getInternal());
-
     assertEquals(
         AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
         detectionConfig.getCategoryConfig().getEventCategory());
+    List<CredentialStuffingTuningConfig> credentialStuffingTuningConfigs =
+        detectionConfig
+            .getCredentialAnomalyDetectionConfig()
+            .getCredentialStuffing()
+            .getCredentialStuffingTuningConfigsList();
+    assertEquals(1, credentialStuffingTuningConfigs.size());
+    assertEquals(credentialStuffingTuningConfig, credentialStuffingTuningConfigs.get(0));
+
     ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
         ScopedAnomalyDetectionConfig.newBuilder();
-
     deletedConfigBuilder.setConfigScope(config1.getConfigScope());
     List<AnomalyDetectionConfig> detectionConfigsToDelete = new ArrayList<>();
     detectionConfigsToDelete.add(config1.getAnomalyDetectionConfigsList().get(0));

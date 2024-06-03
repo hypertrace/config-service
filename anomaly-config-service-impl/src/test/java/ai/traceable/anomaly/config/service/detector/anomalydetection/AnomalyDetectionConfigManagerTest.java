@@ -23,6 +23,7 @@ import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRe
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.*;
 import ai.traceable.anomaly.config.service.v1.detector.*;
+import ai.traceable.anomaly.config.service.v1.detector.CredentialStuffingAnomalyDetectionConfig.ConfigCase;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -682,6 +683,8 @@ public class AnomalyDetectionConfigManagerTest {
         getVolumetricConfig(
             scopedAnomalyDetectionConfig,
             VolumetricAnomalyDetectionConfig.ConfigCase.API_CALL_SPIKE);
+    AnomalyDetectionConfig detectionConfig7 =
+        getCredentialStuffingConfig(scopedAnomalyDetectionConfig, ConfigCase.CREDENTIAL_STUFFING);
 
     deletedScopedAnomalyDetectionConfig =
         requestContext.call(
@@ -728,6 +731,12 @@ public class AnomalyDetectionConfigManagerTest {
                                     VolumetricAnomalyDetectionConfig.newBuilder()
                                         .setApiCallSpike(
                                             ApiCallSpikeAnomalyConfig.getDefaultInstance())))
+                        .addAnomalyDetectionConfigs(
+                            AnomalyDetectionConfig.newBuilder()
+                                .setCredentialAnomalyDetectionConfig(
+                                    CredentialStuffingAnomalyDetectionConfig.newBuilder()
+                                        .setCredentialStuffing(
+                                            CredentialStuffingAnomalyConfig.getDefaultInstance())))
                         .build(),
                     DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_DETECTION_CONFIG));
 
@@ -740,6 +749,7 @@ public class AnomalyDetectionConfigManagerTest {
             .addAnomalyDetectionConfigs(detectionConfig4)
             .addAnomalyDetectionConfigs(detectionConfig5)
             .addAnomalyDetectionConfigs(detectionConfig6)
+            .addAnomalyDetectionConfigs(detectionConfig7)
             .build();
     assertEquals(expectedConfig, deletedScopedAnomalyDetectionConfig);
 
@@ -990,6 +1000,21 @@ public class AnomalyDetectionConfigManagerTest {
             anomalyDetectionConfig ->
                 anomalyDetectionConfig
                     .getVolumetricAnomalyDetectionConfig()
+                    .getConfigCase()
+                    .equals(configCase))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private AnomalyDetectionConfig getCredentialStuffingConfig(
+      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
+      CredentialStuffingAnomalyDetectionConfig.ConfigCase configCase) {
+    return scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(AnomalyDetectionConfig::hasCredentialAnomalyDetectionConfig)
+        .filter(
+            anomalyDetectionConfig ->
+                anomalyDetectionConfig
+                    .getCredentialAnomalyDetectionConfig()
                     .getConfigCase()
                     .equals(configCase))
         .findFirst()

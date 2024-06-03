@@ -39,6 +39,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   private final List<TrainingConfig> defaultApiNamingTrainingConfigs;
   private final List<TrainingConfig> defaultMetadataTrainingConfigs;
   private final List<TrainingConfig> defaultVulnerabilityTrainingConfigs;
+  private final List<TrainingConfig> defaultVolumetricTrainingConfigs;
 
   @Inject
   public TrainingConfigManagerImpl(
@@ -57,6 +58,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     this.defaultApiNamingTrainingConfigs = config.getApiNamingTrainingConfigs();
     this.defaultMetadataTrainingConfigs = config.getMetadataTrainingConfigs();
     this.defaultVulnerabilityTrainingConfigs = config.getVulnerabilityTrainingConfigs();
+    this.defaultVolumetricTrainingConfigs = config.getVolumetricTrainingConfigs();
   }
 
   @Override
@@ -258,7 +260,8 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     return Stream.of(
             this.defaultApiNamingTrainingConfigs.stream(),
             this.defaultMetadataTrainingConfigs.stream(),
-            this.defaultVulnerabilityTrainingConfigs.stream())
+            this.defaultVulnerabilityTrainingConfigs.stream(),
+            this.defaultVolumetricTrainingConfigs.stream())
         .flatMap(Function.identity())
         .collect(Collectors.toUnmodifiableList());
   }

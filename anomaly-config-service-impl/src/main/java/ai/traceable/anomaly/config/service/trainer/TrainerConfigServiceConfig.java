@@ -10,9 +10,11 @@ public class TrainerConfigServiceConfig {
   private static final String API_NAMING_TRAINING_CONFIGS_PATH = "apiNamingTrainingConfigs";
   private static final String METADATA_TRAINING_CONFIGS_PATH = "metadataTrainingConfigs";
   private static final String VULNERABILITY_TRAINING_CONFIGS_PATH = "vulnerabilityTrainingConfigs";
+  private static final String VOLUMETRIC_TRAINING_CONFIGS_PATH = "volumetricTrainingConfigs";
   private final List<TrainingConfig> apiNamingTrainingConfigs;
   private final List<TrainingConfig> metadataTrainingConfigs;
   private final List<TrainingConfig> vulnerabilityTrainingConfigs;
+  private final List<TrainingConfig> volumetricTrainingConfigs;
 
   @Inject
   public TrainerConfigServiceConfig(
@@ -28,6 +30,9 @@ public class TrainerConfigServiceConfig {
             config
                 .getTrainerConfigServiceConfig()
                 .getConfigList(VULNERABILITY_TRAINING_CONFIGS_PATH));
+    this.volumetricTrainingConfigs =
+        configConverter.convertToTrainingConfigs(
+            config.getTrainerConfigServiceConfig().getConfigList(VOLUMETRIC_TRAINING_CONFIGS_PATH));
   }
 
   public List<TrainingConfig> getApiNamingTrainingConfigs() {
@@ -40,5 +45,9 @@ public class TrainerConfigServiceConfig {
 
   public List<TrainingConfig> getVulnerabilityTrainingConfigs() {
     return this.vulnerabilityTrainingConfigs;
+  }
+
+  public List<TrainingConfig> getVolumetricTrainingConfigs() {
+    return this.volumetricTrainingConfigs;
   }
 }

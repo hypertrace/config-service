@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfi
 import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.VolumetricTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -101,6 +102,9 @@ public class TrainingConfigValidator {
 
     EnumMap<LocalTrainingConfig.ConfigCase, TrainingConfig> localTrainingConfigMap =
         new EnumMap<>(LocalTrainingConfig.ConfigCase.class);
+
+    EnumMap<VolumetricTrainingConfig.ConfigCase, TrainingConfig> volumetricTrainingConfigMap =
+        new EnumMap<>(VolumetricTrainingConfig.ConfigCase.class);
 
     for (TrainingConfig trainingConfig : trainingConfigs) {
       Status status;
@@ -206,6 +210,18 @@ public class TrainingConfigValidator {
                     + localTrainingConfigCase);
           } else {
             localTrainingConfigMap.put(localTrainingConfigCase, trainingConfig);
+          }
+          break;
+
+        case VOLUMETRIC_TRAINING_CONFIG:
+          VolumetricTrainingConfig.ConfigCase volumetricTrainingConfigCase =
+              trainingConfig.getVolumetricTrainingConfig().getConfigCase();
+          if (volumetricTrainingConfigMap.containsKey(volumetricTrainingConfigCase)) {
+            return Status.INVALID_ARGUMENT.withDescription(
+                "UpdateScopedTrainingConfigRequest should have only one training config for volumetricTrainingConfig: "
+                    + volumetricTrainingConfigCase);
+          } else {
+            volumetricTrainingConfigMap.put(volumetricTrainingConfigCase, trainingConfig);
           }
           break;
 

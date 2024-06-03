@@ -13,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.SessionTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig.TrainingConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
+import ai.traceable.anomaly.config.service.v1.trainer.VolumetricTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -59,6 +60,8 @@ public class TrainingConfigHandler {
           break;
         case TRAINING_CONFIG_TYPE_LOCAL_TRAINING:
           configCases.add(TrainingConfigCase.LOCAL_TRAINING_CONFIG);
+        case TRAINING_CONFIG_TYPE_VOLUMETRIC_TRAINING:
+          configCases.add(TrainingConfigCase.VOLUMETRIC_TRAINING_CONFIG);
         default:
           break;
       }
@@ -96,6 +99,9 @@ public class TrainingConfigHandler {
     EnumMap<LocalTrainingConfig.ConfigCase, TrainingConfig> localTrainingConfigMap =
         new EnumMap<>(LocalTrainingConfig.ConfigCase.class);
 
+    EnumMap<VolumetricTrainingConfig.ConfigCase, TrainingConfig> volumetricTrainingConfigMap =
+        new EnumMap<>(VolumetricTrainingConfig.ConfigCase.class);
+
     preferredConfig
         .getTrainingConfigsList()
         .forEach(
@@ -125,6 +131,9 @@ public class TrainingConfigHandler {
                 case LOCAL_TRAINING_CONFIG:
                   localTrainingConfigMap.put(
                       trainingConfig.getLocalTrainingConfig().getConfigCase(), trainingConfig);
+                case VOLUMETRIC_TRAINING_CONFIG:
+                  volumetricTrainingConfigMap.put(
+                      trainingConfig.getVolumetricTrainingConfig().getConfigCase(), trainingConfig);
                 default:
                   break;
               }
@@ -170,6 +179,11 @@ public class TrainingConfigHandler {
                       localTrainingConfigMap,
                       trainingConfig.getLocalTrainingConfig().getConfigCase(),
                       trainingConfig);
+                case VOLUMETRIC_TRAINING_CONFIG:
+                  resolve(
+                      volumetricTrainingConfigMap,
+                      trainingConfig.getVolumetricTrainingConfig().getConfigCase(),
+                      trainingConfig);
                 default:
                   break;
               }
@@ -183,6 +197,7 @@ public class TrainingConfigHandler {
         .addAllTrainingConfigs(apiNamingTrainingConfigMap.values())
         .addAllTrainingConfigs(sensitiveDataTrainingConfigMap.values())
         .addAllTrainingConfigs(localTrainingConfigMap.values())
+        .addAllTrainingConfigs(volumetricTrainingConfigMap.values())
         .build();
   }
 
@@ -265,6 +280,15 @@ public class TrainingConfigHandler {
                     filter
                         .getConfigCase()
                         .equals(trainingConfig.getLocalTrainingConfig().getConfigCase()));
+      case VOLUMETRIC_TRAINING_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasVolumetricTrainingConfig)
+            .map(TrainingConfig::getVolumetricTrainingConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getVolumetricTrainingConfig().getConfigCase()));
       default:
         return false;
     }
