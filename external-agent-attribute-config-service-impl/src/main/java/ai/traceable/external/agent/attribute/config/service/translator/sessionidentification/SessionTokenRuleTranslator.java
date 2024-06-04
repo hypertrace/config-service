@@ -1,5 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification;
 
+import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action.AttributeAddition;
@@ -16,6 +17,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor_ = @Inject)
 class SessionTokenRuleTranslator {
   private final PredicateTranslator predicateTranslator;
+  private final AttributeRuleBuilder attributeRuleBuilder;
   private final ExpirationTranslator expirationTranslator;
   private final ProjectionRootTranslator projectionRootTranslator;
   private final SessionIdentificationConstants sessionIdentificationConstants;
@@ -86,37 +88,30 @@ class SessionTokenRuleTranslator {
       List<Projector> projectors, String sessionIdAttr, SessionTokenRule tokenRule) {
     return predicateTranslator.addConditionalPredicateIfPresent(
         projectors.stream()
-            .map(projector -> addAttributeAndProject(sessionIdAttr, projector))
+            .map(projector -> AttributeRule.newBuilder().setProjector(projector).build())
             .collect(Collectors.toUnmodifiableList()),
-        tokenRule);
+        tokenRule,
+        sessionIdAttr);
   }
 
   private AttributeRule buildAttributeRule(
-      String sessionIdKey, List<Projector> projectors, List<Action> expirationActions) {
+      String sessionIdKey, List<Projector> projectors, AttributeRule expirationRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
                 .setEachMatchingProjector(
                     Projector.EachMatchingProjector.newBuilder()
                         .addAttributeRules(
-                            predicateTranslator.buildFirstMatchingProjector(
+                            attributeRuleBuilder.buildFirstMatchingProjectorAttributeRule(
                                 projectors.stream()
                                     .map(
                                         projector ->
                                             AttributeRule.newBuilder()
-                                                .addInitialActions(
-                                                    addAttributeAndProject(sessionIdKey, projector))
+                                                .setProjector(projector)
                                                 .build())
-                                    .collect(Collectors.toUnmodifiableList())))
-                        .addAttributeRules(
-                            predicateTranslator.buildFirstMatchingProjector(
-                                expirationActions.stream()
-                                    .map(
-                                        action ->
-                                            AttributeRule.newBuilder()
-                                                .addInitialActions(action)
-                                                .build())
-                                    .collect(Collectors.toUnmodifiableList())))))
+                                    .collect(Collectors.toUnmodifiableList()),
+                                sessionIdKey))
+                        .addAttributeRules(expirationRule)))
         .build();
   }
 

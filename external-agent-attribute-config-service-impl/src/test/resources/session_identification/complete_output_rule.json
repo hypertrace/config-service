@@ -154,13 +154,13 @@
                     "projector": {
                       "eachMatchingProjector": {
                         "attributeRules": [{
-                          "projector": {
-                            "firstMatchingProjector": {
-                              "attributeRules": [{
-                                "initialActions": [{
-                                  "attributeAddition": {
-                                    "attributeKey": "traceableai.session.new.rule-id.0.id",
-                                    "valueProjectionRule": {
+                          "initialActions": [{
+                            "attributeAddition": {
+                              "attributeKey": "traceableai.session.new.rule-id.0.id",
+                              "valueProjectionRule": {
+                                "projector": {
+                                  "firstMatchingProjector": {
+                                    "attributeRules": [{
                                       "projector": {
                                         "attributeProjector": {
                                           "attributeKey": "http.response.body",
@@ -175,14 +175,7 @@
                                           }
                                         }
                                       }
-                                    }
-                                  }
-                                }]
-                              }, {
-                                "initialActions": [{
-                                  "attributeAddition": {
-                                    "attributeKey": "traceableai.session.new.rule-id.0.id",
-                                    "valueProjectionRule": {
+                                    }, {
                                       "projector": {
                                         "attributeProjector": {
                                           "attributeKey": "rpc.response.body",
@@ -197,20 +190,20 @@
                                           }
                                         }
                                       }
-                                    }
+                                    }]
                                   }
-                                }]
-                              }]
+                                }
+                              }
                             }
-                          }
+                          }]
                         }, {
-                          "projector": {
-                            "firstMatchingProjector": {
-                              "attributeRules": [{
-                                "initialActions": [{
-                                  "attributeAddition": {
-                                    "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
-                                    "valueProjectionRule": {
+                          "initialActions": [{
+                            "attributeAddition": {
+                              "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
+                              "valueProjectionRule": {
+                                "projector": {
+                                  "firstMatchingProjector": {
+                                    "attributeRules": [{
                                       "projector": {
                                         "conditionalProjector": {
                                           "predicate": {
@@ -272,12 +265,12 @@
                                           }
                                         }
                                       }
-                                    }
+                                    }]
                                   }
-                                }]
-                              }]
+                                }
+                              }
                             }
-                          }
+                          }]
                         }]
                       }
                     }
@@ -288,13 +281,13 @@
               "projector": {
                 "eachMatchingProjector": {
                   "attributeRules": [{
-                    "projector": {
-                      "firstMatchingProjector": {
-                        "attributeRules": [{
-                          "initialActions": [{
-                            "attributeAddition": {
-                              "attributeKey": "traceableai.session.rule-id.1.id",
-                              "valueProjectionRule": {
+                    "initialActions": [{
+                      "attributeAddition": {
+                        "attributeKey": "traceableai.session.rule-id.1.id",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "firstMatchingProjector": {
+                              "attributeRules": [{
                                 "projector": {
                                   "attributeProjector": {
                                     "attributeKey": "http.request.body",
@@ -309,14 +302,7 @@
                                     }
                                   }
                                 }
-                              }
-                            }
-                          }]
-                        }, {
-                          "initialActions": [{
-                            "attributeAddition": {
-                              "attributeKey": "traceableai.session.rule-id.1.id",
-                              "valueProjectionRule": {
+                              }, {
                                 "projector": {
                                   "attributeProjector": {
                                     "attributeKey": "rpc.request.body",
@@ -331,20 +317,20 @@
                                     }
                                   }
                                 }
-                              }
+                              }]
                             }
-                          }]
-                        }]
+                          }
+                        }
                       }
-                    }
+                    }]
                   }, {
-                    "projector": {
-                      "firstMatchingProjector": {
-                        "attributeRules": [{
-                          "initialActions": [{
-                            "attributeAddition": {
-                              "attributeKey": "traceableai.session.rule-id.1.expiration.value",
-                              "valueProjectionRule": {
+                    "initialActions": [{
+                      "attributeAddition": {
+                        "attributeKey": "traceableai.session.rule-id.1.expiration.value",
+                        "valueProjectionRule": {
+                          "projector": {
+                            "firstMatchingProjector": {
+                              "attributeRules": [{
                                 "projector": {
                                   "conditionalProjector": {
                                     "predicate": {
@@ -380,14 +366,7 @@
                                     }
                                   }
                                 }
-                              }
-                            }
-                          }]
-                        }, {
-                          "initialActions": [{
-                            "attributeAddition": {
-                              "attributeKey": "traceableai.session.rule-id.1.expiration.value",
-                              "valueProjectionRule": {
+                              }, {
                                 "projector": {
                                   "conditionalProjector": {
                                     "predicate": {
@@ -423,12 +402,12 @@
                                     }
                                   }
                                 }
-                              }
+                              }]
                             }
-                          }]
-                        }]
+                          }
+                        }
                       }
-                    }
+                    }]
                   }]
                 }
               }

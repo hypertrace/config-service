@@ -1,8 +1,7 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification;
 
+import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
-import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action.AttributeAddition;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
@@ -21,9 +20,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor_ = @Inject)
 class ExpirationTranslator {
   private final ProjectionRootTranslator projectionRootTranslator;
+  private final AttributeRuleBuilder attributeRuleBuilder;
   private final SessionIdentificationConstants sessionIdentificationConstants;
 
-  List<Action> translateExpiration(
+  AttributeRule translateExpiration(
       ResponseSessionTokenDetails responseSessionTokenDetails,
       int ruleIndex,
       String ruleId,
@@ -52,7 +52,7 @@ class ExpirationTranslator {
     }
   }
 
-  List<Action> translateExpiration(
+  AttributeRule translateExpiration(
       RequestSessionTokenDetails requestSessionTokenDetails,
       int ruleIndex,
       String ruleId,
@@ -74,36 +74,31 @@ class ExpirationTranslator {
     }
   }
 
-  private List<Action> addExpirationValueAttributeAndProject(
+  private AttributeRule addExpirationValueAttributeAndProject(
       List<Projector> projectors, String expirationKey, String sessionIdAttr) {
-    return projectors.stream()
-        .map(
-            projector ->
-                Action.newBuilder()
-                    .setAttributeAddition(
-                        AttributeAddition.newBuilder()
-                            .setAttributeKey(expirationKey)
-                            .setValueProjectionRule(
-                                AttributeRule.newBuilder()
-                                    .setProjector(
-                                        Projector.newBuilder()
-                                            .setConditionalProjector(
-                                                ConditionalProjector.newBuilder()
-                                                    .setPredicate(
-                                                        Predicate.newBuilder()
-                                                            .setAttributePredicate(
-                                                                AttributePredicate.newBuilder()
-                                                                    .setNamePredicate(
-                                                                        StringPredicate.newBuilder()
-                                                                            .setOperator(
-                                                                                ComparisonOperator
-                                                                                    .COMPARISON_OPERATOR_EQUALS)
-                                                                            .setValue(
-                                                                                sessionIdAttr))))
-                                                    .setAttributeRule(
-                                                        AttributeRule.newBuilder()
-                                                            .setProjector(projector))))))
-                    .build())
-        .collect(Collectors.toUnmodifiableList());
+    return attributeRuleBuilder.buildFirstMatchingProjectorAttributeRule(
+        projectors.stream()
+            .map(
+                projector ->
+                    AttributeRule.newBuilder()
+                        .setProjector(
+                            Projector.newBuilder()
+                                .setConditionalProjector(
+                                    ConditionalProjector.newBuilder()
+                                        .setPredicate(
+                                            Predicate.newBuilder()
+                                                .setAttributePredicate(
+                                                    AttributePredicate.newBuilder()
+                                                        .setNamePredicate(
+                                                            StringPredicate.newBuilder()
+                                                                .setOperator(
+                                                                    ComparisonOperator
+                                                                        .COMPARISON_OPERATOR_EQUALS)
+                                                                .setValue(sessionIdAttr))))
+                                        .setAttributeRule(
+                                            AttributeRule.newBuilder().setProjector(projector))))
+                        .build())
+            .collect(Collectors.toUnmodifiableList()),
+        expirationKey);
   }
 }

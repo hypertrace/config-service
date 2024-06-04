@@ -4,40 +4,46 @@
       "attributeKey": "traceableai.session.new.rule-id.0.expiration.value",
       "valueProjectionRule": {
         "projector": {
-          "conditionalProjector": {
-            "predicate": {
-              "attributePredicate": {
-                "namePredicate": {
-                  "operator": "COMPARISON_OPERATOR_EQUALS",
-                  "value": "traceableai.session.new.rule-id.0.id"
-                }
-              }
-            },
-            "attributeRule": {
+          "firstMatchingProjector": {
+            "attributeRules": [{
               "projector": {
-                "attributeProjector": {
-                  "attributeKey": "http.response.header.set-cookie",
+                "conditionalProjector": {
+                  "predicate": {
+                    "attributePredicate": {
+                      "namePredicate": {
+                        "operator": "COMPARISON_OPERATOR_EQUALS",
+                        "value": "traceableai.session.new.rule-id.0.id"
+                      }
+                    }
+                  },
                   "attributeRule": {
                     "projector": {
-                      "cookieProjector": {
-                        "cookieNameRule": {
-                          "attributeRule": {
-                            "projector": {
-                              "regexCaptureGroupProjector": {
-                                "regexCaptureGroup": "1.*234",
+                      "attributeProjector": {
+                        "attributeKey": "http.response.header.set-cookie",
+                        "attributeRule": {
+                          "projector": {
+                            "cookieProjector": {
+                              "cookieNameRule": {
+                                "key": "cookie1",
                                 "attributeRule": {
+                                  "projector": {
+                                    "regexCaptureGroupProjector": {
+                                      "regexCaptureGroup": "1.*234",
+                                      "attributeRule": {
+                                      }
+                                    }
+                                  }
                                 }
                               }
                             }
-                          },
-                          "key": "cookie1"
+                          }
                         }
                       }
                     }
                   }
                 }
               }
-            }
+            }]
           }
         }
       }

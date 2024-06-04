@@ -1,11 +1,11 @@
 {
-  "projector": {
-    "firstMatchingProjector": {
-      "attributeRules": [{
-        "initialActions": [{
-          "attributeAddition": {
-            "attributeKey": "traceableai.session.rule-id.0.expiration.value",
-            "valueProjectionRule": {
+  "initialActions": [{
+    "attributeAddition": {
+      "attributeKey": "traceableai.session.rule-id.0.expiration.value",
+      "valueProjectionRule": {
+        "projector": {
+          "firstMatchingProjector": {
+            "attributeRules": [{
               "projector": {
                 "conditionalProjector": {
                   "predicate": {
@@ -41,14 +41,7 @@
                   }
                 }
               }
-            }
-          }
-        }]
-      }, {
-        "initialActions": [{
-          "attributeAddition": {
-            "attributeKey": "traceableai.session.rule-id.0.expiration.value",
-            "valueProjectionRule": {
+            }, {
               "projector": {
                 "conditionalProjector": {
                   "predicate": {
@@ -84,10 +77,10 @@
                   }
                 }
               }
-            }
+            }]
           }
-        }]
-      }]
+        }
+      }
     }
-  }
+  }]
 }

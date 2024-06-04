@@ -63,6 +63,25 @@ public class AttributeRuleBuilder {
         buildAttributeAppendAction(AUTH_TYPES_RULE_ATTRIBUTE_KEY, ruleId));
   }
 
+  public AttributeRule buildFirstMatchingProjectorAttributeRule(
+      List<AttributeRule> rules, String key) {
+    return AttributeRule.newBuilder()
+        .addInitialActions(
+            AttributeRule.Action.newBuilder()
+                .setAttributeAddition(
+                    AttributeRule.Action.AttributeAddition.newBuilder()
+                        .setAttributeKey(key)
+                        .setValueProjectionRule(
+                            AttributeRule.newBuilder()
+                                .setProjector(
+                                    Projector.newBuilder()
+                                        .setFirstMatchingProjector(
+                                            Projector.FirstMatchingProjector.newBuilder()
+                                                .addAllAttributeRules(rules)))))
+                .build())
+        .build();
+  }
+
   public Action buildAttributeAdditionAction(String key) {
     return Action.newBuilder()
         .setAttributeAddition(

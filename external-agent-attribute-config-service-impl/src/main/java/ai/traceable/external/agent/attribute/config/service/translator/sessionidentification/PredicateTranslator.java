@@ -27,20 +27,16 @@ class PredicateTranslator {
   private final CustomProjectionTranslator customProjectionTranslator;
 
   AttributeRule addConditionalPredicateIfPresent(
-      List<AttributeRule.Action> actionBuilders, SessionTokenRule tokenRule) {
+      List<AttributeRule> attributeRules, SessionTokenRule tokenRule, String sessionIdAttr) {
     if (!tokenRule.hasTokenConditionalPredicate()) {
-      return buildFirstMatchingProjector(
-          actionBuilders.stream()
-              .map(action -> AttributeRule.newBuilder().addInitialActions(action).build())
-              .collect(Collectors.toUnmodifiableList()));
+      return attributeRuleBuilder.buildFirstMatchingProjectorAttributeRule(
+          attributeRules, sessionIdAttr);
     }
     return AttributeRule.newBuilder()
         .setProjector(
             addConditionalPredicate(
-                buildFirstMatchingProjector(
-                    actionBuilders.stream()
-                        .map(action -> AttributeRule.newBuilder().addInitialActions(action).build())
-                        .collect(Collectors.toUnmodifiableList())),
+                attributeRuleBuilder.buildFirstMatchingProjectorAttributeRule(
+                    attributeRules, sessionIdAttr),
                 tokenRule))
         .build();
   }
@@ -159,15 +155,6 @@ class PredicateTranslator {
     }
 
     return serviceScopePredicate;
-  }
-
-  AttributeRule buildFirstMatchingProjector(List<AttributeRule> rules) {
-    return AttributeRule.newBuilder()
-        .setProjector(
-            Projector.newBuilder()
-                .setFirstMatchingProjector(
-                    Projector.FirstMatchingProjector.newBuilder().addAllAttributeRules(rules)))
-        .build();
   }
 
   LogicalOperator convert(
