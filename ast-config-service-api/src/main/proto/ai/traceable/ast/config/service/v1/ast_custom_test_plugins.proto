@@ -37,6 +37,7 @@ message CreateCustomTestPlugin {
   string plugin_details = 6;
   map<string, TagValue> tags = 7;
   repeated string potential_generated_vulnerability_types = 8;
+  SampleData sample_data = 9;
 }
 
 enum TestPluginType {
@@ -74,6 +75,7 @@ message UpdateCustomTestPlugin {
   string plugin_details = 7;
   map<string, TagValue> tags = 8;
   repeated string potential_generated_vulnerability_types = 9;
+  SampleData sample_data = 10;
 }
 
 message UpdateCustomTestPluginResponse {
@@ -96,9 +98,35 @@ message CustomTestPlugin {
   string plugin_details = 7;
   map<string, TagValue> tags = 8;
   repeated string potential_generated_vulnerability_types = 9;
+  SampleData sample_data = 10;
 }
 
 enum CodeSnippetType {
   CODE_SNIPPET_TYPE_UNSPECIFIED = 0;
   CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT = 1;
+}
+
+message SampleData {
+  oneof sample_data {
+    HttpRestApiDetails http_rest_api_details = 1;
+  }
+}
+
+message HttpRestApiDetails {
+  string request_body = 1;
+  map<string, string> request_headers = 2;
+  string target_url = 3;
+  HttpMethod method = 4;
+  optional string endpoint_id = 5;
+}
+
+enum HttpMethod {
+  HTTP_METHOD_UNSPECIFIED = 0;
+  HTTP_METHOD_GET = 1;
+  HTTP_METHOD_POST = 2;
+  HTTP_METHOD_PUT = 3;
+  HTTP_METHOD_DELETE = 4;
+  HTTP_METHOD_PATCH = 5;
+  HTTP_METHOD_OPTIONS = 6;
+  HTTP_METHOD_HEAD = 7;
 }
