@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.323=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.330=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-annotations:2.16.1=runtimeClasspath,testRuntimeClasspath
@@ -36,7 +36,7 @@ io.micrometer:micrometer-commons:1.10.2=compileClasspath,runtimeClasspath,testCo
 io.micrometer:micrometer-core:1.10.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.micrometer:micrometer-observation:1.10.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.micrometer:micrometer-registry-prometheus:1.10.2=runtimeClasspath,testRuntimeClasspath
-io.netty:netty-bom:4.1.101.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.netty:netty-bom:4.1.108.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.perfmark:perfmark-api:0.26.0=runtimeClasspath,testRuntimeClasspath
 io.prometheus:simpleclient:0.16.0=runtimeClasspath,testRuntimeClasspath
 io.prometheus:simpleclient_common:0.16.0=runtimeClasspath,testRuntimeClasspath
@@ -65,12 +65,12 @@ org.eclipse.jetty:jetty-util-ajax:9.4.53.v20231009=runtimeClasspath,testRuntimeC
 org.eclipse.jetty:jetty-util:9.4.53.v20231009=runtimeClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hdrhistogram:HdrHistogram:2.1.12=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.20=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.grpcutils:grpc-client-utils:0.13.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.grpcutils:grpc-context-utils:0.13.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.22=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.grpcutils:grpc-client-utils:0.13.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.grpcutils:grpc-context-utils:0.13.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.10=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-event-listener:0.4.10=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.core.serviceframework:platform-metrics:0.1.72=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:platform-metrics:0.1.73=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.0=testCompileClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.1=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.1=testRuntimeClasspath
