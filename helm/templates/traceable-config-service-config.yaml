@@ -292,6 +292,9 @@ data:
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultAttributeRetentionRules" }}
       default.attribute.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultAttributeRetentionRules | nindent 6 }}
       {{- end }}
+      {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "systemExcludeSpanRules" }}
+      system.exclude.span.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.systemExcludeSpanRules | nindent 6 }}
+      {{- end }}
     }
     {{- end }}
     local.api.naming.config = {
