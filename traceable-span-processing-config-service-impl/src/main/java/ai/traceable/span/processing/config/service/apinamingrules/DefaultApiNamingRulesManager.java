@@ -11,6 +11,7 @@ import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleMetadata;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRulesFilter;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRulesRequest;
@@ -51,7 +52,13 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
 
   @Override
   public List<ApiNamingRuleDetails> getAllApiNamingRuleDetails(RequestContext requestContext) {
-    return apiNamingRulesConfigStore.getAllData(requestContext);
+    return apiNamingRulesConfigStore.getAllRuleDetails(requestContext);
+  }
+
+  @Override
+  public List<ApiNamingRuleDetails> getApiNamingRuleDetails(
+      RequestContext requestContext, ApiNamingRulesFilter apiNamingRulesFilter) {
+    return apiNamingRulesConfigStore.getRuleDetails(requestContext, apiNamingRulesFilter);
   }
 
   @Override
@@ -146,7 +153,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .collect(Collectors.toUnmodifiableMap(UpdateApiNamingRule::getId, Function.identity()));
 
     List<ApiNamingRule> existingRules =
-        apiNamingRulesConfigStore.getAllData(requestContext).stream()
+        apiNamingRulesConfigStore.getAllRuleDetails(requestContext).stream()
             .map(ApiNamingRuleDetails::getRule)
             .filter(apiNamingRule -> apiNamingRuleMap.containsKey(apiNamingRule.getId()))
             .collect(toUnmodifiableList());

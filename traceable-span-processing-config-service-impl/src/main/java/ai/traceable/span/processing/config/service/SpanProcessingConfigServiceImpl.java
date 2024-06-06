@@ -41,6 +41,8 @@ import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConf
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsResponse;
+import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesRequest;
+import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusResponse;
 import ai.traceable.span.processing.config.service.v1.GetServiceNamingRulesRequest;
@@ -353,6 +355,27 @@ public class SpanProcessingConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get all api naming rules for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getApiNamingRules(
+      GetApiNamingRulesRequest request,
+      StreamObserver<GetApiNamingRulesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.validator.validateOrThrow(requestContext, request);
+
+      responseObserver.onNext(
+          GetApiNamingRulesResponse.newBuilder()
+              .addAllRuleDetails(
+                  apiNamingRulesManager.getApiNamingRuleDetails(
+                      requestContext, request.getApiNamingRulesFilter()))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get api naming rules for request: {}", request, e);
       responseObserver.onError(e);
     }
   }

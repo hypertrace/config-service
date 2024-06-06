@@ -42,7 +42,12 @@ service SpanProcessingConfigService {
 
   rpc UpdateApiNamingRules (UpdateApiNamingRulesRequest) returns (UpdateApiNamingRulesResponse) {}
 
-  rpc GetAllApiNamingRules (GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {}
+  rpc GetAllApiNamingRules (GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {
+    // Prefer using GetApiNamingRules
+    option deprecated = true;
+  }
+
+  rpc GetApiNamingRules (GetApiNamingRulesRequest) returns (GetApiNamingRulesResponse) {}
 
   rpc DeleteApiNamingRule (DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
 
@@ -196,9 +201,20 @@ message CreateApiNamingRulesResponse {
   repeated ApiNamingRuleDetails rules_details = 1;
 }
 
-message GetAllApiNamingRulesRequest {}
+message GetAllApiNamingRulesRequest {
+  option deprecated = true;
+}
 
 message GetAllApiNamingRulesResponse {
+  option deprecated = true;
+  repeated ApiNamingRuleDetails rule_details = 1;
+}
+
+message GetApiNamingRulesRequest {
+  ApiNamingRulesFilter api_naming_rules_filter = 1;
+}
+
+message GetApiNamingRulesResponse {
   repeated ApiNamingRuleDetails rule_details = 1;
 }
 
@@ -261,6 +277,12 @@ message ApiNamingRuleConfig {
     ApiSpecBasedConfig api_spec_based_config = 2;
     AstScanBasedConfig ast_scan_based_config = 3;
   }
+}
+
+message ApiNamingRulesFilter {
+  repeated string ids = 1;
+  repeated string api_spec_ids = 2;
+  optional bool disabled = 3;
 }
 
 message SegmentMatchingBasedConfig {

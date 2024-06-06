@@ -24,6 +24,7 @@ import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesR
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
 import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
@@ -129,6 +130,10 @@ public class SpanProcessingConfigRequestValidator {
   }
 
   public void validateOrThrow(RequestContext requestContext, GetAllApiNamingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  public void validateOrThrow(RequestContext requestContext, GetApiNamingRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
   }
 
