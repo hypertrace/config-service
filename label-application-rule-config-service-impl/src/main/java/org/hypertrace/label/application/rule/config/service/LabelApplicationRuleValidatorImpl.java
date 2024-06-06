@@ -8,6 +8,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import com.google.protobuf.Message;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
+import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.List;
@@ -243,9 +244,10 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
         .getTokenExtractionRulesList()
         .forEach(
             tokenExtractionRule -> {
-              validKeys.add(tokenExtractionRule.getKey());
               if (tokenExtractionRule.hasAlias()) {
                 validKeys.add(tokenExtractionRule.getAlias());
+              } else {
+                validKeys.add(tokenExtractionRule.getKey());
               }
             });
     Pattern pattern = Pattern.compile("\\{(\\\\}|[^}])*}");
@@ -264,6 +266,15 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   private void validateTokenExtractionRule(
       Action.DynamicLabel.TokenExtractionRule tokenExtractionRule) {
     validateNonDefaultPresenceOrThrow(tokenExtractionRule, tokenExtractionRule.KEY_FIELD_NUMBER);
+    if (tokenExtractionRule.hasRegexCapture()) {
+      try {
+        Pattern.compile(tokenExtractionRule.getRegexCapture());
+      } catch (PatternSyntaxException ex) {
+        throwInvalidArgumentException(
+            String.format(
+                "Invalid regex capture expression: %s", tokenExtractionRule.getRegexCapture()));
+      }
+    }
   }
 
   private void throwInvalidArgumentException(String description) {
