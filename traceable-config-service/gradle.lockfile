@@ -1,8 +1,8 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.activity.event.service:activity-event-api:3.0.69=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.330=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.activity.event.service:activity-event-api:3.0.81=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.332=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath
