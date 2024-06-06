@@ -243,9 +243,10 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
         .getTokenExtractionRulesList()
         .forEach(
             tokenExtractionRule -> {
-              validKeys.add(tokenExtractionRule.getKey());
               if (tokenExtractionRule.hasAlias()) {
                 validKeys.add(tokenExtractionRule.getAlias());
+              } else {
+                validKeys.add(tokenExtractionRule.getKey());
               }
             });
     Pattern pattern = Pattern.compile("\\{(\\\\}|[^}])*}");
@@ -264,6 +265,9 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
   private void validateTokenExtractionRule(
       Action.DynamicLabel.TokenExtractionRule tokenExtractionRule) {
     validateNonDefaultPresenceOrThrow(tokenExtractionRule, tokenExtractionRule.KEY_FIELD_NUMBER);
+    if (tokenExtractionRule.hasRegexCapture()) {
+      RegexValidator.validateCaptureGroupCount(tokenExtractionRule.getRegexCapture(), 1);
+    }
   }
 
   private void throwInvalidArgumentException(String description) {

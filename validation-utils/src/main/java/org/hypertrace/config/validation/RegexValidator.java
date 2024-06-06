@@ -16,4 +16,20 @@ public class RegexValidator {
     }
     return Status.OK;
   }
+
+  public static Status validateCaptureGroupCount(String regexPattern, int expectedCount) {
+    // compiling an invalid regex throws PatternSyntaxException
+    try {
+      Pattern pattern = Pattern.compile(regexPattern);
+      if (pattern.groupCount() != expectedCount) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Regex group count should be: " + expectedCount);
+      }
+    } catch (PatternSyntaxException e) {
+      return Status.INVALID_ARGUMENT
+          .withCause(e)
+          .withDescription("Invalid Regex pattern: " + regexPattern);
+    }
+    return Status.OK;
+  }
 }
