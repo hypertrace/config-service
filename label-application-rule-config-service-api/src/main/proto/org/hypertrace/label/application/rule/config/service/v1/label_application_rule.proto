@@ -110,6 +110,7 @@ message LabelApplicationRuleData {
         string key = 1;
         optional string json_path = 2;
         optional string alias = 3;
+        optional string regex_capture = 4;
       }
     }
   }
