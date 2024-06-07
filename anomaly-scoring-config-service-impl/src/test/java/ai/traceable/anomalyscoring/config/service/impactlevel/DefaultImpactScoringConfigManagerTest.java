@@ -3,7 +3,6 @@ package ai.traceable.anomalyscoring.config.service.impactlevel;
 import static ai.traceable.anomalyscoring.config.service.constants.AnomalyScoringConfigConstants.ANOMALY_SCORING_CONFIG_NAMESPACE;
 import static ai.traceable.anomalyscoring.config.service.constants.AnomalyScoringConfigConstants.IMPACT_CONFIG_RESOURCE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomalyscoring.config.service.AnomalyScoringConfigServiceConfig;
@@ -22,6 +21,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -86,7 +86,10 @@ class DefaultImpactScoringConfigManagerTest {
                           .build()))
           .build();
 
-  @Mock private ConfigServiceBlockingStub configServiceStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  private ConfigServiceBlockingStub configServiceStub;
+
+  @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @Mock private AnomalyScoringConfigServiceConfig config;
 
@@ -94,8 +97,6 @@ class DefaultImpactScoringConfigManagerTest {
 
   @BeforeEach
   void setup() {
-    configServiceStub = mock(ConfigServiceBlockingStub.class);
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.impactScoringConfigManager =
         new DefaultImpactScoringConfigManager(
             configServiceStub,

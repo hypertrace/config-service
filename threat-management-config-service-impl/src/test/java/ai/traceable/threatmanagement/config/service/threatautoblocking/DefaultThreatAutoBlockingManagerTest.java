@@ -4,7 +4,6 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.v1.ExcludeAutoBlockingConfig;
@@ -26,6 +25,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -106,15 +106,15 @@ class DefaultThreatAutoBlockingManagerTest {
                           .build()))
           .build();
 
-  @Mock private ConfigServiceBlockingStub configServiceStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  private ConfigServiceBlockingStub configServiceStub;
+
   @Mock private ThreatAutoBlockingActionConfigConverter configConverter;
+  @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
   private ThreatAutoBlockingManager threatAutoBlockingManager;
 
   @BeforeEach
   void setup() {
-    configServiceStub = mock(ConfigServiceBlockingStub.class);
-    this.configConverter = mock(ThreatAutoBlockingActionConfigConverter.class);
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.threatAutoBlockingManager =
         new DefaultThreatAutoBlockingManager(
             configServiceStub,

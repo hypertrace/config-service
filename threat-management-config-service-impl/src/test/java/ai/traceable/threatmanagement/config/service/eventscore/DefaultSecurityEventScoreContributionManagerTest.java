@@ -3,7 +3,6 @@ package ai.traceable.threatmanagement.config.service.eventscore;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
@@ -21,6 +20,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -70,16 +70,16 @@ class DefaultSecurityEventScoreContributionManagerTest {
                   .putFields("criticalScore", Value.newBuilder().setNumberValue(1000).build()))
           .build();
 
-  @Mock private ConfigServiceBlockingStub configServiceStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  private ConfigServiceBlockingStub configServiceStub;
 
   @Mock private ThreatManagementConfigServiceConfig config;
+  @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
 
   private SecurityEventScoreContributionManager securityEventScoreContributionManager;
 
   @BeforeEach
   void setup() {
-    configServiceStub = mock(ConfigServiceBlockingStub.class);
-    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     this.securityEventScoreContributionManager =
         new DefaultSecurityEventScoreContributionManager(
             configServiceStub,
