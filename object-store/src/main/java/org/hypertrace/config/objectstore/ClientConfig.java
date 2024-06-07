@@ -6,6 +6,6 @@ import lombok.Value;
 @Value
 public class ClientConfig {
   Duration timeout;
-
-  public static ClientConfig DEFAULT = new ClientConfig(Duration.ofSeconds(5));
+  // TODO: Explore unobtrusive ways of setting this default from config
+  public static ClientConfig DEFAULT = new ClientConfig(Duration.ofSeconds(10));
 }
