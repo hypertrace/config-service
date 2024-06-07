@@ -3,7 +3,6 @@ package org.hypertrace.config.objectstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,7 +73,8 @@ class IdentifiedObjectStoreTest {
                   .putFields("rank", Values.of(2)))
           .build();
 
-  @Mock ConfigServiceBlockingStub mockStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  ConfigServiceBlockingStub mockStub;
 
   @Mock ConfigChangeEventGenerator configChangeEventGenerator;
 
@@ -85,7 +85,6 @@ class IdentifiedObjectStoreTest {
 
   @BeforeEach
   void beforeEach() {
-    this.mockStub = mock(ConfigServiceBlockingStub.class);
     this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 

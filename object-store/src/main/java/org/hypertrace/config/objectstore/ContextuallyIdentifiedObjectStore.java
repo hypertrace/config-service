@@ -1,14 +1,10 @@
 package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
-import io.grpc.Status;
 import java.util.Optional;
 import java.util.function.Function;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public abstract class ContextuallyIdentifiedObjectStore<T> {
@@ -16,26 +12,39 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
   private final String resourceNamespace;
   private final String resourceName;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGenerator;
+  private final ClientConfig clientConfig;
 
   protected ContextuallyIdentifiedObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName,
       ConfigChangeEventGenerator configChangeEventGenerator) {
+    this(
+        configServiceBlockingStub,
+        resourceNamespace,
+        resourceName,
+        configChangeEventGenerator,
+        ClientConfig.DEFAULT);
+  }
+
+  protected ContextuallyIdentifiedObjectStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      String resourceNamespace,
+      String resourceName,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.resourceNamespace = resourceNamespace;
     this.resourceName = resourceName;
-    this.configChangeEventGenerator = Optional.of(configChangeEventGenerator);
+    this.configChangeEventGenerator = Optional.ofNullable(configChangeEventGenerator);
+    this.clientConfig = clientConfig;
   }
 
   protected ContextuallyIdentifiedObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.resourceNamespace = resourceNamespace;
-    this.resourceName = resourceName;
-    this.configChangeEventGenerator = Optional.empty();
+    this(configServiceBlockingStub, resourceNamespace, resourceName, null);
   }
 
   protected abstract Optional<T> buildDataFromValue(Value value);
@@ -59,32 +68,9 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
   }
 
   public Optional<ConfigObject<T>> getObject(RequestContext context) {
-    String configContext = this.getConfigContextFromRequestContext(context);
-    try {
-      GetConfigResponse getConfigResponse =
-          context.call(
-              () ->
-                  this.configServiceBlockingStub.getConfig(
-                      GetConfigRequest.newBuilder()
-                          .setResourceName(this.resourceName)
-                          .setResourceNamespace(this.resourceNamespace)
-                          .addContexts(configContext)
-                          .build()));
-
-      ContextSpecificConfig contextSpecificConfig =
-          ContextSpecificConfig.newBuilder()
-              .setContext(configContext)
-              .setConfig(getConfigResponse.getConfig())
-              .setCreationTimestamp(getConfigResponse.getCreationTimestamp())
-              .setUpdateTimestamp(getConfigResponse.getUpdateTimestamp())
-              .build();
-      return ConfigObjectImpl.tryBuild(contextSpecificConfig, this::buildDataFromValue);
-    } catch (Exception exception) {
-      if (Status.fromThrowable(exception).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw exception;
-    }
+    return this.buildObjectStoreForContext(context)
+        .getObject(context, this.getConfigContextFromRequestContext(context))
+        .map(Function.identity());
   }
 
   public Optional<T> getData(RequestContext context) {
@@ -107,13 +93,17 @@ public abstract class ContextuallyIdentifiedObjectStore<T> {
     private final RequestContext requestContext;
 
     ContextAwareIdentifiedObjectStoreDelegate(RequestContext requestContext) {
-      super(configServiceBlockingStub, resourceNamespace, resourceName);
-      this.requestContext = requestContext;
+      this(requestContext, null);
     }
 
     ContextAwareIdentifiedObjectStoreDelegate(
         RequestContext requestContext, ConfigChangeEventGenerator configChangeEventGenerator) {
-      super(configServiceBlockingStub, resourceNamespace, resourceName, configChangeEventGenerator);
+      super(
+          configServiceBlockingStub,
+          resourceNamespace,
+          resourceName,
+          configChangeEventGenerator,
+          clientConfig);
       this.requestContext = requestContext;
     }
 
