@@ -1,8 +1,10 @@
 package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
+import io.grpc.Deadline;
 import io.grpc.Status;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -26,26 +28,39 @@ public abstract class DefaultObjectStore<T> {
   private final String resourceNamespace;
   private final String resourceName;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGeneratorOptional;
+  private final ClientConfig clientConfig;
+
+  protected DefaultObjectStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      String resourceNamespace,
+      String resourceName,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      ClientConfig clientConfig) {
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.resourceNamespace = resourceNamespace;
+    this.resourceName = resourceName;
+    this.configChangeEventGeneratorOptional = Optional.ofNullable(configChangeEventGenerator);
+    this.clientConfig = clientConfig;
+  }
 
   protected DefaultObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName,
       ConfigChangeEventGenerator configChangeEventGenerator) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.resourceNamespace = resourceNamespace;
-    this.resourceName = resourceName;
-    this.configChangeEventGeneratorOptional = Optional.of(configChangeEventGenerator);
+    this(
+        configServiceBlockingStub,
+        resourceNamespace,
+        resourceName,
+        configChangeEventGenerator,
+        ClientConfig.DEFAULT);
   }
 
   protected DefaultObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.resourceNamespace = resourceNamespace;
-    this.resourceName = resourceName;
-    this.configChangeEventGeneratorOptional = Optional.empty();
+    this(configServiceBlockingStub, resourceNamespace, resourceName, null);
   }
 
   protected abstract Optional<T> buildDataFromValue(Value value);
@@ -65,11 +80,13 @@ public abstract class DefaultObjectStore<T> {
       GetConfigResponse getConfigResponse =
           context.call(
               () ->
-                  this.configServiceBlockingStub.getConfig(
-                      GetConfigRequest.newBuilder()
-                          .setResourceName(this.resourceName)
-                          .setResourceNamespace(this.resourceNamespace)
-                          .build()));
+                  this.configServiceBlockingStub
+                      .withDeadline(getDeadline())
+                      .getConfig(
+                          GetConfigRequest.newBuilder()
+                              .setResourceName(this.resourceName)
+                              .setResourceNamespace(this.resourceNamespace)
+                              .build()));
 
       return ConfigObjectImpl.tryBuild(
           getConfigResponse.getConfig(),
@@ -90,6 +107,7 @@ public abstract class DefaultObjectStore<T> {
           context.call(
               () ->
                   this.configServiceBlockingStub
+                      .withDeadline(getDeadline())
                       .getConfig(
                           GetConfigRequest.newBuilder()
                               .setResourceName(this.resourceName)
@@ -110,12 +128,14 @@ public abstract class DefaultObjectStore<T> {
     UpsertConfigResponse response =
         context.call(
             () ->
-                this.configServiceBlockingStub.upsertConfig(
-                    UpsertConfigRequest.newBuilder()
-                        .setResourceName(this.resourceName)
-                        .setResourceNamespace(this.resourceNamespace)
-                        .setConfig(this.buildValueFromData(data))
-                        .build()));
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .upsertConfig(
+                        UpsertConfigRequest.newBuilder()
+                            .setResourceName(this.resourceName)
+                            .setResourceNamespace(this.resourceNamespace)
+                            .setConfig(this.buildValueFromData(data))
+                            .build()));
 
     ConfigObject<T> upsertedObject =
         ConfigObjectImpl.tryBuild(response, this::buildDataFromValue)
@@ -153,11 +173,13 @@ public abstract class DefaultObjectStore<T> {
           context
               .call(
                   () ->
-                      this.configServiceBlockingStub.deleteConfig(
-                          DeleteConfigRequest.newBuilder()
-                              .setResourceName(this.resourceName)
-                              .setResourceNamespace(this.resourceNamespace)
-                              .build()))
+                      this.configServiceBlockingStub
+                          .withDeadline(getDeadline())
+                          .deleteConfig(
+                              DeleteConfigRequest.newBuilder()
+                                  .setResourceName(this.resourceName)
+                                  .setResourceNamespace(this.resourceNamespace)
+                                  .build()))
               .getDeletedConfig();
       ConfigObject<T> object =
           ConfigObjectImpl.tryBuild(deletedConfig, this::buildDataFromValue)
@@ -175,5 +197,9 @@ public abstract class DefaultObjectStore<T> {
       }
       throw exception;
     }
+  }
+
+  protected Deadline getDeadline() {
+    return Deadline.after(this.clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS);
   }
 }

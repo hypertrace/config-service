@@ -3,7 +3,6 @@ package org.hypertrace.config.objectstore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,7 +37,8 @@ class DefaultObjectStoreTest {
   private static final Instant TEST_CREATE_TIMESTAMP = Instant.ofEpochMilli(20);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
 
-  @Mock ConfigServiceBlockingStub mockStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  ConfigServiceBlockingStub mockStub;
 
   @Mock ConfigChangeEventGenerator configChangeEventGenerator;
 
@@ -49,7 +49,6 @@ class DefaultObjectStoreTest {
 
   @BeforeEach
   void beforeEach() {
-    this.mockStub = mock(ConfigServiceBlockingStub.class);
     this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 
