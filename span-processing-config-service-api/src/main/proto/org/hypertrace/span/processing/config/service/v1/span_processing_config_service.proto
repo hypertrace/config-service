@@ -66,7 +66,22 @@ message ExcludeSpanRuleInfo {
   SpanFilter filter = 2;
   bool disabled = 3;
   RuleType type = 4;
+  repeated EvaluationTarget evaluation_targets = 5;
 }
+
+message EvaluationTarget {
+  oneof target {
+    Platform platform = 1;
+    PlatformAgent platform_agent = 2;
+    TracingAgent tracing_agent = 3;
+  }
+}
+
+message Platform {}
+
+message PlatformAgent {}
+
+message TracingAgent {}
 
 message ExcludeSpanRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
