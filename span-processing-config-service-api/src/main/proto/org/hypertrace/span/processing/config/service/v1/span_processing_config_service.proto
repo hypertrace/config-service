@@ -72,16 +72,16 @@ message ExcludeSpanRuleInfo {
 message EvaluationTarget {
   oneof target {
     Platform platform = 1;
-    PlatformAgent platform_agent = 2;
-    TracingAgent tracing_agent = 3;
+    Agent agent = 2;
+    AgentModule agent_module = 3;
   }
 }
 
 message Platform {}
 
-message PlatformAgent {}
+message Agent {}
 
-message TracingAgent {}
+message AgentModule {}
 
 message ExcludeSpanRuleMetadata {
   google.protobuf.Timestamp creation_timestamp = 1;
