@@ -15,9 +15,11 @@ import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class BlockingModsecBlobFetcherTest {
   private static final String TENANT_ID = "tenant-id";
@@ -31,8 +33,10 @@ class BlockingModsecBlobFetcherTest {
 
   @BeforeEach
   void setup() {
-    configServiceBlockingStub = mock(AnomalyModsecConfigServiceBlockingStub.class);
-    blockingModsecBlobFetcher = new BlockingModsecBlobFetcher(configServiceBlockingStub);
+    configServiceBlockingStub =
+        mock(AnomalyModsecConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
+    blockingModsecBlobFetcher =
+        new BlockingModsecBlobFetcher(configServiceBlockingStub, ClientConfig.DEFAULT);
   }
 
   @Test

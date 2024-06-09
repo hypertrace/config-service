@@ -10,9 +10,11 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -22,15 +24,18 @@ class ExternalUserAttributionConfigServiceImpl
   private final UserAttributionConfigServiceBlockingStub userAttributionRuleStub;
   private final ExternalUserAttributionRuleTranslator ruleTranslator;
   private final ExternalUserAttributionRuleResponseBuilder responseBuilder;
+  private final ClientConfig clientConfig;
 
   @Inject
   ExternalUserAttributionConfigServiceImpl(
       UserAttributionConfigServiceBlockingStub userAttributionRuleStub,
       ExternalUserAttributionRuleTranslator ruleTranslator,
-      ExternalUserAttributionRuleResponseBuilder responseBuilder) {
+      ExternalUserAttributionRuleResponseBuilder responseBuilder,
+      ClientConfig clientConfig) {
     this.userAttributionRuleStub = userAttributionRuleStub;
     this.ruleTranslator = ruleTranslator;
     this.responseBuilder = responseBuilder;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -56,6 +61,7 @@ class ExternalUserAttributionConfigServiceImpl
         requestContext.call(
             () ->
                 userAttributionRuleStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getUserAttributionRules(GetUserAttributionRulesRequest.getDefaultInstance())
                     .getRulesList()
                     .stream()

@@ -14,14 +14,17 @@ import ai.traceable.malicioussources.config.service.v1.RuleActionType;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
   private final Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
       maliciousSourceDataHandlerMap;
 
@@ -29,9 +32,11 @@ class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFet
   MaliciousSourcesBlockingPolicyDataFetcher(
       MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
       Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
-          maliciousSourceDataHandlerMap) {
+          maliciousSourceDataHandlerMap,
+      ClientConfig clientConfig) {
     this.maliciousSourceDataHandlerMap = maliciousSourceDataHandlerMap;
     this.maliciousSourcesConfigServiceBlockingStub = maliciousSourcesConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -83,7 +88,10 @@ class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFet
 
     return requestContext
         .call(
-            () -> maliciousSourcesConfigServiceBlockingStub.getMaliciousSourcesRules(rulesRequest))
+            () ->
+                maliciousSourcesConfigServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getMaliciousSourcesRules(rulesRequest))
         .getRulesList();
   }
 }

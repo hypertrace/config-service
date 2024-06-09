@@ -14,6 +14,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.uuidcreator)
   implementation(commonLibs.protobuf.javautil)
+  implementation(localLibs.hypertrace.configservice.objectstore)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

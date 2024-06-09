@@ -9,21 +9,26 @@ import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DataClassificationInfoProvider {
   private final DataClassificationConfigServiceBlockingStub
       dataClassificationConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
   public DataClassificationInfoProvider(
-      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub) {
+      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   public DataClassificationInfo fetchDataClassificationInfo(RequestContext requestContext) {
@@ -45,8 +50,10 @@ public class DataClassificationInfoProvider {
     return requestContext
         .call(
             () ->
-                dataClassificationConfigServiceBlockingStub.getDataTypes(
-                    GetDataTypesRequest.newBuilder().setResolveInheritedDetails(true).build()))
+                dataClassificationConfigServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getDataTypes(
+                        GetDataTypesRequest.newBuilder().setResolveInheritedDetails(true).build()))
         .getDataTypesList();
   }
 

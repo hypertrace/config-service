@@ -14,9 +14,11 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 public class CustomSignatureBlobFetcherTest {
   private static final String TENANT_ID = "tenant-id";
@@ -27,10 +29,11 @@ public class CustomSignatureBlobFetcherTest {
   @BeforeEach
   void setup() {
     CustomSignatureConfigServiceBlockingStub customSignatureConfigServiceBlockingStub =
-        mock(CustomSignatureConfigServiceBlockingStub.class);
+        mock(CustomSignatureConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
 
     customSignatureBlobFetcher =
-        new DefaultCustomSignatureBlobFetcher(customSignatureConfigServiceBlockingStub);
+        new DefaultCustomSignatureBlobFetcher(
+            customSignatureConfigServiceBlockingStub, ClientConfig.DEFAULT);
 
     doReturn(
             GetCustomSignatureModsecRulesResponse.newBuilder()

@@ -19,6 +19,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
@@ -74,5 +75,10 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
     return SpanProcessingConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ClientConfig providesClientConfig() {
+    return ClientConfig.DEFAULT;
   }
 }

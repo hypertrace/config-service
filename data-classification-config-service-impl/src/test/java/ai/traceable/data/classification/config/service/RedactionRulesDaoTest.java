@@ -54,6 +54,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -81,7 +82,8 @@ class RedactionRulesDaoTest {
     redactionRulesDao =
         new RedactionRulesDao(
             sensitiveDataConfigServiceBlockingStub,
-            new LegacyDataSetStore(genericStub, configChangeEventGenerator));
+            new LegacyDataSetStore(genericStub, configChangeEventGenerator),
+            ClientConfig.DEFAULT);
   }
 
   @AfterEach

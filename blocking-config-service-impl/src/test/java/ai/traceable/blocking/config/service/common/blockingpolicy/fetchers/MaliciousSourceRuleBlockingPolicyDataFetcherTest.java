@@ -37,9 +37,11 @@ import com.google.protobuf.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
 
@@ -55,7 +57,9 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
   @BeforeEach
   void setUp() {
     this.maliciousSourcesConfigServiceBlockingStub =
-        mock(MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub.class);
+        mock(
+            MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub.class,
+            Answers.RETURNS_SELF);
     BlockingRulesUtils blockingRulesUtils = mock(BlockingRulesUtils.class);
     doReturn(true).when(blockingRulesUtils).isRuleActive(activeTimestamp);
     doReturn(true).when(blockingRulesUtils).isRuleActive(0);
@@ -87,7 +91,8 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
                 MaliciousSourcesRuleCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION,
                 new IpTypeDataHandler(blockingRulesUtils),
                 MaliciousSourcesRuleCondition.ConditionCase.REGION_CONDITION,
-                new RegionDataHandler(blockingRulesUtils)));
+                new RegionDataHandler(blockingRulesUtils)),
+            ClientConfig.DEFAULT);
   }
 
   @Test

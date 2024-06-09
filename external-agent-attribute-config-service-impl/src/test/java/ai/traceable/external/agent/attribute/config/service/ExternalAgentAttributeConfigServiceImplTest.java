@@ -33,6 +33,7 @@ import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRes
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceImplBase;
 import io.grpc.stub.StreamObserver;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -74,7 +75,8 @@ class ExternalAgentAttributeConfigServiceImplTest {
                 mockRuleTranslator,
                 new ExternalAgentAttributeRuleResponseBuilder(mockUuidGenerator),
                 mockFeatureClient,
-                new SemanticVersioningComparator()))
+                new SemanticVersioningComparator(),
+                ClientConfig.DEFAULT))
         .start();
     stub =
         ExternalAgentAttributeConfigServiceGrpc.newBlockingStub(

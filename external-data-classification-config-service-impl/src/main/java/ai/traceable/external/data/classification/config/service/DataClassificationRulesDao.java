@@ -12,22 +12,24 @@ import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.Da
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.data.classification.config.service.v1.ScopeFilter;
 import com.google.inject.Inject;
-import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DataClassificationRulesDao {
-  private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
   private final DataClassificationConfigServiceBlockingStub
       dataClassificationConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
   public DataClassificationRulesDao(
-      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub) {
+      DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.dataClassificationConfigServiceBlockingStub = dataClassificationConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   public List<DataType> getResolvedDataTypesInEvaluationOrder(RequestContext requestContext) {
@@ -35,7 +37,7 @@ class DataClassificationRulesDao {
         .call(
             () ->
                 dataClassificationConfigServiceBlockingStub
-                    .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getDataTypes(
                         GetDataTypesRequest.newBuilder()
                             .setResolveInheritedDetails(true)
@@ -51,7 +53,7 @@ class DataClassificationRulesDao {
         .call(
             () ->
                 dataClassificationConfigServiceBlockingStub
-                    .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getDataTypes(
                         GetDataTypesRequest.newBuilder()
                             .setFilter(
@@ -70,7 +72,7 @@ class DataClassificationRulesDao {
         .call(
             () ->
                 dataClassificationConfigServiceBlockingStub
-                    .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getDataClassificationOverrides(
                         GetDataClassificationOverridesRequest.getDefaultInstance()))
         .getDataClassificationOverridesList()
@@ -85,7 +87,7 @@ class DataClassificationRulesDao {
         .call(
             () ->
                 dataClassificationConfigServiceBlockingStub
-                    .withDeadlineAfter(REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getDataClassificationOverrides(
                         GetDataClassificationOverridesRequest.newBuilder()
                             .setFilter(

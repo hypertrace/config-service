@@ -20,9 +20,11 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import java.util.List;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class DefaultRegularModsecDetectionManagerTest {
   private UuidGenerator uuidGenerator;
@@ -31,14 +33,16 @@ class DefaultRegularModsecDetectionManagerTest {
 
   @BeforeEach
   void setup() {
-    configServiceBlockingStub = mock(AnomalyModsecConfigServiceBlockingStub.class);
+    configServiceBlockingStub =
+        mock(AnomalyModsecConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     when(featureCachingClient.isTpaModSecProcessingDisabled(
             argThat(requestContext -> "tenant1".equals(requestContext.getTenantId().orElse("")))))
         .thenReturn(true);
     uuidGenerator = new UuidGenerator();
     regularModsecDetectionManager =
-        new DefaultRegularModsecDetectionManager(configServiceBlockingStub, uuidGenerator);
+        new DefaultRegularModsecDetectionManager(
+            configServiceBlockingStub, uuidGenerator, ClientConfig.DEFAULT);
   }
 
   @Test

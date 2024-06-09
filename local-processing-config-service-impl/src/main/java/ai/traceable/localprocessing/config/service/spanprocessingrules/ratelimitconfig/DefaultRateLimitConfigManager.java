@@ -17,7 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -32,14 +34,17 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
+  private final ClientConfig clientConfig;
 
   @Inject
   public DefaultRateLimitConfigManager(
       SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
           configServiceBlockingStub,
-      SpanFilterMatcher spanFilterMatcher) {
+      SpanFilterMatcher spanFilterMatcher,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.spanFilterMatcher = spanFilterMatcher;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -47,8 +52,10 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
     return requestContext
         .call(
             () ->
-                configServiceBlockingStub.getAllResolvedSamplingConfigs(
-                    GetAllResolvedSamplingConfigsRequest.newBuilder().build()))
+                configServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getAllResolvedSamplingConfigs(
+                        GetAllResolvedSamplingConfigsRequest.newBuilder().build()))
         .getSamplingConfigsList();
   }
 

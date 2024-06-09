@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 public class DlpRulesFetcherTest {
   private static final String TENANT_ID = "tenant-id";
@@ -33,9 +35,10 @@ public class DlpRulesFetcherTest {
   @BeforeEach
   void setup() {
     RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceBlockingStub =
-        mock(RateLimitingConfigServiceBlockingStub.class);
+        mock(RateLimitingConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
 
-    dlpRulesFetcher = new DlpRulesFetcher(rateLimitingConfigServiceBlockingStub);
+    dlpRulesFetcher =
+        new DlpRulesFetcher(rateLimitingConfigServiceBlockingStub, ClientConfig.DEFAULT);
 
     doReturn(
             GetRateLimitingRuleModsecRulesResponse.newBuilder()

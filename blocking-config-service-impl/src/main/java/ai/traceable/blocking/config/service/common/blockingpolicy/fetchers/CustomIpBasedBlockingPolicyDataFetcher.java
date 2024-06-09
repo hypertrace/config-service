@@ -25,9 +25,11 @@ import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -36,13 +38,16 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
       ImmutableList.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT);
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
+  private final ClientConfig clientConfig;
 
   @Inject
   CustomIpBasedBlockingPolicyDataFetcher(
       IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub,
-      BlockingRulesUtils blockingRulesUtils) {
+      BlockingRulesUtils blockingRulesUtils,
+      ClientConfig clientConfig) {
     this.ipRangeConfigServiceStub = ipRangeConfigServiceStub;
     this.blockingRulesUtils = blockingRulesUtils;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -174,7 +179,11 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
             .build();
 
     GetIpRangeRulesResponse response =
-        requestContext.call(() -> ipRangeConfigServiceStub.getIpRangeRules(getIpRangeRulesRequest));
+        requestContext.call(
+            () ->
+                ipRangeConfigServiceStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getIpRangeRules(getIpRangeRulesRequest));
     return response.getRulesList();
   }
 }

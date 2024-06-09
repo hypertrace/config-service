@@ -30,8 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -109,13 +111,16 @@ public class RedactionRulesDao {
 
   private final SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
   private final LegacyDataSetStore legacyDataSetStore;
+  private final ClientConfig clientConfig;
 
   @Inject
   public RedactionRulesDao(
       SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub,
-      LegacyDataSetStore legacyDataSetStore) {
+      LegacyDataSetStore legacyDataSetStore,
+      ClientConfig clientConfig) {
     this.sensitiveDataConfigServiceBlockingStub = sensitiveDataConfigServiceBlockingStub;
     this.legacyDataSetStore = legacyDataSetStore;
+    this.clientConfig = clientConfig;
   }
 
   public List<DataSet> getDataSetsFromRedactionRules(RequestContext requestContext) {
@@ -270,6 +275,7 @@ public class RedactionRulesDao {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                 .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
                 .getRedactionRulesList()
                 .stream()
@@ -282,8 +288,10 @@ public class RedactionRulesDao {
   private void deleteRedactionRule(RequestContext requestContext, String ruleId) {
     requestContext.call(
         () ->
-            sensitiveDataConfigServiceBlockingStub.deleteRedactionRule(
-                DeleteRedactionRuleRequest.newBuilder().setRedactionRuleId(ruleId).build()));
+            sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .deleteRedactionRule(
+                    DeleteRedactionRuleRequest.newBuilder().setRedactionRuleId(ruleId).build()));
   }
 
   private Optional<DataSet> getAutomaticSecretRedactionDataSet(
@@ -324,6 +332,7 @@ public class RedactionRulesDao {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                 .getAutomaticSecretRedactionStrategy(
                     GetAutomaticSecretRedactionStrategyRequest.getDefaultInstance())
                 .getEnabled());
@@ -332,10 +341,12 @@ public class RedactionRulesDao {
   private void setAutomaticSecretRedactionStrategyToFalse(RequestContext requestContext) {
     requestContext.call(
         () ->
-            sensitiveDataConfigServiceBlockingStub.updateAutomaticSecretRedactionStrategy(
-                UpdateAutomaticSecretRedactionStrategyRequest.newBuilder()
-                    .setEnabled(false)
-                    .build()));
+            sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .updateAutomaticSecretRedactionStrategy(
+                    UpdateAutomaticSecretRedactionStrategyRequest.newBuilder()
+                        .setEnabled(false)
+                        .build()));
   }
 
   private Optional<DataSet> getSensitiveHeadersDataSet(
@@ -380,6 +391,7 @@ public class RedactionRulesDao {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                 .getRedactionStrategyForType(
                     GetRedactionStrategyForTypeRequest.newBuilder()
                         .setParamType(ParamType.PARAM_TYPE_HEADER)
@@ -390,11 +402,13 @@ public class RedactionRulesDao {
   private void setRedactionStrategyForHeaderParamTypeToUnspecified(RequestContext requestContext) {
     requestContext.call(
         () ->
-            sensitiveDataConfigServiceBlockingStub.updateRedactionStrategyForType(
-                UpdateRedactionStrategyForTypeRequest.newBuilder()
-                    .setParamType(ParamType.PARAM_TYPE_HEADER)
-                    .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED)
-                    .build()));
+            sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .updateRedactionStrategyForType(
+                    UpdateRedactionStrategyForTypeRequest.newBuilder()
+                        .setParamType(ParamType.PARAM_TYPE_HEADER)
+                        .setRedactionStrategy(RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED)
+                        .build()));
   }
 
   private DataSuppression mapToDataSuppression(RedactionStrategy redactionStrategy) {

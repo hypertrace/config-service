@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
@@ -42,13 +43,16 @@ public class HttpCustomApiNamingRulesManager {
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       spanProcessingConfigServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
+  private final ClientConfig clientConfig;
 
   @Inject
   public HttpCustomApiNamingRulesManager(
       Config config,
       SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
           spanProcessingConfigServiceBlockingStub,
-      SpanFilterMatcher spanFilterMatcher) {
+      SpanFilterMatcher spanFilterMatcher,
+      ClientConfig clientConfig) {
+    this.clientConfig = clientConfig;
     Duration cacheRefreshDuration =
         config.hasPath(CACHE_REFRESH_DURATION)
             ? config.getDuration(CACHE_REFRESH_DURATION)
@@ -80,8 +84,10 @@ public class HttpCustomApiNamingRulesManager {
       return key
           .callInContext(
               () ->
-                  spanProcessingConfigServiceBlockingStub.getAllApiNamingRules(
-                      GetAllApiNamingRulesRequest.newBuilder().build()))
+                  spanProcessingConfigServiceBlockingStub
+                      .withDeadlineAfter(
+                          clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                      .getAllApiNamingRules(GetAllApiNamingRulesRequest.newBuilder().build()))
           .getRuleDetailsList()
           .stream()
           .map(ApiNamingRuleDetails::getRule)

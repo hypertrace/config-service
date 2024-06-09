@@ -11,9 +11,9 @@ import ai.traceable.platform.insights.api.v1.Value;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class InsightsServiceCoordinatorImpl implements InsightsServiceCoordinator {
@@ -22,10 +22,13 @@ class InsightsServiceCoordinatorImpl implements InsightsServiceCoordinator {
   private static final String IS_HEADER_PII = "isHeaderPii";
 
   private final InsightsServiceBlockingStub insightsServiceBlockingStub;
+  private final SensitiveDataServiceConfig config;
 
   @Inject
-  InsightsServiceCoordinatorImpl(InsightsServiceBlockingStub insightsServiceBlockingStub) {
+  InsightsServiceCoordinatorImpl(
+      InsightsServiceBlockingStub insightsServiceBlockingStub, SensitiveDataServiceConfig config) {
     this.insightsServiceBlockingStub = insightsServiceBlockingStub;
+    this.config = config;
   }
 
   @Override
@@ -45,9 +48,13 @@ class InsightsServiceCoordinatorImpl implements InsightsServiceCoordinator {
             .setFilter(isPiiAttributeFilter)
             .build();
     QueryInsightsResponse response =
-        GrpcClientRequestContextUtil.executeWithHeadersContext(
-            requestContext.getRequestHeaders(),
-            () -> insightsServiceBlockingStub.queryInsights(request));
+        requestContext.call(
+            () ->
+                insightsServiceBlockingStub
+                    .withDeadlineAfter(
+                        config.insightsClientConfig().getTimeout().toMillis(),
+                        TimeUnit.MILLISECONDS)
+                    .queryInsights(request));
     return response.getInsightList().stream()
         .filter(i -> i.getAttributesMap().containsKey(HEADER_NAMESPACED_NAME))
         .map(

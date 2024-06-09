@@ -22,6 +22,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingS
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,13 +31,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ConfigServiceCoordinatorImplTest {
   @Mock ConfigServiceBlockingStub mockGenericStub;
   @Mock ConfigChangeEventGenerator mockChangeEventGenerator;
-  @Mock SensitiveDataServiceConfig mockConfig;
+
+  @Mock(answer = Answers.RETURNS_MOCKS)
+  SensitiveDataServiceConfig mockConfig;
+
   @Mock RedactionRuleConfigStore mockRedactionRuleStore;
   @Mock AutomaticSecretRedactionStrategyConfigStore mockAutoSecretRedactionStore;
   @Mock InvalidJsonPolicyConfigStore mockInvalidJsonPolicyStore;
   @Mock FullPrivacyModeConfigStore mockFullPrivactModeStore;
   @Mock DefaultRedactionRulePersistenceStatusStore mockDefaultRedactionRulePersistenceStore;
-  @Mock DataClassificationConfigServiceBlockingStub mockDataClassificationStub;
+
+  @Mock(answer = Answers.RETURNS_SELF)
+  DataClassificationConfigServiceBlockingStub mockDataClassificationStub;
+
   RequestContext testContext = RequestContext.forTenantId("ConfigServiceCoordinatorImplTest");
   @InjectMocks ConfigServiceCoordinatorImpl configServiceCoordinator;
 

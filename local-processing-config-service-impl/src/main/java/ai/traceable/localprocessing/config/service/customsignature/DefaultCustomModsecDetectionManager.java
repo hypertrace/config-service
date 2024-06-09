@@ -11,6 +11,8 @@ import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
 import com.google.inject.Inject;
+import java.util.concurrent.TimeUnit;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DefaultCustomModsecDetectionManager implements CustomModsecDetectionManager {
@@ -22,13 +24,16 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
 
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
+  private final ClientConfig clientConfig;
 
   @Inject
   public DefaultCustomModsecDetectionManager(
       CustomSignatureConfigServiceBlockingStub configServiceBlockingStub,
-      UuidGenerator uuidGenerator) {
+      UuidGenerator uuidGenerator,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.uuidGenerator = uuidGenerator;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -40,26 +45,29 @@ public class DefaultCustomModsecDetectionManager implements CustomModsecDetectio
     GetCustomSignatureModsecRulesResponse response =
         requestContext.call(
             () ->
-                configServiceBlockingStub.getCustomSignatureModsecRules(
-                    GetCustomSignatureModsecRulesRequest.newBuilder()
-                        .setFilter(
-                            GetRulesFilter.newBuilder()
-                                .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
-                                .setDisabled(false)
-                                .setRuleScope(
-                                    environmentId.isBlank()
-                                        ? RuleScope.getDefaultInstance()
-                                        : RuleScope.newBuilder()
-                                            .setEnvironmentScope(
-                                                EnvironmentScope.newBuilder()
-                                                    .addEnvironmentIds(environmentId))
-                                            .build())
-                                .build())
-                        .setRuleVersion(
-                            shouldUseCoraza
-                                ? CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3
-                                : CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED)
-                        .build()));
+                configServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getCustomSignatureModsecRules(
+                        GetCustomSignatureModsecRulesRequest.newBuilder()
+                            .setFilter(
+                                GetRulesFilter.newBuilder()
+                                    .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                                    .setDisabled(false)
+                                    .setRuleScope(
+                                        environmentId.isBlank()
+                                            ? RuleScope.getDefaultInstance()
+                                            : RuleScope.newBuilder()
+                                                .setEnvironmentScope(
+                                                    EnvironmentScope.newBuilder()
+                                                        .addEnvironmentIds(environmentId))
+                                                .build())
+                                    .build())
+                            .setRuleVersion(
+                                shouldUseCoraza
+                                    ? CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3
+                                    : CustomModsecRuleVersion
+                                        .CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED)
+                            .build()));
 
     String customModSecRulesBlob = response.getModsecRulesBlob();
 

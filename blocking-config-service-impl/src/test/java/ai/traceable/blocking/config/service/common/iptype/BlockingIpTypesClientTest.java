@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,7 @@ class BlockingIpTypesClientTest {
   @Test
   void getBlockingIpTypes() {
     BlockingIpTypesClient fetcher =
-        new BlockingIpTypesClient(maliciousSourcesConfigServiceBlockingStub);
+        new BlockingIpTypesClient(maliciousSourcesConfigServiceBlockingStub, ClientConfig.DEFAULT);
     mockMaliciousSourcesConfigService.addRule(
         "1",
         List.of(IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER),

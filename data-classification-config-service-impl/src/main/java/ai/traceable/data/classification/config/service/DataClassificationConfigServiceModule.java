@@ -10,6 +10,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -59,5 +60,10 @@ class DataClassificationConfigServiceModule extends AbstractModule {
     return DataClassificationConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ClientConfig provideClientConfig() {
+    return ClientConfig.DEFAULT;
   }
 }

@@ -10,6 +10,7 @@ import java.time.Duration;
 import javax.inject.Inject;
 import lombok.Builder;
 import lombok.Value;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 class SensitiveDataServiceConfig {
@@ -76,6 +77,10 @@ class SensitiveDataServiceConfig {
                 config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port")))
         .timeout(config.getDuration(INSIGHTS_SERVICE_CONFIG_REQUEST_TIMEOUT))
         .build();
+  }
+
+  ClientConfig defaultClientConfig() {
+    return ClientConfig.DEFAULT;
   }
 
   private DefaultRedactionRules buildDefaultRedactionRules() {

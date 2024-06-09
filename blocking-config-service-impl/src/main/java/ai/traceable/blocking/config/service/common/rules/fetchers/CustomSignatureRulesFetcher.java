@@ -9,7 +9,9 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class CustomSignatureRulesFetcher implements RulesFetcher {
@@ -21,10 +23,14 @@ public class CustomSignatureRulesFetcher implements RulesFetcher {
           .build();
 
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
-  CustomSignatureRulesFetcher(CustomSignatureConfigServiceBlockingStub configServiceBlockingStub) {
+  CustomSignatureRulesFetcher(
+      CustomSignatureConfigServiceBlockingStub configServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   public GetCustomSignatureModsecRulesResponse fetchModsecRules(
@@ -48,6 +54,9 @@ public class CustomSignatureRulesFetcher implements RulesFetcher {
             .build();
 
     return requestContext.call(
-        () -> configServiceBlockingStub.getCustomSignatureModsecRules(request));
+        () ->
+            configServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .getCustomSignatureModsecRules(request));
   }
 }

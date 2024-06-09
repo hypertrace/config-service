@@ -12,16 +12,21 @@ import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
 import java.util.Collections;
 import java.util.List;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class DataClassificationInfoProviderTest {
-  @Mock DataClassificationConfigServiceBlockingStub mockStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  DataClassificationConfigServiceBlockingStub mockStub;
+
+  @Mock ClientConfig clientConfig;
 
   @InjectMocks DataClassificationInfoProvider dataClassificationInfoProvider;
 

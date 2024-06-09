@@ -31,9 +31,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class RegionRulesFetcherTest {
   private static final String TENANT_ID = "tenant-id";
@@ -47,8 +49,9 @@ class RegionRulesFetcherTest {
   @BeforeEach
   void setup() {
     Clock clock = mock(Clock.class);
-    regionConfigServiceStub = mock(RegionConfigServiceBlockingStub.class);
-    regionRulesFetcher = new RegionRulesFetcher(clock, regionConfigServiceStub);
+    regionConfigServiceStub = mock(RegionConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
+    regionRulesFetcher =
+        new RegionRulesFetcher(clock, regionConfigServiceStub, ClientConfig.DEFAULT);
 
     when(clock.millis()).thenReturn(TIMESTAMP);
   }

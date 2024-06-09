@@ -25,6 +25,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.List;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -103,7 +104,8 @@ class ExternalUserAttributionConfigServiceImplTest {
                     new ExternalUserAttributionConfigServiceImpl(
                         userAttributionStub,
                         externalUserAttributionRuleTranslator,
-                        new ExternalUserAttributionRuleResponseBuilder(new HashGenerator())),
+                        new ExternalUserAttributionRuleResponseBuilder(new HashGenerator()),
+                        ClientConfig.DEFAULT),
                     new TestInterceptor()))
             .build()
             .start();

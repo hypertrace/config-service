@@ -2,7 +2,7 @@ package ai.traceable.external.agent.attribute.config.service;
 
 import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.KEY_PREDICATE_SUPPORT_MIN_TPA_VERSION;
 import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceBlockingStub;
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
@@ -50,13 +50,13 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConfigServiceImplBase {
-  private static final int DEFAULT_DEADLINE_SECONDS = 10;
 
   private final UserAttributionConfigServiceBlockingStub userAttributionRuleStub;
   private final AuthDetectionConfigServiceBlockingStub authDetectionConfigServiceBlockingStub;
@@ -69,6 +69,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
   private final ExternalAgentAttributeRuleResponseBuilder responseBuilder;
   private final FeatureCachingClient featureCachingClient;
   private final SemanticVersioningComparator semanticVersioningComparator;
+  private final ClientConfig clientConfig;
   private final LoadingCache<ContextualKey<AgentAttributeIdentifier>, List<AttributeRule>>
       attributeRulesCache =
           CacheBuilder.newBuilder()
@@ -144,7 +145,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
       return requestContext.call(
           () ->
               userAttributionRuleStub
-                  .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                  .withDeadlineAfter(clientConfig.getTimeout().toMillis(), MILLISECONDS)
                   .getUserAttributionRules(
                       GetUserAttributionRulesRequest.newBuilder()
                           .setFilter(
@@ -179,7 +180,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
       return requestContext.call(
           () ->
               authDetectionConfigServiceBlockingStub
-                  .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                  .withDeadlineAfter(clientConfig.getTimeout().toMillis(), MILLISECONDS)
                   .getAuthDetectionRules(authDetectionRulesRequest)
                   .getRulesList());
     } catch (Exception e) {
@@ -203,7 +204,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
       return requestContext.call(
           () ->
               jwtExtractionBlockingStub
-                  .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                  .withDeadlineAfter(clientConfig.getTimeout().toMillis(), MILLISECONDS)
                   .getJwtExtractionRules(
                       GetJwtExtractionRulesRequest.newBuilder()
                           .setFilter(filterBuilder.build())
@@ -249,7 +250,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
     return requestContext.call(
         () ->
             this.spanProcessingConfigServiceBlockingStub
-                .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), MILLISECONDS)
                 .getServiceNamingRules(request)
                 .getRulesList());
   }
@@ -268,7 +269,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
     return requestContext.call(
         () ->
             this.sessionAttributionConfigServiceBlockingStub
-                .withDeadlineAfter(DEFAULT_DEADLINE_SECONDS, SECONDS)
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), MILLISECONDS)
                 .getSessionIdentificationRules(requestBuilder.build())
                 .getRulesList());
   }

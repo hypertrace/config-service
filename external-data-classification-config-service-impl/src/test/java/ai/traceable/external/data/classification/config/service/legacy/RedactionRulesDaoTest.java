@@ -11,9 +11,11 @@ import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGrpc.SensitiveDataConfigServiceBlockingStub;
 import java.util.List;
 import java.util.Set;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -52,8 +54,11 @@ class RedactionRulesDaoTest {
 
   private static final RequestContext TEST_CONTEXT =
       RequestContext.forTenantId("RedactionRulesDaoTest");
-  @Mock SensitiveDataConfigServiceBlockingStub mockSensitiveDataStub;
 
+  @Mock(answer = Answers.RETURNS_SELF)
+  SensitiveDataConfigServiceBlockingStub mockSensitiveDataStub;
+
+  @Mock ClientConfig mockClientConfig;
   @InjectMocks RedactionRulesDao redactionRulesDao;
 
   @Test

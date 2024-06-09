@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -980,7 +981,8 @@ class DataClassificationConfigServiceImplTest {
     RedactionRulesDao redactionRulesDao =
         new RedactionRulesDao(
             sensitiveDataConfigServiceBlockingStub,
-            new LegacyDataSetStore(genericStub, configChangeEventGenerator));
+            new LegacyDataSetStore(genericStub, configChangeEventGenerator),
+            ClientConfig.DEFAULT);
     mockGenericConfigService
         .addService(
             new DataClassificationConfigServiceImpl(
@@ -997,7 +999,8 @@ class DataClassificationConfigServiceImplTest {
                     new DeletedSystemDatatypeStore(genericStub),
                     redactionRulesDao,
                     config,
-                    new DataClassificationResolutionCache(ownStub, new DataTypeResolver()),
+                    new DataClassificationResolutionCache(
+                        ownStub, new DataTypeResolver(), ClientConfig.DEFAULT),
                     new DataTypeResolutionContextComparator(),
                     null),
                 config))

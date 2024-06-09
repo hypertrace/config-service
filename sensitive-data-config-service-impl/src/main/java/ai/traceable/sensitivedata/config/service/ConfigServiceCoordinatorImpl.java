@@ -27,6 +27,7 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,6 +49,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
   private final InvalidJsonPolicy defaultInvalidJsonPolicy;
   private final boolean defaultFullPrivacyModeEnabled;
   private final DefaultRedactionRules defaultRedactionRules;
+  private final SensitiveDataServiceConfig config;
   private final RedactionRuleConfigStore redactionRuleConfigStore;
   private final AutomaticSecretRedactionStrategyConfigStore
       automaticSecretRedactionStrategyConfigStore;
@@ -76,6 +78,7 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
     this.defaultInvalidJsonPolicy = config.defaultInvalidJsonPolicy();
     this.defaultFullPrivacyModeEnabled = config.defaultFullPrivacyMode();
     this.defaultParamTypeRedactionStrategy = config.defaultParamTypeRedactionStrategy();
+    this.config = config;
     this.redactionRuleConfigStore = redactionRuleConfigStore;
     this.automaticSecretRedactionStrategyConfigStore = automaticSecretRedactionStrategyConfigStore;
     this.invalidJsonPolicyConfigStore = invalidJsonPolicyConfigStore;
@@ -241,13 +244,18 @@ class ConfigServiceCoordinatorImpl implements ConfigServiceCoordinator {
         requestContext
             .call(
                 () ->
-                    dataClassificationConfigServiceBlockingStub.getDataTypes(
-                        GetDataTypesRequest.newBuilder()
-                            .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
-                            .setResolveInheritedDetails(true)
-                            .setFilter(DataTypeFilter.newBuilder().setEnabled(true))
-                            .setOrdering(DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
-                            .build()))
+                    dataClassificationConfigServiceBlockingStub
+                        .withDeadlineAfter(
+                            config.defaultClientConfig().getTimeout().toMillis(),
+                            TimeUnit.MILLISECONDS)
+                        .getDataTypes(
+                            GetDataTypesRequest.newBuilder()
+                                .setSystemDataSetVersion(SYSTEM_DATA_SET_VERSION_RP1)
+                                .setResolveInheritedDetails(true)
+                                .setFilter(DataTypeFilter.newBuilder().setEnabled(true))
+                                .setOrdering(
+                                    DataTypeOrdering.DATA_TYPE_ORDERING_EVALUATION_PRIORITY)
+                                .build()))
             .getDataTypesList()
             .stream()
             .collect(groupingBy(this::getDataTypeVariant));

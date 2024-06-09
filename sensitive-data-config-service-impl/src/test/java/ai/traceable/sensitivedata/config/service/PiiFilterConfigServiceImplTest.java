@@ -28,6 +28,7 @@ import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.platform.insights.api.v1.InsightsServiceGrpc;
 import ai.traceable.sensitivedata.config.service.ConfigServiceCoordinator.DataClassificationRuleState;
+import ai.traceable.sensitivedata.config.service.SensitiveDataServiceConfig.GrpcClientConfig;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetPiiFilterConfigRequest;
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
@@ -40,10 +41,12 @@ import ai.traceable.sensitivedata.config.service.v1.PiiFilterConfigServiceGrpc.P
 import ai.traceable.sensitivedata.config.service.v1.RedactionStrategy;
 import io.grpc.Channel;
 import io.grpc.stub.StreamObserver;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -75,6 +78,9 @@ class PiiFilterConfigServiceImplTest {
             PiiFilterConfig.newBuilder()
                 .addKeyRegexs(PiiElement.newBuilder().setRegex("secret-1"))
                 .build());
+    when(mockConfig.defaultClientConfig()).thenReturn(ClientConfig.DEFAULT);
+    when(mockConfig.insightsClientConfig())
+        .thenReturn(GrpcClientConfig.builder().timeout(Duration.ofSeconds(10)).build());
     when(mockConfig.defaultInvalidJsonPolicy())
         .thenReturn(
             InvalidJsonPolicy.newBuilder()
@@ -439,7 +445,8 @@ class PiiFilterConfigServiceImplTest {
                     new DefaultRedactionRulePersistenceStatusStore(
                         configServiceBlockingStub, configChangeEventGenerator),
                     DataClassificationConfigServiceGrpc.newBlockingStub(channel)),
-                new InsightsServiceCoordinatorImpl(InsightsServiceGrpc.newBlockingStub(channel)),
+                new InsightsServiceCoordinatorImpl(
+                    InsightsServiceGrpc.newBlockingStub(channel), mockConfig),
                 new UuidGenerator()))
         .addService(new MockDataClassificationConfigService())
         .start();

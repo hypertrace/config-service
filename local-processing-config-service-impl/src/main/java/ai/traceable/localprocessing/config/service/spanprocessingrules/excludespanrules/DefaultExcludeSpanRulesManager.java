@@ -15,8 +15,10 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.span.processing.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.v1.ExcludeSpanRule;
@@ -32,14 +34,17 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
+  private final ClientConfig clientConfig;
 
   @Inject
   public DefaultExcludeSpanRulesManager(
       SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
           configServiceBlockingStub,
-      SpanFilterMatcher spanFilterMatcher) {
+      SpanFilterMatcher spanFilterMatcher,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.spanFilterMatcher = spanFilterMatcher;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -49,8 +54,9 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     return requestContext
         .call(
             () ->
-                configServiceBlockingStub.getAllExcludeSpanRules(
-                    GetAllExcludeSpanRulesRequest.newBuilder().build()))
+                configServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getAllExcludeSpanRules(GetAllExcludeSpanRulesRequest.newBuilder().build()))
         .getRuleDetailsList()
         .stream()
         .map(ExcludeSpanRuleDetails::getRule)

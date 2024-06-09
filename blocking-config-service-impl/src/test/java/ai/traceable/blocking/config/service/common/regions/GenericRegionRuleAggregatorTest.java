@@ -21,9 +21,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class GenericRegionRuleAggregatorTest {
   private static final String TENANT_ID = "tenant-id";
@@ -39,10 +41,11 @@ class GenericRegionRuleAggregatorTest {
   @BeforeEach
   void setup() {
     clock = mock(Clock.class);
-    regionConfigServiceStub = mock(RegionConfigServiceBlockingStub.class);
+    regionConfigServiceStub = mock(RegionConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
     mockRuleConverter = (GenericRegionRuleConverter<String>) mock(GenericRegionRuleConverter.class);
     regionRuleAggregator =
-        new GenericRegionRuleAggregator<>(clock, regionConfigServiceStub, mockRuleConverter);
+        new GenericRegionRuleAggregator<>(
+            clock, regionConfigServiceStub, mockRuleConverter, ClientConfig.DEFAULT);
 
     when(this.clock.millis()).thenReturn(TIMESTAMP);
 

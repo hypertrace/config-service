@@ -49,9 +49,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class DefaultHttpApiNamingManagerTest {
 
@@ -65,10 +67,13 @@ class DefaultHttpApiNamingManagerTest {
 
   @BeforeEach
   void setup() throws IOException {
-    trainerConfigServiceBlockingStub = mock(TrainerConfigServiceBlockingStub.class);
+    trainerConfigServiceBlockingStub =
+        mock(TrainerConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
     SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
         spanProcessingConfigServiceBlockingStub =
-            mock(SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class);
+            mock(
+                SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class,
+                Answers.RETURNS_SELF);
     UuidGenerator uuidGenerator = new UuidGenerator();
     httpApiNamingConfig = mock(HttpApiNamingConfig.class);
 
@@ -86,7 +91,9 @@ class DefaultHttpApiNamingManagerTest {
 
     HttpApiNamingCachedConfigManager httpApiNamingCachedConfigManager =
         new HttpApiNamingCachedConfigManager(
-            ConfigFactory.parseMap(Map.of()), trainerConfigServiceBlockingStub);
+            ConfigFactory.parseMap(Map.of()),
+            trainerConfigServiceBlockingStub,
+            ClientConfig.DEFAULT);
     httpApiNamingManager =
         new DefaultHttpApiNamingManager(
             new DefaultHttpApiNamingConfigManager(httpApiNamingConfig, uuidGenerator),
@@ -106,7 +113,8 @@ class DefaultHttpApiNamingManagerTest {
             new HttpCustomApiNamingRulesManager(
                 ConfigFactory.parseMap(Map.of()),
                 spanProcessingConfigServiceBlockingStub,
-                spanFilterMatcher),
+                spanFilterMatcher,
+                ClientConfig.DEFAULT),
             new LocalApiNamingConfigManager(httpApiNamingConfig, httpApiNamingCachedConfigManager),
             entityFetcher);
     when(trainerConfigServiceBlockingStub.getAllScopedTrainingConfigs(any()))

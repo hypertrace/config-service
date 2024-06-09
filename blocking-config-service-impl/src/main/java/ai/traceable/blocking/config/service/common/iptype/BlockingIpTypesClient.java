@@ -12,16 +12,21 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class BlockingIpTypesClient {
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
   public BlockingIpTypesClient(
-      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub) {
+      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.maliciousSourcesConfigServiceBlockingStub = maliciousSourcesConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   public List<MaliciousSourcesRule> fetchMaliciousSourceRules(
@@ -46,7 +51,10 @@ public class BlockingIpTypesClient {
 
     return requestContext
         .call(
-            () -> maliciousSourcesConfigServiceBlockingStub.getMaliciousSourcesRules(rulesRequest))
+            () ->
+                maliciousSourcesConfigServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getMaliciousSourcesRules(rulesRequest))
         .getRulesList();
   }
 

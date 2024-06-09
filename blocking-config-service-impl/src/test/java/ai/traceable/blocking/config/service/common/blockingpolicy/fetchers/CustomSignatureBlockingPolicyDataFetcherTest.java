@@ -27,9 +27,11 @@ import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class CustomSignatureBlockingPolicyDataFetcherTest {
   private static final String TENANT_ID = "tenant-id";
@@ -55,7 +57,9 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
   @BeforeEach
   void setUp() {
     customSignatureConfigServiceBlockingStub =
-        mock(CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub.class);
+        mock(
+            CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub.class,
+            Answers.RETURNS_SELF);
 
     BlockingRulesUtils blockingRulesUtils = mock(BlockingRulesUtils.class);
     doReturn(true).when(blockingRulesUtils).isRuleActive(activeTimestamp);
@@ -81,7 +85,7 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
 
     customSignatureDataFetcher =
         new CustomSignatureBlockingPolicyDataFetcher(
-            customSignatureConfigServiceBlockingStub, blockingRulesUtils);
+            customSignatureConfigServiceBlockingStub, blockingRulesUtils, ClientConfig.DEFAULT);
   }
 
   @Test

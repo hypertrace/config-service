@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -144,12 +145,14 @@ class LocalProcessingConfigServiceImplTest {
                 mock(
                     CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub
                         .class),
-                uuidGenerator));
+                uuidGenerator,
+                ClientConfig.DEFAULT));
     regularModsecDetectionManager =
         spy(
             new DefaultRegularModsecDetectionManager(
                 mock(AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub.class),
-                uuidGenerator));
+                uuidGenerator,
+                ClientConfig.DEFAULT));
 
     ConfigServiceCoordinator configServiceCoordinator =
         new ConfigServiceCoordinatorImpl(

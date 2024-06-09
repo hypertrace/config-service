@@ -38,12 +38,14 @@ import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesService
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
 import java.util.List;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.span.processing.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.span.processing.config.service.v1.GetAllExcludeSpanRulesResponse;
 import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class DefaultSpanProcessingRulesManagerTest {
 
@@ -59,25 +61,31 @@ class DefaultSpanProcessingRulesManagerTest {
   @BeforeEach
   void setup() {
     spanProcessingConfigServiceBlockingStub =
-        mock(SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class);
+        mock(
+            SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub.class,
+            Answers.RETURNS_SELF);
     traceableSpanProcessingConfigServiceBlockingStub =
         mock(
             ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc
-                .SpanProcessingConfigServiceBlockingStub.class);
+                .SpanProcessingConfigServiceBlockingStub.class,
+            Answers.RETURNS_SELF);
     uuidGenerator = new UuidGenerator();
     ai.traceable.config.utils.SpanFilterMatcher spanFilterMatcher =
         new ai.traceable.config.utils.SpanFilterMatcher();
     ExcludeSpanRulesManager excludeSpanRulesManager =
         new DefaultExcludeSpanRulesManager(
-            spanProcessingConfigServiceBlockingStub, new SpanFilterMatcher());
+            spanProcessingConfigServiceBlockingStub, new SpanFilterMatcher(), ClientConfig.DEFAULT);
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(
             traceableSpanProcessingConfigServiceBlockingStub,
             spanFilterMatcher,
-            new FilterConverter());
+            new FilterConverter(),
+            ClientConfig.DEFAULT);
     RateLimitConfigManager rateLimitConfigManager =
         new DefaultRateLimitConfigManager(
-            traceableSpanProcessingConfigServiceBlockingStub, spanFilterMatcher);
+            traceableSpanProcessingConfigServiceBlockingStub,
+            spanFilterMatcher,
+            ClientConfig.DEFAULT);
     spanProcessingRulesManager =
         new DefaultSpanProcessingRulesManager(
             excludeSpanRulesManager,

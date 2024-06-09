@@ -18,6 +18,7 @@ dependencies {
   implementation(commonLibs.traceable.platform.ipUtils)
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.validation)
+  implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(projects.configUtils)
 
   implementation(commonLibs.guice)

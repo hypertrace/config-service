@@ -10,10 +10,7 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGr
 import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGrpc.LicenseStatusConfigServiceBlockingStub;
 import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusRequest;
 import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusResponse;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
-import java.util.Map;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -29,13 +26,6 @@ class LicenseStatusConfigServiceImplTest {
   @BeforeEach
   void setUp() {
     mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGet().mockGetAll();
-    Config config =
-        ConfigFactory.parseMap(
-            Map.of(
-                ConfigServiceCoordinatorImpl.LICENSE_STATUS_CONFIG_SERVICE,
-                Map.of(
-                    ConfigServiceCoordinatorImpl.DEFAULT_LICENSE_LIMIT,
-                    LicenseLimit.LICENSE_LIMIT_AVAILABLE.name())));
 
     Channel channel = mockGenericConfigService.channel();
     ConfigServiceBlockingStub configServiceBlockingStub =

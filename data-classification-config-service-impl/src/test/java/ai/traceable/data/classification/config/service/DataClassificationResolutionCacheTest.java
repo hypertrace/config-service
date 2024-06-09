@@ -14,9 +14,11 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataSetsResponse;
 import java.util.List;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -24,8 +26,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class DataClassificationResolutionCacheTest {
 
-  @Mock DataClassificationConfigServiceBlockingStub mockStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  DataClassificationConfigServiceBlockingStub mockStub;
+
   @Mock DataTypeResolver mockResolver;
+  @Mock ClientConfig clientConfig;
   RequestContext testRequestContext =
       RequestContext.forTenantId("DataClassificationResolutionCacheTest");
   @InjectMocks DataClassificationResolutionCache cache;

@@ -7,6 +7,7 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationConf
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.Channel;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class RateLimitingModsecRulesModule extends AbstractModule {
@@ -29,5 +30,10 @@ public class RateLimitingModsecRulesModule extends AbstractModule {
     return DataClassificationConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ClientConfig provideClientConfig() {
+    return ClientConfig.DEFAULT;
   }
 }

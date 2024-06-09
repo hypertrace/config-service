@@ -13,9 +13,11 @@ import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServic
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -26,6 +28,7 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
   private final FilterConverter filterConverter;
+  private final ClientConfig clientConfig;
 
   @Override
   public List<ProtectionSpanRule> getAllProtectionSpanRules(RequestContext requestContext) {
@@ -33,8 +36,11 @@ public class DefaultProtectionSpanRulesManager implements ProtectionSpanRulesMan
         requestContext
             .call(
                 () ->
-                    configServiceBlockingStub.getAllResolvedProtectionSpanRules(
-                        GetAllResolvedProtectionSpanRulesRequest.getDefaultInstance()))
+                    configServiceBlockingStub
+                        .withDeadlineAfter(
+                            clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                        .getAllResolvedProtectionSpanRules(
+                            GetAllResolvedProtectionSpanRulesRequest.getDefaultInstance()))
             .getRulesList());
   }
 

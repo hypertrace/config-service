@@ -12,6 +12,8 @@ import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DefaultRegularModsecDetectionManager implements RegularModsecDetectionManager {
@@ -27,13 +29,16 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
 
   private final AnomalyModsecConfigServiceBlockingStub configServiceBlockingStub;
   private final UuidGenerator uuidGenerator;
+  private final ClientConfig clientConfig;
 
   @Inject
   public DefaultRegularModsecDetectionManager(
       AnomalyModsecConfigServiceBlockingStub anomalyModsecConfigServiceBlockingStub,
-      UuidGenerator uuidGenerator) {
+      UuidGenerator uuidGenerator,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = anomalyModsecConfigServiceBlockingStub;
     this.uuidGenerator = uuidGenerator;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -62,20 +67,23 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
     GetModsecCrsRulesResponse response =
         requestContext.call(
             () ->
-                configServiceBlockingStub.getModsecCrsRules(
-                    GetModsecCrsRulesRequest.newBuilder()
-                        .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
-                        .setRemoveDisabledRules(true)
-                        .setRuleVersion(version)
-                        .setConfigScope(
-                            environmentId.isBlank()
-                                ? CUSTOMER_CONFIG_SCOPE
-                                : AnomalyConfigScope.newBuilder()
-                                    .setEnvironmentScope(
-                                        AnomalyEnvironmentScope.newBuilder()
-                                            .setEnvironmentId(environmentId))
-                                    .build())
-                        .build()));
+                configServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getModsecCrsRules(
+                        GetModsecCrsRulesRequest.newBuilder()
+                            .addAllSubRuleTypes(
+                                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
+                            .setRemoveDisabledRules(true)
+                            .setRuleVersion(version)
+                            .setConfigScope(
+                                environmentId.isBlank()
+                                    ? CUSTOMER_CONFIG_SCOPE
+                                    : AnomalyConfigScope.newBuilder()
+                                        .setEnvironmentScope(
+                                            AnomalyEnvironmentScope.newBuilder()
+                                                .setEnvironmentId(environmentId))
+                                        .build())
+                            .build()));
 
     String regularCrsRulesBlob;
     if (response.getModsecCrsRulesList().size() == 1

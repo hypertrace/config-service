@@ -9,20 +9,24 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Value;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = @Inject)
 class RedactionRulesDao {
   private final SensitiveDataConfigServiceBlockingStub sensitiveDataConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   List<RedactionRule> getRulesMatchFilter(
       RequestContext requestContext, RedactionRuleFilter filter) {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                 .getAllRedactionRules(GetAllRedactionRulesRequest.getDefaultInstance())
                 .getRedactionRulesList()
                 .stream()
@@ -34,6 +38,7 @@ class RedactionRulesDao {
     return requestContext.call(
         () ->
             sensitiveDataConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                 .getRedactionStrategyForType(
                     GetRedactionStrategyForTypeRequest.newBuilder()
                         .setParamType(ParamType.PARAM_TYPE_HEADER)

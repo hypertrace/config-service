@@ -13,9 +13,11 @@ import com.google.protobuf.util.Timestamps;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -33,13 +35,16 @@ public class MaliciousSourcesRulesFetcher implements RulesFetcher {
 
   private final Clock clock;
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
   public MaliciousSourcesRulesFetcher(
       Clock clock,
-      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub) {
+      MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.clock = clock;
     this.maliciousSourcesConfigServiceBlockingStub = maliciousSourcesConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   public List<MaliciousSourcesRule> fetchRules(
@@ -62,7 +67,10 @@ public class MaliciousSourcesRulesFetcher implements RulesFetcher {
 
     return requestContext
         .call(
-            () -> maliciousSourcesConfigServiceBlockingStub.getMaliciousSourcesRules(rulesRequest))
+            () ->
+                maliciousSourcesConfigServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getMaliciousSourcesRules(rulesRequest))
         .getRulesList()
         .stream()
         .filter(rule -> isRuleActive(clock.millis(), rule.getRuleInfo().getRuleAction()))

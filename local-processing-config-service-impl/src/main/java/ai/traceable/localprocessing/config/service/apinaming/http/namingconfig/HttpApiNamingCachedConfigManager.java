@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
@@ -38,11 +39,14 @@ public class HttpApiNamingCachedConfigManager {
   private final LoadingCache<ContextualKey<Void>, List<ScopedTrainingConfig>> trainingConfigCache;
   private final TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub
       trainerConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
   public HttpApiNamingCachedConfigManager(
       Config config,
-      TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub trainerConfigServiceBlockingStub) {
+      TrainerConfigServiceGrpc.TrainerConfigServiceBlockingStub trainerConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
+    this.clientConfig = clientConfig;
     Duration cacheRefreshDuration =
         config.hasPath(CACHE_REFRESH_DURATION)
             ? config.getDuration(CACHE_REFRESH_DURATION)
@@ -72,8 +76,10 @@ public class HttpApiNamingCachedConfigManager {
     try {
       return key.callInContext(
               () ->
-                  trainerConfigServiceBlockingStub.getAllScopedTrainingConfigs(
-                      buildGetAllScopedTrainingConfigsRequest()))
+                  trainerConfigServiceBlockingStub
+                      .withDeadlineAfter(
+                          clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                      .getAllScopedTrainingConfigs(buildGetAllScopedTrainingConfigsRequest()))
           .getScopedTrainingConfigsList();
     } catch (Exception e) {
       log.error("Could not fetch training configs. Request context:{}", key.getContext(), e);

@@ -26,12 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Value;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
@@ -44,15 +46,19 @@ class DataClassificationResolutionCache {
   private static final Duration EXPIRATION_DURATION = Duration.ofMinutes(30);
   private final DataClassificationConfigServiceBlockingStub stub;
   private final DataTypeResolver dataTypeResolver;
+  private final ClientConfig clientConfig;
   private final LoadingCache<
           ContextualKey<DataClassificationUnresolvedConfig>, List<DataTypeResolutionContext>>
       dataTypeResolutionContextCache;
 
   @Inject
   public DataClassificationResolutionCache(
-      DataClassificationConfigServiceBlockingStub stub, DataTypeResolver dataTypeResolver) {
+      DataClassificationConfigServiceBlockingStub stub,
+      DataTypeResolver dataTypeResolver,
+      ClientConfig clientConfig) {
     this.stub = stub;
     this.dataTypeResolver = dataTypeResolver;
+    this.clientConfig = clientConfig;
 
     this.dataTypeResolutionContextCache =
         CacheBuilder.newBuilder()
@@ -74,7 +80,12 @@ class DataClassificationResolutionCache {
       RequestContext requestContext, List<DataType> dataTypes) {
     List<DataSet> orderedDataSets =
         requestContext
-            .call(() -> this.stub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
+            .call(
+                () ->
+                    this.stub
+                        .withDeadlineAfter(
+                            clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                        .getDataSets(GetDataSetsRequest.getDefaultInstance()))
             .getDataSetsList()
             .stream()
             .sorted(DATA_SET_RESOLUTION_PRECEDENCE_COMPARATOR)

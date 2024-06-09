@@ -19,9 +19,11 @@ import com.google.protobuf.Timestamp;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class MaliciousSourcesRulesFetcherTest {
   private static final String TENANT_ID = "tenant-id";
@@ -56,10 +58,12 @@ class MaliciousSourcesRulesFetcherTest {
   void setup() {
     clock = mock(Clock.class);
     maliciousSourcesConfigServiceBlockingStub =
-        mock(MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub.class);
+        mock(
+            MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub.class,
+            Answers.RETURNS_SELF);
     maliciousSourcesRulesFetcher =
         new MaliciousSourcesRulesFetcher(
-            Clock.systemUTC(), maliciousSourcesConfigServiceBlockingStub);
+            Clock.systemUTC(), maliciousSourcesConfigServiceBlockingStub, ClientConfig.DEFAULT);
 
     when(clock.millis()).thenReturn(TIMESTAMP_IN_MILLIS);
 

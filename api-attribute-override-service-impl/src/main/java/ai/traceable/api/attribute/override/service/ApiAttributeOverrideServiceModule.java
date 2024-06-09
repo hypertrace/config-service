@@ -1,6 +1,5 @@
 package ai.traceable.api.attribute.override.service;
 
-import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrideServiceGrpc;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
@@ -23,14 +22,6 @@ public class ApiAttributeOverrideServiceModule extends AbstractModule {
   protected void configure() {
     bind(BindableService.class).to(ApiAttributeOverrideServiceImpl.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
-  }
-
-  @Provides
-  ApiAttributeOverrideServiceGrpc.ApiAttributeOverrideServiceBlockingStub
-      providesAttributeOverrideService() {
-    return ApiAttributeOverrideServiceGrpc.newBlockingStub(channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 
   @Provides

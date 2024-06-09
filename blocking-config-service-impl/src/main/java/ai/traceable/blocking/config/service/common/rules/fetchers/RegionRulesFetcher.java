@@ -13,18 +13,25 @@ import ai.traceable.region.config.service.v1.RuleScope;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RegionRulesFetcher implements RulesFetcher {
   private final Clock clock;
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
+  private final ClientConfig clientConfig;
 
   @Inject
-  public RegionRulesFetcher(Clock clock, RegionConfigServiceBlockingStub regionConfigServiceStub) {
+  public RegionRulesFetcher(
+      Clock clock,
+      RegionConfigServiceBlockingStub regionConfigServiceStub,
+      ClientConfig clientConfig) {
     this.clock = clock;
     this.regionConfigServiceStub = regionConfigServiceStub;
+    this.clientConfig = clientConfig;
   }
 
   public List<RegionRule> fetchRegionRules(
@@ -43,7 +50,11 @@ public class RegionRulesFetcher implements RulesFetcher {
             .build();
     return requestContext.call(
         () ->
-            this.regionConfigServiceStub.getAllRegionRules(rulesRequest).getRuleList().stream()
+            this.regionConfigServiceStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .getAllRegionRules(rulesRequest)
+                .getRuleList()
+                .stream()
                 .filter(rule -> isRuleActive(clock.millis(), rule))
                 .collect(Collectors.toUnmodifiableList()));
   }
@@ -54,6 +65,7 @@ public class RegionRulesFetcher implements RulesFetcher {
             .map(isoCode -> RegionIdentifier.newBuilder().setCountryIsoCode(isoCode).build())
             .collect(Collectors.toList());
     return this.regionConfigServiceStub
+        .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
         .getDetailedRegions(
             GetDetailedRegionsRequest.newBuilder()
                 .setFilter(RegionsFilter.newBuilder().addAllRegionIdentifier(regionIdentifiers))

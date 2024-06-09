@@ -15,6 +15,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.objectstore)
   // https://traceableai.atlassian.net/browse/ENG-20659
   // This is temporary. Remove this once license enforcer changes are in place
   implementation(commonLibs.traceable.licensemetering.api)

@@ -24,7 +24,9 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
@@ -36,13 +38,16 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
 
   private final AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub;
   private final DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
   ModsecBlockingPolicyDataFetcher(
       AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub,
-      DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub) {
+      DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.anomalyGlobalConfigServiceStub = anomalyGlobalConfigServiceStub;
     this.detectorConfigServiceBlockingStub = detectorConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -80,8 +85,9 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
 
     return requestContext.call(
         () ->
-            anomalyGlobalConfigServiceStub.getScopedAnomalyGlobalConfigStatus(
-                getScopedAnomalyGlobalConfigStatusRequest));
+            anomalyGlobalConfigServiceStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .getScopedAnomalyGlobalConfigStatus(getScopedAnomalyGlobalConfigStatusRequest));
   }
 
   private GetScopedAnomalyDetectionConfigResponse getScopedAnomalyDetectionConfig(
@@ -97,8 +103,9 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
 
     return requestContext.call(
         () ->
-            detectorConfigServiceBlockingStub.getScopedAnomalyDetectionConfig(
-                getScopedAnomalyDetectionConfigRequest));
+            detectorConfigServiceBlockingStub
+                .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                .getScopedAnomalyDetectionConfig(getScopedAnomalyDetectionConfigRequest));
   }
 
   private static List<BlockingPolicyData> parseModsecViolations(

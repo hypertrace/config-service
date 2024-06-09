@@ -18,6 +18,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(commonLibs.hypertrace.framework.metrics)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.guice)

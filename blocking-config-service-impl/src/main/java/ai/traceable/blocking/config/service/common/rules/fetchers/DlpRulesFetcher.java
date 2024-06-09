@@ -16,21 +16,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class DlpRulesFetcher implements RulesFetcher {
   private final RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceBlockingStub;
+  private final ClientConfig clientConfig;
 
   @Inject
-  DlpRulesFetcher(RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceBlockingStub) {
+  DlpRulesFetcher(
+      RateLimitingConfigServiceBlockingStub rateLimitingConfigServiceBlockingStub,
+      ClientConfig clientConfig) {
     this.rateLimitingConfigServiceBlockingStub = rateLimitingConfigServiceBlockingStub;
+    this.clientConfig = clientConfig;
   }
 
   @Nullable
@@ -68,7 +74,9 @@ public class DlpRulesFetcher implements RulesFetcher {
     GetRateLimitingRuleModsecRulesResponse response =
         requestContext.call(
             () ->
-                rateLimitingConfigServiceBlockingStub.getRateLimitingRuleModsecRules(rulesRequest));
+                rateLimitingConfigServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getRateLimitingRuleModsecRules(rulesRequest));
 
     Map<String, DlpModsecRulesData> dlpModsecRulesDataMap =
         response.getModsecBlobsDataList().stream()

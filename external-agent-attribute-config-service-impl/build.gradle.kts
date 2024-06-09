@@ -18,6 +18,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(commonLibs.uuidcreator)
   implementation(commonLibs.protobuf.javautil)
   implementation(projects.configUtils)

@@ -14,6 +14,7 @@ import com.google.inject.Provides;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
@@ -72,5 +73,10 @@ public class ExternalDataClassificationConfigServiceModule extends AbstractModul
                 this.config.getConfig(INSIGHTS_SERVICE_CONFIG).getInt("port")))
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ClientConfig providesClientConfig() {
+    return ClientConfig.DEFAULT;
   }
 }

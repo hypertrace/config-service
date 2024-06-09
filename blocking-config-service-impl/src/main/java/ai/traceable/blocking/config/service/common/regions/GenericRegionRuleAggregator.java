@@ -14,23 +14,28 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class GenericRegionRuleAggregator<T> {
   private final Clock clock;
   private final RegionConfigServiceBlockingStub regionConfigServiceStub;
   private final GenericRegionRuleConverter<T> ruleConverter;
+  private final ClientConfig clientConfig;
 
   @Inject
   public GenericRegionRuleAggregator(
       Clock clock,
       RegionConfigServiceBlockingStub regionConfigServiceStub,
-      GenericRegionRuleConverter<T> converter) {
+      GenericRegionRuleConverter<T> converter,
+      ClientConfig clientConfig) {
     this.clock = clock;
     this.regionConfigServiceStub = regionConfigServiceStub;
     this.ruleConverter = converter;
+    this.clientConfig = clientConfig;
   }
 
   public List<T> getEnabledBlockingRules(
@@ -49,7 +54,11 @@ public class GenericRegionRuleAggregator<T> {
             .build();
     List<RegionRule> regionRules =
         requestContext.call(
-            () -> this.regionConfigServiceStub.getAllRegionRules(rulesRequest).getRuleList());
+            () ->
+                this.regionConfigServiceStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getAllRegionRules(rulesRequest)
+                    .getRuleList());
 
     List<RegionRule> activeRegionRules = getActiveRegionRules(regionRules);
     List<DetailedRegion> detailedRegions = getRegions(activeRegionRules);
@@ -81,6 +90,7 @@ public class GenericRegionRuleAggregator<T> {
     }
 
     return this.regionConfigServiceStub
+        .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
         .getDetailedRegions(
             GetDetailedRegionsRequest.newBuilder()
                 .setFilter(RegionsFilter.newBuilder().addAllId(regionIds))

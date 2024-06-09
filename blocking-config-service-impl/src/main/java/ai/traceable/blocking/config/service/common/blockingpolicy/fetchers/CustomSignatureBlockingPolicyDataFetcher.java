@@ -22,9 +22,11 @@ import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -33,13 +35,16 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
   private static final List<EventType> EVENT_TYPES_LIST =
       ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
   private final BlockingRulesUtils blockingRulesUtils;
+  private final ClientConfig clientConfig;
 
   @Inject
   CustomSignatureBlockingPolicyDataFetcher(
       CustomSignatureConfigServiceBlockingStub configServiceBlockingStub,
-      BlockingRulesUtils blockingRulesUtils) {
+      BlockingRulesUtils blockingRulesUtils,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.blockingRulesUtils = blockingRulesUtils;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -153,7 +158,9 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
     GetCustomSignatureRulesResponse response =
         requestContext.call(
             () ->
-                configServiceBlockingStub.getCustomSignatureRules(getCustomSignatureRulesRequest));
+                configServiceBlockingStub
+                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getCustomSignatureRules(getCustomSignatureRulesRequest));
     return response.getRulesList();
   }
 }
