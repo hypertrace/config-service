@@ -9,8 +9,10 @@ import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -21,13 +23,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class DefaultSecurityEventTypeContributionManager implements SecurityEventTypeContributionManager {
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final SecurityEventTypeContributionConverter securityEventTypeContributionConverter;
+  private final ClientConfig clientConfig;
 
   @Inject
   DefaultSecurityEventTypeContributionManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
-      SecurityEventTypeContributionConverter securityEventTypeContributionConverter) {
+      SecurityEventTypeContributionConverter securityEventTypeContributionConverter,
+      ClientConfig clientConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.securityEventTypeContributionConverter = securityEventTypeContributionConverter;
+    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -50,7 +55,13 @@ class DefaultSecurityEventTypeContributionManager implements SecurityEventTypeCo
 
     try {
       Value config =
-          requestContext.call(() -> configServiceBlockingStub.getConfig(request).getConfig());
+          requestContext.call(
+              () ->
+                  configServiceBlockingStub
+                      .withDeadlineAfter(
+                          clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                      .getConfig(request)
+                      .getConfig());
 
       return securityEventTypeContributionConverter.convert(config);
     } catch (Exception e) {
@@ -82,7 +93,10 @@ class DefaultSecurityEventTypeContributionManager implements SecurityEventTypeCo
             .setContext(configId)
             .build();
 
-    UpsertConfigResponse response = configServiceBlockingStub.upsertConfig(request);
+    UpsertConfigResponse response =
+        configServiceBlockingStub
+            .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+            .upsertConfig(request);
     return securityEventTypeContributionConverter.convert(response.getConfig());
   }
 

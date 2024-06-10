@@ -46,6 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
@@ -66,6 +67,7 @@ public class RateLimitingConfigServiceImpl
       "maxCallCountDurationLimitMinutes";
   private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private final ConfigServiceBlockingStub configServiceBlockingStub;
+  private final ClientConfig clientConfig;
   private static long maxCallCountDurationLimit = TimeUnit.MINUTES.toMillis(180);
   private ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
@@ -76,6 +78,7 @@ public class RateLimitingConfigServiceImpl
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    this.clientConfig = ClientConfig.DEFAULT;
     Config rateLimitingConfigServiceConfig = config.getConfig(RATE_LIMITING_CONFIG_SERVICE_CONFIG);
     if (rateLimitingConfigServiceConfig.hasPath(MAX_CALL_COUNT_DURATION_LIMIT_MINUTES)) {
       maxCallCountDurationLimit =
@@ -148,12 +151,14 @@ public class RateLimitingConfigServiceImpl
     String ruleId = maybeRuleId.get();
     try {
       GetConfigResponse rateLimitConfigResponse =
-          configServiceBlockingStub.getConfig(
-              GetConfigRequest.newBuilder()
-                  .setResourceNamespace(RATE_LIMITING_NAMESPACE)
-                  .setResourceName(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME)
-                  .addContexts(ruleId)
-                  .build());
+          configServiceBlockingStub
+              .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+              .getConfig(
+                  GetConfigRequest.newBuilder()
+                      .setResourceNamespace(RATE_LIMITING_NAMESPACE)
+                      .setResourceName(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME)
+                      .addContexts(ruleId)
+                      .build());
       RateLimitingRuleConfig ruleConfig =
           toRateLimitingRuleConfig(rateLimitConfigResponse.getConfig());
       responseObserver.onNext(
@@ -199,7 +204,9 @@ public class RateLimitingConfigServiceImpl
               .setContext(ruleId)
               .build();
 
-      configServiceBlockingStub.upsertConfig(upsertConfigRequest);
+      configServiceBlockingStub
+          .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+          .upsertConfig(upsertConfigRequest);
 
       CreateRuleConfigResponse createRuleConfigResponse =
           CreateRuleConfigResponse.newBuilder().setRule(createdRuleConfig).build();
@@ -293,7 +300,9 @@ public class RateLimitingConfigServiceImpl
               .setConfig(toValue(updatedRuleConfig))
               .build();
 
-      configServiceBlockingStub.upsertConfig(upsertConfigRequest);
+      configServiceBlockingStub
+          .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+          .upsertConfig(upsertConfigRequest);
 
       UpdateRuleConfigResponse updateRuleConfigResponse =
           UpdateRuleConfigResponse.newBuilder().setRule(updatedRuleConfig).build();
@@ -329,7 +338,9 @@ public class RateLimitingConfigServiceImpl
               .setConfig(associationConfig)
               .build();
 
-      configServiceBlockingStub.upsertConfig(upsertConfigRequest);
+      configServiceBlockingStub
+          .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+          .upsertConfig(upsertConfigRequest);
 
       CreateRuleRateLimitedEntityAssociationResponse
           createRuleRateLimitedEntityAssociationResponse =
@@ -357,7 +368,9 @@ public class RateLimitingConfigServiceImpl
               .setContext(context)
               .build();
 
-      configServiceBlockingStub.deleteConfig(deleteConfigRequest);
+      configServiceBlockingStub
+          .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+          .deleteConfig(deleteConfigRequest);
 
       DeleteRuleRateLimitedEntityAssociationResponse
           deleteRuleRateLimitedEntityAssociationResponse =
@@ -375,12 +388,14 @@ public class RateLimitingConfigServiceImpl
       // Get Rate limit rule association configs
       String entityContext = getRuleRateLimitedEntityContext(rateLimitedEntity);
       GetConfigResponse rateLimitEntityAssociationConfigResponse =
-          configServiceBlockingStub.getConfig(
-              GetConfigRequest.newBuilder()
-                  .setResourceNamespace(RATE_LIMITING_NAMESPACE)
-                  .setResourceName(RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME)
-                  .addContexts(entityContext)
-                  .build());
+          configServiceBlockingStub
+              .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+              .getConfig(
+                  GetConfigRequest.newBuilder()
+                      .setResourceNamespace(RATE_LIMITING_NAMESPACE)
+                      .setResourceName(RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME)
+                      .addContexts(entityContext)
+                      .build());
       return Optional.of(rateLimitEntityAssociationConfigResponse.getConfig().getStringValue());
     } catch (Exception ex) {
       if (!Status.fromThrowable(ex).equals(Status.NOT_FOUND)) {
@@ -451,7 +466,10 @@ public class RateLimitingConfigServiceImpl
               .setResourceName(RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME)
               .setResourceNamespace(RATE_LIMITING_NAMESPACE)
               .build();
-      configServiceBlockingStub.getConfig(getConfigRequest).getConfig();
+      configServiceBlockingStub
+          .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+          .getConfig(getConfigRequest)
+          .getConfig();
     } catch (Exception e) {
       if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
         throw e;
@@ -469,7 +487,9 @@ public class RateLimitingConfigServiceImpl
               .setResourceNamespace(RATE_LIMITING_NAMESPACE)
               .setContext(contextSpecificAssociation.getContext())
               .build();
-      configServiceBlockingStub.deleteConfig(deleteConfigRequest);
+      configServiceBlockingStub
+          .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+          .deleteConfig(deleteConfigRequest);
     }
   }
 

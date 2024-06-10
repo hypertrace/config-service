@@ -3,13 +3,13 @@ package ai.traceable.threatmanagement.config.service.eventtype;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -19,6 +19,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -70,16 +71,16 @@ class DefaultSecurityEventTypeContributionManagerTest {
                   .build())
           .build();
 
-  @Mock private ConfigServiceBlockingStub configServiceStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  private ConfigServiceBlockingStub configServiceStub;
 
   private SecurityEventTypeContributionManager securityEventTypeContributionManager;
 
   @BeforeEach
   void setup() {
-    configServiceStub = mock(ConfigServiceBlockingStub.class);
     this.securityEventTypeContributionManager =
         new DefaultSecurityEventTypeContributionManager(
-            configServiceStub, new SecurityEventTypeContributionConverter());
+            configServiceStub, new SecurityEventTypeContributionConverter(), ClientConfig.DEFAULT);
   }
 
   @Test
