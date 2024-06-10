@@ -180,7 +180,7 @@ public class ModsecRulesRegistryTest {
   public void testRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos =
         modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
-    assertEquals(15, anomalyRuleInfos.size());
+    assertEquals(14, anomalyRuleInfos.size());
     assertEquals(
         "crs_101 :: Server Side Request Forgery (SSRF) Signatures\n"
             + "crs_102 :: XML External Entity Injection (XXE)\n"
@@ -191,7 +191,6 @@ public class ModsecRulesRegistryTest {
             + "crs_930 :: Local File Inclusion\n"
             + "crs_931 :: Remote File Inclusion\n"
             + "crs_932 :: Remote Code Execution\n"
-            + "crs_933 :: PHP Attacks\n"
             + "crs_934 :: NodeJS Injection\n"
             + "crs_941 :: Cross Site Scripting (XSS)\n"
             + "crs_942 :: SQL Injection\n"
