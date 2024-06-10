@@ -46,6 +46,7 @@ message UpsertRelationshipTypeRequest {
   Cardinality right_cardinality = 9;
 
   Lifecycle lifecycle = 10;
+  map<string, EntityFieldMetadata> fields_meta = 11;
 }
 
 message UpsertRelationshipTypeResponse {

@@ -12,15 +12,21 @@ import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
 import ai.traceable.fraud.datamodel.config.service.v1.FraudDataModelConfigServiceGrpc;
 import ai.traceable.fraud.datamodel.config.service.v1.GetEntityTypesRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.GetRelationshipTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.GetTypesResponse;
+import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEventTypeRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEventTypeResponse;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeResponse;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Deadline;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.hypertrace.core.documentstore.Collection;
@@ -207,6 +213,45 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     // verify that the new field has a rev mapping
     String newFieldRevMapping = updatedRevColMappings.get(newFieldMapping.getColumnId());
     Assertions.assertEquals("updated_field", newFieldRevMapping);
+  }
+
+  @Test
+  public void testUpsertRelationshipTypes() {
+    for (RelationshipType relationshipType : FraudDataModelTestUtils.relationshipTypes()) {
+      UpsertRelationshipTypeRequest request =
+          UpsertRelationshipTypeRequest.newBuilder()
+              .setId(relationshipType.getId())
+              .setLeftEntityTypeId(relationshipType.getLeftEntityTypeId())
+              .setRightEntityTypeId(relationshipType.getRightEntityTypeId())
+              .setLeftCardinality(relationshipType.getLeftCardinality())
+              .setRightCardinality(relationshipType.getRightCardinality())
+              .setRightToLeftNavName(relationshipType.getRightToLeftNavName())
+              .setLeftToRightNavName(relationshipType.getLeftToRightNavName())
+              .setLifecycle(relationshipType.getLifecycle())
+              .putAllFieldsMeta(relationshipType.getFieldsMetaMap())
+              .build();
+      UpsertRelationshipTypeResponse response =
+          RequestContext.forTenantId(TENANT_ID)
+              .call(() -> fraudDataModelConfigServiceBlockingStub.upsertRelationshipType(request));
+      Assertions.assertNotNull(response.getRelationshipType());
+    }
+    List<RelationshipType> relationshipTypes =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    fraudDataModelConfigServiceBlockingStub
+                        .getRelationshipTypes(GetRelationshipTypesRequest.getDefaultInstance())
+                        .getRelationshipTypesList());
+    Assertions.assertEquals(
+        FraudDataModelTestUtils.relationshipTypes().size(), relationshipTypes.size());
+    GetTypesResponse allTypes =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    fraudDataModelConfigServiceBlockingStub.getTypes(
+                        GetTypesRequest.getDefaultInstance()));
+    Assertions.assertEquals(
+        FraudDataModelTestUtils.relationshipTypes().size(), allTypes.getRelationshipTypesCount());
   }
 
   @Test
