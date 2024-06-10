@@ -54,6 +54,7 @@ message DeleteExcludeSpanRuleResponse {
 message ExcludeSpanRule {
   string id = 1;
   ExcludeSpanRuleInfo rule_info = 2;
+  repeated EvaluationTarget evaluation_targets = 3;
 }
 
 message ExcludeSpanRuleDetails {
@@ -66,7 +67,6 @@ message ExcludeSpanRuleInfo {
   SpanFilter filter = 2;
   bool disabled = 3;
   RuleType type = 4;
-  repeated EvaluationTarget evaluation_targets = 5;
 }
 
 message EvaluationTarget {
