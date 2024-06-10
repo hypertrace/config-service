@@ -2,7 +2,6 @@ package org.hypertrace.config.objectstore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +23,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -34,13 +34,13 @@ class ContextuallyIdentifiedObjectStoreTest {
   private static final Instant TEST_CREATE_TIMESTAMP = Instant.ofEpochMilli(20);
   private static final Instant TEST_UPDATE_TIMESTAMP = Instant.ofEpochMilli(40);
 
-  @Mock ConfigServiceBlockingStub mockStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  ConfigServiceBlockingStub mockStub;
 
   ContextuallyIdentifiedObjectStore<TestObject> store;
 
   @BeforeEach
   void beforeEach() {
-    this.mockStub = mock(ConfigServiceBlockingStub.class);
     this.store = new TestObjectStore(this.mockStub);
   }
 
@@ -85,8 +85,8 @@ class ContextuallyIdentifiedObjectStoreTest {
                 .build());
     assertEquals(
         Optional.of(
-            new ConfigObjectImpl<>(
-                new TestObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
+            new ContextualConfigObjectImpl<>(
+                "my-tenant", new TestObject("test"), TEST_CREATE_TIMESTAMP, TEST_UPDATE_TIMESTAMP)),
         this.store.getObject(RequestContext.forTenantId("my-tenant")));
 
     verify(this.mockStub, times(1))

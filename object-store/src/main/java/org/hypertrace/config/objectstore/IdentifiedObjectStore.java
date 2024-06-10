@@ -1,9 +1,11 @@
 package org.hypertrace.config.objectstore;
 
 import com.google.protobuf.Value;
+import io.grpc.Deadline;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -34,26 +36,39 @@ public abstract class IdentifiedObjectStore<T> {
   private final String resourceNamespace;
   private final String resourceName;
   private final Optional<ConfigChangeEventGenerator> configChangeEventGeneratorOptional;
+  private final ClientConfig clientConfig;
+
+  protected IdentifiedObjectStore(
+      ConfigServiceBlockingStub configServiceBlockingStub,
+      String resourceNamespace,
+      String resourceName,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      ClientConfig clientConfig) {
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.resourceNamespace = resourceNamespace;
+    this.resourceName = resourceName;
+    this.configChangeEventGeneratorOptional = Optional.ofNullable(configChangeEventGenerator);
+    this.clientConfig = clientConfig;
+  }
 
   protected IdentifiedObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName,
       ConfigChangeEventGenerator configChangeEventGenerator) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.resourceNamespace = resourceNamespace;
-    this.resourceName = resourceName;
-    this.configChangeEventGeneratorOptional = Optional.of(configChangeEventGenerator);
+    this(
+        configServiceBlockingStub,
+        resourceNamespace,
+        resourceName,
+        configChangeEventGenerator,
+        ClientConfig.DEFAULT);
   }
 
   protected IdentifiedObjectStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       String resourceNamespace,
       String resourceName) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
-    this.resourceNamespace = resourceNamespace;
-    this.resourceName = resourceName;
-    this.configChangeEventGeneratorOptional = Optional.empty();
+    this(configServiceBlockingStub, resourceNamespace, resourceName, null);
   }
 
   protected abstract Optional<T> buildDataFromValue(Value value);
@@ -79,11 +94,13 @@ public abstract class IdentifiedObjectStore<T> {
     return context
         .call(
             () ->
-                this.configServiceBlockingStub.getAllConfigs(
-                    GetAllConfigsRequest.newBuilder()
-                        .setResourceName(this.resourceName)
-                        .setResourceNamespace(this.resourceNamespace)
-                        .build()))
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .getAllConfigs(
+                        GetAllConfigsRequest.newBuilder()
+                            .setResourceName(this.resourceName)
+                            .setResourceNamespace(this.resourceNamespace)
+                            .build()))
         .getContextSpecificConfigsList()
         .stream()
         .map(
@@ -107,12 +124,14 @@ public abstract class IdentifiedObjectStore<T> {
       GetConfigResponse getConfigResponse =
           context.call(
               () ->
-                  this.configServiceBlockingStub.getConfig(
-                      GetConfigRequest.newBuilder()
-                          .setResourceName(this.resourceName)
-                          .setResourceNamespace(this.resourceNamespace)
-                          .addContexts(id)
-                          .build()));
+                  this.configServiceBlockingStub
+                      .withDeadline(getDeadline())
+                      .getConfig(
+                          GetConfigRequest.newBuilder()
+                              .setResourceName(this.resourceName)
+                              .setResourceNamespace(this.resourceNamespace)
+                              .addContexts(id)
+                              .build()));
 
       ContextSpecificConfig contextSpecificConfig =
           ContextSpecificConfig.newBuilder()
@@ -138,13 +157,15 @@ public abstract class IdentifiedObjectStore<T> {
     UpsertConfigResponse response =
         context.call(
             () ->
-                this.configServiceBlockingStub.upsertConfig(
-                    UpsertConfigRequest.newBuilder()
-                        .setResourceName(this.resourceName)
-                        .setResourceNamespace(this.resourceNamespace)
-                        .setContext(this.getContextFromData(data))
-                        .setConfig(this.buildValueFromData(data))
-                        .build()));
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .upsertConfig(
+                        UpsertConfigRequest.newBuilder()
+                            .setResourceName(this.resourceName)
+                            .setResourceNamespace(this.resourceNamespace)
+                            .setContext(this.getContextFromData(data))
+                            .setConfig(this.buildValueFromData(data))
+                            .build()));
 
     return this.processUpsertResult(context, response)
         .orElseThrow(Status.INTERNAL::asRuntimeException);
@@ -157,12 +178,14 @@ public abstract class IdentifiedObjectStore<T> {
           requestContext
               .call(
                   () ->
-                      this.configServiceBlockingStub.deleteConfig(
-                          DeleteConfigRequest.newBuilder()
-                              .setResourceName(this.resourceName)
-                              .setResourceNamespace(this.resourceNamespace)
-                              .setContext(context)
-                              .build()))
+                      this.configServiceBlockingStub
+                          .withDeadline(getDeadline())
+                          .deleteConfig(
+                              DeleteConfigRequest.newBuilder()
+                                  .setResourceName(this.resourceName)
+                                  .setResourceNamespace(this.resourceNamespace)
+                                  .setContext(context)
+                                  .build()))
               .getDeletedConfig();
       return Optional.of(processDeleteResult(requestContext, deletedConfig));
     } catch (Exception exception) {
@@ -189,8 +212,10 @@ public abstract class IdentifiedObjectStore<T> {
     return context
         .call(
             () ->
-                this.configServiceBlockingStub.upsertAllConfigs(
-                    UpsertAllConfigsRequest.newBuilder().addAllConfigs(configs).build()))
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .upsertAllConfigs(
+                        UpsertAllConfigsRequest.newBuilder().addAllConfigs(configs).build()))
         .getUpsertedConfigsList()
         .stream()
         .map(upsertedConfig -> this.processUpsertResult(context, upsertedConfig))
@@ -213,8 +238,10 @@ public abstract class IdentifiedObjectStore<T> {
     return requestContext
         .call(
             () ->
-                this.configServiceBlockingStub.deleteConfigs(
-                    DeleteConfigsRequest.newBuilder().addAllConfigs(configsToDelete).build()))
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .deleteConfigs(
+                        DeleteConfigsRequest.newBuilder().addAllConfigs(configsToDelete).build()))
         .getDeletedConfigsList()
         .stream()
         .map(deletedConfig -> processDeleteResult(requestContext, deletedConfig))
@@ -300,5 +327,9 @@ public abstract class IdentifiedObjectStore<T> {
                           return previousValue;
                         }),
                 this.buildValueForChangeEvent(result.getData())));
+  }
+
+  protected Deadline getDeadline() {
+    return Deadline.after(this.clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS);
   }
 }

@@ -1,14 +1,14 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath
-com.github.luben:zstd-jni:1.5.5-1=runtimeClasspath
-com.google.protobuf:protobuf-java:3.24.1=compileClasspath,runtimeClasspath
-io.grpc:grpc-bom:1.60.0=compileClasspath,runtimeClasspath
-org.apache.kafka:kafka-clients:7.5.2-ccs=compileClasspath,runtimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.22=compileClasspath,runtimeClasspath
-org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.7=compileClasspath,runtimeClasspath
-org.lz4:lz4-java:1.8.0=runtimeClasspath
-org.slf4j:slf4j-api:2.0.7=runtimeClasspath
-org.xerial.snappy:snappy-java:1.1.10.5=runtimeClasspath
+com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.github.luben:zstd-jni:1.5.5-1=runtimeClasspath,testRuntimeClasspath
+com.google.protobuf:protobuf-java:3.24.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.grpc:grpc-bom:1.60.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.apache.kafka:kafka-clients:7.5.2-ccs=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.23=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.7=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.lz4:lz4-java:1.8.0=runtimeClasspath,testRuntimeClasspath
+org.slf4j:slf4j-api:2.0.7=runtimeClasspath,testRuntimeClasspath
+org.xerial.snappy:snappy-java:1.1.10.5=runtimeClasspath,testRuntimeClasspath
 empty=annotationProcessor

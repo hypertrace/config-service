@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -114,7 +113,8 @@ class IdentifiedObjectStoreWithFilterTest {
         .build();
   }
 
-  @Mock ConfigServiceBlockingStub mockStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  ConfigServiceBlockingStub mockStub;
 
   @Mock ConfigChangeEventGenerator configChangeEventGenerator;
 
@@ -125,7 +125,6 @@ class IdentifiedObjectStoreWithFilterTest {
 
   @BeforeEach
   void beforeEach() {
-    this.mockStub = mock(ConfigServiceBlockingStub.class);
     this.store = new TestObjectStore(this.mockStub, configChangeEventGenerator);
   }
 
