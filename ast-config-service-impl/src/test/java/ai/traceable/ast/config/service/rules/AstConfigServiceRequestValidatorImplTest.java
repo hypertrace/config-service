@@ -20,11 +20,14 @@ import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.HttpMethod;
+import ai.traceable.ast.config.service.v1.HttpRestApiDetails;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.KeyValuePredicate;
 import ai.traceable.ast.config.service.v1.KeyValuePredicateWithLocation;
 import ai.traceable.ast.config.service.v1.Location;
 import ai.traceable.ast.config.service.v1.RelationalOperator;
+import ai.traceable.ast.config.service.v1.SampleData;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
@@ -52,6 +55,32 @@ class AstConfigServiceRequestValidatorImplTest {
   private RequestContext mockRequestContext = Mockito.mock(RequestContext.class);
   private Map<String, TagValue> tags =
       Map.of("key1", TagValue.newBuilder().addValue("value1").build());
+
+  private final SampleData sampleData =
+      SampleData.newBuilder()
+          .setHttpRestApiDetails(
+              HttpRestApiDetails.newBuilder()
+                  .setMethod(HttpMethod.HTTP_METHOD_POST)
+                  .setTargetUrl("http://localhost:8080")
+                  .putRequestHeaders("authorization", "Beaer eyDfbg")
+                  .setRequestBody(getSampleRequestBody())
+                  .build())
+          .build();
+
+  private final SampleData sampleData1 =
+      SampleData.newBuilder()
+          .setHttpRestApiDetails(
+              HttpRestApiDetails.newBuilder().setMethod(HttpMethod.HTTP_METHOD_GET).build())
+          .build();
+
+  private final SampleData sampleData2 =
+      SampleData.newBuilder()
+          .setHttpRestApiDetails(
+              HttpRestApiDetails.newBuilder()
+                  .setMethod(HttpMethod.HTTP_METHOD_PUT)
+                  .putRequestHeaders("authorization", "Beaer eyDfbg")
+                  .build())
+          .build();
 
   @Test
   void validateUpdateScanPurgeConfigRequest() {
@@ -368,7 +397,35 @@ class AstConfigServiceRequestValidatorImplTest {
                             .setDescription("description")
                             .putTags("key1", TagValue.newBuilder().addValue("value1").build())
                             .addAllPotentialGeneratedVulnerabilityTypes(
-                                List.of("Rate Limiting", "SQL Injection")))
+                                List.of("Rate Limiting", "SQL Injection"))
+                            .setSampleData(sampleData))
+                    .build()));
+
+    // invalid sample data
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                UpdateCustomTestPluginRequest.newBuilder()
+                    .setUpdateCustomTestPlugin(
+                        UpdateCustomTestPlugin.newBuilder()
+                            .setId("test-id")
+                            .setName("test-name")
+                            .setCodeSnippetDetails(
+                                CodeSnippetDetails.newBuilder()
+                                    .setCodeSnippet("dummy-code-snippet")
+                                    .setCodeSnippetType(
+                                        CodeSnippetType
+                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                            .setPluginType(TestPluginType.TEST_PLUGIN_TYPE_ACTIVE)
+                            .setPluginSafetyType(TestPluginSafetyType.TEST_PLUGIN_SAFETY_TYPE_SAFE)
+                            .setPluginDetails("plugin-details")
+                            .setDescription("description")
+                            .putTags("key1", TagValue.newBuilder().addValue("value1").build())
+                            .addAllPotentialGeneratedVulnerabilityTypes(
+                                List.of("Rate Limiting", "SQL Injection"))
+                            .setSampleData(sampleData1))
                     .build()));
   }
 
@@ -421,7 +478,34 @@ class AstConfigServiceRequestValidatorImplTest {
                             .setDescription("description")
                             .putTags("key1", TagValue.newBuilder().addValue("value1").build())
                             .addAllPotentialGeneratedVulnerabilityTypes(
-                                List.of("Rate Limiting", "SQL Injection")))
+                                List.of("Rate Limiting", "SQL Injection"))
+                            .setSampleData(sampleData))
+                    .build()));
+
+    // invalid sample data
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                CreateCustomTestPluginRequest.newBuilder()
+                    .setCreateCustomTestPlugin(
+                        CreateCustomTestPlugin.newBuilder()
+                            .setName("test-name")
+                            .setCodeSnippetDetails(
+                                CodeSnippetDetails.newBuilder()
+                                    .setCodeSnippet("dummy-code-snippet")
+                                    .setCodeSnippetType(
+                                        CodeSnippetType
+                                            .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                            .setPluginType(TestPluginType.TEST_PLUGIN_TYPE_ACTIVE)
+                            .setPluginSafetyType(TestPluginSafetyType.TEST_PLUGIN_SAFETY_TYPE_SAFE)
+                            .setPluginDetails("plugin-details")
+                            .setDescription("description")
+                            .putTags("key1", TagValue.newBuilder().addValue("value1").build())
+                            .addAllPotentialGeneratedVulnerabilityTypes(
+                                List.of("Rate Limiting", "SQL Injection"))
+                            .setSampleData(sampleData2))
                     .build()));
   }
 
@@ -584,5 +668,9 @@ class AstConfigServiceRequestValidatorImplTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> rulesValidator.validateOrThrow(mockRequestContext, request));
+  }
+
+  private String getSampleRequestBody() {
+    return "{\"ssn\": \"[REPLACE_WITH_HASHED_SSN]\", \"user-agent\": \"MyCustomClient/1.0.0\", \"client_id\": 12345}";
   }
 }

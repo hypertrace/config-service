@@ -14,9 +14,12 @@ import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRe
 import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.HttpMethod;
+import ai.traceable.ast.config.service.v1.HttpRestApiDetails;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.Location;
 import ai.traceable.ast.config.service.v1.RelationalOperator;
+import ai.traceable.ast.config.service.v1.SampleData;
 import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
 import ai.traceable.ast.config.service.v1.TagValue;
@@ -202,6 +205,7 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
         requestContext, updateCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList());
     validateTestPluginType(requestContext, updateCustomTestPlugin.getPluginType());
     validateTestPluginSafetyType(requestContext, updateCustomTestPlugin.getPluginSafetyType());
+    validateSampleData(requestContext, updateCustomTestPlugin.getSampleData());
   }
 
   @Override
@@ -233,6 +237,7 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
         requestContext, createCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList());
     validateTestPluginType(requestContext, createCustomTestPlugin.getPluginType());
     validateTestPluginSafetyType(requestContext, createCustomTestPlugin.getPluginSafetyType());
+    validateSampleData(requestContext, createCustomTestPlugin.getSampleData());
   }
 
   @Override
@@ -346,6 +351,35 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
       throw Status.INVALID_ARGUMENT
           .withDescription("Request should have specified code snippet type")
           .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateSampleData(RequestContext requestContext, SampleData sampleData) {
+    if (hasHttpRestApiDetails(sampleData)) {
+      validateHttpRestApiDetails(requestContext, sampleData.getHttpRestApiDetails());
+    }
+  }
+
+  private boolean hasHttpRestApiDetails(SampleData sampleData) {
+    return !SampleData.getDefaultInstance().equals(sampleData)
+        && sampleData.hasHttpRestApiDetails();
+  }
+
+  private void validateHttpRestApiDetails(
+      RequestContext requestContext, HttpRestApiDetails httpRestApiDetails) {
+    validateHttpMethod(requestContext, httpRestApiDetails.getMethod());
+    validateTargetUrl(requestContext, httpRestApiDetails.getTargetUrl());
+  }
+
+  private void validateTargetUrl(RequestContext context, String targetUrl) {
+    validateStringBlankness(context, targetUrl);
+  }
+
+  private void validateHttpMethod(RequestContext context, HttpMethod httpMethod) {
+    if (HttpMethod.HTTP_METHOD_UNSPECIFIED.equals(httpMethod)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Request should have a specified http method")
+          .asRuntimeException(context.buildTrailers());
     }
   }
 
