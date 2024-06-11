@@ -253,7 +253,23 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-193:PHP Remote File Inclusion - https://capec.mitre.org/data/definitions/193.html
       - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
       - Web Application Security Consortium - WASC-5:Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
-
+- ruleId: crs_933
+  ruleName: PHP Attacks
+  anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
+  eventLabels:
+    MITRE_TACTIC: TA0002
+    MITRE_TECHNIQUE: T1059.004
+  eventDetails:
+    description: "An anomaly characteristic of a PHP Attack is detected. PHP attacks occur when an attacker can manipulate the input data processed by the PHP interpreter on the server, potentially leading to arbitrary code execution, data exfiltration, or unauthorized access."
+    mitigation: "To mitigate PHP injection attacks, ensure proper input validation and sanitization. Use prepared statements with parameterized queries for database interactions. Regularly update PHP and all related dependencies to the latest versions to patch known vulnerabilities. Use frameworks that provide built-in protection against injection attacks."
+    impact: "PHP attacks can have severe consequences, including unauthorized access to sensitive data, complete server compromise, data corruption, or loss, and service disruption. Successful exploitation can lead to significant financial loss, reputational damage, and legal liabilities due to data breaches and non-compliance with data protection regulations."
+    references: |
+      - OWASP API Top 10 - 2019 - API8:Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+      - OWASP Top 10 - 2021 - A06:Vulnerable and Outdated Components - https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
+      - OWASP Top 10 - 2017 - A09:Using Components with Known Vulnerabilities - https://owasp.org/www-project-top-ten/2017/A9_2017-Using_Components_with_Known_Vulnerabilities
+      - Common Weakness Enumeration (CWE) - CWE-78:Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection') - https://cwe.mitre.org/data/definitions/78.html
+      - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-248:Command Injection - https://capec.mitre.org/data/definitions/248.html
+      - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
 - ruleId: crs_932
   ruleName: Remote Code Execution
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
@@ -313,7 +329,6 @@
         - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-248:Command Injection - https://capec.mitre.org/data/definitions/248.html
         - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
         - Web Application Security Consortium - WASC-31:OS Commanding - http://projects.webappsec.org/w/page/13246950/OS%20Commanding
-
 - ruleId: crs_944
   ruleName: Java Application Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
