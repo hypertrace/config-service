@@ -3,13 +3,13 @@ package ai.traceable.threatmanagement.config.service.threatscore;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -19,6 +19,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -64,17 +65,19 @@ class DefaultThreatScoreManagerTest {
                   .putFields("highScoreUpperBound", Value.newBuilder().setNumberValue(300).build()))
           .build();
 
-  @Mock private ConfigServiceBlockingStub configServiceStub;
+  @Mock(answer = Answers.RETURNS_SELF)
+  private ConfigServiceBlockingStub configServiceStub;
 
   @Mock private ThreatManagementConfigServiceConfig config;
+  @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
 
   private ThreatScoreManager threatScoreManager;
 
   @BeforeEach
   void setup() {
-    configServiceStub = mock(ConfigServiceBlockingStub.class);
     this.threatScoreManager =
-        new DefaultThreatScoreManager(configServiceStub, config, new ThreatScoreBoundConverter());
+        new DefaultThreatScoreManager(
+            configServiceStub, configChangeEventGenerator, config, new ThreatScoreBoundConverter());
   }
 
   @Test

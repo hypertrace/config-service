@@ -1,6 +1,7 @@
 package ai.traceable.threatmanagement.config.service.statuscode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.threatmanagement.config.service.v1.Protocol;
 import ai.traceable.threatmanagement.config.service.v1.SeverityDowngradePolicy;
@@ -12,6 +13,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import java.util.List;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -27,12 +29,14 @@ class StatusCodeThreatScoreConfigsManagerTest {
   private static Channel channelForMockServer;
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager;
+  private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @BeforeEach
   void setUp() throws IOException {
     String serverName = InProcessServerBuilder.generateName();
     channelForMockServer = InProcessChannelBuilder.forName(serverName).build();
     mockServer = InProcessServerBuilder.forName(serverName).build().start();
+    configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockConfigService =
         new MockGenericConfigService()
             .mockUpsert()
@@ -43,7 +47,8 @@ class StatusCodeThreatScoreConfigsManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     statusCodeThreatScoreConfigsManager =
-        new StatusCodeThreatScoreConfigsManagerImpl(configServiceBlockingStub);
+        new StatusCodeThreatScoreConfigsManagerImpl(
+            configServiceBlockingStub, configChangeEventGenerator);
   }
 
   @AfterEach

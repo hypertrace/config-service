@@ -10,6 +10,7 @@ import com.google.protobuf.Value;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -20,11 +21,13 @@ class StatusCodeThreatScoreConfigsManagerImpl
 
   @Inject
   StatusCodeThreatScoreConfigsManagerImpl(
-      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub) {
+      ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
         THREAT_MANAGEMENT_CONFIG_NAMESPACE,
-        STATUS_CODE_THREAT_SCORE_CONFIGS_RESOURCE_NAME);
+        STATUS_CODE_THREAT_SCORE_CONFIGS_RESOURCE_NAME,
+        configChangeEventGenerator);
   }
 
   @Override

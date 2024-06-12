@@ -9,7 +9,7 @@ import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribu
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
-import org.hypertrace.config.objectstore.ClientConfig;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -74,13 +74,17 @@ class DefaultSecurityEventTypeContributionManagerTest {
   @Mock(answer = Answers.RETURNS_SELF)
   private ConfigServiceBlockingStub configServiceStub;
 
+  @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
+
   private SecurityEventTypeContributionManager securityEventTypeContributionManager;
 
   @BeforeEach
   void setup() {
     this.securityEventTypeContributionManager =
         new DefaultSecurityEventTypeContributionManager(
-            configServiceStub, new SecurityEventTypeContributionConverter(), ClientConfig.DEFAULT);
+            configServiceStub,
+            new SecurityEventTypeContributionConverter(),
+            configChangeEventGenerator);
   }
 
   @Test

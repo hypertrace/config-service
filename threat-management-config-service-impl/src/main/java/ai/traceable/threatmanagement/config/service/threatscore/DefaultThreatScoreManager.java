@@ -11,78 +11,41 @@ import io.grpc.Status;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class DefaultThreatScoreManager implements ThreatScoreManager {
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
+class DefaultThreatScoreManager extends ContextuallyIdentifiedObjectStore<ThreatScoreBound>
+    implements ThreatScoreManager {
   private final ThreatManagementConfigServiceConfig config;
   private final ThreatScoreBoundConverter threatScoreBoundConverter;
 
   @Inject
   DefaultThreatScoreManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator,
       ThreatManagementConfigServiceConfig config,
       ThreatScoreBoundConverter threatScoreBoundConverter) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
+    super(
+        configServiceBlockingStub,
+        THREAT_MANAGEMENT_CONFIG_NAMESPACE,
+        THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.config = config;
     this.threatScoreBoundConverter = threatScoreBoundConverter;
   }
 
   @Override
   public ThreatScoreBound getThreatScoreBound(RequestContext requestContext) {
-    return getThreatScoreBoundConfig(requestContext).orElseGet(this::getDefaultThreatScoreBound);
-  }
-
-  @SneakyThrows
-  private Optional<ThreatScoreBound> getThreatScoreBoundConfig(RequestContext requestContext) {
-    String configId = getConfigId(requestContext);
-    GetConfigRequest getThreatScoreBoundRequest =
-        GetConfigRequest.newBuilder()
-            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
-            .addContexts(configId)
-            .build();
-
-    try {
-      Value config =
-          requestContext.call(
-              () -> configServiceBlockingStub.getConfig(getThreatScoreBoundRequest).getConfig());
-      return threatScoreBoundConverter.convert(config);
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw e;
-    }
+    return getData(requestContext).orElseGet(this::getDefaultThreatScoreBound);
   }
 
   @Override
   public ThreatScoreBound upsertThreatScoreBound(
       RequestContext requestContext, ThreatScoreBound threatScoreBound) {
-    return upsertThreatScoreBoundConfig(requestContext, threatScoreBound)
-        .orElseThrow(Status.INTERNAL::asRuntimeException);
-  }
-
-  @SneakyThrows
-  private Optional<ThreatScoreBound> upsertThreatScoreBoundConfig(
-      RequestContext requestContext, ThreatScoreBound threatScoreBound) {
-    String configId = getConfigId(requestContext);
-
-    UpsertConfigRequest request =
-        UpsertConfigRequest.newBuilder()
-            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
-            .setConfig(threatScoreBoundConverter.convert(threatScoreBound))
-            .setContext(configId)
-            .build();
-
-    UpsertConfigResponse response = configServiceBlockingStub.upsertConfig(request);
-    return threatScoreBoundConverter.convert(response.getConfig());
+    return upsertObject(requestContext, threatScoreBound).getData();
   }
 
   @Override
@@ -94,11 +57,30 @@ class DefaultThreatScoreManager implements ThreatScoreManager {
         .build();
   }
 
-  private String getConfigId(RequestContext requestContext) {
-    // Using tenant id as threat score bound config id, since it's tenant scoped
+  @Override
+  protected Optional<ThreatScoreBound> buildDataFromValue(Value value) {
+    try {
+      return threatScoreBoundConverter.convert(value);
+    } catch (Exception e) {
+      log.error("Unable to build ThreatScoreBound from value : {}", value, e);
+      return Optional.empty();
+    }
+  }
+
+  @SneakyThrows
+  @Override
+  protected Value buildValueFromData(ThreatScoreBound data) {
+    return threatScoreBoundConverter.convert(data);
+  }
+
+  @Override
+  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
     return requestContext
         .getTenantId()
         .orElseThrow(
-            () -> new IllegalArgumentException("Unable to get config id from request context"));
+            () ->
+                Status.INVALID_ARGUMENT
+                    .withDescription("Unable to get tenant id from request context")
+                    .asRuntimeException());
   }
 }

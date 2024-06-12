@@ -11,6 +11,7 @@ import com.google.protobuf.Value;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -24,11 +25,13 @@ class IpReputationThreatScoreConfigManagerImpl
   @Inject
   IpReputationThreatScoreConfigManagerImpl(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
+      ConfigChangeEventGenerator configChangeEventGenerator,
       ThreatManagementConfigServiceConfig config) {
     super(
         configServiceBlockingStub,
         THREAT_MANAGEMENT_CONFIG_NAMESPACE,
-        IP_REPUTATION_THREAT_SCORE_CONFIG_RESOURCE_NAME);
+        IP_REPUTATION_THREAT_SCORE_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.config = config;
   }
 

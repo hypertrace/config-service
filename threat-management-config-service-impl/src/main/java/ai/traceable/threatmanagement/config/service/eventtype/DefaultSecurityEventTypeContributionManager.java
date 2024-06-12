@@ -9,95 +9,42 @@ import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ClientConfig;
+import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
-import org.hypertrace.config.service.v1.GetConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigRequest;
-import org.hypertrace.config.service.v1.UpsertConfigResponse;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class DefaultSecurityEventTypeContributionManager implements SecurityEventTypeContributionManager {
-  private final ConfigServiceBlockingStub configServiceBlockingStub;
+class DefaultSecurityEventTypeContributionManager
+    extends ContextuallyIdentifiedObjectStore<SecurityEventTypeContribution>
+    implements SecurityEventTypeContributionManager {
   private final SecurityEventTypeContributionConverter securityEventTypeContributionConverter;
-  private final ClientConfig clientConfig;
 
   @Inject
   DefaultSecurityEventTypeContributionManager(
       ConfigServiceBlockingStub configServiceBlockingStub,
       SecurityEventTypeContributionConverter securityEventTypeContributionConverter,
-      ClientConfig clientConfig) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
+      ConfigChangeEventGenerator configChangeEventGenerator) {
+    super(
+        configServiceBlockingStub,
+        THREAT_MANAGEMENT_CONFIG_NAMESPACE,
+        SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME,
+        configChangeEventGenerator);
     this.securityEventTypeContributionConverter = securityEventTypeContributionConverter;
-    this.clientConfig = clientConfig;
   }
 
   @Override
   public SecurityEventTypeContribution getSecurityEventTypeContribution(
       RequestContext requestContext) {
-    return getSecurityEventTypeContributionConfig(requestContext)
-        .orElseGet(this::getDefaultSecurityEventTypeContribution);
-  }
-
-  @SneakyThrows
-  private Optional<SecurityEventTypeContribution> getSecurityEventTypeContributionConfig(
-      RequestContext requestContext) {
-    String configId = getConfigId(requestContext);
-    GetConfigRequest request =
-        GetConfigRequest.newBuilder()
-            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
-            .addContexts(configId)
-            .build();
-
-    try {
-      Value config =
-          requestContext.call(
-              () ->
-                  configServiceBlockingStub
-                      .withDeadlineAfter(
-                          clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                      .getConfig(request)
-                      .getConfig());
-
-      return securityEventTypeContributionConverter.convert(config);
-    } catch (Exception e) {
-      if (Status.fromThrowable(e).equals(Status.NOT_FOUND)) {
-        return Optional.empty();
-      }
-      throw e;
-    }
+    return getData(requestContext).orElseGet(this::getDefaultSecurityEventTypeContribution);
   }
 
   @Override
   public SecurityEventTypeContribution upsertSecurityEventTypeContribution(
       RequestContext requestContext, SecurityEventTypeContribution securityEventTypeContribution) {
-    return upsertSecurityEventTypeContributionConfig(requestContext, securityEventTypeContribution)
-        .orElseThrow(Status.INTERNAL::asRuntimeException);
-  }
-
-  @SneakyThrows
-  private Optional<SecurityEventTypeContribution> upsertSecurityEventTypeContributionConfig(
-      RequestContext requestContext, SecurityEventTypeContribution securityEventTypeContribution) {
-    String configId = getConfigId(requestContext);
-
-    UpsertConfigRequest request =
-        UpsertConfigRequest.newBuilder()
-            .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
-            .setResourceName(SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
-            .setConfig(
-                securityEventTypeContributionConverter.convert(securityEventTypeContribution))
-            .setContext(configId)
-            .build();
-
-    UpsertConfigResponse response =
-        configServiceBlockingStub
-            .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-            .upsertConfig(request);
-    return securityEventTypeContributionConverter.convert(response.getConfig());
+    return upsertObject(requestContext, securityEventTypeContribution).getData();
   }
 
   private SecurityEventTypeContribution getDefaultSecurityEventTypeContribution() {
@@ -107,11 +54,30 @@ class DefaultSecurityEventTypeContributionManager implements SecurityEventTypeCo
         .build();
   }
 
-  private String getConfigId(RequestContext requestContext) {
-    // Using tenant id as security event type contribution config id, since it's tenant scoped
+  @Override
+  protected Optional<SecurityEventTypeContribution> buildDataFromValue(Value value) {
+    try {
+      return securityEventTypeContributionConverter.convert(value);
+    } catch (Exception e) {
+      log.error("Unable to build SecurityEventTypeContribution from value : {}", value, e);
+      return Optional.empty();
+    }
+  }
+
+  @SneakyThrows
+  @Override
+  protected Value buildValueFromData(SecurityEventTypeContribution data) {
+    return securityEventTypeContributionConverter.convert(data);
+  }
+
+  @Override
+  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
     return requestContext
         .getTenantId()
         .orElseThrow(
-            () -> new IllegalArgumentException("Unable to get config id from request context"));
+            () ->
+                Status.INVALID_ARGUMENT
+                    .withDescription("Unable to get tenant id from request context")
+                    .asRuntimeException());
   }
 }

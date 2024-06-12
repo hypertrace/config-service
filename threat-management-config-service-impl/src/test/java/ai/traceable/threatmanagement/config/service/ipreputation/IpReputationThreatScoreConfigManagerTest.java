@@ -11,6 +11,7 @@ import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -27,6 +28,7 @@ class IpReputationThreatScoreConfigManagerTest {
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
   private IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager;
   private ThreatManagementConfigServiceConfig config;
+  private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @BeforeEach
   void setUp() throws IOException {
@@ -43,8 +45,10 @@ class IpReputationThreatScoreConfigManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     config = mock(ThreatManagementConfigServiceConfig.class);
+    configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     ipReputationThreatScoreConfigManager =
-        new IpReputationThreatScoreConfigManagerImpl(configServiceBlockingStub, config);
+        new IpReputationThreatScoreConfigManagerImpl(
+            configServiceBlockingStub, configChangeEventGenerator, config);
   }
 
   @AfterEach
