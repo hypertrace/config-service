@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/config/service/v1/assertion.proto";
+
+message AssertionOverride {
+  oneof type {
+    UserDefinedAssertionOverride user_defined_assertion_override = 1;
+    SystemDefinedAssertionOverride system_defined_assertion_override = 2;
+  }
+}
+
+message SystemDefinedAssertionOverride {
+  Assertion assertion = 1;
+}
+
+message UserDefinedAssertionOverride {
+  Assertion assertion = 1;
+}

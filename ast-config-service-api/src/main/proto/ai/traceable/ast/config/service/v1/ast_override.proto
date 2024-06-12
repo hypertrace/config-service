@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/config/service/v1/mutation_override.proto";
+import "ai/traceable/ast/config/service/v1/assertion_override.proto";
+import "ai/traceable/ast/config/service/v1/ast_override_scope.proto";
+
+message AstOverride {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  bool is_enabled = 4;
+  string created_by = 5;
+  string last_updated_by = 6;
+  repeated OverrideScope scopes = 7;
+  OverrideConfig config = 8;
+}
+
+message OverrideConfig {
+  oneof type {
+    MutationOverride mutation_override = 1;
+    AssertionOverride assertion_override = 2;
+  }
+}

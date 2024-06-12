@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/config/service/v1/mutation.proto";
+
+message MutationOverride {
+  oneof type {
+    UserDefinedMutationOverride user_defined_mutation_override = 1;
+    SystemDefinedMutationOverride system_defined_mutation_override = 2;
+  }
+}
+
+message SystemDefinedMutationOverride {
+  Mutation mutation = 1;
+}
+
+message UserDefinedMutationOverride {
+  Mutation mutation = 1;
+}

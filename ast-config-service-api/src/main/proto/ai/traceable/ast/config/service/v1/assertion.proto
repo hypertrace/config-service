@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+message Assertion {
+  string fixed_assertion_id = 1;
+  string lhs = 2;
+  string rhs = 3;
+  MatchOperator operator = 4;
+  map<string, string> data = 5;
+  string lhs_value = 6;
+  string rhs_value = 7;
+  string key = 8;
+  oneof type {
+    AssertionTypeImmediateResponse assertion_type_immediate_response = 9;
+  }
+}
+
+message AssertionTypeImmediateResponse {}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUALS = 2;
+}

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package ai.traceable.ast.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/ast/config/service/v1/ast_override.proto";
+
+message GetAstOverridesResponse {
+  repeated AstOverride ast_overrides = 1;
+}
+
+message CreateAstOverrideResponse {
+  AstOverride ast_override = 1;
+}
+
+message UpdateAstOverrideResponse {
+  AstOverride ast_override = 1;
+}
+
+message DeleteAstOverridesResponse {}

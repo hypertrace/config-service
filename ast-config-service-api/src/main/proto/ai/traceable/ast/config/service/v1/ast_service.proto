@@ -5,6 +5,8 @@ package ai.traceable.ast.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/ast/config/service/v1/ast.proto";
+import "ai/traceable/ast/config/service/v1/ast_overrides_request.proto";
+import "ai/traceable/ast/config/service/v1/ast_overrides_response.proto";
 import "ai/traceable/ast/config/service/v1/ast_custom_test_plugins.proto";
 
 service AstConfigService {
@@ -34,6 +36,14 @@ service AstConfigService {
   rpc UpdateCustomTestPlugin(UpdateCustomTestPluginRequest) returns (UpdateCustomTestPluginResponse);
 
   rpc DeleteCustomTestPlugin(DeleteCustomTestPluginRequest) returns (DeleteCustomTestPluginResponse);
+
+  rpc GetAstOverrides (GetAstOverridesRequest) returns (GetAstOverridesResponse);
+
+  rpc CreateAstOverride (CreateAstOverrideRequest) returns (CreateAstOverrideResponse);
+
+  rpc UpdateAstOverride (UpdateAstOverrideRequest) returns (UpdateAstOverrideResponse);
+
+  rpc DeleteAstOverrides (DeleteAstOverridesRequest) returns (DeleteAstOverridesResponse);
 }
 
 message UpdateScanPurgeConfigRequest {
