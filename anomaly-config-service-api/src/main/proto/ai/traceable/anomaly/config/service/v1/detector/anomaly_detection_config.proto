@@ -228,6 +228,10 @@ message VolumetricAnomalyDetectionConfig {
 }
 
 message ApiCallSpikeAnomalyConfig {
+  ApiCallSpikeTuningConfigList api_call_spike_tuning_config_list = 1;
+}
+
+message ApiCallSpikeTuningConfigList {
   repeated ApiCallSpikeTuningConfig api_call_spike_tuning_configs = 1;
 }
 
@@ -256,7 +260,10 @@ message CredentialStuffingAnomalyDetectionConfig {
 }
 
 message CredentialStuffingAnomalyConfig {
-  // the detection would be applied on the endpoints (along with username extraction) identified by this config
+  CredentialStuffingTuningConfigList credential_stuffing_tuning_config_list = 1;
+}
+
+message CredentialStuffingTuningConfigList {
   repeated CredentialStuffingTuningConfig credential_stuffing_tuning_configs = 1;
 }
 
@@ -271,7 +278,7 @@ message ParameterExtractionConfig {
 }
 
 message CredentialStuffingTuningConfig {
-  // // the below detection config would be applied on the endpoints identified by this config
+  // the below detection config would be applied on the endpoints identified by this config
   DetectionScopeConfig detection_scope_config = 1;
   ParameterExtractionConfig username_extraction_config = 2;
   google.protobuf.Duration look_back_duration = 3;

@@ -102,6 +102,10 @@ message VolumetricTrainingConfig {
 }
 
 message ApiCallSpikeTrainingConfig {
+  ApiCallSpikeTuningConfigList api_call_spike_tuning_config_list = 1;
+}
+
+message ApiCallSpikeTuningConfigList {
   repeated ApiCallSpikeTuningConfig api_call_spike_tuning_configs = 1;
 }
 

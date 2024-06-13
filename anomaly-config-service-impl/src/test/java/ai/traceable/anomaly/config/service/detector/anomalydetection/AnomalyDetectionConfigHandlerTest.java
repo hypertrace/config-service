@@ -804,7 +804,10 @@ public class AnomalyDetectionConfigHandlerTest {
                         VolumetricAnomalyDetectionConfig.newBuilder()
                             .setApiCallSpike(
                                 ApiCallSpikeAnomalyConfig.newBuilder()
-                                    .addApiCallSpikeTuningConfigs(apiCallSpikeTuningConfig))))
+                                    .setApiCallSpikeTuningConfigList(
+                                        ApiCallSpikeTuningConfigList.newBuilder()
+                                            .addApiCallSpikeTuningConfigs(
+                                                apiCallSpikeTuningConfig)))))
             .build();
 
     ScopedAnomalyDetectionConfig config3 =
@@ -840,6 +843,7 @@ public class AnomalyDetectionConfigHandlerTest {
         detectionConfig1
             .getVolumetricAnomalyDetectionConfig()
             .getApiCallSpike()
+            .getApiCallSpikeTuningConfigList()
             .getApiCallSpikeTuningConfigsList();
     assertEquals(1, apiCallSpikeTuningConfigs.size());
     assertEquals(apiCallSpikeTuningConfig, apiCallSpikeTuningConfigs.get(0));
@@ -909,8 +913,10 @@ public class AnomalyDetectionConfigHandlerTest {
                             .setAnomalyRuleId("credentialstuffing")
                             .setCredentialStuffing(
                                 CredentialStuffingAnomalyConfig.newBuilder()
-                                    .addCredentialStuffingTuningConfigs(
-                                        credentialStuffingTuningConfig)))
+                                    .setCredentialStuffingTuningConfigList(
+                                        CredentialStuffingTuningConfigList.newBuilder()
+                                            .addCredentialStuffingTuningConfigs(
+                                                credentialStuffingTuningConfig))))
                     .build())
             .build();
 
@@ -942,6 +948,7 @@ public class AnomalyDetectionConfigHandlerTest {
         detectionConfig
             .getCredentialAnomalyDetectionConfig()
             .getCredentialStuffing()
+            .getCredentialStuffingTuningConfigList()
             .getCredentialStuffingTuningConfigsList();
     assertEquals(1, credentialStuffingTuningConfigs.size());
     assertEquals(credentialStuffingTuningConfig, credentialStuffingTuningConfigs.get(0));
