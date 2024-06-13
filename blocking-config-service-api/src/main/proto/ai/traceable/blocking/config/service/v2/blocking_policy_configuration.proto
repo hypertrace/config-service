@@ -5,11 +5,14 @@ package ai.traceable.blocking.config.service.v2;
 option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/blocking/v2";
 
+import "google/protobuf/struct.proto";
+
 message BlockingPolicyConfigurationRequest {}
 
 message BlockingPolicyConfiguration {
   // in the precedence-order of evaluation
   repeated BlockingDetails blocking_details_list = 1;
+  repeated ExclusionRule exclusion_rules = 2;
 }
 
 message BlockingDetails {
@@ -26,6 +29,25 @@ message BlockingDetails {
     ActorDetails actor_details = 10;
     IpTypeDetails ip_type_details = 11;
     BlockingDetailsCombination details_combination = 12;
+  }
+  string rule_id = 13;
+}
+
+message ExclusionRule {
+  string rule_id = 1;
+  string info = 2;
+  BlockingDetailsCombination details = 3;
+  repeated AnomalousAttributeCondition anomalous_attribute_conditions = 4;
+  repeated EventCondition event_conditions = 5;
+
+  message AnomalousAttributeCondition {
+    MatchExpression key_expression = 1;
+    MatchExpression value_expression = 2;
+  }
+
+  message EventCondition {
+    BlockingCategory blocking_category = 1;
+    repeated string ids = 2;
   }
 }
 
@@ -117,4 +139,20 @@ enum IpType {
   IP_TYPE_TOR = 3;
   IP_TYPE_PROXY = 4;
   IP_TYPE_HOSTING_PROVIDER = 5;
+}
+message MatchExpression {
+  MatchOperator operator = 1;
+  google.protobuf.Value value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUALS = 2;
+  MATCH_OPERATOR_CONTAINS = 3;
+  MATCH_OPERATOR_NOT_CONTAINS = 8;
+  MATCH_OPERATOR_STARTS_WITH = 4;
+  MATCH_OPERATOR_ENDS_WITH = 5;
+  MATCH_OPERATOR_REGEX_MATCH = 6;
+  MATCH_OPERATOR_IN = 7;
 }
