@@ -27,6 +27,7 @@ import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondit
 import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchOperator;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
@@ -87,11 +88,33 @@ public class DetectionExclusionConditionValidator {
       case IP_ABUSE_VELOCITY_CONDITION:
         validateIpAbuseVelocityCondition(condition.getIpAbuseVelocityCondition());
         break;
+      case REGION_CONDITION:
+        validateRegionCondition(condition.getRegionCondition());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
                 "Invalid detection exclusion condition type : %s", condition.getConditionCase()));
     }
+  }
+
+  private void validateRegionCondition(RegionCondition regionCondition) {
+    if (regionCondition.getRegionsList().isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "At least one region value should be provided for region condition : %s",
+              regionCondition));
+    }
+    regionCondition
+        .getRegionsList()
+        .forEach(
+            region -> {
+              if (region.getCountryIsoCode().isBlank()) {
+                throwInvalidArgumentException(
+                    String.format(
+                        "Region value cannot be empty for region condition : %s", regionCondition));
+              }
+            });
   }
 
   private void validateIpOrganisationCondition(IpOrganisationCondition ipOrganisationCondition) {

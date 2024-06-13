@@ -97,6 +97,18 @@ message IpAbuseVelocityCondition {
   IpAbuseVelocity max_ip_abuse_velocity = 1;
 }
 
+message RegionCondition {
+  repeated Region regions = 1;
+  bool exclude = 2;
+
+  message Region {
+    oneof region {
+      string country_iso_code = 1;
+    }
+  }
+}
+
+
 enum IpAbuseVelocity {
   IP_ABUSE_VELOCITY_UNSPECIFIED = 0;
   IP_ABUSE_VELOCITY_LOW = 1;

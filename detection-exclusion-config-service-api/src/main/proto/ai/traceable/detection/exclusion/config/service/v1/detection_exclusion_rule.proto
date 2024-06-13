@@ -47,6 +47,7 @@ message DetectionExclusionCondition {
     IpOrganisationCondition ip_organisation_condition = 12;
     IpAsnCondition ip_asn_condition = 13;
     IpAbuseVelocityCondition ip_abuse_velocity_condition = 14;
+    RegionCondition region_condition = 15;
   }
 }
 

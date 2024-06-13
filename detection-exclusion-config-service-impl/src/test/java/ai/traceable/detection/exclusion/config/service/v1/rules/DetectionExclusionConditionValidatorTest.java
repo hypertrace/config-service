@@ -32,6 +32,7 @@ import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondit
 import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchOperator;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
@@ -909,6 +910,30 @@ class DetectionExclusionConditionValidatorTest {
             .setIpAbuseVelocityCondition(
                 IpAbuseVelocityCondition.newBuilder()
                     .setMaxIpAbuseVelocity(IpAbuseVelocity.IP_ABUSE_VELOCITY_LOW))
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+  }
+
+  @Test
+  void testRegionCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setRegionCondition(RegionCondition.getDefaultInstance())
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // valid condition
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setRegionCondition(
+                RegionCondition.newBuilder()
+                    .setExclude(false)
+                    .addRegions(RegionCondition.Region.newBuilder().setCountryIsoCode("iso")))
             .build();
     assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
   }
