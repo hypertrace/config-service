@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.343=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.344=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:api-attribute-override-service-api:0.36.88=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:data-classification-config-service-api:0.36.88=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:iprange-config-service-api:0.36.88=runtimeClasspath,testRuntimeClasspath
