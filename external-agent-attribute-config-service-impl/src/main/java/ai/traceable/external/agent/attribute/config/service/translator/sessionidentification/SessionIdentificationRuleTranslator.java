@@ -2,8 +2,11 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
+import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
+import com.google.common.collect.Streams;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -18,7 +21,32 @@ public class SessionIdentificationRuleTranslator {
 
   public Stream<AttributeRule> translateSessionIdentificationRules(
       List<SessionIdentificationRule> sessionIdentificationRules) {
-    return sessionIdentificationRules.stream().map(this::translateRule);
+    List<AttributeRule> translatedSessionIdentificationRulesV1 = new ArrayList<>();
+    List<AttributeRule> translatedSessionIdentificationRulesV2 = new ArrayList<>();
+    sessionIdentificationRules.forEach(
+        rule -> {
+          if (rule.getStatus()
+              .getRuleCreationSource()
+              .equals(RuleCreationSource.RULE_CREATION_SOURCE_OLD_API)) {
+            translatedSessionIdentificationRulesV1.add(this.translateRule(rule));
+          } else {
+            translatedSessionIdentificationRulesV2.add(this.translateRule(rule));
+          }
+        });
+    if (translatedSessionIdentificationRulesV1.isEmpty()) {
+      return translatedSessionIdentificationRulesV2.stream();
+    }
+
+    return Streams.concat(
+        Stream.of(
+            AttributeRule.newBuilder()
+                .setProjector(
+                    Projector.newBuilder()
+                        .setFirstMatchingProjector(
+                            Projector.FirstMatchingProjector.newBuilder()
+                                .addAllAttributeRules(translatedSessionIdentificationRulesV1)))
+                .build()),
+        translatedSessionIdentificationRulesV2.stream());
   }
 
   private AttributeRule translateRule(SessionIdentificationRule rule) {

@@ -29,4 +29,19 @@ class SessionIdentificationRuleTranslatorTest {
         TestUtils.getExpectedAttributeRule("session_identification/complete_output_rule.json");
     Assertions.assertEquals(expectedAttributeRule, attributeRules.get(0));
   }
+
+  @Test
+  void test_V1_config() {
+    SessionIdentificationRule rule =
+        TestUtils.getSessionIdentificationRule(
+            "session_identification/input_rule_with_v1_config.json");
+    List<AttributeRule> attributeRules =
+        translator
+            .translateSessionIdentificationRules(List.of(rule))
+            .collect(Collectors.toUnmodifiableList());
+    AttributeRule expectedAttributeRule =
+        TestUtils.getExpectedAttributeRule(
+            "session_identification/output_rule_with_v1_config.json");
+    Assertions.assertEquals(List.of(expectedAttributeRule), attributeRules);
+  }
 }

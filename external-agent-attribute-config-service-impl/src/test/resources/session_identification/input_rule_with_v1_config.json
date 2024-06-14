@@ -1,0 +1,28 @@
+{
+  "id": "rule-id",
+  "scope": {
+    "urlMatchRegexes": ["url.*"],
+    "serviceNameRegexes": ["service1.*"]
+  },
+  "status": {
+    "ruleCreationSource": "RULE_CREATION_SOURCE_OLD_API"
+  },
+  "tokenRules": [
+    {
+      "tokenValueRule": {
+        "tokenValueProjection": {
+          "attributeProjection": {
+            "valueProjectionsInOrder": [{
+              "regexCaptureGroup": {
+                "regexCaptureGroup": "(a.*bcd)"
+              }
+            }]
+          }
+        }
+      },
+      "requestSessionTokenDetails": {
+        "tokenLocation": "REQUEST_ATTRIBUTE_KEY_LOCATION_BODY"
+      }
+    }
+  ]
+}
