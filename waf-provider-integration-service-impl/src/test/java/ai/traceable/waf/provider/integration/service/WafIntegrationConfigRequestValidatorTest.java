@@ -50,6 +50,8 @@ import org.junit.jupiter.api.Test;
 class WafIntegrationConfigRequestValidatorTest {
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId("test-tenant");
   public static final String EXISTING_SECURITY_POLICY_NAME = "existingSecurityPolicyName";
+  public static final String EXISTING_PROJECT_ID = "existing-policy-id";
+  public static final String EXSITING_F5_URL = "exsitingF5Url";
   private final WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator;
   private List<WafIntegration> existingWafIntegrations = List.of();
 
@@ -527,7 +529,7 @@ class WafIntegrationConfigRequestValidatorTest {
         WafIntegration.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName("existingName")
                     .setAwsIntegrationParams(
                         AwsIntegrationParams.newBuilder()
                             .setWebIdentityAuthCredentials(
@@ -686,7 +688,7 @@ class WafIntegrationConfigRequestValidatorTest {
             .setId("id1")
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName("existingName")
                     .setAwsIntegrationParams(
                         AwsIntegrationParams.newBuilder()
                             .setWebIdentityAuthCredentials(
@@ -747,7 +749,7 @@ class WafIntegrationConfigRequestValidatorTest {
             .setId("id")
             .setUpdatedWafIntegrationDetails(
                 UpdatedWafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName("existingName")
                     .setUpdatedAwsIntegrationParams(
                         AwsIntegrationUpdateParams.newBuilder()
                             .setAuthCredentials(
@@ -1317,7 +1319,7 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // request containing an existing security policy name should throw
+    // request containing an existing security policy name and project should throw
     WafIntegration existingGcpWafIntegration = getExistingGcpWafIntegration();
 
     CreateWafIntegrationRequest invalidRequest =
@@ -1329,7 +1331,7 @@ class WafIntegrationConfigRequestValidatorTest {
                         GcpIntegrationParams.newBuilder()
                             .setGcpIntegrationDetails(
                                 GcpIntegrationDetails.newBuilder()
-                                    .setProjectId("project-1")
+                                    .setProjectId(EXISTING_PROJECT_ID)
                                     .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME)
                                     .setDenyActionResponseCodeValue(502)
                                     .setAuthCredentials(
@@ -1480,7 +1482,7 @@ class WafIntegrationConfigRequestValidatorTest {
                         F5IntegrationParams.newBuilder()
                             .setF5IntegrationDetails(
                                 F5IntegrationDetails.newBuilder()
-                                    .setUrl("https://localhost:9000")
+                                    .setUrl(EXSITING_F5_URL)
                                     .setF5PolicyDetails(
                                         F5PolicyDetails.newBuilder()
                                             .setPolicyId("policy1")
@@ -1612,7 +1614,7 @@ class WafIntegrationConfigRequestValidatorTest {
                         GcpIntegrationUpdateParams.newBuilder()
                             .setGcpIntegrationDetails(
                                 GcpIntegrationDetails.newBuilder()
-                                    .setProjectId("project-id")
+                                    .setProjectId(EXISTING_PROJECT_ID)
                                     .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME)
                                     .setDenyActionResponseCode(
                                         GcpIntegrationDetails.DenyActionResponseCode
@@ -1716,7 +1718,7 @@ class WafIntegrationConfigRequestValidatorTest {
                         F5IntegrationUpdateParams.newBuilder()
                             .setF5IntegrationDetails(
                                 F5IntegrationDetails.newBuilder()
-                                    .setUrl("https://localhost:9000")
+                                    .setUrl(EXSITING_F5_URL)
                                     .setF5PolicyDetails(
                                         F5PolicyDetails.newBuilder()
                                             .setPolicyId("policy1")
@@ -1826,6 +1828,7 @@ class WafIntegrationConfigRequestValidatorTest {
                     GcpIntegrationParams.newBuilder()
                         .setGcpIntegrationDetails(
                             GcpIntegrationDetails.newBuilder()
+                                .setProjectId(EXISTING_PROJECT_ID)
                                 .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME))))
         .build();
   }
@@ -1839,6 +1842,7 @@ class WafIntegrationConfigRequestValidatorTest {
                     F5IntegrationParams.newBuilder()
                         .setF5IntegrationDetails(
                             F5IntegrationDetails.newBuilder()
+                                .setUrl(EXSITING_F5_URL)
                                 .setF5PolicyDetails(
                                     F5PolicyDetails.newBuilder()
                                         .setPolicyName(EXISTING_SECURITY_POLICY_NAME)))))

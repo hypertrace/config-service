@@ -1,5 +1,11 @@
 package ai.traceable.waf.provider.integration.service;
 
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AWS_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AZURE_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.F5_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.GCP_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -45,11 +51,9 @@ import ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.WafIntegrationScope;
 import ai.traceable.waf.integration.service.api.v1.WebIdentityAuthenticationCredentials;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -177,36 +181,67 @@ public class WafIntegrationConfigRequestValidator {
       List<WafIntegration> existingWafIntegrations) {
     switch (updatedWafIntegrationDetails.getIntegrationParamsCase()) {
       case UPDATED_CLOUDFLARE_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                id, CLOUDFLARE_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            CLOUDFLARE_INTEGRATION_PARAMS);
         validateUpdatedCloudFlareIntegrationParams(
-            id,
             updatedWafIntegrationDetails.getUpdatedCloudflareIntegrationParams(),
             existingWafIntegrations);
         break;
       case UPDATED_AWS_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(id, AWS_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            AWS_INTEGRATION_PARAMS);
         validateUpdatedAwsIntegrationParams(
             id,
             updatedWafIntegrationDetails.getUpdatedAwsIntegrationParams(),
             existingWafIntegrations);
         break;
       case UPDATED_IMPERVA_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                id, IMPERVA_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            IMPERVA_INTEGRATION_PARAMS);
         validateUpdatedImpervaIntegrationParam(
             updatedWafIntegrationDetails.getUpdatedImpervaIntegrationParams());
         break;
       case UPDATED_AZURE_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(id, AZURE_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            AZURE_INTEGRATION_PARAMS);
         validateUpdatedAzureIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedAzureIntegrationParams());
         break;
       case UPDATED_GCP_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(id, GCP_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            GCP_INTEGRATION_PARAMS);
         validateUpdatedGcpIntegrationParams(
-            id,
-            updatedWafIntegrationDetails.getUpdatedGcpIntegrationParams(),
-            existingWafIntegrations);
+            updatedWafIntegrationDetails.getUpdatedGcpIntegrationParams(), existingWafIntegrations);
         break;
       case UPDATED_F5_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(id, F5_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(), existingWafIntegrations, F5_INTEGRATION_PARAMS);
         validateUpdatedF5IntegrationParams(
-            id,
-            updatedWafIntegrationDetails.getUpdatedF5IntegrationParams(),
-            existingWafIntegrations);
+            updatedWafIntegrationDetails.getUpdatedF5IntegrationParams(), existingWafIntegrations);
         break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
@@ -217,66 +252,70 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
-  private void validateUpdatedF5IntegrationParams(
-      String wafIntegrationId,
-      F5IntegrationUpdateParams updatedF5IntegrationParams,
+  private List<WafIntegration> getOtherWafIntegrationOfSameType(
+      @Nullable String id,
+      WafIntegrationDetails.IntegrationParamsCase integrationParamsCase,
       List<WafIntegration> existingWafIntegrations) {
-    validateUpdatedF5IntegrationDetails(
-        wafIntegrationId,
-        updatedF5IntegrationParams.getF5IntegrationDetails(),
-        existingWafIntegrations);
+    return existingWafIntegrations.stream()
+        .filter(
+            wafIntegration ->
+                wafIntegration
+                        .getWafIntegrationDetails()
+                        .getIntegrationParamsCase()
+                        .equals(integrationParamsCase)
+                    && !wafIntegration.getId().equals(id))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private void validateUniqueIntegrationName(
+      String name,
+      List<WafIntegration> otherExistingWafIntegrationsOfSameType,
+      WafIntegrationDetails.IntegrationParamsCase wafIntegrationType) {
+    otherExistingWafIntegrationsOfSameType.forEach(
+        wafIntegration -> {
+          if (wafIntegration.getWafIntegrationDetails().getName().equals(name)) {
+            throw Status.ALREADY_EXISTS
+                .withDescription(wafIntegrationType + " + with name " + name + " already exists.")
+                .asRuntimeException();
+          }
+        });
+  }
+
+  private void validateUpdatedF5IntegrationParams(
+      F5IntegrationUpdateParams updatedF5IntegrationParams,
+      List<WafIntegration> otherExistingWafIntegrations) {
+    validateUpdatedF5IntegrationDetails(updatedF5IntegrationParams.getF5IntegrationDetails());
+    validateF5IntegrationDetailsNoDuplicatesOrThrow(
+        updatedF5IntegrationParams.getF5IntegrationDetails(), otherExistingWafIntegrations);
   }
 
   private void validateUpdatedGcpIntegrationParams(
-      String id,
       GcpIntegrationUpdateParams gcpIntegrationUpdateParams,
-      List<WafIntegration> existingWafIntegrations) {
-    validateUpdatedGcpIntegrationDetails(
-        id, gcpIntegrationUpdateParams.getGcpIntegrationDetails(), existingWafIntegrations);
+      List<WafIntegration> otherExistingWafIntegrations) {
+    validateUpdatedGcpIntegrationDetails(gcpIntegrationUpdateParams.getGcpIntegrationDetails());
+    validateGcpIntegrationDetailsNoDuplicatesOrThrow(
+        gcpIntegrationUpdateParams.getGcpIntegrationDetails(), otherExistingWafIntegrations);
   }
 
-  private void validateUpdatedGcpIntegrationDetails(
-      String id,
-      GcpIntegrationDetails gcpIntegrationDetails,
-      List<WafIntegration> existingWafIntegrations) {
+  private void validateUpdatedGcpIntegrationDetails(GcpIntegrationDetails gcpIntegrationDetails) {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateUpdatedGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
     validateSecurityPolicyScope(gcpIntegrationDetails);
-    validateUpdatedGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
-        id, gcpIntegrationDetails.getSecurityPolicyName(), existingWafIntegrations);
   }
 
-  private void validateUpdatedGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
-      String id, String securityPolicyName, List<WafIntegration> existingWafIntegrations) {
-    boolean securityPolicyNameExists =
-        existingWafIntegrations.stream()
-            .filter(
-                wafIntegration ->
-                    wafIntegration.getWafIntegrationDetails().hasGcpIntegrationParams()
-                        && !wafIntegration.getId().equals(id))
-            .anyMatch(
-                wafIntegration ->
-                    wafIntegration
-                        .getWafIntegrationDetails()
-                        .getGcpIntegrationParams()
-                        .getGcpIntegrationDetails()
-                        .getSecurityPolicyName()
-                        .equals(securityPolicyName));
-    if (securityPolicyNameExists) {
-      throw buildGcpPolicyNameAlreadyExistsException(securityPolicyName);
-    }
+  private void validateGcpIntegrationDetailsNoDuplicatesOrThrow(
+      GcpIntegrationDetails gcpIntegrationDetails,
+      List<WafIntegration> otherExistingGCPWafIntegrations) {
+    otherExistingGCPWafIntegrations.forEach(
+        wafIntegration -> throwIfDuplicateParams(wafIntegration, gcpIntegrationDetails));
   }
 
-  private void validateUpdatedF5IntegrationDetails(
-      String wafIntegrationId,
-      F5IntegrationDetails f5IntegrationDetails,
-      List<WafIntegration> existingWafIntegrations) {
+  private void validateUpdatedF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
     validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
-    validateF5SecurityPolicyDetails(
-        wafIntegrationId, f5IntegrationDetails.getF5PolicyDetails(), existingWafIntegrations);
+    validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
     if (f5IntegrationDetails.hasF5AuthCredentials()) {
       validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
     }
@@ -297,26 +336,51 @@ public class WafIntegrationConfigRequestValidator {
       WafIntegrationDetails wafIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
     switch (wafIntegrationDetails.getIntegrationParamsCase()) {
       case CLOUDFLARE_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                null, CLOUDFLARE_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            CLOUDFLARE_INTEGRATION_PARAMS);
         validateCloudFlareIntegrationParams(
             wafIntegrationDetails.getCloudflareIntegrationParams(), existingWafIntegrations);
         break;
       case AWS_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(null, AWS_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, AWS_INTEGRATION_PARAMS);
         validateAwsIntegrationParams(
             wafIntegrationDetails.getAwsIntegrationParams(), existingWafIntegrations);
         break;
       case IMPERVA_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                null, IMPERVA_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, IMPERVA_INTEGRATION_PARAMS);
         validateImpervaIntegrationParam(wafIntegrationDetails.getImpervaIntegrationParams());
         validateNonCustomSignatureIntegrationTargets(
             wafIntegrationDetails,
             WafIntegrationDetails.IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
         break;
       case AZURE_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                null, AZURE_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, AZURE_INTEGRATION_PARAMS);
         validateAzureIntegrationParam(wafIntegrationDetails.getAzureIntegrationParams());
         validateNonCustomSignatureIntegrationTargets(
             wafIntegrationDetails,
             WafIntegrationDetails.IntegrationParamsCase.AZURE_INTEGRATION_PARAMS);
         break;
       case GCP_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(null, GCP_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, GCP_INTEGRATION_PARAMS);
         validateGcpIntegrationParams(
             wafIntegrationDetails.getGcpIntegrationParams(), existingWafIntegrations);
         validateNonCustomSignatureIntegrationTargets(
@@ -324,6 +388,10 @@ public class WafIntegrationConfigRequestValidator {
             WafIntegrationDetails.IntegrationParamsCase.GCP_INTEGRATION_PARAMS);
         break;
       case F5_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(null, F5_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, F5_INTEGRATION_PARAMS);
         validateF5IntegrationParams(
             wafIntegrationDetails.getF5IntegrationParams(), existingWafIntegrations);
         break;
@@ -337,65 +405,37 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateGcpIntegrationParams(
-      GcpIntegrationParams gcpIntegrationParams, List<WafIntegration> existingWafIntegrations) {
+      GcpIntegrationParams gcpIntegrationParams,
+      List<WafIntegration> otherExistingGCPWafIntegrations) {
     validateGcpIntegrationDetails(
-        gcpIntegrationParams.getGcpIntegrationDetails(), existingWafIntegrations);
+        gcpIntegrationParams.getGcpIntegrationDetails(), otherExistingGCPWafIntegrations);
   }
 
   private void validateF5IntegrationParams(
-      F5IntegrationParams f5IntegrationParams, List<WafIntegration> existingWafIntegrations) {
-    validateF5IntegrationDetails(
-        f5IntegrationParams.getF5IntegrationDetails(), existingWafIntegrations);
+      F5IntegrationParams f5IntegrationParams,
+      List<WafIntegration> otherExistingF5WafIntegrations) {
+    validateF5IntegrationDetails(f5IntegrationParams.getF5IntegrationDetails());
+    validateF5IntegrationDetailsNoDuplicatesOrThrow(
+        f5IntegrationParams.getF5IntegrationDetails(), otherExistingF5WafIntegrations);
   }
 
   private void validateGcpIntegrationDetails(
-      GcpIntegrationDetails gcpIntegrationDetails, List<WafIntegration> existingWafIntegrations) {
+      GcpIntegrationDetails gcpIntegrationDetails,
+      List<WafIntegration> otherExistingGCPWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.PROJECT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         gcpIntegrationDetails, GcpIntegrationDetails.SECURITY_POLICY_NAME_FIELD_NUMBER);
     validateGcpAuthCredentials(gcpIntegrationDetails.getAuthCredentials());
     validateSecurityPolicyScope(gcpIntegrationDetails);
-    validateGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
-        gcpIntegrationDetails.getSecurityPolicyName(), existingWafIntegrations);
+    validateGcpIntegrationDetailsNoDuplicatesOrThrow(
+        gcpIntegrationDetails, otherExistingGCPWafIntegrations);
   }
 
-  private void validateGcpSecurityPolicyNameNotAlreadyExistsOrThrow(
-      String securityPolicyName, List<WafIntegration> existingWafIntegrations) {
-    boolean securityPolicyNameExists =
-        existingWafIntegrations.stream()
-            .filter(
-                wafIntegration ->
-                    wafIntegration.getWafIntegrationDetails().hasGcpIntegrationParams())
-            .anyMatch(
-                wafIntegration ->
-                    wafIntegration
-                        .getWafIntegrationDetails()
-                        .getGcpIntegrationParams()
-                        .getGcpIntegrationDetails()
-                        .getSecurityPolicyName()
-                        .equals(securityPolicyName));
-    if (securityPolicyNameExists) {
-      throw buildGcpPolicyNameAlreadyExistsException(securityPolicyName);
-    }
-  }
-
-  private StatusRuntimeException buildGcpPolicyNameAlreadyExistsException(
-      String securityPolicyName) {
-    return Status.ALREADY_EXISTS
-        .withDescription(
-            "Security policy name "
-                + securityPolicyName
-                + " is already linked to an existing GCP WAF integration.")
-        .asRuntimeException();
-  }
-
-  private void validateF5IntegrationDetails(
-      F5IntegrationDetails f5IntegrationDetails, List<WafIntegration> existingWafIntegrations) {
+  private void validateF5IntegrationDetails(F5IntegrationDetails f5IntegrationDetails) {
     validateNonDefaultPresenceOrThrow(f5IntegrationDetails, F5IntegrationDetails.URL_FIELD_NUMBER);
     validateUrlOrThrow(f5IntegrationDetails.getUrl());
-    validateF5SecurityPolicyDetails(
-        null, f5IntegrationDetails.getF5PolicyDetails(), existingWafIntegrations);
+    validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
     validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
   }
 
@@ -416,41 +456,60 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   /** wafIntegrationId can be null while validating policy details for a creation request */
-  private void validateF5SecurityPolicyDetails(
-      @Nullable String wafIntegrationId,
-      F5PolicyDetails f5PolicyDetails,
-      List<WafIntegration> existingWafIntegrations) {
+  private void validateF5SecurityPolicyDetails(F5PolicyDetails f5PolicyDetails) {
     validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_NAME_FIELD_NUMBER);
-    validateF5SecurityPolicyNameNotAlreadyExistsOrThrow(
-        wafIntegrationId, f5PolicyDetails.getPolicyName(), existingWafIntegrations);
   }
 
-  private void validateF5SecurityPolicyNameNotAlreadyExistsOrThrow(
-      @Nullable String id,
-      String f5SecurityPolicyName,
-      List<WafIntegration> existingWafIntegrations) {
-    boolean securityPolicyNameExists =
-        existingWafIntegrations.stream()
-            .filter(
-                wafIntegration ->
-                    wafIntegration.getWafIntegrationDetails().hasF5IntegrationParams()
-                        && !wafIntegration.getId().equals(id))
-            .anyMatch(
-                wafIntegration ->
-                    wafIntegration
-                        .getWafIntegrationDetails()
-                        .getF5IntegrationParams()
-                        .getF5IntegrationDetails()
-                        .getF5PolicyDetails()
-                        .getPolicyName()
-                        .equals(f5SecurityPolicyName));
-    if (securityPolicyNameExists) {
+  private void validateF5IntegrationDetailsNoDuplicatesOrThrow(
+      F5IntegrationDetails f5IntegrationDetails,
+      List<WafIntegration> otherExistingF5WafIntegrations) {
+    otherExistingF5WafIntegrations.forEach(
+        wafIntegration -> throwIfDuplicateParams(wafIntegration, f5IntegrationDetails));
+  }
+
+  private void throwIfDuplicateParams(
+      WafIntegration existingIntegration, F5IntegrationDetails f5IntegrationDetails) {
+    F5IntegrationDetails existingDetails =
+        existingIntegration
+            .getWafIntegrationDetails()
+            .getF5IntegrationParams()
+            .getF5IntegrationDetails();
+
+    if (existingDetails.getUrl().equals(f5IntegrationDetails.getUrl())
+        && existingDetails
+            .getF5PolicyDetails()
+            .getPolicyName()
+            .equals(f5IntegrationDetails.getF5PolicyDetails().getPolicyName())) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              "F5 Application policy name "
+                  + f5IntegrationDetails.getF5PolicyDetails().getPolicyName()
+                  + " and server URL "
+                  + f5IntegrationDetails.getUrl()
+                  + " are already linked to an existing F5 WAF integration.")
+          .asRuntimeException();
+    }
+  }
+
+  private void throwIfDuplicateParams(
+      WafIntegration existingIntegration, GcpIntegrationDetails gcpIntegrationDetails) {
+    GcpIntegrationDetails existingDetails =
+        existingIntegration
+            .getWafIntegrationDetails()
+            .getGcpIntegrationParams()
+            .getGcpIntegrationDetails();
+    if (existingDetails.getProjectId().equals(gcpIntegrationDetails.getProjectId())
+        && existingDetails
+            .getSecurityPolicyName()
+            .equals(gcpIntegrationDetails.getSecurityPolicyName())) {
       throw Status.ALREADY_EXISTS
           .withDescription(
               "Security policy name "
-                  + f5SecurityPolicyName
-                  + " is already linked to an existing F5 WAF integration.")
+                  + gcpIntegrationDetails.getSecurityPolicyName()
+                  + " and project ID "
+                  + gcpIntegrationDetails.getProjectId()
+                  + " are already linked to an existing GCP WAF Integration")
           .asRuntimeException();
     }
   }
@@ -487,9 +546,8 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdatedCloudFlareIntegrationParams(
-      String id,
       UpdatedCloudflareIntegrationParams cloudflareIntegrationParams,
-      List<WafIntegration> existingIntegrations) {
+      List<WafIntegration> otherExistingCloudFlareWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
@@ -497,12 +555,8 @@ public class WafIntegrationConfigRequestValidator {
     if (cloudflareIntegrationParams.hasEncryptedApiToken()) {
       this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
     }
-    List<WafIntegration> otherIntegrations =
-        existingIntegrations.stream()
-            .filter(Predicate.not(integration -> integration.getId().equals(id)))
-            .collect(Collectors.toUnmodifiableList());
-
-    validateZoneDoesntExist(cloudflareIntegrationParams.getZone(), otherIntegrations);
+    validateZoneDoesntExist(
+        cloudflareIntegrationParams.getZone(), otherExistingCloudFlareWafIntegrations);
   }
 
   private void validateEncryptedData(EncryptedData encryptedData) {
@@ -543,12 +597,12 @@ public class WafIntegrationConfigRequestValidator {
   private void validateUpdatedAwsIntegrationParams(
       String id,
       AwsIntegrationUpdateParams awsIntegrationUpdateParams,
-      List<WafIntegration> existingWafIntegrations) {
+      List<WafIntegration> otherExistingAWSWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         awsIntegrationUpdateParams, AwsIntegrationUpdateParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationUpdateParams.getResourcesList().forEach(this::validateAwsResource);
     validateArnAlreadyExistInAwsWafIntegration(
-        id, awsIntegrationUpdateParams.getResourcesList(), existingWafIntegrations);
+        id, awsIntegrationUpdateParams.getResourcesList(), otherExistingAWSWafIntegrations);
   }
 
   private void validateImpervaIntegrationParam(ImpervaIntegrationParams impervaIntegrationParams) {
@@ -605,13 +659,14 @@ public class WafIntegrationConfigRequestValidator {
 
   private void validateCloudFlareIntegrationParams(
       CloudflareIntegrationParams cloudflareIntegrationParams,
-      List<WafIntegration> existingWafIntegrations) {
+      List<WafIntegration> otherExistingCloudFlareWafIntegrations) {
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
     this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
-    validateZoneDoesntExist(cloudflareIntegrationParams.getZone(), existingWafIntegrations);
+    validateZoneDoesntExist(
+        cloudflareIntegrationParams.getZone(), otherExistingCloudFlareWafIntegrations);
   }
 
   private void validateZoneDoesntExist(String zone, List<WafIntegration> existingIntegrations) {
@@ -627,26 +682,27 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateAwsIntegrationParams(
-      AwsIntegrationParams awsIntegrationParams, List<WafIntegration> existingWafIntegrations) {
+      AwsIntegrationParams awsIntegrationParams,
+      List<WafIntegration> otherExistingAWSWafIntegrations) {
     validateCredentials(awsIntegrationParams);
     validateNonDefaultPresenceOrThrow(
         awsIntegrationParams, AwsIntegrationParams.RESOURCES_FIELD_NUMBER);
     awsIntegrationParams.getResourcesList().forEach(this::validateAwsResource);
     validateArnAlreadyExistInAwsWafIntegration(
-        awsIntegrationParams.getResourcesList(), existingWafIntegrations);
+        awsIntegrationParams.getResourcesList(), otherExistingAWSWafIntegrations);
   }
 
   private static void validateArnAlreadyExistInAwsWafIntegration(
-      List<AwsResource> resources, List<WafIntegration> existingWafIntegrations) {
-    existingWafIntegrations.stream()
-        .filter(
-            wafIntegration -> wafIntegration.getWafIntegrationDetails().hasAwsIntegrationParams())
-        .forEach(wafIntegration -> validateArn(resources, wafIntegration));
+      List<AwsResource> resources, List<WafIntegration> otherExistingAWSWafIntegrations) {
+    otherExistingAWSWafIntegrations.forEach(
+        wafIntegration -> validateArn(resources, wafIntegration));
   }
 
   private void validateArnAlreadyExistInAwsWafIntegration(
-      String id, List<AwsResource> resources, List<WafIntegration> existingWafIntegrations) {
-    existingWafIntegrations.stream()
+      String id,
+      List<AwsResource> resources,
+      List<WafIntegration> otherExistingAWSWafIntegrations) {
+    otherExistingAWSWafIntegrations.stream()
         .filter(
             wafIntegration -> wafIntegration.getWafIntegrationDetails().hasAwsIntegrationParams())
         .forEach(
