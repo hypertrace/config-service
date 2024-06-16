@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static com.google.common.io.Resources.getResource;
@@ -23,6 +24,9 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.data.classification.config.service.v1.DeleteDataSetRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
+import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
+import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.CreateRedactionRuleRequest;
 import ai.traceable.sensitivedata.config.service.v1.DropUnparsedJsonPolicy;
 import ai.traceable.sensitivedata.config.service.v1.GetAllRedactionRulesRequest;
@@ -244,6 +248,81 @@ class SensitiveDataConfigServiceIntegrationTest extends TraceableConfigServiceIn
 
     updateRedactionStrategyForType(
         ParamType.PARAM_TYPE_HEADER, RedactionStrategy.REDACTION_STRATEGY_RAW);
+  }
+
+  @Test
+  void testDataTypeCreateAndUpdate() {
+    requestContext = RequestContext.forTenantId("test-tenant");
+
+    DataType dataType =
+        DataType.newBuilder()
+            .setId("id-1")
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .setName("rule-1")
+                    .setDescription("description-2")
+                    .setDataSuppression(DataSuppression.DATA_SUPPRESSION_REDACT)
+                    .setSensitivity(DataSetInfo.Sensitivity.SENSITIVITY_CRITICAL)
+                    .setEnabled(true)
+                    .addScopedPatterns(
+                        ScopedPattern.newBuilder()
+                            .setAction(Action.ACTION_MATCH)
+                            .setKeyPattern(
+                                StringPattern.newBuilder()
+                                    .setOperator(Operator.OPERATOR_EQUALS)
+                                    .setValue("test-key"))
+                            .addLocations(LOCATION_QUERY)
+                            .setGlobalScope(GlobalScope.getDefaultInstance())))
+            .build();
+
+    // create data type
+    requestContext.call(
+        () ->
+            dataClassificationConfigServiceStub.createDataType(
+                CreateDataTypeRequest.newBuilder().setRule(dataType.getRule()).build()));
+    GetDataTypesResponse dataTypesResponse =
+        requestContext.call(
+            () ->
+                dataClassificationConfigServiceStub.getDataTypes(
+                    GetDataTypesRequest.getDefaultInstance()));
+
+    DataType createdDataType =
+        dataTypesResponse.getDataTypesList().stream()
+            .filter(dt -> dt.getRule().getName().equals("rule-1"))
+            .findAny()
+            .get();
+
+    assertTrue(createdDataType.hasMetadata());
+    assertTrue(createdDataType.getMetadata().getLastUpdatedTimestamp().getSeconds() > 0);
+
+    DataType dataTypeWithUpdate =
+        createdDataType.toBuilder()
+            .setRule(createdDataType.getRule().toBuilder().setName("updated-rule-1"))
+            .build();
+
+    // update data type
+    requestContext.call(
+        () ->
+            dataClassificationConfigServiceStub.updateDataType(
+                UpdateDataTypeRequest.newBuilder()
+                    .setId(dataTypeWithUpdate.getId())
+                    .setRule(dataTypeWithUpdate.getRule())
+                    .build()));
+
+    dataTypesResponse =
+        requestContext.call(
+            () ->
+                dataClassificationConfigServiceStub.getDataTypes(
+                    GetDataTypesRequest.getDefaultInstance()));
+
+    DataType updatedDataType =
+        dataTypesResponse.getDataTypesList().stream()
+            .filter(dt -> dt.getRule().getName().equals("updated-rule-1"))
+            .findAny()
+            .get();
+
+    assertTrue(updatedDataType.hasMetadata());
+    assertTrue(updatedDataType.getMetadata().getLastUpdatedTimestamp().getSeconds() > 0);
   }
 
   private DataSet createDataSet(

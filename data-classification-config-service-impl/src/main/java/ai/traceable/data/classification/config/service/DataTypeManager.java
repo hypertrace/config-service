@@ -10,6 +10,7 @@ import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeResponse;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataType;
+import ai.traceable.data.classification.config.service.v1.DataTypeMetadata;
 import ai.traceable.data.classification.config.service.v1.DeleteDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.DeleteDataTypeResponse;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
@@ -20,6 +21,7 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
 import java.util.Collection;
 import java.util.Comparator;
@@ -126,6 +128,7 @@ class DataTypeManager {
         DataType.newBuilder()
             .setId(UUID.randomUUID().toString())
             .setRule(request.getRule())
+            .setMetadata(createDataTypeMetadata())
             .build();
     return CreateDataTypeResponse.newBuilder()
         .setDataType(this.dataTypeStore.upsertObject(requestContext, datatype).getData())
@@ -172,7 +175,11 @@ class DataTypeManager {
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
 
     DataType datatypeToUpdate =
-        DataType.newBuilder().setId(request.getId()).setRule(request.getRule()).build();
+        DataType.newBuilder()
+            .setId(request.getId())
+            .setRule(request.getRule())
+            .setMetadata(createDataTypeMetadata())
+            .build();
     return UpdateDataTypeResponse.newBuilder()
         .setDataType(this.dataTypeStore.upsertObject(requestContext, datatypeToUpdate).getData())
         .build();
@@ -244,5 +251,9 @@ class DataTypeManager {
     return this.dataClassificationConfig
         .getSystemDatatype(id)
         .filter(unused -> this.deletedSystemDatatypeStore.getData(requestContext, id).isEmpty());
+  }
+
+  private DataTypeMetadata.Builder createDataTypeMetadata() {
+    return DataTypeMetadata.newBuilder().setLastUpdatedTimestamp(Timestamps.now());
   }
 }
