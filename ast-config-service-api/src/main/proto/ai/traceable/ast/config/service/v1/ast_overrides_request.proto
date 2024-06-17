@@ -22,8 +22,8 @@ message AstOverrideInfo {
   string name = 1;
   optional string description = 2;
   bool is_enabled = 3;
-  OverrideScope override_scope = 4;
-  OverrideConfig override_config = 5;
+  repeated OverrideScope scopes = 4;
+  OverrideConfig config = 5;
 }
 
 message DeleteAstOverridesRequest {
