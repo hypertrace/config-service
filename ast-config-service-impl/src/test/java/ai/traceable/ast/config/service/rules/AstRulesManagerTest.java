@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
+import ai.traceable.ast.config.service.store.AstFeatureConfigStore;
+import ai.traceable.ast.config.service.store.ScanPurgeConfigStore;
+import ai.traceable.ast.config.service.store.VulnerabilityMetadataOverridesStore;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;

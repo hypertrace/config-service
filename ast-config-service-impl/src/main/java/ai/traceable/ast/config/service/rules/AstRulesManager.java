@@ -1,6 +1,9 @@
 package ai.traceable.ast.config.service.rules;
 
 import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
+import ai.traceable.ast.config.service.store.AstFeatureConfigStore;
+import ai.traceable.ast.config.service.store.ScanPurgeConfigStore;
+import ai.traceable.ast.config.service.store.VulnerabilityMetadataOverridesStore;
 import ai.traceable.ast.config.service.v1.AstEnabledConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;

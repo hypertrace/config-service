@@ -1,4 +1,4 @@
-package ai.traceable.ast.config.service.rules;
+package ai.traceable.ast.config.service.store;
 
 import static ai.traceable.ast.config.service.constants.AstConfigConstants.AST_CONFIG_NAMESPACE;
 

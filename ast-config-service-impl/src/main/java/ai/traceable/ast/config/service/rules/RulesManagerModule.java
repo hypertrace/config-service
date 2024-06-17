@@ -11,7 +11,6 @@ public class RulesManagerModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(RulesManager.class).to(AstRulesManager.class);
-    bind(AstConfigServiceRequestValidator.class).to(AstConfigServiceRequestValidatorImpl.class);
   }
 
   @Provides

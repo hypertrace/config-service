@@ -1,5 +1,7 @@
 package ai.traceable.ast.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -10,16 +12,22 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
-import ai.traceable.ast.config.service.rules.AstConfigServiceRequestValidator;
+import ai.traceable.ast.config.service.manager.AstOverridesManager;
 import ai.traceable.ast.config.service.rules.CustomTestPluginManager;
-import ai.traceable.ast.config.service.rules.CustomTestPluginStore;
 import ai.traceable.ast.config.service.rules.RulesManager;
+import ai.traceable.ast.config.service.store.AstOverridesStore;
+import ai.traceable.ast.config.service.store.CustomTestPluginStore;
+import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc;
+import ai.traceable.ast.config.service.v1.AstOverride;
+import ai.traceable.ast.config.service.v1.AstOverrideInfo;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
+import ai.traceable.ast.config.service.v1.CreateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.CustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CustomTestPluginFilter;
+import ai.traceable.ast.config.service.v1.DeleteAstOverridesRequest;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
@@ -30,18 +38,26 @@ import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsResponse;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.GetAstOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAstOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
+import ai.traceable.ast.config.service.v1.MutationOverride;
+import ai.traceable.ast.config.service.v1.OverrideConfig;
+import ai.traceable.ast.config.service.v1.OverrideScope;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.StringList;
+import ai.traceable.ast.config.service.v1.SystemDefinedMutationOverride;
+import ai.traceable.ast.config.service.v1.UpdateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
+import ai.traceable.ast.config.service.validation.AstConfigServiceRequestValidator;
 import com.google.protobuf.Duration;
 import io.grpc.Status;
 import io.grpc.Status.Code;
@@ -50,7 +66,11 @@ import java.util.List;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.test.MockGenericConfigService;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -63,17 +83,42 @@ class AstConfigServiceImplTest {
   private AstConfigServiceConfig config;
   private AstConfigServiceImpl astConfigService;
   private CustomTestPluginStore customTestPluginStore;
+  private MockGenericConfigService mockGenericConfigService;
+  private AstConfigServiceGrpc.AstConfigServiceBlockingStub astConfigServiceBlockingStub;
 
   @BeforeEach
   void setup() {
+    this.mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDeleteAll();
+
+    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+
+    ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+
+    this.astConfigServiceBlockingStub =
+        AstConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+
     requestValidator = mock(AstConfigServiceRequestValidator.class);
     rulesManager = mock(RulesManager.class);
     config = mock(AstConfigServiceConfig.class);
     customTestPluginStore = mock(CustomTestPluginStore.class);
     CustomTestPluginManager customTestPluginManager =
         new CustomTestPluginManager(customTestPluginStore);
-    astConfigService =
-        new AstConfigServiceImpl(requestValidator, rulesManager, config, customTestPluginManager);
+    this.astConfigService =
+        new AstConfigServiceImpl(
+            requestValidator,
+            rulesManager,
+            config,
+            customTestPluginManager,
+            new AstOverridesManager(
+                new AstOverridesStore(genericStub, configChangeEventGenerator)));
+    this.mockGenericConfigService.addService(this.astConfigService).start();
+  }
+
+  @AfterEach
+  void afterEach() {
+    this.mockGenericConfigService.shutdown();
   }
 
   @Nested
@@ -777,5 +822,128 @@ class AstConfigServiceImplTest {
 
       verify(responseStreamObserver, times(1)).onCompleted();
     }
+  }
+
+  @Test
+  void testAstOverridesCrud() {
+    final AstOverrideInfo astOverrideInfo1 =
+        AstOverrideInfo.newBuilder()
+            .setName("name1")
+            .setDescription("description")
+            .setIsEnabled(true)
+            .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId1"))
+            .setConfig(
+                OverrideConfig.newBuilder()
+                    .setMutationOverride(
+                        MutationOverride.newBuilder()
+                            .setSystemDefinedMutationOverride(
+                                SystemDefinedMutationOverride.getDefaultInstance())))
+            .build();
+    final AstOverrideInfo astOverrideInfo2 =
+        AstOverrideInfo.newBuilder()
+            .setName("name2")
+            .setDescription("description")
+            .setIsEnabled(false)
+            .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
+            .setConfig(
+                OverrideConfig.newBuilder()
+                    .setMutationOverride(
+                        MutationOverride.newBuilder()
+                            .setSystemDefinedMutationOverride(
+                                SystemDefinedMutationOverride.getDefaultInstance())))
+            .build();
+
+    AstOverride createdAstOverride1 =
+        astConfigServiceBlockingStub
+            .createAstOverride(
+                CreateAstOverrideRequest.newBuilder().setAstOverrideInfo(astOverrideInfo1).build())
+            .getAstOverride();
+    GetAstOverridesResponse getAstOverridesResponse =
+        astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
+    assertEquals(1, getAstOverridesResponse.getAstOverridesCount());
+
+    AstOverride createdAstOverride2 =
+        astConfigServiceBlockingStub
+            .createAstOverride(
+                CreateAstOverrideRequest.newBuilder().setAstOverrideInfo(astOverrideInfo2).build())
+            .getAstOverride();
+    getAstOverridesResponse =
+        astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
+    assertEquals(2, getAstOverridesResponse.getAstOverridesCount());
+
+    assertTrue(
+        getAstOverridesResponse
+            .getAstOverridesList()
+            .containsAll(
+                List.of(
+                    AstOverride.newBuilder()
+                        .setId(createdAstOverride1.getId())
+                        .setName("name1")
+                        .setDescription("description")
+                        .setIsEnabled(true)
+                        .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId1"))
+                        .setConfig(
+                            OverrideConfig.newBuilder()
+                                .setMutationOverride(
+                                    MutationOverride.newBuilder()
+                                        .setSystemDefinedMutationOverride(
+                                            SystemDefinedMutationOverride.getDefaultInstance())))
+                        .build(),
+                    AstOverride.newBuilder()
+                        .setId(createdAstOverride2.getId())
+                        .setName("name2")
+                        .setDescription("description")
+                        .setIsEnabled(false)
+                        .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
+                        .setConfig(
+                            OverrideConfig.newBuilder()
+                                .setMutationOverride(
+                                    MutationOverride.newBuilder()
+                                        .setSystemDefinedMutationOverride(
+                                            SystemDefinedMutationOverride.getDefaultInstance())))
+                        .build())));
+
+    astConfigServiceBlockingStub.updateAstOverride(
+        UpdateAstOverrideRequest.newBuilder()
+            .setId(createdAstOverride1.getId())
+            .setAstOverrideInfo(
+                AstOverrideInfo.newBuilder()
+                    .setName("updatedName")
+                    .setDescription("updatedDescription")
+                    .setIsEnabled(false)
+                    .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
+                    .setConfig(
+                        OverrideConfig.newBuilder()
+                            .setMutationOverride(
+                                MutationOverride.newBuilder()
+                                    .setSystemDefinedMutationOverride(
+                                        SystemDefinedMutationOverride.getDefaultInstance())))
+                    .build())
+            .build());
+    getAstOverridesResponse =
+        astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
+    assertEquals(2, getAstOverridesResponse.getAstOverridesCount());
+    assertTrue(
+        getAstOverridesResponse
+            .getAstOverridesList()
+            .contains(
+                AstOverride.newBuilder()
+                    .setId(createdAstOverride1.getId())
+                    .setName("updatedName")
+                    .setDescription("updatedDescription")
+                    .setIsEnabled(false)
+                    .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
+                    .setConfig(
+                        OverrideConfig.newBuilder()
+                            .setMutationOverride(
+                                MutationOverride.newBuilder()
+                                    .setSystemDefinedMutationOverride(
+                                        SystemDefinedMutationOverride.getDefaultInstance())))
+                    .build()));
+    astConfigServiceBlockingStub.deleteAstOverrides(
+        DeleteAstOverridesRequest.newBuilder().addIds(createdAstOverride1.getId()).build());
+    getAstOverridesResponse =
+        astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
+    assertEquals(List.of(createdAstOverride2), getAstOverridesResponse.getAstOverridesList());
   }
 }

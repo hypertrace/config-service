@@ -1,14 +1,18 @@
 package ai.traceable.ast.config.service;
 
 import ai.traceable.ast.config.service.configs.AstConfigServiceConfig;
-import ai.traceable.ast.config.service.rules.AstConfigServiceRequestValidator;
+import ai.traceable.ast.config.service.manager.AstOverridesManager;
 import ai.traceable.ast.config.service.rules.CustomTestPluginManager;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc.AstConfigServiceImplBase;
 import ai.traceable.ast.config.service.v1.AstDisabledConfig;
 import ai.traceable.ast.config.service.v1.AstFeatureConfig;
+import ai.traceable.ast.config.service.v1.CreateAstOverrideRequest;
+import ai.traceable.ast.config.service.v1.CreateAstOverrideResponse;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginResponse;
+import ai.traceable.ast.config.service.v1.DeleteAstOverridesRequest;
+import ai.traceable.ast.config.service.v1.DeleteAstOverridesResponse;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
@@ -21,6 +25,8 @@ import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRe
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
 import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsResponse;
+import ai.traceable.ast.config.service.v1.GetAstOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAstOverridesResponse;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
@@ -28,11 +34,14 @@ import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRespo
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigResponse;
+import ai.traceable.ast.config.service.v1.UpdateAstOverrideRequest;
+import ai.traceable.ast.config.service.v1.UpdateAstOverrideResponse;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginResponse;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
+import ai.traceable.ast.config.service.validation.AstConfigServiceRequestValidator;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
@@ -47,6 +56,7 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
   private final RulesManager rulesManager;
   private final AstConfigServiceConfig config;
   private final CustomTestPluginManager customTestPluginManager;
+  private final AstOverridesManager astOverridesManager;
 
   @Override
   public void updateScanPurgeConfig(
@@ -329,6 +339,92 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
     } catch (Exception exception) {
       log.error(
           "Unable to delete custom test plugin for request {} with context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getAstOverrides(
+      final GetAstOverridesRequest request,
+      final StreamObserver<GetAstOverridesResponse> responseObserver) {
+    final RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          GetAstOverridesResponse.newBuilder()
+              .addAllAstOverrides(astOverridesManager.getAstOverrides(requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (final Exception exception) {
+      log.error(
+          "Unable to get ast overrides for request {} within context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void createAstOverride(
+      final CreateAstOverrideRequest request,
+      final StreamObserver<CreateAstOverrideResponse> responseObserver) {
+    final RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          CreateAstOverrideResponse.newBuilder()
+              .setAstOverride(astOverridesManager.createAstOverride(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (final Exception exception) {
+      log.error(
+          "Unable to create ast override for request {} within context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void updateAstOverride(
+      UpdateAstOverrideRequest request,
+      StreamObserver<UpdateAstOverrideResponse> responseObserver) {
+    final RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          UpdateAstOverrideResponse.newBuilder()
+              .setAstOverride(astOverridesManager.updateAstOverride(requestContext, request))
+              .build());
+      responseObserver.onCompleted();
+    } catch (final Exception exception) {
+      log.error(
+          "Unable to update ast override for request {} within context {}",
+          request,
+          requestContext,
+          exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteAstOverrides(
+      final DeleteAstOverridesRequest request,
+      final StreamObserver<DeleteAstOverridesResponse> responseObserver) {
+    final RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      requestValidator.validateOrThrow(requestContext, request);
+      astOverridesManager.deleteAstOverrides(requestContext, request);
+      responseObserver.onNext(DeleteAstOverridesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (final Exception exception) {
+      log.error(
+          "Unable to delete ast overrides for request {} within context {}",
           request,
           requestContext,
           exception);

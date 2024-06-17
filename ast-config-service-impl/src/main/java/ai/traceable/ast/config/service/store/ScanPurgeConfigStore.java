@@ -1,4 +1,4 @@
-package ai.traceable.ast.config.service.rules;
+package ai.traceable.ast.config.service.store;
 
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import com.google.inject.Inject;

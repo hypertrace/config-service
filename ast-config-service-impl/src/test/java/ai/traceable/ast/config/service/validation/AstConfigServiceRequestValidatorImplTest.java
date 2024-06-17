@@ -1,23 +1,33 @@
-package ai.traceable.ast.config.service.rules;
+package ai.traceable.ast.config.service.validation;
 
+import static ai.traceable.ast.config.service.v1.MatchOperator.MATCH_OPERATOR_EQUALS;
+import static ai.traceable.ast.config.service.v1.MutationAction.MUTATION_ACTION_ADD;
 import static ai.traceable.ast.config.service.v1.VulnerabilitySeverity.VULNERABILITY_SEVERITY_HIGH;
 import static ai.traceable.ast.config.service.v1.VulnerabilitySeverity.VULNERABILITY_SEVERITY_UNSPECIFIED;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.ast.config.service.manager.AstOverridesManager;
+import ai.traceable.ast.config.service.v1.Assertion;
+import ai.traceable.ast.config.service.v1.AssertionOverride;
+import ai.traceable.ast.config.service.v1.AssertionTypeImmediateResponse;
 import ai.traceable.ast.config.service.v1.AstEnabledConfig;
+import ai.traceable.ast.config.service.v1.AstOverrideInfo;
 import ai.traceable.ast.config.service.v1.AstReplayConfig;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
+import ai.traceable.ast.config.service.v1.CreateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
+import ai.traceable.ast.config.service.v1.DeleteAstOverridesRequest;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAstOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.HttpMethod;
@@ -26,35 +36,44 @@ import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.KeyValuePredicate;
 import ai.traceable.ast.config.service.v1.KeyValuePredicateWithLocation;
 import ai.traceable.ast.config.service.v1.Location;
+import ai.traceable.ast.config.service.v1.Mutation;
+import ai.traceable.ast.config.service.v1.MutationOverride;
+import ai.traceable.ast.config.service.v1.OverrideConfig;
+import ai.traceable.ast.config.service.v1.OverrideScope;
 import ai.traceable.ast.config.service.v1.RelationalOperator;
 import ai.traceable.ast.config.service.v1.SampleData;
 import ai.traceable.ast.config.service.v1.ScanPurgeConfig;
 import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
+import ai.traceable.ast.config.service.v1.SystemDefinedMutationOverride;
 import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.TestPluginSafetyType;
 import ai.traceable.ast.config.service.v1.TestPluginType;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
+import ai.traceable.ast.config.service.v1.UpdateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
+import ai.traceable.ast.config.service.v1.UserDefinedAssertionOverride;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import com.google.protobuf.Duration;
+import com.google.protobuf.Value;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class AstConfigServiceRequestValidatorImplTest {
   private static final String TENANT_ID = "default-tenant";
-  private AstConfigServiceRequestValidatorImpl rulesValidator =
-      new AstConfigServiceRequestValidatorImpl();
-  private RequestContext mockRequestContext = Mockito.mock(RequestContext.class);
-  private Map<String, TagValue> tags =
-      Map.of("key1", TagValue.newBuilder().addValue("value1").build());
+  @Mock private RequestContext mockRequestContext;
+  @Mock private AstOverridesManager astOverridesManager;
+  @InjectMocks private AstConfigServiceRequestValidatorImpl rulesValidator;
 
   private final SampleData sampleData =
       SampleData.newBuilder()
@@ -668,6 +687,188 @@ class AstConfigServiceRequestValidatorImplTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> rulesValidator.validateOrThrow(mockRequestContext, request));
+  }
+
+  @Test
+  void testValidateGetAstOverridesRequest() {
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, GetAstOverridesRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, GetAstOverridesRequest.getDefaultInstance()));
+  }
+
+  @Test
+  void testValidateCreateAstOverrideRequest() {
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, CreateAstOverrideRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                CreateAstOverrideRequest.newBuilder()
+                    .setAstOverrideInfo(
+                        AstOverrideInfo.newBuilder()
+                            .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId"))
+                            .setConfig(
+                                OverrideConfig.newBuilder()
+                                    .setMutationOverride(
+                                        MutationOverride.newBuilder()
+                                            .setSystemDefinedMutationOverride(
+                                                SystemDefinedMutationOverride.newBuilder()
+                                                    .setMutation(
+                                                        Mutation.newBuilder()
+                                                            .setFixedMutationId("fixedMutationId")
+                                                            .setKey("key")
+                                                            .setAction(MUTATION_ACTION_ADD)
+                                                            .setValue(Value.getDefaultInstance())))
+                                            .build())))
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                CreateAstOverrideRequest.newBuilder()
+                    .setAstOverrideInfo(
+                        AstOverrideInfo.newBuilder()
+                            .setName("name")
+                            .setIsEnabled(true)
+                            .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId"))
+                            .setConfig(
+                                OverrideConfig.newBuilder()
+                                    .setMutationOverride(
+                                        MutationOverride.newBuilder()
+                                            .setSystemDefinedMutationOverride(
+                                                SystemDefinedMutationOverride.newBuilder()
+                                                    .setMutation(
+                                                        Mutation.newBuilder()
+                                                            .setFixedMutationId("fixedMutationId")
+                                                            .setKey("key")
+                                                            .setAction(MUTATION_ACTION_ADD)
+                                                            .setValue(
+                                                                Value.newBuilder()
+                                                                    .setStringValue("string"))))
+                                            .build())))
+                    .build()));
+  }
+
+  @Test
+  void testValidateUpdateAstOverrideRequest() {
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, UpdateAstOverrideRequest.newBuilder().setId("id").build()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    when(astOverridesManager.overrideExists(mockRequestContext, "id")).thenReturn(false);
+    AstOverrideInfo astOverrideInfo =
+        AstOverrideInfo.newBuilder()
+            .setName("name")
+            .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId"))
+            .setConfig(
+                OverrideConfig.newBuilder()
+                    .setAssertionOverride(
+                        AssertionOverride.newBuilder()
+                            .setUserDefinedAssertionOverride(
+                                UserDefinedAssertionOverride.newBuilder()
+                                    .setAssertion(
+                                        Assertion.newBuilder()
+                                            .setFixedAssertionId("fixedAssertionId")
+                                            .setKey("key")
+                                            .setOperator(MATCH_OPERATOR_EQUALS)
+                                            .setLhs("lhs")
+                                            .setRhs("rhs")
+                                            .setAssertionTypeImmediateResponse(
+                                                AssertionTypeImmediateResponse
+                                                    .getDefaultInstance())))
+                            .build()))
+            .build();
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                UpdateAstOverrideRequest.newBuilder()
+                    .setId("id")
+                    .setAstOverrideInfo(astOverrideInfo)
+                    .build()));
+    when(astOverridesManager.overrideExists(mockRequestContext, "id")).thenReturn(true);
+
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                CreateAstOverrideRequest.newBuilder()
+                    .setAstOverrideInfo(
+                        AstOverrideInfo.newBuilder()
+                            .setName("name")
+                            .setConfig(
+                                OverrideConfig.newBuilder()
+                                    .setAssertionOverride(
+                                        AssertionOverride.newBuilder()
+                                            .setUserDefinedAssertionOverride(
+                                                UserDefinedAssertionOverride.newBuilder()
+                                                    .setAssertion(
+                                                        Assertion.newBuilder()
+                                                            .setFixedAssertionId("fixedAssertionId")
+                                                            .setKey("key")
+                                                            .setOperator(MATCH_OPERATOR_EQUALS)
+                                                            .setLhs("lhs")
+                                                            .setRhs("rhs")
+                                                            .setAssertionTypeImmediateResponse(
+                                                                AssertionTypeImmediateResponse
+                                                                    .getDefaultInstance())))
+                                            .build())))
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext,
+                UpdateAstOverrideRequest.newBuilder()
+                    .setId("id")
+                    .setAstOverrideInfo(astOverrideInfo)
+                    .build()));
+  }
+
+  @Test
+  void testValidateDeleteAstOverridesRequest() {
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, DeleteAstOverridesRequest.getDefaultInstance()));
+
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TENANT_ID));
+
+    assertThrows(
+        RuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, DeleteAstOverridesRequest.newBuilder().build()));
+
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                mockRequestContext, DeleteAstOverridesRequest.newBuilder().addIds("id").build()));
   }
 
   private String getSampleRequestBody() {

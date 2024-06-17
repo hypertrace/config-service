@@ -1,5 +1,6 @@
 package ai.traceable.ast.config.service.rules;
 
+import ai.traceable.ast.config.service.store.CustomTestPluginStore;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomTestPlugin;

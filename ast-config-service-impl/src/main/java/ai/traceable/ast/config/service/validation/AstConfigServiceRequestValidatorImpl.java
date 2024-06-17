@@ -1,48 +1,76 @@
-package ai.traceable.ast.config.service.rules;
+package ai.traceable.ast.config.service.validation;
 
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
+
+import ai.traceable.ast.config.service.manager.AstOverridesManager;
+import ai.traceable.ast.config.service.v1.Assertion;
+import ai.traceable.ast.config.service.v1.AssertionOverride;
 import ai.traceable.ast.config.service.v1.AstFeatureConfigFilter;
+import ai.traceable.ast.config.service.v1.AstOverrideInfo;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
+import ai.traceable.ast.config.service.v1.CreateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomerDefinedTagsMap;
+import ai.traceable.ast.config.service.v1.DeleteAstOverridesRequest;
 import ai.traceable.ast.config.service.v1.DeleteCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.DeleteVulnerabilityMetadataOverridesConfigRequest;
 import ai.traceable.ast.config.service.v1.EditVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAllCustomTestPluginsRequest;
 import ai.traceable.ast.config.service.v1.GetAllVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetAstFeatureConfigsRequest;
+import ai.traceable.ast.config.service.v1.GetAstOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.HttpMethod;
 import ai.traceable.ast.config.service.v1.HttpRestApiDetails;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.Location;
+import ai.traceable.ast.config.service.v1.MatchOperator;
+import ai.traceable.ast.config.service.v1.Mutation;
+import ai.traceable.ast.config.service.v1.MutationAction;
+import ai.traceable.ast.config.service.v1.MutationOverride;
+import ai.traceable.ast.config.service.v1.OverrideConfig;
+import ai.traceable.ast.config.service.v1.OverrideScope;
 import ai.traceable.ast.config.service.v1.RelationalOperator;
 import ai.traceable.ast.config.service.v1.SampleData;
 import ai.traceable.ast.config.service.v1.SpanFilters;
 import ai.traceable.ast.config.service.v1.StringPredicate;
+import ai.traceable.ast.config.service.v1.SystemDefinedAssertionOverride;
+import ai.traceable.ast.config.service.v1.SystemDefinedMutationOverride;
 import ai.traceable.ast.config.service.v1.TagValue;
 import ai.traceable.ast.config.service.v1.TestPluginSafetyType;
 import ai.traceable.ast.config.service.v1.TestPluginType;
 import ai.traceable.ast.config.service.v1.UpdateAstFeatureConfigRequest;
+import ai.traceable.ast.config.service.v1.UpdateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
+import ai.traceable.ast.config.service.v1.UserDefinedAssertionOverride;
+import ai.traceable.ast.config.service.v1.UserDefinedMutationOverride;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import ai.traceable.ast.config.service.v1.VulnerabilitySeverity;
 import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
 import com.google.protobuf.Duration;
+import com.google.protobuf.Value;
+import com.google.re2j.Pattern;
+import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.validation.GrpcValidatorUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestValidator {
+@AllArgsConstructor(onConstructor_ = {@Inject})
+public class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestValidator {
+
+  private static final Pattern ALPHA_NUMERIC_WITH_SPACES_PATTERN =
+      Pattern.compile("^\\[a-zA-Z0-9 \\]*$");
+  private final AstOverridesManager astOverridesManager;
 
   @Override
   public void validateOrThrow(RequestContext requestContext, UpdateScanPurgeConfigRequest request) {
@@ -277,6 +305,204 @@ class AstConfigServiceRequestValidatorImpl implements AstConfigServiceRequestVal
     }
     if (request.getEnabledConfig().getReplayConfig().hasSpanFilters()) {
       validateSpanFilters(request.getEnabledConfig().getReplayConfig().getSpanFilters());
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
+      final RequestContext requestContext, final GetAstOverridesRequest request) {
+    validateOrThrow(requestContext);
+  }
+
+  @Override
+  public void validateOrThrow(
+      final RequestContext requestContext, final CreateAstOverrideRequest request) {
+    validateOrThrow(requestContext);
+    validateAstOverrideInfo(requestContext, request.getAstOverrideInfo());
+  }
+
+  @Override
+  public void validateOrThrow(
+      final RequestContext requestContext, final UpdateAstOverrideRequest request) {
+    validateOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, UpdateAstOverrideRequest.ID_FIELD_NUMBER);
+    validateAstOverrideInfo(requestContext, request.getAstOverrideInfo());
+
+    if (!astOverridesManager.overrideExists(requestContext, request.getId())) {
+      throw Status.NOT_FOUND
+          .withDescription(
+              String.format(
+                  "Unable to find override for update in context %s for request %s",
+                  requestContext, request))
+          .asRuntimeException();
+    }
+  }
+
+  @Override
+  public void validateOrThrow(
+      final RequestContext requestContext, final DeleteAstOverridesRequest request) {
+    validateOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, DeleteAstOverridesRequest.IDS_FIELD_NUMBER);
+  }
+
+  private void validateAstOverrideInfo(
+      final RequestContext requestContext, final AstOverrideInfo astOverrideInfo) {
+    if (astOverrideInfo.getName().isBlank()
+        || ALPHA_NUMERIC_WITH_SPACES_PATTERN.matcher(astOverrideInfo.getName()).matches()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Invalid name in ast override info: %s", astOverrideInfo))
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    validateOverrideScope(requestContext, astOverrideInfo.getScopesList());
+    validateOverrideConfig(requestContext, astOverrideInfo.getConfig());
+  }
+
+  private void validateOverrideConfig(
+      final RequestContext requestContext, final OverrideConfig config) {
+    switch (config.getTypeCase()) {
+      case MUTATION_OVERRIDE:
+        validateMutationOverrideConfig(requestContext, config.getMutationOverride());
+        return;
+      case ASSERTION_OVERRIDE:
+        validateAssertionOverrideConfig(requestContext, config.getAssertionOverride());
+        return;
+      case TYPE_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unexpected override config set: %s", config))
+            .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateMutationOverrideConfig(
+      final RequestContext requestContext, final MutationOverride mutationOverride) {
+    switch (mutationOverride.getTypeCase()) {
+      case USER_DEFINED_MUTATION_OVERRIDE:
+        validateUserDefinedMutationOverride(
+            requestContext, mutationOverride.getUserDefinedMutationOverride());
+        return;
+      case SYSTEM_DEFINED_MUTATION_OVERRIDE:
+        validateSystemDefinedMutationOverride(
+            requestContext, mutationOverride.getSystemDefinedMutationOverride());
+        return;
+      case TYPE_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format("Unexpected mutation override set: %s", mutationOverride))
+            .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateAssertionOverrideConfig(
+      final RequestContext requestContext, final AssertionOverride assertionOverride) {
+    switch (assertionOverride.getTypeCase()) {
+      case USER_DEFINED_ASSERTION_OVERRIDE:
+        validateUserDefinedAssertionOverride(
+            requestContext, assertionOverride.getUserDefinedAssertionOverride());
+        return;
+      case SYSTEM_DEFINED_ASSERTION_OVERRIDE:
+        validateSystemDefinedAssertionOverride(
+            requestContext, assertionOverride.getSystemDefinedAssertionOverride());
+        return;
+      case TYPE_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format("Unexpected assertion override set: %s", assertionOverride))
+            .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateSystemDefinedAssertionOverride(
+      final RequestContext requestContext,
+      final SystemDefinedAssertionOverride systemDefinedAssertionOverride) {
+    validateAssertion(requestContext, systemDefinedAssertionOverride.getAssertion());
+  }
+
+  private void validateUserDefinedAssertionOverride(
+      final RequestContext requestContext,
+      final UserDefinedAssertionOverride userDefinedAssertionOverride) {
+    validateAssertion(requestContext, userDefinedAssertionOverride.getAssertion());
+  }
+
+  private void validateUserDefinedMutationOverride(
+      final RequestContext requestContext,
+      final UserDefinedMutationOverride userDefinedMutationOverride) {
+    validateMutation(requestContext, userDefinedMutationOverride.getMutation());
+  }
+
+  private void validateSystemDefinedMutationOverride(
+      final RequestContext requestContext,
+      final SystemDefinedMutationOverride systemDefinedMutationOverride) {
+    validateMutation(requestContext, systemDefinedMutationOverride.getMutation());
+  }
+
+  private void validateMutation(final RequestContext requestContext, final Mutation mutation) {
+    validateNonDefaultPresenceOrThrow(mutation, Mutation.FIXED_MUTATION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(mutation, Mutation.KEY_FIELD_NUMBER);
+    if (Value.getDefaultInstance().equals(mutation.getValue())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Invalid value set in mutation: %s", mutation.getValue()))
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    validateMutationAction(requestContext, mutation.getAction());
+  }
+
+  private void validateMutationAction(
+      final RequestContext requestContext, final MutationAction action) {
+    switch (action) {
+      case MUTATION_ACTION_ADD:
+      case MUTATION_ACTION_SET:
+        return;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unexpected mutation action set: %s", action))
+            .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateAssertion(final RequestContext requestContext, final Assertion assertion) {
+    validateNonDefaultPresenceOrThrow(assertion, Assertion.FIXED_ASSERTION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(assertion, Assertion.LHS_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(assertion, Assertion.RHS_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(assertion, Assertion.KEY_FIELD_NUMBER);
+    validateMatchOperator(requestContext, assertion.getOperator());
+  }
+
+  private void validateMatchOperator(
+      final RequestContext requestContext, final MatchOperator operator) {
+    switch (operator) {
+      case MATCH_OPERATOR_EQUALS:
+      case MATCH_OPERATOR_NOT_EQUALS:
+        return;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unexpected assertion match operator set: %s", operator))
+            .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateOverrideScope(
+      final RequestContext requestContext, final List<OverrideScope> scopes) {
+    if (scopes.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Override scopes list cannot be empty in request")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+    scopes.forEach(scope -> validateOverrideScope(requestContext, scope));
+  }
+
+  private void validateOverrideScope(
+      final RequestContext requestContext, final OverrideScope scope) {
+    switch (scope.getTypeCase()) {
+      case FIXED_TEST_ID:
+        return;
+      case TYPE_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unexpected override scope set: %s", scope))
+            .asRuntimeException(requestContext.buildTrailers());
     }
   }
 

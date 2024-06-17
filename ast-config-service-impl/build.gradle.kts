@@ -10,6 +10,7 @@ dependencies {
   implementation(projects.astConfigServiceApi)
   implementation(commonLibs.guice)
   implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.re2j)
 
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.api)
@@ -24,6 +25,7 @@ dependencies {
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 
