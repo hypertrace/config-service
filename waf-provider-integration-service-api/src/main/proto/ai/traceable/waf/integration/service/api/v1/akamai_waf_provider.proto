@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message AkamaiIntegrationParams {
+  AkamaiIntegrationDetails akamai_integration_details = 1;
+}
+
+message AkamaiIntegrationUpdateParams {
+  AkamaiIntegrationDetails akamai_integration_details = 1;
+}
+
+
+message AkamaiIntegrationDetails {
+  string host = 1; // Host is specific to the customer and is part of the Edge Grid authentication credentials used in the URL.
+  AkamaiPolicyDetails akamai_policy_details = 2;
+  AkamaiAuthCredentials akamai_auth_credentials = 3;
+}
+
+message AkamaiPolicyDetails {
+  string akamai_policy_configuration_id = 1;
+  string policy_id = 2;
+}
+
+message AkamaiAuthCredentials {
+  string encryption_key_id = 1; // Key used to encrypt the data.
+  string encrypted_client_token = 2;
+  string encrypted_client_secret = 3;
+  string encrypted_access_token = 4;
+}
