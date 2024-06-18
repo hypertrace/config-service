@@ -21,27 +21,52 @@ public class ModsecCrsConfig {
       "modsec-crs-sensitive-agent-rules.conf";
 
   public static final Map<ModsecRuleVersion, ModsecCrsConfig> ruleVersionToConfigMap =
-      Map.of(
-          ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-          getModsecCrsConfig("modsec-directives-v3.conf", MODSEC_CRS_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
-          getModsecCrsConfig("modsec-directives-v3-secarglimits.conf", MODSEC_CRS_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
-          getModsecCrsConfig(
-              "modsec-directives-v3-secarglimits-detectiononly-mode.conf", MODSEC_CRS_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
-          getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE,
-          getModsecCrsConfig("coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3,
-          getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_TEST_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE,
-          getModsecCrsConfig(
-              "coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_TEST_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3,
-          getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE),
-          ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3,
-          getModsecCrsConfig("modsec-directives-v3.conf", MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE));
+      Map.ofEntries(
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+              getModsecCrsConfig("modsec-directives-v3.conf", MODSEC_CRS_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+              getModsecCrsConfig("modsec-directives-v3-secarglimits.conf", MODSEC_CRS_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
+              getModsecCrsConfig(
+                  "modsec-directives-v3-secarglimits-detectiononly-mode.conf",
+                  MODSEC_CRS_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_V3,
+              getModsecCrsConfig("modsec-directives-v3.conf", MODSEC_CRS_TEST_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_V3_SECARG_LIMITS,
+              getModsecCrsConfig(
+                  "modsec-directives-v3-secarglimits.conf", MODSEC_CRS_TEST_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
+              getModsecCrsConfig(
+                  "modsec-directives-v3-secarglimits-detectiononly-mode.conf",
+                  MODSEC_CRS_TEST_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
+              getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE,
+              getModsecCrsConfig(
+                  "coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3,
+              getModsecCrsConfig("coraza-v3-directives.conf", MODSEC_CRS_TEST_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE,
+              getModsecCrsConfig(
+                  "coraza-v3-detectiononly-mode-directives.conf", MODSEC_CRS_TEST_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3,
+              getModsecCrsConfig(
+                  "coraza-v3-directives.conf", MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE)),
+          Map.entry(
+              ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3,
+              getModsecCrsConfig(
+                  "modsec-directives-v3.conf", MODSEC_CRS_SENSITIVE_AGENT_RULES_FILE)));
 
   private static ModsecCrsConfig getModsecCrsConfig(
       String directivesFile, String modsecCrsRulesFile) {

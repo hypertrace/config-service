@@ -431,6 +431,34 @@ public class ModsecRulesRegistryTest {
     assertEquals(modsecCrsSensitiveAgentRules.length, j);
   }
 
+  @Test
+  public void testModsecTestRules() {
+    // test to track any unwanted misses/changes in test rules file
+    String[] modsecCrsRules =
+        loadModsecFileContents("modsec/crs/modsec-crs-rules.conf").split("\n\n");
+    String[] modsecCrsTestRules =
+        loadModsecFileContents("modsec/crs/modsec-crs-test-rules.conf").split("\n\n");
+
+    int j = 0;
+    for (int i = 0; i < modsecCrsRules.length; i++) {
+      // Add any exception here when making intended changes in test file.
+      assertEquals(modsecCrsRules[i], modsecCrsTestRules[j++]);
+    }
+    assertEquals(modsecCrsTestRules.length, j);
+
+    // blocking rules should be consistent in both files
+    Pattern blockTagPattern = Pattern.compile("tag:'traceable\\/type\\/(safe,){0,1}block'");
+    List<String> blockingRules =
+        Arrays.stream(modsecCrsRules)
+            .filter(rule -> blockTagPattern.matcher(rule).find())
+            .collect(Collectors.toUnmodifiableList());
+    List<String> blockingTestRules =
+        Arrays.stream(modsecCrsTestRules)
+            .filter(rule -> blockTagPattern.matcher(rule).find())
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(blockingRules, blockingTestRules);
+  }
+
   private Set<String> getIdMatches(String text) {
     Set<String> idMatches = new HashSet<>();
     Arrays.asList(text.split("SecRule"))
