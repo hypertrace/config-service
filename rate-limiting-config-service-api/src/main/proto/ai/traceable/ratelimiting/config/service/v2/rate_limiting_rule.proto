@@ -104,12 +104,12 @@ message LeafCondition {
     IpOrganisationCondition ip_organisation_condition = 12;
     IpAsnCondition ip_asn_condition = 13;
     IpAbuseVelocityCondition ip_abuse_velocity_condition = 14;
-    IpScannerTypeCondition ip_scanner_type_condition = 15;
+    RequestScannerTypeCondition request_scanner_type_condition = 15;
   }
 }
 
-message IpScannerTypeCondition {
-  repeated string ip_scanner_types = 1;
+message RequestScannerTypeCondition {
+  repeated string scanner_types = 1;
   bool exclude = 2;
 }
 

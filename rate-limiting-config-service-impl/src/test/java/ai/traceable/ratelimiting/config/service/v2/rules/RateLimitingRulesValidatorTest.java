@@ -30,7 +30,6 @@ import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
-import ai.traceable.ratelimiting.config.service.v2.IpScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
@@ -40,6 +39,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition.Region;
+import ai.traceable.ratelimiting.config.service.v2.RequestScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.RollingWindowThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
@@ -2674,41 +2674,42 @@ public class RateLimitingRulesValidatorTest {
 
   @Test
   void testIpScannerTypeCondition() {
-    Condition ipScannerTypeCondition =
+    Condition requestScannerTypeCondition =
         Condition.newBuilder()
             .setLeafCondition(
                 LeafCondition.newBuilder()
-                    .setIpScannerTypeCondition(
-                        IpScannerTypeCondition.newBuilder()
-                            .addAllIpScannerTypes(List.of("Scanner1", "Scanner2"))))
+                    .setRequestScannerTypeCondition(
+                        RequestScannerTypeCondition.newBuilder()
+                            .addAllScannerTypes(List.of("Scanner1", "Scanner2"))))
             .build();
-    RateLimitingRuleData ruleData = getRateLimitingRule(ipScannerTypeCondition);
+    RateLimitingRuleData ruleData = getRateLimitingRule(requestScannerTypeCondition);
     CreateRateLimitingRuleRequest request =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
 
-    ipScannerTypeCondition =
+    requestScannerTypeCondition =
         Condition.newBuilder()
             .setLeafCondition(
                 LeafCondition.newBuilder()
-                    .setIpScannerTypeCondition(IpScannerTypeCondition.getDefaultInstance()))
+                    .setRequestScannerTypeCondition(
+                        RequestScannerTypeCondition.getDefaultInstance()))
             .build();
-    ruleData = getRateLimitingRule(ipScannerTypeCondition);
+    ruleData = getRateLimitingRule(requestScannerTypeCondition);
     CreateRateLimitingRuleRequest request1 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertThrows(
         StatusRuntimeException.class,
         () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
 
-    ipScannerTypeCondition =
+    requestScannerTypeCondition =
         Condition.newBuilder()
             .setLeafCondition(
                 LeafCondition.newBuilder()
-                    .setIpScannerTypeCondition(
-                        IpScannerTypeCondition.newBuilder()
-                            .addAllIpScannerTypes(List.of("", "Scanner1"))))
+                    .setRequestScannerTypeCondition(
+                        RequestScannerTypeCondition.newBuilder()
+                            .addAllScannerTypes(List.of("", "Scanner1"))))
             .build();
-    ruleData = getRateLimitingRule(ipScannerTypeCondition);
+    ruleData = getRateLimitingRule(requestScannerTypeCondition);
     CreateRateLimitingRuleRequest request2 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertThrows(

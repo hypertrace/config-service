@@ -26,10 +26,10 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
-import ai.traceable.ratelimiting.config.service.v2.IpScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
+import ai.traceable.ratelimiting.config.service.v2.RequestScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
@@ -91,8 +91,8 @@ public class ValidatorUtils {
       case IP_ABUSE_VELOCITY_CONDITION:
         validateIpAbuseVelocityCondition(leafCondition.getIpAbuseVelocityCondition());
         break;
-      case IP_SCANNER_TYPE_CONDITION:
-        validateIpScannerTypeCondition(leafCondition.getIpScannerTypeCondition());
+      case REQUEST_SCANNER_TYPE_CONDITION:
+        validateRequestScannerTypeCondition(leafCondition.getRequestScannerTypeCondition());
         break;
       default:
         throwInvalidArgumentException(
@@ -101,14 +101,15 @@ public class ValidatorUtils {
     }
   }
 
-  private void validateIpScannerTypeCondition(IpScannerTypeCondition ipScannerTypeCondition) {
+  private void validateRequestScannerTypeCondition(
+      RequestScannerTypeCondition requestScannerTypeCondition) {
     validateNonDefaultPresenceOrThrow(
-        ipScannerTypeCondition, IpScannerTypeCondition.IP_SCANNER_TYPES_FIELD_NUMBER);
-    if (ipScannerTypeCondition.getIpScannerTypesList().stream().anyMatch(String::isBlank)) {
+        requestScannerTypeCondition, RequestScannerTypeCondition.SCANNER_TYPES_FIELD_NUMBER);
+    if (requestScannerTypeCondition.getScannerTypesList().stream().anyMatch(String::isBlank)) {
       throwInvalidArgumentException(
           String.format(
-              "IpScannerTypeCondition should not contain blank string : {}",
-              ipScannerTypeCondition));
+              "RequestScannerTypeCondition should not contain blank string : {}",
+              requestScannerTypeCondition));
     }
   }
 
