@@ -292,8 +292,8 @@ public class SpanProcessingRulesManagerTestUtils {
                                             buildRelationalFilter(
                                                 Field.FIELD_ENVIRONMENT_NAME,
                                                 null,
-                                                RelationalOperator.RELATIONAL_OPERATOR_IN,
-                                                List.of("value1", "value")))))
+                                                RelationalOperator.RELATIONAL_OPERATOR_EQUALS,
+                                                "value"))))
                                 .build())
                         .build()))
         .build();

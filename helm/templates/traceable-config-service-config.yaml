@@ -297,6 +297,9 @@ data:
       {{- end }}
     }
     {{- end }}
+    span.exclusion.rules = {
+      agent.unsupported.rule.ids = {{ .Values.traceableConfigServiceConfig.spanExclusionRules.agentUnsupportedRuleIds | toJson }}
+    }
     local.api.naming.config = {
       agent.polling.frequency = {{ .Values.localApiNamingConfig.agentPollingFrequency }}
       {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}

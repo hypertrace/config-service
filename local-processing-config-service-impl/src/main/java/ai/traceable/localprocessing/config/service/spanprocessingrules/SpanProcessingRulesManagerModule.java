@@ -21,7 +21,7 @@ public class SpanProcessingRulesManagerModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(SpanProcessingRulesManager.class).to(DefaultSpanProcessingRulesManager.class);
-    install(new ExcludeSpanRulesManagerModule());
+    install(new ExcludeSpanRulesManagerModule(this.config));
     install(new ProtectionSpanRulesManagerModule());
     install(new RateLimitConfigManagerModule(this.config));
   }

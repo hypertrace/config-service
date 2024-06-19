@@ -6,6 +6,7 @@ import static ai.traceable.localprocessing.config.service.spanprocessingrules.Sp
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule.Builder;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
+import ai.traceable.localprocessing.config.service.v1.ListValue;
 import ai.traceable.localprocessing.config.service.v1.LogicalOperator;
 import ai.traceable.localprocessing.config.service.v1.RelationalOperator;
 import ai.traceable.localprocessing.config.service.v1.SpanFilter;
@@ -15,6 +16,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -31,20 +33,28 @@ import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServ
 @Slf4j
 public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
 
+  private static final Set<org.hypertrace.span.processing.config.service.v1.RelationalOperator>
+      AGENT_UNSUPPORTED_RELATIONAL_OPERATORS =
+          Set.of(
+              org.hypertrace.span.processing.config.service.v1.RelationalOperator
+                  .RELATIONAL_OPERATOR_IN);
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
   private final ClientConfig clientConfig;
+  private final Set<String> agentUnsupportedRuleIds;
 
   @Inject
   public DefaultExcludeSpanRulesManager(
       SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
           configServiceBlockingStub,
       SpanFilterMatcher spanFilterMatcher,
-      ClientConfig clientConfig) {
+      ClientConfig clientConfig,
+      ExcludeSpanRulesConfig excludeSpanRulesConfig) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.spanFilterMatcher = spanFilterMatcher;
     this.clientConfig = clientConfig;
+    this.agentUnsupportedRuleIds = excludeSpanRulesConfig.getAgentUnsupportedRuleIds();
   }
 
   @Override
@@ -84,8 +94,16 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
   // tree structure
   private Optional<ExcludeSpanProcessingRule> convertExcludeSpanRule(
       ExcludeSpanRule excludeSpanRule, String serviceName, Optional<String> environment) {
+    if (!isSpanFilterPresent(excludeSpanRule)) {
+      return Optional.empty();
+    }
+
+    if (isAgentUnsupportedRule(excludeSpanRule)) {
+      return Optional.empty();
+    }
+
     // check if the rule is disabled
-    if (!excludeSpanRule.getRuleInfo().hasFilter() || excludeSpanRule.getRuleInfo().getDisabled()) {
+    if (excludeSpanRule.getRuleInfo().getDisabled()) {
       return Optional.empty();
     }
 
@@ -101,15 +119,54 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
       return Optional.empty();
     }
 
-    return convertFilter(excludeSpanRule.getRuleInfo().getFilter())
-        .map(
-            spanFilter ->
-                ExcludeSpanProcessingRule.newBuilder()
-                    .setExcludeSpanProcessingRuleInfo(
-                        ExcludeSpanProcessingRuleInfo.newBuilder()
-                            .setId(excludeSpanRule.getId())
-                            .setFilter(spanFilter)))
-        .map(Builder::build);
+    try {
+      return convertFilter(excludeSpanRule.getRuleInfo().getFilter())
+          .map(
+              spanFilter ->
+                  ExcludeSpanProcessingRule.newBuilder()
+                      .setExcludeSpanProcessingRuleInfo(
+                          ExcludeSpanProcessingRuleInfo.newBuilder()
+                              .setId(excludeSpanRule.getId())
+                              .setFilter(spanFilter)))
+          .map(Builder::build);
+    } catch (Exception e) {
+      log.error("Exception occurred in processing spanRule: {}", excludeSpanRule, e);
+      return Optional.empty();
+    }
+  }
+
+  private static boolean isSpanFilterPresent(ExcludeSpanRule excludeSpanRule) {
+    return excludeSpanRule.getRuleInfo().hasFilter();
+  }
+
+  private boolean isAgentUnsupportedRule(ExcludeSpanRule excludeSpanRule) {
+    return isAgentUnsupportedRuleId(excludeSpanRule.getId())
+        || isAgentUnsupportedFilter(excludeSpanRule.getRuleInfo().getFilter());
+  }
+
+  private boolean isAgentUnsupportedFilter(
+      org.hypertrace.span.processing.config.service.v1.SpanFilter spanFilter) {
+    switch (spanFilter.getSpanFilterExpressionCase()) {
+      case LOGICAL_SPAN_FILTER:
+        return isAgentUnsupportedLogicalFilter(spanFilter.getLogicalSpanFilter());
+      case RELATIONAL_SPAN_FILTER:
+        return isAgentUnsupportedRelationalFilter(spanFilter.getRelationalSpanFilter());
+      default:
+        return true;
+    }
+  }
+
+  private boolean isAgentUnsupportedRelationalFilter(
+      RelationalSpanFilterExpression relationalSpanFilter) {
+    return isAgentUnsupportedRelationalOperator(relationalSpanFilter.getOperator());
+  }
+
+  private boolean isAgentUnsupportedLogicalFilter(LogicalSpanFilterExpression logicalSpanFilter) {
+    return logicalSpanFilter.getOperandsList().stream().anyMatch(this::isAgentUnsupportedFilter);
+  }
+
+  private boolean isAgentUnsupportedRuleId(String ruleId) {
+    return agentUnsupportedRuleIds.contains(ruleId);
   }
 
   private Optional<SpanFilter> convertFilter(
@@ -148,10 +205,16 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
                         key,
                         relationalSpanFilter.getOperator(),
                         relationalSpanFilter.getRightOperand()))
+            .flatMap(Optional::stream)
             .collect(Collectors.toUnmodifiableList());
 
     return combineFiltersWithOperator(
         individualAttributeFilters, LogicalOperator.LOGICAL_OPERATOR_OR);
+  }
+
+  private boolean isAgentUnsupportedRelationalOperator(
+      org.hypertrace.span.processing.config.service.v1.RelationalOperator operator) {
+    return AGENT_UNSUPPORTED_RELATIONAL_OPERATORS.contains(operator);
   }
 
   private Optional<SpanFilter> combineFiltersWithOperator(
@@ -172,19 +235,48 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
             .build());
   }
 
-  private SpanFilter buildRelationalFilter(
+  private Optional<SpanFilter> buildRelationalFilter(
       String key,
       org.hypertrace.span.processing.config.service.v1.RelationalOperator operator,
       org.hypertrace.span.processing.config.service.v1.SpanFilterValue filterValue) {
-    return SpanFilter.newBuilder()
-        .setRelationalFilter(
-            ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression
-                .newBuilder()
-                .setSpanAttributeKey(key)
-                .setOperator(convertRelationalOperator(operator))
-                .setRightOperand(
-                    SpanFilterValue.newBuilder().setStringValue(filterValue.getStringValue())))
-        .build();
+    return getSpanFilterValue(filterValue)
+        .map(
+            spanFilterValue ->
+                SpanFilter.newBuilder()
+                    .setRelationalFilter(
+                        ai.traceable.localprocessing.config.service.v1
+                            .RelationalSpanFilterExpression.newBuilder()
+                            .setSpanAttributeKey(key)
+                            .setOperator(convertRelationalOperator(operator))
+                            .setRightOperand(spanFilterValue))
+                    .build());
+  }
+
+  private Optional<SpanFilterValue> getSpanFilterValue(
+      org.hypertrace.span.processing.config.service.v1.SpanFilterValue spanFilterValue) {
+    switch (spanFilterValue.getValueCase()) {
+      case LIST_VALUE:
+        return Optional.of(
+            SpanFilterValue.newBuilder()
+                .setListValue(getListValue(spanFilterValue.getListValue()))
+                .build());
+      case STRING_VALUE:
+        return Optional.of(
+            SpanFilterValue.newBuilder().setStringValue(spanFilterValue.getStringValue()).build());
+      default:
+        log.error("Unknown spanFilterValue type: {}", spanFilterValue.getValueCase());
+        return Optional.empty();
+    }
+  }
+
+  private ListValue getListValue(
+      org.hypertrace.span.processing.config.service.v1.ListValue listValue) {
+    List<SpanFilterValue> spanFilterValues =
+        listValue.getValuesList().stream()
+            .map(this::getSpanFilterValue)
+            .flatMap(Optional::stream)
+            .collect(Collectors.toUnmodifiableList());
+    return ListValue.newBuilder().addAllValues(spanFilterValues).build();
   }
 
   private List<String> getSpanAttributeKeys(
@@ -223,6 +315,8 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
         return RelationalOperator.RELATIONAL_OPERATOR_NOT_EQUALS;
       case RELATIONAL_OPERATOR_REGEX_MATCH:
         return RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
+      case RELATIONAL_OPERATOR_IN:
+        return RelationalOperator.RELATIONAL_OPERATOR_IN;
       default: // TODO: do we want to throw or log error considering these would be used by agent as
         // well
         throw new UnsupportedOperationException(

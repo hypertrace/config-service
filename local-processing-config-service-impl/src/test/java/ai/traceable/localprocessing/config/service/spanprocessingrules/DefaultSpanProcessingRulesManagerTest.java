@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.DefaultExcludeSpanRulesManager;
+import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesConfig;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.protectionspanrules.DefaultProtectionSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.protectionspanrules.ProtectionSpanRulesManager;
@@ -37,7 +38,10 @@ import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesService
 import ai.traceable.localprocessing.config.service.v1.SpanProcessingRulesServiceResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesResponse;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsResponse;
+import com.typesafe.config.ConfigFactory;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.span.processing.utils.SpanFilterMatcher;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -74,7 +78,14 @@ class DefaultSpanProcessingRulesManagerTest {
         new ai.traceable.config.utils.SpanFilterMatcher();
     ExcludeSpanRulesManager excludeSpanRulesManager =
         new DefaultExcludeSpanRulesManager(
-            spanProcessingConfigServiceBlockingStub, new SpanFilterMatcher(), ClientConfig.DEFAULT);
+            spanProcessingConfigServiceBlockingStub,
+            new SpanFilterMatcher(),
+            ClientConfig.DEFAULT,
+            new ExcludeSpanRulesConfig(
+                ConfigFactory.parseMap(
+                    Map.of(
+                        "span.exclusion.rules.agent.unsupported.rule.ids",
+                        Collections.emptyList()))));
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(
             traceableSpanProcessingConfigServiceBlockingStub,

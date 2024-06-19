@@ -553,6 +553,8 @@ traceableConfigServiceConfig:
         }
       ]
 
+  spanExclusionRules:
+    agentUnsupportedRuleIds: ["24a6ccce-1ccf-4a3a-b93f-30a988ffb41f"]
 localApiNamingConfig:
   agentPollingFrequency: 5m
   fullTrieReloadConfig:
