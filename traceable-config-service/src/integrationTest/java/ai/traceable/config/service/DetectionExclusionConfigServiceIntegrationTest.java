@@ -1,5 +1,6 @@
 package ai.traceable.config.service;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,6 +36,7 @@ public class DetectionExclusionConfigServiceIntegrationTest
   private static final DetectionExclusionRuleInfo RULE_INFO1 =
       DetectionExclusionRuleInfo.newBuilder()
           .setName("ruleName1")
+          .addExclusionTargets(EXCLUSION_TARGET_ALERT)
           .addConditions(
               DetectionExclusionCondition.newBuilder()
                   .setIpReputationCondition(
@@ -57,6 +59,7 @@ public class DetectionExclusionConfigServiceIntegrationTest
   private static final DetectionExclusionRuleInfo RULE_INFO2 =
       DetectionExclusionRuleInfo.newBuilder()
           .setName("ruleName2")
+          .addExclusionTargets(EXCLUSION_TARGET_ALERT)
           .addConditions(
               DetectionExclusionCondition.newBuilder()
                   .setEventCondition(

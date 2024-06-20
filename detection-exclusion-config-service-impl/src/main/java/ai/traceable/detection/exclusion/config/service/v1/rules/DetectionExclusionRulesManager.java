@@ -1,5 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -102,7 +103,17 @@ public class DetectionExclusionRulesManager implements RulesManager {
     DetectionExclusionRuleInfo.Builder builder = ruleInfo.toBuilder();
     processIpAddressCondition(ruleInfo, builder);
     processRuleExpiration(ruleInfo, builder);
+    processExclusionTarget(ruleInfo, builder);
     return builder.build();
+  }
+
+  // added EXCLUSION_TARGET_ALERT to exclusion target list (if list is empty), for backward
+  // compatibility.
+  private void processExclusionTarget(
+      DetectionExclusionRuleInfo ruleInfo, DetectionExclusionRuleInfo.Builder builder) {
+    if (ruleInfo.getExclusionTargetsList().isEmpty()) {
+      builder.addExclusionTargets(EXCLUSION_TARGET_ALERT);
+    }
   }
 
   private void processIpAddressCondition(

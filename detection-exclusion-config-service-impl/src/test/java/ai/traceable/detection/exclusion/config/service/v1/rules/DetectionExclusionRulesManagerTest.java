@@ -1,5 +1,7 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,7 +43,12 @@ class DetectionExclusionRulesManagerTest {
   @BeforeEach
   void setUp() {
     MockGenericConfigService mockConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete()
+            .mockUpsertAll();
     mockConfigService.start();
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
@@ -66,6 +73,7 @@ class DetectionExclusionRulesManagerTest {
     DetectionExclusionRuleInfo detectionExclusionRuleInfo =
         DetectionExclusionRuleInfo.newBuilder()
             .setName("rule")
+            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
             .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build())
             .build();
     DetectionExclusionRuleScope detectionExclusionRuleScope =
@@ -109,8 +117,18 @@ class DetectionExclusionRulesManagerTest {
             .setRuleStatus(DetectionExclusionRuleStatus.getDefaultInstance())
             .build();
     detectionExclusionRule = detectionExclusionRule.toBuilder().setRuleInfo(info).build();
+    DetectionExclusionRule expectedDetectionExclusionRule =
+        DetectionExclusionRule.newBuilder()
+            .setId("id")
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("rule1")
+                    .addExclusionTargets(EXCLUSION_TARGET_ALERT)
+                    .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build()))
+            .setRuleScope(detectionExclusionRuleScope)
+            .build();
     assertEquals(
-        detectionExclusionRule,
+        expectedDetectionExclusionRule,
         rulesManager.updateDetectionExclusionRule(requestContext, detectionExclusionRule));
 
     // deleting detection exclusion rule
@@ -120,7 +138,7 @@ class DetectionExclusionRulesManagerTest {
     assertFalse(
         rulesManager
             .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())
-            .contains(detectionExclusionRule));
+            .contains(expectedDetectionExclusionRule));
   }
 
   @Test

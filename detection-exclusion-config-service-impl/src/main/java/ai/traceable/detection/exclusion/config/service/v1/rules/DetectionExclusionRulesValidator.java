@@ -1,5 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
@@ -10,6 +11,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
@@ -97,12 +99,23 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
   public void validateRuleInfo(DetectionExclusionRuleInfo ruleInfo) {
     validateNonDefaultPresenceOrThrow(ruleInfo, DetectionExclusionRuleInfo.NAME_FIELD_NUMBER);
     validateRuleStatus(ruleInfo.getRuleStatus());
+    validateExclusionTargets(ruleInfo.getExclusionTargetsList());
     if (ruleInfo.getConditionsList().isEmpty()) {
       throw Status.INVALID_ARGUMENT
           .withDescription("DetectionExclusionRule has no specified conditions")
           .asRuntimeException();
     }
     ruleInfo.getConditionsList().forEach(conditionValidator::validateRuleCondition);
+  }
+
+  private void validateExclusionTargets(List<ExclusionTarget> exclusionTargets) {
+    if (!exclusionTargets.isEmpty()
+        && (exclusionTargets.stream()
+            .anyMatch(exclusionTarget -> exclusionTarget.equals(EXCLUSION_TARGET_UNSPECIFIED)))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Exclusion targets should not contain UNSPECIFIED exclusion target")
+          .asRuntimeException();
+    }
   }
 
   private void validateRuleScope(DetectionExclusionRuleScope scope) {

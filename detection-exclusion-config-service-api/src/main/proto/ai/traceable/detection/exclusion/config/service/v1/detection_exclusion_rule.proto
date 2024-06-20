@@ -28,6 +28,7 @@ message DetectionExclusionRuleInfo {
   string description = 2;
   repeated DetectionExclusionCondition conditions = 3;
   DetectionExclusionRuleStatus rule_status = 4;
+  repeated ExclusionTarget exclusion_targets = 5;
 }
 
 
@@ -68,6 +69,13 @@ message ExpirationDetails {
   // Timestamp at which the blocking expires.
   // If expiration_timestamp_millis is not set and expiration_duration is set, the value gets derived from the expiration_duration field
   optional int64 expiration_timestamp_millis = 2;
+}
+
+enum ExclusionTarget {
+  EXCLUSION_TARGET_UNSPECIFIED = 0;
+  EXCLUSION_TARGET_BLOCK = 1;
+  EXCLUSION_TARGET_ALLOW = 2;
+  EXCLUSION_TARGET_ALERT = 3;
 }
 
 enum RuleSource{
