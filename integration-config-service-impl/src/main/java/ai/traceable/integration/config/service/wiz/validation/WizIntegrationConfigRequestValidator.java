@@ -10,7 +10,6 @@ import ai.traceable.integration.config.service.wiz.v1.EncryptedText;
 import ai.traceable.integration.config.service.wiz.v1.GetWizIntegrationSummariesRequest;
 import ai.traceable.integration.config.service.wiz.v1.GetWizIntegrationsRequest;
 import ai.traceable.integration.config.service.wiz.v1.UpdateWizIntegrationRequest;
-import ai.traceable.integration.config.service.wiz.v1.WizEventPushConfiguration;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationFilter;
 import ai.traceable.integration.config.service.wiz.v1.WizIntegrationPreferences;
 import com.google.inject.Inject;
@@ -109,11 +108,6 @@ public class WizIntegrationConfigRequestValidator {
           .asRuntimeException();
     }
 
-    if (preferences.hasWizEventPushConfiguration()) {
-      validateNonDefaultPresenceOrThrow(
-          preferences.getWizEventPushConfiguration(),
-          WizEventPushConfiguration.WIZ_INTEGRATION_ID_FIELD_NUMBER);
-    }
-    // nothing in WizIssuePullConfiguration to validate
+    // nothing inside WizIssuePullConfiguration and WizEventPushConfiguration to validate further
   }
 }
