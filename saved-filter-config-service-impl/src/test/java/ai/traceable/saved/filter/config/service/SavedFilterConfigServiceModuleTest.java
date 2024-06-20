@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import com.google.inject.Guice;
 import com.google.inject.Stage;
+import com.typesafe.config.Config;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
@@ -13,12 +14,13 @@ class SavedFilterConfigServiceModuleTest {
   @Test
   void testResolveBindings() {
     Channel mockChannel = mock(Channel.class);
+    Config mockConfig = mock(Config.class);
     ConfigChangeEventGenerator mockEventGenerator = mock(ConfigChangeEventGenerator.class);
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
                     Stage.PRODUCTION,
-                    new SavedFilterConfigServiceModule(mockChannel, mockEventGenerator))
+                    new SavedFilterConfigServiceModule(mockChannel, mockConfig, mockEventGenerator))
                 .getAllBindings());
   }
 }
