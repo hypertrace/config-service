@@ -39,6 +39,7 @@ message ExclusionRule {
   BlockingDetailsCombination details = 3;
   repeated AnomalousAttributeCondition anomalous_attribute_conditions = 4;
   repeated EventCondition event_conditions = 5;
+  repeated ExclusionTarget targets = 6;
 
   message AnomalousAttributeCondition {
     MatchExpression key_expression = 1;
@@ -48,6 +49,12 @@ message ExclusionRule {
   message EventCondition {
     BlockingCategory blocking_category = 1;
     repeated string ids = 2;
+  }
+
+  enum ExclusionTarget {
+    EXCLUSION_TARGET_UNSPECIFIED = 0;
+    EXCLUSION_TARGET_BLOCK = 1;
+    EXCLUSION_TARGET_ALLOW = 2;
   }
 }
 
