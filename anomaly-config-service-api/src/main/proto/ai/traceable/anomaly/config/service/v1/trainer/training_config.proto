@@ -630,14 +630,19 @@ message LogicalFilter {
 }
 
 message RelationalFilter {
-  oneof left_operand {
-    string key = 1;
-  }
-  oneof operator {
-    RelationalOperator value_operator = 2;
-  }
+  KeyFilter key_filter = 1;
+  ValueFilter value_filter = 2;
+}
 
+message KeyFilter {
+  KeyLocation location = 1;
+  RelationalOperator operator = 2;
   Value value = 3;
+}
+
+message ValueFilter {
+  RelationalOperator operator = 1;
+  Value value = 2;
 }
 
 message Value {
@@ -645,6 +650,15 @@ message Value {
     string string_value = 1;
     StringList string_values = 2;
   }
+}
+
+enum KeyLocation {
+  KEY_LOCATION_UNSPECIFIED = 0;
+  KEY_LOCATION_REQUEST_HEADER = 1;
+  KEY_LOCATION_RESPONSE_HEADER = 2;
+  KEY_LOCATION_REQUEST_BODY = 3;
+  KEY_LOCATION_RESPONSE_BODY = 4;
+  KEY_LOCATION_ATTRIBUTES = 5;
 }
 
 enum LogicalOperator {
