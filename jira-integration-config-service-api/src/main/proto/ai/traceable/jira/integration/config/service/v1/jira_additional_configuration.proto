@@ -1,0 +1,65 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.jira.integration.config.service.api.v1;
+
+
+message JiraTemplate {
+  string template_id = 1;
+  string integration_id = 2;
+  string project_id = 3;
+  string issue_type = 4;
+  TraceableEntityType entity_type = 5;
+  JiraTemplateDetails jira_template_details = 6;
+}
+
+message JiraTemplateDetails {
+  string name = 1;
+  string adf_format_value = 2;
+  string markdown_format_value = 3;
+}
+
+message JiraProjectIssueConfiguration {
+  string configuration_id = 1;
+  JiraProjectIssueConfigurationDetails jira_project_issue_configuration_details = 2;
+}
+
+message JiraProjectIssueConfigurationDetails {
+  string integration_id = 1;
+  string project_id = 2;
+  string issue_type = 3;
+  TraceableEntityType valid_traceable_entity_type = 4;
+  JiraStatusMappingConfiguration jira_status_mapping_configuration = 5;
+  repeated JiraTemplate jira_template = 6;
+  repeated JiraFieldConfiguration field_configurations = 7;
+}
+
+message JiraFieldConfiguration {
+  string field_key = 1;
+  optional string overridden_default_value_json_string = 2;
+  optional DynamicField overridden_dynamic_value = 3;
+}
+
+enum DynamicField {
+  DYNAMIC_FIELD_UNSPECIFIED = 0;
+  DYNAMIC_FIELD_LOGGED_IN_USER = 1;
+}
+
+message JiraStatusMappingConfiguration {
+  repeated JiraStatusMapping status_mappings = 1;
+}
+
+message JiraStatusMapping {
+  TraceableEntityStatus traceable_entity_status = 1;
+  string jira_status = 2;
+}
+
+enum TraceableEntityStatus {
+  //TODO: add more traceable entity status
+  TRACEABLE_ENTITY_STATUS_UNSPECIFIED = 0;
+}
+
+enum TraceableEntityType {
+  TRACEABLE_ENTITY_TYPE_UNSPECIFIED = 0;
+  TRACEABLE_ENTITY_TYPE_VULNERABILITY = 1;
+  TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY = 2;
+}

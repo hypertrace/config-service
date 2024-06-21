@@ -2,11 +2,22 @@ syntax = "proto3";
 option java_multiple_files = true;
 package ai.traceable.jira.integration.config.service.api.v1;
 
+import "ai/traceable/jira/integration/config/service/v1/jira_additional_configuration.proto";
+
 service JiraIntegrationConfigService {
   rpc CreateJiraIntegration (CreateJiraIntegrationRequest) returns (CreateJiraIntegrationResponse) {}
   rpc GetJiraIntegrations (GetJiraIntegrationsRequest) returns (GetJiraIntegrationsResponse) {}
   rpc UpdateJiraIntegration (UpdateJiraIntegrationRequest) returns (UpdateJiraIntegrationResponse) {}
   rpc DeleteJiraIntegration (DeleteJiraIntegrationRequest) returns (DeleteJiraIntegrationResponse) {}
+
+  rpc AddJiraTemplate(AddJiraTemplateRequest) returns (AddJiraTemplateResponse) {}
+  rpc UpdateJiraTemplate(UpdateJiraTemplateRequest) returns (UpdateJiraTemplateResponse) {}
+  rpc DeleteJiraTemplate(DeleteJiraTemplateRequest) returns (DeleteJiraTemplateResponse) {}
+
+  rpc CreateProjectIssueConfiguration(CreateProjectIssueConfigurationRequest) returns (CreateProjectIssueConfigurationResponse) {}
+  rpc UpdateProjectIssueConfiguration(UpdateProjectIssueConfigurationRequest) returns (UpdateProjectIssueConfigurationResponse) {}
+  rpc DeleteProjectIssueConfiguration(DeleteProjectIssueConfigurationRequest) returns (DeleteProjectIssueConfigurationResponse) {}
+  rpc GetProjectIssueConfigurations(GetProjectIssueConfigurationsRequest) returns (GetProjectIssueConfigurationsResponse) {}
 }
 
 message CreateJiraIntegrationRequest {
@@ -49,6 +60,96 @@ message DeleteJiraIntegrationRequest {
 message DeleteJiraIntegrationResponse {
 }
 
+message AddJiraTemplateRequest {
+  JiraTemplateDetails jira_template_details = 1;
+  string integration_id = 2;
+  string project_id = 3;
+  string issue_type = 4;
+  TraceableEntityType supported_entity_type = 5;
+}
+
+message AddJiraTemplateResponse {
+  JiraTemplate jira_template = 1;
+}
+
+message UpdateJiraTemplateRequest {
+  string template_id = 1;
+  JiraTemplateDetails jira_template_details = 2;
+}
+
+message UpdateJiraTemplateResponse {
+  JiraTemplate jira_template = 1;
+}
+
+message DeleteJiraTemplateRequest {
+  string template_id = 1;
+}
+
+message DeleteJiraTemplateResponse {
+}
+
+message GetJiraTemplatesRequest {
+  GetJiraTemplatesRequestFilter filter = 1;
+}
+
+message GetJiraTemplatesResponse {
+  repeated JiraTemplate jira_templates = 1;
+}
+
+message CreateProjectIssueConfigurationRequest {
+  string integration_id = 1;
+  string project_id = 2;
+  string issue_type = 3;
+  TraceableEntityType traceable_entity_type = 4;
+  JiraStatusMappingConfiguration jira_status_mapping_configuration = 5;
+  repeated JiraFieldConfiguration field_configurations = 6;
+}
+
+message CreateProjectIssueConfigurationResponse {
+  JiraProjectIssueConfiguration jira_project_configuration = 1;
+}
+
+message UpdateProjectIssueConfigurationRequest {
+  string configuration_id = 1;
+  JiraStatusMappingConfiguration jira_status_mapping_configuration = 2;
+  repeated JiraFieldConfiguration field_configurations = 3;
+}
+
+message UpdateProjectIssueConfigurationResponse {
+  JiraProjectIssueConfiguration jira_project_configuration = 1;
+}
+
+message DeleteProjectIssueConfigurationRequest {
+  string configuration_id = 1;
+}
+
+message DeleteProjectIssueConfigurationResponse {
+}
+
+message GetProjectIssueConfigurationsRequest {
+  GetProjectIssueConfigurationsFilter filter = 1;
+}
+
+//AND among all fields
+message GetProjectIssueConfigurationsFilter {
+  optional string integration_id = 1;
+  optional string project_id = 2;
+  optional string issue_type = 3;
+  repeated TraceableEntityType supported_entity_types = 4; // empty means no-matching for this
+}
+
+message GetProjectIssueConfigurationsResponse {
+  repeated JiraProjectIssueConfiguration jira_project_configurations = 1;
+}
+
+//AND among all fields
+message GetJiraTemplatesRequestFilter {
+  optional string integration_id = 1;
+  optional string project_id = 2;
+  optional string issue_type = 3;
+  repeated TraceableEntityType supported_entity_types = 4; // empty means no-matching for this
+}
+
 message JiraIntegration {
   string id = 1;
   string name = 2;
@@ -65,6 +166,12 @@ message JiraIntegrationDetails {
     JiraCloudIntegrationDetails jira_cloud_integration_details = 1;
     JiraDataCenterIntegrationDetails jira_data_center_integration_details = 2;
   }
+  JiraIntegrationDefaultConfiguration default_project_configuration = 3;
+}
+
+message JiraIntegrationDefaultConfiguration {
+  string default_project_id = 1;
+  optional string default_issue_type = 2;
 }
 
 message JiraCloudIntegrationDetails {
