@@ -132,7 +132,13 @@ message Clause {
     MatchExpression match_expression = 1;
     KeyValueExpression key_value_expression = 2;
     AttributeKeyValueExpression attribute_key_value_expression = 3;
+    CustomSecRule custom_sec_rule = 4;
   }
+}
+
+message CustomSecRule {
+  string input_sec_rule = 1;
+  string sanitised_sec_rule = 2;
 }
 
 message MatchExpression {

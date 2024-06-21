@@ -11,6 +11,7 @@ import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
+import ai.traceable.customsignature.config.service.v1.CustomSecRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
@@ -201,6 +202,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
         return validateKeyValueExpression(clause.getKeyValueExpression());
       case ATTRIBUTE_KEY_VALUE_EXPRESSION:
         return validateAttributeKeyValueExpression(clause.getAttributeKeyValueExpression());
+      case CUSTOM_SEC_RULE:
+        return validateCustomSecRule(clause.getCustomSecRule());
       default:
         return Status.INVALID_ARGUMENT.withDescription(
             "Custom Signature Rule Clause should have a valid expression");
@@ -344,6 +347,18 @@ class CustomSignatureRulesValidator implements RulesValidator {
     } else {
       return Status.OK;
     }
+  }
+
+  private Status validateCustomSecRule(CustomSecRule rule) {
+    if (!rule.getInputSecRule().startsWith("SecRule")) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Sec Rule should be start with keyword SecRule");
+    }
+    if (!rule.getSanitisedSecRule().isBlank()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Sanitized Sec Rule should be empty in create/update request");
+    }
+    return Status.OK;
   }
 
   private boolean isNumber(String value) {
