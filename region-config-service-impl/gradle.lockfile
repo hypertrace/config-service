@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:3.0.81=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.357=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.358=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
@@ -35,6 +35,7 @@ commons-io:commons-io:2.15.1=compileClasspath,runtimeClasspath,testCompileClassp
 commons-logging:commons-logging:1.2=runtimeClasspath,testRuntimeClasspath
 commons-net:commons-net:3.10.0=runtimeClasspath,testRuntimeClasspath
 commons-validator:commons-validator:1.7=runtimeClasspath,testRuntimeClasspath
+dk.brics.automaton:automaton:1.11-8=runtimeClasspath,testRuntimeClasspath
 io.grpc:grpc-api:1.60.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-bom:1.60.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-context:1.60.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath

@@ -4,6 +4,7 @@ import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.ACTI
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
+import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
@@ -17,15 +18,10 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import com.google.protobuf.ProtocolStringList;
-import dk.brics.automaton.Automaton;
-import dk.brics.automaton.RegExp;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TransactionActionConfigValidator {
-  private static final List<Automaton> DEFAULT_WIDE_REGEX_AUTOMATON_LIST =
-      List.of(new RegExp(".*").toAutomaton(), new RegExp("\\.*").toAutomaton());
   private final ValidatorUtils validatorUtils = new ValidatorUtils();
 
   public void validateRateLimitingRuleData(RateLimitingRuleData data) {
@@ -281,22 +277,7 @@ public class TransactionActionConfigValidator {
             String.format(
                 "Invalid scope condition : %s for transaction action config", scopeCondition));
       }
-      validatorUtils.validateRegexes(urlRegexesList);
-      validateNonWideRegexes(scopeCondition.getUrlScope());
+      RegexValidator.validateRegexes(urlRegexesList);
     }
-  }
-
-  public void validateNonWideRegexes(ScopeCondition.UrlScope urlScope) {
-    urlScope
-        .getUrlRegexesList()
-        .forEach(
-            regex -> {
-              Automaton regAutomaton = new RegExp(regex).toAutomaton();
-              if (DEFAULT_WIDE_REGEX_AUTOMATON_LIST.stream()
-                  .anyMatch(automaton -> automaton.equals(regAutomaton))) {
-                validatorUtils.throwInvalidArgumentException(
-                    String.format("Url scope should not accept wide regex: %s", regex));
-              }
-            });
   }
 }

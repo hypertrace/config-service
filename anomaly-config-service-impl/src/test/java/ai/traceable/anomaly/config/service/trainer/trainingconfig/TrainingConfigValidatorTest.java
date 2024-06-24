@@ -496,11 +496,7 @@ class TrainingConfigValidatorTest {
                     .setTrieModelTrainingConfig(
                         TrieModelTrainingConfig.newBuilder()
                             .setAllowRegexList(
-                                StringList.newBuilder()
-                                    .addAllValues(
-                                        List.of(
-                                            "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\""))
-                                    .build())
+                                StringList.newBuilder().addAllValues(List.of("regex")).build())
                             .build())
                     .build())
             .build();
@@ -553,9 +549,7 @@ class TrainingConfigValidatorTest {
                                 UrlPathFilterConfig.newBuilder()
                                     .setUrlPathRegexPatterns(
                                         StringList.newBuilder()
-                                            .addAllValues(
-                                                List.of(
-                                                    "\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\s\\\\.]{0,1}[0-9]{3}[-\\\\s\\\\.]{0,1}[0-9]{4}$/\\n\""))
+                                            .addAllValues(List.of(".*regex.*"))
                                             .build())
                                     .build())
                             .build())
@@ -602,11 +596,7 @@ class TrainingConfigValidatorTest {
                     .setUrlFilterConfig(
                         UrlFilterConfig.newBuilder()
                             .setUrlRejectRegexPatterns(
-                                StringList.newBuilder()
-                                    .addAllValues(
-                                        List.of(
-                                            "\"\\\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{3}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{4}$/\\\\n\\\"\""))
-                                    .build())
+                                StringList.newBuilder().addAllValues(List.of(".*regex.*")).build())
                             .build())
                     .build())
             .build();
@@ -651,10 +641,7 @@ class TrainingConfigValidatorTest {
                     .setCustomRulesListConfig(
                         CustomRulesListConfig.newBuilder()
                             .addCustomRulesConfig(
-                                CustomRuleConfig.newBuilder()
-                                    .setRegex(
-                                        "\"\\\"/^[(]{0,1}[0-9]{3}[)]{0,1}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{3}[-\\\\\\\\s\\\\\\\\.]{0,1}[0-9]{4}$/\\\\n\\\"\"")
-                                    .build())
+                                CustomRuleConfig.newBuilder().setRegex(".*regex.*").build())
                             .build())
                     .build())
             .build();

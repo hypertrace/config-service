@@ -30,7 +30,6 @@ dependencies {
   implementation(commonLibs.traceable.platform.ipUtils)
   implementation(commonLibs.traceable.modsecurity.jni)
   implementation(commonLibs.commons.lang)
-  implementation(localLibs.automaton)
 
   implementation(commonLibs.traceable.activityevent.api)
   implementation(commonLibs.protobuf.javautil)

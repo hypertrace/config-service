@@ -13,6 +13,7 @@ message ScopeCondition {
   oneof scope {
     EntityScope entity_scope = 1;
     LabelScope label_scope = 2;
+    UrlScope url_scope = 3;
   }
 }
 

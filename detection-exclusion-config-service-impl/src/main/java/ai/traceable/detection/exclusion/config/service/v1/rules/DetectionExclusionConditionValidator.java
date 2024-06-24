@@ -32,6 +32,7 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.ListValue;
@@ -118,11 +119,11 @@ public class DetectionExclusionConditionValidator {
   }
 
   private void validateIpOrganisationCondition(IpOrganisationCondition ipOrganisationCondition) {
-    validateRegexes(ipOrganisationCondition.getIpOrganisationRegexesList());
+    RegexValidator.validateRegexes(ipOrganisationCondition.getIpOrganisationRegexesList());
   }
 
   private void validateIpAsnCondition(IpAsnCondition ipAsnCondition) {
-    validateRegexes(ipAsnCondition.getIpAsnRegexesList());
+    RegexValidator.validateRegexes(ipAsnCondition.getIpAsnRegexesList());
   }
 
   private void validateIpAbuseVelocityCondition(IpAbuseVelocityCondition ipAbuseVelocityCondition) {
@@ -153,6 +154,9 @@ public class DetectionExclusionConditionValidator {
       case LABEL_SCOPE:
         validateLabelScope(condition.getLabelScope());
         break;
+      case URL_SCOPE:
+        validateUrlScope(condition.getUrlScope());
+        break;
       default:
         throwInvalidArgumentException(
             String.format("Invalid scopeConditionCase %s", condition.getScopeCase()));
@@ -167,6 +171,11 @@ public class DetectionExclusionConditionValidator {
   private void validateLabelScope(LabelScope labelScope) {
     validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_TYPE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_IDS_FIELD_NUMBER);
+  }
+
+  private void validateUrlScope(UrlScope urlScope) {
+    validateNonDefaultPresenceOrThrow(urlScope, UrlScope.URL_REGEXES_FIELD_NUMBER);
+    RegexValidator.validateRegexes(urlScope.getUrlRegexesList());
   }
 
   private void validateSpanAttributeMatchCondition(SpanAttributeMatchCondition condition) {
@@ -407,10 +416,6 @@ public class DetectionExclusionConditionValidator {
 
   private boolean listValueContainsOnlyStrings(ListValue listValue) {
     return listValue.getValuesList().stream().allMatch(Value::hasStringValue);
-  }
-
-  private void validateRegexes(List<String> regexes) {
-    regexes.forEach(this::validateRegex);
   }
 
   private void validateRegex(String regexPattern) {

@@ -18,6 +18,7 @@ dependencies {
   implementation(commonLibs.commons.csv)
   implementation(commonLibs.guava)
   implementation(commonLibs.json.path)
+  implementation(localLibs.automaton)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

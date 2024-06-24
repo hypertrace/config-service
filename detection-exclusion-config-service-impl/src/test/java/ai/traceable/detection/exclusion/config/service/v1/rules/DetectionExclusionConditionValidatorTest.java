@@ -37,6 +37,7 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
@@ -127,6 +128,43 @@ class DetectionExclusionConditionValidatorTest {
                       .build())
               .build();
 
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+    }
+
+    // invalid url scope condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setScopeCondition(
+                  ScopeCondition.newBuilder().setUrlScope(UrlScope.getDefaultInstance()).build())
+              .build();
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+    }
+
+    // wide regex invalid url scope condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setScopeCondition(
+                  ScopeCondition.newBuilder()
+                      .setUrlScope(UrlScope.newBuilder().addUrlRegexes(".*"))
+                      .build())
+              .build();
+      assertThrows(
+          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+    }
+
+    // valid url scope condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setScopeCondition(
+                  ScopeCondition.newBuilder()
+                      .setUrlScope(
+                          UrlScope.newBuilder().addAllUrlRegexes(List.of(".*reg1.*", ".*reg2.*")))
+                      .build())
+              .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
     }
   }
@@ -854,7 +892,8 @@ class DetectionExclusionConditionValidatorTest {
         assertThrows(
             StatusRuntimeException.class,
             () -> conditionValidator.validateRuleCondition(condition));
-    assertTrue(throwable.getMessage().contains("Invalid Regex Value : ]["));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
     // valid condition
     DetectionExclusionCondition condition1 =
@@ -878,7 +917,8 @@ class DetectionExclusionConditionValidatorTest {
         assertThrows(
             StatusRuntimeException.class,
             () -> conditionValidator.validateRuleCondition(condition));
-    assertTrue(throwable.getMessage().contains("Invalid Regex Value : ]["));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
     // valid condition
     DetectionExclusionCondition condition1 =

@@ -15,6 +15,10 @@ message LabelScope {
   repeated string label_ids = 2;
 }
 
+message UrlScope{
+  repeated string url_regexes = 1;
+}
+
 enum EntityType {
   ENTITY_TYPE_UNSPECIFIED = 0;
   ENTITY_TYPE_SERVICE = 1;
