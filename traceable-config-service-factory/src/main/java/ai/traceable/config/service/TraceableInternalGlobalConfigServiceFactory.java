@@ -22,7 +22,9 @@ public class TraceableInternalGlobalConfigServiceFactory implements GrpcPlatform
         providersFactory.getProvidersForEnvironment(grpcServiceContainerEnvironment);
     return List.of(
         new GrpcPlatformService(PartitionerConfigServiceFactory.build(providers.getConfig())),
-        new GrpcPlatformService(FraudDataModelConfigServiceFactory.build(providers.getConfig())),
+        new GrpcPlatformService(
+            FraudDataModelConfigServiceFactory.build(
+                providers.getConfig(), providers.getChangeEventGenerator())),
         new GrpcPlatformService(
             FraudDataModelDerivationConfigServiceFactory.build(
                 providers.getLocalChannel(), providers.getChangeEventGenerator())));

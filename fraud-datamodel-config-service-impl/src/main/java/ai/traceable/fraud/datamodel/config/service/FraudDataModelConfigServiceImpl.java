@@ -75,7 +75,7 @@ public class FraudDataModelConfigServiceImpl
               .putAllFieldsMeta(request.getFieldsMetaMap())
               .build();
       ObjectType finalTypeForUpsert = generateMappings(requestContext, entityType);
-      fraudObjectTypesStore.putObjectTypes(
+      fraudObjectTypesStore.upsertObjectTypes(
           requestContext, Collections.singletonList(finalTypeForUpsert));
       responseObserver.onNext(
           UpsertEntityTypeResponse.newBuilder()
@@ -108,7 +108,7 @@ public class FraudDataModelConfigServiceImpl
               .addAllTags(FraudDataModelUtils.getDefaultTagsForRelationshipType())
               .build();
       ObjectType finalTypeForUpsert = generateMappings(requestContext, relationshipType);
-      fraudObjectTypesStore.putObjectTypes(
+      fraudObjectTypesStore.upsertObjectTypes(
           requestContext,
           Collections.singletonList(
               ObjectType.newBuilder()
@@ -138,7 +138,7 @@ public class FraudDataModelConfigServiceImpl
               .setTimestampField(request.getTimestampField())
               .build();
       ObjectType finalTypeForUpsert = generateMappings(requestContext, eventType);
-      fraudObjectTypesStore.putObjectTypes(
+      fraudObjectTypesStore.upsertObjectTypes(
           requestContext,
           Collections.singletonList(
               ObjectType.newBuilder().setEventType(finalTypeForUpsert.getEventType()).build()));
@@ -167,7 +167,7 @@ public class FraudDataModelConfigServiceImpl
               .putAllFieldsMeta(request.getFieldsMetaMap())
               .build();
       ObjectType finalTypeForUpsert = generateMappings(requestContext, metricType);
-      fraudObjectTypesStore.putObjectTypes(
+      fraudObjectTypesStore.upsertObjectTypes(
           requestContext,
           Collections.singletonList(
               ObjectType.newBuilder().setMetricType(finalTypeForUpsert.getMetricType()).build()));

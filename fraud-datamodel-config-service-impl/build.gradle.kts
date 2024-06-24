@@ -21,6 +21,7 @@ sourceSets {
 
 dependencies {
   implementation(projects.fraudDatamodelConfigServiceApi)
+  implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(commonLibs.protobuf.java)
   implementation(commonLibs.protobuf.javautil)
 

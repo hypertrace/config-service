@@ -3,6 +3,9 @@ package ai.traceable.fraud.datamodel.config.service;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Message;
+import com.google.protobuf.util.JsonFormat;
 import io.grpc.Status;
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +15,17 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public abstract class FraudDataModelUtils {
   private static final List<String> DEFAULT_RELATIONSHIP_TYPE_TAGS =
       Collections.singletonList("api_id");
+
+  private static final JsonFormat.Printer jsonPrinter =
+      JsonFormat.printer().includingDefaultValueFields();
+
+  public static String serialize(Message m) {
+    try {
+      return jsonPrinter.preservingProtoFieldNames().print(m);
+    } catch (InvalidProtocolBufferException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public static ObjectTypeReference getObjectTypeReference(ObjectType objectType) {
     switch (objectType.getObjectCase()) {

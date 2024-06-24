@@ -8,7 +8,8 @@ import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface FraudObjectTypesStore {
-  void putObjectTypes(RequestContext requestContext, List<ObjectType> objectTypes) throws Exception;
+  void upsertObjectTypes(RequestContext requestContext, List<ObjectType> objectTypes)
+      throws Exception;
 
   Optional<ObjectType> getObjectType(
       RequestContext requestContext, ObjectTypeReference objectTypeReference) throws Exception;

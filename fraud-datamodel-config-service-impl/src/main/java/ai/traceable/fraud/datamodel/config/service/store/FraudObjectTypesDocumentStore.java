@@ -8,6 +8,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.core.documentstore.BulkDeleteResult;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -32,9 +35,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
   public static final String FRAUD_OBJECT_TYPES = "fraud_object_types";
   private final Collection collection;
+  private final ConfigChangeEventGenerator changeEventGenerator;
 
-  public FraudObjectTypesDocumentStore(Datastore datastore) {
+  public FraudObjectTypesDocumentStore(
+      Datastore datastore, ConfigChangeEventGenerator changeEventGenerator) {
     this.collection = datastore.getCollection(FRAUD_OBJECT_TYPES);
+    this.changeEventGenerator = changeEventGenerator;
   }
 
   private ObjectType toObjectType(Document doc) throws IOException {
@@ -121,7 +127,7 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
   }
 
   @Override
-  public void putObjectTypes(RequestContext requestContext, List<ObjectType> objectTypes)
+  public void upsertObjectTypes(RequestContext requestContext, List<ObjectType> objectTypes)
       throws Exception {
     String tenantId = getTenantId(requestContext);
     Map<Key, Document> documentMap = new HashMap<>(objectTypes.size());
@@ -134,17 +140,31 @@ public class FraudObjectTypesDocumentStore implements FraudObjectTypesStore {
               tenantId, typeRef.getObjectKind(), typeRef.getId(), timestamp, timestamp, objectType);
       documentMap.put(key, doc);
     }
-    this.collection.bulkUpsert(documentMap);
+    if (this.collection.bulkUpsert(documentMap)) {
+      for (ObjectType objectType : objectTypes) {
+        Value value =
+            Value.newBuilder().setStringValue(FraudDataModelUtils.serialize(objectType)).build();
+        changeEventGenerator.sendCreateNotification(requestContext, FRAUD_OBJECT_TYPES, value);
+      }
+    }
   }
 
   @Override
   public void deleteObjectTypes(
       RequestContext requestContext, List<ObjectTypeReference> objectTypeReferences) {
     String tenantId = getTenantId(requestContext);
-    this.collection.delete(
-        objectTypeReferences.stream()
-            .map(o -> new FraudObjectTypeKey(tenantId, o))
-            .collect(Collectors.toSet()));
+    BulkDeleteResult result =
+        this.collection.delete(
+            objectTypeReferences.stream()
+                .map(o -> new FraudObjectTypeKey(tenantId, o))
+                .collect(Collectors.toSet()));
+    if (result.getDeletedCount() > 0) {
+      for (ObjectTypeReference typeReference : objectTypeReferences) {
+        Value value =
+            Value.newBuilder().setStringValue(FraudDataModelUtils.serialize(typeReference)).build();
+        changeEventGenerator.sendDeleteNotification(requestContext, FRAUD_OBJECT_TYPES, value);
+      }
+    }
   }
 
   private RelationalExpression buildTenantIdFilter(String tenantId) {

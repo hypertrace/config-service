@@ -19,6 +19,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
 
@@ -27,15 +28,20 @@ public class FraudDataModelConfigServiceModule extends AbstractModule {
   public static final String DOC_STORE_CONFIG_KEY = "document.store";
   public static final String DATA_STORE_TYPE = "dataStoreType";
   private final Config config;
+  private final ConfigChangeEventGenerator changeEventGenerator;
 
-  public FraudDataModelConfigServiceModule(Config config) {
+  public FraudDataModelConfigServiceModule(
+      Config config, ConfigChangeEventGenerator changeEventGenerator) {
     this.config = config;
+    this.changeEventGenerator = changeEventGenerator;
   }
 
   @Override
   protected void configure() {
+    bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
     bind(BindableService.class).to(FraudDataModelConfigServiceImpl.class);
-    bind(FraudObjectTypesStore.class).toInstance(getFraudObjectTypesDocumentStore(config));
+    bind(FraudObjectTypesStore.class)
+        .toInstance(getFraudObjectTypesDocumentStore(config, changeEventGenerator));
     bind(ColumnMappingsStore.class).toInstance(getColumnMappingsDocumentStore(config));
     bind(ColumnMapperDelegate.class).to(ColumnMapperDelegateImpl.class);
     bind(new TypeLiteral<ColumnMapper<EntityType>>() {}).to(EntityTypeColumnMapper.class);
@@ -45,13 +51,14 @@ public class FraudDataModelConfigServiceModule extends AbstractModule {
     bind(new TypeLiteral<ColumnMapper<MetricType>>() {}).to(MetricTypeColumnMapper.class);
   }
 
-  private FraudObjectTypesDocumentStore getFraudObjectTypesDocumentStore(Config config) {
+  private FraudObjectTypesDocumentStore getFraudObjectTypesDocumentStore(
+      Config config, ConfigChangeEventGenerator changeEventGenerator) {
     Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE);
     Config docStoreConfig = genericConfig.getConfig(DOC_STORE_CONFIG_KEY);
     String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
     Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
     Datastore datastore = DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
-    return new FraudObjectTypesDocumentStore(datastore);
+    return new FraudObjectTypesDocumentStore(datastore, changeEventGenerator);
   }
 
   private ColumnMappingsDocumentStore getColumnMappingsDocumentStore(Config config) {
