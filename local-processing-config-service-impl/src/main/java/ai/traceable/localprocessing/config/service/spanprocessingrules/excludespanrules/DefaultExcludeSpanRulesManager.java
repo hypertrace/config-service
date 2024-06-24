@@ -2,9 +2,9 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules.excludes
 
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanAttributeConstants.URL_PATH_SPAN_ATTRIBUTE_KEYS;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanAttributeConstants.URL_SPAN_ATTRIBUTE_KEYS;
+import static ai.traceable.localprocessing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
 
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule;
-import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRule.Builder;
 import ai.traceable.localprocessing.config.service.v1.ExcludeSpanProcessingRuleInfo;
 import ai.traceable.localprocessing.config.service.v1.ListValue;
 import ai.traceable.localprocessing.config.service.v1.LogicalOperator;
@@ -33,11 +33,8 @@ import org.hypertrace.span.processing.config.service.v1.SpanProcessingConfigServ
 @Slf4j
 public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
 
-  private static final Set<org.hypertrace.span.processing.config.service.v1.RelationalOperator>
-      AGENT_UNSUPPORTED_RELATIONAL_OPERATORS =
-          Set.of(
-              org.hypertrace.span.processing.config.service.v1.RelationalOperator
-                  .RELATIONAL_OPERATOR_IN);
+  private static final Set<RelationalOperator> AGENT_UNSUPPORTED_RELATIONAL_OPERATORS =
+      Set.of(RELATIONAL_OPERATOR_IN);
   private final SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
@@ -98,10 +95,6 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
       return Optional.empty();
     }
 
-    if (isAgentUnsupportedRule(excludeSpanRule)) {
-      return Optional.empty();
-    }
-
     // check if the rule is disabled
     if (excludeSpanRule.getRuleInfo().getDisabled()) {
       return Optional.empty();
@@ -127,8 +120,9 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
                       .setExcludeSpanProcessingRuleInfo(
                           ExcludeSpanProcessingRuleInfo.newBuilder()
                               .setId(excludeSpanRule.getId())
-                              .setFilter(spanFilter)))
-          .map(Builder::build);
+                              .setFilter(spanFilter))
+                      .build())
+          .filter(this::isAgentSupportedRule);
     } catch (Exception e) {
       log.error("Exception occurred in processing spanRule: {}", excludeSpanRule, e);
       return Optional.empty();
@@ -139,34 +133,37 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
     return excludeSpanRule.getRuleInfo().hasFilter();
   }
 
-  private boolean isAgentUnsupportedRule(ExcludeSpanRule excludeSpanRule) {
-    return isAgentUnsupportedRuleId(excludeSpanRule.getId())
-        || isAgentUnsupportedFilter(excludeSpanRule.getRuleInfo().getFilter());
+  private boolean isAgentSupportedRule(ExcludeSpanProcessingRule spanProcessingRule) {
+    return isAgentSupportedRuleId(spanProcessingRule.getExcludeSpanProcessingRuleInfo().getId())
+        && isAgentSupportedFilter(
+            spanProcessingRule.getExcludeSpanProcessingRuleInfo().getFilter());
   }
 
-  private boolean isAgentUnsupportedFilter(
-      org.hypertrace.span.processing.config.service.v1.SpanFilter spanFilter) {
+  private boolean isAgentSupportedFilter(SpanFilter spanFilter) {
     switch (spanFilter.getSpanFilterExpressionCase()) {
-      case LOGICAL_SPAN_FILTER:
-        return isAgentUnsupportedLogicalFilter(spanFilter.getLogicalSpanFilter());
-      case RELATIONAL_SPAN_FILTER:
-        return isAgentUnsupportedRelationalFilter(spanFilter.getRelationalSpanFilter());
+      case LOGICAL_FILTER:
+        return isAgentSupportedLogicalFilter(spanFilter.getLogicalFilter());
+      case RELATIONAL_FILTER:
+        return isAgentSupportedRelationalFilter(spanFilter.getRelationalFilter());
       default:
-        return true;
+        return false;
     }
   }
 
-  private boolean isAgentUnsupportedRelationalFilter(
-      RelationalSpanFilterExpression relationalSpanFilter) {
-    return isAgentUnsupportedRelationalOperator(relationalSpanFilter.getOperator());
+  private boolean isAgentSupportedRelationalFilter(
+      ai.traceable.localprocessing.config.service.v1.RelationalSpanFilterExpression
+          relationalSpanFilter) {
+    return isAgentSupportedRelationalOperator(relationalSpanFilter.getOperator());
   }
 
-  private boolean isAgentUnsupportedLogicalFilter(LogicalSpanFilterExpression logicalSpanFilter) {
-    return logicalSpanFilter.getOperandsList().stream().anyMatch(this::isAgentUnsupportedFilter);
+  private boolean isAgentSupportedLogicalFilter(
+      ai.traceable.localprocessing.config.service.v1.LogicalSpanFilterExpression
+          logicalSpanFilter) {
+    return logicalSpanFilter.getOperandsList().stream().allMatch(this::isAgentSupportedFilter);
   }
 
-  private boolean isAgentUnsupportedRuleId(String ruleId) {
-    return agentUnsupportedRuleIds.contains(ruleId);
+  private boolean isAgentSupportedRuleId(String ruleId) {
+    return !agentUnsupportedRuleIds.contains(ruleId);
   }
 
   private Optional<SpanFilter> convertFilter(
@@ -212,9 +209,8 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
         individualAttributeFilters, LogicalOperator.LOGICAL_OPERATOR_OR);
   }
 
-  private boolean isAgentUnsupportedRelationalOperator(
-      org.hypertrace.span.processing.config.service.v1.RelationalOperator operator) {
-    return AGENT_UNSUPPORTED_RELATIONAL_OPERATORS.contains(operator);
+  private boolean isAgentSupportedRelationalOperator(RelationalOperator relationalOperator) {
+    return !AGENT_UNSUPPORTED_RELATIONAL_OPERATORS.contains(relationalOperator);
   }
 
   private Optional<SpanFilter> combineFiltersWithOperator(
@@ -316,7 +312,7 @@ public class DefaultExcludeSpanRulesManager implements ExcludeSpanRulesManager {
       case RELATIONAL_OPERATOR_REGEX_MATCH:
         return RelationalOperator.RELATIONAL_OPERATOR_REGEX_MATCH;
       case RELATIONAL_OPERATOR_IN:
-        return RelationalOperator.RELATIONAL_OPERATOR_IN;
+        return RELATIONAL_OPERATOR_IN;
       default: // TODO: do we want to throw or log error considering these would be used by agent as
         // well
         throw new UnsupportedOperationException(
