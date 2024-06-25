@@ -25,11 +25,6 @@ public class RegexValidator {
           .withCause(e)
           .withDescription("Invalid Regex pattern: " + regexPattern);
     }
-    if (isWideRegex(regexPattern)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Wide regex is not allowed : {}", regexPattern))
-          .asRuntimeException();
-    }
     return Status.OK;
   }
 
