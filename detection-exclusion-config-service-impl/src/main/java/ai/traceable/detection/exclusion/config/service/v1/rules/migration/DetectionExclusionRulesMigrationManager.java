@@ -3,15 +3,20 @@ package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 import ai.traceable.anomaly.config.service.exclusion.handlers.AnomalyExclusionRuleConfigStore;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionMigrationConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +32,10 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DetectionExclusionRulesMigrationManager implements RulesMigrationManager {
 
-  private static final GetRulesFilter OLD_RULES_FILTER =
+  static final GetRulesFilter OLD_RULES_FILTER =
       GetRulesFilter.newBuilder().addRuleCreationSources(RuleSource.RULE_SOURCE_OLD_API).build();
-
-  private static final DetectionExclusionMigrationConfig MIGRATION_COMPLETED_CONFIG =
-      DetectionExclusionMigrationConfig.newBuilder().setMigrationCompleted(true).build();
+  private static final String SSTI_OLD_SUB_RULE_ID = "crs_9210310";
+  private static final String SSTI_NEW_SUB_RULE_ID = "crs_9320310";
 
   private final FeatureCachingClient featureCachingClient;
   private final DetectionExclusionRulesStore newRulesStore;
@@ -42,6 +46,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   private final DetectionExclusionConfigServiceConfig config;
 
   private final Set<ContextualKey<Void>> migrationCompletedTenantsSet = new HashSet<>();
+  private final Set<ContextualKey<Void>> changeLog2MigrationCompletedTenantsSet = new HashSet<>();
 
   @Inject
   public DetectionExclusionRulesMigrationManager(
@@ -62,30 +67,28 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   }
 
   @Override
-  public boolean shouldMigrateFromOldStore(RequestContext requestContext) {
+  public void migrateFromOldStoreIfApplicable(RequestContext requestContext) {
     if (config.isMigrationDisabled()) {
-      return false;
+      return;
     }
     ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
     if (migrationCompletedTenantsSet.contains(contextualKey)) {
-      return false;
+      return;
     }
-
-    boolean migrationCompleted =
+    DetectionExclusionMigrationConfig migrationConfig =
         migrationStore
             .getData(requestContext)
-            .map(DetectionExclusionMigrationConfig::getMigrationCompleted)
-            .orElse(false);
-    if (migrationCompleted) {
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+
+    if (migrationConfig.getMigrationCompleted()) {
       migrationCompletedTenantsSet.add(contextualKey);
-      return false;
-    } else {
-      return featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext);
+    } else if (featureCachingClient.isDetectionExclusionV2EnabledForTenant(requestContext)) {
+      updateDetectionExclusionRulesFromOldStore(requestContext, migrationConfig);
     }
   }
 
-  @Override
-  public void updateDetectionExclusionRulesFromOldStore(RequestContext requestContext) {
+  private void updateDetectionExclusionRulesFromOldStore(
+      RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
     Map<String, ContextualConfigObject<DetectionExclusionRule>> newRuleObjects =
         newRulesStore.getAllObjects(requestContext, OLD_RULES_FILTER).stream()
             .collect(Collectors.toMap(object -> object.getData().getId(), Function.identity()));
@@ -140,7 +143,91 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       newRulesStore.upsertObjects(requestContext, oldRulesToUpdate);
     }
 
-    migrationStore.upsertObject(requestContext, MIGRATION_COMPLETED_CONFIG);
+    migrationStore.upsertObject(
+        requestContext, migrationConfig.toBuilder().setMigrationCompleted(true).build());
     migrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
+  }
+
+  @Override
+  public void migrateFromChangeLog2IfApplicable(RequestContext requestContext) {
+    if (config.isChangeLog2MigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (changeLog2MigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    DetectionExclusionMigrationConfig migrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+
+    if (migrationConfig.getChangeLog2MigrationCompleted()) {
+      changeLog2MigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateDetectionExclusionRulesFromChangeLog2(requestContext, migrationConfig);
+    }
+  }
+
+  private void updateDetectionExclusionRulesFromChangeLog2(
+      RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
+    List<DetectionExclusionRule> updatedRules =
+        newRulesStore.getAllConfigData(requestContext).stream()
+            .map(
+                rule -> {
+                  DetectionExclusionRuleInfo.Builder ruleInfoBuilder =
+                      rule.getRuleInfo().toBuilder();
+                  boolean isUpdated = updateConditionForSSTIifAny(ruleInfoBuilder);
+                  if (ruleInfoBuilder.getExclusionTargetsList().isEmpty()) {
+                    ruleInfoBuilder.addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT);
+                    isUpdated = true;
+                  }
+                  return isUpdated ? rule.toBuilder().setRuleInfo(ruleInfoBuilder).build() : null;
+                })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList());
+
+    if (!updatedRules.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, updatedRules);
+    }
+
+    migrationStore.upsertObject(
+        requestContext, migrationConfig.toBuilder().setChangeLog2MigrationCompleted(true).build());
+    changeLog2MigrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
+  }
+
+  private boolean updateConditionForSSTIifAny(DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {
+    boolean isUpdated = false;
+    List<DetectionExclusionCondition> conditions = new ArrayList<>();
+    for (DetectionExclusionCondition condition : ruleInfoBuilder.getConditionsList()) {
+      if (condition.getEventCondition().getSystemDefinedEventsList().stream()
+          .anyMatch(event -> SSTI_OLD_SUB_RULE_ID.equals(event.getEventSubTypeId()))) {
+        List<SystemDefinedEvent> events =
+            condition.getEventCondition().getSystemDefinedEventsList().stream()
+                .map(
+                    event -> {
+                      if (SSTI_OLD_SUB_RULE_ID.equals(event.getEventTypeId())) {
+                        return event.toBuilder().setEventTypeId(SSTI_NEW_SUB_RULE_ID).build();
+                      }
+                      return event;
+                    })
+                .collect(Collectors.toList());
+        conditions.add(
+            condition.toBuilder()
+                .setEventCondition(
+                    condition.getEventCondition().toBuilder()
+                        .clearSystemDefinedEvents()
+                        .addAllSystemDefinedEvents(events))
+                .build());
+        isUpdated = true;
+      } else {
+        conditions.add(condition);
+      }
+    }
+    if (isUpdated) {
+      ruleInfoBuilder.clearConditions();
+      ruleInfoBuilder.addAllConditions(conditions);
+    }
+    return isUpdated;
   }
 }

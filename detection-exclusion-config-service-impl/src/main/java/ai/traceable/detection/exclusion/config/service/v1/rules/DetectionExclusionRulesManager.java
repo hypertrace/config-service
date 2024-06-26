@@ -42,9 +42,8 @@ public class DetectionExclusionRulesManager implements RulesManager {
   @Override
   public List<DetectionExclusionRule> getDetectionExclusionRules(
       RequestContext requestContext, GetRulesFilter filter) {
-    if (rulesMigrationManager.shouldMigrateFromOldStore(requestContext)) {
-      rulesMigrationManager.updateDetectionExclusionRulesFromOldStore(requestContext);
-    }
+    rulesMigrationManager.migrateFromOldStoreIfApplicable(requestContext);
+    rulesMigrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       return rulesStore.getAllConfigData(requestContext);
     }

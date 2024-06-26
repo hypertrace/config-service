@@ -263,6 +263,8 @@ traceableConfigServiceConfig:
     splunkHttpSupportEnabled: false
   detectionExclusionConfigService:
     migrationDisabled: false
+    changeLog2:
+      migrationDisabled: true
   astConfigService:
     defaultPurgeDuration: 30d
     defaultAstFeatureConfig:

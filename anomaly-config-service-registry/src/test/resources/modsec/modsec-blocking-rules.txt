@@ -54,7 +54,6 @@ crs_9440920 :: Java Spring Core: RCE (CVE-2022-22965)
 crs_9440930 :: Confluence Server OGNL Injection: Webwork: (CVE-2021-26084)
 crs_944120 :: Remote Command Execution: Java serialization (CVE-2015-4852) (120)
 crs_9440940 :: Apache Struts path traversal to RCE vulnerability: (CVE-2023-50164)
-crs_9210310 :: Server Side Template Injection (SSTI) Attempt
 crs_9410160 :: XSS InjectionChecker: HTML Injection
 crs_1040100 :: GraphQL Introspection Query Detected
 crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint
@@ -64,6 +63,7 @@ crs_9320100 :: Remote Command Execution: Unix Command Injection (T100)
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105)
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150)
 crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155)
+crs_9320310 :: Server Side Template Injection (SSTI) Attempt
 crs_932180 :: Restricted File Upload Attempt
 crs_9410170 :: NoScript XSS InjectionChecker: Attribute Injection (T170)
 crs_941260 :: IE XSS Filters - Attack (Meta charset)
