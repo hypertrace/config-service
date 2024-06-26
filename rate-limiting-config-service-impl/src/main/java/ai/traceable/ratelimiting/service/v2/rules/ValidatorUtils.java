@@ -143,7 +143,7 @@ public class ValidatorUtils {
   }
 
   public void validateRegex(String regexPattern) {
-    Status status = RegexValidator.validate(regexPattern);
+    Status status = RegexValidator.validateRegex(regexPattern);
     if (!status.isOk()) {
       throwInvalidArgumentException(String.format("Invalid Regex pattern: %s", regexPattern));
     }
@@ -333,7 +333,7 @@ public class ValidatorUtils {
               "Invalid condition for type %s:%n %s",
               getName(userIdCondition), printMessage(userIdCondition)));
     }
-    RegexValidator.validateRegexes(userIdRegexes);
+    RegexValidator.validateRegexesWithNonWide(userIdRegexes);
   }
 
   private void validateEmailDomainCondition(EmailDomainCondition emailDomainCondition) {
@@ -345,7 +345,7 @@ public class ValidatorUtils {
               "Invalid condition for type %s:%n %s",
               getName(emailDomainCondition), printMessage(emailDomainCondition)));
     }
-    RegexValidator.validateRegexes(emailRegexes);
+    RegexValidator.validateRegexesWithNonWide(emailRegexes);
   }
 
   private void validateUserAgentCondition(UserAgentCondition userAgentCondition) {
@@ -357,7 +357,7 @@ public class ValidatorUtils {
               "Invalid condition for type %s:%n %s",
               getName(userAgentCondition), printMessage(userAgentCondition)));
     }
-    RegexValidator.validateRegexes(userAgentRegexes);
+    RegexValidator.validateRegexesWithNonWide(userAgentRegexes);
   }
 
   private void validateIpConnectionTypeCondition(
@@ -396,11 +396,12 @@ public class ValidatorUtils {
   }
 
   private void validateIpOrganisationCondition(IpOrganisationCondition ipOrganisationCondition) {
-    RegexValidator.validateRegexes(ipOrganisationCondition.getIpOrganisationRegexesList());
+    RegexValidator.validateRegexesWithNonWide(
+        ipOrganisationCondition.getIpOrganisationRegexesList());
   }
 
   private void validateIpAsnCondition(IpAsnCondition ipAsnCondition) {
-    RegexValidator.validateRegexes(ipAsnCondition.getIpAsnRegexesList());
+    RegexValidator.validateRegexesWithNonWide(ipAsnCondition.getIpAsnRegexesList());
   }
 
   private void validateIpAbuseVelocityCondition(IpAbuseVelocityCondition ipAbuseVelocityCondition) {

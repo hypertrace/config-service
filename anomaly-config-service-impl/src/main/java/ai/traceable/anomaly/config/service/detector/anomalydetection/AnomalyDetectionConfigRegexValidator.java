@@ -17,7 +17,7 @@ class AnomalyDetectionConfigRegexValidator {
       case OBJECT_BOLA:
         status =
             detectionConfig.getObjectBola().getMultiValuedStringParamRules().getRulesList().stream()
-                .map(rule -> RegexValidator.validate(rule.getKeyRegex()))
+                .map(rule -> RegexValidator.validateRegex(rule.getKeyRegex()))
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -30,7 +30,7 @@ class AnomalyDetectionConfigRegexValidator {
                 .filter(MultiValuedStringParamRule::hasValueRegex)
                 .map(
                     multiValuedStringParamRule ->
-                        RegexValidator.validate(multiValuedStringParamRule.getValueRegex()))
+                        RegexValidator.validateRegex(multiValuedStringParamRule.getValueRegex()))
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -47,7 +47,7 @@ class AnomalyDetectionConfigRegexValidator {
       case MISSING_PARAM:
         status =
             detectionConfig.getMissingParam().getSevereRegexStrings().getValuesList().stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -57,7 +57,7 @@ class AnomalyDetectionConfigRegexValidator {
         }
         status =
             detectionConfig.getMissingParam().getAuthRegexStrings().getValuesList().stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -66,7 +66,7 @@ class AnomalyDetectionConfigRegexValidator {
       case UNKNOWN_PARAM:
         status =
             detectionConfig.getUnknownParam().getSevereRegexStrings().getValuesList().stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -87,7 +87,7 @@ class AnomalyDetectionConfigRegexValidator {
                 .getRejectUrlRegexStrings()
                 .getValuesList()
                 .stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -100,7 +100,7 @@ class AnomalyDetectionConfigRegexValidator {
                 .getRejectUrlRegexStrings()
                 .getValuesList()
                 .stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);

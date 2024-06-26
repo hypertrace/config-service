@@ -147,7 +147,7 @@ public class SessionTokenRuleValidator {
     }
 
     if (operator == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX) {
-      Status status = RegexValidator.validate(matchCondition.getMatchValue().getStringValue());
+      Status status = RegexValidator.validateRegex(matchCondition.getMatchValue().getStringValue());
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }

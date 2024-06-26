@@ -19,7 +19,7 @@ class TrainingConfigRegexValidator {
       case JWT_PARAMS:
         status =
             metadataTrainingConfig.getJwtParams().getIncludeParamRegexes().getValuesList().stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -36,7 +36,7 @@ class TrainingConfigRegexValidator {
       case ENUMERABLE_PARAM:
         if (vulnerabilityTrainingConfig.getEnumerableParam().hasIncludeParamRegex()) {
           status =
-              RegexValidator.validate(
+              RegexValidator.validateRegex(
                   vulnerabilityTrainingConfig.getEnumerableParam().getIncludeParamRegex());
         }
         break;
@@ -51,7 +51,7 @@ class TrainingConfigRegexValidator {
       case OBJECT_BOLA:
         ObjectBolaTrainingConfig objectBolaTrainingConfig = sessionTrainingConfig.getObjectBola();
         status =
-            RegexValidator.validate(
+            RegexValidator.validateRegex(
                 objectBolaTrainingConfig
                     .getParamSusceptibilityConfig()
                     .getRequestParamValueRegex());
@@ -60,7 +60,7 @@ class TrainingConfigRegexValidator {
         }
         status =
             objectBolaTrainingConfig.getMultiValuedStringParamRules().getRulesList().stream()
-                .map(rule -> RegexValidator.validate(rule.getKeyRegex()))
+                .map(rule -> RegexValidator.validateRegex(rule.getKeyRegex()))
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -70,7 +70,7 @@ class TrainingConfigRegexValidator {
         status =
             objectBolaTrainingConfig.getMultiValuedStringParamRules().getRulesList().stream()
                 .filter(MultiValuedStringParamRule::hasValueRegex)
-                .map(rule -> RegexValidator.validate(rule.getValueRegex()))
+                .map(rule -> RegexValidator.validateRegex(rule.getValueRegex()))
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -90,7 +90,7 @@ class TrainingConfigRegexValidator {
                 .getUrlRejectRegexPatterns()
                 .getValuesList()
                 .stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -103,7 +103,7 @@ class TrainingConfigRegexValidator {
                 .getAllowRegexList()
                 .getValuesList()
                 .stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -112,7 +112,7 @@ class TrainingConfigRegexValidator {
       case CUSTOM_RULES_LIST_CONFIG:
         status =
             apiNamingTrainingConfig.getCustomRulesListConfig().getCustomRulesConfigList().stream()
-                .map(rule -> RegexValidator.validate(rule.getRegex()))
+                .map(rule -> RegexValidator.validateRegex(rule.getRegex()))
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);
@@ -126,7 +126,7 @@ class TrainingConfigRegexValidator {
                 .getUrlPathRegexPatterns()
                 .getValuesList()
                 .stream()
-                .map(RegexValidator::validate)
+                .map(RegexValidator::validateRegex)
                 .filter(Predicate.not(Status::isOk))
                 .findFirst()
                 .orElse(Status.OK);

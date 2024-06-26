@@ -93,7 +93,7 @@ public class SessionIdentificationConfigRequestValidator {
   private void validateRegexList(List<String> regexes) {
     regexes.forEach(
         regex -> {
-          Status status = RegexValidator.validate(regex);
+          Status status = RegexValidator.validateRegex(regex);
           if (!status.isOk()) {
             throw status.asRuntimeException();
           }

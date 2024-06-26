@@ -277,7 +277,7 @@ public class TransactionActionConfigValidator {
             String.format(
                 "Invalid scope condition : %s for transaction action config", scopeCondition));
       }
-      RegexValidator.validateRegexes(urlRegexesList);
+      RegexValidator.validateRegexesWithNonWide(urlRegexesList);
     }
   }
 }

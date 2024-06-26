@@ -33,7 +33,7 @@ public class ModsecOperatorExpression {
 
   private void validate() {
     if (operator.equals(ModsecOperator.MATCHES_REGEX)) {
-      Status status = RegexValidator.validate(value);
+      Status status = RegexValidator.validateRegex(value);
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }

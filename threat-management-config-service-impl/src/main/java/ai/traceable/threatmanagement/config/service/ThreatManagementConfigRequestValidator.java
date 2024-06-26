@@ -125,7 +125,7 @@ class ThreatManagementConfigRequestValidator {
         .getUserIdRegexesList()
         .forEach(
             userIdRegex -> {
-              if (!RegexValidator.validate(userIdRegex).isOk()) {
+              if (!RegexValidator.validateRegex(userIdRegex).isOk()) {
                 throw new IllegalArgumentException(
                     "Invalid user id regex provided: " + userIdRegex);
               }

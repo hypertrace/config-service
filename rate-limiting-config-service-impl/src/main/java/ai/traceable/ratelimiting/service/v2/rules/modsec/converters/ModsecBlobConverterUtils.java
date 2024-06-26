@@ -126,7 +126,7 @@ public class ModsecBlobConverterUtils {
   }
 
   static void validateRegex(String combinedRegex) {
-    Status validationStatus = RegexValidator.validate(combinedRegex);
+    Status validationStatus = RegexValidator.validateRegex(combinedRegex);
     if (!validationStatus.isOk()) {
       throw validationStatus.asRuntimeException();
     }

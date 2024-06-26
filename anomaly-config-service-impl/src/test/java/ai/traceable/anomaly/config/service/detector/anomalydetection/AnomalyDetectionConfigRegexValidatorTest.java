@@ -147,7 +147,7 @@ public class AnomalyDetectionConfigRegexValidatorTest {
   }
 
   @Test
-  void testValidateApiStateBasedAnomalyDetectionConfigRegex() {
+  void testValidateRegexWithNonWideApiStateBasedAnomalyDetectionConfigRegexWithWide() {
     ApiStateBasedAnomalyDetectionConfig detectionConfig =
         ApiStateBasedAnomalyDetectionConfig.newBuilder()
             .setUnderDiscoveryApi(

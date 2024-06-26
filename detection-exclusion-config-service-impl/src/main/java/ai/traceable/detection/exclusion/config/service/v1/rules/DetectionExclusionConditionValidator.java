@@ -175,7 +175,7 @@ public class DetectionExclusionConditionValidator {
 
   private void validateUrlScope(UrlScope urlScope) {
     validateNonDefaultPresenceOrThrow(urlScope, UrlScope.URL_REGEXES_FIELD_NUMBER);
-    RegexValidator.validateRegexes(urlScope.getUrlRegexesList());
+    RegexValidator.validateRegexesWithNonWide(urlScope.getUrlRegexesList());
   }
 
   private void validateSpanAttributeMatchCondition(SpanAttributeMatchCondition condition) {
@@ -419,7 +419,7 @@ public class DetectionExclusionConditionValidator {
   }
 
   private void validateRegex(String regexPattern) {
-    Status status = RegexValidator.validate(regexPattern);
+    Status status = RegexValidator.validateRegex(regexPattern);
     if (!status.isOk()) {
       throwInvalidArgumentException(String.format("Invalid Regex Value : %s", regexPattern));
     }

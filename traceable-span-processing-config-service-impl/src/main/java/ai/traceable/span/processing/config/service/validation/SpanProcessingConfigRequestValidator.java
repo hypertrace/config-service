@@ -379,7 +379,7 @@ public class SpanProcessingConfigRequestValidator {
     final SpanFilterValue rhs = filter.getRelationalSpanFilter().getRightOperand();
     if (filter.getRelationalSpanFilter().getOperator().equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
       validateNonDefaultPresenceOrThrow(rhs, SpanFilterValue.STRING_VALUE_FIELD_NUMBER);
-      final Status status = RegexValidator.validate(rhs.getStringValue());
+      final Status status = RegexValidator.validateRegex(rhs.getStringValue());
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }
@@ -389,7 +389,7 @@ public class SpanProcessingConfigRequestValidator {
   private void validateRegex(List<String> regexes) {
     Status status =
         regexes.stream()
-            .map(RegexValidator::validate)
+            .map(RegexValidator::validateRegex)
             .filter(Predicate.not(Status::isOk))
             .findFirst()
             .orElse(Status.OK);

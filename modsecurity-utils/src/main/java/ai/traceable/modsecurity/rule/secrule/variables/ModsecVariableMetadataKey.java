@@ -35,7 +35,7 @@ public class ModsecVariableMetadataKey {
         throw new IllegalArgumentException(
             String.format("Pipe is not allowed in Modsec Variable Operator Regex: %s", key));
       }
-      Status status = RegexValidator.validate(key);
+      Status status = RegexValidator.validateRegex(key);
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }

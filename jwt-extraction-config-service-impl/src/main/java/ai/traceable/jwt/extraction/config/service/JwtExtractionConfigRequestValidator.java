@@ -121,7 +121,7 @@ class JwtExtractionConfigRequestValidator {
 
   void validateJwtLocation(JwtLocation location) {
     if (location.hasRegexCaptureGroup()) {
-      Status status = RegexValidator.validate(location.getRegexCaptureGroup());
+      Status status = RegexValidator.validateRegex(location.getRegexCaptureGroup());
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }
@@ -172,7 +172,7 @@ class JwtExtractionConfigRequestValidator {
     if (stringPredicate.getOperator() == RelationalOperator.RELATIONAL_OPERATOR_MATCHES_REGEX
         || stringPredicate.getOperator()
             == RelationalOperator.RELATIONAL_OPERATOR_NOT_MATCHES_REGEX) {
-      Status status = RegexValidator.validate(stringPredicate.getValue());
+      Status status = RegexValidator.validateRegex(stringPredicate.getValue());
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }

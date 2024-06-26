@@ -133,7 +133,7 @@ public class AnomalyConfigValidator {
           return Status.INVALID_ARGUMENT.withDescription(
               "Param regex should not be empty for paramInfo");
         }
-        return RegexValidator.validate(paramInfo.getParamRegex());
+        return RegexValidator.validateRegex(paramInfo.getParamRegex());
       default:
         return Status.INVALID_ARGUMENT.withDescription("ParamInfo is not set");
     }

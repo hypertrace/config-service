@@ -72,19 +72,23 @@ public class AstScanProfileConfigRequestValidator {
   private void validateScanProfileConfigurationFields(
       ScanProfileConfiguration scanProfileConfiguration) {
     Status regexValidationStatus;
-    regexValidationStatus = RegexValidator.validate(scanProfileConfiguration.getIncludeUrlRegex());
+    regexValidationStatus =
+        RegexValidator.validateRegex(scanProfileConfiguration.getIncludeUrlRegex());
     if (!regexValidationStatus.isOk()) {
       throw regexValidationStatus.asRuntimeException();
     }
-    regexValidationStatus = RegexValidator.validate(scanProfileConfiguration.getExcludeUrlRegex());
+    regexValidationStatus =
+        RegexValidator.validateRegex(scanProfileConfiguration.getExcludeUrlRegex());
     if (!regexValidationStatus.isOk()) {
       throw regexValidationStatus.asRuntimeException();
     }
-    regexValidationStatus = RegexValidator.validate(scanProfileConfiguration.getIncludeFqnRegex());
+    regexValidationStatus =
+        RegexValidator.validateRegex(scanProfileConfiguration.getIncludeFqnRegex());
     if (!regexValidationStatus.isOk()) {
       throw regexValidationStatus.asRuntimeException();
     }
-    regexValidationStatus = RegexValidator.validate(scanProfileConfiguration.getExcludeUrlRegex());
+    regexValidationStatus =
+        RegexValidator.validateRegex(scanProfileConfiguration.getExcludeUrlRegex());
     if (!regexValidationStatus.isOk()) {
       throw regexValidationStatus.asRuntimeException();
     }

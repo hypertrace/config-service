@@ -105,7 +105,7 @@ class IpRangeRulesValidator implements RulesValidator {
             == StatusCodeMatchType.STATUS_CODE_MATCH_TYPE_MATCHES_REGEX
         || statusCodeMatchCondition.getMatchType()
             == StatusCodeMatchType.STATUS_CODE_MATCH_TYPE_NOT_MATCH_REGEX) {
-      return RegexValidator.validate(statusCodeMatchCondition.getMatchValue());
+      return RegexValidator.validateRegex(statusCodeMatchCondition.getMatchValue());
     }
     return Status.OK;
   }

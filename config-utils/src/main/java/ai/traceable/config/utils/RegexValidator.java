@@ -16,7 +16,7 @@ public class RegexValidator {
 
   private RegexValidator() {}
 
-  public static Status validate(String regexPattern) {
+  public static Status validateRegex(String regexPattern) {
     // compiling an invalid regex throws PatternSyntaxException
     try {
       Pattern.compile(regexPattern);
@@ -46,14 +46,24 @@ public class RegexValidator {
 
   public static void validateRegexes(List<String> regexes) {
     for (String regex : regexes) {
+      if (validateRegex(regex) != Status.OK) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Invalid regex is not allowed : {}", regex))
+            .asRuntimeException();
+      }
+    }
+  }
+
+  public static void validateRegexesWithNonWide(List<String> regexes) {
+    for (String regex : regexes) {
+      if (validateRegex(regex) != Status.OK) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Invalid regex is not allowed : {}", regex))
+            .asRuntimeException();
+      }
       if (isWideRegex(regex)) {
         throw Status.INVALID_ARGUMENT
             .withDescription(String.format("Wide regex is not allowed : {}", regex))
-            .asRuntimeException();
-      }
-      if (validate(regex) != Status.OK) {
-        throw Status.INVALID_ARGUMENT
-            .withDescription(String.format("Invalid regex is not allowed : {}", regex))
             .asRuntimeException();
       }
     }
