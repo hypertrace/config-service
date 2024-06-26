@@ -159,10 +159,17 @@ message KeyValueExpression {
 }
 
 message AttributeKeyValueExpression {
-  MatchOperator key_match_operator = 1;
-  string match_key = 2;
-  MatchOperator value_match_operator = 3;
-  string match_value = 4;
+  MatchOperator key_match_operator = 1 [deprecated = true];
+  string match_key = 2 [deprecated = true];
+  MatchOperator value_match_operator = 3 [deprecated = true];
+  string match_value = 4 [deprecated = true];
+  StringCondition key_condition = 5;
+  StringCondition value_condition = 6;
+}
+
+message StringCondition {
+  MatchOperator operator = 1;
+  string value = 2;
 }
 
 message ExpiryDetails {
