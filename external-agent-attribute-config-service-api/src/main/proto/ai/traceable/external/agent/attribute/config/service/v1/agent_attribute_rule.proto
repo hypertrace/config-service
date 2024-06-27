@@ -52,6 +52,14 @@ message AttributeRule {
       FirstMatchingProjector first_matching_projector = 10;
       EachMatchingProjector each_matching_projector = 11;
       ConditionalProjector conditional_projector = 12;
+      SubstitutionProjector substitution_projector = 13;
+    }
+
+    message SubstitutionProjector {
+      // search and replace the string matching the regexCaptureGroup
+      string regex_capture_group_search = 1;
+      AttributeRule replacement_projection_rule = 2;
+      AttributeRule attribute_rule = 3;
     }
 
     message ConditionalProjector {
