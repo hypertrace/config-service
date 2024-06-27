@@ -2,8 +2,12 @@ package ai.traceable.jira.integration.config.service;
 
 import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateResponse;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateResponse;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfigurationDetails;
@@ -11,6 +15,8 @@ import ai.traceable.jira.integration.config.service.api.v1.JiraTemplate;
 import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateResponse;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
@@ -170,6 +176,84 @@ class JiraAdditionalConfigurationCoordinator {
             .build());
 
     return DeleteJiraTemplateResponse.newBuilder().build();
+  }
+
+  CreateProjectIssueConfigurationResponse createProjectIssueConfiguration(
+      CreateProjectIssueConfigurationRequest request, RequestContext requestContext) {
+
+    if (this.getJiraAdditionalConfiguration(
+            requestContext,
+            GetProjectIssueConfigurationsFilter.newBuilder()
+                .setIntegrationId(request.getIntegrationId())
+                .setIssueType(request.getIssueType())
+                .setProjectId(request.getProjectId())
+                .addSupportedEntityTypes(request.getTraceableEntityType())
+                .build())
+        .stream()
+        .findFirst()
+        .isPresent()) {
+      throw Status.ALREADY_EXISTS
+          .withDescription("Configuration already exists")
+          .asRuntimeException();
+    }
+
+    JiraProjectIssueConfiguration configuration =
+        JiraProjectIssueConfiguration.newBuilder()
+            .setConfigurationId(UUID.randomUUID().toString())
+            .setJiraProjectIssueConfigurationDetails(
+                JiraProjectIssueConfigurationDetails.newBuilder()
+                    .setIntegrationId(request.getIntegrationId())
+                    .setIssueType(request.getIssueType())
+                    .setProjectId(request.getProjectId())
+                    .setValidTraceableEntityType(request.getTraceableEntityType())
+                    .setJiraStatusMappingConfiguration(request.getJiraStatusMappingConfiguration())
+                    .addAllFieldConfigurations(request.getFieldConfigurationsList()))
+            .build();
+
+    this.jiraAdditionalConfigurationStore.upsertObject(requestContext, configuration);
+
+    return CreateProjectIssueConfigurationResponse.newBuilder()
+        .setJiraProjectConfiguration(configuration)
+        .build();
+  }
+
+  UpdateProjectIssueConfigurationResponse updateProjectIssueConfiguration(
+      UpdateProjectIssueConfigurationRequest request, RequestContext requestContext) {
+
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
+        this.jiraAdditionalConfigurationStore
+            .getData(requestContext, request.getConfigurationId())
+            .orElseThrow(
+                () ->
+                    Status.NOT_FOUND
+                        .withDescription("Configuration not found")
+                        .asRuntimeException());
+
+    JiraProjectIssueConfiguration updatedConfiguration =
+        jiraProjectIssueConfiguration.toBuilder()
+            .setJiraProjectIssueConfigurationDetails(
+                jiraProjectIssueConfiguration.getJiraProjectIssueConfigurationDetails().toBuilder()
+                    .setJiraStatusMappingConfiguration(request.getJiraStatusMappingConfiguration())
+                    .clearFieldConfigurations()
+                    .addAllFieldConfigurations(request.getFieldConfigurationsList()))
+            .build();
+
+    this.jiraAdditionalConfigurationStore.upsertObject(requestContext, updatedConfiguration);
+
+    return UpdateProjectIssueConfigurationResponse.newBuilder()
+        .setJiraProjectConfiguration(updatedConfiguration)
+        .build();
+  }
+
+  DeleteProjectIssueConfigurationResponse deleteProjectIssueConfiguration(
+      DeleteProjectIssueConfigurationRequest request, RequestContext requestContext) {
+
+    this.jiraAdditionalConfigurationStore
+        .deleteObject(requestContext, request.getConfigurationId())
+        .orElseThrow(
+            () -> Status.NOT_FOUND.withDescription("Configuration not found").asRuntimeException());
+
+    return DeleteProjectIssueConfigurationResponse.getDefaultInstance();
   }
 
   List<JiraProjectIssueConfiguration> getJiraAdditionalConfiguration(

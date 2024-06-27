@@ -4,14 +4,22 @@ import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateReques
 import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateResponse;
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationResponse;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateResponse;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateResponse;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
@@ -104,5 +112,32 @@ public class JiraIntegrationCoordinator {
   public DeleteJiraTemplateResponse deleteJiraTemplate(
       RequestContext requestContext, DeleteJiraTemplateRequest request) {
     return this.jiraAdditionalConfigurationCoordinator.deleteJiraTemplate(request, requestContext);
+  }
+
+  public CreateProjectIssueConfigurationResponse createProjectIssueConfiguration(
+      RequestContext requestContext, CreateProjectIssueConfigurationRequest request) {
+    return this.jiraAdditionalConfigurationCoordinator.createProjectIssueConfiguration(
+        request, requestContext);
+  }
+
+  public UpdateProjectIssueConfigurationResponse updateProjectIssueConfiguration(
+      RequestContext requestContext, UpdateProjectIssueConfigurationRequest request) {
+    return this.jiraAdditionalConfigurationCoordinator.updateProjectIssueConfiguration(
+        request, requestContext);
+  }
+
+  public DeleteProjectIssueConfigurationResponse deleteProjectIssueConfiguration(
+      RequestContext requestContext, DeleteProjectIssueConfigurationRequest request) {
+    return this.jiraAdditionalConfigurationCoordinator.deleteProjectIssueConfiguration(
+        request, requestContext);
+  }
+
+  public GetProjectIssueConfigurationsResponse getProjectIssueConfigurations(
+      RequestContext requestContext, GetProjectIssueConfigurationsRequest request) {
+    return GetProjectIssueConfigurationsResponse.newBuilder()
+        .addAllJiraProjectConfigurations(
+            this.jiraAdditionalConfigurationCoordinator.getJiraAdditionalConfiguration(
+                requestContext, request.getFilter()))
+        .build();
   }
 }

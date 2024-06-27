@@ -5,18 +5,26 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
+import ai.traceable.jira.integration.config.service.api.v1.JiraFieldConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
+import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
 import ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -73,6 +81,94 @@ public class JiraIntegrationConfigServiceValidator {
       DeleteJiraTemplateRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteJiraTemplateRequest.TEMPLATE_ID_FIELD_NUMBER);
+  }
+
+  public void validateCreateProjectIssueConfiguration(
+      CreateProjectIssueConfigurationRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.INTEGRATION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.ISSUE_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.PROJECT_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        request, AddJiraTemplateRequest.SUPPORTED_ENTITY_TYPE_FIELD_NUMBER);
+
+    request
+        .getJiraStatusMappingConfiguration()
+        .getStatusMappingsList()
+        .forEach(this::validateJiraStatusMapping);
+    request.getFieldConfigurationsList().forEach(this::validateJiraFieldConfiguration);
+  }
+
+  public void validateUpdateProjectIssueConfiguration(
+      UpdateProjectIssueConfigurationRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, UpdateProjectIssueConfigurationRequest.CONFIGURATION_ID_FIELD_NUMBER);
+    request
+        .getJiraStatusMappingConfiguration()
+        .getStatusMappingsList()
+        .forEach(this::validateJiraStatusMapping);
+    request.getFieldConfigurationsList().forEach(this::validateJiraFieldConfiguration);
+  }
+
+  public void validateDeleteProjectIssueConfiguration(
+      DeleteProjectIssueConfigurationRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, DeleteProjectIssueConfigurationRequest.CONFIGURATION_ID_FIELD_NUMBER);
+  }
+
+  public void validateGetProjectIssueConfiguration(
+      GetProjectIssueConfigurationsRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, DeleteProjectIssueConfigurationRequest.CONFIGURATION_ID_FIELD_NUMBER);
+    this.validateGetProjectIssueConfigurationsFilter(request.getFilter());
+  }
+
+  private void validateGetProjectIssueConfigurationsFilter(
+      GetProjectIssueConfigurationsFilter filter) {
+    if (filter.hasIntegrationId()) {
+      validateNonDefaultPresenceOrThrow(
+          filter, GetProjectIssueConfigurationsFilter.INTEGRATION_ID_FIELD_NUMBER);
+    }
+    if (filter.hasProjectId()) {
+      validateNonDefaultPresenceOrThrow(
+          filter, GetProjectIssueConfigurationsFilter.PROJECT_ID_FIELD_NUMBER);
+    }
+    if (filter.hasIssueType()) {
+      validateNonDefaultPresenceOrThrow(
+          filter, GetProjectIssueConfigurationsFilter.ISSUE_TYPE_FIELD_NUMBER);
+    }
+    if (filter.getSupportedEntityTypesList().stream()
+        .anyMatch(
+            entityType ->
+                (entityType == TraceableEntityType.UNRECOGNIZED
+                    || entityType == TraceableEntityType.TRACEABLE_ENTITY_TYPE_UNSPECIFIED))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Supported entity types should be valid")
+          .asRuntimeException();
+    }
+  }
+
+  private void validateJiraStatusMapping(JiraStatusMapping statusMapping) {
+    validateNonDefaultPresenceOrThrow(statusMapping, JiraStatusMapping.JIRA_STATUS_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        statusMapping, JiraStatusMapping.TRACEABLE_ENTITY_STATUS_FIELD_NUMBER);
+  }
+
+  private void validateJiraFieldConfiguration(JiraFieldConfiguration jiraFieldConfiguration) {
+    validateNonDefaultPresenceOrThrow(
+        jiraFieldConfiguration, JiraFieldConfiguration.FIELD_KEY_FIELD_NUMBER);
+    if (jiraFieldConfiguration.hasOverriddenDynamicValue()) {
+      validateNonDefaultPresenceOrThrow(
+          jiraFieldConfiguration, JiraFieldConfiguration.OVERRIDDEN_DYNAMIC_VALUE_FIELD_NUMBER);
+    }
+    if (jiraFieldConfiguration.hasOverriddenDefaultValueJsonString()) {
+      validateNonDefaultPresenceOrThrow(
+          jiraFieldConfiguration,
+          JiraFieldConfiguration.OVERRIDDEN_DEFAULT_VALUE_JSON_STRING_FIELD_NUMBER);
+    }
   }
 
   private void validateJiraTemplateDetails(JiraTemplateDetails details) {
