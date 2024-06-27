@@ -88,10 +88,6 @@ message DeleteJiraTemplateRequest {
 message DeleteJiraTemplateResponse {
 }
 
-message GetJiraTemplatesRequest {
-  GetJiraTemplatesRequestFilter filter = 1;
-}
-
 message GetJiraTemplatesResponse {
   repeated JiraTemplate jira_templates = 1;
 }
@@ -140,14 +136,6 @@ message GetProjectIssueConfigurationsFilter {
 
 message GetProjectIssueConfigurationsResponse {
   repeated JiraProjectIssueConfiguration jira_project_configurations = 1;
-}
-
-//AND among all fields
-message GetJiraTemplatesRequestFilter {
-  optional string integration_id = 1;
-  optional string project_id = 2;
-  optional string issue_type = 3;
-  repeated TraceableEntityType supported_entity_types = 4; // empty means no-matching for this
 }
 
 message JiraIntegration {

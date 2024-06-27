@@ -3,16 +3,20 @@ package ai.traceable.jira.integration.config.service;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.jira.integration.config.service.api.v1.AddJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
+import ai.traceable.jira.integration.config.service.api.v1.JiraTemplateDetails;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -45,6 +49,36 @@ public class JiraIntegrationConfigServiceValidator {
     } else {
       validateUnscopedForMutationOrThrow(requestContext, Collections.emptySet());
     }
+  }
+
+  public void validateAddJiraTemplate(
+      AddJiraTemplateRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.INTEGRATION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.ISSUE_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.PROJECT_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        request, AddJiraTemplateRequest.SUPPORTED_ENTITY_TYPE_FIELD_NUMBER);
+    this.validateJiraTemplateDetails(request.getJiraTemplateDetails());
+  }
+
+  public void validateUpdateJiraTemplate(
+      UpdateJiraTemplateRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, UpdateJiraTemplateRequest.TEMPLATE_ID_FIELD_NUMBER);
+    this.validateJiraTemplateDetails(request.getJiraTemplateDetails());
+  }
+
+  public void validateDeleteJiraTemplate(
+      DeleteJiraTemplateRequest request, RequestContext requestContext) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(request, DeleteJiraTemplateRequest.TEMPLATE_ID_FIELD_NUMBER);
+  }
+
+  private void validateJiraTemplateDetails(JiraTemplateDetails details) {
+    validateNonDefaultPresenceOrThrow(details, JiraTemplateDetails.NAME_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        details, JiraTemplateDetails.MARKDOWN_FORMAT_VALUE_FIELD_NUMBER);
   }
 
   private void validateJiraIntegrationDetailsOrThrow(

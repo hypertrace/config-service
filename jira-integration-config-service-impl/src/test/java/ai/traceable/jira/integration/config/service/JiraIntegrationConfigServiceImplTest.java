@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class JiraIntegrationConfigServiceImplTest {
   public static final String TENANT_ID = "default tenant";
   JiraIntegrationStore jiraIntegrationStore;
+  JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
   MockGenericConfigService mockGenericConfigService;
   JiraIntegrationConfigServiceBlockingStub stub;
   @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
@@ -47,11 +48,17 @@ class JiraIntegrationConfigServiceImplTest {
         new JiraIntegrationStore(
             ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel()),
             mockConfigChangeEventGenerator);
+    jiraAdditionalConfigurationStore =
+        new JiraAdditionalConfigurationStore(
+            ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel()),
+            mockConfigChangeEventGenerator);
     mockGenericConfigService
         .addService(
             new JiraIntegrationConfigServiceImpl(
                 new JiraIntegrationConfigServiceValidator(jiraIntegrationStore),
-                new JiraIntegrationCoordinator(jiraIntegrationStore)))
+                new JiraIntegrationCoordinator(
+                    jiraIntegrationStore,
+                    new JiraAdditionalConfigurationCoordinator(jiraAdditionalConfigurationStore))))
         .start();
     stub = JiraIntegrationConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
   }
