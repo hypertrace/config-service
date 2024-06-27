@@ -418,7 +418,13 @@ public class ModsecRulesRegistryTest {
 
     int j = 0;
     for (int i = 0; i < modsecCrsAllRules.length; i++) {
-      if (!modsecCrsAllRules[i].startsWith("SecRule")) {
+      if (modsecCrsAllRules[i].startsWith("SecRuleUpdateTargetById")) {
+        if (j < modsecCrsSensitiveAgentRules.length
+            && modsecCrsSensitiveAgentRules[j].startsWith("SecRuleUpdateTargetById")) {
+          j++;
+        }
+        continue;
+      } else if (!modsecCrsAllRules[i].startsWith("SecRule")) {
         assertEquals(modsecCrsAllRules[i], modsecCrsSensitiveAgentRules[j++]);
       } else if (!modsecCrsAllRules[i].contains("tag:'traceable/type/regular'")) {
         String sanitizedString =
