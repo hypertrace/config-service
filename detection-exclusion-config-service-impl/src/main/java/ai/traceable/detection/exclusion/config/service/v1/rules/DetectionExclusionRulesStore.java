@@ -107,6 +107,16 @@ public class DetectionExclusionRulesStore
     return Optional.of(detectionExclusionRule)
         .filter(
             rule ->
+                filter.getExclusionTargetsList().isEmpty()
+                    || filter.getExclusionTargetsList().stream()
+                        .anyMatch(
+                            exclusionTarget ->
+                                detectionExclusionRule
+                                    .getRuleInfo()
+                                    .getExclusionTargetsList()
+                                    .contains(exclusionTarget)))
+        .filter(
+            rule ->
                 filter.getRuleIdsList().isEmpty()
                     || filter.getRuleIdsList().contains(detectionExclusionRule.getId()))
         .filter(

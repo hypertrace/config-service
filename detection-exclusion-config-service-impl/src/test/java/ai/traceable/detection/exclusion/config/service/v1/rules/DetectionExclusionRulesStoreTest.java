@@ -1,5 +1,8 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -15,6 +18,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
@@ -215,6 +219,7 @@ class DetectionExclusionRulesStoreTest {
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("envId1")))
             .setRuleInfo(
                 DetectionExclusionRuleInfo.newBuilder()
+                    .addAllExclusionTargets(List.of(EXCLUSION_TARGET_ALLOW, EXCLUSION_TARGET_ALERT))
                     .setRuleStatus(
                         DetectionExclusionRuleStatus.newBuilder()
                             .setDisabled(false)
@@ -227,42 +232,95 @@ class DetectionExclusionRulesStoreTest {
     Optional<DetectionExclusionRule> result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter("envId2", false, false, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
+            getRulesFilter(
+                "envId2",
+                false,
+                false,
+                "ruleId",
+                RuleSource.RULE_SOURCE_CUSTOMER,
+                List.of(EXCLUSION_TARGET_ALLOW)));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter("envId1", true, false, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
+            getRulesFilter(
+                "envId1",
+                true,
+                false,
+                "ruleId",
+                RuleSource.RULE_SOURCE_CUSTOMER,
+                List.of(EXCLUSION_TARGET_ALLOW)));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter("envId1", false, true, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
+            getRulesFilter(
+                "envId1",
+                false,
+                true,
+                "ruleId",
+                RuleSource.RULE_SOURCE_CUSTOMER,
+                List.of(EXCLUSION_TARGET_ALLOW)));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter("envId1", false, false, "ruleId1", RuleSource.RULE_SOURCE_CUSTOMER));
+            getRulesFilter(
+                "envId1",
+                false,
+                false,
+                "ruleId1",
+                RuleSource.RULE_SOURCE_CUSTOMER,
+                List.of(EXCLUSION_TARGET_ALLOW)));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter("envId1", false, false, "ruleId", RuleSource.RULE_SOURCE_DEFAULT));
+            getRulesFilter(
+                "envId1",
+                false,
+                false,
+                "ruleId",
+                RuleSource.RULE_SOURCE_DEFAULT,
+                List.of(EXCLUSION_TARGET_ALLOW)));
     assertTrue(result.isEmpty());
 
     result =
         detectionExclusionRulesStore.filterConfigData(
             detectionExclusionRule,
-            getRulesFilter("envId1", false, false, "ruleId", RuleSource.RULE_SOURCE_CUSTOMER));
+            getRulesFilter(
+                "envId1",
+                false,
+                false,
+                "ruleId",
+                RuleSource.RULE_SOURCE_CUSTOMER,
+                List.of(EXCLUSION_TARGET_BLOCK)));
+    assertTrue(result.isEmpty());
+
+    result =
+        detectionExclusionRulesStore.filterConfigData(
+            detectionExclusionRule,
+            getRulesFilter(
+                "envId1",
+                false,
+                false,
+                "ruleId",
+                RuleSource.RULE_SOURCE_CUSTOMER,
+                List.of(EXCLUSION_TARGET_ALLOW)));
     assertEquals(detectionExclusionRule, result.get());
   }
 
   private GetRulesFilter getRulesFilter(
-      String envId, boolean disabled, boolean hidden, String ruleId, RuleSource creationSource) {
+      String envId,
+      boolean disabled,
+      boolean hidden,
+      String ruleId,
+      RuleSource creationSource,
+      List<ExclusionTarget> exclusionTargets) {
     return GetRulesFilter.newBuilder()
         .addRuleIds(ruleId)
         .setRuleScope(
@@ -271,6 +329,7 @@ class DetectionExclusionRulesStoreTest {
         .setDisabled(disabled)
         .setHidden(hidden)
         .addRuleCreationSources(creationSource)
+        .addAllExclusionTargets(exclusionTargets)
         .build();
   }
 
