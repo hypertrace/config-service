@@ -179,7 +179,7 @@ public class DetectionExclusionConditionValidator {
   }
 
   private void validateSpanAttributeMatchCondition(SpanAttributeMatchCondition condition) {
-    if (!condition.hasKeyMatchCondition() || !condition.hasValueMatchCondition()) {
+    if (!condition.hasKeyMatchCondition()) {
       throwInvalidArgumentException(
           String.format(
               "Invalid spanAttributeMatchCondition for detection exclusion rule :%n %s",
@@ -192,8 +192,9 @@ public class DetectionExclusionConditionValidator {
     if (keyMetadataMatchCondition.hasMatchCondition()) {
       validateMatchCondition(keyMetadataMatchCondition.getMatchCondition());
     }
-
-    validateMatchCondition(condition.getValueMatchCondition());
+    if (condition.hasValueMatchCondition()) {
+      validateMatchCondition(condition.getValueMatchCondition());
+    }
   }
 
   private void validateIpLocationTypeCondition(IpLocationTypeCondition condition) {
