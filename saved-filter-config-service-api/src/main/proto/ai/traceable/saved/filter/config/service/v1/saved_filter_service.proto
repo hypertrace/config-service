@@ -41,8 +41,6 @@ message UpdateSavedFilterRequest {
   Visibility visibility = 3;
   // Criteria for filtering
   FilterCriteria filter_criteria = 4;
-  // Disable the saved filter
-  bool disabled = 5;
 }
 
 message UpdateSavedFilterResponse {

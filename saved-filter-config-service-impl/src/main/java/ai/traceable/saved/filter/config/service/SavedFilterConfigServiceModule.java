@@ -2,7 +2,6 @@ package ai.traceable.saved.filter.config.service;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -11,13 +10,10 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 
 public class SavedFilterConfigServiceModule extends AbstractModule {
   private final Channel channel;
-  private final Config config;
   private final ConfigChangeEventGenerator changeEventGenerator;
 
-  SavedFilterConfigServiceModule(
-      Channel channel, Config config, ConfigChangeEventGenerator changeEventGenerator) {
+  SavedFilterConfigServiceModule(Channel channel, ConfigChangeEventGenerator changeEventGenerator) {
     this.channel = channel;
-    this.config = config;
     this.changeEventGenerator = changeEventGenerator;
   }
 
@@ -25,11 +21,6 @@ public class SavedFilterConfigServiceModule extends AbstractModule {
   protected void configure() {
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
     bind(BindableService.class).to(SavedFilterConfigServiceImpl.class);
-  }
-
-  @Provides
-  public Config providesConfig() {
-    return this.config;
   }
 
   @Provides

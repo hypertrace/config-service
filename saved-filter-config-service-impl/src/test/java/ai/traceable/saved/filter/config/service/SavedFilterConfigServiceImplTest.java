@@ -1,8 +1,6 @@
 package ai.traceable.saved.filter.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -22,14 +20,10 @@ import ai.traceable.saved.filter.config.service.v1.RelationalOperator;
 import ai.traceable.saved.filter.config.service.v1.SavedFilter;
 import ai.traceable.saved.filter.config.service.v1.SavedFilterServiceGrpc;
 import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterRequest;
-import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterResponse;
 import ai.traceable.saved.filter.config.service.v1.Visibility;
 import ai.traceable.saved.filter.config.service.validation.SavedFilterRequestValidator;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import io.grpc.StatusRuntimeException;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -50,60 +44,46 @@ class SavedFilterConfigServiceImplTest {
   private static final String FILTER_NAME_1 = "filter-1";
   private static final String FILTER_NAME_2 = "filter-2";
   private static final String ENDPOINTS_SCOPE = "api-endpoints";
-  private static final String SYSTEM_DEFAULT_FILTER_ID = "0433fd25-da97-4cb1-b2f9-1ebb7bb39f21";
-  private static final String MOCK_CONFIG =
-      "saved.filter.config.service {\n"
-          + "  default.saved.filters = [\n"
-          + "    {\n"
-          + "      \"id\": \"0433fd25-da97-4cb1-b2f9-1ebb7bb39f21\",\n"
-          + "      \"name\": \"DNA Is Learnt\",\n"
-          + "      \"scope\": \"API_SETTINGS\",\n"
-          + "      \"disabled\": false,\n"
-          + "      \"visibility\": {\n"
-          + "          \"public\": {}\n"
-          + "      },\n"
-          + "      \"filter_criteria\": {\n"
-          + "        \"logical_filter\": {\n"
-          + "          \"operator\": \"LOGICAL_OPERATOR_AND\",\n"
-          + "          \"filter_criteria\": [\n"
-          + "            {\n"
-          + "              \"relational_filter\": {\n"
-          + "                \"field_name\": \"isLearnt\",\n"
-          + "                \"operator\": \"RELATIONAL_OPERATOR_EQ\",\n"
-          + "                \"field_value\": true\n"
-          + "              }\n"
-          + "            }\n"
-          + "          ]\n"
-          + "        }\n"
-          + "      },\n"
-          + "    }\n"
-          + "  ]\n"
-          + "}";
 
   private SavedFilterServiceGrpc.SavedFilterServiceBlockingStub savedFilterServiceBlockingStub;
   private MockGenericConfigService mockGenericConfigService;
-  private Config config;
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private TimestampConverter timestampConverter;
   @Mock private UuidGenerator uuidGenerator;
 
   @BeforeEach
   void beforeEach() {
-    this.config = ConfigFactory.parseString(MOCK_CONFIG);
+    this.mockGenericConfigService =
+        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    this.mockGenericConfigService
+        .addService(
+            new SavedFilterConfigServiceImpl(
+                new SavedFilterStoreManager(
+                    new SavedFilterConfigStore(genericStub, eventGenerator),
+                    this.timestampConverter,
+                    uuidGenerator),
+                new SavedFilterRequestValidator()))
+        .start();
+
+    this.savedFilterServiceBlockingStub =
+        SavedFilterServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
     when(this.timestampConverter.convert(any()))
         .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
+    when(uuidGenerator.generateRandomId()).thenReturn(UUID_1);
   }
 
   @AfterEach
-  void afterEach() {}
+  void afterEach() {
+    this.mockGenericConfigService.shutdown();
+  }
 
   @Test
   void testSavedFilterCRUD() {
-    when(uuidGenerator.generateRandomId()).thenReturn(UUID_1);
-    this.mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    setupSavedFilterService();
-
     FilterCriteria filterCriteria1 =
         buildRelationalFilterCriteria("c1", RelationalOperator.RELATIONAL_OPERATOR_EQ, "v1");
     Visibility publicVisibility =
@@ -185,77 +165,6 @@ class SavedFilterConfigServiceImplTest {
                 this.savedFilterServiceBlockingStub.getSavedFilters(
                     GetSavedFiltersRequest.newBuilder().setScope(TRACES_SCOPE).build()));
     assertEquals(0, getSavedFiltersResponse.getSavedFiltersCount());
-    this.mockGenericConfigService.shutdown();
-  }
-
-  @Test
-  void testSystemSavedFilterCRUD() {
-    this.mockGenericConfigService = new MockGenericConfigService().mockUpsert().mockGetAll();
-    setupSavedFilterService();
-
-    RequestContext requestContext = buildRequestContext();
-
-    // Get Default Saved Filter in SETTINGS scope
-    GetSavedFiltersResponse getSavedFiltersResponse =
-        requestContext.call(
-            () ->
-                this.savedFilterServiceBlockingStub.getSavedFilters(
-                    GetSavedFiltersRequest.newBuilder().setScope("SETTINGS").build()));
-    assertNotNull(getSavedFiltersResponse);
-
-    // Update Default Saved Filter
-    FilterCriteria filterCriteria =
-        buildRelationalFilterCriteria("c1", RelationalOperator.RELATIONAL_OPERATOR_EQ, "v1");
-    UpdateSavedFilterResponse updateSavedFilterResponse =
-        requestContext.call(
-            () ->
-                this.savedFilterServiceBlockingStub.updateSavedFilter(
-                    UpdateSavedFilterRequest.newBuilder()
-                        .setId(SYSTEM_DEFAULT_FILTER_ID)
-                        .setName("DNA Is Learnt")
-                        .setFilterCriteria(filterCriteria)
-                        .setVisibility(
-                            Visibility.newBuilder()
-                                .setPublic(PublicVisibility.getDefaultInstance())
-                                .build())
-                        .build()));
-    SavedFilter updatedSavedFilter = updateSavedFilterResponse.getSavedFilter();
-    assertEquals(updatedSavedFilter.getId(), SYSTEM_DEFAULT_FILTER_ID);
-
-    // Delete Operation on Default Saved Filter should not be allowed
-    assertThrows(
-        StatusRuntimeException.class,
-        () ->
-            requestContext.call(
-                () ->
-                    this.savedFilterServiceBlockingStub
-                        .withCallCredentials(
-                            RequestContextClientCallCredsProviderFactory
-                                .getClientCallCredsProvider()
-                                .get())
-                        .deleteSavedFilter(
-                            DeleteSavedFilterRequest.newBuilder()
-                                .setId(SYSTEM_DEFAULT_FILTER_ID)
-                                .build())));
-  }
-
-  private void setupSavedFilterService() {
-    ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
-        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    this.mockGenericConfigService
-        .addService(
-            new SavedFilterConfigServiceImpl(
-                new SavedFilterStoreManager(
-                    new SavedFilterConfigStore(genericStub, eventGenerator),
-                    this.timestampConverter,
-                    this.uuidGenerator),
-                new SavedFilterRequestValidator(),
-                this.config))
-        .start();
-    this.savedFilterServiceBlockingStub =
-        SavedFilterServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
-            .withCallCredentials(
-                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
 
   private static FilterCriteria buildRelationalFilterCriteria(

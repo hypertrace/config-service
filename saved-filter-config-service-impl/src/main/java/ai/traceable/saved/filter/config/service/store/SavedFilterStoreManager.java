@@ -13,17 +13,13 @@ import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterResponse;
 import io.grpc.Status;
 import io.grpc.StatusException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class SavedFilterStoreManager {
+
   private final SavedFilterConfigStore savedFilterConfigStore;
   private final TimestampConverter timestampConverter;
   private final UuidGenerator uuidGenerator;
@@ -56,18 +52,9 @@ public class SavedFilterStoreManager {
   }
 
   public UpdateSavedFilterResponse updateSavedFilter(
-      RequestContext requestContext,
-      UpdateSavedFilterRequest request,
-      Map<String, SavedFilter> systemSavedFilterIdToFilterMap)
-      throws StatusException {
-    String filterId = request.getId();
-    if (systemSavedFilterIdToFilterMap.containsKey(filterId)) {
-      SavedFilter savedFilter =
-          updateSystemSavedFilter(
-              requestContext, request, systemSavedFilterIdToFilterMap.get(filterId));
-      return UpdateSavedFilterResponse.newBuilder().setSavedFilter(savedFilter).build();
-    }
-    SavedFilter existingSavedFilter = fetchExistingSavedFilterOrThrow(filterId, requestContext);
+      RequestContext requestContext, UpdateSavedFilterRequest request) throws StatusException {
+    SavedFilter existingSavedFilter =
+        fetchExistingSavedFilterOrThrow(request.getId(), requestContext);
     SavedFilter updatedSavedFilter =
         SavedFilter.newBuilder(existingSavedFilter)
             .setName(request.getName())
@@ -81,13 +68,7 @@ public class SavedFilterStoreManager {
   }
 
   public DeleteSavedFilterResponse deleteSavedFilter(
-      RequestContext requestContext,
-      DeleteSavedFilterRequest request,
-      Map<String, SavedFilter> systemSavedFilterIdToFilterMap)
-      throws StatusException {
-    if (systemSavedFilterIdToFilterMap.containsKey(request.getId())) {
-      throw Status.PERMISSION_DENIED.asRuntimeException();
-    }
+      RequestContext requestContext, DeleteSavedFilterRequest request) throws StatusException {
     SavedFilter existingSavedFilter =
         fetchExistingSavedFilterOrThrow(request.getId(), requestContext);
     this.savedFilterConfigStore
@@ -97,30 +78,10 @@ public class SavedFilterStoreManager {
   }
 
   public GetSavedFiltersResponse fetchSavedFilters(
-      RequestContext requestContext,
-      GetSavedFiltersRequest request,
-      Map<String, SavedFilter> systemSavedFilterIdToFilterMap) {
-    List<SavedFilter> userSavedFilters =
-        savedFilterConfigStore.getAllConfigData(requestContext, request);
+      RequestContext requestContext, GetSavedFiltersRequest request) {
     List<SavedFilter> savedFilters =
-        filterSavedFilters(
-            reorderSavedFilters(userSavedFilters, systemSavedFilterIdToFilterMap),
-            request.getScope());
+        savedFilterConfigStore.getAllConfigData(requestContext, request);
     return GetSavedFiltersResponse.newBuilder().addAllSavedFilters(savedFilters).build();
-  }
-
-  private SavedFilter updateSystemSavedFilter(
-      RequestContext requestContext,
-      UpdateSavedFilterRequest request,
-      SavedFilter existingSystemSavedFilter) {
-    SavedFilter updatedSystemSavedFilter =
-        SavedFilter.newBuilder(existingSystemSavedFilter)
-            .setFilterCriteria(request.getFilterCriteria())
-            .setDisabled(request.getDisabled())
-            .build();
-    ContextualConfigObject<SavedFilter> configObject =
-        savedFilterConfigStore.upsertObject(requestContext, updatedSystemSavedFilter);
-    return buildSavedFilterFromConfigObject(configObject);
   }
 
   private SavedFilter buildSavedFilterFromConfigObject(
@@ -136,42 +97,6 @@ public class SavedFilterStoreManager {
     return savedFilterConfigStore
         .getData(requestContext, id)
         .orElseThrow(Status.NOT_FOUND::asException);
-  }
-
-  private List<SavedFilter> filterSavedFilters(List<SavedFilter> savedFilters, String scope) {
-    if (scope.isEmpty()) {
-      return savedFilters;
-    }
-    return savedFilters.stream()
-        .filter(
-            savedFilter -> savedFilter.getScope().equals(scope)) // Get all filters of desired scope
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private List<SavedFilter> reorderSavedFilters(
-      List<SavedFilter> userSavedFilters, Map<String, SavedFilter> systemSavedFilterIdToFilterMap) {
-    List<SavedFilter> savedFilters = new ArrayList<>();
-    List<SavedFilter> overriddenSystemSavedFilters = new ArrayList<>();
-    Set<String> overriddenSystemSavedFilterIds = new HashSet<>();
-
-    for (SavedFilter userSavedFilter : userSavedFilters) {
-      String id = userSavedFilter.getId();
-      if (systemSavedFilterIdToFilterMap.containsKey(id)) {
-        overriddenSystemSavedFilters.add(userSavedFilter);
-        overriddenSystemSavedFilterIds.add(id);
-      } else {
-        savedFilters.add(userSavedFilter);
-      }
-    }
-
-    List<SavedFilter> nonOverriddenSystemSavedFilters =
-        systemSavedFilterIdToFilterMap.values().stream()
-            .filter(savedFilter -> !overriddenSystemSavedFilterIds.contains(savedFilter.getId()))
-            .collect(Collectors.toUnmodifiableList());
-
-    savedFilters.addAll(overriddenSystemSavedFilters);
-    savedFilters.addAll(nonOverriddenSystemSavedFilters);
-    return savedFilters;
   }
 
   // ToDo ENG-31204 Move this validation into an auth interceptor
