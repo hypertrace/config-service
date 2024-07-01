@@ -382,7 +382,7 @@ public class FraudDataModelConfigServiceImpl
         .getObjectType(
             requestContext,
             FraudDataModelUtils.getObjectTypeReference(
-                ObjectKind.OBJECT_KIND_RELATIONSHIP, metricType.getId()))
+                ObjectKind.OBJECT_KIND_METRIC, metricType.getId()))
         .map(objectType -> this.updateAndGetObjectType(requestContext, metricType, objectType))
         .orElseGet(() -> createAndGetObjectType(requestContext, metricType));
   }

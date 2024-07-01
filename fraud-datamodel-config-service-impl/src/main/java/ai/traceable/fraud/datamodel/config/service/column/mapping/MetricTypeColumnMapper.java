@@ -12,6 +12,8 @@ import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
+  private static final String METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID = "metric_column_mappings";
+
   private final ColumnMapperDelegate delegate;
 
   @Inject
@@ -35,7 +37,10 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
     MetricType.Builder newTypeBldr = inputType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            requestContext, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(inputType));
+            requestContext,
+            ObjectKind.OBJECT_KIND_METRIC,
+            METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID,
+            createColumnMapping(inputType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
@@ -47,14 +52,18 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
     MetricType.Builder newTypeBldr = newType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            requestContext, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(newType));
+            requestContext,
+            ObjectKind.OBJECT_KIND_METRIC,
+            METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID,
+            createColumnMapping(newType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
   @Override
   public MetricType populateFieldMappings(
       MetricType objectType, List<ColumnMappingsDocument> mappings) {
-    ObjectTypeColumnMappings typeColumnMappings = delegate.buildObjectTypeColumnMappings(mappings);
+    ObjectTypeColumnMappings typeColumnMappings =
+        delegate.buildObjectTypeColumnMappings(objectType.getFieldsMetaMap().keySet(), mappings);
     var newTypeBldr = objectType.toBuilder();
     newTypeBldr.clearFieldsMeta().clearColumnMappingMeta();
     newTypeBldr.setColumnMappingMeta(typeColumnMappings.getColumnMappingMeta());

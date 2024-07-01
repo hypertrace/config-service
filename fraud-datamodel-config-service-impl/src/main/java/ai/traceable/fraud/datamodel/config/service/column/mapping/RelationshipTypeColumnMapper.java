@@ -62,7 +62,8 @@ public class RelationshipTypeColumnMapper implements ColumnMapper<RelationshipTy
   @Override
   public RelationshipType populateFieldMappings(
       RelationshipType objectType, List<ColumnMappingsDocument> mappings) {
-    ObjectTypeColumnMappings typeColumnMappings = delegate.buildObjectTypeColumnMappings(mappings);
+    ObjectTypeColumnMappings typeColumnMappings =
+        delegate.buildObjectTypeColumnMappings(objectType.getFieldsMetaMap().keySet(), mappings);
     var newTypeBldr = objectType.toBuilder();
     newTypeBldr.clearFieldsMeta().clearColumnMappingMeta();
     newTypeBldr.setColumnMappingMeta(typeColumnMappings.getColumnMappingMeta());

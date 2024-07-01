@@ -15,11 +15,14 @@ import ai.traceable.fraud.datamodel.config.service.v1.GetEntityTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetRelationshipTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesResponse;
+import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
 import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEventTypeRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEventTypeResponse;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertMetricTypeRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertMetricTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeResponse;
 import com.typesafe.config.ConfigFactory;
@@ -143,6 +146,92 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     // verify that the new field has a rev mapping
     String newFieldRevMapping = updatedRevColMappings.get(newFieldMapping.getColumnId());
     Assertions.assertEquals("updated_field", newFieldRevMapping);
+  }
+
+  @Test
+  public void testUpdateMappings_forMetricType() throws IOException {
+    MetricType metricType1 =
+        ResourceUtils.readProto("fraud/datamodel/test_metric_type_1.json", MetricType.newBuilder())
+            .build();
+
+    UpsertMetricTypeRequest request =
+        UpsertMetricTypeRequest.newBuilder()
+            .setId(metricType1.getId())
+            .putAllFieldsMeta(metricType1.getFieldsMetaMap())
+            .setTimestampField(metricType1.getTimestampField())
+            .build();
+    UpsertMetricTypeResponse response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
+    Assertions.assertNotNull(response.getMetricType());
+    Assertions.assertEquals(
+        response.getMetricType().getFieldsMetaCount(),
+        response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
+    Assertions.assertEquals(
+        response.getMetricType().getFieldsMetaCount(),
+        response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
+
+    ColumnMappingMeta createdColumnMappings = response.getMetricType().getColumnMappingMeta();
+
+    // upsert the same type again, verify mappings don't change.
+    response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
+    Assertions.assertNotNull(response.getMetricType());
+    ColumnMappingMeta updatedColumnMappings = response.getMetricType().getColumnMappingMeta();
+    Assertions.assertEquals(createdColumnMappings, updatedColumnMappings);
+
+    // upsert another metric type. for columns of same name (As those in the previous type),
+    // we should get the same mappings for this type
+    MetricType metricType2 =
+        ResourceUtils.readProto("fraud/datamodel/test_metric_type_2.json", MetricType.newBuilder())
+            .build();
+    UpsertMetricTypeRequest request2 =
+        UpsertMetricTypeRequest.newBuilder()
+            .setId(metricType2.getId())
+            .putAllFieldsMeta(metricType2.getFieldsMetaMap())
+            .setTimestampField(metricType2.getTimestampField())
+            .build();
+    response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request2));
+    Assertions.assertNotNull(response.getMetricType());
+    Assertions.assertEquals(
+        response.getMetricType().getFieldsMetaCount(),
+        response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
+    Assertions.assertEquals(
+        response.getMetricType().getFieldsMetaCount(),
+        response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
+
+    ColumnMappingMeta columnMappingsForMetric1 = createdColumnMappings;
+    ColumnMappingMeta columnMappingsForMetric2 = response.getMetricType().getColumnMappingMeta();
+    // verify that additional fields of metric2 have mappings.
+    for (Map.Entry<String, ColumnMapping> entryForMetric2 :
+        columnMappingsForMetric2.getColumnMappingMap().entrySet()) {
+      if (columnMappingsForMetric1.getColumnMappingMap().containsKey(entryForMetric2.getKey())) {
+        Assertions.assertEquals(
+            columnMappingsForMetric1.getColumnMappingMap().get(entryForMetric2.getKey()),
+            entryForMetric2.getValue(),
+            entryForMetric2.getKey());
+      } else {
+        Assertions.assertNotNull(entryForMetric2.getValue());
+      }
+    }
+
+    // upsert metric type1 again
+    // upsert the same type again, verify mappings don't change.
+    response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
+    Assertions.assertNotNull(response.getMetricType());
+    updatedColumnMappings = response.getMetricType().getColumnMappingMeta();
+    Assertions.assertEquals(createdColumnMappings, updatedColumnMappings);
+    Assertions.assertEquals(
+        response.getMetricType().getFieldsMetaCount(),
+        response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
+    Assertions.assertEquals(
+        response.getMetricType().getFieldsMetaCount(),
+        response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
   }
 
   @Test

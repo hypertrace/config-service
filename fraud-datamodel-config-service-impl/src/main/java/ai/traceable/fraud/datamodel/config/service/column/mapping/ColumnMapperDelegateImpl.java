@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.documentstore.model.exception.DuplicateDocumentException;
 import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
@@ -66,11 +67,15 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
 
   @Override
   public ObjectTypeColumnMappings buildObjectTypeColumnMappings(
-      List<ColumnMappingsDocument> mappings) {
+      Set<String> fields, List<ColumnMappingsDocument> mappings) {
     ObjectTypeColumnMappings.Builder builder = ObjectTypeColumnMappings.newBuilder();
     ColumnMappingMeta.Builder columnMappingBuilder = ColumnMappingMeta.newBuilder();
-    for (var mapping : mappings) {
+    for (ColumnMappingsDocument mapping : mappings) {
       InternalFieldMetadata fieldMeta = mapping.getInternalFieldMetadata();
+      String fieldName = mapping.getFieldName();
+      if (!fields.contains(fieldName)) {
+        continue;
+      }
       builder.putFieldsMeta(mapping.getFieldName(), fieldMeta);
       columnMappingBuilder.putColumnMapping(
           mapping.getFieldName(),

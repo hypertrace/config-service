@@ -55,7 +55,8 @@ public class EntityTypeColumnMapper implements ColumnMapper<EntityType> {
   @Override
   public EntityType populateFieldMappings(
       EntityType objectType, List<ColumnMappingsDocument> mappings) {
-    ObjectTypeColumnMappings typeColumnMappings = delegate.buildObjectTypeColumnMappings(mappings);
+    ObjectTypeColumnMappings typeColumnMappings =
+        delegate.buildObjectTypeColumnMappings(objectType.getFieldsMetaMap().keySet(), mappings);
     var newTypeBldr = objectType.toBuilder();
     newTypeBldr.clearFieldsMeta().clearColumnMappingMeta();
     newTypeBldr.setColumnMappingMeta(typeColumnMappings.getColumnMappingMeta());
