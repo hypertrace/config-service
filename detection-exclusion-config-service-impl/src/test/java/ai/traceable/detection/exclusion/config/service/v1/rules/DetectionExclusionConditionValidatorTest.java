@@ -12,6 +12,7 @@ import ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCond
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.EmailDomainCondition;
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EntityType;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
@@ -38,6 +39,7 @@ import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCond
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
+import ai.traceable.detection.exclusion.config.service.v1.UserAgentCondition;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
@@ -976,5 +978,88 @@ class DetectionExclusionConditionValidatorTest {
                     .addRegions(RegionCondition.Region.newBuilder().setCountryIsoCode("iso")))
             .build();
     assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+  }
+
+  @Test
+  void testEmailDomainCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setEmailDomainCondition(
+                EmailDomainCondition.newBuilder()
+                    .setExclude(true)
+                    .addAllEmailRegexes(List.of("e1", "e2"))
+                    .addAllEmailDomains(List.of("r1", "r2")))
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setEmailDomainCondition(
+                EmailDomainCondition.newBuilder()
+                    .setExclude(true)
+                    .addAllEmailRegexes(List.of("}{", "]["))
+                    .addAllEmailDomains(List.of("e1", "e2")))
+            .build();
+
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition1));
+
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    DetectionExclusionCondition condition2 =
+        DetectionExclusionCondition.newBuilder()
+            .setEmailDomainCondition(EmailDomainCondition.newBuilder().setExclude(true).build())
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition2));
+
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  void testUserAgentCondition() {
+    DetectionExclusionCondition condition =
+        DetectionExclusionCondition.newBuilder()
+            .setUserAgentCondition(
+                UserAgentCondition.newBuilder()
+                    .setExclude(true)
+                    .addAllUserAgents(List.of("u1", "u2"))
+                    .addAllUserAgentRegexes(List.of(".*u1", ".*u2")))
+            .build();
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+
+    DetectionExclusionCondition condition1 =
+        DetectionExclusionCondition.newBuilder()
+            .setUserAgentCondition(
+                UserAgentCondition.newBuilder()
+                    .setExclude(true)
+                    .addAllUserAgents(List.of("u1", "u2"))
+                    .addAllUserAgentRegexes(List.of("}{", "][")))
+            .build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition1));
+
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    DetectionExclusionCondition condition2 =
+        DetectionExclusionCondition.newBuilder()
+            .setUserAgentCondition(UserAgentCondition.newBuilder().setExclude(true))
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> conditionValidator.validateRuleCondition(condition2));
+
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 }

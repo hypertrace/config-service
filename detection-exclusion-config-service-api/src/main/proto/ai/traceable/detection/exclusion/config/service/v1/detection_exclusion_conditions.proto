@@ -109,6 +109,17 @@ message RegionCondition {
   }
 }
 
+message EmailDomainCondition {
+  repeated string email_domains = 1;
+  repeated string email_regexes = 2;
+  bool exclude = 3;
+}
+
+message UserAgentCondition {
+  repeated string user_agents = 1;
+  repeated string user_agent_regexes = 2;
+  bool exclude = 3;
+}
 
 enum IpAbuseVelocity {
   IP_ABUSE_VELOCITY_UNSPECIFIED = 0;

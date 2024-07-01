@@ -49,6 +49,8 @@ message DetectionExclusionCondition {
     IpAsnCondition ip_asn_condition = 13;
     IpAbuseVelocityCondition ip_abuse_velocity_condition = 14;
     RegionCondition region_condition = 15;
+    EmailDomainCondition email_domain_condition = 16;
+    UserAgentCondition user_agent_condition = 17;
   }
 }
 

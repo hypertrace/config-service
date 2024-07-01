@@ -11,6 +11,7 @@ import ai.traceable.detection.exclusion.config.service.v1.AttributeValueType;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
 import ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.EmailDomainCondition;
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAbuseVelocityCondition;
@@ -33,9 +34,11 @@ import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCond
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
+import ai.traceable.detection.exclusion.config.service.v1.UserAgentCondition;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.ListValue;
+import com.google.protobuf.Message;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.List;
@@ -92,11 +95,42 @@ public class DetectionExclusionConditionValidator {
       case REGION_CONDITION:
         validateRegionCondition(condition.getRegionCondition());
         break;
+      case EMAIL_DOMAIN_CONDITION:
+        validateEmailDomainCondition(condition.getEmailDomainCondition());
+        break;
+      case USER_AGENT_CONDITION:
+        validateUserAgentCondition(condition.getUserAgentCondition());
+        break;
+
       default:
         throwInvalidArgumentException(
             String.format(
                 "Invalid detection exclusion condition type : %s", condition.getConditionCase()));
     }
+  }
+
+  private void validateEmailDomainCondition(EmailDomainCondition emailDomainCondition) {
+    List<String> emailDomains = emailDomainCondition.getEmailDomainsList();
+    List<String> emailRegexes = emailDomainCondition.getEmailRegexesList();
+    if (emailDomains.isEmpty() && emailRegexes.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(emailDomainCondition), printMessage(emailDomainCondition)));
+    }
+    RegexValidator.validateRegexesWithNonWide(emailRegexes);
+  }
+
+  private void validateUserAgentCondition(UserAgentCondition userAgentCondition) {
+    List<String> userAgents = userAgentCondition.getUserAgentsList();
+    List<String> userAgentRegexes = userAgentCondition.getUserAgentRegexesList();
+    if (userAgents.isEmpty() && userAgentRegexes.isEmpty()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(userAgentCondition), printMessage(userAgentCondition)));
+    }
+    RegexValidator.validateRegexesWithNonWide(userAgentRegexes);
   }
 
   private void validateRegionCondition(RegionCondition regionCondition) {
@@ -434,5 +468,9 @@ public class DetectionExclusionConditionValidator {
     return (matchCondition.getOperator().equals(MATCH_OPERATOR_GREATER_THAN)
             || matchCondition.getOperator().equals(MATCH_OPERATOR_LESS_THAN))
         && !matchCondition.getValue().hasNumberValue();
+  }
+
+  public String getName(Message message) {
+    return message.getDescriptorForType().getName();
   }
 }
