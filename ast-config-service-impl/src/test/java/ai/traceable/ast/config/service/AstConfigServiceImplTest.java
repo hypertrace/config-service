@@ -830,7 +830,6 @@ class AstConfigServiceImplTest {
         AstOverrideInfo.newBuilder()
             .setName("name1")
             .setDescription("description")
-            .setIsEnabled(true)
             .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId1"))
             .setConfig(
                 OverrideConfig.newBuilder()
@@ -843,7 +842,6 @@ class AstConfigServiceImplTest {
         AstOverrideInfo.newBuilder()
             .setName("name2")
             .setDescription("description")
-            .setIsEnabled(false)
             .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
             .setConfig(
                 OverrideConfig.newBuilder()
@@ -880,7 +878,6 @@ class AstConfigServiceImplTest {
                         .setId(createdAstOverride1.getId())
                         .setName("name1")
                         .setDescription("description")
-                        .setIsEnabled(true)
                         .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId1"))
                         .setConfig(
                             OverrideConfig.newBuilder()
@@ -893,7 +890,6 @@ class AstConfigServiceImplTest {
                         .setId(createdAstOverride2.getId())
                         .setName("name2")
                         .setDescription("description")
-                        .setIsEnabled(false)
                         .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
                         .setConfig(
                             OverrideConfig.newBuilder()
@@ -910,7 +906,6 @@ class AstConfigServiceImplTest {
                 AstOverrideInfo.newBuilder()
                     .setName("updatedName")
                     .setDescription("updatedDescription")
-                    .setIsEnabled(false)
                     .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
                     .setConfig(
                         OverrideConfig.newBuilder()
@@ -931,7 +926,6 @@ class AstConfigServiceImplTest {
                     .setId(createdAstOverride1.getId())
                     .setName("updatedName")
                     .setDescription("updatedDescription")
-                    .setIsEnabled(false)
                     .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId2"))
                     .setConfig(
                         OverrideConfig.newBuilder()

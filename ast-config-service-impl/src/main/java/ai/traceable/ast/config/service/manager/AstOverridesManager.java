@@ -54,7 +54,6 @@ public class AstOverridesManager {
         AstOverride.newBuilder()
             .setId(existingAstOverride.getId())
             .setName(astOverrideInfo.getName())
-            .setIsEnabled(astOverrideInfo.getIsEnabled())
             .setCreatedBy(existingAstOverride.getCreatedBy())
             .addAllScopes(astOverrideInfo.getScopesList())
             .setConfig(astOverrideInfo.getConfig());
@@ -71,7 +70,6 @@ public class AstOverridesManager {
         AstOverride.newBuilder()
             .setId(UUID.randomUUID().toString())
             .setName(astOverrideInfo.getName())
-            .setIsEnabled(astOverrideInfo.getIsEnabled())
             .addAllScopes(astOverrideInfo.getScopesList())
             .setConfig(astOverrideInfo.getConfig());
     if (astOverrideInfo.hasDescription()) {

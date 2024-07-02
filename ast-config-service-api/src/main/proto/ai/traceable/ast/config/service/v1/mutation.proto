@@ -13,6 +13,7 @@ message Mutation {
   google.protobuf.Value value = 4;
   map<string, string> data = 5;
   google.protobuf.Value original_value = 6;
+  bool is_enabled = 7;
 }
 
 enum MutationAction {
