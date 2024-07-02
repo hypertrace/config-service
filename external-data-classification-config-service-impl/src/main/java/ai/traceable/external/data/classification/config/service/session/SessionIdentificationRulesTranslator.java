@@ -1,5 +1,7 @@
 package ai.traceable.external.data.classification.config.service.session;
 
+import static ai.traceable.config.utils.RegexUtils.escapeRegex;
+
 import ai.traceable.external.data.classification.config.service.v1.AttributeFilter;
 import ai.traceable.external.data.classification.config.service.v1.AttributePredicate;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
@@ -209,8 +211,8 @@ public class SessionIdentificationRulesTranslator {
           PathPredicate.newBuilder()
               .setPathSegmentPredicate(
                   StringPredicate.newBuilder()
-                      .setOperator(Operator.OPERATOR_EQUALS)
-                      .setValue(projections.get(0).getJsonPath().getPath()))
+                      .setOperator(Operator.OPERATOR_MATCHES_REGEX)
+                      .setValue(escapeRegex(projections.get(0).getJsonPath().getPath())))
               .build());
     }
     return Optional.empty();

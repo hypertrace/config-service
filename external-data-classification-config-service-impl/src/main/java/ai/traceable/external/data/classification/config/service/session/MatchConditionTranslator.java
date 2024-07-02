@@ -1,5 +1,7 @@
 package ai.traceable.external.data.classification.config.service.session;
 
+import static ai.traceable.config.utils.RegexUtils.escapeRegex;
+
 import ai.traceable.external.data.classification.config.service.v1.Operator;
 import ai.traceable.external.data.classification.config.service.v1.StringPredicate;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
@@ -64,9 +66,5 @@ public class MatchConditionTranslator {
     throw Status.INVALID_ARGUMENT
         .withDescription(String.format("Unable to convert match operator %s", operator))
         .asRuntimeException();
-  }
-
-  private String escapeRegex(String value) {
-    return value.replaceAll("\\W", "\\\\$0");
   }
 }

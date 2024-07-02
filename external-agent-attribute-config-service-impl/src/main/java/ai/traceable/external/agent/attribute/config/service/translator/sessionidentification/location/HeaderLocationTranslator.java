@@ -1,5 +1,6 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.location;
 
+import static ai.traceable.config.utils.RegexUtils.escapeRegex;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.REQUEST_HEADER_KEY_FORMAT_STRINGS;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.RESPONSE_HEADER_KEY_FORMAT_STRINGS;
 
@@ -86,8 +87,7 @@ public class HeaderLocationTranslator
     if (matchCondition.getMatchValue().getValueCase() != LiteralValue.ValueCase.STRING_VALUE) {
       return predicate;
     }
-    String escapedRegexLocation =
-        this.escapeRegex(location.substring(0, location.indexOf("%s"))) + "%s";
+    String escapedRegexLocation = escapeRegex(location.substring(0, location.indexOf("%s"))) + "%s";
     Projector.ConditionalProjector.Predicate.StringPredicate.Builder modifiedPredicate =
         predicate.toBuilder();
     switch (matchCondition.getOperator()) {
@@ -116,9 +116,5 @@ public class HeaderLocationTranslator
       return value.substring(1);
     }
     return value;
-  }
-
-  private String escapeRegex(String value) {
-    return value.replaceAll("\\W", "\\\\$0");
   }
 }

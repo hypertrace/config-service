@@ -1,5 +1,7 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification;
 
+import static ai.traceable.config.utils.RegexUtils.escapeRegex;
+
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
@@ -71,9 +73,5 @@ public class MatchConditionTranslator {
     throw Status.INVALID_ARGUMENT
         .withDescription(String.format("Unable to convert match operator %s", operator))
         .asRuntimeException();
-  }
-
-  private String escapeRegex(String value) {
-    return value.replaceAll("\\W", "\\\\$0");
   }
 }
