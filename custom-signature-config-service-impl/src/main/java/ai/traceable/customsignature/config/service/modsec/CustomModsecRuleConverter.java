@@ -12,6 +12,7 @@ import ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRule;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRuleClause;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecValueMatchClause;
+import ai.traceable.modsecurity.rule.api.v1.CustomSecRuleClause;
 import ai.traceable.modsecurity.rule.api.v1.RequestKeyValueMatchMetadata;
 import ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata;
 import ai.traceable.modsecurity.rule.api.v1.ResponseKeyValueMatchMetadata;
@@ -67,9 +68,17 @@ public class CustomModsecRuleConverter {
         return convert(clause.getMatchExpression());
       case KEY_VALUE_EXPRESSION:
         return convert(clause.getKeyValueExpression());
+      case CUSTOM_SEC_RULE:
+        return convert(clause.getCustomSecRule().getInputSecRule());
       default:
         throw new IllegalArgumentException("Unknown clause case: " + clause.getClauseCase());
     }
+  }
+
+  private CustomModsecRuleClause convert(String inputSecRule) {
+    return CustomModsecRuleClause.newBuilder()
+        .setCustomSecRuleClause(CustomSecRuleClause.newBuilder().setInputSecRule(inputSecRule))
+        .build();
   }
 
   private CustomModsecRuleClause convert(MatchExpression expression) {

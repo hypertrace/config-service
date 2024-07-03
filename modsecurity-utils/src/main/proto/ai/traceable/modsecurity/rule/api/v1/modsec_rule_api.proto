@@ -16,7 +16,12 @@ message CustomModsecRuleClause {
   oneof clause {
     CustomModsecValueMatchClause value_match_clause = 1;
     CustomModsecKeyValueMatchClause key_value_match_clause = 2;
+    CustomSecRuleClause custom_sec_rule_clause = 3;
   }
+}
+
+message CustomSecRuleClause {
+  string input_sec_rule = 1;
 }
 
 message CustomModsecValueMatchClause {

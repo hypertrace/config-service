@@ -4,10 +4,10 @@ import ai.traceable.modsecurity.rule.api.v1.CustomModsecRule;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRuleClause;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatchClauseConverter;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
+import ai.traceable.modsecurity.rule.secrule.CustomSecRule;
 import ai.traceable.modsecurity.rule.secrule.ModsecSecRuleGroup;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -31,27 +31,30 @@ public class ModsecRuleConverterImpl implements ModsecRuleConverter {
       throw new IllegalArgumentException(
           "Custom Modsec Rule should have a valid rule ID and a valid rule UUID");
     }
-    ModsecSecRuleGroup secRuleGroup =
-        new ModsecSecRuleGroup(
-            customModsecRule.getRuleId(),
-            customModsecRule.getRuleUuid(),
-            customModsecRule.getRuleMsg(),
-            Optional.of(customModsecRule.getLogMessage()).filter(Predicate.not(String::isBlank)));
+    ModsecSecRuleGroup.ModsecRuleGroupBuilder secRuleGroupBuilder = ModsecSecRuleGroup.builder();
+    secRuleGroupBuilder.setId(customModsecRule.getRuleId());
+    secRuleGroupBuilder.setMsg(customModsecRule.getRuleMsg());
+    secRuleGroupBuilder.setRuleUuid(customModsecRule.getRuleUuid());
+    secRuleGroupBuilder.setLogData(customModsecRule.getLogMessage());
     for (CustomModsecRuleClause clause : customModsecRule.getAndClausesList()) {
       switch (clause.getClauseCase()) {
         case VALUE_MATCH_CLAUSE:
-          secRuleGroup.addSecRule(
+          secRuleGroupBuilder.addSecRule(
               valueMatchClauseConverter.getSecRule(clause.getValueMatchClause()));
           break;
         case KEY_VALUE_MATCH_CLAUSE:
-          secRuleGroup.addSecRules(
+          secRuleGroupBuilder.addSecRules(
               keyValueMatchClauseConverter.getSecRules(clause.getKeyValueMatchClause()));
           break;
+        case CUSTOM_SEC_RULE_CLAUSE:
+          secRuleGroupBuilder.addCustomSecRule(new CustomSecRule(clause.getCustomSecRuleClause()));
+          break;
+
         default:
           throw new IllegalArgumentException("Invalid Clause case: " + clause.getClauseCase());
       }
     }
-    return secRuleGroup.getValidatedModsecRuleString();
+    return secRuleGroupBuilder.build().getValidatedModsecRuleString();
   }
 
   @Override

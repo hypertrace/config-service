@@ -4,6 +4,8 @@ import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.PIPE;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SPACE_DELIMITER;
 
+import ai.traceable.modsecurity.rule.secrule.actions.ModsecActions;
+import ai.traceable.modsecurity.rule.secrule.actions.ModsecActionsType;
 import ai.traceable.modsecurity.rule.secrule.operator.ModsecOperatorExpression;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariable;
 import java.util.List;
@@ -13,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Builder
 @Slf4j
-public class ModsecSecRule {
+public class ModsecSecRule implements SecRuleContainer {
   private final List<ModsecVariable> variables;
   private final ModsecOperatorExpression operatorExpression;
 
@@ -27,7 +29,9 @@ public class ModsecSecRule {
     return variables;
   }
 
-  public String getSecRuleString(String modsecActions) {
+  @Override
+  public String getSecRuleString(ModsecActions modsecActions, ModsecActionsType actionsType) {
+    String actionString = modsecActions.getActionsString(actionsType);
     if (variables.isEmpty()) {
       return "";
     }
@@ -38,6 +42,6 @@ public class ModsecSecRule {
                 .map(ModsecVariable::toString)
                 .collect(Collectors.toUnmodifiableList()));
     return String.join(
-        SPACE_DELIMITER, SEC_RULE, variableString, operatorExpression.toString(), modsecActions);
+        SPACE_DELIMITER, SEC_RULE, variableString, operatorExpression.toString(), actionString);
   }
 }
