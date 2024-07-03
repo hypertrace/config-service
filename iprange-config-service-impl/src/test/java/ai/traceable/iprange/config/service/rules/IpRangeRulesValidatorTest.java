@@ -35,7 +35,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -63,7 +63,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setConditions(
                   IpRangeRuleConditions.newBuilder()
@@ -90,7 +90,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setConditions(
                   IpRangeRuleConditions.newBuilder()
@@ -117,7 +117,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -145,7 +145,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -172,7 +172,7 @@ class IpRangeRulesValidatorTest {
       IpRangeRuleDetails iprangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .build();
 
@@ -209,7 +209,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Test")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.1.0.0/16"))
               .build();
 
       CreateIpRangeRuleRequest createIpRangeRuleRequest =
@@ -227,7 +227,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Test")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
               .build();
 
@@ -257,7 +257,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("30").build())
@@ -278,7 +278,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
               .build();
 
@@ -298,7 +298,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
               .build();
       Mockito.when(blockAllExceptRulesSupplier.get())
@@ -322,7 +322,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -352,7 +352,7 @@ class IpRangeRulesValidatorTest {
       IpRangeRuleDetails iprangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .build();
 
@@ -374,7 +374,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .build();
 
@@ -393,7 +393,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -424,7 +424,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
@@ -455,7 +455,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .build();
 
@@ -500,7 +500,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Test")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.1.0.0/16"))
               .build();
 
       UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
@@ -521,7 +521,7 @@ class IpRangeRulesValidatorTest {
           IpRangeRuleDetails.newBuilder()
               .setName("Test")
               .setDescription("Range rule test")
-              .addAllRawInputIpData(Arrays.asList("1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
               .build();
 
@@ -554,7 +554,7 @@ class IpRangeRulesValidatorTest {
       IpRangeRuleDetails iprangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_ALLOW)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("345").build())
@@ -578,7 +578,7 @@ class IpRangeRulesValidatorTest {
       IpRangeRuleDetails iprangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
               .build();
 
@@ -603,7 +603,7 @@ class IpRangeRulesValidatorTest {
       IpRangeRuleDetails iprangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
-              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.1/16"))
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
               .build();
 
@@ -642,5 +642,26 @@ class IpRangeRulesValidatorTest {
       Status status = rulesValidator.validate(deleteIpRangeRuleRequest);
       assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
     }
+  }
+
+  @Test
+  @DisplayName("Should return invalid argument status when host bits are not zero in a cidr")
+  void validateRawInputIpAddressesTest() {
+    IpRangeRuleDetails iprangeRuleDetails =
+        IpRangeRuleDetails.newBuilder()
+            .setName("Tester")
+            .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.1.0/16"))
+            .setRuleAction(RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT)
+            .build();
+    UpdateIpRangeRuleRequest updateIpRangeRuleRequest =
+        UpdateIpRangeRuleRequest.newBuilder()
+            .setId("Tester0")
+            .setRuleDetails(iprangeRuleDetails)
+            .build();
+    Mockito.when(blockAllExceptRulesSupplier.get())
+        .thenReturn(List.of(IpRangeRule.getDefaultInstance()));
+
+    Status status = rulesValidator.validate(updateIpRangeRuleRequest, blockAllExceptRulesSupplier);
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
   }
 }
