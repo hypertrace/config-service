@@ -747,7 +747,6 @@ class AstConfigServiceRequestValidatorImplTest {
                     .setAstOverrideInfo(
                         AstOverrideInfo.newBuilder()
                             .setName("name")
-                            .setIsEnabled(true)
                             .addScopes(OverrideScope.newBuilder().setFixedTestId("fixedTestId"))
                             .setConfig(
                                 OverrideConfig.newBuilder()
