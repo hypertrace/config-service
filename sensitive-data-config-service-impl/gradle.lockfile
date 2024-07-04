@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:4.0.3=testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.390=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.392=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.5.34=testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=testRuntimeClasspath
@@ -25,7 +25,7 @@ ai.traceable.platform:api-naming-model:5.0.11=testRuntimeClasspath
 ai.traceable.platform:conditions-matcher:1.0.251=testRuntimeClasspath
 ai.traceable.platform:config-providers:1.0.251=testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.64=testRuntimeClasspath
-ai.traceable.platform:insights-service-api:2.0.38=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:insights-service-api:2.0.44=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.117=testRuntimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.49=testRuntimeClasspath
 ai.traceable.platform:session-constants:1.0.5=testRuntimeClasspath
