@@ -11,11 +11,9 @@ import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.iprange.config.service.v1.StatusCodeMatchCondition;
 import ai.traceable.iprange.config.service.v1.StatusCodeMatchType;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
-import ai.traceable.platform.utils.ip.IpValidationUtils;
 import io.grpc.Status;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 class IpRangeRulesValidator implements RulesValidator {
@@ -79,12 +77,6 @@ class IpRangeRulesValidator implements RulesValidator {
     if (details.getRawInputIpDataList().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "IP Range rule should have at least one valid IP address or range");
-    } else {
-      // validate ranges
-      Status ipValidationStatus = validateRawInputIpDataList(details);
-      if (!ipValidationStatus.isOk()) {
-        return ipValidationStatus;
-      }
     }
 
     if (details.getRuleAction() == RuleAction.RULE_ACTION_UNSPECIFIED) {
@@ -134,16 +126,6 @@ class IpRangeRulesValidator implements RulesValidator {
     }
   }
 
-  private Status validateRawInputIpDataList(IpRangeRuleDetails details) {
-    return details.getRawInputIpDataList().stream()
-        .filter(Predicate.not(this::validateRawInputIpOrThrow))
-        .findAny()
-        .map(
-            ipAddress ->
-                Status.INVALID_ARGUMENT.withDescription("Found invalid IP/CIDR " + ipAddress))
-        .orElse(Status.OK);
-  }
-
   private boolean isDuplicateBlockAllExceptCreate(
       Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
     return !blockAllExceptRulesSupplier.get().isEmpty();
@@ -153,9 +135,5 @@ class IpRangeRulesValidator implements RulesValidator {
       String id, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
     List<IpRangeRule> ipRangeRules = blockAllExceptRulesSupplier.get();
     return ipRangeRules.stream().anyMatch(rule -> !rule.getId().equals(id));
-  }
-
-  private boolean validateRawInputIpOrThrow(String rawInputIp) {
-    return IpValidationUtils.isIpAddressRangeInCIDRWithHostBitsZero(rawInputIp);
   }
 }
