@@ -1,5 +1,6 @@
 package ai.traceable.waf.provider.integration.service;
 
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AWS_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AZURE_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS;
@@ -10,6 +11,11 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.waf.integration.service.api.v1.AkamaiAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
@@ -165,6 +171,7 @@ public class WafIntegrationConfigRequestValidator {
       case WAF_PROVIDER_TYPE_AZURE:
       case WAF_PROVIDER_TYPE_GCP:
       case WAF_PROVIDER_TYPE_F5:
+      case WAF_PROVIDER_TYPE_AKAMAI:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -243,6 +250,18 @@ public class WafIntegrationConfigRequestValidator {
         validateUpdatedF5IntegrationParams(
             updatedWafIntegrationDetails.getUpdatedF5IntegrationParams(), existingWafIntegrations);
         break;
+      case UPDATED_AKAMAI_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                id, AKAMAI_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            AKAMAI_INTEGRATION_PARAMS);
+        validateUpdatedAkamaiIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedAkamaiIntegrationParams(),
+            existingWafIntegrations);
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -289,6 +308,15 @@ public class WafIntegrationConfigRequestValidator {
         updatedF5IntegrationParams.getF5IntegrationDetails(), otherExistingWafIntegrations);
   }
 
+  private void validateUpdatedAkamaiIntegrationParams(
+      AkamaiIntegrationUpdateParams akamaiIntegrationUpdateParams,
+      List<WafIntegration> otherExistingWafIntegrations) {
+    validateUpdatedAkamaiIntegrationDetails(
+        akamaiIntegrationUpdateParams.getAkamaiIntegrationDetails());
+    validateAkamaiIntegrationDetailsNoDuplicatesOrThrow(
+        akamaiIntegrationUpdateParams.getAkamaiIntegrationDetails(), otherExistingWafIntegrations);
+  }
+
   private void validateUpdatedGcpIntegrationParams(
       GcpIntegrationUpdateParams gcpIntegrationUpdateParams,
       List<WafIntegration> otherExistingWafIntegrations) {
@@ -318,6 +346,16 @@ public class WafIntegrationConfigRequestValidator {
     validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
     if (f5IntegrationDetails.hasF5AuthCredentials()) {
       validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
+    }
+  }
+
+  private void validateUpdatedAkamaiIntegrationDetails(
+      AkamaiIntegrationDetails akamaiIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        akamaiIntegrationDetails, AkamaiIntegrationDetails.HOST_FIELD_NUMBER);
+    validateAkamaiPolicyDetails(akamaiIntegrationDetails.getAkamaiPolicyDetails());
+    if (akamaiIntegrationDetails.hasAkamaiAuthCredentials()) {
+      validateAkamaiAuthCredentials(akamaiIntegrationDetails.getAkamaiAuthCredentials());
     }
   }
 
@@ -395,6 +433,15 @@ public class WafIntegrationConfigRequestValidator {
         validateF5IntegrationParams(
             wafIntegrationDetails.getF5IntegrationParams(), existingWafIntegrations);
         break;
+      case AKAMAI_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                null, AKAMAI_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, AKAMAI_INTEGRATION_PARAMS);
+        validateAkamaiIntegrationParams(
+            wafIntegrationDetails.getAkamaiIntegrationParams(), existingWafIntegrations);
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -419,6 +466,14 @@ public class WafIntegrationConfigRequestValidator {
         f5IntegrationParams.getF5IntegrationDetails(), otherExistingF5WafIntegrations);
   }
 
+  private void validateAkamaiIntegrationParams(
+      AkamaiIntegrationParams akamaiIntegrationParams,
+      List<WafIntegration> existingAkamaiWafIntegrations) {
+    validateAkamaiIntegrationDetails(akamaiIntegrationParams.getAkamaiIntegrationDetails());
+    validateAkamaiIntegrationDetailsNoDuplicatesOrThrow(
+        akamaiIntegrationParams.getAkamaiIntegrationDetails(), existingAkamaiWafIntegrations);
+  }
+
   private void validateGcpIntegrationDetails(
       GcpIntegrationDetails gcpIntegrationDetails,
       List<WafIntegration> otherExistingGCPWafIntegrations) {
@@ -437,6 +492,13 @@ public class WafIntegrationConfigRequestValidator {
     validateUrlOrThrow(f5IntegrationDetails.getUrl());
     validateF5SecurityPolicyDetails(f5IntegrationDetails.getF5PolicyDetails());
     validateF5AuthCredentials(f5IntegrationDetails.getF5AuthCredentials());
+  }
+
+  private void validateAkamaiIntegrationDetails(AkamaiIntegrationDetails akamaiIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        akamaiIntegrationDetails, AkamaiIntegrationDetails.HOST_FIELD_NUMBER);
+    validateAkamaiPolicyDetails(akamaiIntegrationDetails.getAkamaiPolicyDetails());
+    validateAkamaiAuthCredentials(akamaiIntegrationDetails.getAkamaiAuthCredentials());
   }
 
   private void validateUrlOrThrow(String urlString) {
@@ -461,11 +523,25 @@ public class WafIntegrationConfigRequestValidator {
     validateNonDefaultPresenceOrThrow(f5PolicyDetails, F5PolicyDetails.POLICY_NAME_FIELD_NUMBER);
   }
 
+  private void validateAkamaiPolicyDetails(AkamaiPolicyDetails akamaiPolicyDetails) {
+    validateNonDefaultPresenceOrThrow(
+        akamaiPolicyDetails, AkamaiPolicyDetails.POLICY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        akamaiPolicyDetails, AkamaiPolicyDetails.AKAMAI_POLICY_CONFIGURATION_ID_FIELD_NUMBER);
+  }
+
   private void validateF5IntegrationDetailsNoDuplicatesOrThrow(
       F5IntegrationDetails f5IntegrationDetails,
       List<WafIntegration> otherExistingF5WafIntegrations) {
     otherExistingF5WafIntegrations.forEach(
         wafIntegration -> throwIfDuplicateParams(wafIntegration, f5IntegrationDetails));
+  }
+
+  private void validateAkamaiIntegrationDetailsNoDuplicatesOrThrow(
+      AkamaiIntegrationDetails akamaiIntegrationDetails,
+      List<WafIntegration> existingAkamaiWafIntegrations) {
+    existingAkamaiWafIntegrations.forEach(
+        wafIntegration -> throwIfDuplicateParams(wafIntegration, akamaiIntegrationDetails));
   }
 
   private void throwIfDuplicateParams(
@@ -488,6 +564,27 @@ public class WafIntegrationConfigRequestValidator {
                   + " and server URL "
                   + f5IntegrationDetails.getUrl()
                   + " are already linked to an existing F5 WAF integration.")
+          .asRuntimeException();
+    }
+  }
+
+  private void throwIfDuplicateParams(
+      WafIntegration existingIntegration, AkamaiIntegrationDetails akamaiIntegrationDetails) {
+    AkamaiIntegrationDetails existingDetails =
+        existingIntegration
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails();
+
+    if (existingDetails
+        .getAkamaiPolicyDetails()
+        .getPolicyId()
+        .equals(akamaiIntegrationDetails.getAkamaiPolicyDetails().getPolicyId())) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              "Akamai policy id "
+                  + akamaiIntegrationDetails.getAkamaiPolicyDetails().getPolicyId()
+                  + " is already linked to an existing Akamai WAF integration.")
           .asRuntimeException();
     }
   }
@@ -543,6 +640,17 @@ public class WafIntegrationConfigRequestValidator {
         f5AuthCredentials, F5AuthCredentials.ENCRYPTED_PASSWORD_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         f5AuthCredentials, F5AuthCredentials.ENCRYPTION_KEY_ID_FIELD_NUMBER);
+  }
+
+  private void validateAkamaiAuthCredentials(AkamaiAuthCredentials akamaiAuthCredentials) {
+    validateNonDefaultPresenceOrThrow(
+        akamaiAuthCredentials, AkamaiAuthCredentials.ENCRYPTION_KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        akamaiAuthCredentials, AkamaiAuthCredentials.ENCRYPTED_ACCESS_TOKEN_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        akamaiAuthCredentials, AkamaiAuthCredentials.ENCRYPTED_CLIENT_TOKEN_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        akamaiAuthCredentials, AkamaiAuthCredentials.ENCRYPTED_CLIENT_SECRET_FIELD_NUMBER);
   }
 
   private void validateUpdatedCloudFlareIntegrationParams(

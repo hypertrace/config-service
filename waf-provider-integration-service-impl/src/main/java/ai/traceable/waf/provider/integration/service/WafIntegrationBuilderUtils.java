@@ -1,5 +1,8 @@
 package ai.traceable.waf.provider.integration.service;
 
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
@@ -72,6 +75,9 @@ public class WafIntegrationBuilderUtils {
       case UPDATED_F5_INTEGRATION_PARAMS:
         updateF5WafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
+      case UPDATED_AKAMAI_INTEGRATION_PARAMS:
+        updateAkamaiWafIntegration(request, updatedWafIntegrationDetailsBuilder);
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -92,6 +98,15 @@ public class WafIntegrationBuilderUtils {
     detailsBuilder.setF5IntegrationParams(
         getUpdatedF5IntegrationParams(
             updatedF5IntegrationParams, detailsBuilder.getF5IntegrationParams()));
+  }
+
+  private static void updateAkamaiWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
+    AkamaiIntegrationUpdateParams updatedAkamaiIntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedAkamaiIntegrationParams();
+    detailsBuilder.setAkamaiIntegrationParams(
+        getUpdatedAkamaiIntegrationParams(
+            updatedAkamaiIntegrationParams, detailsBuilder.getAkamaiIntegrationParams()));
   }
 
   private static GcpIntegrationParams getUpdatedGcpIntegrationParams(
@@ -128,6 +143,25 @@ public class WafIntegrationBuilderUtils {
                     : existingF5IntegrationDetails.getF5AuthCredentials())
             .build();
     return F5IntegrationParams.newBuilder().setF5IntegrationDetails(f5IntegrationDetails).build();
+  }
+
+  private static AkamaiIntegrationParams getUpdatedAkamaiIntegrationParams(
+      AkamaiIntegrationUpdateParams akamaiIntegrationUpdateParams,
+      AkamaiIntegrationParams akamaiIntegrationParams) {
+    AkamaiIntegrationDetails updatedAkamaiIntegrationDetails =
+        akamaiIntegrationUpdateParams.getAkamaiIntegrationDetails();
+    AkamaiIntegrationDetails existingAkamaiIntegrationDetails =
+        akamaiIntegrationParams.getAkamaiIntegrationDetails();
+    AkamaiIntegrationDetails akamaiIntegrationDetails =
+        updatedAkamaiIntegrationDetails.toBuilder()
+            .setAkamaiAuthCredentials(
+                updatedAkamaiIntegrationDetails.hasAkamaiAuthCredentials()
+                    ? updatedAkamaiIntegrationDetails.getAkamaiAuthCredentials()
+                    : existingAkamaiIntegrationDetails.getAkamaiAuthCredentials())
+            .build();
+    return AkamaiIntegrationParams.newBuilder()
+        .setAkamaiIntegrationDetails(akamaiIntegrationDetails)
+        .build();
   }
 
   private static boolean updatedRequestHasAuthCredentials(
@@ -439,6 +473,8 @@ public class WafIntegrationBuilderUtils {
         return getGcpWafIntegrationWithSecretsStripped(wafIntegration);
       case F5_INTEGRATION_PARAMS:
         return getF5WafIntegrationWithSecretsStripped(wafIntegration);
+      case AKAMAI_INTEGRATION_PARAMS:
+        return getAkamaiWafIntegrationWithSecretsStripped(wafIntegration);
       default:
         return wafIntegration;
     }
@@ -458,6 +494,25 @@ public class WafIntegrationBuilderUtils {
                 .setF5IntegrationParams(
                     f5IntegrationParams.toBuilder()
                         .setF5IntegrationDetails(f5IntegrationDetailsBuilder.build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  private static WafIntegration getAkamaiWafIntegrationWithSecretsStripped(
+      WafIntegration wafIntegration) {
+    AkamaiIntegrationParams akamaiIntegrationParams =
+        wafIntegration.getWafIntegrationDetails().getAkamaiIntegrationParams();
+    AkamaiIntegrationDetails.Builder akamaiIntegrationDetailsBuilder =
+        akamaiIntegrationParams.getAkamaiIntegrationDetails().toBuilder();
+    akamaiIntegrationDetailsBuilder.clearAkamaiAuthCredentials();
+    return WafIntegration.newBuilder()
+        .setId(wafIntegration.getId())
+        .setWafIntegrationDetails(
+            wafIntegration.getWafIntegrationDetails().toBuilder()
+                .setAkamaiIntegrationParams(
+                    akamaiIntegrationParams.toBuilder()
+                        .setAkamaiIntegrationDetails(akamaiIntegrationDetailsBuilder)
                         .build())
                 .build())
         .build();

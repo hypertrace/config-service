@@ -5,6 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.waf.integration.service.api.v1.AkamaiAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
@@ -144,6 +149,30 @@ class WafIntegrationConfigServiceImplTest {
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(
         stripF5Secrets(
+            expectedDetails.toBuilder()
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                        .build())
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                        .build())
+                .build()),
+        response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
+  void createWafIntegrationAkamaiTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(
+        stripAkamaiSecrets(
             expectedDetails.toBuilder()
                 .addIntegrationTargets(
                     WafIntegrationTarget.newBuilder()
@@ -624,6 +653,31 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void getWafIntegrationsAkamaiTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_AKAMAI))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    WafIntegration expectedWafIntegration = createResponse.getWafIntegration();
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(expectedWafIntegration, response.getWafIntegrationList().get(0));
+  }
+
+  @Test
   void updateWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -998,6 +1052,99 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void updateWafIntegrationAkamaiTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des1")
+            .setUpdatedAkamaiIntegrationParams(
+                AkamaiIntegrationUpdateParams.newBuilder()
+                    .setAkamaiIntegrationDetails(
+                        AkamaiIntegrationDetails.newBuilder()
+                            .setHost("https://localhost:8000")
+                            .setAkamaiPolicyDetails(
+                                AkamaiPolicyDetails.newBuilder()
+                                    .setPolicyId("policy2")
+                                    .setAkamaiPolicyConfigurationId("config2")
+                                    .build()))
+                    .build())
+            .build();
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+    AkamaiIntegrationParams akamaiIntegrationParams =
+        updateResponse.getWafIntegration().getWafIntegrationDetails().getAkamaiIntegrationParams();
+    assertEquals("name1", updateResponse.getWafIntegration().getWafIntegrationDetails().getName());
+    assertEquals(
+        "des1", updateResponse.getWafIntegration().getWafIntegrationDetails().getDescription());
+    assertEquals(
+        "https://localhost:8000", akamaiIntegrationParams.getAkamaiIntegrationDetails().getHost());
+    assertEquals(
+        "policy2",
+        akamaiIntegrationParams
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails()
+            .getPolicyId());
+    assertEquals(
+        "config2",
+        akamaiIntegrationParams
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails()
+            .getAkamaiPolicyConfigurationId());
+
+    GetWafIntegrationsDetailsResponse wafIntegrationDetails =
+        wafProviderServiceBlockingStub.getWafIntegrationsDetails(
+            GetWafIntegrationsDetailsRequest.newBuilder()
+                .setFilter(
+                    GetWafIntegrationsFilter.newBuilder()
+                        .addIds(updateResponse.getWafIntegration().getId()))
+                .build());
+    assertEquals(
+        "client-secret",
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails()
+            .getAkamaiAuthCredentials()
+            .getEncryptedClientSecret());
+    assertEquals(
+        "access-token",
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails()
+            .getAkamaiAuthCredentials()
+            .getEncryptedAccessToken());
+    assertEquals(
+        "client-secret",
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getAkamaiIntegrationParams()
+            .getAkamaiIntegrationDetails()
+            .getAkamaiAuthCredentials()
+            .getEncryptedClientSecret());
+  }
+
+  @Test
   void deleteWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -1088,6 +1235,29 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
+  @Test
+  void deleteWafIntegrationAkamaiTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
   private WafIntegrationDetails createWebIdentityDetails(
       String name, IntegrationParamsCase paramsCase) {
     switch (paramsCase) {
@@ -1133,6 +1303,20 @@ class WafIntegrationConfigServiceImplTest {
             .setF5IntegrationDetails(f5IntegrationDetailsBuilder.build())
             .build();
     return expectedDetails.toBuilder().setF5IntegrationParams(updatedF5IntegrationParams).build();
+  }
+
+  private WafIntegrationDetails stripAkamaiSecrets(WafIntegrationDetails expectedDetails) {
+    AkamaiIntegrationDetails akamaiIntegrationDetails =
+        expectedDetails.getAkamaiIntegrationParams().getAkamaiIntegrationDetails();
+    AkamaiIntegrationDetails.Builder akamaiIntegrationDetailsBuilder =
+        akamaiIntegrationDetails.toBuilder().clearAkamaiAuthCredentials();
+    AkamaiIntegrationParams updatedAkamaiIntegrationParams =
+        expectedDetails.getAkamaiIntegrationParams().toBuilder()
+            .setAkamaiIntegrationDetails(akamaiIntegrationDetailsBuilder.build())
+            .build();
+    return expectedDetails.toBuilder()
+        .setAkamaiIntegrationParams(updatedAkamaiIntegrationParams)
+        .build();
   }
 
   private WafIntegrationDetails createWafIntegrationDetails(
@@ -1281,6 +1465,28 @@ class WafIntegrationConfigServiceImplTest {
                                 F5AuthCredentials.newBuilder()
                                     .setEncryptedUserName("user-name")
                                     .setEncryptedPassword("password")
+                                    .setEncryptionKeyId("key-id"))))
+            .build();
+      case AKAMAI_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .setAkamaiIntegrationParams(
+                AkamaiIntegrationParams.newBuilder()
+                    .setAkamaiIntegrationDetails(
+                        AkamaiIntegrationDetails.newBuilder()
+                            .setHost("https://localhost:9000")
+                            .setAkamaiPolicyDetails(
+                                AkamaiPolicyDetails.newBuilder()
+                                    .setPolicyId("policy1")
+                                    .setAkamaiPolicyConfigurationId("configId")
+                                    .build())
+                            .setAkamaiAuthCredentials(
+                                AkamaiAuthCredentials.newBuilder()
+                                    .setEncryptedClientSecret("client-secret")
+                                    .setEncryptedClientToken("client-token")
+                                    .setEncryptedAccessToken("access-token")
                                     .setEncryptionKeyId("key-id"))))
             .build();
       default:

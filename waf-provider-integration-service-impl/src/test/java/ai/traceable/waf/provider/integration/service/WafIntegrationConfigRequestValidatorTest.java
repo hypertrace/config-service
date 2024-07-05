@@ -3,6 +3,10 @@ package ai.traceable.waf.provider.integration.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import ai.traceable.waf.integration.service.api.v1.AkamaiAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.AkamaiIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.AkamaiPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AwsIntegrationUpdateParams;
@@ -50,8 +54,9 @@ import org.junit.jupiter.api.Test;
 class WafIntegrationConfigRequestValidatorTest {
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId("test-tenant");
   public static final String EXISTING_SECURITY_POLICY_NAME = "existingSecurityPolicyName";
-  public static final String EXISTING_PROJECT_ID = "existing-policy-id";
+  public static final String EXISTING_POLICY_ID = "existing-policy-id";
   public static final String EXSITING_F5_URL = "exsitingF5Url";
+
   private final WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator;
   private List<WafIntegration> existingWafIntegrations = List.of();
 
@@ -1331,7 +1336,7 @@ class WafIntegrationConfigRequestValidatorTest {
                         GcpIntegrationParams.newBuilder()
                             .setGcpIntegrationDetails(
                                 GcpIntegrationDetails.newBuilder()
-                                    .setProjectId(EXISTING_PROJECT_ID)
+                                    .setProjectId(EXISTING_POLICY_ID)
                                     .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME)
                                     .setDenyActionResponseCodeValue(502)
                                     .setAuthCredentials(
@@ -1503,6 +1508,156 @@ class WafIntegrationConfigRequestValidatorTest {
   }
 
   @Test
+  void testInvalidCreateAkamaiRequestTest() {
+    // empty akamai integration details
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(AkamaiIntegrationParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing akamai host
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(
+                        AkamaiIntegrationParams.newBuilder()
+                            .setAkamaiIntegrationDetails(
+                                AkamaiIntegrationDetails.newBuilder()
+                                    .setAkamaiPolicyDetails(
+                                        AkamaiPolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setAkamaiPolicyConfigurationId("config1")
+                                            .build())
+                                    .setAkamaiAuthCredentials(
+                                        AkamaiAuthCredentials.newBuilder()
+                                            .setEncryptedAccessToken("access-token")
+                                            .setEncryptedClientToken("client-token")
+                                            .setEncryptedClientSecret("client-secret")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing Akamai security policy
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(
+                        AkamaiIntegrationParams.newBuilder()
+                            .setAkamaiIntegrationDetails(
+                                AkamaiIntegrationDetails.newBuilder()
+                                    .setHost("https://localhost:9000")
+                                    .setAkamaiAuthCredentials(
+                                        AkamaiAuthCredentials.newBuilder()
+                                            .setEncryptedAccessToken("access-token")
+                                            .setEncryptedClientToken("client-token")
+                                            .setEncryptedClientSecret("client-secret")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing akamai auth credentials
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(
+                        AkamaiIntegrationParams.newBuilder()
+                            .setAkamaiIntegrationDetails(
+                                AkamaiIntegrationDetails.newBuilder()
+                                    .setHost("https://localhost:9000")))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request4, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(
+                        AkamaiIntegrationParams.newBuilder()
+                            .setAkamaiIntegrationDetails(
+                                AkamaiIntegrationDetails.newBuilder()
+                                    .setHost("https://localhost:9000")
+                                    .setAkamaiPolicyDetails(
+                                        AkamaiPolicyDetails.newBuilder()
+                                            .setPolicyId("policy1")
+                                            .setAkamaiPolicyConfigurationId("config1")
+                                            .build())
+                                    .setAkamaiAuthCredentials(
+                                        AkamaiAuthCredentials.newBuilder()
+                                            .setEncryptedAccessToken("access-token")
+                                            .setEncryptedClientToken("client-token")
+                                            .setEncryptedClientSecret("client-secret")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request creating integration for which the policy-name already exists should throw
+    WafIntegration existingF5WafIntegration = getExistingAkamaiWafIntegration();
+    CreateWafIntegrationRequest invalidRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setAkamaiIntegrationParams(
+                        AkamaiIntegrationParams.newBuilder()
+                            .setAkamaiIntegrationDetails(
+                                AkamaiIntegrationDetails.newBuilder()
+                                    .setHost("host")
+                                    .setAkamaiPolicyDetails(
+                                        AkamaiPolicyDetails.newBuilder()
+                                            .setPolicyId(EXISTING_POLICY_ID)
+                                            .setAkamaiPolicyConfigurationId("config1")
+                                            .build())
+                                    .setAkamaiAuthCredentials(
+                                        AkamaiAuthCredentials.newBuilder()
+                                            .setEncryptedAccessToken("access-token")
+                                            .setEncryptedClientToken("client-token")
+                                            .setEncryptedClientSecret("client-secret")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingF5WafIntegration)));
+  }
+
+  @Test
   void invalidUpdateAzureRequestTest() {
     // empty azure integration params list
     UpdateWafIntegrationRequest request1 =
@@ -1614,7 +1769,7 @@ class WafIntegrationConfigRequestValidatorTest {
                         GcpIntegrationUpdateParams.newBuilder()
                             .setGcpIntegrationDetails(
                                 GcpIntegrationDetails.newBuilder()
-                                    .setProjectId(EXISTING_PROJECT_ID)
+                                    .setProjectId(EXISTING_POLICY_ID)
                                     .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME)
                                     .setDenyActionResponseCode(
                                         GcpIntegrationDetails.DenyActionResponseCode
@@ -1828,7 +1983,7 @@ class WafIntegrationConfigRequestValidatorTest {
                     GcpIntegrationParams.newBuilder()
                         .setGcpIntegrationDetails(
                             GcpIntegrationDetails.newBuilder()
-                                .setProjectId(EXISTING_PROJECT_ID)
+                                .setProjectId(EXISTING_POLICY_ID)
                                 .setSecurityPolicyName(EXISTING_SECURITY_POLICY_NAME))))
         .build();
   }
@@ -1846,6 +2001,22 @@ class WafIntegrationConfigRequestValidatorTest {
                                 .setF5PolicyDetails(
                                     F5PolicyDetails.newBuilder()
                                         .setPolicyName(EXISTING_SECURITY_POLICY_NAME)))))
+        .build();
+  }
+
+  private WafIntegration getExistingAkamaiWafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setAkamaiIntegrationParams(
+                    AkamaiIntegrationParams.newBuilder()
+                        .setAkamaiIntegrationDetails(
+                            AkamaiIntegrationDetails.newBuilder()
+                                .setHost("host")
+                                .setAkamaiPolicyDetails(
+                                    AkamaiPolicyDetails.newBuilder()
+                                        .setPolicyId(EXISTING_POLICY_ID)))))
         .build();
   }
 }
