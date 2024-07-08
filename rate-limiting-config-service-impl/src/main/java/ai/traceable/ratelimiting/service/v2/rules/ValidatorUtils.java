@@ -4,8 +4,14 @@ import static ai.traceable.ratelimiting.config.service.v2.DataSensitivityLevel.D
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HOST;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HTTP_METHOD;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_QUERY_PARAMS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY_SIZE;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_COOKIES_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_BODY_SIZE;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_COOKIES_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_URL;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_USER_AGENT;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
@@ -45,7 +51,13 @@ public class ValidatorUtils {
           TYPE_HTTP_METHOD,
           TYPE_USER_AGENT,
           TYPE_REQUEST_BODY,
-          TYPE_RESPONSE_BODY_SIZE);
+          TYPE_RESPONSE_BODY_SIZE,
+          TYPE_REQUEST_BODY_SIZE,
+          TYPE_QUERY_PARAMS_COUNT,
+          TYPE_REQUEST_HEADERS_COUNT,
+          TYPE_RESPONSE_HEADERS_COUNT,
+          TYPE_REQUEST_COOKIES_COUNT,
+          TYPE_RESPONSE_COOKIES_COUNT);
 
   public void validateLeafCondition(LeafCondition leafCondition) {
     switch (leafCondition.getConditionCase()) {

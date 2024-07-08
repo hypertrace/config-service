@@ -1,6 +1,8 @@
 package ai.traceable.ratelimiting.config.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -1281,6 +1283,47 @@ public class RateLimitingRulesValidatorTest {
     CreateRateLimitingRuleRequest request7 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request7, List.of()));
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(TYPE_RESPONSE_HEADERS_COUNT)
+                                    .setValueCondition(
+                                        StringCondition.newBuilder()
+                                            .setValue("abc")
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_LESS_THAN)))))
+            .build();
+    CreateRateLimitingRuleRequest request8 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request8, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    ruleData =
+        ruleData.toBuilder()
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setKeyValueCondition(
+                                KeyValueCondition.newBuilder()
+                                    .setType(TYPE_REQUEST_HEADERS_COUNT)
+                                    .setValueCondition(
+                                        StringCondition.newBuilder()
+                                            .setValue("1000")
+                                            .setOperator(MatchOperator.MATCH_OPERATOR_LESS_THAN)))))
+            .build();
+    CreateRateLimitingRuleRequest request9 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request9, List.of()));
   }
 
   @Test
