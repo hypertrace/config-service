@@ -510,6 +510,7 @@ public class CustomSignatureRulesValidatorTest {
                                     .setMatchExpression(
                                         MatchExpression.newBuilder()
                                             .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                            .setMatchValue("101")
                                             .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
                                             .setMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_GREATER_THAN)
@@ -519,9 +520,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(
-        status.getDescription().contains("match expression supports body size for only response"));
+    assertEquals(Code.OK, status.getCode());
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()

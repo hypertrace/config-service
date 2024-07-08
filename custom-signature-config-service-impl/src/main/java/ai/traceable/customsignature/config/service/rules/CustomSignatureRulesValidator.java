@@ -1,5 +1,10 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HOST;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HTTP_METHOD;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_URL;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_USER_AGENT;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
@@ -41,6 +46,14 @@ class CustomSignatureRulesValidator implements RulesValidator {
   private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
   private static final Set<EventType> INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES =
       Set.of(EventType.EVENT_TYPE_ALLOW, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+
+  private static final Set<MatchKey> INVALID_RESPONSE_MATCH_KEYS =
+      Set.of(
+          MATCH_KEY_URL,
+          MATCH_KEY_QUERY_PARAMS_COUNT,
+          MATCH_KEY_HOST,
+          MATCH_KEY_HTTP_METHOD,
+          MATCH_KEY_USER_AGENT);
 
   private final ModsecRulesManager modsecRulesManager;
 
@@ -219,10 +232,12 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule match expression should have a valid match operator.");
     }
-    if (matchExpression.getMatchKey().equals(MatchKey.MATCH_KEY_BODY_SIZE)
-        && !matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
+    if (matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
+        && INVALID_RESPONSE_MATCH_KEYS.contains(matchExpression.getMatchKey())) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule match expression supports body size for only response");
+          String.format(
+              "Invalid match key : %s for match category : %s for custom signature rule",
+              matchExpression.getMatchKey(), matchExpression.getMatchCategory()));
     }
     if (isInvalidMathematicalOperation(matchExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(

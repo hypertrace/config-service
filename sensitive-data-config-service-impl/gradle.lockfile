@@ -2,9 +2,9 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:4.0.3=testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.392=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.featureflag:feature-flag-future-client:0.5.34=testRuntimeClasspath
-ai.traceable.featureflag:feature-flag-service-api:0.5.34=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.395=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.featureflag:feature-flag-future-client:0.7.0=testRuntimeClasspath
+ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=testRuntimeClasspath
 ai.traceable.libinjection:xss:0.4.0=testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=testRuntimeClasspath
