@@ -2,21 +2,21 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:4.0.3=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.395=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.397=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:xss:0.4.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:api-utils:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:deep-data-store:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:training-evaluation-framework:0.8.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:xml-utils:0.8.36=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:api-utils:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:deep-data-store:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:training-evaluation-framework:0.8.38=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:xml-utils:0.8.38=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.135=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:3.0.9=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:1.0.251=runtimeClasspath,testRuntimeClasspath
