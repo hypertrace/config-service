@@ -9,6 +9,9 @@ import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX;
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
@@ -32,6 +35,7 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
+import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
@@ -365,15 +369,30 @@ class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateCustomSecRule(CustomSecRule rule) {
-    if (!rule.getInputSecRule().startsWith("SecRule")) {
+    String inputSecRule = rule.getInputSecRule();
+    if (!inputSecRule.startsWith(SEC_RULE)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Sec Rule should be start with keyword SecRule");
+    }
+
+    if (!SEC_RULE_ID_REGEX.matcher(inputSecRule).find()) {
+      return Status.INVALID_ARGUMENT.withDescription("Sec Rule actions should start with \"id: ");
+    }
+
+    if (checkChainKeywords(inputSecRule)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Chain keyword should be there between any 2 directives containing SecAction or SecRule or SecRuleScript");
     }
     if (!rule.getSanitisedSecRule().isBlank()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Sanitized Sec Rule should be empty in create/update request");
     }
     return Status.OK;
+  }
+
+  public boolean checkChainKeywords(String inputSecRule) {
+    Matcher matcher = SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX.matcher(inputSecRule);
+    return matcher.matches();
   }
 
   private boolean isNumber(String value) {

@@ -1,5 +1,7 @@
 package ai.traceable.modsecurity.rule.secrule.actions;
 
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
+
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,9 +17,6 @@ public class ModsecActions {
   private static final String LOG_DATA_FORMAT = "logdata:'%s'";
   private static final String PARANOIA_LEVEL_TAG_FORMAT = "tag:'paranoia-level/%d'";
   private static final String RULE_UUID_TAG_FORMAT = "tag:'rule-uuid/%s'";
-  private static final Pattern SEC_RULE_ID_REGEX =
-      Pattern.compile(
-          "id[ \\t\\x0B\\f\\r]{0,10}:[ \\t\\x0B\\f\\r]{0,10}\\d+[ \\t\\x0B\\f\\r]{0,10},");
   private static final Pattern MESSAGE_REGEX =
       Pattern.compile(
           "msg[ \\t\\x0B\\f\\r]{0,10}:[ \\t\\x0B\\f\\r]{0,10}'.{0,300}'[ \\t\\x0B\\f\\r]{0,10},");
