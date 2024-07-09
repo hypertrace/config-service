@@ -19,10 +19,10 @@ public class ModsecActions {
   private static final String RULE_UUID_TAG_FORMAT = "tag:'rule-uuid/%s'";
   private static final Pattern MESSAGE_REGEX =
       Pattern.compile(
-          "msg[ \\t\\x0B\\f\\r]{0,10}:[ \\t\\x0B\\f\\r]{0,10}'.{0,300}'[ \\t\\x0B\\f\\r]{0,10},");
+          "msg[ \\t\\x0B\\f\\r]{0,10}:[ \\t\\x0B\\f\\r]{0,10}'.{0,300}'[ \\t\\x0B\\f\\r]{0,10}");
   private static final Pattern LOG_DATA_REGEX =
       Pattern.compile(
-          "logdata[ \\t\\x0B\\f\\r]{0,10}:[ \\t\\x0B\\f\\r]{0,10}'.{0,300}'[ \\t\\x0B\\f\\r]{0,10},");
+          "logdata[ \\t\\x0B\\f\\r]{0,10}:[ \\t\\x0B\\f\\r]{0,10}'.{0,300}'[ \\t\\x0B\\f\\r]{0,10}");
 
   private static final String DEFAULT_PHASE = String.format(PHASE_FORMAT, 2);
   private static final String RESPONSE_PHASE = String.format(PHASE_FORMAT, 4);
