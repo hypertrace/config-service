@@ -25,8 +25,6 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
   public ObjectTypeColumnMappings createColumnMapping(MetricType newType) {
     return ObjectTypeColumnMappings.newBuilder()
         .putAllFieldsMeta(fieldMetaToInternalFieldMetadataMap(newType.getFieldsMetaMap()))
-        // these are not allowed to change, so if user updates it this will undo that
-        // todo: add default mappings here.
         .build();
   }
 

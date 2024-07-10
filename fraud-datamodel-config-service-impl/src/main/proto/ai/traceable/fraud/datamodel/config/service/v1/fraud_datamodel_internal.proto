@@ -14,6 +14,7 @@ enum ObjectKind {
   OBJECT_KIND_RELATIONSHIP = 2;
   OBJECT_KIND_EVENT = 3;
   OBJECT_KIND_METRIC = 4;
+  OBJECT_KIND_BASELINE = 5;
 }
 
 message ObjectTypeReference {
@@ -28,6 +29,7 @@ message ObjectType {
     RelationshipType relationship_type = 2;
     EventType event_type = 3;
     MetricType metric_type = 4;
+    BaselineType baseline_type = 5;
   }
 }
 

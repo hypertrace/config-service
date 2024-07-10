@@ -15,6 +15,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.GetEntityTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetRelationshipTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesResponse;
+import ai.traceable.fraud.datamodel.config.service.v1.MetricDataType;
 import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
 import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeRequest;
@@ -157,6 +158,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     UpsertMetricTypeRequest request =
         UpsertMetricTypeRequest.newBuilder()
             .setId(metricType1.getId())
+            .setMetricDataType(MetricDataType.METRIC_DATA_TYPE_COUNTER)
             .putAllFieldsMeta(metricType1.getFieldsMetaMap())
             .setTimestampField(metricType1.getTimestampField())
             .build();
@@ -189,6 +191,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     UpsertMetricTypeRequest request2 =
         UpsertMetricTypeRequest.newBuilder()
             .setId(metricType2.getId())
+            .setMetricDataType(MetricDataType.METRIC_DATA_TYPE_COUNTER)
             .putAllFieldsMeta(metricType2.getFieldsMetaMap())
             .setTimestampField(metricType2.getTimestampField())
             .build();

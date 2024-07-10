@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service;
 
+import ai.traceable.fraud.datamodel.config.service.column.mapping.BaselineTypeColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperDelegate;
 import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperDelegateImpl;
@@ -11,6 +12,7 @@ import ai.traceable.fraud.datamodel.config.service.column.mapping.MetricTypeColu
 import ai.traceable.fraud.datamodel.config.service.column.mapping.RelationshipTypeColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesDocumentStore;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesStore;
+import ai.traceable.fraud.datamodel.config.service.v1.BaselineType;
 import ai.traceable.fraud.datamodel.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.config.service.v1.EventType;
 import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
@@ -49,6 +51,7 @@ public class FraudDataModelConfigServiceModule extends AbstractModule {
         .to(RelationshipTypeColumnMapper.class);
     bind(new TypeLiteral<ColumnMapper<EventType>>() {}).to(EventTypeColumnMapper.class);
     bind(new TypeLiteral<ColumnMapper<MetricType>>() {}).to(MetricTypeColumnMapper.class);
+    bind(new TypeLiteral<ColumnMapper<BaselineType>>() {}).to(BaselineTypeColumnMapper.class);
   }
 
   private FraudObjectTypesDocumentStore getFraudObjectTypesDocumentStore(

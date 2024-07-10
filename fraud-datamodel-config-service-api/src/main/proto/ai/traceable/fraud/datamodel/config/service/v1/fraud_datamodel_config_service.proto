@@ -11,11 +11,13 @@ service FraudDataModelConfigService {
   rpc UpsertRelationshipType(UpsertRelationshipTypeRequest) returns (UpsertRelationshipTypeResponse) {}
   rpc UpsertEventType(UpsertEventTypeRequest) returns (UpsertEventTypeResponse) {}
   rpc UpsertMetricType(UpsertMetricTypeRequest) returns (UpsertMetricTypeResponse) {}
+  rpc UpsertBaselineType(UpsertBaselineTypeRequest) returns (UpsertBaselineTypeResponse) {}
   rpc GetTypes(GetTypesRequest) returns (GetTypesResponse) {}
   rpc GetEntityTypes(GetEntityTypesRequest) returns (GetEntityTypesResponse) {}
   rpc GetRelationshipTypes(GetRelationshipTypesRequest) returns (GetRelationshipTypesResponse) {}
   rpc GetEventTypes(GetEventTypesRequest) returns (GetEventTypesResponse) {}
   rpc GetMetricTypes(GetMetricTypesRequest) returns (GetMetricTypesResponse) {}
+  rpc GetBaselineTypes(GetBaselineTypesRequest) returns (GetBaselineTypesResponse) {}
   rpc DeleteDataModel(DeleteDataModelRequest) returns (DeleteDataModelResponse) {}
 }
 
@@ -78,21 +80,47 @@ message UpsertMetricTypeResponse {
   MetricType metric_type = 1;
 }
 
+message UpsertBaselineTypeRequest {
+  BaselineType baseline_type = 1;
+}
+
+message UpsertBaselineTypeResponse {
+  BaselineType baseline_type = 1;
+}
+
+message TypesFilter {
+  repeated string type_ids = 1;
+}
+
 message GetTypesRequest {}
 
-message GetEntityTypesRequest {}
+message GetEntityTypesRequest {
+  TypesFilter types_filter = 1;
+}
 
-message GetRelationshipTypesRequest {}
+message GetRelationshipTypesRequest {
+  TypesFilter types_filter = 1;
+}
 
-message GetEventTypesRequest {}
+message GetEventTypesRequest {
+  TypesFilter types_filter = 1;
+}
 
-message GetMetricTypesRequest {}
+message GetMetricTypesRequest {
+  TypesFilter types_filter = 1;
+}
+
+message GetBaselineTypesRequest {
+  TypesFilter types_filter = 1;
+  TypesFilter metric_types_filter = 2;
+}
 
 message GetTypesResponse {
   repeated EntityType entity_types = 1;
   repeated RelationshipType relationship_types = 2;
   repeated EventType event_types = 3;
   repeated MetricType metric_types = 4;
+  repeated BaselineType baseline_types = 5;
 }
 
 message GetEntityTypesResponse {
@@ -109,6 +137,10 @@ message GetEventTypesResponse {
 
 message GetMetricTypesResponse {
   repeated MetricType metric_types = 1;
+}
+
+message GetBaselineTypesResponse {
+  repeated BaselineType baseline_types = 1;
 }
 
 message DeleteDataModelRequest {

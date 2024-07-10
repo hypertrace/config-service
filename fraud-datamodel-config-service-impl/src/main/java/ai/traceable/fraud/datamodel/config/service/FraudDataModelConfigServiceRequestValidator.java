@@ -159,8 +159,23 @@ public class FraudDataModelConfigServiceRequestValidator {
           .withDescription("timestampField cannot be empty")
           .asRuntimeException();
     }
+    if (upsertMetricTypeRequest.getMetricDataType().getNumber() <= 0) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Invalid metric_data_type")
+          .asRuntimeException();
+    }
     validateOrThrow(upsertMetricTypeRequest.getFieldsMetaMap());
     validateOrThrow(
         upsertMetricTypeRequest.getTimestampField(), upsertMetricTypeRequest.getFieldsMetaMap());
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, UpsertBaselineTypeRequest upsertBaselineTypeRequest) {
+    validateRequestContext(requestContext);
+    validateOrThrow(upsertBaselineTypeRequest.getBaselineType().getId());
+    if (upsertBaselineTypeRequest.getBaselineType().getBaselineAlgo().getNumber() <= 0) {
+      throw Status.INVALID_ARGUMENT.withDescription("Invalid baseline algo").asRuntimeException();
+    }
+    validateOrThrow(upsertBaselineTypeRequest.getBaselineType().getFieldsMetaMap());
   }
 }

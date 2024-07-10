@@ -2,13 +2,21 @@ package ai.traceable.config.service.fraud.datamodel;
 
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelTestUtils;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesDocumentStore;
+import ai.traceable.fraud.datamodel.config.service.v1.BaselineAlgo;
+import ai.traceable.fraud.datamodel.config.service.v1.BaselineType;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
 import ai.traceable.fraud.datamodel.config.service.v1.FraudDataModelConfigServiceGrpc;
+import ai.traceable.fraud.datamodel.config.service.v1.GetBaselineTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetEntityTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertBaselineTypeRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertBaselineTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeRequest;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Deadline;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.hypertrace.core.documentstore.Collection;
@@ -112,6 +120,47 @@ public class FraudDataModelConfigServiceIntegrationTest {
                         GetTypesRequest.getDefaultInstance()));
     Assertions.assertEquals(
         FraudDataModelTestUtils.entityTypes().size(), allTypes.getEntityTypesCount());
+  }
+
+  @Test
+  public void testUpsertBaselineTypes() {
+    BaselineType baselineType =
+        BaselineType.newBuilder()
+            .setId("ewma_api_count")
+            .setBaselineAlgo(BaselineAlgo.BASELINE_ALGO_EWMA)
+            .setMetricTypeId("api_count")
+            .putFieldsMeta(
+                "api_id", FieldMetadata.newBuilder().setFieldType(FieldType.FIELD_TYPE_STR).build())
+            .build();
+
+    UpsertBaselineTypeRequest request =
+        UpsertBaselineTypeRequest.newBuilder().setBaselineType(baselineType).build();
+    UpsertBaselineTypeResponse response =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(() -> fraudDataModelConfigServiceBlockingStub.upsertBaselineType(request));
+    Assertions.assertNotNull(response.getBaselineType());
+
+    List<BaselineType> baselineTypes =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    fraudDataModelConfigServiceBlockingStub.getBaselineTypes(
+                        GetBaselineTypesRequest.getDefaultInstance()))
+            .getBaselineTypesList();
+    Assertions.assertEquals(1, baselineTypes.size());
+    Assertions.assertEquals(baselineType.getBaselineAlgo(), baselineTypes.get(0).getBaselineAlgo());
+    Assertions.assertEquals(baselineType.getId(), baselineTypes.get(0).getId());
+    Assertions.assertEquals(baselineType.getMetricTypeId(), baselineTypes.get(0).getMetricTypeId());
+    Assertions.assertEquals(
+        baselineType.getFieldsMetaCount(), baselineTypes.get(0).getFieldsMetaCount());
+    Assertions.assertEquals(
+        baselineType.getFieldsMetaCount(),
+        baselineTypes.get(0).getColumnMappingMeta().getColumnMappingCount());
+    Assertions.assertEquals(
+        baselineType.getFieldsMetaMap().keySet(), baselineTypes.get(0).getFieldsMetaMap().keySet());
+    Assertions.assertEquals(
+        baselineType.getFieldsMetaMap().keySet(),
+        baselineTypes.get(0).getColumnMappingMeta().getColumnMappingMap().keySet());
   }
 
   private static Collection getFraudObjectTypesStore() {

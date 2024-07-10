@@ -97,13 +97,14 @@ public class FraudDataModelConfigServiceRequestValidatorTest {
         () ->
             target.validateOrThrow(
                 requestContext, UpsertMetricTypeRequest.newBuilder().getDefaultInstanceForType()));
-    var metricType = FraudDataModelTestUtils.metricType("test_metric");
+    MetricType metricType = FraudDataModelTestUtils.metricType("test_metric");
     Assertions.assertDoesNotThrow(
         () ->
             target.validateOrThrow(
                 requestContext,
                 UpsertMetricTypeRequest.newBuilder()
                     .setId(metricType.getId())
+                    .setMetricDataType(metricType.getMetricDataType())
                     .setTimestampField(metricType.getTimestampField())
                     .putAllFieldsMeta(metricType.getFieldsMetaMap())
                     .build()));

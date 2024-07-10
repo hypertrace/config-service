@@ -24,8 +24,6 @@ public class RelationshipTypeColumnMapper implements ColumnMapper<RelationshipTy
   public ObjectTypeColumnMappings createColumnMapping(RelationshipType newType) {
     return ObjectTypeColumnMappings.newBuilder()
         .putAllFieldsMeta(entityFieldMetaToInternalFieldMetadataMap(newType.getFieldsMetaMap()))
-        // these are not allowed to change, so if user updates it this will undo that
-        // todo: add default mappings here.
         .build();
   }
 

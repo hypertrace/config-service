@@ -2,9 +2,14 @@ package ai.traceable.fraud.datamodel.config.service;
 
 import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesStore;
+import ai.traceable.fraud.datamodel.config.service.v1.BaselineType;
+import ai.traceable.fraud.datamodel.config.service.v1.DeleteDataModelRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.DeleteDataModelResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.config.service.v1.EventType;
 import ai.traceable.fraud.datamodel.config.service.v1.FraudDataModelConfigServiceGrpc;
+import ai.traceable.fraud.datamodel.config.service.v1.GetBaselineTypesRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.GetBaselineTypesResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.GetEntityTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetEntityTypesResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.GetEventTypesRequest;
@@ -17,6 +22,8 @@ import ai.traceable.fraud.datamodel.config.service.v1.GetTypesRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.GetTypesResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
 import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertBaselineTypeRequest;
+import ai.traceable.fraud.datamodel.config.service.v1.UpsertBaselineTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeRequest;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEntityTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertEventTypeRequest;
@@ -27,10 +34,12 @@ import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeRequ
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeResponse;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
+import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -44,6 +53,7 @@ public class FraudDataModelConfigServiceImpl
   private final ColumnMapper<RelationshipType> relationshipTypeColumnMapper;
   private final ColumnMapper<EventType> eventTypeColumnMapper;
   private final ColumnMapper<MetricType> metricTypeColumnMapper;
+  private final ColumnMapper<BaselineType> baselineTypeColumnMapper;
 
   @Inject
   public FraudDataModelConfigServiceImpl(
@@ -52,13 +62,15 @@ public class FraudDataModelConfigServiceImpl
       ColumnMapper<EntityType> entityTypeColumnMapper,
       ColumnMapper<RelationshipType> relationshipTypeColumnMapper,
       ColumnMapper<EventType> eventTypeColumnMapper,
-      ColumnMapper<MetricType> metricTypeColumnMapper) {
+      ColumnMapper<MetricType> metricTypeColumnMapper,
+      ColumnMapper<BaselineType> baselineTypeColumnMapper) {
     this.fraudObjectTypesStore = fraudObjectTypesStore;
     this.validator = validator;
     this.entityTypeColumnMapper = entityTypeColumnMapper;
     this.relationshipTypeColumnMapper = relationshipTypeColumnMapper;
     this.eventTypeColumnMapper = eventTypeColumnMapper;
     this.metricTypeColumnMapper = metricTypeColumnMapper;
+    this.baselineTypeColumnMapper = baselineTypeColumnMapper;
   }
 
   @Override
@@ -83,7 +95,7 @@ public class FraudDataModelConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Put object type failed for request:{}", request, e);
+      log.error("Put Entity type failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -120,7 +132,7 @@ public class FraudDataModelConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Put object type failed for request:{}", request, e);
+      log.error("Put Relationship type failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -148,7 +160,7 @@ public class FraudDataModelConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Put object type failed for request:{}", request, e);
+      log.error("Put Event type failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -177,7 +189,32 @@ public class FraudDataModelConfigServiceImpl
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Put object type failed for request:{}", request, e);
+      log.error("Put Metric type failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void upsertBaselineType(
+      UpsertBaselineTypeRequest request,
+      StreamObserver<UpsertBaselineTypeResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateOrThrow(requestContext, request);
+      ObjectType finalTypeForUpsert = generateMappings(requestContext, request.getBaselineType());
+      fraudObjectTypesStore.upsertObjectTypes(
+          requestContext,
+          Collections.singletonList(
+              ObjectType.newBuilder()
+                  .setBaselineType(finalTypeForUpsert.getBaselineType())
+                  .build()));
+      responseObserver.onNext(
+          UpsertBaselineTypeResponse.newBuilder()
+              .setBaselineType(finalTypeForUpsert.getBaselineType())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Put Baseline type failed for request:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -206,6 +243,26 @@ public class FraudDataModelConfigServiceImpl
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get object types failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteDataModel(
+      DeleteDataModelRequest request, StreamObserver<DeleteDataModelResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
+      List<ObjectType> allTypes =
+          fraudObjectTypesStore.getAllObjectTypes(
+              requestContext, ObjectKind.OBJECT_KIND_UNSPECIFIED);
+      List<ObjectTypeReference> allTypeRefs =
+          allTypes.stream()
+              .map(FraudDataModelUtils::getObjectTypeReference)
+              .collect(Collectors.toList());
+      fraudObjectTypesStore.deleteObjectTypes(requestContext, allTypeRefs);
+    } catch (Exception e) {
+      log.error("Delete data model failed:{}", request, e);
       responseObserver.onError(e);
     }
   }
@@ -286,6 +343,26 @@ public class FraudDataModelConfigServiceImpl
         metricsResponse.addMetricTypes(type.getMetricType());
       }
       responseObserver.onNext(metricsResponse.build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Get metric types failed for request:{}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getBaselineTypes(
+      GetBaselineTypesRequest request, StreamObserver<GetBaselineTypesResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      validator.validateRequestContext(requestContext);
+      List<ObjectType> allTypes =
+          fraudObjectTypesStore.getAllObjectTypes(requestContext, ObjectKind.OBJECT_KIND_BASELINE);
+      GetBaselineTypesResponse.Builder baselinesResponse = GetBaselineTypesResponse.newBuilder();
+      for (ObjectType type : allTypes) {
+        baselinesResponse.addBaselineTypes(type.getBaselineType());
+      }
+      responseObserver.onNext(baselinesResponse.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get metric types failed for request:{}", request, e);
@@ -400,5 +477,33 @@ public class FraudDataModelConfigServiceImpl
         metricTypeColumnMapper.forUpdate(
             requestContext, existingObjectType.getMetricType(), metricType);
     return ObjectType.newBuilder().setMetricType(mappedMetricType).build();
+  }
+
+  private ObjectType generateMappings(RequestContext requestContext, BaselineType baselineType)
+      throws Exception {
+    return fraudObjectTypesStore
+        .getObjectType(
+            requestContext,
+            FraudDataModelUtils.getObjectTypeReference(
+                ObjectKind.OBJECT_KIND_BASELINE, baselineType.getId()))
+        .map(objectType -> this.updateAndGetObjectType(requestContext, baselineType, objectType))
+        .orElseGet(() -> createAndGetObjectType(requestContext, baselineType));
+  }
+
+  @SneakyThrows
+  private ObjectType createAndGetObjectType(
+      RequestContext requestContext, BaselineType baselineType) {
+    BaselineType mappedBaselineType =
+        baselineTypeColumnMapper.forCreate(requestContext, baselineType);
+    return ObjectType.newBuilder().setBaselineType(mappedBaselineType).build();
+  }
+
+  @SneakyThrows
+  private ObjectType updateAndGetObjectType(
+      RequestContext requestContext, BaselineType baselineType, ObjectType existingObjectType) {
+    BaselineType mappedBaselineType =
+        baselineTypeColumnMapper.forUpdate(
+            requestContext, existingObjectType.getBaselineType(), baselineType);
+    return ObjectType.newBuilder().setBaselineType(mappedBaselineType).build();
   }
 }

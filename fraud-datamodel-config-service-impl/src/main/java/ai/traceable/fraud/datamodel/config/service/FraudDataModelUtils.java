@@ -49,6 +49,11 @@ public abstract class FraudDataModelUtils {
             .setObjectKind(ObjectKind.OBJECT_KIND_METRIC)
             .setId(objectType.getMetricType().getId())
             .build();
+      case BASELINE_TYPE:
+        return ObjectTypeReference.newBuilder()
+            .setObjectKind(ObjectKind.OBJECT_KIND_BASELINE)
+            .setId(objectType.getMetricType().getId())
+            .build();
     }
     throw Status.INVALID_ARGUMENT.asRuntimeException();
   }
