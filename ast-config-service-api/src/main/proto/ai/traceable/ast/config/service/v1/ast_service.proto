@@ -8,7 +8,6 @@ import "ai/traceable/ast/config/service/v1/ast.proto";
 import "ai/traceable/ast/config/service/v1/ast_overrides_request.proto";
 import "ai/traceable/ast/config/service/v1/ast_overrides_response.proto";
 import "ai/traceable/ast/config/service/v1/ast_custom_test_plugins.proto";
-import "ai/traceable/ast/config/service/v1/vulnerability_auto_resolution_config.proto";
 
 service AstConfigService {
   // read api
@@ -45,8 +44,6 @@ service AstConfigService {
   rpc UpdateAstOverride (UpdateAstOverrideRequest) returns (UpdateAstOverrideResponse);
 
   rpc DeleteAstOverrides (DeleteAstOverridesRequest) returns (DeleteAstOverridesResponse);
-
-  rpc GetVulnerabilityAutoResolutionConfigs(GetVulnerabilityAutoResolutionConfigsRequest) returns (GetVulnerabilityAutoResolutionConfigsResponse);
 }
 
 message UpdateScanPurgeConfigRequest {
@@ -123,10 +120,4 @@ message GetAstFeatureConfigsResponse {
     AstDisabledConfig default_disabled_config = 2;
     AstEnabledConfig default_enabled_config = 3;
   }
-}
-
-message GetVulnerabilityAutoResolutionConfigsRequest {}
-
-message GetVulnerabilityAutoResolutionConfigsResponse {
-  repeated VulnerabilityAutoResolutionConfig vulnerability_auto_resolution_configs = 1;
 }
