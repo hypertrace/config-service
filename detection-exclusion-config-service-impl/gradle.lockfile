@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.399=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.402=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:api-attribute-override-service-api:0.36.159=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:data-classification-config-service-api:0.36.159=runtimeClasspath,testRuntimeClasspath
 ai.traceable.config.service:iprange-config-service-api:0.36.159=runtimeClasspath,testRuntimeClasspath
@@ -24,7 +24,7 @@ ai.traceable.platform-gateway:xml-utils:0.8.39=runtimeClasspath,testRuntimeClass
 ai.traceable.platform:actor-service-api:0.2.135=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:3.0.9=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:1.0.251=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-constants:5.0.11=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-constants:5.0.12=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:conditions-matcher:1.0.251=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:config-providers:1.0.251=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.64=runtimeClasspath,testRuntimeClasspath
