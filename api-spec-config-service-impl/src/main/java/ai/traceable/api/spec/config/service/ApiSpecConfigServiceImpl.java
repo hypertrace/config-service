@@ -155,7 +155,8 @@ public class ApiSpecConfigServiceImpl
               .setSpecType(
                   SPEC_TYPE_UNSPECIFIED.equals(createApiSpec.getSpecType())
                       ? SpecType.SPEC_TYPE_OPEN_API_SPEC
-                      : createApiSpec.getSpecType());
+                      : createApiSpec.getSpecType())
+              .setApiInspectorDisabled(createApiSpec.getApiInspectorDisabled());
 
       List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
 
@@ -361,7 +362,8 @@ public class ApiSpecConfigServiceImpl
         ApiSpec.newBuilder(existingApiSpec)
             .setName(updateApiSpec.getName())
             .setApiNamingEnabled(updateApiSpec.getApiNamingEnabled())
-            .setApiDiscoveryEnabled(updateApiSpec.getApiDiscoveryEnabled());
+            .setApiDiscoveryEnabled(updateApiSpec.getApiDiscoveryEnabled())
+            .setApiInspectorDisabled(updateApiSpec.getApiInspectorDisabled());
 
     // set updated status if present, else persist with existing status
     if (!API_SPEC_STATUS_UNSPECIFIED.equals(updateApiSpec.getStatus())) {
