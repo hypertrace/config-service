@@ -677,6 +677,7 @@ enum RelationalOperator {
   RELATIONAL_OPERATOR_REGEX_MATCH = 6;
   RELATIONAL_OPERATOR_IN = 7;
   RELATIONAL_OPERATOR_EXISTS = 8;
+  RELATIONAL_OPERATOR_NOT_IN = 9;
 }
 
 message ThresholdRegexConfig {
