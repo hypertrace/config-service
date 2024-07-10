@@ -109,6 +109,7 @@ message ApiSpec {
   optional string spec_path = 8;
   bool api_discovery_enabled = 9;
   SpecType spec_type = 10;
+  bool api_inspector_disabled = 11;
 }
 
 enum SpecType {
