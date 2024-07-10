@@ -56,6 +56,7 @@ message CreateApiSpec {
   optional string spec_path = 5;
   bool api_discovery_enabled = 6;
   SpecType spec_type = 7;
+  bool api_inspector_disabled = 8;
 }
 
 // update
@@ -81,6 +82,7 @@ message UpdateApiSpec {
   bool api_naming_enabled = 3;
   ApiSpecStatus status = 4;
   bool api_discovery_enabled = 5;
+  bool api_inspector_disabled = 6;
 }
 
 // delete
