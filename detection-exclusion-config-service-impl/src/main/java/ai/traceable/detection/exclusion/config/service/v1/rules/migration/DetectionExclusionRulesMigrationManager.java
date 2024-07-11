@@ -47,6 +47,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
 
   private final Set<ContextualKey<Void>> migrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> changeLog2MigrationCompletedTenantsSet = new HashSet<>();
+  private final Set<ContextualKey<Void>> changeLog3MigrationCompletedTenantsSet = new HashSet<>();
 
   @Inject
   public DetectionExclusionRulesMigrationManager(
@@ -169,7 +170,50 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     }
   }
 
+  @Override
+  public void migrateFromChangeLog3IfApplicable(RequestContext requestContext) {
+    if (config.isChangeLog3MigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (changeLog3MigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    DetectionExclusionMigrationConfig migrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+
+    if (migrationConfig.getChangeLog3MigrationCompleted()) {
+      changeLog3MigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateDetectionExclusionRulesFromChangeLog3(requestContext, migrationConfig);
+    }
+  }
+
   private void updateDetectionExclusionRulesFromChangeLog2(
+      RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
+    List<DetectionExclusionRule> updatedRules =
+        newRulesStore.getAllConfigData(requestContext).stream()
+            .filter(rule -> rule.getRuleInfo().toBuilder().getExclusionTargetsList().isEmpty())
+            .map(
+                rule ->
+                    rule.toBuilder()
+                        .setRuleInfo(
+                            rule.getRuleInfo().toBuilder()
+                                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+
+    if (!updatedRules.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, updatedRules);
+    }
+    migrationStore.upsertObject(
+        requestContext, migrationConfig.toBuilder().setChangeLog2MigrationCompleted(true).build());
+    changeLog2MigrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
+  }
+
+  private void updateDetectionExclusionRulesFromChangeLog3(
       RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
     List<DetectionExclusionRule> updatedRules =
         newRulesStore.getAllConfigData(requestContext).stream()
@@ -177,23 +221,19 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
                 rule -> {
                   DetectionExclusionRuleInfo.Builder ruleInfoBuilder =
                       rule.getRuleInfo().toBuilder();
-                  boolean isUpdated = updateConditionForSSTIifAny(ruleInfoBuilder);
-                  if (ruleInfoBuilder.getExclusionTargetsList().isEmpty()) {
-                    ruleInfoBuilder.addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALERT);
-                    isUpdated = true;
+                  if (updateConditionForSSTIifAny(ruleInfoBuilder)) {
+                    return rule.toBuilder().setRuleInfo(ruleInfoBuilder).build();
                   }
-                  return isUpdated ? rule.toBuilder().setRuleInfo(ruleInfoBuilder).build() : null;
+                  return null;
                 })
             .filter(Objects::nonNull)
             .collect(Collectors.toUnmodifiableList());
-
     if (!updatedRules.isEmpty()) {
       newRulesStore.upsertObjects(requestContext, updatedRules);
     }
-
     migrationStore.upsertObject(
-        requestContext, migrationConfig.toBuilder().setChangeLog2MigrationCompleted(true).build());
-    changeLog2MigrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
+        requestContext, migrationConfig.toBuilder().setChangeLog3MigrationCompleted(true).build());
+    changeLog3MigrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
   }
 
   private boolean updateConditionForSSTIifAny(DetectionExclusionRuleInfo.Builder ruleInfoBuilder) {
@@ -206,8 +246,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
             condition.getEventCondition().getSystemDefinedEventsList().stream()
                 .map(
                     event -> {
-                      if (SSTI_OLD_SUB_RULE_ID.equals(event.getEventTypeId())) {
-                        return event.toBuilder().setEventTypeId(SSTI_NEW_SUB_RULE_ID).build();
+                      if (SSTI_OLD_SUB_RULE_ID.equals(event.getEventSubTypeId())) {
+                        return event.toBuilder().setEventSubTypeId(SSTI_NEW_SUB_RULE_ID).build();
                       }
                       return event;
                     })

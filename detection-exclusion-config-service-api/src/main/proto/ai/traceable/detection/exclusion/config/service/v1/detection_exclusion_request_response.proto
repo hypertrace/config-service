@@ -51,6 +51,8 @@ message GetRulesFilter {
 
 message DetectionExclusionMigrationConfig {
   bool migration_completed = 1;
-  // SSTI parent rule change & exclusion target addition
+  // exclusion target addition
   bool change_log_2_migration_completed = 2;
+  // SSTI parent rule fix
+  bool change_log_3_migration_completed = 3;
 }

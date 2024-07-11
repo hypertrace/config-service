@@ -6,4 +6,6 @@ public interface RulesMigrationManager {
   void migrateFromOldStoreIfApplicable(RequestContext requestContext);
 
   void migrateFromChangeLog2IfApplicable(RequestContext requestContext);
+
+  void migrateFromChangeLog3IfApplicable(RequestContext requestContext);
 }

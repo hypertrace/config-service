@@ -1,6 +1,8 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 
 import static ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager.OLD_RULES_FILTER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -54,9 +56,6 @@ class DetectionExclusionRulesMigrationManagerTest {
   private final RequestContext requestContext = RequestContext.forTenantId("tenantId");
   private final AnomalyExclusionRuleConfig sampleOldRuleConfig = getSampleOldRuleConfig();
   private final DetectionExclusionRule sampleNewRule = getSampleNewRule();
-  private final DetectionExclusionRule sampleRuleWithSsti = getSampleSstiRule();
-  private final DetectionExclusionRule sampleChangeLog2UpdatedRule =
-      getSampleChangeLog2UpdatedRule();
   private final Instant creationTimestamp = Instant.now();
 
   private final List<ContextualConfigObject<DetectionExclusionRule>> newRules =
@@ -106,7 +105,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(newRules);
     when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
     DetectionExclusionMigrationConfig completedMigrationConfig =
-        mockMigrationStore(false, false).toBuilder().setMigrationCompleted(true).build();
+        mockMigrationStore(false, false, false).toBuilder().setMigrationCompleted(true).build();
 
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
@@ -135,7 +134,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(Collections.emptyList());
     when(oldRulesStore.getAllObjects(any())).thenReturn(Collections.emptyList());
     DetectionExclusionMigrationConfig completedMigrationConfig =
-        mockMigrationStore(false, false).toBuilder().setMigrationCompleted(true).build();
+        mockMigrationStore(false, false, false).toBuilder().setMigrationCompleted(true).build();
 
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
@@ -155,7 +154,7 @@ class DetectionExclusionRulesMigrationManagerTest {
         .thenReturn(true);
     when(newRulesStore.getAllObjects(any(), any())).thenReturn(newRules);
     when(oldRulesStore.getAllObjects(any())).thenReturn(oldRules);
-    mockMigrationStore(true, false);
+    mockMigrationStore(true, false, false);
 
     migrationManager.migrateFromOldStoreIfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
@@ -170,9 +169,15 @@ class DetectionExclusionRulesMigrationManagerTest {
   @Test
   void testMigration_changeLog2() {
     when(newRulesStore.getAllConfigData(any()))
-        .thenReturn(List.of(sampleNewRule, sampleRuleWithSsti, sampleChangeLog2UpdatedRule));
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleChangeLog2Rule(false, "id2a"),
+                getSampleChangeLog2Rule(true, "id2b")));
     DetectionExclusionMigrationConfig completedMigrationConfig =
-        mockMigrationStore(true, false).toBuilder().setChangeLog2MigrationCompleted(true).build();
+        mockMigrationStore(true, false, false).toBuilder()
+            .setChangeLog2MigrationCompleted(true)
+            .build();
 
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
@@ -185,19 +190,31 @@ class DetectionExclusionRulesMigrationManagerTest {
             argThat(
                 list ->
                     list.size() == 2
-                        && list.get(0).getId().equals("id1")
-                        && list.get(1).getId().equals("id2")));
+                        && verifyExclusionTargets("id1", list.get(0))
+                        && verifyExclusionTargets("id2a", list.get(1))));
 
     resetStores();
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     verifyZeroInteractionWithRulesStore(true);
   }
 
+  private boolean verifyExclusionTargets(String id, DetectionExclusionRule rule) {
+    assertEquals(id, rule.getId());
+    List<ExclusionTarget> targets = rule.getRuleInfo().getExclusionTargetsList();
+    assertEquals(1, targets.size());
+    assertTrue(targets.contains(ExclusionTarget.EXCLUSION_TARGET_ALERT));
+    return true;
+  }
+
   @Test
   void testMigrationCompleted_changeLog2() {
     when(newRulesStore.getAllConfigData(any()))
-        .thenReturn(List.of(sampleNewRule, sampleRuleWithSsti, sampleChangeLog2UpdatedRule));
-    mockMigrationStore(false, true);
+        .thenReturn(
+            List.of(
+                sampleNewRule,
+                getSampleChangeLog2Rule(false, "id2a"),
+                getSampleChangeLog2Rule(true, "id2b")));
+    mockMigrationStore(false, true, false);
 
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     verify(migrationStore, times(1)).getData(requestContext);
@@ -206,6 +223,65 @@ class DetectionExclusionRulesMigrationManagerTest {
 
     resetStores();
     migrationManager.migrateFromChangeLog2IfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  @Test
+  void testMigration_changeLog3() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule, getSampleSstiRule(false, "id3a"), getSampleSstiRule(true, "id3b")));
+    DetectionExclusionMigrationConfig completedMigrationConfig =
+        mockMigrationStore(true, false, false).toBuilder()
+            .setChangeLog3MigrationCompleted(true)
+            .build();
+
+    migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(1)).upsertObject(requestContext, completedMigrationConfig);
+    verify(newRulesStore, times(1)).getAllConfigData(requestContext);
+    verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
+    verify(newRulesStore, times(1))
+        .upsertObjects(
+            eq(requestContext),
+            argThat(list -> list.size() == 1 && verifySsti("id3a", list.get(0))));
+
+    resetStores();
+    migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
+    verifyZeroInteractionWithRulesStore(true);
+  }
+
+  private boolean verifySsti(String id, DetectionExclusionRule rule) {
+    assertEquals(id, rule.getId());
+    assertTrue(
+        rule.getRuleInfo().getConditionsList().stream()
+            .flatMap(
+                condition -> condition.getEventCondition().getSystemDefinedEventsList().stream())
+            .filter(
+                event ->
+                    event
+                        .getEventFamily()
+                        .equals(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC))
+            .allMatch(event -> event.getEventSubTypeId().equals("crs_9320310")));
+    return true;
+  }
+
+  @Test
+  void testMigrationCompleted_changeLog3() {
+    when(newRulesStore.getAllConfigData(any()))
+        .thenReturn(
+            List.of(
+                sampleNewRule, getSampleSstiRule(false, "id3a"), getSampleSstiRule(true, "id3b")));
+    mockMigrationStore(false, false, true);
+
+    migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
+    verify(migrationStore, times(1)).getData(requestContext);
+    verify(migrationStore, times(0)).upsertObject(eq(requestContext), any());
+    verify(newRulesStore, times(0)).getAllConfigData(requestContext);
+
+    resetStores();
+    migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
     verifyZeroInteractionWithRulesStore(true);
   }
 
@@ -267,9 +343,34 @@ class DetectionExclusionRulesMigrationManagerTest {
         .build();
   }
 
-  private DetectionExclusionRule getSampleSstiRule() {
+  private DetectionExclusionRule getSampleChangeLog2Rule(boolean updated, String id) {
+    DetectionExclusionRuleInfo.Builder ruleInfoBuilder =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("name3")
+            .setDescription("desc3")
+            .addConditions(
+                DetectionExclusionCondition.newBuilder()
+                    .setScopeCondition(
+                        ScopeCondition.newBuilder()
+                            .setEntityScope(
+                                EntityScope.newBuilder()
+                                    .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                    .addEntityIds("service"))));
+    if (updated) {
+      ruleInfoBuilder.addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK);
+    }
     return DetectionExclusionRule.newBuilder()
-        .setId("id2")
+        .setId(id)
+        .setRuleScope(
+            DetectionExclusionRuleScope.newBuilder()
+                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
+        .setRuleInfo(ruleInfoBuilder)
+        .build();
+  }
+
+  private DetectionExclusionRule getSampleSstiRule(boolean updated, String id) {
+    return DetectionExclusionRule.newBuilder()
+        .setId(id)
         .setRuleScope(
             DetectionExclusionRuleScope.newBuilder()
                 .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
@@ -286,29 +387,8 @@ class DetectionExclusionRulesMigrationManagerTest {
                                         .setEventFamily(
                                             SystemDefinedEventFamily
                                                 .SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
-                                        .setEventSubTypeId("crs_9210310"))))
-                .addConditions(
-                    DetectionExclusionCondition.newBuilder()
-                        .setScopeCondition(
-                            ScopeCondition.newBuilder()
-                                .setEntityScope(
-                                    EntityScope.newBuilder()
-                                        .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
-                                        .addEntityIds("service")))))
-        .build();
-  }
-
-  private DetectionExclusionRule getSampleChangeLog2UpdatedRule() {
-    return DetectionExclusionRule.newBuilder()
-        .setId("id3")
-        .setRuleScope(
-            DetectionExclusionRuleScope.newBuilder()
-                .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env")))
-        .setRuleInfo(
-            DetectionExclusionRuleInfo.newBuilder()
-                .setName("name3")
-                .setDescription("desc3")
-                .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                                        .setEventSubTypeId(
+                                            updated ? "crs_9320310" : "crs_9210310"))))
                 .addConditions(
                     DetectionExclusionCondition.newBuilder()
                         .setScopeCondition(
@@ -339,11 +419,14 @@ class DetectionExclusionRulesMigrationManagerTest {
   }
 
   private DetectionExclusionMigrationConfig mockMigrationStore(
-      boolean migrationCompleted, boolean changeLog2MigrationCompleted) {
+      boolean migrationCompleted,
+      boolean changeLog2MigrationCompleted,
+      boolean changeLog3MigrationCompleted) {
     DetectionExclusionMigrationConfig migrationConfig =
         DetectionExclusionMigrationConfig.newBuilder()
             .setMigrationCompleted(migrationCompleted)
             .setChangeLog2MigrationCompleted(changeLog2MigrationCompleted)
+            .setChangeLog3MigrationCompleted(changeLog3MigrationCompleted)
             .build();
     when(migrationStore.getData(any())).thenReturn(Optional.of(migrationConfig));
     return migrationConfig;
