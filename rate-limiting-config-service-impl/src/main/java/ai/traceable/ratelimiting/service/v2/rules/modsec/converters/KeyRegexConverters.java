@@ -7,8 +7,8 @@ public class KeyRegexConverters {
   private static final String DOT_CHARACTER_REGEX = "[.]";
   private static final String BEGINNING_REGEX_CHAR = "^";
   private static final String TERMINAL_REGEX_CHAR = "$";
-  private static final String FILLER_REGEX = ".*";
-  private static final String NON_DOT_FILLER_REGEX = "[^.]*";
+  private static final String NON_GREEDY_FILLER_REGEX = ".*?";
+  private static final String NON_DOT_FILLER_REGEX = "[^.]*?";
   private static final Function<String, String> MAKE_OPTIONAL_BLOCK = regex -> "(" + regex + ")?";
 
   /**
@@ -42,14 +42,14 @@ public class KeyRegexConverters {
 
     String transformedRegex =
         BEGINNING_REGEX_CHAR
-            + MAKE_OPTIONAL_BLOCK.apply(FILLER_REGEX + DOT_CHARACTER_REGEX)
+            + MAKE_OPTIONAL_BLOCK.apply(NON_GREEDY_FILLER_REGEX + DOT_CHARACTER_REGEX)
             + bodyParamNameString;
 
     if (isLeaf) {
       return transformedRegex + TERMINAL_REGEX_CHAR;
     } else {
       return transformedRegex
-          + MAKE_OPTIONAL_BLOCK.apply(DOT_CHARACTER_REGEX + FILLER_REGEX)
+          + MAKE_OPTIONAL_BLOCK.apply(DOT_CHARACTER_REGEX + NON_GREEDY_FILLER_REGEX)
           + TERMINAL_REGEX_CHAR;
     }
   }
@@ -67,11 +67,11 @@ public class KeyRegexConverters {
     keyRegex = removeAnchorEndpoints(keyRegex);
     valueRegex = removeAnchorEndpoints(valueRegex);
     return keyRegex
-        + FILLER_REGEX
+        + NON_GREEDY_FILLER_REGEX
         + valueRegex
         + OR_REGEX_DELIMITER
         + valueRegex
-        + FILLER_REGEX
+        + NON_GREEDY_FILLER_REGEX
         + keyRegex;
   }
 

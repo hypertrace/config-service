@@ -519,7 +519,7 @@ class RateLimitingModsecRulesManagerTest {
               + EMPTY_LOCATION_HASH
               + "0"
               + "',severity:'CRITICAL',chain\"\n"
-              + "SecRule ARGS_POST:/^(.*[.])?cc([.].*)?$/ \"@rx ^5554$\" \"capture,block,t:none\"");
+              + "SecRule ARGS_POST:/^(.*?[.])?cc([.].*?)?$/ \"@rx ^5554$\" \"capture,block,t:none\"");
 
   private static final List<String> expectedIgnoreConditionBlob =
       List.of(
@@ -543,6 +543,6 @@ class RateLimitingModsecRulesManagerTest {
             + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/credit-card:"
             + PROMPT_LOCATION_HASH,
         "',severity:'CRITICAL',chain\"\n"
-            + "SecRule ARGS_POST:prompt \"@rx cc.*5554|5554.*cc\" \"capture,block,t:none\"");
+            + "SecRule ARGS_POST:prompt \"@rx cc.*?5554|5554.*?cc\" \"capture,block,t:none\"");
   }
 }
