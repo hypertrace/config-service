@@ -12,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.Setter;
 
 public class ModsecSecRuleGroup {
@@ -63,25 +61,35 @@ public class ModsecSecRuleGroup {
 
   @Setter
   public static class ModsecRuleGroupBuilder {
-    private final List<ModsecSecRule> secRules = new ArrayList<>();
-    private final List<CustomSecRule> customSecRules = new ArrayList<>();
+    private final List<SecRuleContainer> secRules = new ArrayList<>();
     private long id;
     private String msg;
     private String ruleUuid;
     private String logData;
+    private boolean responsePhase = false;
 
     private ModsecRuleGroupBuilder() {}
 
     public void addSecRule(ModsecSecRule secRule) {
-      this.secRules.add(secRule);
+      responsePhase |=
+          secRule.getVariables().stream()
+              .map(ModsecVariable::getMetadata)
+              .anyMatch(ModsecVariableMetadata::needsResponsePhase);
+      secRules.add(secRule);
     }
 
     public void addSecRules(List<ModsecSecRule> secRules) {
+      responsePhase |=
+          secRules.stream()
+              .map(ModsecSecRule::getVariables)
+              .flatMap(List::stream)
+              .map(ModsecVariable::getMetadata)
+              .anyMatch(ModsecVariableMetadata::needsResponsePhase);
       this.secRules.addAll(secRules);
     }
 
     public void addCustomSecRule(CustomSecRule customSecRule) {
-      this.customSecRules.add(customSecRule);
+      secRules.add(customSecRule);
     }
 
     public ModsecSecRuleGroup build() {
@@ -100,15 +108,9 @@ public class ModsecSecRuleGroup {
               ruleUuid,
               msg,
               Optional.ofNullable(logData).filter(Predicate.not(String::isBlank)),
-              secRules.stream()
-                  .map(ModsecSecRule::getVariables)
-                  .flatMap(List::stream)
-                  .map(ModsecVariable::getMetadata)
-                  .anyMatch(ModsecVariableMetadata::needsResponsePhase));
-      List<SecRuleContainer> rules =
-          Stream.concat(customSecRules.stream(), secRules.stream())
-              .collect(Collectors.toUnmodifiableList());
-      return new ModsecSecRuleGroup(modsecActions, rules);
+              responsePhase);
+
+      return new ModsecSecRuleGroup(modsecActions, secRules);
     }
 
     private boolean isNullOrBlank(String str) {

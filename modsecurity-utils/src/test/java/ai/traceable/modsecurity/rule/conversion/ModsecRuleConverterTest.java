@@ -141,8 +141,9 @@ public class ModsecRuleConverterTest {
             .build());
     convertedModsecRulesBlob = modsecRuleConverter.getModsecRulesBlob(customModsecRules);
     expectedModsecRulesBlob =
-        "SecRule REQUEST_HEADERS \"@rx (\\\\u[0-9a-fA-F]{4}){4,}\" \\\n"
-            + "    \"tag:'rule-uuid/uuid1',logdata:'log1',msg:'msg1',id:12345,\\\n"
+        "SecRule REQUEST_METHOD \"@streq abc\" \"id:12345,phase:2,capture,t:none,msg:'msg1',logdata:'log1',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/uuid1',severity:'CRITICAL',chain\"\n"
+            + "SecRule REQUEST_HEADERS \"@rx (\\\\u[0-9a-fA-F]{4}){4,}\" \\\n"
+            + "    \"\\\n"
             + "    phase:1,\\\n"
             + "    nolog,\\\n"
             + "    noauditlog,\\\n"
@@ -153,8 +154,7 @@ public class ModsecRuleConverterTest {
             + "    chain\"\n"
             + "    SecRule TX:0 \"@rx .*\" \\\n"
             + "        \"t:none,t:urlDecodeUni,t:htmlEntityDecode,t:jsDecode,\\\n"
-            + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}',chain\"\n"
-            + "SecRule REQUEST_METHOD \"@streq abc\" \"capture,block,t:none\"";
+            + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}'\"";
     assertEquals(expectedModsecRulesBlob, convertedModsecRulesBlob);
 
     customModsecRules.clear();
@@ -164,20 +164,6 @@ public class ModsecRuleConverterTest {
             .setRuleUuid("uuid1")
             .setLogMessage("log1")
             .setRuleId(12345)
-            .addAndClauses(
-                CustomModsecRuleClause.newBuilder()
-                    .setValueMatchClause(
-                        CustomModsecValueMatchClause.newBuilder()
-                            .setRequestValueMetadata(
-                                RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD)
-                            .setValueMatchExpression(
-                                CustomModsecMatchExpression.newBuilder()
-                                    .setMatchValue("abc")
-                                    .setValueMatchOperator(
-                                        CustomModsecMatchExpression.MatchOperator
-                                            .MATCH_OPERATOR_EQUALS)
-                                    .build())
-                            .build()))
             .addAndClauses(
                 CustomModsecRuleClause.newBuilder()
                     .setCustomSecRuleClause(
@@ -214,6 +200,20 @@ public class ModsecRuleConverterTest {
                                     + "    SecRule TX:0 \"@rx .*\" \\\n"
                                     + "        \"t:none,t:urlDecodeUni,t:htmlEntityDecode,t:jsDecode,\\\n"
                                     + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}'\"")))
+            .addAndClauses(
+                CustomModsecRuleClause.newBuilder()
+                    .setValueMatchClause(
+                        CustomModsecValueMatchClause.newBuilder()
+                            .setRequestValueMetadata(
+                                RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD)
+                            .setValueMatchExpression(
+                                CustomModsecMatchExpression.newBuilder()
+                                    .setMatchValue("abc")
+                                    .setValueMatchOperator(
+                                        CustomModsecMatchExpression.MatchOperator
+                                            .MATCH_OPERATOR_EQUALS)
+                                    .build())
+                            .build()))
             .build());
     convertedModsecRulesBlob = modsecRuleConverter.getModsecRulesBlob(customModsecRules);
     expectedModsecRulesBlob =
