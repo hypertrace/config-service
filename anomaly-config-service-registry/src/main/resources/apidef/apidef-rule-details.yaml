@@ -15,7 +15,7 @@
       - A user can disable MFA skipping security controls by setting the "skipMfa" field to true.
     mitigation: |
       The best way to protect your code against Mass Assignment is to make the API schemas and deployed apps consistent. The application should only accept parameters declared in the API schema.
-      While using ORM frameworks, always use lists of permitted parameters. Don't accepting raw inputs.
+      While using ORM frameworks, always use lists of permitted parameters. Don't accept raw inputs.
     impact: |
       It depends on the exposed parameters.
       - A parameter like role might have a critical impact in your application by allowing privilege escalation.
