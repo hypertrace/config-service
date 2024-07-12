@@ -15,6 +15,7 @@ message ScopeCondition {
     LabelScope label_scope = 2;
     UrlScope url_scope = 3;
   }
+  bool exclude = 4;
 }
 
 message SpanAttributeMatchCondition {
