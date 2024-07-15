@@ -50,6 +50,17 @@ message GetLocalProcessingConfigResponse {
 message GetSpanProcessingRulesRequest {
   repeated SpanProcessingRulesServiceRequest service_requests = 1;
   optional string environment = 2;
+  AgentCapabilities agent_capabilities = 3;
+
+  message AgentCapabilities {
+    repeated Component components = 1;
+  }
+
+  message Component {
+    oneof value {
+      string traceable_platform_agent_version = 1;
+    }
+  }
 }
 
 message SpanProcessingRulesServiceRequest {
