@@ -648,6 +648,9 @@ anomalyConfigServiceConfig:
 #    }
 #  ]
 
+prometheusrule:
+  additionalRuleLabels: {}
+
 hpa:
   enabled: false
   minReplicas: 1

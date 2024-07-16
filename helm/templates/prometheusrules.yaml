@@ -20,6 +20,10 @@ spec:
           expr: sum(config_threat_autoblocking_action_timer_seconds_max) by (tenantId, operation) > 0
           for: 0m
           labels:
-            severity: critical
-            productgroup: security-detection
+            severity: SEV2
+            repository: config-service
+            team: common
+            {{- with .Values.prometheusrule.additionalRuleLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
   {{- end }}
