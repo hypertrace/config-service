@@ -52,11 +52,10 @@ public class SavedQueryConfigStore
     if (request.getFilter().hasScope() && !request.getFilter().getScope().equals(data.getScope())) {
       return Optional.empty();
     }
-    if (!request.getFilter().getUserIdsList().isEmpty()) {
-      String userId = data.hasAuthor() ? data.getAuthor().getId() : data.getCreatedByUserId();
-      return request.getFilter().getUserIdsList().contains(userId)
-          ? Optional.of(data)
-          : Optional.empty();
+    if (!request.getFilter().getEmailIdsList().isEmpty()) {
+      return Optional.of(data.getAuthor().getEmailId())
+          .filter(email -> request.getFilter().getEmailIdsList().contains(email))
+          .map(author -> data);
     }
     return Optional.of(data);
   }

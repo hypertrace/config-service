@@ -55,7 +55,8 @@ message GetSavedQueriesRequest {
 
 message GetSavedQueriesFilter {
   optional string scope = 1;
-  repeated string user_ids = 2;
+  repeated string user_ids = 2 [deprecated = true];
+  repeated string email_ids = 3;
 }
 
 message GetSavedQueriesResponse {

@@ -4,6 +4,7 @@ import ai.traceable.saved.query.config.service.v1.GetSavedQueriesFilter;
 import ai.traceable.saved.query.config.service.v1.GetSavedQueriesRequest;
 import ai.traceable.saved.query.config.service.v1.SavedQuery;
 import ai.traceable.saved.query.config.service.v1.User;
+import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.Assertions;
@@ -32,7 +33,7 @@ public class SavedQueryConfigStoreTest {
             .filterConfigData(
                 SavedQuery.newBuilder()
                     .setScope("someScope")
-                    .setAuthor(User.newBuilder().setId("user1").build())
+                    .setAuthor(User.newBuilder().setEmailId("email1").build())
                     .build(),
                 scopeFilter)
             .isPresent());
@@ -42,14 +43,14 @@ public class SavedQueryConfigStoreTest {
             .filterConfigData(
                 SavedQuery.newBuilder()
                     .setScope("someOtherScope")
-                    .setAuthor(User.newBuilder().setId("user1").build())
+                    .setAuthor(User.newBuilder().setEmailId("email1").build())
                     .build(),
                 scopeFilter)
             .isEmpty());
 
     GetSavedQueriesRequest userFilter =
         GetSavedQueriesRequest.newBuilder()
-            .setFilter(GetSavedQueriesFilter.newBuilder().addUserIds("user1").build())
+            .setFilter(GetSavedQueriesFilter.newBuilder().addAllEmailIds(List.of("email1")).build())
             .build();
 
     Assertions.assertTrue(
@@ -57,7 +58,7 @@ public class SavedQueryConfigStoreTest {
             .filterConfigData(
                 SavedQuery.newBuilder()
                     .setScope("someOtherScope")
-                    .setAuthor(User.newBuilder().setId("user1").build())
+                    .setAuthor(User.newBuilder().setEmailId("email1").build())
                     .build(),
                 userFilter)
             .isPresent());
@@ -67,9 +68,24 @@ public class SavedQueryConfigStoreTest {
             .filterConfigData(
                 SavedQuery.newBuilder()
                     .setScope("someOtherScope")
-                    .setAuthor(User.newBuilder().setId("user2").build())
+                    .setAuthor(User.newBuilder().setEmailId("email2").build())
                     .build(),
                 userFilter)
             .isEmpty());
+
+    GetSavedQueriesRequest emptyEmailFilter =
+        GetSavedQueriesRequest.newBuilder()
+            .setFilter(GetSavedQueriesFilter.newBuilder().build())
+            .build();
+
+    Assertions.assertTrue(
+        configStore
+            .filterConfigData(
+                SavedQuery.newBuilder()
+                    .setScope("someOtherScope")
+                    .setAuthor(User.newBuilder().setEmailId("email2").build())
+                    .build(),
+                emptyEmailFilter)
+            .isPresent());
   }
 }

@@ -17,7 +17,6 @@ import ai.traceable.saved.query.config.service.v1.User;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -25,7 +24,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class SavedQueryStoreManager {
 
-  private final DeletedSavedQueryConfigStore deletedSavedQueryStore;
   private final SavedQueryConfigStore savedQueryConfigStore;
   private final DefaultSavedQueryConfig defaultSavedQueryConfig;
   private final TimestampConverter timestampConverter;
@@ -38,7 +36,6 @@ public class SavedQueryStoreManager {
       SavedQueryConfigStore savedQueryConfigStore,
       TimestampConverter timestampConverter,
       UuidGenerator uuidGenerator) {
-    this.deletedSavedQueryStore = deletedSavedQueryConfigStore;
     this.defaultSavedQueryConfig = defaultSavedQueryConfig;
     this.savedQueryConfigStore = savedQueryConfigStore;
     this.timestampConverter = timestampConverter;
@@ -47,8 +44,12 @@ public class SavedQueryStoreManager {
 
   public CreateSavedQueryResponse createSavedQuery(
       RequestContext requestContext, CreateSavedQueryRequest request) {
-    User.Builder userBuilder = User.newBuilder().setId(requestContext.getUserId().orElseThrow());
-    requestContext.getName().or(requestContext::getEmail).ifPresent(userBuilder::setName);
+    User.Builder userBuilder =
+        User.newBuilder().setEmailId(requestContext.getEmail().orElseThrow());
+    requestContext
+        .getName()
+        .ifPresent(userBuilder::setName); // name - not mandatory; email - mandatory
+    requestContext.getUserId().ifPresent(userBuilder::setId);
     SavedQuery.Builder newSavedQueryBuilder =
         SavedQuery.newBuilder()
             .setId(uuidGenerator.generateRandomId())
@@ -68,10 +69,15 @@ public class SavedQueryStoreManager {
 
   public UpdateSavedQueryResponse updateSavedQuery(
       RequestContext requestContext, UpdateSavedQueryRequest request) throws StatusException {
-    SavedQuery existingSavedQuery = fetchExistingSavedQueryOrThrow(request.getId(), requestContext);
     if (defaultSavedQueryConfig.isDefaultQuery(request.getId())) {
-      deletedSavedQueryStore.markDefaultIdDeleted(requestContext, request.getId());
+      throw Status.UNIMPLEMENTED
+          .withDescription("Edit operation is not supported for default queries")
+          .asRuntimeException(requestContext.buildTrailers());
     }
+
+    SavedQuery existingSavedQuery = fetchExistingSavedQueryOrThrow(request.getId(), requestContext);
+    checkAuthorPermission(existingSavedQuery, requestContext);
+
     SavedQuery.Builder updatedSavedQueryBuilder =
         SavedQuery.newBuilder(existingSavedQuery)
             .setName(request.getName())
@@ -86,25 +92,33 @@ public class SavedQueryStoreManager {
   }
 
   public DeleteSavedQueryResponse deleteSavedQuery(
-      RequestContext requestContext, DeleteSavedQueryRequest request) {
+      RequestContext requestContext, DeleteSavedQueryRequest request) throws StatusException {
     String queryId = request.getId();
-    if (defaultSavedQueryConfig.isDefaultQuery(queryId)
-        && deletedSavedQueryStore.getObject(requestContext, queryId).isEmpty()) {
-      deletedSavedQueryStore.markDefaultIdDeleted(requestContext, queryId);
-    } else {
-      this.savedQueryConfigStore
-          .deleteObject(requestContext, queryId)
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+    if (defaultSavedQueryConfig.isDefaultQuery(queryId)) {
+      throw Status.UNIMPLEMENTED
+          .withDescription("Delete operation is not supported for default queries")
+          .asRuntimeException();
     }
+    SavedQuery existingSavedQuery = fetchExistingSavedQueryOrThrow(request.getId(), requestContext);
+    checkAuthorPermission(existingSavedQuery, requestContext);
+
+    this.savedQueryConfigStore
+        .deleteObject(requestContext, queryId)
+        .orElseThrow(Status.NOT_FOUND::asRuntimeException);
     return DeleteSavedQueryResponse.newBuilder().build();
   }
 
   public GetSavedQueriesResponse fetchSavedQueries(
       RequestContext requestContext, GetSavedQueriesRequest request) {
-    Set<String> deletedIds = this.deletedSavedQueryStore.getDeletedDefaultIds(requestContext);
     List<SavedQuery> undeletedDefaultQueries =
         defaultSavedQueryConfig.getQueriesForScope(request.getFilter().getScope()).stream()
-            .filter(query -> !deletedIds.contains(query.getId()))
+            .filter(
+                query ->
+                    request.getFilter().getEmailIdsList().isEmpty()
+                        || request
+                            .getFilter()
+                            .getEmailIdsList()
+                            .contains(query.getAuthor().getEmailId()))
             .collect(Collectors.toUnmodifiableList());
     List<SavedQuery> storedSavedQueries =
         savedQueryConfigStore.getAllConfigData(requestContext, request);
@@ -139,7 +153,15 @@ public class SavedQueryStoreManager {
       throws StatusException {
     return savedQueryConfigStore
         .getData(requestContext, id)
-        .or(() -> defaultSavedQueryConfig.getDefaultQuery(id))
         .orElseThrow(() -> Status.NOT_FOUND.asException(requestContext.buildTrailers()));
+  }
+
+  private void checkAuthorPermission(SavedQuery existingSavedQuery, RequestContext requestContext) {
+    String authorEmail = existingSavedQuery.getAuthor().getEmailId();
+    if (!authorEmail.isBlank() && !authorEmail.equals(requestContext.getEmail().orElseThrow())) {
+      throw Status.PERMISSION_DENIED
+          .withDescription("The current user is not the author of the query")
+          .asRuntimeException();
+    }
   }
 }

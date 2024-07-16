@@ -1,6 +1,7 @@
 package ai.traceable.saved.query.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -20,10 +21,13 @@ import ai.traceable.saved.query.config.service.v1.QueryClauses;
 import ai.traceable.saved.query.config.service.v1.SavedQuery;
 import ai.traceable.saved.query.config.service.v1.SavedQueryServiceGrpc;
 import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryRequest;
+import ai.traceable.saved.query.config.service.v1.User;
 import ai.traceable.saved.query.config.service.validation.SavedQueryRequestValidator;
 import com.google.protobuf.Timestamp;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -121,7 +125,7 @@ class SavedQueryConfigServiceImplTest {
     assertEquals(QUERY_NAME_1, createdSavedQuery.getName());
     assertEquals(TRACES_SCOPE, createdSavedQuery.getScope());
     assertEquals(queryClauses1, createdSavedQuery.getQueryClauses());
-    assertEquals("Favian.Reynolds@example.com", createdSavedQuery.getCreatedByUserId());
+    assertEquals("google-oauth2|107056790216294270188", createdSavedQuery.getCreatedByUserId());
     Timestamp expectedTimestamp = Timestamp.newBuilder().setSeconds(100).build();
     assertEquals(expectedTimestamp, createdSavedQuery.getCreatedTimestamp());
     assertEquals(expectedTimestamp, createdSavedQuery.getUpdatedTimestamp());
@@ -241,6 +245,11 @@ class SavedQueryConfigServiceImplTest {
             + "            \"group_limit\": \"5\",\n"
             + "            \"interval\": \"5m\"\n"
             + "          }\n"
+            + "          \"author\": {\n"
+            + "            \"id\": \"ce16162f-cc9b-4a2c-9374-172566d6d393\",\n"
+            + "            \"name\": \"Traceable\",\n"
+            + "            \"email_id\": \"raj.patel@traceable.ai\"\n"
+            + "          }\n"
             + "        }\n"
             + "      ]\n"
             + "    }\n"
@@ -258,18 +267,24 @@ class SavedQueryConfigServiceImplTest {
             .setInterval("5m")
             .setGroupLimit("5")
             .build();
+    User user =
+        User.newBuilder()
+            .setId("ce16162f-cc9b-4a2c-9374-172566d6d393")
+            .setName("Traceable")
+            .setEmailId("raj.patel@traceable.ai")
+            .build();
     SavedQuery expectedSavedQuery =
         SavedQuery.newBuilder()
             .setId(uuid)
             .setName(name)
             .setScope(TRACES_SCOPE)
             .setQueryClauses(queryClauses1)
+            .setAuthor(user)
             .build();
     Config savedQueryConfig = ConfigFactory.parseString(jsonString);
     when(mockConfig.getConfig(SAVED_QUERY_CONFIG_SERVICE)).thenReturn(savedQueryConfig);
 
-    this.mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    this.mockGenericConfigService = new MockGenericConfigService().mockGetAll();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     this.mockGenericConfigService
@@ -288,8 +303,6 @@ class SavedQueryConfigServiceImplTest {
         SavedQueryServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-    when(this.timestampConverter.convert(any()))
-        .thenReturn(Timestamp.newBuilder().setSeconds(1697479787).build());
 
     RequestContext requestContext = buildRequestContext();
     GetSavedQueriesResponse getSavedQueriesResponse =
@@ -330,38 +343,55 @@ class SavedQueryConfigServiceImplTest {
             .setCreatedTimestamp(Timestamp.newBuilder().setSeconds(1697479787).build())
             .setUpdatedTimestamp(Timestamp.newBuilder().setSeconds(1697479787).build())
             .build();
-    SavedQuery updatedSavedQuery =
-        requestContext.call(
-            () ->
-                this.savedQueryServiceBlockingStub
-                    .updateSavedQuery(
-                        UpdateSavedQueryRequest.newBuilder()
-                            .setId(uuid)
-                            .setName(name)
-                            .setQueryClauses(updatedQueryClause)
-                            .build())
-                    .getSavedQuery());
-    assertEquals(expectedSavedQuery, updatedSavedQuery);
 
-    requestContext.call(
-        () ->
-            this.savedQueryServiceBlockingStub
-                .withCallCredentials(
-                    RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get())
-                .deleteSavedQuery(DeleteSavedQueryRequest.newBuilder().setId(uuid).build()));
+    StatusRuntimeException editException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                requestContext.call(
+                    () ->
+                        this.savedQueryServiceBlockingStub
+                            .updateSavedQuery(
+                                UpdateSavedQueryRequest.newBuilder()
+                                    .setId(uuid)
+                                    .setName(name)
+                                    .setQueryClauses(updatedQueryClause)
+                                    .build())
+                            .getSavedQuery()));
+    assertEquals(Status.UNIMPLEMENTED.getCode(), editException.getStatus().getCode());
+
+    StatusRuntimeException deleteException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                requestContext.call(
+                    () ->
+                        this.savedQueryServiceBlockingStub
+                            .withCallCredentials(
+                                RequestContextClientCallCredsProviderFactory
+                                    .getClientCallCredsProvider()
+                                    .get())
+                            .deleteSavedQuery(
+                                DeleteSavedQueryRequest.newBuilder().setId(uuid).build())));
+    assertEquals(Status.UNIMPLEMENTED.getCode(), deleteException.getStatus().getCode());
 
     getSavedQueriesResponse =
         requestContext.call(
             () ->
                 this.savedQueryServiceBlockingStub.getSavedQueries(
-                    GetSavedQueriesRequest.newBuilder().build()));
-    assertEquals(0, getSavedQueriesResponse.getSavedQueriesCount());
+                    GetSavedQueriesRequest.newBuilder()
+                        .setFilter(
+                            GetSavedQueriesFilter.newBuilder()
+                                .addAllEmailIds(List.of("raj.patel@traceable.ai"))
+                                .build())
+                        .build()));
+    assertEquals(1, getSavedQueriesResponse.getSavedQueriesCount());
   }
 
   private static RequestContext buildRequestContext() {
     return RequestContext.forTenantId("t1")
         .put(
             "authorization",
-            "Bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJGYXZpYW4uUmV5bm9sZHNAZXhhbXBsZS5jb20iLCJyb2xlIjoidXNlciIsImlhdCI6MTY4NDM0NzcxOSwiZXhwIjoxNjg0OTUyNTE5fQ.cjyK-u3j7K5sHNSf7SG0oGe6xKCV0jOTm9kqN68JmFkdxUx5Dvd1WuF7Zg7uM-8sNBgxmtPg-bxJ2Ddnmb4Fd3IhSe1L-1dbZi3-dJldlK6i9m3O5pp3ivoQvobk1mfh2jCdbZ3tLcLF7t5OLDnqK_9COQ4plTMlmwX8Jr1L8C1kfzYHfHa91Rc9lDGjSJnxaAwfXAgqBhOSZCdX-EgYRyINnF6elLibLnL8J_PP50RLctNnZuEznImvPXQ6twl8A6JJmCkJYUp0HP9mdBJIz6RcuHYt0QU5avZprKQ6p_23WhuNzSvPRSjD0l9RGR8uQHU8LWVuu9i0L8Sfyr3TrA");
+            "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InpMOFcyU3lTTWk0Ujh4MUM4b1NjbiJ9.eyJodHRwczovL3RyYWNlYWJsZS5haS9yb2xlc192MiI6WyJ0cmFjZWFibGUiXSwiaHR0cHM6Ly90cmFjZWFibGUuYWkvY3VzdG9tZXJfaWQiOiIzZTc2MTg3OS1jNzdiLTRkOGYtYTA3NS02MmZmMjhlOGZhOGEiLCJodHRwczovL3RyYWNlYWJsZS5haS9yb2xlcyI6WyJ0cmFjZWFibGUiXSwiaHR0cHM6Ly90cmFjZWFibGUuYWkvanRpIjoiODJjYTllYzctODkwMS00YTJhLWI2NWYtZTA5Y2IwOGQwY2Y0IiwiaHR0cHM6Ly90cmFjZWFibGUuYWkvcmljaF9yb2xlcyI6W3siZW52cyI6W10sImlkIjoidHJhY2VhYmxlIn1dLCJnaXZlbl9uYW1lIjoiUmFqIiwiZmFtaWx5X25hbWUiOiJQYXRlbCIsIm5pY2tuYW1lIjoicmFqLnBhdGVsIiwibmFtZSI6IlJhaiBQYXRlbCIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NLRXdDZEVqajNoUVlsWk9JMHBTaVNyVWxKeFlKQUJCcjBHRW5vLXR6R21QUHJxOXc9czk2LWMiLCJ1cGRhdGVkX2F0IjoiMjAyNC0wNy0wNFQxNDowMDo0OS40OTBaIiwiZW1haWwiOiJyYWoucGF0ZWxAdHJhY2VhYmxlLmFpIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImlzcyI6Imh0dHBzOi8vdHJhY2VhYmxlLXNhbmRib3gudXMuYXV0aDAuY29tLyIsImF1ZCI6IjY2bHNCNWFnaGxHemFNbnFubkdubUFkc0E3WHh0d1d0IiwiaWF0IjoxNzIwMTAxNjUyLCJleHAiOjE3MjAxMzc2NTIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTA3MDU2NzkwMjE2Mjk0MjcwMTg4Iiwic2lkIjoibllpTWRDMDJOOERQSk5DQjFlNUVtVkFGRG5RNm9ULWwifQ.xOCCsRsSH6gb-zPdnfdr0goOQeIk66M_HruaVulZ1xciGTUjvW9b7tl113xjkTxvHYghXlEq5XkcU2K_MTIw-Y5jtCtvxHKTyat3E6KSTIVjl-COhArDmlSMhqefpNxY2ew9VFiODP5vfq1JS6rx-q3anVhWV1X36k5D2Fpd4lASokdrJ0SpyjRF05Bv0hDJmkPjKbOKE3pVNX4WCG377hN9VbAxtITkTteLbHkeEIYH0xH8f95qlpTm9i5xpYttCl6K_GvKOdwws0IKlhntrsfDPQj7T4IyHoCCMtZkPLLNaIyoVk8LI3CC-OEBFypjedN_FG4QOR8Clt7A_MN0Dw");
   }
 }
