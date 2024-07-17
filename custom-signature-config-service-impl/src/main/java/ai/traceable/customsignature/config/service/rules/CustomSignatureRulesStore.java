@@ -1,19 +1,31 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class CustomSignatureRulesStore
@@ -23,6 +35,8 @@ public class CustomSignatureRulesStore
   public static final String CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE = "customSignatureRule";
   public static final String CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME =
       "customSignatureRuleConfig";
+
+  private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
 
   @Inject
   public CustomSignatureRulesStore(
@@ -35,6 +49,17 @@ public class CustomSignatureRulesStore
         CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.customSignatureRuleConverter = customSignatureRuleConverter;
+  }
+
+  @Override
+  public List<CustomSignatureRule> getAllConfigData(RequestContext requestContext) {
+    return getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext));
+  }
+
+  @Override
+  public List<CustomSignatureRule> getAllConfigData(
+      RequestContext requestContext, GetRulesFilter filter) {
+    return getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext, filter));
   }
 
   @Override
@@ -101,5 +126,87 @@ public class CustomSignatureRulesStore
             .anyMatch(Clause::hasCustomSecRule);
     return (hasCustomSecRule && filter.getContainsSecRuleClause())
         || (!hasCustomSecRule && !filter.getContainsSecRuleClause());
+  }
+
+  // processing existing custom signature rule, when attribute key value expression does not have
+  // key condition.
+  private List<CustomSignatureRule> getCustomSignatureRules(
+      RequestContext requestContext, List<CustomSignatureRule> existingCustomSignatureRule) {
+    if (!PROCESSED_RULE_TENANT_IDS.contains(requestContext.buildInternalContextualKey())) {
+      List<CustomSignatureRule> customSignatureRules = new ArrayList<>();
+      List<CustomSignatureRule> processedCustomSignatureRules = new ArrayList<>();
+      for (CustomSignatureRule rule : existingCustomSignatureRule) {
+        Optional<CustomSignatureRule> updateCustomSignatureRule =
+            updateCustomSignatureRuleIfApplicable(rule);
+        if (updateCustomSignatureRule.isEmpty()) {
+          customSignatureRules.add(rule);
+        } else {
+          processedCustomSignatureRules.add(updateCustomSignatureRule.get());
+        }
+      }
+      if (!processedCustomSignatureRules.isEmpty()) {
+        customSignatureRules.addAll(
+            super.upsertObjects(requestContext, processedCustomSignatureRules).stream()
+                .map(ConfigObject::getData)
+                .collect(Collectors.toUnmodifiableList()));
+      }
+      PROCESSED_RULE_TENANT_IDS.add(requestContext.buildInternalContextualKey());
+      return customSignatureRules;
+    }
+    return existingCustomSignatureRule;
+  }
+
+  // processing Clause with AttributeKeyValueExpression to have key and value condition for backward
+  // compatibility.
+  private Optional<CustomSignatureRule> updateCustomSignatureRuleIfApplicable(
+      CustomSignatureRule rule) {
+    boolean anyClauseUpdated = false;
+    List<Clause> clauses = new ArrayList<>();
+    for (Clause clause : rule.getDefinition().getClauseGroup().getClausesList()) {
+      if (clause.hasAttributeKeyValueExpression()
+          && !clause.getAttributeKeyValueExpression().hasKeyCondition()) {
+        clauses.add(
+            clause.toBuilder()
+                .setAttributeKeyValueExpression(processAttributeKeyValueExpression(clause))
+                .build());
+        anyClauseUpdated = true;
+      } else {
+        clauses.add(clause);
+      }
+    }
+    return anyClauseUpdated ? Optional.of(processRuleDefinition(rule, clauses)) : Optional.empty();
+  }
+
+  private AttributeKeyValueExpression processAttributeKeyValueExpression(Clause clause) {
+    AttributeKeyValueExpression.Builder attributeKeyValueExpressionBuilder =
+        clause.getAttributeKeyValueExpression().toBuilder();
+    return attributeKeyValueExpressionBuilder
+        .setKeyCondition(
+            getStringCondition(
+                attributeKeyValueExpressionBuilder.getMatchKey(),
+                attributeKeyValueExpressionBuilder.getKeyMatchOperator()))
+        .setValueCondition(
+            getStringCondition(
+                attributeKeyValueExpressionBuilder.getMatchValue(),
+                attributeKeyValueExpressionBuilder.getValueMatchOperator()))
+        .build();
+  }
+
+  private CustomSignatureRule processRuleDefinition(
+      CustomSignatureRule rule, List<Clause> updateClauses) {
+    ClauseGroup clauseGroup =
+        rule.getDefinition().getClauseGroup().toBuilder()
+            .clearClauses()
+            .addAllClauses(updateClauses)
+            .build();
+
+    RuleDefinition ruleDefinition =
+        rule.getDefinition().toBuilder().setClauseGroup(clauseGroup).build();
+
+    return rule.toBuilder().setDefinition(ruleDefinition).build();
+  }
+
+  private StringCondition getStringCondition(String value, MatchOperator operator) {
+    return StringCondition.newBuilder().setValue(value).setOperator(operator).build();
   }
 }

@@ -27,6 +27,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(commonLibs.traceable.modsecurity.jni)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  implementation(localLibs.hypertrace.configservice.validation)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

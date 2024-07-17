@@ -12,6 +12,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
@@ -34,6 +35,7 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.StringCondition;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
@@ -268,6 +270,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
           "Custom Signature Rule key-value expression should have a valid tag.");
     }
     return validateExpression(
+        false,
         keyValueExpression.getMatchKey(),
         keyValueExpression.getKeyMatchOperator(),
         keyValueExpression.getMatchValue(),
@@ -276,14 +279,39 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
   private Status validateAttributeKeyValueExpression(
       AttributeKeyValueExpression attributeKeyValueExpression) {
-    return validateExpression(
-        attributeKeyValueExpression.getMatchKey(),
-        attributeKeyValueExpression.getKeyMatchOperator(),
-        attributeKeyValueExpression.getMatchValue(),
-        attributeKeyValueExpression.getValueMatchOperator());
+    if (!attributeKeyValueExpression.hasKeyCondition()) {
+      Status status =
+          validateExpression(
+              true,
+              attributeKeyValueExpression.getMatchKey(),
+              attributeKeyValueExpression.getKeyMatchOperator(),
+              attributeKeyValueExpression.getMatchValue(),
+              attributeKeyValueExpression.getValueMatchOperator());
+      if (status != Status.OK) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "Invalid attribute key value expression : %s", attributeKeyValueExpression));
+      }
+      return Status.OK;
+    }
+    validateStringCondition(attributeKeyValueExpression.getKeyCondition());
+    if (attributeKeyValueExpression.hasValueCondition()) {
+      validateStringCondition(attributeKeyValueExpression.getValueCondition());
+    }
+    return Status.OK;
+  }
+
+  private void validateStringCondition(StringCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
+    if (stringCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
+        || stringCondition.getOperator() == MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      validateRegex(stringCondition.getValue());
+    }
   }
 
   private Status validateExpression(
+      boolean isEmptyValueAllowed,
       String matchKey,
       MatchOperator keyMatchOperator,
       String matchValue,
@@ -296,11 +324,11 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule expression should have a valid key match operator.");
     }
-    if (matchValue.isEmpty()) {
+    if (!isEmptyValueAllowed && matchValue.isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule expression should have a valid match value.");
     }
-    if (valueMatchOperator == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
+    if (!matchValue.isEmpty() && valueMatchOperator == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule expression should have a valid value match operator.");
     }

@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore.CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE;
 import static ai.traceable.customsignature.config.service.rules.CustomSignatureRulesStore.CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,6 +12,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
@@ -20,6 +24,7 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Struct;
@@ -47,7 +52,12 @@ public class CustomSignatureRulesManagerTest {
   @BeforeEach
   public void setup() {
     mockConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+        new MockGenericConfigService()
+            .mockUpsert()
+            .mockGet()
+            .mockGetAll()
+            .mockDelete()
+            .mockUpsertAll();
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ruleConverter = spy(CustomSignatureRuleConverter.class);
@@ -89,18 +99,43 @@ public class CustomSignatureRulesManagerTest {
                 .setName("name-3")
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                .build(),
+            CustomSignatureRule.newBuilder()
+                .setId("id4")
+                .setName("name-4")
+                .setDefinition(
+                    RuleDefinition.newBuilder()
+                        .setClauseGroup(
+                            ClauseGroup.newBuilder()
+                                .addClauses(
+                                    Clause.newBuilder()
+                                        .setAttributeKeyValueExpression(
+                                            AttributeKeyValueExpression.newBuilder()
+                                                .setKeyMatchOperator(MATCH_OPERATOR_NOT_EQUAL)
+                                                .setMatchKey("key")
+                                                .setValueMatchOperator(MATCH_OPERATOR_NOT_EQUAL)
+                                                .setMatchValue("value")))))
+                .setEffect(
+                    RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .build());
 
-    when(rulesManager.generateRuleId()).thenReturn("id1").thenReturn("id2").thenReturn("id3");
+    when(rulesManager.generateRuleId())
+        .thenReturn("id1")
+        .thenReturn("id2")
+        .thenReturn("id3")
+        .thenReturn("id4");
     rulesManager.createCustomSignatureRule(
         requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-1").build());
     rulesManager.createCustomSignatureRule(
         requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-2").build());
     rulesManager.createCustomSignatureRule(
         requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-3").build());
+    rulesManager.createCustomSignatureRule(
+        requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-4").build());
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(0));
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(1));
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(2));
+    rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(3));
 
     List<CustomSignatureRule> results;
 
@@ -119,12 +154,40 @@ public class CustomSignatureRulesManagerTest {
     assertEquals(expectedRules.get(1), results.get(0));
 
     // No filter -- return all rules
+    requestContext = RequestContext.forTenantId("tenant");
     results =
         rulesManager.getCustomSignatureRules(requestContext, GetRulesFilter.newBuilder().build());
-    assertEquals(3, results.size());
+    CustomSignatureRule expectedRule =
+        CustomSignatureRule.newBuilder()
+            .setId("id4")
+            .setName("name-4")
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setAttributeKeyValueExpression(
+                                        AttributeKeyValueExpression.newBuilder()
+                                            .setKeyMatchOperator(MATCH_OPERATOR_NOT_EQUAL)
+                                            .setMatchKey("key")
+                                            .setValueMatchOperator(MATCH_OPERATOR_NOT_EQUAL)
+                                            .setMatchValue("value")
+                                            .setKeyCondition(
+                                                StringCondition.newBuilder()
+                                                    .setOperator(MATCH_OPERATOR_NOT_EQUAL)
+                                                    .setValue("key"))
+                                            .setValueCondition(
+                                                StringCondition.newBuilder()
+                                                    .setValue("value")
+                                                    .setOperator(MATCH_OPERATOR_NOT_EQUAL))))))
+            .setEffect(RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+            .build();
+    assertEquals(4, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
+    assertTrue(results.contains(expectedRule));
 
     // Filter on disabled
     results =
@@ -178,7 +241,7 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("dev"))).build());
-    assertEquals(3, results.size());
+    assertEquals(4, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
@@ -188,7 +251,7 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("prod"))).build());
-    assertEquals(2, results.size());
+    assertEquals(3, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(2)));
 
@@ -197,7 +260,7 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("staging"))).build());
-    assertEquals(1, results.size());
+    assertEquals(2, results.size());
     assertTrue(results.contains(expectedRules.get(2)));
 
     // Filter by rule scope with env scope with no envs should only return rules with no envs
@@ -205,7 +268,7 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of())).build());
-    assertEquals(1, results.size());
+    assertEquals(2, results.size());
     assertTrue(results.contains(expectedRules.get(2)));
 
     // Filter by rule scope with no env scope should all available rules
@@ -213,7 +276,7 @@ public class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(RuleScope.getDefaultInstance()).build());
-    assertEquals(3, results.size());
+    assertEquals(4, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
