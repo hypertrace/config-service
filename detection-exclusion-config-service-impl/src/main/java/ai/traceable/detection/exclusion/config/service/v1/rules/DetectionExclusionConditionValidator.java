@@ -1,5 +1,19 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HOST;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HTTP_METHOD;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_QUERY_PARAMS_COUNT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_BODY;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_BODY_SIZE;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_COOKIES_COUNT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_HEADERS_COUNT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_BODY;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_BODY_SIZE;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_COOKIES_COUNT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_HEADERS_COUNT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_STATUS_CODE;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_URL;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_USER_AGENT;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
@@ -24,6 +38,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeConditio
 import ai.traceable.detection.exclusion.config.service.v1.IpOrganisationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
+import ai.traceable.detection.exclusion.config.service.v1.KeyMetadata;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
@@ -43,10 +58,28 @@ import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DetectionExclusionConditionValidator {
+
+  private static final Set<KeyMetadata> KEY_NULL_META_DATAS =
+      Set.of(
+          KEY_METADATA_URL,
+          KEY_METADATA_HOST,
+          KEY_METADATA_HTTP_METHOD,
+          KEY_METADATA_USER_AGENT,
+          KEY_METADATA_STATUS_CODE,
+          KEY_METADATA_REQUEST_BODY,
+          KEY_METADATA_RESPONSE_BODY,
+          KEY_METADATA_REQUEST_BODY_SIZE,
+          KEY_METADATA_RESPONSE_BODY_SIZE,
+          KEY_METADATA_QUERY_PARAMS_COUNT,
+          KEY_METADATA_REQUEST_HEADERS_COUNT,
+          KEY_METADATA_RESPONSE_HEADERS_COUNT,
+          KEY_METADATA_REQUEST_COOKIES_COUNT,
+          KEY_METADATA_RESPONSE_COOKIES_COUNT);
 
   void validateRuleCondition(DetectionExclusionCondition condition) {
     switch (condition.getConditionCase()) {
@@ -223,11 +256,28 @@ public class DetectionExclusionConditionValidator {
     KeyMetadataMatchCondition keyMetadataMatchCondition = condition.getKeyMatchCondition();
     validateNonDefaultPresenceOrThrow(
         keyMetadataMatchCondition, KeyMetadataMatchCondition.METADATA_FIELD_NUMBER);
-    if (keyMetadataMatchCondition.hasMatchCondition()) {
+    KeyMetadata metadata = keyMetadataMatchCondition.getMetadata();
+    if (KEY_NULL_META_DATAS.contains(metadata)) {
+      if (keyMetadataMatchCondition.hasMatchCondition()) {
+        throwInvalidArgumentException(
+            String.format(
+                "Key match condition should not be present for key meta data : %s", metadata));
+      }
+      if (!condition.hasValueMatchCondition()) {
+        throwInvalidArgumentException(
+            String.format(
+                "Value match condition should not be present for key meta data : %s", metadata));
+      }
+    } else {
+      if (!keyMetadataMatchCondition.hasMatchCondition()) {
+        throwInvalidArgumentException(
+            String.format(
+                "Key match condition should be present for key meta data : %s", metadata));
+      }
       validateMatchCondition(keyMetadataMatchCondition.getMatchCondition());
-    }
-    if (condition.hasValueMatchCondition()) {
-      validateMatchCondition(condition.getValueMatchCondition());
+      if (condition.hasValueMatchCondition()) {
+        validateMatchCondition(condition.getValueMatchCondition());
+      }
     }
   }
 

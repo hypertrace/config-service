@@ -224,7 +224,7 @@ class DetectionExclusionConditionValidatorTest {
                   SpanAttributeMatchCondition.newBuilder()
                       .setKeyMatchCondition(
                           KeyMetadataMatchCondition.newBuilder()
-                              .setMetadata(KeyMetadata.KEY_METADATA_HOST)
+                              .setMetadata(KeyMetadata.KEY_METADATA_REQUEST_BODY_PARAMETER)
                               .setMatchCondition(
                                   MatchCondition.newBuilder()
                                       .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -249,7 +249,7 @@ class DetectionExclusionConditionValidatorTest {
                   SpanAttributeMatchCondition.newBuilder()
                       .setKeyMatchCondition(
                           KeyMetadataMatchCondition.newBuilder()
-                              .setMetadata(KeyMetadata.KEY_METADATA_HOST)
+                              .setMetadata(KeyMetadata.KEY_METADATA_QUERY_PARAMETER)
                               .setMatchCondition(
                                   MatchCondition.newBuilder()
                                       .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -278,7 +278,7 @@ class DetectionExclusionConditionValidatorTest {
                   SpanAttributeMatchCondition.newBuilder()
                       .setKeyMatchCondition(
                           KeyMetadataMatchCondition.newBuilder()
-                              .setMetadata(KeyMetadata.KEY_METADATA_HOST)
+                              .setMetadata(KeyMetadata.KEY_METADATA_QUERY_PARAMETER)
                               .setMatchCondition(
                                   MatchCondition.newBuilder()
                                       .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
@@ -300,7 +300,7 @@ class DetectionExclusionConditionValidatorTest {
                   SpanAttributeMatchCondition.newBuilder()
                       .setKeyMatchCondition(
                           KeyMetadataMatchCondition.newBuilder()
-                              .setMetadata(KeyMetadata.KEY_METADATA_HOST)
+                              .setMetadata(KeyMetadata.KEY_METADATA_QUERY_PARAMETER)
                               .setMatchCondition(
                                   MatchCondition.newBuilder()
                                       .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
