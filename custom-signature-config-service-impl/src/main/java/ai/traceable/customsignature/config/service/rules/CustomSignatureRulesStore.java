@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
@@ -69,6 +70,7 @@ public class CustomSignatureRulesStore
                     || filter.getEventTypesList().contains(rule.getEffect().getEventType()))
         .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
         .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
+        .filter(rule -> filterOnCustomSecRulePresent(rule, filter))
         .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
   }
 
@@ -88,5 +90,16 @@ public class CustomSignatureRulesStore
 
     List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
     return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
+  }
+
+  private boolean filterOnCustomSecRulePresent(CustomSignatureRule rule, GetRulesFilter filter) {
+    if (!filter.hasContainsSecRuleClause()) {
+      return true;
+    }
+    boolean hasCustomSecRule =
+        rule.getDefinition().getClauseGroup().getClausesList().stream()
+            .anyMatch(Clause::hasCustomSecRule);
+    return (hasCustomSecRule && filter.getContainsSecRuleClause())
+        || (!hasCustomSecRule && !filter.getContainsSecRuleClause());
   }
 }
