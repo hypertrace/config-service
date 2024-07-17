@@ -1,5 +1,7 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -105,7 +107,17 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .withDescription("DetectionExclusionRule has no specified conditions")
           .asRuntimeException();
     }
-    ruleInfo.getConditionsList().forEach(conditionValidator::validateRuleCondition);
+    boolean isBlockOrAllowTargetPresent =
+        ruleInfo.getExclusionTargetsList().stream()
+            .anyMatch(
+                exclusionTarget ->
+                    exclusionTarget.equals(EXCLUSION_TARGET_BLOCK)
+                        || exclusionTarget.equals(EXCLUSION_TARGET_ALLOW));
+    ruleInfo
+        .getConditionsList()
+        .forEach(
+            condition ->
+                conditionValidator.validateRuleCondition(isBlockOrAllowTargetPresent, condition));
   }
 
   private void validateExclusionTargets(List<ExclusionTarget> exclusionTargets) {

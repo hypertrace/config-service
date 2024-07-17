@@ -70,7 +70,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid scopeConditionCase"));
     }
 
@@ -85,7 +85,8 @@ class DetectionExclusionConditionValidatorTest {
               .build();
 
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // label scope not set
@@ -99,7 +100,8 @@ class DetectionExclusionConditionValidatorTest {
               .build();
 
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // entity ids not set
@@ -114,7 +116,8 @@ class DetectionExclusionConditionValidatorTest {
               .build();
 
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // valid condition
@@ -130,7 +133,7 @@ class DetectionExclusionConditionValidatorTest {
                       .build())
               .build();
 
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // invalid url scope condition
@@ -141,7 +144,8 @@ class DetectionExclusionConditionValidatorTest {
                   ScopeCondition.newBuilder().setUrlScope(UrlScope.getDefaultInstance()).build())
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // wide regex invalid url scope condition
@@ -154,7 +158,8 @@ class DetectionExclusionConditionValidatorTest {
                       .build())
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // valid url scope condition
@@ -167,7 +172,7 @@ class DetectionExclusionConditionValidatorTest {
                           UrlScope.newBuilder().addAllUrlRegexes(List.of(".*reg1.*", ".*reg2.*")))
                       .build())
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
   }
 
@@ -183,7 +188,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid spanAttributeMatchCondition"));
     }
 
@@ -196,7 +201,8 @@ class DetectionExclusionConditionValidatorTest {
                       .setKeyMatchCondition(KeyMetadataMatchCondition.getDefaultInstance()))
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // value not set for match condition
@@ -213,7 +219,8 @@ class DetectionExclusionConditionValidatorTest {
                                       .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS))))
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // invalid value type for regex match condition
@@ -234,7 +241,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(
           throwable
               .getMessage()
@@ -263,7 +270,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(
           throwable
               .getMessage()
@@ -288,8 +295,33 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid Regex"));
+    }
+
+    // invalid condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_RESPONSE_BODY_SIZE)
+                              .setMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                      .setValue(Value.newBuilder().setStringValue("abc.*"))))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                              .setValue(Value.newBuilder().setStringValue("value"))))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(true, condition));
+      assertTrue(throwable.getMessage().contains("exclusion target block"));
     }
 
     // valid condition
@@ -310,7 +342,25 @@ class DetectionExclusionConditionValidatorTest {
                               .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
                               .setValue(Value.newBuilder().setStringValue("value"))))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
+
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_REQUEST_HEADER)
+                              .setMatchCondition(
+                                  MatchCondition.newBuilder()
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                      .setValue(Value.newBuilder().setStringValue("abc.*"))))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                              .setValue(Value.newBuilder().setStringValue("value"))))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(true, condition1));
     }
   }
 
@@ -323,7 +373,8 @@ class DetectionExclusionConditionValidatorTest {
               .setIpLocationTypeCondition(IpLocationTypeCondition.getDefaultInstance())
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // invalid ip location type
@@ -337,7 +388,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid IP location type"));
     }
 
@@ -349,7 +400,7 @@ class DetectionExclusionConditionValidatorTest {
                   IpLocationTypeCondition.newBuilder()
                       .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_BOT))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
   }
 
@@ -364,7 +415,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid ipReputationCondition"));
     }
 
@@ -378,7 +429,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("IP reputation score should be >= 0 and <= 100"));
     }
 
@@ -394,7 +445,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid IP reputation severity"));
     }
 
@@ -407,7 +458,7 @@ class DetectionExclusionConditionValidatorTest {
                       .setMaxIpReputationSeverity(
                           IpReputationSeverity.IP_REPUTATION_SEVERITY_MEDIUM))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
   }
 
@@ -422,7 +473,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid userIdCondition"));
     }
 
@@ -435,7 +486,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid Regex"));
     }
 
@@ -445,7 +496,7 @@ class DetectionExclusionConditionValidatorTest {
           DetectionExclusionCondition.newBuilder()
               .setUserIdCondition(UserIdCondition.newBuilder().addUserIdRegexes("abc.*"))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
   }
 
@@ -460,7 +511,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid eventCondition"));
     }
 
@@ -477,7 +528,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid custom rule family"));
     }
 
@@ -495,7 +546,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("RuleId provided is empty"));
     }
 
@@ -514,7 +565,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid system defined event family"));
     }
 
@@ -533,7 +584,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("TypeId provided is empty"));
     }
     // value not set for match condition
@@ -554,7 +605,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Match condition should have a valid value"));
     }
 
@@ -577,7 +628,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(
           throwable
               .getMessage()
@@ -606,7 +657,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(
           throwable
               .getMessage()
@@ -631,7 +682,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid Regex"));
     }
     // valid condition
@@ -650,7 +701,7 @@ class DetectionExclusionConditionValidatorTest {
                                   SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
                               .setEventTypeId("integer")))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
   }
 
@@ -665,7 +716,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid anomalousAttributeCondition"));
     }
 
@@ -686,7 +737,7 @@ class DetectionExclusionConditionValidatorTest {
       Throwable throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition));
+              () -> conditionValidator.validateRuleCondition(false, condition));
 
       assertTrue(
           throwable
@@ -709,7 +760,7 @@ class DetectionExclusionConditionValidatorTest {
       throwable =
           assertThrows(
               StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(condition1));
+              () -> conditionValidator.validateRuleCondition(false, condition1));
 
       assertTrue(
           throwable
@@ -730,7 +781,7 @@ class DetectionExclusionConditionValidatorTest {
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
                               .setValue(Value.newBuilder().setStringValue("abc.*"))))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
 
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
@@ -741,7 +792,7 @@ class DetectionExclusionConditionValidatorTest {
                               .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
                               .setValue(Value.newBuilder().setStringValue("abc.*"))))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
     }
   }
 
@@ -754,7 +805,8 @@ class DetectionExclusionConditionValidatorTest {
               .setIpAddressCondition(IpAddressCondition.getDefaultInstance())
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // invalid ip address condition (either rawInputIpData or (any one of cidrRanges or ipAddress)
@@ -768,7 +820,8 @@ class DetectionExclusionConditionValidatorTest {
                       .addIpAddresses("1.2.3.4"))
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
 
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
@@ -778,7 +831,8 @@ class DetectionExclusionConditionValidatorTest {
                       .addCidrIpRanges("192.3.4.5/2"))
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition1));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition1));
 
       DetectionExclusionCondition condition2 =
           DetectionExclusionCondition.newBuilder()
@@ -789,7 +843,8 @@ class DetectionExclusionConditionValidatorTest {
                       .addIpAddresses("1.2.3.4"))
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition2));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition2));
 
       DetectionExclusionCondition condition3 =
           DetectionExclusionCondition.newBuilder()
@@ -802,7 +857,8 @@ class DetectionExclusionConditionValidatorTest {
                       .addIpAddresses("1.2.3.4"))
               .build();
       assertThrows(
-          StatusRuntimeException.class, () -> conditionValidator.validateRuleCondition(condition3));
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition3));
     }
 
     // valid ip address condition (empty rawInputIpData and any one of cidrRanges or ip address is
@@ -812,12 +868,12 @@ class DetectionExclusionConditionValidatorTest {
           DetectionExclusionCondition.newBuilder()
               .setIpAddressCondition(IpAddressCondition.newBuilder().addIpAddresses("1.2.3.4"))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
               .setIpAddressCondition(IpAddressCondition.newBuilder().addCidrIpRanges("192.3.4.5/2"))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
     }
 
     // valid ip address condition (raw input ip data is present)
@@ -828,7 +884,7 @@ class DetectionExclusionConditionValidatorTest {
                   IpAddressCondition.newBuilder()
                       .addAllRawInputIpData(List.of("2.3.4.5", "1.2.3.4/23")))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
     }
 
     // valid ip address condition (ip address condition type is all internal/external)
@@ -840,7 +896,7 @@ class DetectionExclusionConditionValidatorTest {
                       .setIpAddressConditionType(
                           IpAddressConditionType.IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
               .setIpAddressCondition(
@@ -848,7 +904,7 @@ class DetectionExclusionConditionValidatorTest {
                       .setIpAddressConditionType(
                           IpAddressConditionType.IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL))
               .build();
-      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
     }
   }
 
@@ -864,7 +920,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition));
+            () -> conditionValidator.validateRuleCondition(false, condition));
     assertTrue(
         throwable
             .getMessage()
@@ -878,7 +934,7 @@ class DetectionExclusionConditionValidatorTest {
                     .addIpConnectionTypes(IpConnectionType.IP_CONNECTION_TYPE_MOBILE)
                     .build())
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
   }
 
   @Test
@@ -893,7 +949,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition));
+            () -> conditionValidator.validateRuleCondition(false, condition));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
@@ -905,7 +961,7 @@ class DetectionExclusionConditionValidatorTest {
                     .setExclude(true)
                     .addAllIpOrganisationRegexes(List.of(".*reg")))
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
   }
 
   @Test
@@ -918,7 +974,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition));
+            () -> conditionValidator.validateRuleCondition(false, condition));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
@@ -928,7 +984,7 @@ class DetectionExclusionConditionValidatorTest {
             .setIpAsnCondition(
                 IpAsnCondition.newBuilder().setExclude(true).addAllIpAsnRegexes(List.of(".*reg")))
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
   }
 
   @Test
@@ -942,7 +998,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition));
+            () -> conditionValidator.validateRuleCondition(false, condition));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
@@ -953,7 +1009,7 @@ class DetectionExclusionConditionValidatorTest {
                 IpAbuseVelocityCondition.newBuilder()
                     .setMaxIpAbuseVelocity(IpAbuseVelocity.IP_ABUSE_VELOCITY_LOW))
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
   }
 
   @Test
@@ -965,7 +1021,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition));
+            () -> conditionValidator.validateRuleCondition(false, condition));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
@@ -977,7 +1033,7 @@ class DetectionExclusionConditionValidatorTest {
                     .setExclude(false)
                     .addRegions(RegionCondition.Region.newBuilder().setCountryIsoCode("iso")))
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition1));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
   }
 
   @Test
@@ -990,7 +1046,7 @@ class DetectionExclusionConditionValidatorTest {
                     .addAllEmailRegexes(List.of("e1", "e2"))
                     .addAllEmailDomains(List.of("r1", "r2")))
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
 
     DetectionExclusionCondition condition1 =
         DetectionExclusionCondition.newBuilder()
@@ -1004,7 +1060,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition1));
+            () -> conditionValidator.validateRuleCondition(false, condition1));
 
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
@@ -1016,7 +1072,7 @@ class DetectionExclusionConditionValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition2));
+            () -> conditionValidator.validateRuleCondition(false, condition2));
 
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
@@ -1032,7 +1088,7 @@ class DetectionExclusionConditionValidatorTest {
                     .addAllUserAgents(List.of("u1", "u2"))
                     .addAllUserAgentRegexes(List.of(".*u1", ".*u2")))
             .build();
-    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(condition));
+    assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
 
     DetectionExclusionCondition condition1 =
         DetectionExclusionCondition.newBuilder()
@@ -1045,7 +1101,7 @@ class DetectionExclusionConditionValidatorTest {
     Throwable throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition1));
+            () -> conditionValidator.validateRuleCondition(false, condition1));
 
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
@@ -1057,7 +1113,7 @@ class DetectionExclusionConditionValidatorTest {
     throwable =
         assertThrows(
             StatusRuntimeException.class,
-            () -> conditionValidator.validateRuleCondition(condition2));
+            () -> conditionValidator.validateRuleCondition(false, condition2));
 
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());

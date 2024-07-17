@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 
@@ -35,7 +36,7 @@ class DetectionExclusionRulesValidatorTest {
   @BeforeEach
   void setUp() {
     conditionValidator = mock(DetectionExclusionConditionValidator.class);
-    doNothing().when(conditionValidator).validateRuleCondition(any());
+    doNothing().when(conditionValidator).validateRuleCondition(anyBoolean(), any());
     detectionExclusionRulesValidator = new DetectionExclusionRulesValidator(conditionValidator);
   }
 

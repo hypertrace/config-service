@@ -1,11 +1,21 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.ANOMALOUS_ATTRIBUTE_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.ATTRIBUTE_MATCH_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.IP_ADDRESS_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.REGION_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.SCOPE_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HOST;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HTTP_METHOD;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_QUERY_PARAMETER;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_QUERY_PARAMS_COUNT;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_BODY;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_BODY_PARAMETER;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_BODY_SIZE;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_COOKIE;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_COOKIES_COUNT;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_HEADER;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_HEADERS_COUNT;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_BODY;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_RESPONSE_BODY_SIZE;
@@ -81,13 +91,45 @@ public class DetectionExclusionConditionValidator {
           KEY_METADATA_REQUEST_COOKIES_COUNT,
           KEY_METADATA_RESPONSE_COOKIES_COUNT);
 
-  void validateRuleCondition(DetectionExclusionCondition condition) {
+  private static final Set<DetectionExclusionCondition.ConditionCase>
+      VALID_CONDITIONS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW =
+          Set.of(
+              SCOPE_CONDITION,
+              IP_ADDRESS_CONDITION,
+              IP_LOCATION_TYPE_CONDITION,
+              REGION_CONDITION,
+              ATTRIBUTE_MATCH_CONDITION,
+              ANOMALOUS_ATTRIBUTE_CONDITION);
+
+  private static final Set<KeyMetadata> VALID_METADATAS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW =
+      Set.of(
+          KEY_METADATA_URL,
+          KEY_METADATA_HOST,
+          KEY_METADATA_HTTP_METHOD,
+          KEY_METADATA_USER_AGENT,
+          KEY_METADATA_REQUEST_BODY,
+          KEY_METADATA_REQUEST_HEADER,
+          KEY_METADATA_REQUEST_COOKIE,
+          KEY_METADATA_QUERY_PARAMETER,
+          KEY_METADATA_REQUEST_BODY_PARAMETER);
+
+  void validateRuleCondition(
+      boolean isBlockOrAllowTargetPresent, DetectionExclusionCondition condition) {
+    if (isBlockOrAllowTargetPresent
+        && !VALID_CONDITIONS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW.contains(
+            condition.getConditionCase())) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid detection exclusion condition type : %s with exclusion target set as block or allow",
+              condition.getConditionCase()));
+    }
     switch (condition.getConditionCase()) {
       case SCOPE_CONDITION:
-        validateScopeCondition(condition.getScopeCondition());
+        validateScopeCondition(isBlockOrAllowTargetPresent, condition.getScopeCondition());
         break;
       case ATTRIBUTE_MATCH_CONDITION:
-        validateSpanAttributeMatchCondition(condition.getAttributeMatchCondition());
+        validateSpanAttributeMatchCondition(
+            isBlockOrAllowTargetPresent, condition.getAttributeMatchCondition());
         break;
       case IP_LOCATION_TYPE_CONDITION:
         validateIpLocationTypeCondition(condition.getIpLocationTypeCondition());
@@ -105,7 +147,7 @@ public class DetectionExclusionConditionValidator {
         validateAnomalousAttributeCondition(condition.getAnomalousAttributeCondition());
         break;
       case SOURCE_SCOPE_CONDITION:
-        validateScopeCondition(condition.getSourceScopeCondition());
+        validateScopeCondition(isBlockOrAllowTargetPresent, condition.getSourceScopeCondition());
         break;
       case SOURCE_ANOMALOUS_ATTRIBUTE_MATCH_CONDITION:
         validateAnomalousAttributeCondition(condition.getSourceAnomalousAttributeMatchCondition());
@@ -213,13 +255,14 @@ public class DetectionExclusionConditionValidator {
     }
   }
 
-  private void validateScopeCondition(ScopeCondition condition) {
+  private void validateScopeCondition(
+      boolean isBlockOrAllowTargetPresent, ScopeCondition condition) {
     switch (condition.getScopeCase()) {
       case ENTITY_SCOPE:
         validateEntityScope(condition.getEntityScope());
         break;
       case LABEL_SCOPE:
-        validateLabelScope(condition.getLabelScope());
+        validateLabelScope(isBlockOrAllowTargetPresent, condition.getLabelScope());
         break;
       case URL_SCOPE:
         validateUrlScope(condition.getUrlScope());
@@ -235,7 +278,13 @@ public class DetectionExclusionConditionValidator {
     validateNonDefaultPresenceOrThrow(entityScope, EntityScope.ENTITY_IDS_FIELD_NUMBER);
   }
 
-  private void validateLabelScope(LabelScope labelScope) {
+  private void validateLabelScope(boolean isBlockOrAllowTargetPresent, LabelScope labelScope) {
+    if (isBlockOrAllowTargetPresent) {
+      throwInvalidArgumentException(
+          String.format(
+              "Label scope should no be present when exclusion target is block or allow : %s",
+              labelScope));
+    }
     validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_TYPE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_IDS_FIELD_NUMBER);
   }
@@ -245,7 +294,8 @@ public class DetectionExclusionConditionValidator {
     RegexValidator.validateRegexesWithNonWide(urlScope.getUrlRegexesList());
   }
 
-  private void validateSpanAttributeMatchCondition(SpanAttributeMatchCondition condition) {
+  private void validateSpanAttributeMatchCondition(
+      boolean isBlockOrAllowTargetPresent, SpanAttributeMatchCondition condition) {
     if (!condition.hasKeyMatchCondition()) {
       throwInvalidArgumentException(
           String.format(
@@ -254,6 +304,15 @@ public class DetectionExclusionConditionValidator {
     }
 
     KeyMetadataMatchCondition keyMetadataMatchCondition = condition.getKeyMatchCondition();
+    if (isBlockOrAllowTargetPresent) {
+      if (!VALID_METADATAS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW.contains(
+          keyMetadataMatchCondition.getMetadata())) {
+        throwInvalidArgumentException(
+            String.format(
+                "Invalid metadata type : %s for detection exclusion rule with exclusion target block or allow",
+                keyMetadataMatchCondition.getMetadata()));
+      }
+    }
     validateNonDefaultPresenceOrThrow(
         keyMetadataMatchCondition, KeyMetadataMatchCondition.METADATA_FIELD_NUMBER);
     KeyMetadata metadata = keyMetadataMatchCondition.getMetadata();
