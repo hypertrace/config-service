@@ -201,6 +201,7 @@ message BlockingMetadataAnomalyDetectionConfig {
 message CustomRulesAnomalyDetectionConfig {
   oneof config {
     MaliciousSourcesRulesAnomalyConfig malicious_sources = 1;
+    CustomSignatureAnomalyConfig custom_signature = 2;
   }
 
   message MaliciousSourcesRulesAnomalyConfig {
@@ -447,7 +448,9 @@ message CustomIpAnomalyConfig {}
 
 message CustomRegionAnomalyConfig {}
 
-message CustomSignatureAnomalyConfig {}
+message CustomSignatureAnomalyConfig {
+  CustomModsecRuleVersion modsec_rule_version = 1;
+}
 
 message RateLimitAnomalyConfig {}
 
@@ -534,4 +537,13 @@ message IpTypeList {
 
 message AnomalySubRuleConfigMap {
   map<string, AnomalySubRuleConfig> sub_rule_configs = 1;
+}
+
+enum CustomModsecRuleVersion {
+  CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED = 0;
+  CUSTOM_MODSEC_RULE_VERSION_V3 = 1;
+  CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS = 2;
+  CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3 = 3;
+  CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE = 4;
+  CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE = 5;
 }
