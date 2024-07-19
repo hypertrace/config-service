@@ -17,6 +17,8 @@ message ApiSpecFilter {
     StringList ids = 2;
     StringList spec_paths = 3;
   }
+  SpecTypeFilter spec_type_filter = 4;
+  optional bool api_inspector_disabled = 5;
 }
 
 message StringList {
@@ -25,6 +27,10 @@ message StringList {
 
 message FileContentSha256Filter {
   repeated string file_content_sha256 = 1;
+}
+
+message SpecTypeFilter {
+  repeated SpecType spec_types = 1;
 }
 
 message GetApiSpecsResponse {

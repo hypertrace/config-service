@@ -101,6 +101,23 @@ public class ApiSpecConfigServiceImpl
                                 .getFileContentSha256()
                                 .getFileContentSha256List()
                                 .contains(spec.getFileContentSha256()))
+                // filter based on spec types
+                .filter(
+                    spec ->
+                        !request.getApiSpecFilter().hasSpecTypeFilter()
+                            || (request
+                                .getApiSpecFilter()
+                                .getSpecTypeFilter()
+                                .getSpecTypesList()
+                                .contains(spec.getSpecType())))
+                // filter based on api inspector flag
+                .filter(
+                    spec ->
+                        !request.getApiSpecFilter().hasApiInspectorDisabled()
+                            || Boolean.compare(
+                                    spec.getApiInspectorDisabled(),
+                                    request.getApiSpecFilter().getApiInspectorDisabled())
+                                == 0)
                 .collect(Collectors.toUnmodifiableList());
         getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
       }

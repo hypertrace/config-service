@@ -2,6 +2,8 @@ package ai.traceable.api.spec.config.service;
 
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_COMPLETED;
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_IN_PROGRESS;
+import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_OPEN_API_SPEC;
+import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_POSTMAN_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -21,7 +23,7 @@ import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.FileContentSha256Filter;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
-import ai.traceable.api.spec.config.service.v1.SpecType;
+import ai.traceable.api.spec.config.service.v1.SpecTypeFilter;
 import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
@@ -438,6 +440,89 @@ class ApiSpecConfigServiceImplTest {
   }
 
   @Test
+  void testGetApiSpecsWithSpecTypeFilter() {
+    ApiSpec createdApiSpec1 =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec1")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec1.json")
+                            .setSpecType(SPEC_TYPE_OPEN_API_SPEC))
+                    .build())
+            .getApiSpec();
+    ApiSpec createdApiSpec2 =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec2")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec2.json")
+                            .setSpecType(SPEC_TYPE_POSTMAN_COLLECTION)
+                            .setApiInspectorDisabled(true))
+                    .build())
+            .getApiSpec();
+    ApiSpec createdApiSpec3 =
+        this.apiSpecConfigServiceBlockingStub
+            .createApiSpec(
+                CreateApiSpecRequest.newBuilder()
+                    .setCreateApiSpec(
+                        CreateApiSpec.newBuilder()
+                            .setName("spec3")
+                            .setApiNamingEnabled(true)
+                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setSpecPath("/test/spec3.json")
+                            .setSpecType(SPEC_TYPE_OPEN_API_SPEC)
+                            .setApiInspectorDisabled(true))
+                    .build())
+            .getApiSpec();
+
+    List<ApiSpec> apiSpecs =
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setSpecTypeFilter(
+                                SpecTypeFilter.newBuilder().addSpecTypes(SPEC_TYPE_OPEN_API_SPEC)))
+                    .build())
+            .getApiSpecsList();
+    assertEquals(List.of(createdApiSpec3, createdApiSpec1), apiSpecs);
+
+    apiSpecs =
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setSpecTypeFilter(
+                                SpecTypeFilter.newBuilder().addSpecTypes(SPEC_TYPE_OPEN_API_SPEC))
+                            .setApiInspectorDisabled(false))
+                    .build())
+            .getApiSpecsList();
+    assertEquals(List.of(createdApiSpec1), apiSpecs);
+
+    apiSpecs =
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setSpecTypeFilter(
+                                SpecTypeFilter.newBuilder().addSpecTypes(SPEC_TYPE_OPEN_API_SPEC))
+                            .setApiInspectorDisabled(true))
+                    .build())
+            .getApiSpecsList();
+    assertEquals(List.of(createdApiSpec3), apiSpecs);
+  }
+
+  @Test
   void testLimitSpecConfigs() {
     // Create max_allowed number of spec configs.
     for (int i = 0; i < TEST_MAX_ALLOWED_SPECS_PER_TENANT; i++) {
@@ -565,7 +650,7 @@ class ApiSpecConfigServiceImplTest {
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setSpecPath("/test/spec1.json")
-            .setSpecType(SpecType.SPEC_TYPE_OPEN_API_SPEC)
+            .setSpecType(SPEC_TYPE_OPEN_API_SPEC)
             .build();
     ApiSpec updatedSecondApiSpec =
         ApiSpec.newBuilder()
@@ -576,7 +661,7 @@ class ApiSpecConfigServiceImplTest {
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setSpecPath("/test/spec2.json")
-            .setSpecType(SpecType.SPEC_TYPE_OPEN_API_SPEC)
+            .setSpecType(SPEC_TYPE_OPEN_API_SPEC)
             .build();
 
     assertTrue(updatedApiSpecs.contains(updatedFirstApiSpec));
