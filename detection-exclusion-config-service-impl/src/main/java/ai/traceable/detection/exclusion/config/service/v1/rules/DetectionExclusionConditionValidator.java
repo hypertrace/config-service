@@ -2,6 +2,7 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.ANOMALOUS_ATTRIBUTE_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.ATTRIBUTE_MATCH_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.EVENT_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.IP_ADDRESS_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.REGION_CONDITION;
@@ -94,6 +95,7 @@ public class DetectionExclusionConditionValidator {
   private static final Set<DetectionExclusionCondition.ConditionCase>
       VALID_CONDITIONS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW =
           Set.of(
+              EVENT_CONDITION,
               SCOPE_CONDITION,
               IP_ADDRESS_CONDITION,
               IP_LOCATION_TYPE_CONDITION,
