@@ -14,7 +14,8 @@ message ConfigChangeEventValue {
   }
   optional string user_id = 4;
   optional string user_name = 5;
-  optional string user_email = 7;
+  string user_email = 7;
+
   int64 event_time_millis = 6;
 }
 
