@@ -58,7 +58,9 @@ import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.UpdateScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.VulnerabilityMetadataOverrides;
 import ai.traceable.ast.config.service.validation.AstConfigServiceRequestValidator;
+import ai.traceable.config.utils.TimestampConverter;
 import com.google.protobuf.Duration;
+import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
@@ -83,6 +85,7 @@ class AstConfigServiceImplTest {
   private AstConfigServiceConfig config;
   private AstConfigServiceImpl astConfigService;
   private CustomTestPluginStore customTestPluginStore;
+  private TimestampConverter timestampConverter;
   private MockGenericConfigService mockGenericConfigService;
   private AstConfigServiceGrpc.AstConfigServiceBlockingStub astConfigServiceBlockingStub;
 
@@ -105,6 +108,7 @@ class AstConfigServiceImplTest {
     customTestPluginStore = mock(CustomTestPluginStore.class);
     CustomTestPluginManager customTestPluginManager =
         new CustomTestPluginManager(customTestPluginStore);
+    timestampConverter = mock(TimestampConverter.class);
     this.astConfigService =
         new AstConfigServiceImpl(
             requestValidator,
@@ -112,7 +116,8 @@ class AstConfigServiceImplTest {
             config,
             customTestPluginManager,
             new AstOverridesManager(
-                new AstOverridesStore(genericStub, configChangeEventGenerator)));
+                new AstOverridesStore(genericStub, configChangeEventGenerator),
+                timestampConverter));
     this.mockGenericConfigService.addService(this.astConfigService).start();
   }
 
@@ -826,6 +831,8 @@ class AstConfigServiceImplTest {
 
   @Test
   void testAstOverridesCrud() {
+    final Timestamp mockTimestamp = Timestamp.newBuilder().setSeconds(100L).build();
+    when(timestampConverter.convert(any())).thenReturn(mockTimestamp);
     final AstOverrideInfo astOverrideInfo1 =
         AstOverrideInfo.newBuilder()
             .setName("name1")
@@ -860,6 +867,7 @@ class AstConfigServiceImplTest {
         astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
     assertEquals(1, getAstOverridesResponse.getAstOverridesCount());
 
+    System.out.println(createdAstOverride1);
     AstOverride createdAstOverride2 =
         astConfigServiceBlockingStub
             .createAstOverride(
@@ -885,6 +893,7 @@ class AstConfigServiceImplTest {
                                     MutationOverride.newBuilder()
                                         .setSystemDefinedMutationOverride(
                                             SystemDefinedMutationOverride.getDefaultInstance())))
+                        .setLastUpdatedTimestamp(mockTimestamp)
                         .build(),
                     AstOverride.newBuilder()
                         .setId(createdAstOverride2.getId())
@@ -897,6 +906,7 @@ class AstConfigServiceImplTest {
                                     MutationOverride.newBuilder()
                                         .setSystemDefinedMutationOverride(
                                             SystemDefinedMutationOverride.getDefaultInstance())))
+                        .setLastUpdatedTimestamp(mockTimestamp)
                         .build())));
 
     astConfigServiceBlockingStub.updateAstOverride(
@@ -933,6 +943,7 @@ class AstConfigServiceImplTest {
                                 MutationOverride.newBuilder()
                                     .setSystemDefinedMutationOverride(
                                         SystemDefinedMutationOverride.getDefaultInstance())))
+                    .setLastUpdatedTimestamp(mockTimestamp)
                     .build()));
     astConfigServiceBlockingStub.deleteAstOverrides(
         DeleteAstOverridesRequest.newBuilder().addIds(createdAstOverride1.getId()).build());

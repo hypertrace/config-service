@@ -4,6 +4,7 @@ package ai.traceable.ast.config.service.v1;
 
 option java_multiple_files = true;
 
+import "google/protobuf/timestamp.proto";
 import "ai/traceable/ast/config/service/v1/mutation_override.proto";
 import "ai/traceable/ast/config/service/v1/assertion_override.proto";
 import "ai/traceable/ast/config/service/v1/ast_override_scope.proto";
@@ -16,6 +17,7 @@ message AstOverride {
   string last_updated_by = 5;
   repeated OverrideScope scopes = 6;
   OverrideConfig config = 7;
+  google.protobuf.Timestamp last_updated_timestamp = 8;
 }
 
 message OverrideConfig {
