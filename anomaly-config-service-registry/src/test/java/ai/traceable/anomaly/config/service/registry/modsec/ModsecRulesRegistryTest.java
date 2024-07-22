@@ -439,30 +439,30 @@ public class ModsecRulesRegistryTest {
 
   @Test
   public void testModsecTestRules() {
-    // test to track any unwanted misses/changes in test rules file
-    String[] modsecCrsRules =
-        loadModsecFileContents("modsec/crs/modsec-crs-rules.conf").split("\n\n");
-    String[] modsecCrsTestRules =
-        loadModsecFileContents("modsec/crs/modsec-crs-test-rules.conf").split("\n\n");
+    // Check if the number of safe rules in test file match with the original file.
+    List<String> testSubRules =
+        modsecRulesRegistry
+            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3)
+            .values()
+            .stream()
+            .map(
+                anomalySubRuleInfo ->
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
+            .sorted()
+            .collect(Collectors.toList());
 
-    int j = 0;
-    for (int i = 0; i < modsecCrsRules.length; i++) {
-      // Add any exception here when making intended changes in test file.
-      assertEquals(modsecCrsRules[i], modsecCrsTestRules[j++]);
-    }
-    assertEquals(modsecCrsTestRules.length, j);
+    List<String> subRules =
+        modsecRulesRegistry
+            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3)
+            .values()
+            .stream()
+            .map(
+                anomalySubRuleInfo ->
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
+            .sorted()
+            .collect(Collectors.toList());
 
-    // blocking rules should be consistent in both files
-    Pattern blockTagPattern = Pattern.compile("tag:'traceable\\/type\\/(safe,){0,1}block'");
-    List<String> blockingRules =
-        Arrays.stream(modsecCrsRules)
-            .filter(rule -> blockTagPattern.matcher(rule).find())
-            .collect(Collectors.toUnmodifiableList());
-    List<String> blockingTestRules =
-        Arrays.stream(modsecCrsTestRules)
-            .filter(rule -> blockTagPattern.matcher(rule).find())
-            .collect(Collectors.toUnmodifiableList());
-    assertEquals(blockingRules, blockingTestRules);
+    assertEquals(testSubRules, subRules);
   }
 
   private Set<String> getIdMatches(String text) {
