@@ -40,6 +40,7 @@ import ai.traceable.splunk.integration.config.service.SplunkIntegrationConfigSer
 import ai.traceable.syslog.integration.config.service.SyslogIntegrationConfigServiceFactory;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
+import ai.traceable.vulnerability.config.service.VulnerabilityConfigServiceFactory;
 import ai.traceable.waf.provider.integration.service.WafIntegrationConfigServiceFactory;
 import io.grpc.BindableService;
 import java.util.Collection;
@@ -222,6 +223,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getChannelRegistry())),
             wrap(
                 AstConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    providers.getConfig())),
+            wrap(
+                VulnerabilityConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getChangeEventGenerator(),
                     providers.getConfig())),
