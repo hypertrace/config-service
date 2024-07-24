@@ -31,6 +31,7 @@ message BlockingDetails {
     BlockingDetailsCombination details_combination = 12;
   }
   string rule_id = 13;
+  RuleAction action = 14;
 }
 
 message ExclusionRule {
@@ -108,6 +109,34 @@ message IpTypeDetails {
   repeated IpType ip_types = 1;
 }
 
+message RuleAction {
+  repeated InlineModification inline_modifications = 1;
+}
+
+message InlineModification {
+  oneof modification {
+    HeaderInjection header_injection = 1;
+  }
+}
+
+message HeaderInjection {
+  AttributeScope scope = 1;
+  string header_name = 2;
+  FieldValue value = 3;
+}
+
+message FieldValue {
+  oneof value {
+    string static_value = 1;
+  }
+}
+
+enum AttributeScope {
+  ATTRIBUTE_SCOPE_UNSPECIFIED = 0;
+  ATTRIBUTE_SCOPE_REQUEST = 1;
+  ATTRIBUTE_SCOPE_RESPONSE = 2;
+}
+
 // BlockingCategory should be consistent with v1 due to use of ordinal parsing in detector
 enum BlockingCategory {
   BLOCKING_CATEGORY_UNSPECIFIED = 0;
@@ -128,6 +157,7 @@ enum BlockingRuleType {
   BLOCKING_RULE_TYPE_ALLOW = 1;
   BLOCKING_RULE_TYPE_BLOCK = 2;
   BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT = 3;
+  BLOCKING_RULE_TYPE_ANALYTICS = 4;
 }
 
 // BlockingStatus should be consistent with v1 due to use of ordinal parsing in detector
