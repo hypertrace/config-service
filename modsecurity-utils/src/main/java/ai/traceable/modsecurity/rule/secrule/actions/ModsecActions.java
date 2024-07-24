@@ -155,11 +155,11 @@ public class ModsecActions {
 
   private String replaceMsgAction(String actionsString) {
     Matcher matcher = MESSAGE_REGEX.matcher(actionsString);
-    String msgAction = String.format(MSG_FORMAT, msg) + COMMA_DELIMITER;
+    String msgAction = String.format(MSG_FORMAT, msg);
     if (matcher.find()) {
       return matcher.replaceFirst(msgAction);
     }
-    return QUOTE + msgAction + actionsString.substring(1);
+    return QUOTE + msgAction + COMMA_DELIMITER + actionsString.substring(1);
   }
 
   private String addLogActionIfAbsent(String actionsString) {

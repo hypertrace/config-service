@@ -175,6 +175,51 @@ public class ModsecRuleConverterTest {
                                     + "    nolog,\\\n"
                                     + "    noauditlog,\\\n"
                                     + "    capture,\\\n"
+                                    + "    msg:'rule-msg',\\\n"
+                                    + "    tag:'traceable/rank/1',\\\n"
+                                    + "    tag:'traceable/severity/HIGH',\\\n"
+                                    + "    setvar:TX.MATCH_NAME=%{MATCHED_VAR_NAME},\\\n"
+                                    + "    chain\"\n"
+                                    + "    SecRule TX:0 \"@rx .*\" \\\n"
+                                    + "        \"t:none,t:urlDecodeUni,t:htmlEntityDecode,t:jsDecode,\\\n"
+                                    + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}'\"")))
+            .build());
+    convertedModsecRulesBlob = modsecRuleConverter.getModsecRulesBlob(customModsecRules);
+    expectedModsecRulesBlob =
+        "SecRule REQUEST_HEADERS \"@rx (\\\\u[0-9a-fA-F]{4}){4,}\" \\\n"
+            + "    \"tag:'rule-uuid/uuid1',logdata:'log1',id:12345,\\\n"
+            + "    phase:1,\\\n"
+            + "    nolog,\\\n"
+            + "    noauditlog,\\\n"
+            + "    capture,\\\n"
+            + "    msg:'msg1',\\\n"
+            + "    tag:'traceable/rank/1',\\\n"
+            + "    tag:'traceable/severity/HIGH',\\\n"
+            + "    setvar:TX.MATCH_NAME=%{MATCHED_VAR_NAME},\\\n"
+            + "    chain\"\n"
+            + "    SecRule TX:0 \"@rx .*\" \\\n"
+            + "        \"t:none,t:urlDecodeUni,t:htmlEntityDecode,t:jsDecode,\\\n"
+            + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}'\"";
+    assertEquals(expectedModsecRulesBlob, convertedModsecRulesBlob);
+
+    customModsecRules.clear();
+    customModsecRules.add(
+        CustomModsecRule.newBuilder()
+            .setRuleMsg("msg1")
+            .setRuleUuid("uuid1")
+            .setLogMessage("log1")
+            .setRuleId(12345)
+            .addAndClauses(
+                CustomModsecRuleClause.newBuilder()
+                    .setCustomSecRuleClause(
+                        CustomSecRuleClause.newBuilder()
+                            .setInputSecRule(
+                                "SecRule REQUEST_HEADERS \"@rx (\\\\u[0-9a-fA-F]{4}){4,}\" \\\n"
+                                    + "    \"id:9210104,\\\n"
+                                    + "    phase:1,\\\n"
+                                    + "    nolog,\\\n"
+                                    + "    noauditlog,\\\n"
+                                    + "    capture,\\\n"
                                     + "    tag:'traceable/rank/1',\\\n"
                                     + "    tag:'traceable/severity/HIGH',\\\n"
                                     + "    setvar:TX.MATCH_NAME=%{MATCHED_VAR_NAME},\\\n"
