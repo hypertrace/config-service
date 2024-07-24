@@ -53,7 +53,25 @@ class ConfigChangeEventGeneratorImplTest {
   }
 
   @Test
-  void sendCreateNotificationWithUserDetailsInContext() throws InvalidProtocolBufferException {
+  void sendCreateNotification() throws InvalidProtocolBufferException {
+    Value config = createStringValue();
+    changeEventGenerator.sendCreateNotification(
+        requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, config);
+    verify(eventProducer)
+        .send(
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
+            ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
+                .setCreateEvent(
+                    ConfigCreateEvent.newBuilder()
+                        .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
+                        .build())
+                .build());
+  }
+
+  @Test
+  void sendCreateNotificationWithUserDetailsInRequestContext()
+      throws InvalidProtocolBufferException {
     Value config = createStringValue();
     when(requestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
     when(requestContext.getName()).thenReturn(Optional.of(TEST_USER_NAME));
@@ -67,23 +85,6 @@ class ConfigChangeEventGeneratorImplTest {
                 .setUserId(TEST_USER_ID)
                 .setUserEmail(TEST_USER_EMAIL)
                 .setUserName(TEST_USER_NAME)
-                .setEventTimeMillis(CURRENT_TIME_MILLIS)
-                .setCreateEvent(
-                    ConfigCreateEvent.newBuilder()
-                        .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
-                        .build())
-                .build());
-  }
-
-  @Test
-  void sendCreateNotification() throws InvalidProtocolBufferException {
-    Value config = createStringValue();
-    changeEventGenerator.sendCreateNotification(
-        requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, config);
-    verify(eventProducer)
-        .send(
-            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
-            ConfigChangeEventValue.newBuilder()
                 .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
