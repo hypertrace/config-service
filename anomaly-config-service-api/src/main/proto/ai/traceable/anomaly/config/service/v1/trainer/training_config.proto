@@ -187,6 +187,7 @@ message MetadataTrainingConfig {
     NumericSignTrainingConfig numeric_sign = 26;
     StructuredContentDepthTrainingConfig structured_content_depth = 27;
     IsEncryptedApiTrainingConfig is_encrypted_api = 28;
+    CorrelationAttributeTrainingConfig correlation_attribute = 29;
   }
 }
 
@@ -322,6 +323,8 @@ message CountTrainingConfig {}
 message IsExternalApiTrainingConfig {}
 
 message IsEncryptedApiTrainingConfig {}
+
+message CorrelationAttributeTrainingConfig {}
 
 message MessagePartStatsTrainingConfig {}
 
