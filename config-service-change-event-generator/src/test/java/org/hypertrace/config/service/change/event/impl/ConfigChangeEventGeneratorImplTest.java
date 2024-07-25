@@ -32,6 +32,9 @@ class ConfigChangeEventGeneratorImplTest {
   private static final String TEST_CONTEXT = "test-context";
   private static final String TEST_VALUE = "test-value";
   private static final String TEST_NEW_VALUE = "test-new-value";
+  private static final String TEST_USER_ID = "test-user-id";
+  private static final String TEST_USER_NAME = "test-user-name";
+  private static final String TEST_USER_EMAIL = "test-user-email";
   private static final long CURRENT_TIME_MILLIS = 1000;
 
   @Mock EventProducer<ConfigChangeEventKey, ConfigChangeEventValue> eventProducer;
@@ -45,7 +48,8 @@ class ConfigChangeEventGeneratorImplTest {
     mockClock = mock(Clock.class);
     when(mockClock.millis()).thenReturn(CURRENT_TIME_MILLIS);
     changeEventGenerator = new ConfigChangeEventGeneratorImpl(eventProducer, mockClock);
-    requestContext = RequestContext.forTenantId(TEST_TENANT_ID_1);
+    requestContext = mock(RequestContext.class);
+    when(requestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID_1));
   }
 
   @Test
@@ -57,6 +61,30 @@ class ConfigChangeEventGeneratorImplTest {
         .send(
             KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
             ConfigChangeEventValue.newBuilder()
+                .setEventTimeMillis(CURRENT_TIME_MILLIS)
+                .setCreateEvent(
+                    ConfigCreateEvent.newBuilder()
+                        .setCreatedConfigJson(ConfigProtoConverter.convertToJsonString(config))
+                        .build())
+                .build());
+  }
+
+  @Test
+  void sendCreateNotificationWithUserDetailsInRequestContext()
+      throws InvalidProtocolBufferException {
+    Value config = createStringValue();
+    when(requestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(requestContext.getName()).thenReturn(Optional.of(TEST_USER_NAME));
+    when(requestContext.getEmail()).thenReturn(Optional.of(TEST_USER_EMAIL));
+    changeEventGenerator.sendCreateNotification(
+        requestContext, TEST_CONFIG_TYPE, TEST_CONTEXT, config);
+    verify(eventProducer)
+        .send(
+            KeyUtil.getKey(TEST_TENANT_ID_1, TEST_CONFIG_TYPE, Optional.of(TEST_CONTEXT)),
+            ConfigChangeEventValue.newBuilder()
+                .setUserId(TEST_USER_ID)
+                .setUserEmail(TEST_USER_EMAIL)
+                .setUserName(TEST_USER_NAME)
                 .setEventTimeMillis(CURRENT_TIME_MILLIS)
                 .setCreateEvent(
                     ConfigCreateEvent.newBuilder()
