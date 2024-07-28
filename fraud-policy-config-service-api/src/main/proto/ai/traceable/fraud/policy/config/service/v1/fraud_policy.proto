@@ -55,6 +55,20 @@ enum TimeUnit {
   TIME_UNIT_DAYS = 5;
 }
 
+enum FraudPolicyStage {
+  FRAUD_POLICY_STAGE_UNSPECIFIED = 0;
+
+  // policy is actively being used and output must be shown to external customers as well.
+  FRAUD_POLICY_STAGE_PRODUCTION = 1;
+
+  // policy is being tested, and produces reasonable output. Output can be seen by external customers ONLY by turning
+  // on debug flag.
+  FRAUD_POLICY_STAGE_STAGING = 2;
+
+  // policy is being tested, and MUST not be shown to external customers at all.
+  FRAUD_POLICY_STAGE_INTERNAL = 3;
+}
+
 // policy is a set of rules
 message FraudPolicy {
   string id = 1;
@@ -79,6 +93,12 @@ message FraudPolicy {
 
   // set to true if we should not evaluate this policy.
   bool disabled = 9;
+
+  // apply these labels on all fraud detection events emitted by this fraud policy.
+  repeated string labels = 10;
+
+  // set the fraud policy stage, it will determine the visibililty of the policy's detection output.
+  FraudPolicyStage fraud_policy_stage = 11;
 }
 
 message FraudWatcherPolicy {
@@ -218,6 +238,16 @@ message EWMABaseline {
   double alpha = 1;
 }
 
+message LinearRegressionBaseline {
+  enum Regressor {
+    REGRESSOR_UNSPECIFIED = 0;
+    REGRESSOR_LINEAR = 1;
+    REGRESSOR_THEIL_SEN = 2;
+    REGRESSOR_HUBER = 3;
+  }
+  Regressor regressor = 1;
+}
+
 message BaselineDataConfig {
   // how many historical data points are to be considered to build a baseline
   int32 num_periods = 1;
@@ -247,6 +277,7 @@ message QuantileFunc {
 message BaselineSpec {
   oneof algo {
     SimpleAggregationBaseline simple_aggregation_baseline = 1;
+    LinearRegressionBaseline linear_regression_baseline = 2;
     SMABaseline sma_baseline = 3;
     EWMABaseline ewma_baseline = 4;
   }

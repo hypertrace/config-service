@@ -66,9 +66,18 @@ message EntityMetricQuery {
   TimeFrame time_frame = 5;
 }
 
+message DimensionList {
+  repeated string dimensions = 1;
+}
+
 message MetricQuery {
   // what field are we aggregating?
-  string field_to_aggregate = 1;
+  string field_to_aggregate = 1 [deprecated = true];
+
+  oneof aggregate {
+    string metric_id = 6;
+    DimensionList dimensions = 7;
+  }
 
   // what are the slices? determines the cardinality of the output.
   repeated string group_by = 2;
@@ -81,6 +90,9 @@ message MetricQuery {
 
   // what is the time frame for which data points are to be generated?
   TimeFrame time_frame = 5;
+
+  // filters, on the group_by keys
+  repeated MetricQueryFilter filters = 8;
 }
 
 message TimeFrame {
@@ -184,6 +196,12 @@ message EntityQueryPredicate {
   ai.traceable.fraud.datamodel.config.service.v1.FieldValue value = 5;
   // for IN, NOT_IN
   repeated ai.traceable.fraud.datamodel.config.service.v1.FieldValue range_values = 6;
+}
+
+message MetricQueryFilter {
+  string key = 1;
+  Operation op = 2;
+  ai.traceable.fraud.datamodel.config.service.v1.FieldValue value = 3;
 }
 
 message EntityQueryProjection {
