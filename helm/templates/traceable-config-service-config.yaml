@@ -93,7 +93,7 @@ data:
         resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustar.resourceFile }}
         {{- end }}
         {{- if .Values.traceableConfigServiceConfig.regionConfigService.neustar.versions }}
-        {{ .Values.traceableConfigServiceConfig.regionConfigService.neustar.versions | nindent 8 }}
+        {{- .Values.traceableConfigServiceConfig.regionConfigService.neustar.versions | nindent 8 }}
         {{- end }}
       }
       ipqs.countries.data {
@@ -102,7 +102,7 @@ data:
         resource.file = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resourceFile }}
         {{- end }}
         {{- if .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions }}
-        {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions | nindent 8 }}
+        {{- .Values.traceableConfigServiceConfig.regionConfigService.ipqs.versions | nindent 8 }}
         {{- end }}
         {{- if .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resolveNeustar }}
         resolve.neustar = {{ .Values.traceableConfigServiceConfig.regionConfigService.ipqs.resolveNeustar }}
@@ -141,7 +141,7 @@ data:
         resource.file = {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.resourceFile }}
         {{- end }}
         {{- if .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions }}
-        {{ .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions | nindent 6 }}
+        {{- .Values.traceableConfigServiceConfig.blockingConfigService.iptype.versions | nindent 6 }}
         {{- end }}
       }
     }
@@ -295,7 +295,7 @@ data:
       default.attribute.retention.rules = {{- .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultAttributeRetentionRules | indent 6 }}
       {{- end }}
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "systemExcludeSpanRules" }}
-      system.exclude.span.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.systemExcludeSpanRules | nindent 6 }}
+      system.exclude.span.rules = {{- .Values.traceableConfigServiceConfig.spanProcessingConfig.systemExcludeSpanRules | indent 6 }}
       {{- end }}
     }
     {{- end }}
@@ -347,24 +347,24 @@ data:
     }
     trainer.config.service = {
       {{- if .Values.defaultApiNamingTrainerConfigs }}
-      apiNamingTrainingConfigs = {{ .Values.defaultApiNamingTrainerConfigs | nindent 6 }}
+      apiNamingTrainingConfigs = {{- .Values.defaultApiNamingTrainerConfigs | indent 6 }}
       {{- end }}
       {{- if .Values.defaultVulnerabilityTrainingConfigs }}
-      vulnerabilityTrainingConfigs = {{ .Values.defaultVulnerabilityTrainingConfigs | nindent 6 }}
+      vulnerabilityTrainingConfigs = {{- .Values.defaultVulnerabilityTrainingConfigs | indent 6 }}
       {{- end }}
     }
     detector.config.service = {
       {{- if .Values.defaultModsecDetectionConfigs }}
-      modsecDetectionConfigs = {{ .Values.defaultModsecDetectionConfigs | nindent 6 }}
+      modsecDetectionConfigs = {{- .Values.defaultModsecDetectionConfigs | indent 6 }}
       {{- end }}
     }
 
   risk.conf: |-
     {{- if hasKey .Values "riskConfigServiceConfig" }}
       {{- if hasKey .Values.riskConfigServiceConfig "riskLevelConfigValues" }}
-        riskLevelConfigValues = {{ .Values.riskConfigServiceConfig.riskLevelConfigValues | nindent 2 }}
+        riskLevelConfigValues = {{- .Values.riskConfigServiceConfig.riskLevelConfigValues | indent 2 }}
       {{- end }}
       {{- if hasKey .Values.riskConfigServiceConfig "riskFactorGridConfigValues" }}
-        riskFactorGridConfigValues = {{ .Values.riskConfigServiceConfig.riskFactorGridConfigValues | nindent 2 }}
+        riskFactorGridConfigValues = {{- .Values.riskConfigServiceConfig.riskFactorGridConfigValues | indent 2 }}
       {{- end }}
     {{- end }}
