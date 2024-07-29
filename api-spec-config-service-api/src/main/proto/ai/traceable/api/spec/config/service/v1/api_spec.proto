@@ -19,6 +19,23 @@ message ApiSpecFilter {
   }
   SpecTypeFilter spec_type_filter = 4;
   optional bool api_inspector_disabled = 5;
+  ReferenceApiSpecFilter reference_api_spec = 6;
+  ReferenceTypeFilter reference_type = 7;
+}
+
+message ReferenceApiSpecFilter {
+  repeated ReferenceApiSpec reference_api_specs = 1;
+}
+
+message ReferenceTypeFilter {
+  repeated ReferenceType reference_types = 1;
+}
+
+message ReferenceApiSpec {
+  oneof reference_type {
+    string spec_id = 1;
+    string spec_path = 2;
+  }
 }
 
 message StringList {
@@ -118,6 +135,63 @@ message ApiSpec {
   bool api_discovery_enabled = 9;
   SpecType spec_type = 10;
   bool api_inspector_disabled = 11;
+  ReferenceType reference_type = 12;
+  ApiSpecMetadata api_spec_metadata = 13;
+}
+
+enum ReferenceType {
+  REFERENCE_TYPE_UNSPECIFIED = 0;
+  REFERENCE_TYPE_MAIN = 1;
+  REFERENCE_TYPE_REFERENCE = 2;
+}
+
+message ApiSpecMetadata {
+  oneof spec_metadata_type {
+    OpenApiSpecMetadata open_api_spec_metadata = 1;
+    PostmanCollectionMetadata postman_collection_metadata = 2;
+    PostmanEnvironmentMetadata postman_environment_metadata = 3;
+    GraphqlSchemaMetadata graphql_schema_metadata = 4;
+  }
+}
+
+message OpenApiSpecMetadata {
+  repeated OpenApiSpecReference open_api_spec_references = 1;
+  OpenApiSpecResolutionState open_api_spec_resolution_state = 2;
+}
+
+enum OpenApiSpecResolutionState {
+  OPEN_API_SPEC_RESOLUTION_STATE_UNSPECIFIED = 0;
+  OPEN_API_SPEC_RESOLUTION_STATE_INCOMPLETE = 1;
+  OPEN_API_SPEC_RESOLUTION_STATE_COMPLETE = 2;
+}
+
+message PostmanCollectionMetadata {
+}
+
+message PostmanEnvironmentMetadata {
+}
+
+message GraphqlSchemaMetadata {
+}
+
+message OpenApiSpecReference {
+  string resolved_spec_path = 1;
+  oneof resolution_result {
+    MissingOpenApiSpecReference missing_open_api_spec_reference = 2;
+    IncompleteOpenApiSpecReference incomplete_open_api_spec_reference = 3;
+    CompleteOpenApiSpecReference complete_open_api_spec_reference = 4;
+  }
+}
+
+message MissingOpenApiSpecReference {
+}
+
+message IncompleteOpenApiSpecReference {
+  string spec_id = 1;
+}
+
+message CompleteOpenApiSpecReference {
+  string spec_id = 1;
 }
 
 enum SpecType {
@@ -137,4 +211,6 @@ enum ApiSpecStatus {
   API_SPEC_STATUS_FILE_LIMIT_EXCEEDED = 5;
   API_SPEC_STATUS_NO_FILES_FOUND = 6;
   API_SPEC_STATUS_INVALID_JOB_ID = 7;
+  API_SPEC_STATUS_RESOLUTION_IN_PROGRESS = 8;
+  API_SPEC_STATUS_RESOLUTION_COMPLETED = 9;
 }

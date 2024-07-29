@@ -17,14 +17,45 @@ service ApiSpecConfigService {
   }
 
   rpc UpdateApiSpec (UpdateApiSpecRequest) returns (UpdateApiSpecResponse) {
+    option deprecated = true; // Use "BulkUpdateApiSpecs" instead
   }
 
   rpc UpdateApiSpecs (UpdateApiSpecsRequest) returns (UpdateApiSpecsResponse) {
+    option deprecated = true; // Use "BulkUpdateApiSpecs" instead
+  }
+
+  rpc BulkUpdateApiSpecs (BulkUpdateApiSpecsRequest) returns (BulkUpdateApiSpecsResponse) {
   }
 
   rpc DeleteApiSpec (DeleteApiSpecRequest) returns (DeleteApiSpecResponse) {
   }
 
   rpc DeleteApiSpecs (DeleteApiSpecsRequest) returns (DeleteApiSpecsResponse) {
+  }
+}
+
+// bulk update
+message BulkUpdateApiSpecsRequest {
+  repeated ApiSpecUpdate api_specs = 1;
+}
+
+message BulkUpdateApiSpecsResponse {
+  repeated ApiSpec api_specs = 1;
+}
+
+message ApiSpecUpdate {
+  string spec_id = 1;
+  repeated UpdatedApiSpecField updated_api_spec_fields = 2;
+}
+
+message UpdatedApiSpecField {
+  oneof field {
+    string name = 1;
+    bool api_naming_enabled = 2;
+    ApiSpecStatus status = 3;
+    bool api_discovery_enabled = 4;
+    bool api_inspector_disabled = 5;
+    ReferenceType reference_type = 6;
+    ApiSpecMetadata api_spec_metadata = 7;
   }
 }
