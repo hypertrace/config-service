@@ -286,13 +286,13 @@ data:
     {{- if hasKey $.Values.traceableConfigServiceConfig "spanProcessingConfig" }}
     span.processing.config.service = {
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultRequestHeaderRetentionRules" }}
-      default.request.header.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultRequestHeaderRetentionRules | nindent 6 }}
+      default.request.header.retention.rules = {{- .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultRequestHeaderRetentionRules | indent 6 }}
       {{- end }}
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultResponseHeaderRetentionRules" }}
-      default.response.header.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultResponseHeaderRetentionRules | nindent 6 }}
+      default.response.header.retention.rules = {{- .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultResponseHeaderRetentionRules | indent 6 }}
       {{- end }}
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "defaultAttributeRetentionRules" }}
-      default.attribute.retention.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultAttributeRetentionRules | nindent 6 }}
+      default.attribute.retention.rules = {{- .Values.traceableConfigServiceConfig.spanProcessingConfig.defaultAttributeRetentionRules | indent 6 }}
       {{- end }}
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "systemExcludeSpanRules" }}
       system.exclude.span.rules = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.systemExcludeSpanRules | nindent 6 }}
@@ -343,7 +343,7 @@ data:
     global {
       disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
-      licenseTiers = {{ .Values.anomalyConfigServiceConfig.global.licenseTiers | nindent 6 }}
+      licenseTiers = {{- .Values.anomalyConfigServiceConfig.global.licenseTiers | indent 6 }}
     }
     trainer.config.service = {
       {{- if .Values.defaultApiNamingTrainerConfigs }}
