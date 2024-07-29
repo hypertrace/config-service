@@ -51,7 +51,8 @@ class DataClassificationResolutionCacheTest {
             .setInfo(
                 DataSetInfo.newBuilder()
                     .addDataTypeIds("dt1-standalone")
-                    .addDataTypeIds("dt2-fromdataset"))
+                    .addDataTypeIds("dt2-fromdataset")
+                    .addDataTypeIds("dt5-standalone"))
             .build();
     when(this.mockStub.getDataSets(GetDataSetsRequest.getDefaultInstance()))
         .thenReturn(
@@ -59,9 +60,11 @@ class DataClassificationResolutionCacheTest {
     DataType dataType1 =
         DataType.newBuilder()
             .setId("dt1-standalone")
-            .setRule(DataTypeRule.newBuilder().addDataSetId(dataSet1.getId()))
+            .setRule(
+                DataTypeRule.newBuilder()
+                    .addDataSetId(dataSet1.getId())
+                    .addDataSetId(dataSet2.getId()))
             .build();
-    when(this.mockResolver.resolve(dataType1, List.of(dataSet1, dataSet2))).thenReturn(dataType1);
     when(this.mockResolver.isLegacyDataType(dataType1)).thenReturn(false);
     when(this.mockResolver.isStandAloneDataType(dataType1)).thenReturn(true);
     DataType dataType2 = DataType.newBuilder().setId("dt2-fromdataset").build();
@@ -75,6 +78,13 @@ class DataClassificationResolutionCacheTest {
     when(this.mockResolver.resolve(dataType4, List.of())).thenReturn(dataType4);
     when(this.mockResolver.isLegacyDataType(dataType4)).thenReturn(false);
     when(this.mockResolver.isStandAloneDataType(dataType4)).thenReturn(false);
+    DataType dataType5 =
+        DataType.newBuilder()
+            .setId("dt5-standalone")
+            .setRule(DataTypeRule.newBuilder().addDataSetId(dataSet1.getId()))
+            .build();
+    when(this.mockResolver.isLegacyDataType(dataType5)).thenReturn(false);
+    when(this.mockResolver.isStandAloneDataType(dataType5)).thenReturn(true);
 
     List<DataTypeResolutionContext> expectedResult =
         List.of(
@@ -97,11 +107,17 @@ class DataClassificationResolutionCacheTest {
                 DataTypeProvenance.FROM_LEGACY_REDACTION_RULE,
                 2),
             new DataTypeResolutionContext(
-                dataType4, dataType4, List.of(), DataTypeProvenance.ORPHAN_DATA_TYPE, 3));
+                dataType4, dataType4, List.of(), DataTypeProvenance.ORPHAN_DATA_TYPE, 3),
+            new DataTypeResolutionContext(
+                dataType5,
+                dataType5,
+                List.of(dataSet1),
+                DataTypeProvenance.STANDALONE_DATA_TYPE,
+                4));
     assertEquals(
         expectedResult,
         cache.getDataTypeResolutions(
-            testRequestContext, List.of(dataType1, dataType2, dataType3, dataType4)));
+            testRequestContext, List.of(dataType1, dataType2, dataType3, dataType4, dataType5)));
   }
 
   @Test

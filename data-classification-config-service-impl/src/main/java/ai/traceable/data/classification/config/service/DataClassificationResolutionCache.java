@@ -211,13 +211,24 @@ class DataClassificationResolutionCache {
                     ORPHAN_DATA_TYPE)
                 .onResultOf(DataTypeResolutionContextFragment::getProvenance))
         .map(
-            context ->
-                new DataTypeResolutionContext(
-                    context.getDataType(),
-                    this.dataTypeResolver.resolve(context.getDataType(), uniqueDataSetReferences),
-                    uniqueDataSetReferences,
-                    context.getProvenance(),
-                    context.getEncounterOrder()))
+            context -> {
+              DataType resolvedDataType;
+              List<DataSet> resolvedDataSetReferences;
+              if (context.getProvenance().equals(STANDALONE_DATA_TYPE)) {
+                resolvedDataType = context.getDataType();
+                resolvedDataSetReferences = context.getDataSets();
+              } else {
+                resolvedDataType =
+                    this.dataTypeResolver.resolve(context.getDataType(), uniqueDataSetReferences);
+                resolvedDataSetReferences = uniqueDataSetReferences;
+              }
+              return new DataTypeResolutionContext(
+                  context.getDataType(),
+                  resolvedDataType,
+                  resolvedDataSetReferences,
+                  context.getProvenance(),
+                  context.getEncounterOrder());
+            })
         .orElseThrow();
   }
 
