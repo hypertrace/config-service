@@ -38,6 +38,10 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
     if (blockingDetailsBuilder == null) {
       return null;
     }
+    if (blockingPolicyData.getRuleType() == RuleType.ANALYTICS) {
+      // Not supported in v1
+      return null;
+    }
     blockingDetailsBuilder
         .setBlockingRuleType(convert(blockingPolicyData.getRuleType()))
         .setInfo(blockingPolicyData.getInfo())

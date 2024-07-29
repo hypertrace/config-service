@@ -64,6 +64,8 @@ import ai.traceable.blocking.config.service.v2.IpTypeRule;
 import ai.traceable.blocking.config.service.v2.RegionBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.RegionDetails;
 import ai.traceable.config.service.TraceableConfigServiceIntegrationTestBase;
+import ai.traceable.customsignature.config.service.v1.AgentModification;
+import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -74,11 +76,15 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.FieldValue;
+import ai.traceable.customsignature.config.service.v1.HeaderInjection;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.data.classification.config.service.v1.CreateDataSetRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
@@ -332,7 +338,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
   @Test
   void agentVersioningModsecTest() {
-    createCustomSignatureRule(Optional.of(ENVIRONMENT_ID));
+    createCustomSignatureRule(
+        Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
 
     AgentCapabilities unsetLibtraceableAgentCapability =
         AgentCapabilities.newBuilder()
@@ -384,6 +391,16 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             BlockingConfigResponseElement::hasCustomSignatureBlockingRules);
     String customSignatureHash = customSignatureResponse.get(0).getHash();
     assertNotEquals(emptyValueUuid, customSignatureHash);
+    assertFalse(
+        customSignatureResponse
+            .get(0)
+            .getCustomSignatureBlockingRules()
+            .getCustomSignatureRulesBlob()
+            .contains("SecArgumentsLimit"));
+    assertEquals(
+        List.of(unsetLibtraceableAgentCapability),
+        customSignatureResponse.get(0).getAgentCapabilitiesList());
+
     assertFalse(
         customSignatureResponse
             .get(0)
@@ -495,7 +512,9 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     actorEntityId.add(
         createActor(STATUS_ALWAYS_ALLOWED, 0L, "", BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE));
 
-    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
+    customSignatureRuleId.add(
+        createCustomSignatureRule(
+            Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING));
 
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
@@ -631,7 +650,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getIpAddressesList());
 
     createRegionRules();
-    customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
+    customSignatureRuleId.add(
+        createCustomSignatureRule(Optional.empty(), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING));
     createMaliciousSourceRule(
         "test-rule-ipType-1",
         Optional.empty(),
@@ -1020,7 +1040,18 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
-    index += 2;
+    index++;
+    assertEquals(
+        BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+            customSignatureRuleId.get(0), "rule-1", "EVENT_SEVERITY_MEDIUM"),
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
+    assertEquals(
+        BLOCKING_STATUS_DENIED,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
+    index++;
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
@@ -1283,7 +1314,29 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                         .build()));
   }
 
-  private static String createCustomSignatureRule(Optional<String> environmentId) {
+  private static String createCustomSignatureRule(
+      Optional<String> environmentId, EventType eventType) {
+    RuleEffect ruleEffect =
+        RuleEffect.newBuilder()
+            .setEventType(eventType)
+            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .build();
+    if (eventType == EventType.EVENT_TYPE_TESTING_DETECTION) {
+      ruleEffect.toBuilder()
+          .addEffects(
+              RuleEffectWithModifications.newBuilder()
+                  .setAgentRuleEffect(
+                      AgentRuleEffect.newBuilder()
+                          .addAgentModifications(
+                              AgentModification.newBuilder()
+                                  .setHeaderInjection(
+                                      HeaderInjection.newBuilder()
+                                          .setHeaderName("sample-header")
+                                          .setHeaderCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                          .setValue(
+                                              FieldValue.newBuilder()
+                                                  .setStaticValue("sample-value"))))));
+    }
     CreateCustomSignatureRuleResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -1316,10 +1369,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                                         .addEnvironmentIds(id))
                                                 .build())
                                     .orElse(RuleScope.getDefaultInstance()))
-                            .setEffect(
-                                RuleEffect.newBuilder()
-                                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM))
+                            .setEffect(ruleEffect)
                             .build()));
     return response.getRule().getId();
   }

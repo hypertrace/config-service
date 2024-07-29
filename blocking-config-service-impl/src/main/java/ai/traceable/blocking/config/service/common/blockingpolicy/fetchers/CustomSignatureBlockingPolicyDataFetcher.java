@@ -1,13 +1,16 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_ANALYTICS;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_EXEMPTIONS;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_VIOLATIONS;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.CustomSignatureRuleEffectConverter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -16,6 +19,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -31,9 +35,10 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
-  private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
-  private static final List<EventType> EVENT_TYPES_LIST =
+  private static final String NON_BLOCKING_RULE_INFO = "Rule has some non-blocking agent action";
+  private static final List<EventType> BLOCKING_EVENT_TYPES_LIST =
       ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
+  private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final BlockingRulesUtils blockingRulesUtils;
   private final ClientConfig clientConfig;
 
@@ -54,7 +59,7 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
       BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
     List<CustomSignatureRule> ruleList = fetchCustomSignatureRule(requestContext, environmentId);
-    return new BlockingPolicyAggregate(
+    return new BlockingPolicyAggregate<>(
         ruleList.stream()
             .map(this::getBlockingDetails)
             .filter(Optional::isPresent)
@@ -90,6 +95,9 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                 CustomSignatureBlockingDetails.builder()
                     .ruleId(customSignatureRule.getId())
                     .build())
+            .action(
+                CustomSignatureRuleEffectConverter.convert(
+                    customSignatureRule.getEffect().getEffectsList()))
             .build());
   }
 
@@ -99,15 +107,13 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
         return Optional.of(
             ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
                 rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
-
       case EVENT_TYPE_DETECTION_AND_BLOCKING:
         return Optional.of(
             ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
                 rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
-
       case EVENT_TYPE_NORMAL_DETECTION:
       case EVENT_TYPE_TESTING_DETECTION:
-        return Optional.empty();
+        return Optional.of(NON_BLOCKING_RULE_INFO);
       default:
         log.info("Could not find info for rule with rule id: {}", rule.getId());
         return Optional.empty();
@@ -120,6 +126,9 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
         return Optional.of(CUSTOM_SIGNATURE_EXEMPTIONS);
       case EVENT_TYPE_DETECTION_AND_BLOCKING:
         return Optional.of(CUSTOM_SIGNATURE_VIOLATIONS);
+      case EVENT_TYPE_NORMAL_DETECTION:
+      case EVENT_TYPE_TESTING_DETECTION:
+        return Optional.of(CUSTOM_SIGNATURE_ANALYTICS);
       default:
         log.info("No bucket type exist for event type : {}", eventType);
         return Optional.empty();
@@ -132,6 +141,9 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
         return Optional.of(BlockingPolicyData.RuleType.ALLOW);
       case EVENT_TYPE_DETECTION_AND_BLOCKING:
         return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      case EVENT_TYPE_NORMAL_DETECTION:
+      case EVENT_TYPE_TESTING_DETECTION:
+        return Optional.of(RuleType.ANALYTICS);
       default:
         log.info("Invalid rule event type: {} for rule with rule id: {}", eventType, id);
         return Optional.empty();
@@ -145,7 +157,6 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
         GetCustomSignatureRulesRequest.newBuilder()
             .setFilter(
                 GetRulesFilter.newBuilder()
-                    .addAllEventTypes(EVENT_TYPES_LIST)
                     .setDisabled(false)
                     .setRuleScope(
                         RuleScope.newBuilder()
@@ -161,6 +172,18 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                 configServiceBlockingStub
                     .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getCustomSignatureRules(getCustomSignatureRulesRequest));
-    return response.getRulesList();
+    return response.getRulesList().stream()
+        .filter(this::filterRules)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean filterRules(CustomSignatureRule customSignatureRule) {
+    // If the rule type is blocking filter
+    if (BLOCKING_EVENT_TYPES_LIST.contains(customSignatureRule.getEffect().getEventType())) {
+      return true;
+    }
+    // If there is some agent rule effect then filter
+    return customSignatureRule.getEffect().getEffectsList().stream()
+        .anyMatch(RuleEffectWithModifications::hasAgentRuleEffect);
   }
 }

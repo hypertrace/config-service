@@ -3,25 +3,36 @@ package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 import static ai.traceable.customsignature.config.service.v1.EventSeverity.EVENT_SEVERITY_HIGH;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_ALLOW;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_TESTING_DETECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.customsignature.config.service.v1.AgentModification;
+import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.HeaderInjection;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -41,8 +52,6 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
       GetCustomSignatureRulesRequest.newBuilder()
           .setFilter(
               GetRulesFilter.newBuilder()
-                  .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                  .addEventTypes(EVENT_TYPE_ALLOW)
                   .setDisabled(false)
                   .setRuleScope(
                       RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder())))
@@ -141,6 +150,7 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
         customSignatureRuleList.get(1).getCategory());
     assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(1).getRuleType());
     assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(1).getStatus());
+    assertNull(customSignatureRuleList.get(1).getAction());
     assertEquals(activeTimestamp, customSignatureRuleList.get(1).getTimestamp());
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
@@ -156,8 +166,6 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
             GetCustomSignatureRulesRequest.newBuilder()
                 .setFilter(
                     GetRulesFilter.newBuilder()
-                        .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .addEventTypes(EVENT_TYPE_ALLOW)
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(
@@ -175,6 +183,42 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                 mock(BlockingRulesSupplier.class))
             .getBlockingPolicyList();
     assertEquals(3, customSignatureRuleList.size());
+    assertEquals(
+        CustomSignatureBlockingDetails.builder().ruleId("rule-id-1").build(),
+        customSignatureRuleList.get(0).getBlockingDetails());
+    assertEquals(
+        CustomSignatureBlockingDetails.builder().ruleId("rule-id-3").build(),
+        customSignatureRuleList.get(1).getBlockingDetails());
+    assertEquals(
+        CustomSignatureBlockingDetails.builder().ruleId("rule-id-5").build(),
+        customSignatureRuleList.get(2).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(2).getCategory());
+    assertEquals(
+        BlockingPolicyDataBucket.CUSTOM_SIGNATURE_ANALYTICS,
+        customSignatureRuleList.get(2).getBucket());
+    assertEquals(RuleType.ANALYTICS, customSignatureRuleList.get(2).getRuleType());
+    assertNotNull(customSignatureRuleList.get(2).getAction());
+    assertEquals(1, customSignatureRuleList.get(2).getAction().getInlineModificationsList().size());
+    assertEquals(
+        "header-name",
+        customSignatureRuleList
+            .get(2)
+            .getAction()
+            .getInlineModifications(0)
+            .getHeaderInjection()
+            .getHeaderName());
+    assertEquals(
+        "static-value",
+        customSignatureRuleList
+            .get(2)
+            .getAction()
+            .getInlineModifications(0)
+            .getHeaderInjection()
+            .getValue()
+            .getStaticValue());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(2).getTimestamp());
     assertThrows(
         NullPointerException.class,
         () ->
@@ -258,7 +302,38 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setDescription("rule-description-5")
                   .setEffect(
                       RuleEffect.newBuilder()
-                          .setEventType(EVENT_TYPE_ALLOW)
+                          .setEventType(EVENT_TYPE_TESTING_DETECTION)
+                          .setEventSeverity(EVENT_SEVERITY_HIGH)
+                          .addEffects(
+                              RuleEffectWithModifications.newBuilder()
+                                  .setAgentRuleEffect(
+                                      AgentRuleEffect.newBuilder()
+                                          .addAgentModifications(
+                                              AgentModification.newBuilder()
+                                                  .setHeaderInjection(
+                                                      HeaderInjection.newBuilder()
+                                                          .setHeaderName("header-name")
+                                                          .setHeaderCategory(
+                                                              MatchCategory.MATCH_CATEGORY_REQUEST)
+                                                          .setValue(
+                                                              FieldValue.newBuilder()
+                                                                  .setStaticValue(
+                                                                      "static-value")))))))
+                  .setRuleScope(
+                      RuleScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT_ID)))
+                  .setDisabled(false)
+                  .setBlockingExpiryDetails(
+                      ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp)))
+          .addRules(
+              CustomSignatureRule.newBuilder()
+                  .setId("rule-id-6")
+                  .setName("rule-name-6")
+                  .setDescription("rule-description-6")
+                  .setEffect(
+                      RuleEffect.newBuilder()
+                          .setEventType(EVENT_TYPE_TESTING_DETECTION)
                           .setEventSeverity(EVENT_SEVERITY_HIGH))
                   .setRuleScope(
                       RuleScope.newBuilder()

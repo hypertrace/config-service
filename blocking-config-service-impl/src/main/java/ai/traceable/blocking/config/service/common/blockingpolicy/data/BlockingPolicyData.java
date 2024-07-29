@@ -1,6 +1,8 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.data;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.v2.RuleAction;
+import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,6 +16,7 @@ public final class BlockingPolicyData {
   Status status;
   BlockingPolicyDataBucket bucket;
   BlockingDetails blockingDetails;
+  @Nullable RuleAction action;
 
   public enum Category {
     THREAT_ACTOR,
@@ -32,7 +35,8 @@ public final class BlockingPolicyData {
   public enum RuleType {
     ALLOW,
     BLOCK,
-    BLOCK_ALL_EXCEPT
+    BLOCK_ALL_EXCEPT,
+    ANALYTICS
   }
 
   public enum Status {

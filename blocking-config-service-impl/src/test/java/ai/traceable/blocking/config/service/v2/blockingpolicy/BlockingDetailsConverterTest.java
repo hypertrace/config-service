@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ActorBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
@@ -30,6 +31,7 @@ import ai.traceable.blocking.config.service.v2.IpType;
 import ai.traceable.blocking.config.service.v2.IpTypeDetails;
 import ai.traceable.blocking.config.service.v2.ModsecDetails;
 import ai.traceable.blocking.config.service.v2.RegionDetails;
+import ai.traceable.blocking.config.service.v2.RuleAction;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import java.util.List;
@@ -45,6 +47,7 @@ class BlockingDetailsConverterTest {
 
   private static final BlockingPolicyDataFilter filter =
       BlockingPolicyDataFilter.builder().minLibtraceableVersion("0.1.98-rc.164").build();
+  private static final RuleAction mockRuleAction = mock(RuleAction.class);
 
   @Test
   void testIpRangeConversion() {
@@ -489,6 +492,7 @@ class BlockingDetailsConverterTest {
         .ruleType(ruleType)
         .category(category)
         .blockingDetails(blockingDetails)
+        .action(mockRuleAction)
         .build();
   }
 
@@ -503,7 +507,8 @@ class BlockingDetailsConverterTest {
             .setCategory(category)
             .setStatus(status)
             .setInfo(info)
-            .setBlockingRuleType(type);
+            .setBlockingRuleType(type)
+            .setAction(mockRuleAction);
     return timestamp.map(builder::setExpirationTimestamp).orElse(builder);
   }
 }

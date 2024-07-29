@@ -52,7 +52,9 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
     if (blockingPolicyData.getTimestamp() != 0) {
       blockingDetailsBuilder.setExpirationTimestamp(blockingPolicyData.getTimestamp());
     }
-
+    if (blockingPolicyData.getAction() != null) {
+      blockingDetailsBuilder.setAction(blockingPolicyData.getAction());
+    }
     BlockingDetailsCondition blockingDetailsCondition;
     if (semanticVersioningComparator.compare(
             filter.getMinLibtraceableVersion(), MINIMUM_LIBTRACEABLE_VERSION_FOR_ACTOR_DETAILS)
@@ -75,6 +77,8 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
         return BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK;
       case BLOCK_ALL_EXCEPT:
         return BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT;
+      case ANALYTICS:
+        return BlockingRuleType.BLOCKING_RULE_TYPE_ANALYTICS;
       default:
         log.error("Cannot find blocking rule type corresponding to - {}", ruleType);
         return BlockingRuleType.BLOCKING_RULE_TYPE_UNSPECIFIED;
