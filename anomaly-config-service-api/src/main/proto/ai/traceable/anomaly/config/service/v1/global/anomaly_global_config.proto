@@ -60,6 +60,7 @@ message ScopedAnomalyConfigStatus {
   AnomalyConfigStatus config_status = 2;
   ExcludedEventsGenerationConfig excluded_events_config = 3;
   AnomalyConfidenceLevel min_confidence_level = 4;
+  bool enabled_for_exit_spans = 5;
 }
 
 // any addition here requires update in ScopedGlobalConfigStatusChangeConverter logic
@@ -68,6 +69,7 @@ message ScopedAnomalyConfigStatusChange {
   AnomalyConfigStatusChange config_status = 2;
   ExcludedEventsGenerationConfig excluded_events_config = 3;
   optional AnomalyConfidenceLevel min_confidence_level = 4;
+  optional bool enabled_for_exit_spans = 5;
 }
 
 message ExcludedEventsGenerationConfig {
