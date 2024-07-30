@@ -7,15 +7,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.api.spec.config.service.v1.ApiSpecMetadata;
+import ai.traceable.api.spec.config.service.v1.ApiSpecUpdate;
+import ai.traceable.api.spec.config.service.v1.BulkUpdateApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.CompleteOpenApiSpecReference;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpec;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.IncompleteOpenApiSpecReference;
+import ai.traceable.api.spec.config.service.v1.MissingOpenApiSpecReference;
+import ai.traceable.api.spec.config.service.v1.OpenApiSpecMetadata;
+import ai.traceable.api.spec.config.service.v1.OpenApiSpecReference;
+import ai.traceable.api.spec.config.service.v1.ReferenceType;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.UpdatedApiSpecField;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -84,7 +94,7 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 CreateApiSpecRequest.newBuilder()
-                    .setCreateApiSpec(CreateApiSpec.newBuilder().build())
+                    .setCreateApiSpec(CreateApiSpec.newBuilder())
                     .build()));
 
     assertInvalidArgStatusContaining(
@@ -93,7 +103,7 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 CreateApiSpecRequest.newBuilder()
-                    .setCreateApiSpec(CreateApiSpec.newBuilder().setName("name").build())
+                    .setCreateApiSpec(CreateApiSpec.newBuilder().setName("name"))
                     .build()));
 
     assertDoesNotThrow(
@@ -106,8 +116,7 @@ class ApiSpecConfigRequestValidatorTest {
                             .setName("name")
                             .setApiNamingEnabled(true)
                             .setStatus(API_SPEC_STATUS_COMPLETED)
-                            .setSpecPath("/test/name.json")
-                            .build())
+                            .setSpecPath("/test/name.json"))
                     .build()));
   }
 
@@ -126,7 +135,7 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 UpdateApiSpecRequest.newBuilder()
-                    .setApiSpec(UpdateApiSpec.newBuilder().setName("name").build())
+                    .setApiSpec(UpdateApiSpec.newBuilder().setName("name"))
                     .build()));
 
     assertInvalidArgStatusContaining(
@@ -135,7 +144,7 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 UpdateApiSpecRequest.newBuilder()
-                    .setApiSpec(UpdateApiSpec.newBuilder().setSpecId("id").build())
+                    .setApiSpec(UpdateApiSpec.newBuilder().setSpecId("id"))
                     .build()));
 
     assertDoesNotThrow(
@@ -148,8 +157,7 @@ class ApiSpecConfigRequestValidatorTest {
                             .setSpecId("id")
                             .setName("name")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_COMPLETED)
-                            .build())
+                            .setStatus(API_SPEC_STATUS_COMPLETED))
                     .build()));
   }
 
@@ -168,7 +176,7 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 UpdateApiSpecsRequest.newBuilder()
-                    .addApiSpecs(UpdateApiSpec.newBuilder().setName("name").build())
+                    .addApiSpecs(UpdateApiSpec.newBuilder().setName("name"))
                     .build()));
 
     assertInvalidArgStatusContaining(
@@ -177,7 +185,7 @@ class ApiSpecConfigRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 UpdateApiSpecsRequest.newBuilder()
-                    .addApiSpecs(UpdateApiSpec.newBuilder().setSpecId("id").build())
+                    .addApiSpecs(UpdateApiSpec.newBuilder().setSpecId("id"))
                     .build()));
 
     assertInvalidArgStatusContaining(
@@ -196,8 +204,251 @@ class ApiSpecConfigRequestValidatorTest {
                             .setSpecId("id")
                             .setName("name")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_COMPLETED)
-                            .build())
+                            .setStatus(API_SPEC_STATUS_COMPLETED))
+                    .build()));
+  }
+
+  @Test
+  void validatesApiSpecsBulkUpdateRequest() {
+    assertInvalidArgStatusContaining(
+        "Tenant ID",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, BulkUpdateApiSpecsRequest.newBuilder().build()));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 spec is to be provided in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext, BulkUpdateApiSpecsRequest.newBuilder().build()));
+
+    assertInvalidArgStatusContaining(
+        "ApiSpecUpdate.spec_id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder().setName("name").build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 update field is to be provided in request to spec id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(List.of(ApiSpecUpdate.newBuilder().setSpecId("id").build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. At least 1 update field is to be set in request to spec id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(UpdatedApiSpecField.newBuilder().build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. Field is updated more than once for spec with id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder().setName("name1").build(),
+                                        UpdatedApiSpecField.newBuilder().setName("name2").build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "UpdatedApiSpecField.name",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(UpdatedApiSpecField.newBuilder().setName("").build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "OpenApiSpecReference.resolved_spec_path",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder()
+                                            .setApiSpecMetadata(
+                                                ApiSpecMetadata.newBuilder()
+                                                    .setOpenApiSpecMetadata(
+                                                        OpenApiSpecMetadata.newBuilder()
+                                                            .addAllOpenApiSpecReferences(
+                                                                List.of(
+                                                                    OpenApiSpecReference
+                                                                        .newBuilder()
+                                                                        .setMissingOpenApiSpecReference(
+                                                                            MissingOpenApiSpecReference
+                                                                                .newBuilder())
+                                                                        .build()))))
+                                            .build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "IncompleteOpenApiSpecReference.spec_id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder()
+                                            .setApiSpecMetadata(
+                                                ApiSpecMetadata.newBuilder()
+                                                    .setOpenApiSpecMetadata(
+                                                        OpenApiSpecMetadata.newBuilder()
+                                                            .addAllOpenApiSpecReferences(
+                                                                List.of(
+                                                                    OpenApiSpecReference
+                                                                        .newBuilder()
+                                                                        .setResolvedSpecPath(
+                                                                            "/test/spec2.json")
+                                                                        .setIncompleteOpenApiSpecReference(
+                                                                            IncompleteOpenApiSpecReference
+                                                                                .newBuilder())
+                                                                        .build()))))
+                                            .build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "CompleteOpenApiSpecReference.spec_id",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder()
+                                            .setApiSpecMetadata(
+                                                ApiSpecMetadata.newBuilder()
+                                                    .setOpenApiSpecMetadata(
+                                                        OpenApiSpecMetadata.newBuilder()
+                                                            .addAllOpenApiSpecReferences(
+                                                                List.of(
+                                                                    OpenApiSpecReference
+                                                                        .newBuilder()
+                                                                        .setResolvedSpecPath(
+                                                                            "/test/spec2.json")
+                                                                        .setCompleteOpenApiSpecReference(
+                                                                            CompleteOpenApiSpecReference
+                                                                                .newBuilder())
+                                                                        .build()))))
+                                            .build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
+        "Invalid request. Repeated update to spec detected in request",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id1")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder().setName("name1").build()))
+                                .build(),
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id1")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder().setName("name2").build()))
+                                .build()))
+                    .build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id1")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder().setName("name1").build(),
+                                        UpdatedApiSpecField.newBuilder()
+                                            .setApiNamingEnabled(true)
+                                            .build()))
+                                .build(),
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id2")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder()
+                                            .setReferenceType(
+                                                ReferenceType.REFERENCE_TYPE_REFERENCE)
+                                            .build(),
+                                        UpdatedApiSpecField.newBuilder()
+                                            .setApiSpecMetadata(
+                                                ApiSpecMetadata.newBuilder()
+                                                    .setOpenApiSpecMetadata(
+                                                        OpenApiSpecMetadata.newBuilder()
+                                                            .addAllOpenApiSpecReferences(
+                                                                List.of(
+                                                                    OpenApiSpecReference
+                                                                        .newBuilder()
+                                                                        .setResolvedSpecPath(
+                                                                            "/test/spec2.json")
+                                                                        .setCompleteOpenApiSpecReference(
+                                                                            CompleteOpenApiSpecReference
+                                                                                .newBuilder()
+                                                                                .setSpecId("id2"))
+                                                                        .build()))))
+                                            .build()))
+                                .build()))
                     .build()));
   }
 
