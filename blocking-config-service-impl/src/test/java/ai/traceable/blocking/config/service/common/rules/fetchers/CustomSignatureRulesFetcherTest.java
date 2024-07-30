@@ -2,8 +2,6 @@ package ai.traceable.blocking.config.service.common.rules.fetchers;
 
 import static ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
 import static ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS;
-import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_ALLOW;
-import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -45,11 +43,7 @@ public class CustomSignatureRulesFetcherTest {
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureModsecRules(
             GetCustomSignatureModsecRulesRequest.newBuilder()
-                .setFilter(
-                    GetRulesFilter.newBuilder()
-                        .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .addEventTypes(EVENT_TYPE_ALLOW)
-                        .setDisabled(false))
+                .setFilter(GetRulesFilter.newBuilder().setDisabled(false))
                 .setRuleVersion(CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
                 .build());
 
@@ -63,8 +57,6 @@ public class CustomSignatureRulesFetcherTest {
             GetCustomSignatureModsecRulesRequest.newBuilder()
                 .setFilter(
                     GetRulesFilter.newBuilder()
-                        .addEventTypes(EVENT_TYPE_DETECTION_AND_BLOCKING)
-                        .addEventTypes(EVENT_TYPE_ALLOW)
                         .setDisabled(false)
                         .setRuleScope(
                             RuleScope.newBuilder()
