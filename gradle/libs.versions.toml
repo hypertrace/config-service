@@ -17,3 +17,4 @@ hypertrace-configservice-factory = { module = "org.hypertrace.config.service:con
 hypertrace-configservice-partitioner-config-impl = { module = "org.hypertrace.config.service:partitioner-config-service-impl" }
 
 automaton = { module = "dk.brics.automaton:automaton", version = "1.11-8"}
+mongo-driver = { module = "org.mongodb:mongodb-driver-sync", version = "4.10.2" }

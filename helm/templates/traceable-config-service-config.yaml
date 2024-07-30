@@ -11,6 +11,12 @@ data:
     service.global.port.internal = {{ .Values.internalGlobalServiceContainerPort }}
     service.admin.port = {{ .Values.containerAdminPort }}
     generic.config.service {
+      document.store {
+        mongo {
+          host = {{ .Values.traceableConfigServiceConfig.mongo.host | quote }}
+          url = {{ .Values.traceableConfigServiceConfig.mongo.url | quote }}
+        }
+      }
       publish.change.events = {{ .Values.traceableConfigServiceConfig.publishChangeEvents }}
       document.store {
         {{- $dst := .Values.traceableConfigServiceConfig.dataStoreType }}
@@ -85,6 +91,10 @@ data:
       port = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.port }}
       cache.expiration.duration = {{ .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheExpiryDuration }}
       cache.max.size = {{ int .Values.traceableConfigServiceConfig.licenseMeteringServiceConfig.cacheMaxSize }}
+    }
+    iam.v2.service = {
+      host = {{ .Values.traceableConfigServiceConfig.iamV2ServiceConfig.host }}
+      grpc.port = {{ .Values.traceableConfigServiceConfig.iamV2ServiceConfig.grpcPort }}
     }
     region.config.service {
       neustar.countries.data {
@@ -336,6 +346,9 @@ data:
         refresh = {{ .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.cache.refresh }}
         maxSize = {{ int .Values.traceableConfigServiceConfig.externalDataClassificationServiceConfig.cache.maxSize }}
       }
+    }
+    saved.query.config.service = {
+      userDataMigrationFlag = {{ .Values.savedQueriesConfig.userDataMigrationFlag }}
     }
 
   anomaly.conf: |-

@@ -1,5 +1,6 @@
 package ai.traceable.saved.query.config.service;
 
+import ai.traceable.saved.query.config.service.migration.SavedQueryDataMigration;
 import ai.traceable.saved.query.config.service.store.SavedQueryStoreManager;
 import ai.traceable.saved.query.config.service.v1.CreateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.CreateSavedQueryResponse;
@@ -27,9 +28,16 @@ class SavedQueryConfigServiceImpl extends SavedQueryServiceGrpc.SavedQueryServic
 
   @Inject
   SavedQueryConfigServiceImpl(
-      SavedQueryStoreManager savedQueryStoreManager, SavedQueryRequestValidator requestValidator) {
+      SavedQueryStoreManager savedQueryStoreManager,
+      SavedQueryRequestValidator requestValidator,
+      SavedQueryDataMigration savedQueryDataMigration,
+      SavedQueryDataMigrationConfig defaultSavedQueryConfig) {
     this.savedQueryStoreManager = savedQueryStoreManager;
     this.requestValidator = requestValidator;
+
+    if (defaultSavedQueryConfig.isSavedQueryUserDataMigrationEnabled()) {
+      savedQueryDataMigration.migrate();
+    }
   }
 
   @Override

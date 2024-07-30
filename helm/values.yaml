@@ -203,6 +203,9 @@ traceableConfigServiceConfig:
     port: 51018
     cacheExpiryDuration: 5m
     cacheMaxSize: 5000
+  iamV2ServiceConfig:
+    host: iam-v2
+    grpcPort: 51100
   regionConfigService:
     neustar:
       mode: VERSIONS_DIR
@@ -656,3 +659,6 @@ hpa:
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
+
+savedQueriesConfig:
+  userDataMigrationFlag: false

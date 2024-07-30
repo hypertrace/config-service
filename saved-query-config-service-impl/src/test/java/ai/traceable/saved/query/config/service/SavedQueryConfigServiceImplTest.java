@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.saved.query.config.service.migration.SavedQueryDataMigration;
 import ai.traceable.saved.query.config.service.store.DeletedSavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryStoreManager;
@@ -23,6 +24,8 @@ import ai.traceable.saved.query.config.service.v1.SavedQueryServiceGrpc;
 import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryRequest;
 import ai.traceable.saved.query.config.service.v1.User;
 import ai.traceable.saved.query.config.service.validation.SavedQueryRequestValidator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -56,6 +59,8 @@ class SavedQueryConfigServiceImplTest {
   @Mock private TimestampConverter timestampConverter;
   @Mock private UuidGenerator uuidGenerator;
   @Mock private Config mockConfig;
+  @Mock private SavedQueryDataMigration savedQueryDataMigration;
+  @Mock private SavedQueryDataMigrationConfig savedQueryDataMigrationConfig;
 
   @AfterEach
   void afterEach() {
@@ -63,7 +68,7 @@ class SavedQueryConfigServiceImplTest {
   }
 
   @Test
-  void testSavedQueryCRUD() {
+  void testSavedQueryCRUD() throws InvalidProtocolBufferException, JsonProcessingException {
     String jsonString =
         "\"default\": {\n"
             + "    \"saved\": {\n"
@@ -86,7 +91,9 @@ class SavedQueryConfigServiceImplTest {
                     new SavedQueryConfigStore(genericStub, eventGenerator),
                     this.timestampConverter,
                     uuidGenerator),
-                new SavedQueryRequestValidator()))
+                new SavedQueryRequestValidator(),
+                savedQueryDataMigration,
+                savedQueryDataMigrationConfig))
         .start();
 
     this.savedQueryServiceBlockingStub =
@@ -214,7 +221,7 @@ class SavedQueryConfigServiceImplTest {
   }
 
   @Test
-  void testDefaultSavedQueryCRUD() {
+  void testDefaultSavedQueryCRUD() throws InvalidProtocolBufferException, JsonProcessingException {
     String uuid = "b592ec8e-0de6-4fd4-96aa-0449ef995192";
     String name = "Top APIs seeing bot traffic with poor IP reputation from Data Center";
     String jsonString =
@@ -296,7 +303,9 @@ class SavedQueryConfigServiceImplTest {
                     new SavedQueryConfigStore(genericStub, eventGenerator),
                     this.timestampConverter,
                     uuidGenerator),
-                new SavedQueryRequestValidator()))
+                new SavedQueryRequestValidator(),
+                savedQueryDataMigration,
+                savedQueryDataMigrationConfig))
         .start();
 
     this.savedQueryServiceBlockingStub =
