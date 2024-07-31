@@ -42,18 +42,16 @@ public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidato
       return Status.INVALID_ARGUMENT.withDescription(
           "Anomaly Global Config Update request should have a valid scoped config change object.");
     }
-    if (!request.getScopedConfig().hasConfigStatus()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Anomaly Global Config Update request should have a valid config status.");
-    }
     if (!request.getScopedConfig().hasConfigScope()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Anomaly Global Config Update request should have a valid config scope.");
     }
-    Status status;
-    if ((status = anomalyConfigValidator.validate(request.getScopedConfig().getConfigStatus()))
-        == Status.OK) {
-      return anomalyConfigValidator.validate(request.getScopedConfig().getConfigScope());
+    Status status = anomalyConfigValidator.validate(request.getScopedConfig().getConfigScope());
+    if (status != Status.OK) {
+      return status;
+    }
+    if (request.getScopedConfig().hasConfigStatus()) {
+      return anomalyConfigValidator.validate(request.getScopedConfig().getConfigStatus());
     }
     return status;
   }

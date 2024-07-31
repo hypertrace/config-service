@@ -111,16 +111,6 @@ class AnomalyGlobalConfigServiceValidatorTest {
       status =
           globalValidator.validate(
               UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
-                  .setScopedConfig(ScopedAnomalyConfigStatusChange.getDefaultInstance())
-                  .build());
-      assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-      assertTrue(status.getDescription().contains("valid config status"));
-      verify(configValidator, times(0)).validate((AnomalyConfigStatusChange) any());
-      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
-
-      status =
-          globalValidator.validate(
-              UpdateScopedAnomalyGlobalConfigStatusRequest.newBuilder()
                   .setScopedConfig(
                       ScopedAnomalyConfigStatusChange.newBuilder()
                           .setConfigStatus(configStatusChange))
@@ -154,7 +144,7 @@ class AnomalyGlobalConfigServiceValidatorTest {
                   .build());
       assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
       verify(configValidator, times(1)).validate((AnomalyConfigStatusChange) any());
-      verify(configValidator, times(0)).validate((AnomalyConfigScope) any());
+      verify(configValidator, times(1)).validate((AnomalyConfigScope) any());
     }
   }
 
