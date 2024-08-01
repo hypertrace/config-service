@@ -76,9 +76,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
 
     Status status;
-
-    boolean hasResponseOrAttribute =
-        hasResponseOrAttribute(request.getDefinition().getClauseGroup().getClausesList());
+    List<Clause> clauses = request.getDefinition().getClauseGroup().getClausesList();
+    boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
     if (!request.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
@@ -102,7 +101,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(request.getEffect().getEventType())) {
+    if (clauses.stream().noneMatch(Clause::hasAttributeKeyValueExpression)) {
       return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
     }
     return Status.OK;
@@ -121,9 +120,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
 
     Status status;
-
-    boolean hasResponseOrAttribute =
-        hasResponseOrAttribute(rule.getDefinition().getClauseGroup().getClausesList());
+    List<Clause> clauses = rule.getDefinition().getClauseGroup().getClausesList();
+    boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
     if (!rule.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
@@ -147,7 +145,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(rule.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES.contains(rule.getEffect().getEventType())) {
+    if (clauses.stream().noneMatch(Clause::hasAttributeKeyValueExpression)) {
       return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
     }
     return Status.OK;

@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.modsec;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
+import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
@@ -36,6 +38,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
 
   @Override
   public GetCustomSignatureModsecRulesResponse getModsecRules(
+      RequestContext requestContext,
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion) {
     List<CustomSignatureRuleDetails> ruleDetailsList = new ArrayList<>();
@@ -45,6 +48,15 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     long modsecIdAssignment = MODSEC_ID_SEED;
 
     for (CustomSignatureRule rule : customSignatureRules) {
+      // drop rule with attribute key value expression.
+      if (rule.getDefinition().getClauseGroup().getClausesList().stream()
+          .anyMatch(Clause::hasAttributeKeyValueExpression)) {
+        log.debug(
+            "Modsec conversion not supported for attribute criteria - rule ID: {} tenant ID: {}",
+            rule,
+            requestContext.getTenantId().orElse("Unknown"));
+        continue;
+      }
       String modsecRule;
       modsecIdAssignment++;
       try {

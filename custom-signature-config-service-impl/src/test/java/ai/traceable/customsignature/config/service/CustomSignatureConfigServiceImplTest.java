@@ -217,7 +217,7 @@ public class CustomSignatureConfigServiceImplTest {
   public void testGetCustomSignatureModsecRules() {
     when(rulesManager.getCustomSignatureRules(any(), any()))
         .thenReturn(List.of(CustomSignatureRule.newBuilder().build()));
-    when(modsecRulesManager.getModsecRules(any(), any()))
+    when(modsecRulesManager.getModsecRules(any(), any(), any()))
         .thenThrow(new UnsupportedOperationException())
         .thenReturn(GetCustomSignatureModsecRulesResponse.newBuilder().build());
 

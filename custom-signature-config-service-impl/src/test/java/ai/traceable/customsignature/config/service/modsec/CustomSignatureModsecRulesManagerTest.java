@@ -44,12 +44,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.SystemUtils;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 
 public class CustomSignatureModsecRulesManagerTest {
 
   private static final int EXPIRY_TIMESTAMP_MILLIS = 12345678;
   private static final String EXPIRY_DURATION = "P3M";
+  private static final String TENANT_ID = "id";
 
   @Test
   public void testConvertRulesException() throws Exception {
@@ -62,6 +64,7 @@ public class CustomSignatureModsecRulesManagerTest {
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
+            RequestContext.forTenantId(TENANT_ID),
             List.of(CustomSignatureRule.newBuilder().build()),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED);
     assertTrue(response.getModsecRulesBlob().isEmpty());
@@ -69,6 +72,7 @@ public class CustomSignatureModsecRulesManagerTest {
 
     response =
         modsecRulesManager.getModsecRules(
+            RequestContext.forTenantId(TENANT_ID),
             List.of(
                 CustomSignatureRule.newBuilder()
                     .setDefinition(
@@ -86,6 +90,7 @@ public class CustomSignatureModsecRulesManagerTest {
         .thenThrow(new UnsupportedOperationException());
     response =
         modsecRulesManager.getModsecRules(
+            RequestContext.forTenantId(TENANT_ID),
             List.of(
                 CustomSignatureRule.newBuilder()
                     .setDefinition(
@@ -230,7 +235,9 @@ public class CustomSignatureModsecRulesManagerTest {
 
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
-            rules, CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+            RequestContext.forTenantId(TENANT_ID),
+            rules,
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
     assertEquals(
         rules.size()
             + 4

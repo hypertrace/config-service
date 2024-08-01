@@ -6,10 +6,12 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import io.grpc.Status;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface ModsecRulesManager {
 
   GetCustomSignatureModsecRulesResponse getModsecRules(
+      RequestContext requestContext,
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion);
 
