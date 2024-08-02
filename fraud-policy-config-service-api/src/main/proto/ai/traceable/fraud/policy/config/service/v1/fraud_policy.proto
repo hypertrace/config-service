@@ -97,7 +97,7 @@ message FraudPolicy {
   // apply these labels on all fraud detection events emitted by this fraud policy.
   repeated string labels = 10;
 
-  // set the fraud policy stage, it will determine the visibililty of the policy's detection output.
+  // set the fraud policy stage, it will determine the visibility of the policy's detection output.
   FraudPolicyStage fraud_policy_stage = 11;
 }
 
@@ -130,6 +130,8 @@ message FraudBizImpactRule {
 message EntityGraphBasedFraudRule {
   // in this case, any entity that matches this query is a "rule hit"
   ai.traceable.fraud.query.model.v1.EntityGraphDataQuery entity_graph_data_query = 1;
+  ThresholdDefinition threshold_definition = 4;
+
   // what should we summarize the results of this query as?
   string message_format = 2;
   // data query should return these parameters.
@@ -169,6 +171,7 @@ message FraudRule {
 }
 
 message ThresholdDefinition {
+  string threshold_name = 4;
   enum ThresholdOperator {
     THRESHOLD_OPERATOR_UNSPECIFIED = 0;
     THRESHOLD_OPERATOR_ABOVE = 1;

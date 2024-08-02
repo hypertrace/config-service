@@ -4,9 +4,12 @@ import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
 import ai.traceable.fraud.query.model.v1.DataQuery;
 import ai.traceable.fraud.query.model.v1.EntityMetricDataQuery;
 import ai.traceable.fraud.query.model.v1.MetricDataQuery;
+import ai.traceable.fraud.query.model.v1.MetricQuery;
+import ai.traceable.fraud.query.model.v1.TimeFrame;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class FraudPolicyDefinitionsTest {
@@ -35,8 +38,65 @@ public class FraudPolicyDefinitionsTest {
   }
 
   @Test
-  public void test() {
-    var policy =
+  void test_baseline() {
+    MetricDataQuery lhs =
+        MetricDataQuery.newBuilder()
+            .setMetricQuery(
+                MetricQuery.newBuilder()
+                    .setMetricId("total_span_count")
+                    .addGroupBy("api_id")
+                    .addGroupBy("ip_org")
+                    .setSingleAggregateValue(true)
+                    .setTimeFrame(TimeFrame.newBuilder().setStartTime(1000).setEndTime(2000)))
+            .build();
+    FraudPolicy fraudPolicy =
+        FraudPolicy.newBuilder()
+            .setId("id1")
+            .setName("num_registrations_by_email_domain")
+            .setFraudPolicyRule(
+                FraudPolicyRule.newBuilder()
+                    .setFraudRule(
+                        FraudRule.newBuilder()
+                            .setMetricFraudRule(
+                                MetricBasedFraudRule.newBuilder()
+                                    .setMetricDataQuery(lhs)
+                                    .setThresholdDefinition(
+                                        ThresholdDefinition.newBuilder()
+                                            .setThresholdOperator(
+                                                ThresholdDefinition.ThresholdOperator
+                                                    .THRESHOLD_OPERATOR_ABOVE)
+                                            .setManualThreshold(
+                                                ManualThreshold.newBuilder()
+                                                    .setQueryBasedThreshold(
+                                                        QueryBasedThreshold.newBuilder()
+                                                            .setCopyQueryFromRule(true)
+                                                            .setBaselineConfig(
+                                                                BaselineConfig.newBuilder()
+                                                                    .setBaselineDataConfig(
+                                                                        BaselineDataConfig
+                                                                            .newBuilder()
+                                                                            .setSeasonality(
+                                                                                BaselineDataConfig
+                                                                                    .Seasonality
+                                                                                    .SEASONALITY_DAILY)
+                                                                            .setNumPeriods(7))
+                                                                    .setBaselineSpec(
+                                                                        BaselineSpec.newBuilder()
+                                                                            .setEwmaBaseline(
+                                                                                EWMABaseline
+                                                                                    .getDefaultInstance()))))))
+                                    .build())))
+            .setCategory(FraudPolicyCategory.FRAUD_POLICY_CATEGORY_FRAUD)
+            .build();
+    print(fraudPolicy);
+    FraudPolicy deserialized =
+        deserialize(serialize(fraudPolicy), FraudPolicy.newBuilder()).build();
+    Assertions.assertEquals(fraudPolicy, deserialized);
+  }
+
+  @Test
+  void test() {
+    FraudPolicy policy =
         FraudPolicy.newBuilder()
             .setId("id1")
             .setName("email_domain_is_disposable_auto_threshold")
@@ -82,7 +142,8 @@ public class FraudPolicyDefinitionsTest {
             .build();
 
     print(policy);
-
+    FraudPolicy deserialized = deserialize(serialize(policy), FraudPolicy.newBuilder()).build();
+    Assertions.assertEquals(policy, deserialized);
     policy =
         FraudPolicy.newBuilder()
             .setId("id2")
@@ -128,6 +189,8 @@ public class FraudPolicyDefinitionsTest {
             .setCategory(FraudPolicyCategory.FRAUD_POLICY_CATEGORY_FRAUD)
             .build();
     print(policy);
+    deserialized = deserialize(serialize(policy), FraudPolicy.newBuilder()).build();
+    Assertions.assertEquals(policy, deserialized);
 
     policy =
         FraudPolicy.newBuilder()
@@ -197,5 +260,7 @@ public class FraudPolicyDefinitionsTest {
             .setCategory(FraudPolicyCategory.FRAUD_POLICY_CATEGORY_RISK)
             .build();
     print(policy);
+    deserialized = deserialize(serialize(policy), FraudPolicy.newBuilder()).build();
+    Assertions.assertEquals(policy, deserialized);
   }
 }
