@@ -151,6 +151,15 @@ public class ApiSpecConfigServiceImpl
                                 .getReferenceType()
                                 .getReferenceTypesList()
                                 .contains(spec.getReferenceType()))
+                // filter based on spec names
+                .filter(
+                    spec ->
+                        !request.getApiSpecFilter().hasNames()
+                            || request
+                                .getApiSpecFilter()
+                                .getNames()
+                                .getValuesList()
+                                .contains(spec.getName()))
                 .collect(Collectors.toUnmodifiableList());
         getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
       }
@@ -498,6 +507,17 @@ public class ApiSpecConfigServiceImpl
         case API_SPEC_METADATA:
           apiSpecBuilder.setApiSpecMetadata(updateApiSpecField.getApiSpecMetadata());
           break;
+        case SPEC_PATH:
+          apiSpecBuilder.setSpecPath(updateApiSpecField.getSpecPath());
+          break;
+        case FIELD_NOT_SET:
+        default:
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid request. At least 1 update field is to be set in request to spec id: %s",
+                      apiSpecUpdate.getSpecId()))
+              .asRuntimeException();
       }
     }
     return apiSpecBuilder.build();

@@ -178,6 +178,10 @@ public class ApiSpecConfigRequestValidator {
             updatedApiSpecField.getApiSpecMetadata().getOpenApiSpecMetadata());
       }
     }
+    if (updatedApiSpecField.hasSpecPath()) {
+      validateNonDefaultPresenceOrThrow(
+          updatedApiSpecField, UpdatedApiSpecField.SPEC_PATH_FIELD_NUMBER);
+    }
   }
 
   private void validateOpenApiSpecMetadata(OpenApiSpecMetadata openApiSpecMetadata) {

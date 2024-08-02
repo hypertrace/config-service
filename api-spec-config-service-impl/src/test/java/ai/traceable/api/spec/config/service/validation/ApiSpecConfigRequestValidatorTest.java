@@ -295,6 +295,22 @@ class ApiSpecConfigRequestValidatorTest {
                     .build()));
 
     assertInvalidArgStatusContaining(
+        "UpdatedApiSpecField.spec_path",
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                BulkUpdateApiSpecsRequest.newBuilder()
+                    .addAllApiSpecs(
+                        List.of(
+                            ApiSpecUpdate.newBuilder()
+                                .setSpecId("id")
+                                .addAllUpdatedApiSpecFields(
+                                    List.of(
+                                        UpdatedApiSpecField.newBuilder().setSpecPath("").build()))
+                                .build()))
+                    .build()));
+
+    assertInvalidArgStatusContaining(
         "OpenApiSpecReference.resolved_spec_path",
         () ->
             validator.validateOrThrow(

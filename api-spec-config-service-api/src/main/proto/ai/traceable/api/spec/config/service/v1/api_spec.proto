@@ -21,6 +21,7 @@ message ApiSpecFilter {
   optional bool api_inspector_disabled = 5;
   ReferenceApiSpecFilter reference_api_spec = 6;
   ReferenceTypeFilter reference_type = 7;
+  StringList names = 8;
 }
 
 message ReferenceApiSpecFilter {

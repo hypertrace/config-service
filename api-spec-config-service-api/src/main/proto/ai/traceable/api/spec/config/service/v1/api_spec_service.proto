@@ -57,5 +57,6 @@ message UpdatedApiSpecField {
     bool api_inspector_disabled = 5;
     ReferenceType reference_type = 6;
     ApiSpecMetadata api_spec_metadata = 7;
+    string spec_path = 8;
   }
 }
