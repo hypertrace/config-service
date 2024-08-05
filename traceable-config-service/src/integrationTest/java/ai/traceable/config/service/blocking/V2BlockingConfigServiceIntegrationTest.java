@@ -814,8 +814,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         10, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
-    addIpRangeRule(Optional.empty(), RULE_ACTION_ALLOW);
-    addIpRangeRule(Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
+    addIpRangeRule("ip-range-rule-1", Optional.empty(), RULE_ACTION_ALLOW);
+    addIpRangeRule("ip-range-rule-2", Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
 
     createDLPPolicy(Optional.of(ENVIRONMENT_ID));
 
@@ -1550,7 +1550,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                         .build()));
   }
 
-  void addIpRangeRule(Optional<String> environmentId, RuleAction ruleAction) {
+  void addIpRangeRule(String ruleName, Optional<String> environmentId, RuleAction ruleAction) {
     RequestContext.forTenantId(TENANT_ID)
         .call(
             () ->
@@ -1558,7 +1558,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     CreateIpRangeRuleRequest.newBuilder()
                         .setRuleDetails(
                             IpRangeRuleDetails.newBuilder()
-                                .setName("ip-range-rule")
+                                .setName(ruleName)
                                 .setRuleAction(ruleAction)
                                 .addRawInputIpData("11.11.11.11"))
                         .setRuleScope(

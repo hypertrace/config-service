@@ -12,6 +12,7 @@ import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 class RegionRulesValidator implements RulesValidator {
@@ -42,13 +43,18 @@ class RegionRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "create region rule with alert action should have a valid severity");
     }
-
     if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             request.getActionType())
         && isDuplicateBlockAllExceptRuleCreate(existingRegionRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to create duplicate rule for action "
               + RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
+    }
+    Optional<RegionRule> ruleWithSameName =
+        getRegionRuleWithSameName(request.getName(), existingRegionRulesSupplier);
+    if (ruleWithSameName.isPresent()) {
+      return Status.ALREADY_EXISTS.withDescription(
+          String.format("Region rule with name : {} already exist", request.getName()));
     }
     return Status.OK;
   }
@@ -91,6 +97,12 @@ class RegionRulesValidator implements RulesValidator {
           "Trying to change rule action to "
               + RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT
               + ". Rule of this type already exists.");
+    }
+    Optional<RegionRule> ruleWithSameName =
+        getRegionRuleWithSameName(request.getName(), existingRegionRulesSupplier);
+    if (ruleWithSameName.isPresent() && !ruleWithSameName.get().getId().equals(request.getId())) {
+      return Status.ALREADY_EXISTS.withDescription(
+          String.format("Region rule with name : {} already exist", request.getName()));
     }
     return Status.OK;
   }
@@ -180,5 +192,12 @@ class RegionRulesValidator implements RulesValidator {
             String.format(
                 "Invalid case: %s found for region identifier.", identifier.getIdentifierCase()));
     }
+  }
+
+  private static Optional<RegionRule> getRegionRuleWithSameName(
+      String name, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
+    return existingRegionRulesSupplier.get().stream()
+        .filter(rule -> rule.getName().equals(name))
+        .findFirst();
   }
 }

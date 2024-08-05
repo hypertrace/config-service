@@ -175,6 +175,28 @@ class RegionRulesValidatorTest {
 
       assertEquals(Code.ALREADY_EXISTS, status.getCode());
     }
+
+    @Test
+    @DisplayName(
+        "Should return already exist status on creating a name which for which rule already exist")
+    void should_fail_createRegionRule_withSameNameAlreadyExist() {
+      CreateRegionRuleRequest createRegionRuleRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .build();
+      when(getAllRegionRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  RegionRule.newBuilder()
+                      .setName("name")
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                      .build()));
+
+      Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+      assertEquals(Code.ALREADY_EXISTS, status.getCode());
+    }
   }
 
   @Nested
@@ -367,6 +389,30 @@ class RegionRulesValidatorTest {
                       .build()));
       Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
 
+      assertEquals(Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return already exist status on updateing a name which for which rule already exist")
+    void should_fail_updateRegionRule_sameNameAlreadyExist() {
+      UpdateRegionRuleRequest updateRegionRuleRequest =
+          UpdateRegionRuleRequest.newBuilder()
+              .setId("id")
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .build();
+
+      when(getAllRegionRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  RegionRule.newBuilder()
+                      .setId("id2")
+                      .setName("name")
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+                      .build()));
+      Status status = rulesValidator.validate(updateRegionRuleRequest, getAllRegionRulesSupplier);
       assertEquals(Code.ALREADY_EXISTS, status.getCode());
     }
   }

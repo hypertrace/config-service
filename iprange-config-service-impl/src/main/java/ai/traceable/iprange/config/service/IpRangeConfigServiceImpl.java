@@ -59,17 +59,20 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
       CreateIpRangeRuleRequest request,
       StreamObserver<CreateIpRangeRuleResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
       Status status =
           rulesValidator.validate(
-              request, getBlockAllExceptRulesSupplier(RequestContext.CURRENT.get()));
+              request,
+              () ->
+                  rulesManager.getIpRangeRules(
+                      requestContext, GetRulesFilter.getDefaultInstance()));
       if (!status.isOk()) {
         log.error("Create Ip Range Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
         return;
       }
 
-      IpRangeRule ipRangeRule =
-          rulesManager.createIpRangeRule(RequestContext.CURRENT.get(), request);
+      IpRangeRule ipRangeRule = rulesManager.createIpRangeRule(requestContext, request);
 
       if (ipRangeRule == null) {
         log.error("Unable to create Ip Range Rule request: {}, returns null", request);
@@ -87,7 +90,7 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
 
       if (shouldPublishActivityEvents) {
         activityEventProducer.publishSecurityConfigurationChangeEvent(
-            RequestContext.CURRENT.get(),
+            requestContext,
             buildSecurityConfigurationChangeEvent(ipRangeRule, SecurityConfigurationAction.ADD));
       }
     } catch (Exception e) {

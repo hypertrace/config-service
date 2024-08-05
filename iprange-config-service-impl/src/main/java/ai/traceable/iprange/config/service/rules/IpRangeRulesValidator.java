@@ -1,5 +1,7 @@
 package ai.traceable.iprange.config.service.rules;
 
+import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
+
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
@@ -15,6 +17,7 @@ import ai.traceable.platform.utils.ip.IpValidationUtils;
 import io.grpc.Status;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -22,7 +25,7 @@ class IpRangeRulesValidator implements RulesValidator {
 
   @Override
   public Status validate(
-      CreateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
+      CreateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
     Status status = validate(request.getRuleDetails());
     if (!status.isOk()) {
       return status;
@@ -31,17 +34,24 @@ class IpRangeRulesValidator implements RulesValidator {
     if (!status.isOk()) {
       return status;
     }
-    if (RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
-        && isDuplicateBlockAllExceptCreate(blockAllExceptRulesSupplier)) {
+    if (RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
+        && isDuplicateBlockAllExceptCreate(ipRangeRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
-          "Trying to create duplicate rule for action " + RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT);
+          "Trying to create duplicate rule for action " + RULE_ACTION_BLOCK_ALL_EXCEPT);
+    }
+    Optional<IpRangeRule> ipRangeRuleWithSameName =
+        getIpRangeRuleWithSameName(request.getRuleDetails().getName(), ipRangeRulesSupplier);
+    if (ipRangeRuleWithSameName.isPresent()) {
+      return Status.ALREADY_EXISTS.withDescription(
+          String.format(
+              "Ip range rule with name : {} already exist", request.getRuleDetails().getName()));
     }
     return Status.OK;
   }
 
   @Override
   public Status validate(
-      UpdateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
+      UpdateIpRangeRuleRequest request, Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription("Update Ip Range rule should have a valid id");
     }
@@ -53,12 +63,20 @@ class IpRangeRulesValidator implements RulesValidator {
     if (!status.isOk()) {
       return status;
     }
-    if (RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
-        && isDuplicateBlockAllExceptUpdate(request.getId(), blockAllExceptRulesSupplier)) {
+    if (RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
+        && isDuplicateBlockAllExceptUpdate(request.getId(), ipRangeRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to change rule action to "
-              + RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT
+              + RULE_ACTION_BLOCK_ALL_EXCEPT
               + ". Rule of this type already exists");
+    }
+    Optional<IpRangeRule> ipRangeRuleWithSameName =
+        getIpRangeRuleWithSameName(request.getRuleDetails().getName(), ipRangeRulesSupplier);
+    if (ipRangeRuleWithSameName.isPresent()
+        && !ipRangeRuleWithSameName.get().getId().equals(request.getId())) {
+      return Status.ALREADY_EXISTS.withDescription(
+          String.format(
+              "Ip range rule with name : {} already exist", request.getRuleDetails().getName()));
     }
     return Status.OK;
   }
@@ -145,17 +163,29 @@ class IpRangeRulesValidator implements RulesValidator {
   }
 
   private boolean isDuplicateBlockAllExceptCreate(
-      Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
-    return !blockAllExceptRulesSupplier.get().isEmpty();
+      Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
+    return ipRangeRulesSupplier.get().stream()
+        .anyMatch(
+            rule -> rule.getRuleDetails().getRuleAction().equals(RULE_ACTION_BLOCK_ALL_EXCEPT));
   }
 
   private boolean isDuplicateBlockAllExceptUpdate(
-      String id, Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier) {
-    List<IpRangeRule> ipRangeRules = blockAllExceptRulesSupplier.get();
-    return ipRangeRules.stream().anyMatch(rule -> !rule.getId().equals(id));
+      String id, Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
+    return ipRangeRulesSupplier.get().stream()
+        .anyMatch(
+            rule ->
+                rule.getRuleDetails().getRuleAction().equals(RULE_ACTION_BLOCK_ALL_EXCEPT)
+                    && !rule.getId().equals(id));
   }
 
   private boolean validateRawInputIpOrThrow(String rawInputIp) {
     return IpValidationUtils.isIpAddressRangeInCIDRWithHostBitsZero(rawInputIp);
+  }
+
+  private static Optional<IpRangeRule> getIpRangeRuleWithSameName(
+      String name, Supplier<List<IpRangeRule>> existingIpRangeRulesSupplier) {
+    return existingIpRangeRulesSupplier.get().stream()
+        .filter(rule -> rule.getRuleDetails().getName().equals(name))
+        .findFirst();
   }
 }

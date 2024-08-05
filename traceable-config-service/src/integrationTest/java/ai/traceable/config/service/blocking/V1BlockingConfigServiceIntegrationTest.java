@@ -416,8 +416,8 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertTrue(response.getBlockingPolicyConfiguration().getBlockingDetailsListList().isEmpty());
 
     // Check blocking policy
-    addIpRangeRule(Optional.empty(), RULE_ACTION_ALLOW);
-    addIpRangeRule(Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
+    addIpRangeRule("ip-range-rule-1", Optional.empty(), RULE_ACTION_ALLOW);
+    addIpRangeRule("ip-range-rule-2", Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
 
     createMaliciousSourceRule(
         "id-2",
@@ -831,7 +831,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                         .build()));
   }
 
-  void addIpRangeRule(Optional<String> environmentId, RuleAction ruleAction) {
+  void addIpRangeRule(String ruleName, Optional<String> environmentId, RuleAction ruleAction) {
     RequestContext.forTenantId(TENANT_ID)
         .call(
             () ->
@@ -839,7 +839,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     CreateIpRangeRuleRequest.newBuilder()
                         .setRuleDetails(
                             IpRangeRuleDetails.newBuilder()
-                                .setName("ip-range-rule")
+                                .setName(ruleName)
                                 .setRuleAction(ruleAction)
                                 .addRawInputIpData("11.11.11.11"))
                         .setRuleScope(
