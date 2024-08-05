@@ -135,7 +135,6 @@ public class ApiSpecConfigServiceImpl
                                     .getReferenceApiSpec()
                                     .getReferenceApiSpecsCount()
                                 == 0
-                            || !spec.getApiSpecMetadata().hasOpenApiSpecMetadata()
                             || checkAnyReferenceMatch(request, spec))
                 // filter based on reference type
                 .filter(
@@ -524,12 +523,14 @@ public class ApiSpecConfigServiceImpl
   }
 
   private boolean checkAnyReferenceMatch(GetApiSpecsRequest request, ApiSpec spec) {
-    return spec
-        .getApiSpecMetadata()
-        .getOpenApiSpecMetadata()
-        .getOpenApiSpecReferencesList()
-        .stream()
-        .anyMatch(specMetaDataReference -> checkAnyFilterMatch(request, specMetaDataReference));
+    return spec.hasApiSpecMetadata()
+        && spec.getApiSpecMetadata().hasOpenApiSpecMetadata()
+        && spec
+            .getApiSpecMetadata()
+            .getOpenApiSpecMetadata()
+            .getOpenApiSpecReferencesList()
+            .stream()
+            .anyMatch(specMetaDataReference -> checkAnyFilterMatch(request, specMetaDataReference));
   }
 
   private boolean checkAnyFilterMatch(
