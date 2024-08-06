@@ -64,6 +64,7 @@ public class SavedQueryDataMigration {
           log.debug("Starting data migration for saved query with id: {}", savedQuery.getId());
         } catch (IllegalArgumentException exception) {
           log.info("Error deserializing saved query document: {} ... skipping", documentId);
+          continue;
         }
 
         // Fetching user-id from existing document
