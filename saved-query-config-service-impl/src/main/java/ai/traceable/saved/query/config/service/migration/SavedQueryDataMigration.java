@@ -11,18 +11,18 @@ import ai.traceable.saved.query.config.service.store.DefaultMongoDatabase;
 import ai.traceable.saved.query.config.service.v1.SavedQuery;
 import ai.traceable.saved.query.config.service.v1.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.result.UpdateResult;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.conversions.Bson;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.core.documentstore.Document;
 
 @Slf4j
@@ -37,9 +37,7 @@ public class SavedQueryDataMigration {
   private static final String SAVED_QUERY_CONFIG_RESOURCE_NAMESPACE_VALUE = "saved-query-config";
   private static final String COLLECTION_NAME = "configurations";
   private static final String AUTHOR_ATTRIBUTE = "config.author";
-  private static final String CONFIG_ATTRIBUTE = "config";
   private static final String DOCUMENT_ID = "_id";
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public void migrate() {
     if (database.isEmpty()) {
@@ -56,10 +54,17 @@ public class SavedQueryDataMigration {
       while (documents.hasNext()) {
         Document document = documents.next();
         String jsonDocument = document.toJson();
+        ConfigDocument configDocument = ConfigDocument.fromJson(jsonDocument);
+        String documentId = configDocument.getDocumentId();
 
         // saved-query mongo document
-        SavedQuery savedQuery = buildSavedQueryFromJsonString(jsonDocument);
-        log.debug("Starting data migration for saved query with id: {}", savedQuery.getId());
+        SavedQuery savedQuery = null;
+        try {
+          savedQuery = buildSavedQueryFromConfigDocument(configDocument);
+          log.debug("Starting data migration for saved query with id: {}", savedQuery.getId());
+        } catch (IllegalArgumentException exception) {
+          log.info("Error deserializing saved query document: {} ... skipping", documentId);
+        }
 
         // Fetching user-id from existing document
         String userId =
@@ -85,7 +90,7 @@ public class SavedQueryDataMigration {
 
         // Upsert user information to the saved-query document.
         Bson update = createUpdateQueryFromUser(userInformation);
-        Bson filter = createDocumentIdFilter(jsonDocument);
+        Bson filter = createDocumentIdFilter(documentId);
         UpdateResult updateResult = collection.upsertDocument(filter, update);
 
         if (updateResult.getModifiedCount() == 1) {
@@ -114,9 +119,7 @@ public class SavedQueryDataMigration {
     return new BasicDBObject("$set", new BasicDBObject(AUTHOR_ATTRIBUTE, object));
   }
 
-  private Bson createDocumentIdFilter(String jsonStringDocument) throws JsonProcessingException {
-    String documentId =
-        OBJECT_MAPPER.readValue(jsonStringDocument, JsonNode.class).get(DOCUMENT_ID).asText();
+  private Bson createDocumentIdFilter(String documentId) throws JsonProcessingException {
     return eq(DOCUMENT_ID, documentId);
   }
 
@@ -126,15 +129,13 @@ public class SavedQueryDataMigration {
         eq(RESOURCE_NAMESPACE_FIELD_NAME, SAVED_QUERY_CONFIG_RESOURCE_NAMESPACE_VALUE));
   }
 
-  private SavedQuery buildSavedQueryFromJsonString(String jsonDocument)
-      throws InvalidProtocolBufferException, JsonProcessingException {
-    String jsonConfig = extractConfigFromJson(jsonDocument);
-    SavedQuery.Builder builder = SavedQuery.newBuilder();
-    JsonFormat.parser().merge(jsonConfig, builder);
-    return builder.build();
-  }
+  private static SavedQuery buildSavedQueryFromConfigDocument(ConfigDocument configDocument)
+      throws IOException {
+    if (configDocument.getConfig() == null)
+      throw new IllegalArgumentException("CONFIG_ATTRIBUTE is missing or null");
 
-  private String extractConfigFromJson(String jsonDocument) throws JsonProcessingException {
-    return OBJECT_MAPPER.readTree(jsonDocument).get(CONFIG_ATTRIBUTE).toString();
+    SavedQuery.Builder savedQueryBuilder = SavedQuery.newBuilder();
+    ConfigProtoConverter.mergeFromValue(configDocument.getConfig(), savedQueryBuilder);
+    return savedQueryBuilder.build();
   }
 }
