@@ -31,7 +31,7 @@ public class ModsecBlobValidator {
     try {
       RuleEngine.loadNativeLibrary();
       return true;
-    } catch (IOException e) {
+    } catch (IOException | UnsupportedOperationException e) {
       log.warn(
           "Failed loading rule engine native library in rate-limiting rule modsec converted with error:",
           e);
