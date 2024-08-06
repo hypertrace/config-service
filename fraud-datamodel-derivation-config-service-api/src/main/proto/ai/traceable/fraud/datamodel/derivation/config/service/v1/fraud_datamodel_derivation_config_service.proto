@@ -5,6 +5,7 @@ package ai.traceable.fraud.datamodel.derivation.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/fraud/datamodel/derivation/config/service/v1/fraud_datamodel_derivation_config.proto";
+import "google/protobuf/struct.proto";
 
 service FraudDataModelDerivationConfigService {
   rpc CreateDerivationConfig(CreateDerivationConfigRequest) returns (CreateDerivationConfigResponse) {}
@@ -13,7 +14,14 @@ service FraudDataModelDerivationConfigService {
   rpc GetDerivationConfigs(GetDerivationConfigsRequest) returns (GetDerivationConfigsResponse) {}
   rpc GetDerivationConfig(GetDerivationConfigRequest) returns (GetDerivationConfigResponse) {}
   rpc DeleteDerivationConfigs(DeleteDerivationConfigsRequest) returns (DeleteDerivationConfigsResponse) {}
+  rpc CreateUserAgentMergeMappingConfig(CreateUserAgentMergeMappingConfigRequest) returns (CreateUserAgentMergeMappingConfigResponse) {}
+  rpc GetUserAgentMergeMappingConfig(GetUserAgentMergeMappingConfigRequest) returns (GetUserAgentMergeMappingConfigResponse) {}
+  rpc GetUserAgentMergeMappingConfigs(GetUserAgentMergeMappingConfigsRequest) returns (GetUserAgentMergeMappingConfigsResponse) {}
+  rpc UpdateUserAgentMergeMappingConfig(UpdateUserAgentMergeMappingConfigRequest) returns (UpdateUserAgentMergeMappingConfigResponse) {}
+  rpc DeleteUserAgentMergeMappingConfig(DeleteUserAgentMergeMappingConfigRequest) returns (DeleteUserAgentMergeMappingConfigResponse) {}
 }
+
+
 
 message CreateDerivationConfigRequest {
   DerivationConfigType derivation_config_type = 1;
@@ -67,5 +75,42 @@ message DeleteDerivationConfigsRequest {
 }
 
 message DeleteDerivationConfigsResponse {
+}
 
+message CreateUserAgentMergeMappingConfigRequest {
+  map<string, google.protobuf.ListValue> pairs = 2;
+}
+
+message CreateUserAgentMergeMappingConfigResponse {
+  UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
+}
+
+message GetUserAgentMergeMappingConfigsRequest {
+}
+
+message GetUserAgentMergeMappingConfigsResponse {
+  repeated UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
+}
+
+message GetUserAgentMergeMappingConfigRequest {
+  string id = 1;
+}
+
+message GetUserAgentMergeMappingConfigResponse {
+  UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
+}
+
+message UpdateUserAgentMergeMappingConfigRequest {
+    UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
+}
+
+message UpdateUserAgentMergeMappingConfigResponse {
+  UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
+}
+
+message DeleteUserAgentMergeMappingConfigRequest {
+  string id = 1;
+}
+
+message DeleteUserAgentMergeMappingConfigResponse {
 }

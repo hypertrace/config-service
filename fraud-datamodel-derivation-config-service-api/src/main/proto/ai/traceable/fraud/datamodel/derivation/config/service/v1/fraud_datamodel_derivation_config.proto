@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.fraud.datamodel.derivation.config.service.v1;
 
+import "google/protobuf/struct.proto";
+
 option java_multiple_files = true;
 
 enum DerivationConfigType {
@@ -24,4 +26,9 @@ message DerivationConfig {
   string name = 3;
   string derivation_config = 4;
   bool disabled = 5;
+}
+
+message UserAgentMergeMappingConfig {
+  string id = 1;
+  map<string, google.protobuf.ListValue> pairs = 2;
 }

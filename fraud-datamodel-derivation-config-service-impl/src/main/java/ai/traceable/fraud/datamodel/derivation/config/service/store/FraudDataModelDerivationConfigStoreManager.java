@@ -1,20 +1,11 @@
 package ai.traceable.fraud.datamodel.derivation.config.service.store;
 
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfig;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.*;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -22,13 +13,18 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class FraudDataModelDerivationConfigStoreManager {
 
   private final FraudDataModelDerivationConfigStore fraudDataModelDerivationConfigStore;
+  private final FraudDataModelDerivationTransformConfigStore
+      fraudDataModelDerivationTransformConfigStore;
   private final UuidGenerator uuidGenerator;
 
   @Inject
   public FraudDataModelDerivationConfigStoreManager(
       FraudDataModelDerivationConfigStore fraudDataModelDerivationConfigStore,
+      FraudDataModelDerivationTransformConfigStore fraudDataModelDerivationTransformConfigStore,
       UuidGenerator uuidGenerator) {
     this.fraudDataModelDerivationConfigStore = fraudDataModelDerivationConfigStore;
+    this.fraudDataModelDerivationTransformConfigStore =
+        fraudDataModelDerivationTransformConfigStore;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -114,6 +110,74 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public void deleteDerivedConfig(RequestContext requestContext, String id) {
     fraudDataModelDerivationConfigStore.deleteObject(requestContext, id);
+  }
+
+  public CreateUserAgentMergeMappingConfigResponse createUserAgentMergeMappingConfig(
+      RequestContext requestContext, CreateUserAgentMergeMappingConfigRequest request) {
+    UserAgentMergeMappingConfig config =
+        UserAgentMergeMappingConfig.newBuilder()
+            .setId(uuidGenerator.generateRandomId())
+            .putAllPairs(request.getPairsMap())
+            .build();
+
+    ContextualConfigObject<UserAgentMergeMappingConfig> configObject =
+        fraudDataModelDerivationTransformConfigStore.upsertObject(requestContext, config);
+    return CreateUserAgentMergeMappingConfigResponse.newBuilder()
+        .setUserAgentMergeMappingConfig(
+            UserAgentMergeMappingConfig.newBuilder()
+                .setId(configObject.getData().getId())
+                .putAllPairs(configObject.getData().getPairsMap())
+                .build())
+        .build();
+  }
+
+  public GetUserAgentMergeMappingConfigResponse getUserAgentMergeMappingConfig(
+      RequestContext requestContext, GetUserAgentMergeMappingConfigRequest request)
+      throws StatusException {
+    Optional<UserAgentMergeMappingConfig> config =
+        fraudDataModelDerivationTransformConfigStore.getData(requestContext, request.getId());
+    if (config.isEmpty()) {
+      throw Status.INTERNAL
+          .withDescription(
+              String.format("No user agent merge mapping config found with id=%s", request.getId()))
+          .asException();
+    }
+    return GetUserAgentMergeMappingConfigResponse.newBuilder()
+        .setUserAgentMergeMappingConfig(config.get())
+        .build();
+  }
+
+  public GetUserAgentMergeMappingConfigsResponse getUserAgentMergeMappingConfigs(
+      RequestContext requestContext, GetUserAgentMergeMappingConfigsRequest request) {
+    List<UserAgentMergeMappingConfig> configs =
+        fraudDataModelDerivationTransformConfigStore.getAllConfigData(requestContext);
+    return GetUserAgentMergeMappingConfigsResponse.newBuilder()
+        .addAllUserAgentMergeMappingConfig(configs)
+        .build();
+  }
+
+  public UpdateUserAgentMergeMappingConfigResponse updateUserAgentMergeMappingConfig(
+      RequestContext requestContext, UpdateUserAgentMergeMappingConfigRequest request) {
+    UserAgentMergeMappingConfig config =
+        UserAgentMergeMappingConfig.newBuilder()
+            .setId(request.getUserAgentMergeMappingConfig().getId())
+            .putAllPairs(request.getUserAgentMergeMappingConfig().getPairsMap())
+            .build();
+
+    ContextualConfigObject<UserAgentMergeMappingConfig> configObject =
+        fraudDataModelDerivationTransformConfigStore.upsertObject(requestContext, config);
+    return UpdateUserAgentMergeMappingConfigResponse.newBuilder()
+        .setUserAgentMergeMappingConfig(
+            UserAgentMergeMappingConfig.newBuilder()
+                .setId(configObject.getData().getId())
+                .putAllPairs(configObject.getData().getPairsMap())
+                .build())
+        .build();
+  }
+
+  public void deleteUserAgentMergeMappingConfig(
+      RequestContext requestContext, DeleteUserAgentMergeMappingConfigRequest request) {
+    fraudDataModelDerivationTransformConfigStore.deleteObject(requestContext, request.getId());
   }
 
   private DerivationConfig buildDerivationConfig(

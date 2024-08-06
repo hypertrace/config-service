@@ -17,9 +17,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class FraudDataModelDerivationConfigStore
     extends IdentifiedObjectStoreWithFilter<DerivationConfig, GetDerivationConfigsRequest> {
 
-  private static final String FRAUD_DATAMODEL_DERIVATION_RESOURCE_NAME =
+  public static final String FRAUD_DATAMODEL_DERIVATION_RESOURCE_NAME =
       "fraud-datamodel-derivation";
-  private static final String FRAUD_DATAMODEL_DERIVATION_CONFIG_RESOURCE_NAMESPACE =
+  public static final String FRAUD_DATAMODEL_DERIVATION_CONFIG_RESOURCE_NAMESPACE =
       "fraud-datamodel-derivation-config";
 
   @Inject

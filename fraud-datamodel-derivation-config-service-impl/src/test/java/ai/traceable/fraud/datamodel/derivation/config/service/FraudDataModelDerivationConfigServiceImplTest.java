@@ -1,11 +1,17 @@
 package ai.traceable.fraud.datamodel.derivation.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStore;
 import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStoreManager;
+import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationTransformConfigStore;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateUserAgentMergeMappingConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateUserAgentMergeMappingConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteUserAgentMergeMappingConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteUserAgentMergeMappingConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfig;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfigType;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.FraudDataModelDerivationConfigServiceGrpc;
@@ -13,8 +19,21 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationCo
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigsRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigsResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateUserAgentMergeMappingConfigRequest;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateUserAgentMergeMappingConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.UserAgentMergeMappingConfig;
 import ai.traceable.fraud.datamodel.derivation.config.service.validation.FraudDataModelDerivationConfigRequestValidator;
+import com.google.protobuf.ListValue;
+import com.google.protobuf.Value;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -46,7 +65,9 @@ class FraudDataModelDerivationConfigServiceImplTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     this.storeManager =
         new FraudDataModelDerivationConfigStoreManager(
-            new FraudDataModelDerivationConfigStore(genericStub, eventGenerator), uuidGenerator);
+            new FraudDataModelDerivationConfigStore(genericStub, eventGenerator),
+            new FraudDataModelDerivationTransformConfigStore(genericStub, eventGenerator),
+            uuidGenerator);
     this.mockGenericConfigService
         .addService(
             new FraudDataModelDerivationConfigServiceImpl(
@@ -142,6 +163,119 @@ class FraudDataModelDerivationConfigServiceImplTest {
                         .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                         .build()));
     assertEquals(0, getDerivationConfigsResponse.getDerivationConfigsCount());
+  }
+
+  @Test
+  public void testUserAgentMappingConfigCrud() {
+    RequestContext requestContext = buildRequestContext();
+
+    Map<String, List<String>> map = Map.of("a", List.of("b", "c"), "d", List.of("e", "f"));
+    UserAgentMergeMappingConfig config = convertToUserAgentMergeMappingConfig(map, null);
+
+    CreateUserAgentMergeMappingConfigResponse createUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .createUserAgentMergeMappingConfig(
+                        CreateUserAgentMergeMappingConfigRequest.newBuilder()
+                            .putAllPairs(config.getPairsMap())
+                            .build()));
+    assertNotNull(createUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig());
+    String id = createUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId();
+    System.out.println("Created config with id=" + id);
+
+    map = Map.of("a1", List.of("b1", "c1"), "d1", List.of("e1", "f1"));
+    UserAgentMergeMappingConfig updateConfig = convertToUserAgentMergeMappingConfig(map, id);
+
+    UpdateUserAgentMergeMappingConfigResponse updateUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .updateUserAgentMergeMappingConfig(
+                        UpdateUserAgentMergeMappingConfigRequest.newBuilder()
+                            .setUserAgentMergeMappingConfig(updateConfig)
+                            .build()));
+
+    assertEquals(
+        id, updateUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId());
+    assertEquals(
+        map,
+        convertToMap(
+            updateUserAgentMergeMappingConfigResponse
+                .getUserAgentMergeMappingConfig()
+                .getPairsMap()));
+
+    GetUserAgentMergeMappingConfigResponse getUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .getUserAgentMergeMappingConfig(
+                        GetUserAgentMergeMappingConfigRequest.newBuilder().setId(id).build()));
+
+    assertEquals(
+        id, getUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId());
+
+    DeleteUserAgentMergeMappingConfigResponse deleteUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .deleteUserAgentMergeMappingConfig(
+                        DeleteUserAgentMergeMappingConfigRequest.newBuilder()
+                            .setId(
+                                createUserAgentMergeMappingConfigResponse
+                                    .getUserAgentMergeMappingConfig()
+                                    .getId())
+                            .build()));
+
+    GetUserAgentMergeMappingConfigsResponse getUserAgentMergeMappingConfigsResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .getUserAgentMergeMappingConfigs(
+                        GetUserAgentMergeMappingConfigsRequest.newBuilder().build()));
+
+    assertEquals(0, getUserAgentMergeMappingConfigsResponse.getUserAgentMergeMappingConfigCount());
+  }
+
+  private UserAgentMergeMappingConfig convertToUserAgentMergeMappingConfig(
+      Map<String, List<String>> map, String id) {
+    UserAgentMergeMappingConfig.Builder builder = UserAgentMergeMappingConfig.newBuilder();
+    if (id != null) {
+      builder.setId(id);
+    }
+
+    for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+      String key = entry.getKey();
+      List<String> values = entry.getValue();
+
+      ListValue.Builder listValueBuilder = ListValue.newBuilder();
+      listValueBuilder.addAllValues(
+          values.stream()
+              .map(value -> Value.newBuilder().setStringValue(value).build())
+              .collect(Collectors.toList()));
+
+      builder.putPairs(key, listValueBuilder.build());
+    }
+
+    return builder.build();
+  }
+
+  private Map<String, List<String>> convertToMap(Map<String, ListValue> listValueMap) {
+    Map<String, List<String>> stringListMap = new HashMap<>();
+
+    for (Map.Entry<String, ListValue> entry : listValueMap.entrySet()) {
+      String key = entry.getKey();
+      ListValue listValue = entry.getValue();
+
+      List<String> values =
+          listValue.getValuesList().stream()
+              .map(Value::getStringValue)
+              .collect(Collectors.toList());
+
+      stringListMap.put(key, values);
+    }
+
+    return stringListMap;
   }
 
   private static RequestContext buildRequestContext() {

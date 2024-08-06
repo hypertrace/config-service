@@ -1,19 +1,7 @@
 package ai.traceable.fraud.datamodel.derivation.config.service;
 
 import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStoreManager;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteDerivationConfigsRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteDerivationConfigsResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.FraudDataModelDerivationConfigServiceGrpc;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigResponse;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigRequest;
-import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpsertDerivationConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.*;
 import ai.traceable.fraud.datamodel.derivation.config.service.validation.FraudDataModelDerivationConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -158,6 +146,143 @@ class FraudDataModelDerivationConfigServiceImpl
       Exception decoratedException = decorateException(requestContext, exception);
       log.warn(
           "Error while deleting fraud datamodel derivation configs for request: {} with context {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void createUserAgentMergeMappingConfig(
+      ai.traceable.fraud.datamodel.derivation.config.service.v1
+              .CreateUserAgentMergeMappingConfigRequest
+          request,
+      io.grpc.stub.StreamObserver<
+              ai.traceable.fraud.datamodel.derivation.config.service.v1
+                  .CreateUserAgentMergeMappingConfigResponse>
+          responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          fraudDataModelDerivationConfigStoreManager.createUserAgentMergeMappingConfig(
+              requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while getting user agent mapping config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void getUserAgentMergeMappingConfig(
+      ai.traceable.fraud.datamodel.derivation.config.service.v1
+              .GetUserAgentMergeMappingConfigRequest
+          request,
+      io.grpc.stub.StreamObserver<
+              ai.traceable.fraud.datamodel.derivation.config.service.v1
+                  .GetUserAgentMergeMappingConfigResponse>
+          responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          fraudDataModelDerivationConfigStoreManager.getUserAgentMergeMappingConfig(
+              requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while getting user agent mapping config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void getUserAgentMergeMappingConfigs(
+      ai.traceable.fraud.datamodel.derivation.config.service.v1
+              .GetUserAgentMergeMappingConfigsRequest
+          request,
+      io.grpc.stub.StreamObserver<
+              ai.traceable.fraud.datamodel.derivation.config.service.v1
+                  .GetUserAgentMergeMappingConfigsResponse>
+          responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          fraudDataModelDerivationConfigStoreManager.getUserAgentMergeMappingConfigs(
+              requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while getting user agent mapping config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  /** */
+  @Override
+  public void updateUserAgentMergeMappingConfig(
+      ai.traceable.fraud.datamodel.derivation.config.service.v1
+              .UpdateUserAgentMergeMappingConfigRequest
+          request,
+      io.grpc.stub.StreamObserver<
+              ai.traceable.fraud.datamodel.derivation.config.service.v1
+                  .UpdateUserAgentMergeMappingConfigResponse>
+          responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateOrThrow(requestContext, request);
+      responseObserver.onNext(
+          fraudDataModelDerivationConfigStoreManager.updateUserAgentMergeMappingConfig(
+              requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while upserting user agent mapping config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  /** */
+  @Override
+  public void deleteUserAgentMergeMappingConfig(
+      ai.traceable.fraud.datamodel.derivation.config.service.v1
+              .DeleteUserAgentMergeMappingConfigRequest
+          request,
+      io.grpc.stub.StreamObserver<
+              ai.traceable.fraud.datamodel.derivation.config.service.v1
+                  .DeleteUserAgentMergeMappingConfigResponse>
+          responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateOrThrow(requestContext, request);
+      fraudDataModelDerivationConfigStoreManager.deleteUserAgentMergeMappingConfig(
+          requestContext, request);
+      responseObserver.onNext(DeleteUserAgentMergeMappingConfigResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while deleting user agent mapping config for request: {} with context: {}",
           request,
           requestContext,
           decoratedException);
