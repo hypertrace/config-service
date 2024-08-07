@@ -1,7 +1,6 @@
 package ai.traceable.fraud.datamodel.derivation.config.service.store;
 
 import static ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStore.FRAUD_DATAMODEL_DERIVATION_CONFIG_RESOURCE_NAMESPACE;
-import static ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStore.FRAUD_DATAMODEL_DERIVATION_RESOURCE_NAME;
 
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UserAgentMergeMappingConfig;
 import com.google.inject.Inject;
@@ -16,6 +15,9 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 public class FraudDataModelDerivationTransformConfigStore
     extends IdentifiedObjectStore<UserAgentMergeMappingConfig> {
 
+  public static final String FRAUD_DATAMODEL_DERIVATION_TRANSFORMATIONS_CONFIG_RESOURCE_NAMESPACE =
+      "fraud-datamodel-derivation-transformations-config";
+
   @Inject
   public FraudDataModelDerivationTransformConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
@@ -23,7 +25,7 @@ public class FraudDataModelDerivationTransformConfigStore
     super(
         configServiceBlockingStub,
         FRAUD_DATAMODEL_DERIVATION_CONFIG_RESOURCE_NAMESPACE,
-        FRAUD_DATAMODEL_DERIVATION_RESOURCE_NAME,
+        FRAUD_DATAMODEL_DERIVATION_TRANSFORMATIONS_CONFIG_RESOURCE_NAMESPACE,
         configChangeEventGenerator);
   }
 
