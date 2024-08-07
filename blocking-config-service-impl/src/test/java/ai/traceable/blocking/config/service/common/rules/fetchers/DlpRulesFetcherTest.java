@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.blocking.config.service.common.rules.ModsecRulesData;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
@@ -87,7 +88,7 @@ public class DlpRulesFetcherTest {
     assertTrue(
         dlpRulesFetcher.fetchDlpModsecRules(REQUEST_CONTEXT, Optional.empty(), Set.of()).isEmpty());
 
-    Map<String, DlpRulesFetcher.DlpModsecRulesData> dlpModsecRulesDataMap =
+    Map<String, ModsecRulesData<RateLimitingModsecRule>> dlpModsecRulesDataMap =
         dlpRulesFetcher.fetchDlpModsecRules(
             REQUEST_CONTEXT,
             Optional.empty(),
@@ -96,7 +97,7 @@ public class DlpRulesFetcherTest {
     // no dlp rules for service-x
     assertEquals(4, dlpModsecRulesDataMap.size());
 
-    DlpRulesFetcher.DlpModsecRulesData dlpModsecRulesData;
+    ModsecRulesData<RateLimitingModsecRule> dlpModsecRulesData;
 
     dlpModsecRulesData = dlpModsecRulesDataMap.get("service-x");
     assertTrue(dlpModsecRulesData.getModsecDirectivesBlob().isEmpty());

@@ -12,6 +12,7 @@ dependencies {
   api(projects.iprangeConfigServiceApi)
   api(projects.rateLimitingConfigServiceApi)
   api(projects.maliciousSourcesConfigServiceApi)
+  api(projects.detectionExclusionConfigServiceApi)
 
   implementation(commonLibs.traceable.opadistributor.api)
   implementation(commonLibs.traceable.actorservice.api)

@@ -19,4 +19,7 @@ service DetectionExclusionConfigService {
 
     rpc DeleteDetectionExclusionRule (DeleteDetectionExclusionRuleRequest) returns (DeleteDetectionExclusionRuleResponse) {
     }
+
+    rpc GetExclusionModsecRules (GetExclusionModsecRulesRequest) returns (GetExclusionModsecRulesResponse) {
+    }
 }

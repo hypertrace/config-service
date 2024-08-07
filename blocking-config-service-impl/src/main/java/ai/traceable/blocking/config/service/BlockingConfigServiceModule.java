@@ -10,6 +10,8 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
@@ -117,6 +119,14 @@ public class BlockingConfigServiceModule extends AbstractModule {
   RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
       Channel channel) {
     return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  DetectionExclusionConfigServiceBlockingStub providesDetectionExclusionConfigServiceBlockingStub(
+      Channel channel) {
+    return DetectionExclusionConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

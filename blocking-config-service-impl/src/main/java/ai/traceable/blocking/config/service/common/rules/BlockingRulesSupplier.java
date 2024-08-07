@@ -3,12 +3,16 @@ package ai.traceable.blocking.config.service.common.rules;
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher;
-import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher.DlpModsecRulesData;
+import ai.traceable.blocking.config.service.common.rules.fetchers.ExclusionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
@@ -34,6 +38,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -52,11 +57,17 @@ public class BlockingRulesSupplier {
   private final Optional<String> environmentId;
   private final Function<CustomModsecRuleVersion, GetCustomSignatureModsecRulesResponse>
       customSignatureRulesGetter;
-  private final Function<Set<String>, Map<String, DlpModsecRulesData>> dlpModsecRulesGetter;
+  private final Function<Set<String>, Map<String, ModsecRulesData<RateLimitingModsecRule>>>
+      dlpModsecRulesGetter;
+  private final Function<Set<String>, Map<String, ModsecRulesData<DetectionExclusionModsecRule>>>
+      exclusionModsecRulesGetter;
   private final Function<List<String>, List<DetailedRegion>> countryIsoCodeRegionsGetter;
   private final ConcurrentMap<CustomModsecRuleVersion, GetCustomSignatureModsecRulesResponse>
       customSignatureRulesMap = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, DlpModsecRulesData> dlpRulesMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ModsecRulesData<RateLimitingModsecRule>> dlpRulesMap =
+      new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ModsecRulesData<DetectionExclusionModsecRule>>
+      exclusionRulesMap = new ConcurrentHashMap<>();
   private final Supplier<List<RegionRule>> regionRulesSupplier;
   private final Supplier<List<MaliciousSourcesRule>> maliciousSourcesRulesSupplier;
 
@@ -78,9 +89,14 @@ public class BlockingRulesSupplier {
 
     dlpModsecRulesGetter =
         serviceNames ->
-            ((DlpRulesFetcher)
-                    blockingRulesSupplierContext.getRulesFetcher(RulesFetcher.RulesFetcherType.DLP))
+            ((DlpRulesFetcher) blockingRulesSupplierContext.getRulesFetcher(RulesFetcherType.DLP))
                 .fetchDlpModsecRules(requestContext, environmentId, serviceNames);
+
+    exclusionModsecRulesGetter =
+        serviceNames ->
+            ((ExclusionRulesFetcher)
+                    blockingRulesSupplierContext.getRulesFetcher(RulesFetcherType.EXCLUSION))
+                .fetchExclusionModsecRules(requestContext, environmentId, serviceNames);
 
     countryIsoCodeRegionsGetter =
         countryIsoCodes ->
@@ -137,7 +153,7 @@ public class BlockingRulesSupplier {
   public Map<String, String> getCustomModsecBlobs(
       CustomModsecRuleVersion version, Set<String> serviceNames) {
     if (serviceNames.isEmpty()) {
-      // no dlp rules would be fetched if service-name is not provided.
+      // no dlp or exclusion rules would be fetched if service-name is not provided.
       // assumption: agents supporting DLP rules will always send service-name.
       return Collections.emptyMap();
     }
@@ -147,11 +163,15 @@ public class BlockingRulesSupplier {
 
     if (CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE
         .equals(version)) {
-      // DLP rules are supported only when multi-match is enabled.
+      // DLP and or exclusion rules are supported only when multi-match is enabled.
       fetchDlpRulesForMissingServiceNamesIfAny(serviceNames);
+      fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
       combinedModsecBlobFunction =
           serviceName ->
-              getCombinedModsecBlobs(customSignatureModsecRulesBlob, dlpRulesMap.get(serviceName));
+              getCombinedModsecBlobs(
+                  customSignatureModsecRulesBlob,
+                  dlpRulesMap.get(serviceName),
+                  exclusionRulesMap.get(serviceName));
     } else {
       // When Dlp rules are not supported, only return the custom signature rules.
       combinedModsecBlobFunction = serviceName -> customSignatureModsecRulesBlob;
@@ -171,12 +191,14 @@ public class BlockingRulesSupplier {
       Function<DetailedRegion, T> ruleConverter, Set<String> serviceNames) {
 
     List<String> combinedIsoCodes =
-        Stream.concat(
+        Stream.of(
                 regionRulesSupplier.get().stream()
                     .flatMap(
                         regionRule -> regionRule.getRegionIdToCountryMapMap().values().stream())
                     .map(Country::getIsoCode),
-                getDlpRulesCountryIsoCodes(serviceNames).stream())
+                getDlpRulesCountryIsoCodes(serviceNames).stream(),
+                getExclusionRulesCountryIsoCodes(serviceNames).stream())
+            .flatMap(Function.identity())
             .distinct()
             .collect(Collectors.toUnmodifiableList());
 
@@ -204,16 +226,20 @@ public class BlockingRulesSupplier {
 
     Stream<IpTypeRuleInfo.IpType> maliciousSourcesIpTypes = getMaliciousSourcesIpTypes();
     if (serviceNames.isEmpty()) {
-      // no dlp rules would be fetched if service-name is not provided.
+      // no dlp or exclusion rules would be fetched if service-name is not provided.
       // assumption: agents supporting DLP rules will always send service-name.
       return convertIpTypeIpMappings(ruleConverter, ipTypesInfoMap, maliciousSourcesIpTypes);
     }
 
     Stream<IpTypeRuleInfo.IpType> dlpRulesIpTypes = getDlpRulesIpTypes(serviceNames);
+    Stream<IpTypeRuleInfo.IpType> exclusionRulesIpTypes = getExclusionRulesIpTypes(serviceNames);
+
     return convertIpTypeIpMappings(
         ruleConverter,
         ipTypesInfoMap,
-        Stream.concat(maliciousSourcesIpTypes, dlpRulesIpTypes).distinct());
+        Stream.of(maliciousSourcesIpTypes, dlpRulesIpTypes, exclusionRulesIpTypes)
+            .flatMap(Function.identity())
+            .distinct());
   }
 
   /** Returns the list of DLP rules keyed by service name */
@@ -230,7 +256,26 @@ public class BlockingRulesSupplier {
             Collectors.toMap(
                 Function.identity(),
                 serviceName ->
-                    dlpRulesMap.getOrDefault(serviceName, new DlpModsecRulesData()).getRules(),
+                    dlpRulesMap.getOrDefault(serviceName, new ModsecRulesData<>()).getRules(),
+                (existingList, newList) -> existingList,
+                LinkedHashMap::new));
+  }
+
+  /** Returns the list of Exclusion rules keyed by service name */
+  public Map<String, List<DetectionExclusionModsecRule>> getExclusionRules(
+      Set<String> serviceNames) {
+    if (serviceNames.isEmpty()) {
+      // no exclusion rules would be fetched if service-name is not provided.
+      return Collections.emptyMap();
+    }
+    fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
+
+    return serviceNames.stream()
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                serviceName ->
+                    exclusionRulesMap.getOrDefault(serviceName, new ModsecRulesData<>()).getRules(),
                 (existingList, newList) -> existingList,
                 LinkedHashMap::new));
   }
@@ -244,20 +289,49 @@ public class BlockingRulesSupplier {
                 .collect(Collectors.toCollection(LinkedHashSet::new))));
   }
 
-  /** Method to combine DLP rules modsec blob with custom signature rules modsec blob */
+  /** Method to fetch Exclusion rules for service not present in the map */
+  private void fetchExclusionRulesForMissingServiceNamesIfAny(Set<String> serviceNames) {
+    exclusionRulesMap.putAll(
+        exclusionModsecRulesGetter.apply(
+            serviceNames.stream()
+                .filter(serviceName -> !exclusionRulesMap.containsKey(serviceName))
+                .collect(Collectors.toCollection(LinkedHashSet::new))));
+  }
+
+  /**
+   * Method to combine DLP and exclusion rules modsec blob with custom signature rules modsec blob
+   */
   private String getCombinedModsecBlobs(
-      String customSignatureModsecRulesBlob, DlpModsecRulesData dlpModsecRulesData) {
+      String customSignatureModsecRulesBlob,
+      ModsecRulesData<RateLimitingModsecRule> dlpModsecRulesData,
+      ModsecRulesData<DetectionExclusionModsecRule> exclusionModsecRulesData) {
+    // First combine custom signature and DLP
     String modsecRulesBlobPrefix = customSignatureModsecRulesBlob;
-    // no dlp rules, return custom-signature blob as is
-    if (dlpModsecRulesData == null || dlpModsecRulesData.getModsecDirectivesBlob().isEmpty()) {
-      return modsecRulesBlobPrefix;
+    // if dlp rules is present
+    if (dlpModsecRulesData != null && !dlpModsecRulesData.getModsecDirectivesBlob().isEmpty()) {
+      // no custom signature rules blob - add modsec directives from dlp rules modsec blob data
+      // if custom signature rules blob is present, it already contains the necessary directives
+      if (modsecRulesBlobPrefix.isEmpty()) {
+        modsecRulesBlobPrefix = dlpModsecRulesData.getModsecDirectivesBlob();
+      }
+      modsecRulesBlobPrefix =
+          modsecRulesBlobPrefix + NEW_LINE_DELIMITER + dlpModsecRulesData.getModsecRulesBlob();
     }
-    // no custom signature rules blob - add modsec directives from dlp rules modsec blob data
-    // if custom signature rules blob is present, it already contains the necessary directives
-    if (modsecRulesBlobPrefix.isEmpty()) {
-      modsecRulesBlobPrefix = dlpModsecRulesData.getModsecDirectivesBlob();
+
+    // if exclusion rules is present
+    if (exclusionModsecRulesData != null
+        && !exclusionModsecRulesData.getModsecDirectivesBlob().isEmpty()) {
+
+      if (modsecRulesBlobPrefix.isEmpty()) {
+        modsecRulesBlobPrefix = exclusionModsecRulesData.getModsecDirectivesBlob();
+      }
+      modsecRulesBlobPrefix =
+          modsecRulesBlobPrefix
+              + NEW_LINE_DELIMITER
+              + exclusionModsecRulesData.getModsecRulesBlob();
     }
-    return modsecRulesBlobPrefix + NEW_LINE_DELIMITER + dlpModsecRulesData.getModsecRulesBlob();
+
+    return modsecRulesBlobPrefix;
   }
 
   private Stream<IpTypeRuleInfo.IpType> getMaliciousSourcesIpTypes() {
@@ -274,7 +348,8 @@ public class BlockingRulesSupplier {
                                 .stream()))
         .distinct()
         .filter(Objects::nonNull)
-        .map(IpTypeRuleInfo::convertIpType);
+        .map(IpTypeRuleInfo::convertIpType)
+        .filter(Objects::nonNull);
   }
 
   private Stream<IpTypeRuleInfo.IpType> getDlpRulesIpTypes(Set<String> serviceNames) {
@@ -285,12 +360,40 @@ public class BlockingRulesSupplier {
     return serviceNames.stream()
         .flatMap(
             serviceName ->
-                dlpRulesMap.getOrDefault(serviceName, new DlpModsecRulesData()).getRules().stream())
+                dlpRulesMap.getOrDefault(serviceName, new ModsecRulesData<>()).getRules().stream())
         .filter(rule -> ruleIds.add(rule.getId()))
         .flatMap(rule -> extractDlpIpLocationTypes(rule.getData().getCondition()))
         .distinct()
         .filter(Objects::nonNull)
-        .map(IpTypeRuleInfo::convertIpType);
+        .map(IpTypeRuleInfo::convertIpType)
+        .filter(Objects::nonNull);
+  }
+
+  private Stream<IpTypeRuleInfo.IpType> getExclusionRulesIpTypes(Set<String> serviceNames) {
+    fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
+    // To avoid using entire message for identifying distinct rules
+    // to subsequently avoid extracting ip-types from same rule multiple times
+    Set<String> ruleIds = ConcurrentHashMap.newKeySet();
+    return serviceNames.stream()
+        .flatMap(
+            serviceName ->
+                exclusionRulesMap
+                    .getOrDefault(serviceName, new ModsecRulesData<>())
+                    .getRules()
+                    .stream())
+        .filter(rule -> ruleIds.add(rule.getRule().getId()))
+        .flatMap(rule -> rule.getRule().getRuleInfo().getConditionsList().stream())
+        .filter(DetectionExclusionCondition::hasIpLocationTypeCondition)
+        .flatMap(
+            detectionExclusionCondition ->
+                detectionExclusionCondition
+                    .getIpLocationTypeCondition()
+                    .getIpLocationTypesList()
+                    .stream())
+        .distinct()
+        .filter(Objects::nonNull)
+        .map(BlockingRulesSupplier::convertIpType)
+        .filter(Objects::nonNull);
   }
 
   private List<String> getDlpRulesCountryIsoCodes(Set<String> serviceNames) {
@@ -308,12 +411,12 @@ public class BlockingRulesSupplier {
     return serviceNames.stream()
         .flatMap(
             serviceName ->
-                dlpRulesMap.getOrDefault(serviceName, new DlpModsecRulesData()).getRules().stream())
+                dlpRulesMap.getOrDefault(serviceName, new ModsecRulesData<>()).getRules().stream())
         .filter(rule -> ruleIds.add(rule.getId()))
         .flatMap(rule -> extractDlpCountryIsoCodes(rule.getData().getCondition()))
         .distinct()
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private static Stream<String> extractDlpCountryIsoCodes(Condition condition) {
@@ -326,6 +429,35 @@ public class BlockingRulesSupplier {
   private static Stream<String> extractDlpCountryIsoCodes(LeafCondition condition) {
     return condition.getRegionCondition().getRegionIdentifiersList().stream()
         .map(RegionCondition.Region::getCountryIsoCode);
+  }
+
+  private List<String> getExclusionRulesCountryIsoCodes(Set<String> serviceNames) {
+    // no exclusion rules would be fetched if service-name is not provided.
+    if (serviceNames.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    fetchExclusionRulesForMissingServiceNamesIfAny(serviceNames);
+
+    // To avoid using entire message for identifying distinct rules
+    // to subsequently avoid extracting region-iso from same rule multiple times
+    Set<String> ruleIds = ConcurrentHashMap.newKeySet();
+    return serviceNames.stream()
+        .flatMap(
+            serviceName ->
+                exclusionRulesMap
+                    .getOrDefault(serviceName, new ModsecRulesData<>())
+                    .getRules()
+                    .stream())
+        .filter(rule -> ruleIds.add(rule.getRule().getId()))
+        .flatMap(rule -> rule.getRule().getRuleInfo().getConditionsList().stream())
+        .filter(DetectionExclusionCondition::hasRegionCondition)
+        .flatMap(
+            detectionExclusionCondition ->
+                detectionExclusionCondition.getRegionCondition().getRegionsList().stream())
+        .map(Region::getCountryIsoCode)
+        .distinct()
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private static <T> List<ImmutablePair<T, String>> convertIpTypeIpMappings(
@@ -349,5 +481,24 @@ public class BlockingRulesSupplier {
 
   private static Stream<IpLocationType> extractDlpIpLocationTypes(LeafCondition condition) {
     return condition.getIpLocationTypeCondition().getIpLocationTypesList().stream();
+  }
+
+  @Nullable
+  private static IpTypeRuleInfo.IpType convertIpType(
+      ai.traceable.detection.exclusion.config.service.v1.IpLocationType ipLocationType) {
+    switch (ipLocationType) {
+      case IP_LOCATION_TYPE_BOT:
+        return IpTypeRuleInfo.IpType.BOT;
+      case IP_LOCATION_TYPE_ANONYMOUS_VPN:
+        return IpTypeRuleInfo.IpType.ANONYMOUS_VPN;
+      case IP_LOCATION_TYPE_HOSTING_PROVIDER:
+        return IpTypeRuleInfo.IpType.HOSTING_PROVIDER;
+      case IP_LOCATION_TYPE_PUBLIC_PROXY:
+        return IpTypeRuleInfo.IpType.PUBLIC_PROXY;
+      case IP_LOCATION_TYPE_TOR_EXIT_NODE:
+        return IpTypeRuleInfo.IpType.TOR_EXIT_NODE;
+      default:
+        return null;
+    }
   }
 }

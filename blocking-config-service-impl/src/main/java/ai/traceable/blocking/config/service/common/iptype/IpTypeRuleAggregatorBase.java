@@ -44,6 +44,7 @@ public class IpTypeRuleAggregatorBase<T> {
 
     return blockingIpTypes.stream()
         .map(IpTypeRuleInfo::convertIpType)
+        .filter(Objects::nonNull)
         .map(ipTypesInfoMap::get)
         .filter(Objects::nonNull)
         .map(ipTypeConverter::convert)

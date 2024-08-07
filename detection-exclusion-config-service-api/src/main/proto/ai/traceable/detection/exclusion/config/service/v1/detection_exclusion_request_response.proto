@@ -56,3 +56,20 @@ message DetectionExclusionMigrationConfig {
   // SSTI parent rule fix
   bool change_log_3_migration_completed = 3;
 }
+
+message GetExclusionModsecRulesRequest{
+  GetRulesFilter rules_filter = 1;
+  repeated string service_names = 2;
+}
+
+message GetExclusionModsecRulesResponse {
+  string modsec_directives_blob = 1;
+  repeated ModsecBlobData modsec_blobs_data = 2;
+  repeated DetectionExclusionModsecRule modsec_rules = 3;
+}
+
+message ModsecBlobData {
+  string modsec_blob = 1;
+  repeated string service_names = 2;
+  repeated string rule_ids = 3;
+}

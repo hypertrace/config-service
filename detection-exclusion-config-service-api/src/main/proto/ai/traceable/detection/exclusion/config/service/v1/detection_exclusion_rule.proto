@@ -103,3 +103,7 @@ enum RuleIntent {
   RULE_INTENT_FALSE_POSITIVE = 1;
   RULE_INTENT_INTERNAL_TO_EXTERNAL = 2;
 }
+
+message DetectionExclusionModsecRule {
+  DetectionExclusionRule rule = 1;
+}

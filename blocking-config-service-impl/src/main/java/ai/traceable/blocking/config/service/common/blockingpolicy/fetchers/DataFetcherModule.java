@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.malicioussources.handlers.MaliciousSourcesDataFetcherModule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
@@ -35,5 +36,6 @@ public class DataFetcherModule extends AbstractModule {
     requireBinding(AnomalyGlobalConfigServiceBlockingStub.class);
     requireBinding(DetectorConfigServiceBlockingStub.class);
     requireBinding(RateLimitingConfigServiceBlockingStub.class);
+    requireBinding(DetectionExclusionConfigServiceBlockingStub.class);
   }
 }

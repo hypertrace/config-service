@@ -107,6 +107,24 @@ public class DetectionExclusionConfigServiceImpl
     }
   }
 
+  @Override
+  public void getExclusionModsecRules(
+      GetExclusionModsecRulesRequest request,
+      StreamObserver<GetExclusionModsecRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      //      rulesValidator.validateOrThrow(context, request);
+      //
+      //      rulesManager.deleteDetectionExclusionRule(context, request.getId());
+
+      responseObserver.onNext(GetExclusionModsecRulesResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
   private List<DetectionExclusionRule> getExistingRules(RequestContext context) {
     return rulesManager.getDetectionExclusionRules(context, GetRulesFilter.getDefaultInstance());
   }

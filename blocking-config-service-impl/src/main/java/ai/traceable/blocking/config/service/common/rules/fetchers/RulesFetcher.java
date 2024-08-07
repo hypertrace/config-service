@@ -6,6 +6,7 @@ public interface RulesFetcher {
     MALICIOUS_SOURCES,
     REGION,
     CUSTOM_SIGNATURE,
-    DLP;
+    DLP,
+    EXCLUSION
   }
 }

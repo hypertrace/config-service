@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service.common.rules.fetchers;
 
+import ai.traceable.blocking.config.service.common.rules.ModsecRulesData;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
@@ -10,7 +11,6 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import lombok.EqualsAndHashCode;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -40,7 +38,7 @@ public class DlpRulesFetcher implements RulesFetcher {
   }
 
   @Nullable
-  public Map<String, DlpModsecRulesData> fetchDlpModsecRules(
+  public Map<String, ModsecRulesData<RateLimitingModsecRule>> fetchDlpModsecRules(
       RequestContext requestContext, Optional<String> environmentId, Set<String> serviceNames) {
     if (serviceNames.isEmpty()) {
       return Collections.emptyMap();
@@ -78,16 +76,17 @@ public class DlpRulesFetcher implements RulesFetcher {
                     .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getRateLimitingRuleModsecRules(rulesRequest));
 
-    Map<String, DlpModsecRulesData> dlpModsecRulesDataMap =
+    Map<String, ModsecRulesData<RateLimitingModsecRule>> dlpModsecRulesDataMap =
         response.getModsecBlobsDataList().stream()
             .flatMap(
                 data -> {
-                  DlpModsecRulesData dlpModsecRulesData =
-                      new DlpModsecRulesData(
+                  ModsecRulesData<RateLimitingModsecRule> dlpModsecRulesData =
+                      new ModsecRulesData<>(
                           response.getModsecDirectivesBlob(),
                           data.getModsecBlob(),
                           data.getRuleIdsList(),
-                          response.getRulesList());
+                          response.getRulesList(),
+                          RateLimitingModsecRule::getId);
                   return data.getServiceNamesList().stream()
                       .map(serviceName -> Map.entry(serviceName, dlpModsecRulesData));
                 })
@@ -96,34 +95,7 @@ public class DlpRulesFetcher implements RulesFetcher {
     // add empty entry for serviceNames which do not have dlp rules
     serviceNames.forEach(
         serviceName ->
-            dlpModsecRulesDataMap.computeIfAbsent(serviceName, sName -> new DlpModsecRulesData()));
+            dlpModsecRulesDataMap.computeIfAbsent(serviceName, sName -> new ModsecRulesData<>()));
     return dlpModsecRulesDataMap;
-  }
-
-  @Value
-  @EqualsAndHashCode
-  public static class DlpModsecRulesData {
-    String modsecDirectivesBlob;
-    String modsecRulesBlob;
-    List<RateLimitingModsecRule> rules;
-
-    public DlpModsecRulesData(
-        String modsecDirectivesBlob,
-        String modsecRulesBlob,
-        List<String> ruleIds,
-        Collection<RateLimitingModsecRule> rules) {
-      this.modsecDirectivesBlob = modsecDirectivesBlob;
-      this.modsecRulesBlob = modsecRulesBlob;
-      this.rules =
-          rules.stream()
-              .filter(rule -> ruleIds.contains(rule.getId()))
-              .collect(Collectors.toList());
-    }
-
-    public DlpModsecRulesData() {
-      modsecDirectivesBlob = "";
-      modsecRulesBlob = "";
-      rules = Collections.emptyList();
-    }
   }
 }

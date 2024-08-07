@@ -3,10 +3,13 @@ package ai.traceable.blocking.config.service.common.rules;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.ExclusionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourcesRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
+import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesConfigServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
 import ai.traceable.region.config.service.v1.RegionConfigServiceGrpc;
@@ -27,6 +30,7 @@ public class BlockingRulesFetcherModule extends AbstractModule {
         .to(MaliciousSourcesRulesFetcher.class);
     multiBinder.addBinding(RulesFetcher.RulesFetcherType.REGION).to(RegionRulesFetcher.class);
     multiBinder.addBinding(RulesFetcher.RulesFetcherType.DLP).to(DlpRulesFetcher.class);
+    multiBinder.addBinding(RulesFetcherType.EXCLUSION).to(ExclusionRulesFetcher.class);
 
     requireBinding(Clock.class);
     requireBinding(RegionConfigServiceGrpc.RegionConfigServiceBlockingStub.class);
@@ -37,5 +41,6 @@ public class BlockingRulesFetcherModule extends AbstractModule {
     requireBinding(
         MaliciousSourcesConfigServiceGrpc.MaliciousSourcesConfigServiceBlockingStub.class);
     requireBinding(RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub.class);
+    requireBinding(DetectionExclusionConfigServiceBlockingStub.class);
   }
 }
