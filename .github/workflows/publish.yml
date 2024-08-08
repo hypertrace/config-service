@@ -6,6 +6,8 @@ on:
 jobs:
   create-release:
     runs-on: self-hosted-x64-small
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
@@ -128,3 +130,27 @@ jobs:
       - uses: hypertrace/github-actions/release-notes@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  post-publish-artifacts:
+    runs-on: self-hosted-x64-small
+    needs: [ create-release, publish-charts ]
+    steps:
+      - name: Get Token from Github App
+        uses: tibdex/github-app-token@v2
+        id: generate-token
+        with:
+          app_id: ${{ secrets.GH_CI_APP_ID }}
+          private_key: ${{ secrets.GH_CI_APP_PRIVATE_KEY }}
+          repositories: >-
+            ["traceable-bom"]
+      - name: Auto upgrade BOM
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          repository: Traceableai/traceable-bom
+          event-type: upgrade-version
+          client-payload: |
+            {
+              "repository": "${{ github.repository }}",
+              "version": "${{ needs.create-release.outputs.version }}"
+            }
