@@ -7,6 +7,7 @@ option java_multiple_files = true;
 message ScopedDataProtectionConfig {
   DataProtectionScope scope = 1;
   DataProtectionConfig config = 2;
+  optional bool disable_data_protection = 3;
 }
 
 message DataProtectionScope {
