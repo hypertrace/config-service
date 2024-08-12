@@ -179,5 +179,6 @@ public class ConfigChangeEventGeneratorImpl implements ConfigChangeEventGenerato
   private void populateUserDetails(RequestContext requestContext, Builder builder) {
     requestContext.getUserId().ifPresent(builder::setUserId);
     requestContext.getName().or(requestContext::getEmail).ifPresent(builder::setUserName);
+    requestContext.getEmail().ifPresent(builder::setUserEmail);
   }
 }
