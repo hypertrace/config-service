@@ -114,11 +114,13 @@ public class SavedQueryStoreManager {
         defaultSavedQueryConfig.getQueriesForScope(request.getFilter().getScope()).stream()
             .filter(
                 query ->
-                    request.getFilter().getEmailIdsList().isEmpty()
+                    (request.getFilter().getEmailIdsList().isEmpty()
+                            && request.getFilter().getUserIdsList().isEmpty())
                         || request
                             .getFilter()
                             .getEmailIdsList()
-                            .contains(query.getAuthor().getEmailId()))
+                            .contains(query.getAuthor().getEmailId())
+                        || request.getFilter().getUserIdsList().contains(query.getAuthor().getId()))
             .collect(Collectors.toUnmodifiableList());
     List<SavedQuery> storedSavedQueries =
         savedQueryConfigStore.getAllConfigData(requestContext, request);

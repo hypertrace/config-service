@@ -56,6 +56,11 @@ public class SavedQueryConfigStore
       return Optional.of(data.getAuthor().getEmailId())
           .filter(email -> request.getFilter().getEmailIdsList().contains(email))
           .map(author -> data);
+    } else if (!request.getFilter().getUserIdsList().isEmpty()) {
+      String userId = data.hasAuthor() ? data.getAuthor().getId() : data.getCreatedByUserId();
+      return request.getFilter().getUserIdsList().contains(userId)
+          ? Optional.of(data)
+          : Optional.empty();
     }
     return Optional.of(data);
   }

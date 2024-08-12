@@ -42,15 +42,40 @@ public class SavedQueryConfigStoreTest {
         configStore
             .filterConfigData(
                 SavedQuery.newBuilder()
+                    .setScope("someScope")
+                    .setAuthor(User.newBuilder().setId("user1").build())
+                    .build(),
+                scopeFilter)
+            .isPresent());
+
+    Assertions.assertTrue(
+        configStore
+            .filterConfigData(
+                SavedQuery.newBuilder()
                     .setScope("someOtherScope")
                     .setAuthor(User.newBuilder().setEmailId("email1").build())
                     .build(),
                 scopeFilter)
             .isEmpty());
 
-    GetSavedQueriesRequest userFilter =
+    Assertions.assertTrue(
+        configStore
+            .filterConfigData(
+                SavedQuery.newBuilder()
+                    .setScope("someOtherScope")
+                    .setAuthor(User.newBuilder().setId("user1").build())
+                    .build(),
+                scopeFilter)
+            .isEmpty());
+
+    GetSavedQueriesRequest userFilterUsingEmail =
         GetSavedQueriesRequest.newBuilder()
             .setFilter(GetSavedQueriesFilter.newBuilder().addAllEmailIds(List.of("email1")).build())
+            .build();
+
+    GetSavedQueriesRequest userFilterUsingId =
+        GetSavedQueriesRequest.newBuilder()
+            .setFilter(GetSavedQueriesFilter.newBuilder().addUserIds("user1").build())
             .build();
 
     Assertions.assertTrue(
@@ -60,7 +85,17 @@ public class SavedQueryConfigStoreTest {
                     .setScope("someOtherScope")
                     .setAuthor(User.newBuilder().setEmailId("email1").build())
                     .build(),
-                userFilter)
+                userFilterUsingEmail)
+            .isPresent());
+
+    Assertions.assertTrue(
+        configStore
+            .filterConfigData(
+                SavedQuery.newBuilder()
+                    .setScope("someOtherScope")
+                    .setAuthor(User.newBuilder().setId("user1").build())
+                    .build(),
+                userFilterUsingId)
             .isPresent());
 
     Assertions.assertTrue(
@@ -70,7 +105,17 @@ public class SavedQueryConfigStoreTest {
                     .setScope("someOtherScope")
                     .setAuthor(User.newBuilder().setEmailId("email2").build())
                     .build(),
-                userFilter)
+                userFilterUsingEmail)
+            .isEmpty());
+
+    Assertions.assertTrue(
+        configStore
+            .filterConfigData(
+                SavedQuery.newBuilder()
+                    .setScope("someOtherScope")
+                    .setAuthor(User.newBuilder().setId("user2").build())
+                    .build(),
+                userFilterUsingId)
             .isEmpty());
 
     GetSavedQueriesRequest emptyEmailFilter =
