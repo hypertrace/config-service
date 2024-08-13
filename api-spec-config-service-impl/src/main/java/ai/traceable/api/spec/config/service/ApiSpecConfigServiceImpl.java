@@ -35,6 +35,7 @@ import ai.traceable.api.spec.config.service.v1.UpdatedApiSpecField;
 import ai.traceable.api.spec.config.service.validation.ApiSpecConfigRequestValidator;
 import ai.traceable.config.utils.TimestampConverter;
 import com.google.inject.Inject;
+import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
@@ -471,7 +472,8 @@ public class ApiSpecConfigServiceImpl
             .setName(updateApiSpec.getName())
             .setApiNamingEnabled(updateApiSpec.getApiNamingEnabled())
             .setApiDiscoveryEnabled(updateApiSpec.getApiDiscoveryEnabled())
-            .setApiInspectorDisabled(updateApiSpec.getApiInspectorDisabled());
+            .setApiInspectorDisabled(updateApiSpec.getApiInspectorDisabled())
+            .setLastUpdatedTimestamp(Timestamps.now());
 
     // set updated status if present, else persist with existing status
     if (!API_SPEC_STATUS_UNSPECIFIED.equals(updateApiSpec.getStatus())) {
@@ -482,7 +484,8 @@ public class ApiSpecConfigServiceImpl
 
   private ApiSpec buildPartiallyUpdatedApiSpec(
       ApiSpec existingApiSpec, ApiSpecUpdate apiSpecUpdate) {
-    ApiSpec.Builder apiSpecBuilder = ApiSpec.newBuilder(existingApiSpec);
+    ApiSpec.Builder apiSpecBuilder =
+        ApiSpec.newBuilder(existingApiSpec).setLastUpdatedTimestamp(Timestamps.now());
     for (UpdatedApiSpecField updateApiSpecField : apiSpecUpdate.getUpdatedApiSpecFieldsList()) {
       switch (updateApiSpecField.getFieldCase()) {
         case NAME:
