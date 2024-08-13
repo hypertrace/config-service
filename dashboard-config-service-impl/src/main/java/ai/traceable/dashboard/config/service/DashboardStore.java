@@ -59,6 +59,9 @@ class DashboardStore
         .filter(
             dashboard ->
                 !filter.hasUiReference()
-                    || filter.getUiReference().equals(dashboard.getUiReference()));
+                    || filter.getUiReference().equals(dashboard.getUiReference()))
+        .filter(
+            dashboard ->
+                !filter.hasDashboardId() || filter.getDashboardId().equals(dashboard.getId()));
   }
 }

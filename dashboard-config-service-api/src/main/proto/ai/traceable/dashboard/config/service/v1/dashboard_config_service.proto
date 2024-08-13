@@ -21,6 +21,7 @@ message GetDashboardsRequest {
 
   message DashboardFilter {
     optional string ui_reference = 1;
+    optional string dashboard_id = 2;
   }
 }
 
