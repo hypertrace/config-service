@@ -534,9 +534,11 @@ public class AstConfigServiceRequestValidatorImpl implements AstConfigServiceReq
     Preconditions.checkArgument(
         !stringPredicate.getOperator().equals(RelationalOperator.RELATIONAL_OPERATOR_UNSPECIFIED),
         "Relational Operator in Predicate for Span Filters is Not Specified");
-    if (stringPredicate
-        .getOperator()
-        .equals(RelationalOperator.RELATIONAL_OPERATOR_MATCHES_REGEX)) {
+
+    RelationalOperator operator = stringPredicate.getOperator();
+
+    if (operator.equals(RelationalOperator.RELATIONAL_OPERATOR_MATCHES_REGEX)
+        || operator.equals(RelationalOperator.RELATIONAL_OPERATOR_NOT_MATCHES_REGEX)) {
       Preconditions.checkArgument(
           isValidRegex(stringPredicate.getValue()),
           "Regex provided in value for Span Filters is invalid");
