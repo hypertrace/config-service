@@ -13,6 +13,7 @@ protobuf {
 
 dependencies {
   api(projects.traceableSpanProcessingConfigServiceApi)
+  implementation(projects.apiSpecConfigServiceApi)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(projects.configUtils)
 

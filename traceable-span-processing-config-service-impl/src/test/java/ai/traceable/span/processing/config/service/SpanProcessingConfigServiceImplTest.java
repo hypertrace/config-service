@@ -13,6 +13,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.api.spec.config.service.v1.ApiSpec;
+import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
+import ai.traceable.api.spec.config.service.v1.ApiSpecFilter;
+import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
+import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
 import ai.traceable.span.processing.config.service.apinamingrules.DefaultApiNamingRulesManager;
@@ -80,6 +86,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class SpanProcessingConfigServiceImplTest {
 
@@ -87,6 +94,8 @@ class SpanProcessingConfigServiceImplTest {
   private ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc
           .SpanProcessingConfigServiceBlockingStub
       spanProcessingConfigServiceStub;
+  private ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub
+      apiSpecConfigServiceBlockingStub;
 
   @BeforeEach
   void beforeEach() {
@@ -104,6 +113,8 @@ class SpanProcessingConfigServiceImplTest {
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     TimestampConverter timestampConverter = mock(TimestampConverter.class);
+    this.apiSpecConfigServiceBlockingStub =
+        mock(ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
 
     SamplingConfigsConfigStore samplingConfigsConfigStore =
         new SamplingConfigsConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
@@ -115,7 +126,8 @@ class SpanProcessingConfigServiceImplTest {
     SamplingConfigManager samplingConfigManager =
         new DefaultSamplingConfigManager(timestampConverter, samplingConfigsConfigStore);
     ApiNamingRulesManager apiNamingRulesManager =
-        new DefaultApiNamingRulesManager(apiNamingRulesConfigStore, timestampConverter);
+        new DefaultApiNamingRulesManager(
+            apiNamingRulesConfigStore, timestampConverter, this.apiSpecConfigServiceBlockingStub);
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(timestampConverter, protectionSpanRulesConfigStore);
     DefaultProtectionSpanRuleEvaluationStatusConfigStore
@@ -142,6 +154,8 @@ class SpanProcessingConfigServiceImplTest {
 
     when(timestampConverter.convert(any()))
         .thenReturn(Timestamp.newBuilder().setSeconds(100).build());
+    when(this.apiSpecConfigServiceBlockingStub.getApiSpecs(any()))
+        .thenReturn(GetApiSpecsResponse.getDefaultInstance());
   }
 
   @AfterEach
@@ -952,6 +966,7 @@ class SpanProcessingConfigServiceImplTest {
 
   @Test
   void testApiSpecBasedApiNamingRules_handleDuplication() {
+
     List<ApiNamingRuleDetails> firstTwoCreatedApiNamingRuleDetails =
         this.spanProcessingConfigServiceStub
             .createApiNamingRules(
@@ -1118,6 +1133,166 @@ class SpanProcessingConfigServiceImplTest {
     this.spanProcessingConfigServiceStub.deleteApiNamingRules(
         DeleteApiNamingRulesRequest.newBuilder()
             .addAllIds(List.of(secondCreatedApiNamingRuleId))
+            .build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertTrue(apiNamingRules.isEmpty());
+  }
+
+  @Test
+  void testApiSpecBasedApiNamingRules_handleReUpload() {
+    when(this.apiSpecConfigServiceBlockingStub.getApiSpecs(
+            GetApiSpecsRequest.newBuilder()
+                .setApiSpecFilter(
+                    ApiSpecFilter.newBuilder()
+                        .setIds(StringList.newBuilder().addAllValues(List.of("id1"))))
+                .build()))
+        .thenReturn(
+            GetApiSpecsResponse.newBuilder()
+                .addAllApiSpecs(
+                    List.of(
+                        ApiSpec.newBuilder().setSpecId("id1").setApiNamingEnabled(false).build()))
+                .build());
+
+    // Add specs (id1,false,rule1), (id2,true,rule1), (id3,false,rule2)
+
+    List<ApiNamingRuleDetails> firstTwoCreatedApiNamingRuleDetails =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName1")
+                                .setDisabled(false)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id1", "id2"), List.of("regex"), List.of("value")))
+                                .setFilter(buildTestFilter())
+                                .build(),
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("ruleName2")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id3"), List.of("regex1"), List.of("value1")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList();
+
+    List<ApiNamingRule> apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstTwoCreatedApiNamingRuleDetails.get(0).getRule()));
+    assertTrue(apiNamingRules.contains(firstTwoCreatedApiNamingRuleDetails.get(1).getRule()));
+
+    String firstCreatedApiNamingRuleId =
+        "ruleName1"
+                .equals(
+                    firstTwoCreatedApiNamingRuleDetails.get(0).getRule().getRuleInfo().getName())
+            ? firstTwoCreatedApiNamingRuleDetails.get(0).getRule().getId()
+            : firstTwoCreatedApiNamingRuleDetails.get(1).getRule().getId();
+
+    // Update (id2,true,rule1) -> (id2,false,rule3)
+    // Update (id3,false,rule2) -> (id3,false,rule4)
+    // Add (id4,true,rule4)
+
+    ApiNamingRule firstReuploadedApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRules(
+                CreateApiNamingRulesRequest.newBuilder()
+                    .addAllRulesInfo(
+                        List.of(
+                            ApiNamingRuleInfo.newBuilder()
+                                .setName("reUploadRuleName1")
+                                .setDisabled(true)
+                                .setRuleConfig(
+                                    buildApiSpecBasedConfig(
+                                        List.of("id2"), List.of("regex2"), List.of("value2")))
+                                .setFilter(buildTestFilter())
+                                .build()))
+                    .build())
+            .getRulesDetailsList()
+            .get(0)
+            .getRule();
+    ApiNamingRule secondReuploadedApiNamingRule =
+        this.spanProcessingConfigServiceStub
+            .createApiNamingRule(
+                CreateApiNamingRuleRequest.newBuilder()
+                    .setRuleInfo(
+                        ApiNamingRuleInfo.newBuilder()
+                            .setName("reUploadRuleName2")
+                            .setDisabled(false)
+                            .setRuleConfig(
+                                buildApiSpecBasedConfig(
+                                    List.of("id3", "id4"), List.of("regex3"), List.of("value3")))
+                            .setFilter(buildTestFilter()))
+                    .build())
+            .getRuleDetails()
+            .getRule();
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(3, apiNamingRules.size());
+    assertTrue(
+        apiNamingRules.contains(
+            ApiNamingRule.newBuilder()
+                .setId(firstCreatedApiNamingRuleId)
+                .setRuleInfo(
+                    ApiNamingRuleInfo.newBuilder()
+                        .setName("ruleName1")
+                        .setFilter(buildTestFilter())
+                        .setDisabled(true)
+                        .setRuleConfig(
+                            buildApiSpecBasedConfig(
+                                List.of("id1"), List.of("regex"), List.of("value"))))
+                .build()));
+    assertTrue(
+        apiNamingRules.contains(
+            ApiNamingRule.newBuilder()
+                .setId(firstReuploadedApiNamingRule.getId())
+                .setRuleInfo(
+                    ApiNamingRuleInfo.newBuilder()
+                        .setName("reUploadRuleName1")
+                        .setFilter(buildTestFilter())
+                        .setDisabled(true)
+                        .setRuleConfig(
+                            buildApiSpecBasedConfig(
+                                List.of("id2"), List.of("regex2"), List.of("value2"))))
+                .build()));
+    assertTrue(
+        apiNamingRules.contains(
+            ApiNamingRule.newBuilder()
+                .setId(secondReuploadedApiNamingRule.getId())
+                .setRuleInfo(
+                    ApiNamingRuleInfo.newBuilder()
+                        .setName("reUploadRuleName2")
+                        .setFilter(buildTestFilter())
+                        .setDisabled(false)
+                        .setRuleConfig(
+                            buildApiSpecBasedConfig(
+                                List.of("id3", "id4"), List.of("regex3"), List.of("value3"))))
+                .build()));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRule(
+        DeleteApiNamingRuleRequest.newBuilder().setId(firstCreatedApiNamingRuleId).build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(2, apiNamingRules.size());
+    assertTrue(
+        apiNamingRules.contains(firstReuploadedApiNamingRule)
+            && apiNamingRules.contains(secondReuploadedApiNamingRule));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRule(
+        DeleteApiNamingRuleRequest.newBuilder()
+            .setId(firstReuploadedApiNamingRule.getId())
+            .build());
+
+    apiNamingRules = getAllApiNamingRules();
+    assertEquals(1, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(secondReuploadedApiNamingRule));
+
+    this.spanProcessingConfigServiceStub.deleteApiNamingRules(
+        DeleteApiNamingRulesRequest.newBuilder()
+            .addAllIds(List.of(secondReuploadedApiNamingRule.getId()))
             .build());
 
     apiNamingRules = getAllApiNamingRules();

@@ -1,9 +1,17 @@
 package ai.traceable.span.processing.config.service.apinamingrules;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Stream.empty;
 
+import ai.traceable.api.spec.config.service.v1.ApiSpec;
+import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
+import ai.traceable.api.spec.config.service.v1.ApiSpecFilter;
+import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
+import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.store.ApiNamingRulesConfigStore;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
@@ -24,9 +32,11 @@ import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,12 +52,17 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
 
   private final TimestampConverter timestampConverter;
   private final ApiNamingRulesConfigStore apiNamingRulesConfigStore;
+  private final ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub
+      apiSpecConfigServiceBlockingStub;
 
   @Inject
   public DefaultApiNamingRulesManager(
-      ApiNamingRulesConfigStore apiNamingRulesConfigStore, TimestampConverter timestampConverter) {
+      ApiNamingRulesConfigStore apiNamingRulesConfigStore,
+      TimestampConverter timestampConverter,
+      ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub apiSpecConfigServiceBlockingStub) {
     this.timestampConverter = timestampConverter;
     this.apiNamingRulesConfigStore = apiNamingRulesConfigStore;
+    this.apiSpecConfigServiceBlockingStub = apiSpecConfigServiceBlockingStub;
   }
 
   @Override
@@ -107,14 +122,25 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
     if (apiSpecBasedApiNamingRulesInfo.isEmpty()) {
       return empty();
     }
-    List<ApiNamingRule> existingApiNamingRules =
-        getAllApiNamingRuleDetails(requestContext).stream()
-            .map(ApiNamingRuleDetails::getRule)
-            .collect(toUnmodifiableList());
+    Map<String, List<ApiNamingRuleInfo>> specIdToApiNamingRulesInfoMap = new HashMap<>();
+    apiSpecBasedApiNamingRulesInfo.forEach(
+        apiNamingRuleInfo ->
+            getSpecIdsFromApiNamingRuleInfo(apiNamingRuleInfo)
+                .forEach(
+                    specId ->
+                        specIdToApiNamingRulesInfoMap
+                            .computeIfAbsent(specId, key -> new ArrayList<>())
+                            .add(apiNamingRuleInfo)));
 
     Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap =
-        existingApiNamingRules.stream()
+        getAllApiNamingRuleDetails(requestContext).stream()
+            .map(ApiNamingRuleDetails::getRule)
             .collect(Collectors.toMap(ApiNamingRule::getId, Function.identity()));
+
+    deleteOrUpdateExistingApiNamingRules(
+        requestContext,
+        unmodifiableMap(existingApiNamingRuleIdToRuleMap),
+        unmodifiableMap(specIdToApiNamingRulesInfoMap));
 
     Set<String> apiSpecBasedNamingRuleIds = new HashSet<>();
     apiSpecBasedApiNamingRulesInfo.stream()
@@ -227,11 +253,17 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .setRuleInfo(apiNamingRuleInfo)
             .build();
       case API_SPEC_BASED_CONFIG:
-        Stream<ApiNamingRule> existingApiNamingRuleStream =
-            getAllApiNamingRuleDetails(requestContext).stream().map(ApiNamingRuleDetails::getRule);
+        Map<String, List<ApiNamingRuleInfo>> apiSpecIdtoApiNamingRuleInfo =
+            getSpecIdsFromApiNamingRuleInfo(apiNamingRuleInfo).stream()
+                .collect(toUnmodifiableMap(Function.identity(), key -> List.of(apiNamingRuleInfo)));
+
         Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap =
-            existingApiNamingRuleStream.collect(
-                Collectors.toUnmodifiableMap(ApiNamingRule::getId, Function.identity()));
+            getAllApiNamingRuleDetails(requestContext).stream()
+                .map(ApiNamingRuleDetails::getRule)
+                .collect(Collectors.toUnmodifiableMap(ApiNamingRule::getId, Function.identity()));
+
+        deleteOrUpdateExistingApiNamingRules(
+            requestContext, existingApiNamingRuleIdToRuleMap, apiSpecIdtoApiNamingRuleInfo);
         return createApiSpecBasedNamingRule(existingApiNamingRuleIdToRuleMap, apiNamingRuleInfo);
       default:
         log.error("Unrecognized api naming rule config type:{}", apiNamingRuleInfo);
@@ -311,5 +343,145 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
     return apiNamingRuleInfo1.getFilter().equals(apiNamingRuleInfo2.getFilter())
         && apiSpecBasedConfig1.getRegexesList().equals(apiSpecBasedConfig2.getRegexesList())
         && apiSpecBasedConfig1.getValuesList().equals(apiSpecBasedConfig2.getValuesList());
+  }
+
+  private void deleteOrUpdateExistingApiNamingRules(
+      RequestContext requestContext,
+      Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap,
+      Map<String, List<ApiNamingRuleInfo>> apiSpecIdToApiNamingRulesInfo) {
+    Map<String, ApiNamingRule> apiNamingRuleIdToUpdatedRuleMap =
+        new HashMap<>(existingApiNamingRuleIdToRuleMap);
+    Set<String> updatedApiNamingRuleIds = new HashSet<>();
+    for (Entry<String, List<ApiNamingRuleInfo>> apiSpecIdToApiNamingRuleInfo :
+        apiSpecIdToApiNamingRulesInfo.entrySet()) {
+      deleteOrUpdateAndReturnApiNamingRulesForSpecId(
+              unmodifiableMap(apiNamingRuleIdToUpdatedRuleMap),
+              apiSpecIdToApiNamingRuleInfo.getKey(),
+              apiSpecIdToApiNamingRuleInfo.getValue())
+          .forEach(
+              apiNamingRule -> {
+                apiNamingRuleIdToUpdatedRuleMap.put(apiNamingRule.getId(), apiNamingRule);
+                updatedApiNamingRuleIds.add(apiNamingRule.getId());
+              });
+    }
+
+    List<ApiNamingRule> specBasedNamingRulesToUpdate = new ArrayList<>();
+    List<String> specBasedNamingRuleIdsToDelete = new ArrayList<>();
+    List<String> specIdsInUpdatedRules =
+        updatedApiNamingRuleIds.stream()
+            .map(apiNamingRuleIdToUpdatedRuleMap::get)
+            .flatMap(
+                apiNamingRule ->
+                    getSpecIdsFromApiNamingRuleInfo(apiNamingRule.getRuleInfo()).stream())
+            .distinct()
+            .collect(Collectors.toUnmodifiableList());
+    Map<String, Boolean> specIdsToApiNamingEnabledMap =
+        getApiSpecsFromIds(specIdsInUpdatedRules).stream()
+            .collect(
+                Collectors.toUnmodifiableMap(ApiSpec::getSpecId, ApiSpec::getApiNamingEnabled));
+    for (String apiNamingRuleId : updatedApiNamingRuleIds) {
+      ApiNamingRule apiNamingRule = apiNamingRuleIdToUpdatedRuleMap.get(apiNamingRuleId);
+      if (getSpecIdsFromApiNamingRuleInfo(apiNamingRule.getRuleInfo()).isEmpty()) {
+        specBasedNamingRuleIdsToDelete.add(apiNamingRuleId);
+      } else {
+        specBasedNamingRulesToUpdate.add(
+            buildApiNamingRuleAndSetRuleDisabled(apiNamingRule, specIdsToApiNamingEnabledMap));
+      }
+    }
+    if (!specBasedNamingRulesToUpdate.isEmpty()) {
+      this.apiNamingRulesConfigStore.upsertObjects(requestContext, specBasedNamingRulesToUpdate);
+    }
+    if (!specBasedNamingRuleIdsToDelete.isEmpty()) {
+      this.apiNamingRulesConfigStore.deleteObjects(requestContext, specBasedNamingRuleIdsToDelete);
+    }
+  }
+
+  private List<ApiNamingRule> deleteOrUpdateAndReturnApiNamingRulesForSpecId(
+      Map<String, ApiNamingRule> existingApiNamingRuleIdToRuleMap,
+      String apiSpecId,
+      List<ApiNamingRuleInfo> apiNamingRulesInfo) {
+    // Ids of existing API Naming Rules with API Spec based configs, containing given ApiSpecId
+    List<String> existingSpecBasedNamingRuleIdsToCleanUp =
+        existingApiNamingRuleIdToRuleMap.values().stream()
+            .filter(
+                apiNamingRule ->
+                    getSpecIdsFromApiNamingRuleInfo(apiNamingRule.getRuleInfo())
+                        .contains(apiSpecId))
+            .map(ApiNamingRule::getId)
+            .collect(Collectors.toList());
+    // Ids of existing API Naming Rules similar to the given Naming rule Infos that are to be added
+    // which contain given ApiSpecId
+    List<String> specBasedNamingRuleIdsMatchingExistingRules =
+        apiNamingRulesInfo.stream()
+            .map(
+                apiNamingRuleInfo ->
+                    checkIfApiNamingRuleAlreadyExists(
+                        existingApiNamingRuleIdToRuleMap.values().stream(), apiNamingRuleInfo))
+            .flatMap(Optional::stream)
+            .map(ApiNamingRule::getId)
+            .collect(toUnmodifiableList());
+    // Filter out API Naming Rules where updated would be redundant
+    existingSpecBasedNamingRuleIdsToCleanUp.removeAll(specBasedNamingRuleIdsMatchingExistingRules);
+
+    List<ApiNamingRule> cleanedUpApiNamingRules = new ArrayList<>();
+    existingSpecBasedNamingRuleIdsToCleanUp.forEach(
+        apiNamingId -> {
+          List<String> remainingApiSpecIds =
+              new ArrayList<>(
+                  getSpecIdsFromApiNamingRuleInfo(
+                      existingApiNamingRuleIdToRuleMap.get(apiNamingId).getRuleInfo()));
+
+          remainingApiSpecIds.remove(apiSpecId);
+          ApiNamingRule cleanedUpApiNamingRule =
+              buildCleanUpApinamingRule(
+                  existingApiNamingRuleIdToRuleMap.get(apiNamingId), remainingApiSpecIds);
+          cleanedUpApiNamingRules.add(cleanedUpApiNamingRule);
+        });
+    return unmodifiableList(cleanedUpApiNamingRules);
+  }
+
+  private List<ApiSpec> getApiSpecsFromIds(List<String> apiSpecIds) {
+    GetApiSpecsRequest request =
+        GetApiSpecsRequest.newBuilder()
+            .setApiSpecFilter(
+                ApiSpecFilter.newBuilder().setIds(StringList.newBuilder().addAllValues(apiSpecIds)))
+            .build();
+    return this.apiSpecConfigServiceBlockingStub.getApiSpecs(request).getApiSpecsList();
+  }
+
+  private ApiNamingRule buildApiNamingRuleAndSetRuleDisabled(
+      ApiNamingRule apiNamingRule, Map<String, Boolean> specIdsToApiNamingEnabledMap) {
+    ApiNamingRuleInfo apiNamingRuleInfo = apiNamingRule.getRuleInfo();
+    boolean ruleEnabled =
+        getSpecIdsFromApiNamingRuleInfo(apiNamingRuleInfo).stream()
+            .filter(specIdsToApiNamingEnabledMap::containsKey)
+            .anyMatch(specIdsToApiNamingEnabledMap::get);
+    return ApiNamingRule.newBuilder(apiNamingRule)
+        .setRuleInfo(ApiNamingRuleInfo.newBuilder(apiNamingRuleInfo).setDisabled(!ruleEnabled))
+        .build();
+  }
+
+  private ApiNamingRule buildCleanUpApinamingRule(
+      ApiNamingRule apiNamingRule, List<String> remainingApiSpecIds) {
+    ApiNamingRuleInfo apiNamingRuleInfo = apiNamingRule.getRuleInfo();
+    ApiSpecBasedConfig apiSpecBasedConfig =
+        apiNamingRuleInfo.getRuleConfig().getApiSpecBasedConfig();
+    return ApiNamingRule.newBuilder(apiNamingRule)
+        .setRuleInfo(
+            ApiNamingRuleInfo.newBuilder(apiNamingRuleInfo)
+                .setRuleConfig(
+                    ApiNamingRuleConfig.newBuilder()
+                        .setApiSpecBasedConfig(
+                            ApiSpecBasedConfig.newBuilder(apiSpecBasedConfig)
+                                .clearApiSpecIds()
+                                .addAllApiSpecIds(remainingApiSpecIds))))
+        .build();
+  }
+
+  private List<String> getSpecIdsFromApiNamingRuleInfo(ApiNamingRuleInfo apiNamingRuleInfo) {
+    if (apiNamingRuleInfo.getRuleConfig().hasApiSpecBasedConfig()) {
+      return apiNamingRuleInfo.getRuleConfig().getApiSpecBasedConfig().getApiSpecIdsList();
+    }
+    return emptyList();
   }
 }
