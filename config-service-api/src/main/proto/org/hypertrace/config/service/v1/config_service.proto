@@ -40,7 +40,7 @@ message UpsertConfigRequest {
   string context = 4;
 
   //optional - only required when we want to have optimistic locking for update
-  Filter upsertCondition = 5;
+  Filter upsert_condition = 5;
 }
 
 message UpsertConfigResponse {
