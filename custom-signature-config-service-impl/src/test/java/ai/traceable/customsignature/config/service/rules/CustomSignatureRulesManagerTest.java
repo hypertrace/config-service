@@ -293,11 +293,13 @@ public class CustomSignatureRulesManagerTest {
             .setDefinition(RuleDefinition.newBuilder().build())
             .setEffect(RuleEffect.newBuilder().build())
             .setRuleScope(getRuleScope(List.of("dev")))
+            .setInternal(true)
             .build();
     CreateCustomSignatureRuleRequest createRuleRequest =
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
             .setRuleScope(getRuleScope(List.of("dev")))
+            .setInternal(true)
             .build();
     assertEquals(
         customSignatureRule,

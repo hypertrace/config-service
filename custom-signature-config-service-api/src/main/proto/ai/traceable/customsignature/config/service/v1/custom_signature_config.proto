@@ -11,6 +11,7 @@ message CreateCustomSignatureRuleRequest {
   RuleEffect effect = 4;
   ExpiryDetails blocking_expiry_details = 5;
   RuleScope rule_scope = 6;
+  bool internal = 7;
 }
 
 message CreateCustomSignatureRuleResponse {
