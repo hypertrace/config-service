@@ -38,6 +38,9 @@ message UpsertConfigRequest {
   // optional - only required if config applies to a specific context.
   // If empty, specified config is associated with a default context.
   string context = 4;
+
+  //optional - only required when we want to have optimistic locking for update
+  Filter upsertCondition = 5;
 }
 
 message UpsertConfigResponse {
@@ -160,4 +163,40 @@ message UpsertAllConfigsResponse {
     int64 update_timestamp = 4;
     optional google.protobuf.Value prev_config = 5;
   }
+}
+
+message Filter {
+  oneof type {
+    RelationalFilter relational_filter = 1;
+    LogicalFilter logical_filter = 2;
+  }
+}
+
+message RelationalFilter {
+  string lhs = 1;
+  RelationalOperator op = 2;
+  google.protobuf.Value rhs = 3;
+}
+
+message LogicalFilter {
+  LogicalOperator op = 1;
+  repeated Filter operands = 2;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQ = 1;
+  RELATIONAL_OPERATOR_NEQ = 2;
+  RELATIONAL_OPERATOR_IN = 3;
+  RELATIONAL_OPERATOR_NOT_IN = 4;
+  RELATIONAL_OPERATOR_GT = 5;
+  RELATIONAL_OPERATOR_LT = 6;
+  RELATIONAL_OPERATOR_GE = 7;
+  RELATIONAL_OPERATOR_LE = 8;
+}
+
+enum LogicalOperator {
+  COMPOSITE_OPERATOR_UNSPECIFIED = 0;
+  COMPOSITE_OPERATOR_AND = 1;
+  COMPOSITE_OPERATOR_OR = 2;
 }
