@@ -7,7 +7,6 @@ option java_multiple_files = true;
 message ScopedDataProtectionConfig {
   DataProtectionScope scope = 1;
   DataProtectionConfig config = 2;
-  optional bool disable_data_protection = 3;
 }
 
 message DataProtectionScope {
@@ -19,6 +18,7 @@ message DataProtectionScope {
 message DataProtectionConfig {
   DataSensitivity min_data_sensitivity = 1;
   repeated DataProtectionExclusion exclusions = 2;
+  optional bool disable_data_protection = 3;
 }
 
 enum DataSensitivity {

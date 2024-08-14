@@ -33,7 +33,6 @@ message DeleteScopedDataProtectionConfigResponse {
 message UpsertScopedDataProtectionConfigRequest {
   DataProtectionScope scope = 1;
   DataProtectionConfig config = 2;
-  optional bool disable_data_protection = 3;
 }
 
 message UpsertScopedDataProtectionConfigResponse {
