@@ -14,6 +14,7 @@ import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -180,16 +181,22 @@ public class CustomSignatureRulesStore
   private AttributeKeyValueExpression processAttributeKeyValueExpression(Clause clause) {
     AttributeKeyValueExpression.Builder attributeKeyValueExpressionBuilder =
         clause.getAttributeKeyValueExpression().toBuilder();
-    return attributeKeyValueExpressionBuilder
-        .setKeyCondition(
+    AttributeKeyValueExpression.Builder builder =
+        attributeKeyValueExpressionBuilder.setKeyCondition(
             getStringCondition(
                 attributeKeyValueExpressionBuilder.getMatchKey(),
-                attributeKeyValueExpressionBuilder.getKeyMatchOperator()))
-        .setValueCondition(
-            getStringCondition(
-                attributeKeyValueExpressionBuilder.getMatchValue(),
-                attributeKeyValueExpressionBuilder.getValueMatchOperator()))
-        .build();
+                attributeKeyValueExpressionBuilder.getKeyMatchOperator()));
+    if (Objects.nonNull(attributeKeyValueExpressionBuilder.getMatchValue())
+        && !attributeKeyValueExpressionBuilder.getMatchValue().isBlank()
+        && !attributeKeyValueExpressionBuilder
+            .getValueMatchOperator()
+            .equals(MatchOperator.MATCH_OPERATOR_UNSPECIFIED)) {
+      builder.setValueCondition(
+          getStringCondition(
+              attributeKeyValueExpressionBuilder.getMatchValue(),
+              attributeKeyValueExpressionBuilder.getValueMatchOperator()));
+    }
+    return builder.build();
   }
 
   private CustomSignatureRule processRuleDefinition(
