@@ -49,23 +49,18 @@ public class SavedQueryDataMigration {
     Iterator<Document> documents = collection.find(createSavedQueryFilter());
     log.info("Starting saved-query user data migration");
 
-    try {
-      int noOfdocumentsMigrated = 0;
-      while (documents.hasNext()) {
+    int noOfdocumentsMigrated = 0;
+    String documentId = "";
+    while (documents.hasNext()) {
+      try {
         Document document = documents.next();
         String jsonDocument = document.toJson();
         ConfigDocument configDocument = ConfigDocument.fromJson(jsonDocument);
-        String documentId = configDocument.getDocumentId();
+        documentId = configDocument.getDocumentId();
 
         // saved-query mongo document
-        SavedQuery savedQuery = null;
-        try {
-          savedQuery = buildSavedQueryFromConfigDocument(configDocument);
-          log.debug("Starting data migration for saved query with id: {}", savedQuery.getId());
-        } catch (IllegalArgumentException exception) {
-          log.info("Error deserializing saved query document: {} ... skipping", documentId);
-          continue;
-        }
+        SavedQuery savedQuery = buildSavedQueryFromConfigDocument(configDocument);
+        log.debug("Starting data migration for saved query with id: {}", savedQuery.getId());
 
         // Fetching user-id from existing document
         String userId =
@@ -82,6 +77,7 @@ public class SavedQueryDataMigration {
         GetUserDetailsByIdResponse userInfo =
             iamServiceBlockingStub.getUserDetailsById(
                 GetUserDetailsByIdRequest.newBuilder().setUserId(userId).build());
+
         User userInformation =
             User.newBuilder()
                 .setId(userId)
@@ -94,23 +90,27 @@ public class SavedQueryDataMigration {
         Bson filter = createDocumentIdFilter(documentId);
         UpdateResult updateResult = collection.upsertDocument(filter, update);
 
-        if (updateResult.getModifiedCount() == 1) {
-          log.debug("Document updated successfully");
-          noOfdocumentsMigrated += 1;
-        } else {
+        log.info("Document: {} updated successfully", savedQuery.getId());
+        noOfdocumentsMigrated += 1;
+
+        if (updateResult.getModifiedCount() != 1) {
           log.debug(
               "Document not updated; some error occurred. Was the update request acknowledged by MongoDB: {}, Number of documents found in MongoDB: {}",
               updateResult.wasAcknowledged(),
               updateResult.getMatchedCount());
         }
+      } catch (IllegalArgumentException exception) {
+        log.info("Error deserializing saved query document: {} ... skipping", documentId);
+      } catch (Exception e) {
         log.info(
-            "Data migration ended gracefully. No of documents migrated: {}", noOfdocumentsMigrated);
+            "skipping ... some error occurred while migration data for document: {}, exception: {}",
+            documentId,
+            e);
       }
-    } catch (Exception e) {
-      log.info("Some error occured while migration user information for saved queries ", e);
-    } finally {
-      database.ifPresent(DefaultMongoDatabase::closeMongoClient);
     }
+    log.info(
+        "Data migration ended gracefully. No of documents migrated: {}", noOfdocumentsMigrated);
+    database.ifPresent(DefaultMongoDatabase::closeMongoClient);
   }
 
   private Bson createUpdateQueryFromUser(User userInformation)
