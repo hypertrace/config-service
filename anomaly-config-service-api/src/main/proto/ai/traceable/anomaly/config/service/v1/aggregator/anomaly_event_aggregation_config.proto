@@ -82,6 +82,9 @@ message AggregationConfig {
   optional int32 max_events_with_score_per_user_across_params = 5;
   optional int32 max_events_without_score_per_user_across_params = 6;
   optional int32 max_users_per_param = 7;
+  google.protobuf.Duration user_max_duration = 8;
+  google.protobuf.Duration param_value_max_duration = 9;
+  google.protobuf.Duration param_name_max_duration = 10;
 }
 
 message AggregationExcludeConfig {
