@@ -6,12 +6,15 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,64 +64,53 @@ public class AnomalyDetectionConfigHandler {
     return builder.build();
   }
 
-  public ScopedAnomalyDetectionConfig merge(
-      ScopedAnomalyDetectionConfig preferredConfig,
-      ScopedAnomalyDetectionConfig fallbackConfig,
+  public Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> convert(
       GetAnomalyDetectionConfigsFilter filter) {
-
-    if (filter.getAnomalyDetectionConfigTypesList().isEmpty()) {
-      return merge(preferredConfig, fallbackConfig);
+    Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases = new HashSet<>();
+    for (AnomalyDetectionConfigType configType : filter.getAnomalyDetectionConfigTypesList()) {
+      switch (configType) {
+        case ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .MODSECURITY_ANOMALY_DETECTION_CONFIG);
+          break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .API_DEFINITION_METADATA_ANOMALY_DETECTION_CONFIG);
+          break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .API_STATE_BASED_ANOMALY_DETECTION_CONFIG);
+          break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_BLOCKING_METADATA:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .BLOCKING_METADATA_ANOMALY_DETECTION_CONFIG);
+          break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_SESSION_DEFINITION:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .SESSION_DEFINITION_METADATA_ANOMALY_DETECTION_CONFIG);
+          break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_CUSTOM_RULES:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .CUSTOM_RULES_ANOMALY_DETECTION_CONFIG);
+        case ANOMALY_DETECTION_CONFIG_TYPE_VOLUMETRIC:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .VOLUMETRIC_ANOMALY_DETECTION_CONFIG);
+        case ANOMALY_DETECTION_CONFIG_TYPE_CREDENTIAL_STUFFING:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .CREDENTIAL_ANOMALY_DETECTION_CONFIG);
+        default:
+          break;
+      }
     }
-
-    ScopedAnomalyDetectionConfig.Builder builder = ScopedAnomalyDetectionConfig.newBuilder();
-    builder.setConfigScope(preferredConfig.getConfigScope());
-
-    filter
-        .getAnomalyDetectionConfigTypesList()
-        .forEach(
-            configType -> {
-              switch (configType) {
-                case ANOMALY_DETECTION_CONFIG_TYPE_MODSECURITY:
-                  builder.addAllAnomalyDetectionConfigs(
-                      modsecConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_API_DEFINITION:
-                  builder.addAllAnomalyDetectionConfigs(
-                      apiDefinitionConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED:
-                  builder.addAllAnomalyDetectionConfigs(
-                      apiStateBasedConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_SESSION_DEFINITION:
-                  builder.addAllAnomalyDetectionConfigs(
-                      sessionDefinitionConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_BLOCKING_METADATA:
-                  builder.addAllAnomalyDetectionConfigs(
-                      blockingMetadataConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_CUSTOM_RULES:
-                  builder.addAllAnomalyDetectionConfigs(
-                      customRulesConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_VOLUMETRIC:
-                  builder.addAllAnomalyDetectionConfigs(
-                      volumetricDetectionConfigHandler.merge(preferredConfig, fallbackConfig));
-                  break;
-                case ANOMALY_DETECTION_CONFIG_TYPE_CREDENTIAL_STUFFING:
-                  builder.addAllAnomalyDetectionConfigs(
-                      credentialStuffingDetectionConfigHandler.merge(
-                          preferredConfig, fallbackConfig));
-                  break;
-                default:
-                  LOGGER.error(
-                      "Invalid configType {} in anomalyDetectionConfigsFilter", configType);
-                  break;
-              }
-            });
-
-    return builder.build();
+    return configCases;
   }
 
   public ScopedAnomalyDetectionConfig merge(

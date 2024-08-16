@@ -325,7 +325,7 @@ public class AnomalyDetectionConfigManagerTest {
         .thenReturn(createScopedAnomalyConfigStatusList());
 
     scopedAnomalyDetectionConfigs =
-        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
+        configManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(requestContext, filter);
     assertEquals(1, scopedAnomalyDetectionConfigs.size());
     assertEquals(customerConfigScope, scopedAnomalyDetectionConfigs.get(0).getConfigScope());
 
@@ -342,7 +342,7 @@ public class AnomalyDetectionConfigManagerTest {
     updateScopedAnomalyDetectionConfig(requestContext, scopedAnomalyDetectionConfig);
 
     scopedAnomalyDetectionConfigs =
-        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter);
+        configManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(requestContext, filter);
     List<AnomalyConfigScope> configScopes =
         scopedAnomalyDetectionConfigs.stream()
             .map(ScopedAnomalyDetectionConfig::getConfigScope)
@@ -476,6 +476,27 @@ public class AnomalyDetectionConfigManagerTest {
     defaultDetectionConfigs.addAll(config.getDefaultCustomRulesDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultVolumetricDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultCredentialStuffingDetectionConfigs());
+
+    GetAnomalyDetectionConfigsFilter filter =
+        GetAnomalyDetectionConfigsFilter.newBuilder()
+            .addAnomalyDetectionConfigTypes(
+                AnomalyDetectionConfigType.ANOMALY_DETECTION_CONFIG_TYPE_API_STATE_BASED)
+            .build();
+    assertEquals(
+        0,
+        configManager
+            .getScopedAnomalyDetectionConfig(requestContext, customerConfigScope, filter)
+            .getAnomalyDetectionConfigsCount());
+    assertEquals(
+        0,
+        configManager
+            .getGlobalResolvedScopedAnomalyDetectionConfig(
+                requestContext, customerConfigScope, filter)
+            .getAnomalyDetectionConfigsCount());
+    verifyEmptyDetectionConfigs(
+        configManager.getAllScopedAnomalyDetectionConfig(requestContext, filter));
+    verifyEmptyDetectionConfigs(
+        configManager.getAllGlobalResolvedScopedAnomalyDetectionConfigs(requestContext, filter));
 
     List<AnomalyDetectionConfig> detectionConfigs =
         configManager
@@ -1048,5 +1069,13 @@ public class AnomalyDetectionConfigManagerTest {
         scopedAnomalyConfigStatus2,
         scopedAnomalyConfigStatus3,
         scopedAnomalyConfigStatus4);
+  }
+
+  private void verifyEmptyDetectionConfigs(List<ScopedAnomalyDetectionConfig> detectionConfigs) {
+    assertEquals(1, detectionConfigs.size());
+    assertEquals(
+        AnomalyConfigScope.ScopeCase.CUSTOMER_SCOPE,
+        detectionConfigs.get(0).getConfigScope().getScopeCase());
+    assertEquals(0, detectionConfigs.get(0).getAnomalyDetectionConfigsCount());
   }
 }

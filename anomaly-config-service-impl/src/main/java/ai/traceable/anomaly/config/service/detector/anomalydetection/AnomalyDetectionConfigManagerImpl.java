@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -166,8 +167,10 @@ public class AnomalyDetectionConfigManagerImpl
                 anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(configScope))
             .orElse(ScopedAnomalyDetectionConfig.newBuilder().setConfigScope(configScope).build());
 
-    return anomalyDetectionConfigHandler.merge(
-        scopedAnomalyDetectionConfig, ScopedAnomalyDetectionConfig.getDefaultInstance(), filter);
+    scopedAnomalyDetectionConfig =
+        anomalyDetectionConfigHandler.merge(
+            scopedAnomalyDetectionConfig, ScopedAnomalyDetectionConfig.getDefaultInstance());
+    return filterConfigs(scopedAnomalyDetectionConfig, filter);
   }
 
   @Override
@@ -204,8 +207,8 @@ public class AnomalyDetectionConfigManagerImpl
             scopedAnomalyDetectionConfig ->
                 anomalyDetectionConfigHandler.merge(
                     scopedAnomalyDetectionConfig,
-                    ScopedAnomalyDetectionConfig.getDefaultInstance(),
-                    filter))
+                    ScopedAnomalyDetectionConfig.getDefaultInstance()))
+        .map(detectionConfig -> filterConfigs(detectionConfig, filter))
         .collect(Collectors.toList());
   }
 
@@ -267,6 +270,7 @@ public class AnomalyDetectionConfigManagerImpl
   /**
    * @param configMap
    * @param tenantId
+   * @param filter
    * @return List of resolved scopedAnomalyDetectionConfigs for all the anomalyConfigScopes of the
    *     given tenant
    */
@@ -304,6 +308,7 @@ public class AnomalyDetectionConfigManagerImpl
    * @param configMap
    * @param configScope
    * @param contextsWithIncreasingPriority
+   * @param filter
    * @return ScopedAnomalyDetectionConfig, resolved using the provided context priority.
    */
   private ScopedAnomalyDetectionConfig getResolvedConfig(
@@ -324,11 +329,10 @@ public class AnomalyDetectionConfigManagerImpl
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =
           configMap.containsKey(context)
-              ? anomalyDetectionConfigHandler.merge(
-                  configMap.get(context), anomalyDetectionConfig, filter)
+              ? anomalyDetectionConfigHandler.merge(configMap.get(context), anomalyDetectionConfig)
               : anomalyDetectionConfig;
     }
-    return anomalyDetectionConfig;
+    return filterConfigs(anomalyDetectionConfig, filter);
   }
 
   private final String getTenantId(RequestContext requestContext) {
@@ -376,5 +380,23 @@ public class AnomalyDetectionConfigManagerImpl
               return config;
             })
         .collect(Collectors.toList());
+  }
+
+  private ScopedAnomalyDetectionConfig filterConfigs(
+      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
+      GetAnomalyDetectionConfigsFilter filter) {
+    Set<AnomalyDetectionConfig.AnomalyDetectionConfigCase> configCases =
+        anomalyDetectionConfigHandler.convert(filter);
+    if (configCases.isEmpty()) {
+      return scopedAnomalyDetectionConfig;
+    }
+    ScopedAnomalyDetectionConfig.Builder builder = ScopedAnomalyDetectionConfig.newBuilder();
+    builder.setConfigScope(scopedAnomalyDetectionConfig.getConfigScope());
+    scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList().stream()
+        .filter(
+            detectionConfig ->
+                configCases.contains(detectionConfig.getAnomalyDetectionConfigCase()))
+        .forEach(builder::addAnomalyDetectionConfigs);
+    return builder.build();
   }
 }
