@@ -146,6 +146,10 @@ class DashboardConfigServiceImpl extends DashboardConfigServiceGrpc.DashboardCon
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       this.validator.validate(requestContext, request);
+      this.dashboardStore
+          .getData(requestContext, request.getId())
+          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+
       this.dashboardStore.deleteObject(requestContext, request.getId());
       responseObserver.onNext(DeleteDashboardResponse.getDefaultInstance());
       responseObserver.onCompleted();
