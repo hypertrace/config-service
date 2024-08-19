@@ -45,6 +45,7 @@ message UpdateDashboardRequest {
   string name = 2;
   optional string description = 3;
   string json = 4;
+  google.protobuf.Timestamp previous_update_timestamp = 7;
 }
 
 message UpdateDashboardResponse {
