@@ -22,6 +22,7 @@ message ApiSpecFilter {
   ReferenceApiSpecFilter reference_api_spec = 6;
   ReferenceTypeFilter reference_type = 7;
   StringList names = 8;
+  ApiSpecStatusFilter status_filter = 9;
 }
 
 message ReferenceApiSpecFilter {
@@ -49,6 +50,10 @@ message FileContentSha256Filter {
 
 message SpecTypeFilter {
   repeated SpecType spec_types = 1;
+}
+
+message ApiSpecStatusFilter {
+  repeated ApiSpecStatus statuses = 1;
 }
 
 message GetApiSpecsResponse {
@@ -205,8 +210,8 @@ enum SpecType {
 
 enum ApiSpecStatus {
   API_SPEC_STATUS_UNSPECIFIED = 0;
-  API_SPEC_STATUS_IN_PROGRESS = 1;
-  API_SPEC_STATUS_COMPLETED = 2;
+  API_SPEC_STATUS_IN_PROGRESS = 1 [deprecated = true];
+  API_SPEC_STATUS_COMPLETED = 2 [deprecated = true];
   API_SPEC_STATUS_INVALID_FORMAT = 3;
   API_SPEC_STATUS_SIZE_LIMIT_EXCEEDED = 4;
   API_SPEC_STATUS_FILE_LIMIT_EXCEEDED = 5;
@@ -214,4 +219,8 @@ enum ApiSpecStatus {
   API_SPEC_STATUS_INVALID_JOB_ID = 7;
   API_SPEC_STATUS_RESOLUTION_IN_PROGRESS = 8;
   API_SPEC_STATUS_RESOLUTION_COMPLETED = 9;
+  API_SPEC_STATUS_RESOLUTION_FAILED = 10;
+
+  API_SPEC_STATUS_UPLOAD_IN_PROGRESS = 11;
+  API_SPEC_STATUS_UPLOAD_COMPLETED = 12;
 }

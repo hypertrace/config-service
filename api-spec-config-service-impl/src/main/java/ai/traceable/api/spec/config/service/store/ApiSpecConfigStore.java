@@ -1,5 +1,6 @@
 package ai.traceable.api.spec.config.service.store;
 
+import ai.traceable.api.spec.config.service.converter.ApiSpecStatusConverter;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
 import ai.traceable.api.spec.config.service.v1.SpecType;
 import ai.traceable.config.utils.TimestampConverter;
@@ -20,18 +21,21 @@ public class ApiSpecConfigStore extends IdentifiedObjectStore<ApiSpec> {
   private static final String API_SPEC_CONFIG_RESOURCE_NAME = "api-spec";
   private static final String API_SPEC_CONFIG_RESOURCE_NAMESPACE = "api-spec-config";
   private final TimestampConverter timestampConverter;
+  private final ApiSpecStatusConverter apiSpecStatusConverter;
 
   @Inject
   public ApiSpecConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       TimestampConverter timestampConverter,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      ApiSpecStatusConverter apiSpecStatusConverter) {
     super(
         configServiceBlockingStub,
         API_SPEC_CONFIG_RESOURCE_NAMESPACE,
         API_SPEC_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.timestampConverter = timestampConverter;
+    this.apiSpecStatusConverter = apiSpecStatusConverter;
   }
 
   public List<ApiSpec> getAllData(RequestContext requestContext) {
@@ -50,6 +54,9 @@ public class ApiSpecConfigStore extends IdentifiedObjectStore<ApiSpec> {
                             ? SpecType
                                 .SPEC_TYPE_OPEN_API_SPEC // defaulting for backward compatibility
                             : contextualConfigObject.getData().getSpecType())
+                    .setStatus(
+                        this.apiSpecStatusConverter.convert(
+                            contextualConfigObject.getData().getStatus()))
                     .build())
         .collect(Collectors.toUnmodifiableList());
   }
@@ -59,6 +66,7 @@ public class ApiSpecConfigStore extends IdentifiedObjectStore<ApiSpec> {
   protected Optional<ApiSpec> buildDataFromValue(Value value) {
     ApiSpec.Builder configBuilder = ApiSpec.newBuilder();
     ConfigProtoConverter.mergeFromValue(value, configBuilder);
+    configBuilder.setStatus(this.apiSpecStatusConverter.convert(configBuilder.getStatus()));
     return Optional.of(configBuilder.build());
   }
 

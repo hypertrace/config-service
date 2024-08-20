@@ -2,6 +2,8 @@ package ai.traceable.api.spec.config.service;
 
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_COMPLETED;
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_IN_PROGRESS;
+import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UPLOAD_COMPLETED;
+import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UPLOAD_IN_PROGRESS;
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_OPEN_API_SPEC;
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_POSTMAN_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,11 +14,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.api.spec.config.service.converter.ApiSpecStatusConverter;
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
 import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
 import ai.traceable.api.spec.config.service.v1.ApiSpecFilter;
 import ai.traceable.api.spec.config.service.v1.ApiSpecMetadata;
+import ai.traceable.api.spec.config.service.v1.ApiSpecStatusFilter;
 import ai.traceable.api.spec.config.service.v1.ApiSpecUpdate;
 import ai.traceable.api.spec.config.service.v1.BulkUpdateApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.CreateApiSpec;
@@ -77,9 +81,11 @@ class ApiSpecConfigServiceImplTest {
         ConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
     TimestampConverter timestampConverter = mock(TimestampConverter.class);
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
+    ApiSpecStatusConverter apiSpecStatusConverter = new ApiSpecStatusConverter();
 
     ApiSpecConfigStore apiSpecConfigStore =
-        new ApiSpecConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
+        new ApiSpecConfigStore(
+            genericStub, timestampConverter, configChangeEventGenerator, apiSpecStatusConverter);
     Config testConfig =
         ConfigFactory.parseMap(
             Map.of("maxAllowedSpecsPerTenant", TEST_MAX_ALLOWED_SPECS_PER_TENANT));
@@ -89,7 +95,8 @@ class ApiSpecConfigServiceImplTest {
                 new ApiSpecConfigRequestValidator(),
                 apiSpecConfigStore,
                 timestampConverter,
-                new ApiSpecConfig(testConfig)))
+                new ApiSpecConfig(testConfig),
+                new ApiSpecStatusConverter()))
         .start();
 
     this.apiSpecConfigServiceBlockingStub =
@@ -175,7 +182,7 @@ class ApiSpecConfigServiceImplTest {
             .getApiSpec();
     assertEquals("updatedSpec1", updatedFirstApiSpec.getName());
     assertFalse(updatedFirstApiSpec.getApiNamingEnabled());
-    assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedFirstApiSpec.getStatus());
+    assertEquals(API_SPEC_STATUS_UPLOAD_IN_PROGRESS, updatedFirstApiSpec.getStatus());
 
     updatedFirstApiSpec =
         this.apiSpecConfigServiceBlockingStub
@@ -191,7 +198,7 @@ class ApiSpecConfigServiceImplTest {
             .getApiSpec();
     assertEquals("updatedSpec1", updatedFirstApiSpec.getName());
     assertFalse(updatedFirstApiSpec.getApiNamingEnabled());
-    assertEquals(API_SPEC_STATUS_COMPLETED, updatedFirstApiSpec.getStatus());
+    assertEquals(API_SPEC_STATUS_UPLOAD_COMPLETED, updatedFirstApiSpec.getStatus());
 
     assertEquals(
         ApiSpec.newBuilder(
@@ -294,7 +301,7 @@ class ApiSpecConfigServiceImplTest {
     assertEquals(
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
         updatedApiSpec.getFileContentSha256());
-    assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+    assertEquals(API_SPEC_STATUS_UPLOAD_IN_PROGRESS, updatedApiSpec.getStatus());
   }
 
   @Test
@@ -344,7 +351,7 @@ class ApiSpecConfigServiceImplTest {
     assertEquals("updatedSpec1", updatedApiSpec.getName());
     assertFalse(updatedApiSpec.getApiNamingEnabled());
     assertEquals("/test/spec1.json", updatedApiSpec.getSpecPath());
-    assertEquals(API_SPEC_STATUS_IN_PROGRESS, updatedApiSpec.getStatus());
+    assertEquals(API_SPEC_STATUS_UPLOAD_IN_PROGRESS, updatedApiSpec.getStatus());
   }
 
   @Test
@@ -455,7 +462,7 @@ class ApiSpecConfigServiceImplTest {
                         CreateApiSpec.newBuilder()
                             .setName("spec2")
                             .setApiNamingEnabled(true)
-                            .setStatus(API_SPEC_STATUS_IN_PROGRESS)
+                            .setStatus(API_SPEC_STATUS_COMPLETED)
                             .setSpecPath("/test/spec2.json")
                             .setFileContentSha256(
                                 "5e50280084181a7a3e44c8093b367d4b79e6b6d19e575bfc956a7714b58196ab")
@@ -545,6 +552,21 @@ class ApiSpecConfigServiceImplTest {
                     .setApiSpecFilter(
                         ApiSpecFilter.newBuilder()
                             .setApiInspectorDisabled(firstCreatedApiSpec.getApiInspectorDisabled()))
+                    .build())
+            .getApiSpecsList();
+    assertTrue(getApiSpecs.contains(firstCreatedApiSpec));
+    assertFalse(getApiSpecs.contains(secondCreatedApiSpec));
+
+    // Filter based on status
+    getApiSpecs =
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setStatusFilter(
+                                ApiSpecStatusFilter.newBuilder()
+                                    .addAllStatuses(List.of(API_SPEC_STATUS_IN_PROGRESS))))
                     .build())
             .getApiSpecsList();
     assertTrue(getApiSpecs.contains(firstCreatedApiSpec));
@@ -758,7 +780,7 @@ class ApiSpecConfigServiceImplTest {
             .setSpecId(firstCreatedApiSpec.getSpecId())
             .setName("updatedSpec1")
             .setApiNamingEnabled(false)
-            .setStatus(API_SPEC_STATUS_COMPLETED)
+            .setStatus(API_SPEC_STATUS_UPLOAD_COMPLETED)
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100))
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100))
             .setSpecPath("/test/spec1.json")
@@ -771,7 +793,7 @@ class ApiSpecConfigServiceImplTest {
             .setSpecId(secondCreatedApiSpec.getSpecId())
             .setName("updatedSpec2")
             .setApiNamingEnabled(false)
-            .setStatus(API_SPEC_STATUS_COMPLETED)
+            .setStatus(API_SPEC_STATUS_UPLOAD_COMPLETED)
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100))
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100))
             .setSpecPath("/test/spec2.json")
@@ -936,7 +958,7 @@ class ApiSpecConfigServiceImplTest {
             .setSpecId(firstCreatedApiSpec.getSpecId())
             .setName("updatedSpec1")
             .setApiNamingEnabled(false)
-            .setStatus(API_SPEC_STATUS_COMPLETED)
+            .setStatus(API_SPEC_STATUS_UPLOAD_COMPLETED)
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setSpecPath("/test/spec1.json")
@@ -951,7 +973,7 @@ class ApiSpecConfigServiceImplTest {
             .setSpecId(secondCreatedApiSpec.getSpecId())
             .setName("updatedSpec2")
             .setApiNamingEnabled(true)
-            .setStatus(API_SPEC_STATUS_COMPLETED)
+            .setStatus(API_SPEC_STATUS_UPLOAD_COMPLETED)
             .setCreationTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(100).build())
             .setSpecPath("/test/spec2.json")
