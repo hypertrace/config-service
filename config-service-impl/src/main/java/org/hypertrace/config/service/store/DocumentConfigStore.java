@@ -6,6 +6,7 @@ import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
+import static org.hypertrace.core.documentstore.Filter.Op.OR;
 
 import com.google.common.collect.Maps;
 import com.google.protobuf.Value;
@@ -29,6 +30,7 @@ import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -46,34 +48,49 @@ public class DocumentConfigStore implements ConfigStore {
 
   private final Datastore datastore;
   private final Collection collection;
+  private final FilterBuilder filterBuilder;
 
   public DocumentConfigStore(Clock clock, Datastore datastore) {
     this.clock = clock;
     this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
+    this.filterBuilder = new FilterBuilder();
   }
 
   @Override
   public UpsertedConfig writeConfig(
       ConfigResourceContext configResourceContext,
       String lastUpdatedUserId,
-      Value latestConfig,
+      UpsertConfigRequest request,
       String lastUpdatedUserEmail)
       throws IOException {
     Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
         previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
 
+    // reject create config with condition
+    if (optionalPreviousConfig.isEmpty() && request.hasUpsertCondition()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("No upsert condition required for creating config")
+          .asRuntimeException();
+    }
+
     Key latestDocKey = new ConfigDocumentKey(configResourceContext);
     ConfigDocument latestConfigDocument =
         buildConfigDocument(
             configResourceContext,
-            latestConfig,
+            request.getConfig(),
             lastUpdatedUserId,
             previousConfigDoc,
             lastUpdatedUserEmail);
 
-    collection.upsert(latestDocKey, latestConfigDocument);
+    if (request.hasUpsertCondition()) {
+      Filter filter = this.filterBuilder.buildDocStoreFilter(request.getUpsertCondition());
+      collection.update(latestDocKey, latestConfigDocument, filter);
+    } else {
+      collection.createOrReplace(latestDocKey, latestConfigDocument);
+    }
+
     return optionalPreviousConfig
         .map(previousConfig -> this.buildUpsertResult(latestConfigDocument, previousConfig))
         .orElseGet(() -> this.buildUpsertResult(latestConfigDocument));
@@ -262,7 +279,7 @@ public class DocumentConfigStore implements ConfigStore {
             .map(this::getConfigResourceFieldContextFilter)
             .collect(Collectors.toUnmodifiableList());
     Filter configResourceFieldContextFilter = new Filter();
-    configResourceFieldContextFilter.setOp(Filter.Op.OR);
+    configResourceFieldContextFilter.setOp(OR);
     configResourceFieldContextFilter.setChildFilters(childFilters.toArray(Filter[]::new));
     Filter tenantIdFilter =
         Filter.eq(

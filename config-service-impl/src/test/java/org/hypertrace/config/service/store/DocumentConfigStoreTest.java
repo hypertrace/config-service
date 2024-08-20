@@ -9,6 +9,7 @@ import static org.hypertrace.config.service.TestUtils.getConfig2;
 import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURATIONS_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -17,6 +18,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Value;
+import com.google.protobuf.util.Values;
+import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.time.Clock;
 import java.util.Collections;
@@ -28,7 +31,13 @@ import java.util.Set;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.Filter;
+import org.hypertrace.config.service.v1.LogicalFilter;
+import org.hypertrace.config.service.v1.LogicalOperator;
+import org.hypertrace.config.service.v1.RelationalFilter;
+import org.hypertrace.config.service.v1.RelationalOperator;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.documentstore.CloseableIterator;
 import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
@@ -54,16 +63,49 @@ class DocumentConfigStoreTest {
   private static Collection collection;
   private DocumentConfigStore configStore;
   private Clock mockClock;
+  private FilterBuilder filterBuilder;
 
   @BeforeEach()
   void beforeEach() {
     collection = mock(Collection.class);
     this.mockClock = mock(Clock.class);
+    this.filterBuilder = mock(FilterBuilder.class);
     this.configStore = new DocumentConfigStore(mockClock, new MockDatastore());
   }
 
   @Test
-  void writeConfig() throws IOException {
+  void WriteConfigForCreate() throws IOException {
+    CloseableIteratorImpl iterator = new CloseableIteratorImpl(List.of());
+    when(collection.search(any(Query.class))).thenReturn(iterator);
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.getConfig()).thenReturn(config1);
+    when(request.hasUpsertCondition()).thenReturn(false);
+    when(mockClock.millis()).thenReturn(TIMESTAMP1);
+    UpsertedConfig upsertedConfig =
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
+    assertEquals(config1, upsertedConfig.getConfig());
+    assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
+
+    ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
+    ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+    verify(collection, times(1)).createOrReplace(keyCaptor.capture(), documentCaptor.capture());
+
+    Key key = keyCaptor.getValue();
+    Document document = documentCaptor.getValue();
+    assertEquals(new ConfigDocumentKey(configResourceContext), key);
+    assertEquals(
+        getConfigDocument(configResourceContext.getContext(), 1, config1, TIMESTAMP1, TIMESTAMP1),
+        document);
+
+    // throw exception when passed an upsert condition
+    when(request.hasUpsertCondition()).thenReturn(true);
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
+  }
+
+  @Test
+  void WriteConfigForUpdateWithoutUpsertCondition() throws IOException {
     CloseableIteratorImpl iterator =
         new CloseableIteratorImpl(
             Collections.singletonList(
@@ -74,15 +116,82 @@ class DocumentConfigStoreTest {
                     TIMESTAMP1,
                     TIMESTAMP2)));
     when(collection.search(any(Query.class))).thenReturn(iterator);
-
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.getConfig()).thenReturn(config1);
+    when(request.hasUpsertCondition()).thenReturn(false);
+    when(mockClock.millis()).thenReturn(TIMESTAMP2);
     UpsertedConfig upsertedConfig =
-        configStore.writeConfig(configResourceContext, USER_ID, config1, USER_EMAIL);
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
     assertEquals(config1, upsertedConfig.getConfig());
+    assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
+    assertEquals(TIMESTAMP2, upsertedConfig.getUpdateTimestamp());
+
+    ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
+    ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
+    verify(collection, times(1)).createOrReplace(keyCaptor.capture(), documentCaptor.capture());
+
+    Key key = keyCaptor.getValue();
+    Document document = documentCaptor.getValue();
+    long newVersion = CONFIG_VERSION + 1;
+    assertEquals(new ConfigDocumentKey(configResourceContext), key);
+    assertEquals(
+        getConfigDocument(
+            configResourceContext.getContext(), newVersion, config1, TIMESTAMP1, TIMESTAMP2),
+        document);
+  }
+
+  @Test
+  void WriteConfigForUpdateWithUpsertCondition() throws IOException {
+    CloseableIteratorImpl iterator =
+        new CloseableIteratorImpl(
+            Collections.singletonList(
+                getConfigDocument(
+                    configResourceContext.getContext(),
+                    CONFIG_VERSION,
+                    config1,
+                    TIMESTAMP1,
+                    TIMESTAMP2)));
+    when(collection.search(any(Query.class))).thenReturn(iterator);
+    UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    when(request.hasUpsertCondition()).thenReturn(true);
+    when(request.getConfig()).thenReturn(config2);
+
+    Filter upsertCondition =
+        Filter.newBuilder()
+            .setLogicalFilter(
+                LogicalFilter.newBuilder()
+                    .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                    .addOperands(
+                        Filter.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilter.newBuilder()
+                                    .setConfigJsonPath("k1")
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setValue(Values.of(10))))
+                    .addOperands(
+                        Filter.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilter.newBuilder()
+                                    .setConfigJsonPath("k2")
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setValue(Values.of("v2")))))
+            .build();
+
+    org.hypertrace.core.documentstore.Filter docFilter =
+        new org.hypertrace.core.documentstore.Filter();
+    when(request.getUpsertCondition()).thenReturn(upsertCondition);
+    when(filterBuilder.buildDocStoreFilter(upsertCondition)).thenReturn(docFilter);
+    UpsertedConfig upsertedConfig =
+        configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
+    assertEquals(config2, upsertedConfig.getConfig());
     assertEquals(TIMESTAMP1, upsertedConfig.getCreationTimestamp());
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
-    verify(collection, times(1)).upsert(keyCaptor.capture(), documentCaptor.capture());
+    ArgumentCaptor<org.hypertrace.core.documentstore.Filter> filterCaptor =
+        ArgumentCaptor.forClass(org.hypertrace.core.documentstore.Filter.class);
+    verify(collection, times(1))
+        .update(keyCaptor.capture(), documentCaptor.capture(), filterCaptor.capture());
 
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();
@@ -92,7 +201,7 @@ class DocumentConfigStoreTest {
         getConfigDocument(
             configResourceContext.getContext(),
             newVersion,
-            config1,
+            config2,
             TIMESTAMP1,
             ((ConfigDocument) document).getUpdateTimestamp()),
         document);
