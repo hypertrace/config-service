@@ -1,0 +1,293 @@
+package ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion;
+
+import ai.traceable.blocking.config.service.v2.BlockingCategory;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination.ConditionsOperator;
+import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
+import ai.traceable.blocking.config.service.v2.CustomSignatureDetails;
+import ai.traceable.blocking.config.service.v2.ExclusionRule;
+import ai.traceable.blocking.config.service.v2.ExclusionRule.AnomalousAttributeCondition;
+import ai.traceable.blocking.config.service.v2.ExclusionRule.EventCondition;
+import ai.traceable.blocking.config.service.v2.IpDetails;
+import ai.traceable.blocking.config.service.v2.IpType;
+import ai.traceable.blocking.config.service.v2.IpTypeDetails;
+import ai.traceable.blocking.config.service.v2.MatchExpression;
+import ai.traceable.blocking.config.service.v2.MatchOperator;
+import ai.traceable.blocking.config.service.v2.RegionDetails;
+import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
+import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
+  private static final Map<ExclusionTarget, ExclusionRule.ExclusionTarget> EXCLUSION_TARGET_MAP =
+      Map.of(
+          ExclusionTarget.EXCLUSION_TARGET_ALLOW,
+              ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_ALLOW,
+          ExclusionTarget.EXCLUSION_TARGET_BLOCK,
+              ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_BLOCK);
+
+  @Override
+  public ExclusionRule convert(DetectionExclusionModsecRule detectionExclusionModsecRule) {
+    ExclusionRule.Builder exclusionRuleBuilder = ExclusionRule.newBuilder();
+
+    // Add match conditions corresponding to modsec rules
+    exclusionRuleBuilder.setDetails(
+        BlockingDetailsCombination.newBuilder()
+            .setOperator(ConditionsOperator.CONDITIONS_OPERATOR_AND)
+            .addAllDetailsConditions(
+                detectionExclusionModsecRule.getAssociatedModsecRuleIdsList().stream()
+                    .map(
+                        ruleId ->
+                            BlockingDetailsCondition.newBuilder()
+                                .setCustomSignatureDetails(
+                                    CustomSignatureDetails.newBuilder().setRuleId(ruleId))
+                                .build())
+                    .collect(Collectors.toUnmodifiableList())));
+
+    detectionExclusionModsecRule
+        .getRule()
+        .getRuleInfo()
+        .getConditionsList()
+        .forEach(condition -> convertCondition(condition, exclusionRuleBuilder));
+
+    exclusionRuleBuilder.addAllTargets(
+        detectionExclusionModsecRule.getRule().getRuleInfo().getExclusionTargetsList().stream()
+            .map(EXCLUSION_TARGET_MAP::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toUnmodifiableList()));
+
+    return exclusionRuleBuilder.build();
+  }
+
+  private void convertCondition(
+      DetectionExclusionCondition condition, ExclusionRule.Builder builder) {
+    switch (condition.getConditionCase()) {
+      case SCOPE_CONDITION:
+        // Handled by modsec rule when URL scope
+        break;
+      case ATTRIBUTE_MATCH_CONDITION:
+        // Handled by modsec rule when URL condition
+        break;
+      case IP_LOCATION_TYPE_CONDITION:
+        addDetailsCondition(builder, convert(condition.getIpLocationTypeCondition()));
+        break;
+      case EVENT_CONDITION:
+        convertEventCondition(condition.getEventCondition()).forEach(builder::addEventConditions);
+        break;
+      case ANOMALOUS_ATTRIBUTE_CONDITION:
+        builder.addAnomalousAttributeConditions(
+            convertAttributeCondition(condition.getAnomalousAttributeCondition()));
+        break;
+      case IP_ADDRESS_CONDITION:
+        addDetailsCondition(builder, convert(condition.getIpAddressCondition()));
+        break;
+      case REGION_CONDITION:
+        addDetailsCondition(builder, convert(condition.getRegionCondition()));
+        break;
+      default:
+        log.warn("Unsupported condition type: {}", condition.getConditionCase());
+    }
+  }
+
+  private void addDetailsCondition(
+      ExclusionRule.Builder builder, BlockingDetailsCondition condition) {
+    builder.getDetailsBuilder().addDetailsConditions(condition);
+  }
+
+  private BlockingDetailsCondition convert(IpAddressCondition ipAddressCondition) {
+    BlockingDetailsCondition condition =
+        BlockingDetailsCondition.newBuilder()
+            .setIpDetails(
+                IpDetails.newBuilder()
+                    .addAllIpAddresses(ipAddressCondition.getIpAddressesList())
+                    .addAllIpRanges(ipAddressCondition.getCidrIpRangesList()))
+            .build();
+
+    return wrapInNotConditionIfExcluded(ipAddressCondition.getExclude(), condition);
+  }
+
+  private BlockingDetailsCondition convert(RegionCondition regionCondition) {
+    BlockingDetailsCondition condition =
+        BlockingDetailsCondition.newBuilder()
+            .setRegionDetails(
+                RegionDetails.newBuilder()
+                    .addAllRegions(
+                        regionCondition.getRegionsList().stream()
+                            .map(Region::getCountryIsoCode)
+                            .collect(Collectors.toUnmodifiableList())))
+            .build();
+
+    return wrapInNotConditionIfExcluded(regionCondition.getExclude(), condition);
+  }
+
+  private BlockingDetailsCondition convert(IpLocationTypeCondition ipTypeLocation) {
+    BlockingDetailsCondition condition =
+        BlockingDetailsCondition.newBuilder()
+            .setIpTypeDetails(
+                IpTypeDetails.newBuilder()
+                    .addAllIpTypes(
+                        ipTypeLocation.getIpLocationTypesList().stream()
+                            .map(this::convert)
+                            .collect(Collectors.toUnmodifiableList())))
+            .build();
+
+    return wrapInNotConditionIfExcluded(ipTypeLocation.getExclude(), condition);
+  }
+
+  private List<EventCondition> convertEventCondition(
+      ai.traceable.detection.exclusion.config.service.v1.EventCondition condition) {
+    List<EventCondition> eventConditions = new ArrayList<>();
+
+    // Convert SystemDefinedEvent to EventCondition
+    condition
+        .getSystemDefinedEventsList()
+        .forEach(
+            systemEvent -> {
+              if (systemEvent.getEventFamily()
+                  == SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC) {
+                eventConditions.add(
+                    EventCondition.newBuilder()
+                        .setBlockingCategory(BlockingCategory.BLOCKING_CATEGORY_MODSECURITY)
+                        .addAllIds(getEventIds(systemEvent))
+                        .build());
+              } else {
+                log.warn("Unrecognized system event family: {}", systemEvent.getEventFamily());
+              }
+            });
+
+    condition
+        .getCustomRuleEventsList()
+        .forEach(
+            customRuleEvent ->
+                eventConditions.add(
+                    EventCondition.newBuilder()
+                        .setBlockingCategory(getBlockingCategory(customRuleEvent))
+                        .addIds(customRuleEvent.getRuleId())
+                        .build()));
+
+    return eventConditions;
+  }
+
+  private BlockingDetailsCondition wrapInNotConditionIfExcluded(
+      boolean exclude, BlockingDetailsCondition condition) {
+    if (exclude) {
+      return BlockingDetailsCondition.newBuilder()
+          .setDetailsCombination(
+              BlockingDetailsCombination.newBuilder()
+                  .setOperator(ConditionsOperator.CONDITIONS_OPERATOR_NOT)
+                  .addDetailsConditions(condition))
+          .build();
+    }
+    return condition;
+  }
+
+  private AnomalousAttributeCondition convertAttributeCondition(
+      ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition condition) {
+    AnomalousAttributeCondition.Builder parsedConditionBuilder =
+        AnomalousAttributeCondition.newBuilder();
+
+    if (condition.hasKeyMatchCondition()) {
+      parsedConditionBuilder.setKeyExpression(
+          convertMatchCondition(condition.getKeyMatchCondition()));
+    }
+
+    if (condition.hasValueMatchCondition()) {
+      parsedConditionBuilder.setValueExpression(
+          convertMatchCondition(condition.getValueMatchCondition()));
+    }
+
+    return parsedConditionBuilder.build();
+  }
+
+  private MatchExpression convertMatchCondition(
+      ai.traceable.detection.exclusion.config.service.v1.MatchCondition condition) {
+    return MatchExpression.newBuilder()
+        .setOperator(convertOperator(condition.getOperator()))
+        .setValue(condition.getValue())
+        .build();
+  }
+
+  private List<String> getEventIds(SystemDefinedEvent systemEvent) {
+    List<String> eventIds = new ArrayList<>();
+    if (!systemEvent.getEventTypeId().isEmpty()) {
+      // TODO fetch and fill all sub-rule ids
+      eventIds.add(systemEvent.getEventTypeId());
+    } else if (!systemEvent.getEventSubTypeId().isEmpty()) {
+      eventIds.add(systemEvent.getEventSubTypeId());
+    }
+    return eventIds;
+  }
+
+  private BlockingCategory getBlockingCategory(CustomRuleEvent event) {
+    switch (event.getRuleFamily()) {
+      case CUSTOM_RULE_FAMILY_SIGNATURE:
+        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
+      case CUSTOM_RULE_FAMILY_RATE_LIMIT:
+        return BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
+      case CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES:
+        return BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
+      case CUSTOM_RULE_FAMILY_DATA_LOSS_PREVENTION:
+        return BlockingCategory.BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
+      case CUSTOM_RULE_FAMILY_ENUMERATION:
+        return BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
+      case CUSTOM_RULE_FAMILY_UNSPECIFIED:
+      default:
+        log.warn("Unrecognized custom rule family: {}", event.getRuleFamily());
+        return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
+    }
+  }
+
+  private MatchOperator convertOperator(
+      ai.traceable.detection.exclusion.config.service.v1.MatchOperator oldOperator) {
+    switch (oldOperator) {
+      case MATCH_OPERATOR_EQUALS:
+        return MatchOperator.MATCH_OPERATOR_EQUALS;
+      case MATCH_OPERATOR_NOT_EQUAL:
+        return MatchOperator.MATCH_OPERATOR_NOT_EQUALS;
+      case MATCH_OPERATOR_MATCHES_REGEX:
+        return MatchOperator.MATCH_OPERATOR_REGEX_MATCH;
+      case MATCH_OPERATOR_NOT_MATCH_REGEX:
+        return MatchOperator.MATCH_OPERATOR_NOT_CONTAINS;
+      case MATCH_OPERATOR_GREATER_THAN:
+        return MatchOperator.MATCH_OPERATOR_GREATER_THAN;
+      case MATCH_OPERATOR_LESS_THAN:
+        return MatchOperator.MATCH_OPERATOR_LESS_THAN;
+      default:
+        return MatchOperator.MATCH_OPERATOR_UNSPECIFIED;
+    }
+  }
+
+  private IpType convert(IpLocationType locationType) {
+    switch (locationType) {
+      case IP_LOCATION_TYPE_UNSPECIFIED:
+        return IpType.IP_TYPE_UNSPECIFIED;
+      case IP_LOCATION_TYPE_ANONYMOUS_VPN:
+        return IpType.IP_TYPE_VPN;
+      case IP_LOCATION_TYPE_HOSTING_PROVIDER:
+        return IpType.IP_TYPE_HOSTING_PROVIDER;
+      case IP_LOCATION_TYPE_PUBLIC_PROXY:
+        return IpType.IP_TYPE_PROXY;
+      case IP_LOCATION_TYPE_TOR_EXIT_NODE:
+        return IpType.IP_TYPE_TOR;
+      case IP_LOCATION_TYPE_BOT:
+        return IpType.IP_TYPE_BOT;
+      default:
+        throw new IllegalArgumentException("Unknown IpLocationType: " + locationType);
+    }
+  }
+}

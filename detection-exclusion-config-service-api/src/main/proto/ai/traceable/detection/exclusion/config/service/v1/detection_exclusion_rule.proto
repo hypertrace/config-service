@@ -107,4 +107,6 @@ enum RuleIntent {
 
 message DetectionExclusionModsecRule {
   DetectionExclusionRule rule = 1;
+  // Implicit AND within the list
+  repeated string associated_modsec_rule_ids = 3;
 }

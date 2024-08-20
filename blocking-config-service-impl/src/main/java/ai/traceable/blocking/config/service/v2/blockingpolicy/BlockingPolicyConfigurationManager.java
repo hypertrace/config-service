@@ -11,28 +11,36 @@ import ai.traceable.blocking.config.service.v2.BlockingConfigResponseElement;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v2.Component;
+import ai.traceable.blocking.config.service.v2.ExclusionRule;
+import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.ExclusionRuleConverter;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BlockingPolicyConfigurationManager implements BlockingConfigManagerBase {
   private final GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator;
+  private final ExclusionRuleConverter exclusionRuleConverter;
   private final SemanticVersioningComparator semanticVersioningComparator;
   private final UuidGenerator uuidGenerator;
 
   @Inject
   public BlockingPolicyConfigurationManager(
       GenericBlockingDetailsAggregator<BlockingDetails> blockingDetailsAggregator,
+      ExclusionRuleConverter exclusionRuleConverter,
       SemanticVersioningComparator semanticVersioningComparator,
       UuidGenerator uuidGenerator) {
     this.blockingDetailsAggregator = blockingDetailsAggregator;
+    this.exclusionRuleConverter = exclusionRuleConverter;
     this.semanticVersioningComparator = semanticVersioningComparator;
     this.uuidGenerator = uuidGenerator;
   }
@@ -82,38 +90,64 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         blockingDetailsAggregator.getBlockingDetails(
             blockingRulesSupplier.getRequestContext(), filter, blockingRulesSupplier);
 
-    if (aggregate.getBlockingPolicyList() != null) {
+    Map<String, List<ExclusionRule>> serviceScopedExclusionRules =
+        blockingRulesSupplier
+            .getExclusionRules(new LinkedHashSet<>(serviceNames))
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry ->
+                        entry.getValue().stream()
+                            .map(exclusionRuleConverter::convert)
+                            .collect(Collectors.toList())));
+
+    if (aggregate.getBlockingPolicyList() != null && serviceScopedExclusionRules.isEmpty()) {
       return Collections.singletonList(
           checkHashAndBuildResponse(
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getPreviousHash)
                   .collect(Collectors.toUnmodifiableList()),
-              aggregate.getBlockingPolicyList(),
+              new ServiceScopedInfo(aggregate.getBlockingPolicyList(), List.of()),
               requestElements.stream()
                   .map(BlockingConfigRequestElement::getSupportedAgentCapabilitiesList)
                   .flatMap(List::stream)
                   .collect(Collectors.toUnmodifiableList())));
     }
 
+    Map<String, List<BlockingDetails>> serviceScopedBlockingPolicyMap;
+    if (aggregate.getBlockingPolicyList() != null) {
+      serviceScopedBlockingPolicyMap =
+          serviceNames.stream()
+              .collect(
+                  Collectors.toUnmodifiableMap(
+                      Function.identity(), a -> aggregate.getBlockingPolicyList()));
+    } else {
+      serviceScopedBlockingPolicyMap = aggregate.getServiceScopedBlockingPolicyMap();
+    }
+
+    Map<String, ServiceScopedInfo> serviceScopedInfoMap =
+        mergeServiceScopedMaps(serviceScopedExclusionRules, serviceScopedBlockingPolicyMap);
+
     return requestElements.stream()
         .map(
             requestElement ->
-                buildServiceScopedResponseElements(
-                    requestElement, aggregate.getServiceScopedBlockingPolicyMap()))
+                buildServiceScopedResponseElements(requestElement, serviceScopedInfoMap))
         .flatMap(List::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 
   private List<BlockingConfigResponseElement> buildServiceScopedResponseElements(
       BlockingConfigRequestElement requestElement,
-      Map<String, List<BlockingDetails>> serviceBlockingDetails) {
+      Map<String, ServiceScopedInfo> serviceScopedInfoMap) {
     return requestElement.getSupportedAgentCapabilitiesList().stream()
         .map(
             agentCapabilities ->
                 new AbstractMap.SimpleEntry<>(
                     agentCapabilities,
                     Optional.ofNullable(
-                        serviceBlockingDetails.get(this.getServiceName(agentCapabilities)))))
+                        serviceScopedInfoMap.get(this.getServiceName(agentCapabilities)))))
         .collect(
             Collectors.groupingBy(
                 Map.Entry::getValue,
@@ -125,17 +159,20 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
             entry ->
                 checkHashAndBuildResponse(
                     Collections.singletonList(requestElement.getPreviousHash()),
-                    entry.getKey().orElse(List.of()),
+                    entry.getKey().orElse(new ServiceScopedInfo()),
                     entry.getValue()))
         .collect(Collectors.toUnmodifiableList());
   }
 
   private BlockingConfigResponseElement checkHashAndBuildResponse(
       List<String> previousHashes,
-      List<BlockingDetails> blockingDetails,
+      ServiceScopedInfo serviceScopedInfo,
       List<AgentCapabilities> agentCapabilities) {
     BlockingPolicyConfiguration blockingPolicyConfiguration =
-        BlockingPolicyConfiguration.newBuilder().addAllBlockingDetailsList(blockingDetails).build();
+        BlockingPolicyConfiguration.newBuilder()
+            .addAllBlockingDetailsList(serviceScopedInfo.getBlockingDetails())
+            .addAllExclusionRules(serviceScopedInfo.getExclusionRules())
+            .build();
     String responseHash = uuidGenerator.generateId(blockingPolicyConfiguration);
     if (previousHashes.stream().allMatch(responseHash::equals)) {
       return BlockingConfigResponseElement.newBuilder()
@@ -149,6 +186,24 @@ public class BlockingPolicyConfigurationManager implements BlockingConfigManager
         .setBlockingPolicyConfiguration(blockingPolicyConfiguration)
         .addAllAgentCapabilities(agentCapabilities)
         .build();
+  }
+
+  private static Map<String, ServiceScopedInfo> mergeServiceScopedMaps(
+      Map<String, List<ExclusionRule>> serviceScopedExclusionRules,
+      Map<String, List<BlockingDetails>> serviceScopedBlockingPolicyMap) {
+    return Stream.concat(
+            serviceScopedExclusionRules.keySet().stream(),
+            serviceScopedBlockingPolicyMap.keySet().stream())
+        .distinct()
+        .collect(
+            Collectors.toMap(
+                serviceName -> serviceName,
+                serviceName ->
+                    new ServiceScopedInfo(
+                        Optional.ofNullable(serviceScopedBlockingPolicyMap.get(serviceName))
+                            .orElse(Collections.emptyList()),
+                        Optional.ofNullable(serviceScopedExclusionRules.get(serviceName))
+                            .orElse(Collections.emptyList()))));
   }
 
   private String getServiceName(AgentCapabilities agentCapabilities) {

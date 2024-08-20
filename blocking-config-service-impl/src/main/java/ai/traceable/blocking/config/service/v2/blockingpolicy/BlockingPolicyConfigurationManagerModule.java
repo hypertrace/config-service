@@ -4,6 +4,8 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.GenericBlockin
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetailsVisitor;
 import ai.traceable.blocking.config.service.v2.BlockingDetails;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
+import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.ExcludeRuleConverterImpl;
+import ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion.ExclusionRuleConverter;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
@@ -24,5 +26,7 @@ public class BlockingPolicyConfigurationManagerModule extends AbstractModule {
 
     bind(new TypeLiteral<BlockingDetailsConverterBase<BlockingDetails>>() {})
         .to(BlockingDetailsConverter.class);
+
+    bind(ExclusionRuleConverter.class).to(ExcludeRuleConverterImpl.class);
   }
 }
