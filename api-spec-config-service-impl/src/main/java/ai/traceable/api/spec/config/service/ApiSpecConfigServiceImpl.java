@@ -4,12 +4,10 @@ import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STA
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_UNSPECIFIED;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import ai.traceable.api.spec.config.service.converter.ApiSpecStatusConverter;
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
 import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
 import ai.traceable.api.spec.config.service.v1.ApiSpecMetadata;
-import ai.traceable.api.spec.config.service.v1.ApiSpecStatus;
 import ai.traceable.api.spec.config.service.v1.ApiSpecUpdate;
 import ai.traceable.api.spec.config.service.v1.BulkUpdateApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.BulkUpdateApiSpecsResponse;
@@ -58,20 +56,17 @@ public class ApiSpecConfigServiceImpl
   private final ApiSpecConfigRequestValidator validator;
   private final ApiSpecConfigStore apiSpecConfigStore;
   private final ApiSpecConfig apiSpecConfig;
-  private final ApiSpecStatusConverter apiSpecStatusConverter;
 
   @Inject
   public ApiSpecConfigServiceImpl(
       ApiSpecConfigRequestValidator requestValidator,
       ApiSpecConfigStore apiSpecConfigStore,
       TimestampConverter timestampConverter,
-      ApiSpecConfig apiSpecConfig,
-      ApiSpecStatusConverter apiSpecStatusConverter) {
+      ApiSpecConfig apiSpecConfig) {
     this.validator = requestValidator;
     this.apiSpecConfigStore = apiSpecConfigStore;
     this.timestampConverter = timestampConverter;
     this.apiSpecConfig = apiSpecConfig;
-    this.apiSpecStatusConverter = apiSpecStatusConverter;
   }
 
   @Override
@@ -86,15 +81,6 @@ public class ApiSpecConfigServiceImpl
       if (!request.hasApiSpecFilter()) {
         getApiSpecsResponse.addAllApiSpecs(existingApiSpecs);
       } else {
-        List<ApiSpecStatus> convertedStatuses = new ArrayList<>();
-        if (request.getApiSpecFilter().hasStatusFilter()) {
-          List<ApiSpecStatus> statuses =
-              request.getApiSpecFilter().getStatusFilter().getStatusesList();
-          convertedStatuses.addAll(
-              statuses.stream()
-                  .map(this.apiSpecStatusConverter::convert)
-                  .collect(toUnmodifiableList()));
-        }
         List<ApiSpec> matchedApiSpecs =
             existingApiSpecs.stream()
                 // filter based on file sha.
@@ -174,11 +160,6 @@ public class ApiSpecConfigServiceImpl
                                 .getNames()
                                 .getValuesList()
                                 .contains(spec.getName()))
-                // filter based on statuses
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasStatusFilter()
-                            || convertedStatuses.contains(spec.getStatus()))
                 .collect(Collectors.toUnmodifiableList());
         getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
       }
@@ -227,7 +208,7 @@ public class ApiSpecConfigServiceImpl
               .setSpecId(UUID.randomUUID().toString())
               .setName(createApiSpec.getName())
               .setApiNamingEnabled(createApiSpec.getApiNamingEnabled())
-              .setStatus(this.apiSpecStatusConverter.convert(createApiSpec.getStatus()))
+              .setStatus(createApiSpec.getStatus())
               .setApiDiscoveryEnabled(createApiSpec.getApiDiscoveryEnabled())
               // defaulting for backward compatibility, request side handling due to traceable-cli
               .setSpecType(
@@ -496,7 +477,7 @@ public class ApiSpecConfigServiceImpl
 
     // set updated status if present, else persist with existing status
     if (!API_SPEC_STATUS_UNSPECIFIED.equals(updateApiSpec.getStatus())) {
-      apiSpecBuilder.setStatus(this.apiSpecStatusConverter.convert(updateApiSpec.getStatus()));
+      apiSpecBuilder.setStatus(updateApiSpec.getStatus());
     }
     return apiSpecBuilder.build();
   }
@@ -514,8 +495,7 @@ public class ApiSpecConfigServiceImpl
           apiSpecBuilder.setApiNamingEnabled(updateApiSpecField.getApiNamingEnabled());
           break;
         case STATUS:
-          apiSpecBuilder.setStatus(
-              this.apiSpecStatusConverter.convert(updateApiSpecField.getStatus()));
+          apiSpecBuilder.setStatus(updateApiSpecField.getStatus());
           break;
         case API_DISCOVERY_ENABLED:
           apiSpecBuilder.setApiDiscoveryEnabled(updateApiSpecField.getApiDiscoveryEnabled());
