@@ -90,7 +90,7 @@ public class DocumentConfigStore implements ConfigStore {
       UpdateResult updateResult = collection.update(latestDocKey, latestConfigDocument, filter);
       if (updateResult.getUpdatedCount() <= 0) {
         throw Status.FAILED_PRECONDITION
-            .withDescription("Update failed because upsert condition did not match any record")
+            .withDescription("Update failed because upsert condition did not match given record")
             .asRuntimeException();
       }
     } else {
