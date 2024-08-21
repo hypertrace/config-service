@@ -117,6 +117,7 @@ public class FraudDataModelDerivationConfigStoreManager {
     UserAgentMergeMappingConfig config =
         UserAgentMergeMappingConfig.newBuilder()
             .setId(uuidGenerator.generateRandomId())
+            .setApiScope(ApiScope.newBuilder().setApiId(request.getApiScope().getApiId()).build())
             .putAllPairs(request.getPairsMap())
             .build();
 
@@ -126,6 +127,10 @@ public class FraudDataModelDerivationConfigStoreManager {
         .setUserAgentMergeMappingConfig(
             UserAgentMergeMappingConfig.newBuilder()
                 .setId(configObject.getData().getId())
+                .setApiScope(
+                    ApiScope.newBuilder()
+                        .setApiId(configObject.getData().getApiScope().getApiId())
+                        .build())
                 .putAllPairs(configObject.getData().getPairsMap())
                 .build())
         .build();
@@ -161,6 +166,10 @@ public class FraudDataModelDerivationConfigStoreManager {
     UserAgentMergeMappingConfig config =
         UserAgentMergeMappingConfig.newBuilder()
             .setId(request.getUserAgentMergeMappingConfig().getId())
+            .setApiScope(
+                ApiScope.newBuilder()
+                    .setApiId(request.getUserAgentMergeMappingConfig().getApiScope().getApiId())
+                    .build())
             .putAllPairs(request.getUserAgentMergeMappingConfig().getPairsMap())
             .build();
 
@@ -170,6 +179,10 @@ public class FraudDataModelDerivationConfigStoreManager {
         .setUserAgentMergeMappingConfig(
             UserAgentMergeMappingConfig.newBuilder()
                 .setId(configObject.getData().getId())
+                .setApiScope(
+                    ApiScope.newBuilder()
+                        .setApiId(configObject.getData().getApiScope().getApiId())
+                        .build())
                 .putAllPairs(configObject.getData().getPairsMap())
                 .build())
         .build();

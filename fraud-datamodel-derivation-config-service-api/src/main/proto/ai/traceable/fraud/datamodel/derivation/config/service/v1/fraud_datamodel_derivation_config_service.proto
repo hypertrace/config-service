@@ -79,6 +79,9 @@ message DeleteDerivationConfigsResponse {
 
 message CreateUserAgentMergeMappingConfigRequest {
   map<string, google.protobuf.ListValue> pairs = 2;
+  oneof scope {
+    ApiScope api_scope = 3;
+  }
 }
 
 message CreateUserAgentMergeMappingConfigResponse {

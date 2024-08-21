@@ -31,4 +31,11 @@ message DerivationConfig {
 message UserAgentMergeMappingConfig {
   string id = 1;
   map<string, google.protobuf.ListValue> pairs = 2;
+  oneof scope {
+    ApiScope api_scope = 3;
+  }
+}
+
+message ApiScope {
+  string api_id = 1;
 }
