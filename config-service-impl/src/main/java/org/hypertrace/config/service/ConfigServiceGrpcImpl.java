@@ -53,8 +53,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
     try {
       ConfigResourceContext configResourceContext = getConfigResourceContext(request);
       UpsertedConfig upsertedConfig =
-          configStore.writeConfig(
-              configResourceContext, getUserId(), request.getConfig(), getUserEmail());
+          configStore.writeConfig(configResourceContext, getUserId(), request, getUserEmail());
       UpsertConfigResponse.Builder builder = UpsertConfigResponse.newBuilder();
       builder.setConfig(request.getConfig());
       builder.setCreationTimestamp(upsertedConfig.getCreationTimestamp());
