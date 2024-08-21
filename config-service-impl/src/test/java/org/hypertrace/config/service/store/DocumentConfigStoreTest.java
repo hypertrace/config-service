@@ -157,7 +157,7 @@ class DocumentConfigStoreTest {
     UpdateResult updateResult = mock(UpdateResult.class);
     when(request.hasUpsertCondition()).thenReturn(true);
     when(request.getConfig()).thenReturn(config2);
-    when(collection.update(any(Key.class),any(), any())).thenReturn(updateResult);
+    when(collection.update(any(Key.class), any(), any())).thenReturn(updateResult);
     when(updateResult.getUpdatedCount()).thenReturn(1L);
 
     Filter upsertCondition =
@@ -210,9 +210,11 @@ class DocumentConfigStoreTest {
             ((ConfigDocument) document).getUpdateTimestamp()),
         document);
 
-    //failed upsert condition
+    // failed upsert condition
     when(updateResult.getUpdatedCount()).thenReturn(0L);
-    assertThrows(StatusRuntimeException.class, () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
   }
 
   @Test
