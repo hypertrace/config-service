@@ -7,7 +7,7 @@ import org.hypertrace.config.service.v1.LogicalFilter;
 import org.hypertrace.config.service.v1.RelationalFilter;
 import org.hypertrace.core.documentstore.Filter;
 
-public class FilterBuilder {
+class FilterBuilder {
 
   public Filter buildDocStoreFilter(org.hypertrace.config.service.v1.Filter filter) {
     switch (filter.getTypeCase()) {
@@ -24,23 +24,27 @@ public class FilterBuilder {
   private Filter evaluateCompositeExpression(LogicalFilter logicalFilter) {
     switch (logicalFilter.getOperator()) {
       case LOGICAL_OPERATOR_OR:
-        Filter[] childFilters =
-            logicalFilter.getOperandsList().stream()
-                .map(this::buildDocStoreFilter)
-                .toArray(Filter[]::new);
-        Filter filter = new Filter();
-        filter.setOp(Filter.Op.OR);
-        filter.setChildFilters(childFilters);
-        return filter;
+        {
+          Filter[] childFilters =
+              logicalFilter.getOperandsList().stream()
+                  .map(this::buildDocStoreFilter)
+                  .toArray(Filter[]::new);
+          Filter filter = new Filter();
+          filter.setOp(Filter.Op.OR);
+          filter.setChildFilters(childFilters);
+          return filter;
+        }
       case LOGICAL_OPERATOR_AND:
-        Filter[] childFilters2 =
-            logicalFilter.getOperandsList().stream()
-                .map(this::buildDocStoreFilter)
-                .toArray(Filter[]::new);
-        Filter filter2 = new Filter();
-        filter2.setOp(Filter.Op.AND);
-        filter2.setChildFilters(childFilters2);
-        return filter2;
+        {
+          Filter[] childFilters =
+              logicalFilter.getOperandsList().stream()
+                  .map(this::buildDocStoreFilter)
+                  .toArray(Filter[]::new);
+          Filter filter = new Filter();
+          filter.setOp(Filter.Op.AND);
+          filter.setChildFilters(childFilters);
+          return filter;
+        }
       case LOGICAL_OPERATOR_UNSPECIFIED:
       default:
         throw Status.INVALID_ARGUMENT

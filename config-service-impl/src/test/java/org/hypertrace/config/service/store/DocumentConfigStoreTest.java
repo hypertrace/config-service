@@ -44,6 +44,7 @@ import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.Query;
+import org.hypertrace.core.documentstore.UpdateResult;
 import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -153,8 +154,11 @@ class DocumentConfigStoreTest {
                     TIMESTAMP2)));
     when(collection.search(any(Query.class))).thenReturn(iterator);
     UpsertConfigRequest request = mock(UpsertConfigRequest.class);
+    UpdateResult updateResult = mock(UpdateResult.class);
     when(request.hasUpsertCondition()).thenReturn(true);
     when(request.getConfig()).thenReturn(config2);
+    when(collection.update(any(Key.class),any(), any())).thenReturn(updateResult);
+    when(updateResult.getUpdatedCount()).thenReturn(1L);
 
     Filter upsertCondition =
         Filter.newBuilder()
@@ -205,6 +209,10 @@ class DocumentConfigStoreTest {
             TIMESTAMP1,
             ((ConfigDocument) document).getUpdateTimestamp()),
         document);
+
+    //failed upsert condition
+    when(updateResult.getUpdatedCount()).thenReturn(0L);
+    assertThrows(StatusRuntimeException.class, () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
   }
 
   @Test

@@ -39,6 +39,7 @@ import org.hypertrace.core.documentstore.Filter;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.OrderBy;
 import org.hypertrace.core.documentstore.Query;
+import org.hypertrace.core.documentstore.UpdateResult;
 
 /** Document store which stores and serves the configurations. */
 @Slf4j
@@ -86,7 +87,12 @@ public class DocumentConfigStore implements ConfigStore {
 
     if (request.hasUpsertCondition()) {
       Filter filter = this.filterBuilder.buildDocStoreFilter(request.getUpsertCondition());
-      collection.update(latestDocKey, latestConfigDocument, filter);
+      UpdateResult updateResult = collection.update(latestDocKey, latestConfigDocument, filter);
+      if (updateResult.getUpdatedCount() <= 0) {
+        throw Status.FAILED_PRECONDITION
+            .withDescription("Update failed because upsert condition did not match any record")
+            .asRuntimeException();
+      }
     } else {
       collection.createOrReplace(latestDocKey, latestConfigDocument);
     }
