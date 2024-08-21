@@ -156,8 +156,9 @@ class RegionRulesValidatorTest {
     }
 
     @Test
-    @DisplayName("should return ALREADY_EXISTS for duplicate block all except action type")
-    void should_pass_createRegionRule_duplicateBlockAllExcept() {
+    @DisplayName(
+        "should return ALREADY_EXISTS for duplicate block all except action type for all environments")
+    void should_fail_createRegionRule_allEnvironments_duplicateBlockAllExcept() {
       CreateRegionRuleRequest createRegionRuleRequest =
           CreateRegionRuleRequest.newBuilder()
               .addRegionId("region-1")
@@ -174,6 +175,70 @@ class RegionRulesValidatorTest {
       Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
 
       assertEquals(Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "should return ALREADY_EXISTS for duplicate block all except action type for selected environments")
+    void should_fail_createRegionRule_selectedEnvironments_duplicateBlockAllExcept() {
+      CreateRegionRuleRequest createRegionRuleRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env1", "env2"))))
+              .build();
+      when(getAllRegionRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  RegionRule.newBuilder()
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setRuleScope(
+                          RuleScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1"))))
+                      .build()));
+
+      Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+      // rule already exists for env1
+      assertEquals(Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "should return OK for valid block all except action type for selected environments")
+    void should_pass_createRegionRule_selectedEnvironments_blockAllExcept() {
+      CreateRegionRuleRequest createRegionRuleRequest =
+          CreateRegionRuleRequest.newBuilder()
+              .addRegionId("region-1")
+              .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+              .setName("name")
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env3", "env4"))))
+              .build();
+      when(getAllRegionRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  RegionRule.newBuilder()
+                      .setActionType(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setRuleScope(
+                          RuleScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1", "env2"))))
+                      .build()));
+
+      Status status = rulesValidator.validate(createRegionRuleRequest, getAllRegionRulesSupplier);
+      // block all except rule exists only for env1 and env2, not for env3 and env4
+      assertEquals(Code.OK, status.getCode());
     }
 
     @Test

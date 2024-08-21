@@ -35,7 +35,9 @@ class IpRangeRulesValidator implements RulesValidator {
       return status;
     }
     if (RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
-        && isDuplicateBlockAllExceptCreate(ipRangeRulesSupplier)) {
+        && isDuplicateBlockAllExceptCreate(
+            request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+            ipRangeRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to create duplicate rule for action " + RULE_ACTION_BLOCK_ALL_EXCEPT);
     }
@@ -64,7 +66,10 @@ class IpRangeRulesValidator implements RulesValidator {
       return status;
     }
     if (RULE_ACTION_BLOCK_ALL_EXCEPT.equals(request.getRuleDetails().getRuleAction())
-        && isDuplicateBlockAllExceptUpdate(request.getId(), ipRangeRulesSupplier)) {
+        && isDuplicateBlockAllExceptUpdate(
+            request.getId(),
+            request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+            ipRangeRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to change rule action to "
               + RULE_ACTION_BLOCK_ALL_EXCEPT
@@ -163,19 +168,30 @@ class IpRangeRulesValidator implements RulesValidator {
   }
 
   private boolean isDuplicateBlockAllExceptCreate(
-      Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
+      List<String> environmentIds, Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
     return ipRangeRulesSupplier.get().stream()
-        .anyMatch(
-            rule -> rule.getRuleDetails().getRuleAction().equals(RULE_ACTION_BLOCK_ALL_EXCEPT));
+        .anyMatch(rule -> isDuplicateBlockAllExceptRule(rule, environmentIds));
   }
 
   private boolean isDuplicateBlockAllExceptUpdate(
-      String id, Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
+      String id, List<String> environmentIds, Supplier<List<IpRangeRule>> ipRangeRulesSupplier) {
     return ipRangeRulesSupplier.get().stream()
         .anyMatch(
             rule ->
-                rule.getRuleDetails().getRuleAction().equals(RULE_ACTION_BLOCK_ALL_EXCEPT)
-                    && !rule.getId().equals(id));
+                !rule.getId().equals(id) && isDuplicateBlockAllExceptRule(rule, environmentIds));
+  }
+
+  private boolean isDuplicateBlockAllExceptRule(IpRangeRule rule, List<String> environmentIds) {
+    List<String> ruleEnvironmentIds =
+        rule.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+    return rule.getRuleDetails().getRuleAction().equals(RULE_ACTION_BLOCK_ALL_EXCEPT)
+        && ( // Not allowing all environments block all except in case a rule already exists
+        environmentIds.isEmpty()
+            || // Not allowing any block all except rule if already an all environments one exists
+            ruleEnvironmentIds.isEmpty()
+            || // Only allowing another block all except rule if it has no environment intersection
+            // with an existing rule
+            ruleEnvironmentIds.stream().anyMatch(environmentIds::contains));
   }
 
   private boolean validateRawInputIpOrThrow(String rawInputIp) {

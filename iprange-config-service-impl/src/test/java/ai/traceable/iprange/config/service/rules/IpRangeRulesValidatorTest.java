@@ -293,8 +293,8 @@ class IpRangeRulesValidatorTest {
 
     @Test
     @DisplayName(
-        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule")
-    void validateCreateIpRangeRuleRequest_incorrect_duplicateBlockAllExcept() {
+        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule for all environments")
+    void validateCreateIpRangeRuleRequest_incorrect_allEnvironments_duplicateBlockAllExcept() {
       IpRangeRuleDetails iprangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester")
@@ -317,6 +317,88 @@ class IpRangeRulesValidatorTest {
       Status status =
           rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
       assertEquals(Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule for selected environments")
+    void validateCreateIpRangeRuleRequest_incorrect_selectedEnvironments_duplicateBlockAllExcept() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
+              .setRuleAction(RULE_ACTION_BLOCK_ALL_EXCEPT)
+              .build();
+      Mockito.when(blockAllExceptRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  IpRangeRule.newBuilder()
+                      .setRuleDetails(
+                          IpRangeRuleDetails.newBuilder()
+                              .setRuleAction(RULE_ACTION_BLOCK_ALL_EXCEPT))
+                      .setRuleScope(
+                          RuleScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1"))))
+                      .build()));
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(iprangeRuleDetails)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env1", "env2"))))
+              .build();
+
+      // rule already exists for env1
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return OK status when creating a valid block all except rule for selected environments")
+    void validateCreateIpRangeRuleRequest_selectedEnvironments_blockAllExcept() {
+      IpRangeRuleDetails iprangeRuleDetails =
+          IpRangeRuleDetails.newBuilder()
+              .setName("Tester")
+              .setDescription("Range rule test")
+              .addAllRawInputIpData(Arrays.asList("1.2.3.4", "1.1.0.0/16"))
+              .setRuleAction(RULE_ACTION_BLOCK_ALL_EXCEPT)
+              .build();
+      Mockito.when(blockAllExceptRulesSupplier.get())
+          .thenReturn(
+              List.of(
+                  IpRangeRule.newBuilder()
+                      .setRuleDetails(
+                          IpRangeRuleDetails.newBuilder()
+                              .setRuleAction(RULE_ACTION_BLOCK_ALL_EXCEPT))
+                      .setRuleScope(
+                          RuleScope.newBuilder()
+                              .setEnvironmentScope(
+                                  EnvironmentScope.newBuilder()
+                                      .addAllEnvironmentIds(List.of("env1", "env2"))))
+                      .build()));
+
+      CreateIpRangeRuleRequest createIpRangeRuleRequest =
+          CreateIpRangeRuleRequest.newBuilder()
+              .setRuleDetails(iprangeRuleDetails)
+              .setRuleScope(
+                  RuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env3", "env4"))))
+              .build();
+
+      // block all except rule exists only for env1 and env2, not for env3 and env4
+      Status status =
+          rulesValidator.validate(createIpRangeRuleRequest, blockAllExceptRulesSupplier);
+      assertEquals(Code.OK, status.getCode());
     }
   }
 

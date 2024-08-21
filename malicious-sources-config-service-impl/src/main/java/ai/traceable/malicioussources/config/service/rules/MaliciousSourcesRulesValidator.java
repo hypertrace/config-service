@@ -64,7 +64,9 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
             .collect(Collectors.toUnmodifiableList());
     if (RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             request.getRuleInfo().getRuleAction().getActionType())
-        && isDuplicateBlockAllExceptCreate(() -> blockAllExceptRulesSupplier)) {
+        && isDuplicateBlockAllExceptCreate(
+            request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+            () -> blockAllExceptRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to create duplicate rule for action "
               + RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
@@ -112,7 +114,9 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
     if (RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             maliciousSourcesRule.getRuleInfo().getRuleAction().getActionType())
         && isDuplicateBlockAllExceptUpdate(
-            maliciousSourcesRule.getId(), () -> blockAllExceptRulesSupplier)) {
+            maliciousSourcesRule.getId(),
+            maliciousSourcesRule.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+            () -> blockAllExceptRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to change rule action to "
               + RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT
@@ -361,14 +365,34 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
   }
 
   private boolean isDuplicateBlockAllExceptCreate(
+      List<String> environmentIds,
       Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier) {
-    return !blockAllExceptRulesSupplier.get().isEmpty();
+    return blockAllExceptRulesSupplier.get().stream()
+        .anyMatch(rule -> isDuplicateBlockAllExceptRule(rule, environmentIds));
   }
 
   private boolean isDuplicateBlockAllExceptUpdate(
-      String id, Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier) {
+      String id,
+      List<String> environmentIds,
+      Supplier<List<MaliciousSourcesRule>> blockAllExceptRulesSupplier) {
     List<MaliciousSourcesRule> maliciousSourcesRules = blockAllExceptRulesSupplier.get();
-    return maliciousSourcesRules.stream().anyMatch(rule -> !rule.getId().equals(id));
+    return maliciousSourcesRules.stream()
+        .anyMatch(
+            rule ->
+                !rule.getId().equals(id) && isDuplicateBlockAllExceptRule(rule, environmentIds));
+  }
+
+  private boolean isDuplicateBlockAllExceptRule(
+      MaliciousSourcesRule rule, List<String> environmentIds) {
+    List<String> ruleEnvironmentIds =
+        rule.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+    return // Not allowing all environments block all except in case a rule already exists
+    environmentIds.isEmpty()
+        || // Not allowing any block all except rule if already an all environments one exists
+        ruleEnvironmentIds.isEmpty()
+        || // Only allowing another block all except rule if it has no environment intersection
+        // with an existing rule
+        ruleEnvironmentIds.stream().anyMatch(environmentIds::contains);
   }
 
   private Optional<MaliciousSourcesRule> getRuleForName(

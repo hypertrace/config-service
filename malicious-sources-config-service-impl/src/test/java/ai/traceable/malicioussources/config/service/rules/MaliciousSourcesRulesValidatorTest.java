@@ -756,8 +756,9 @@ public class MaliciousSourcesRulesValidatorTest {
 
     @Test
     @DisplayName(
-        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule")
-    void validateCreateMaliciousSourcesRuleRequest_incorrect_duplicateBlockAllExcept() {
+        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule for all environments")
+    void
+        validateCreateMaliciousSourcesRuleRequest_incorrect_allEnvironments_duplicateBlockAllExcept() {
       MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
           MaliciousSourcesRuleInfo.newBuilder()
               .setName("Tester-1")
@@ -799,6 +800,122 @@ public class MaliciousSourcesRulesValidatorTest {
               .build();
       Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of(rule));
       assertEquals(Status.Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return ALREADY_EXISTS status when creating a duplicate block all except rule for selected environments")
+    void
+        validateCreateMaliciousSourcesRuleRequest_incorrect_selectedEnvironments_duplicateBlockAllExcept() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-2")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+      MaliciousSourcesRule rule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleScope(
+                  MaliciousSourcesRuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder().addAllEnvironmentIds(List.of("env1"))))
+              .build();
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo1)
+              .setRuleScope(
+                  MaliciousSourcesRuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env1", "env2"))))
+              .build();
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of(rule));
+      // rule already exists for env1
+      assertEquals(Status.Code.ALREADY_EXISTS, status.getCode());
+    }
+
+    @Test
+    @DisplayName(
+        "Should return OK status when creating a valid block all except rule for selected environments")
+    void validateCreateMaliciousSourcesRuleRequest_selectedEnvironments_blockAllExcept() {
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-1")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+      MaliciousSourcesRuleInfo maliciousSourcesRuleInfo1 =
+          MaliciousSourcesRuleInfo.newBuilder()
+              .setName("Tester-2")
+              .setDescription("Malicious Sources Rule Test")
+              .setRuleAction(
+                  MaliciousSourcesRuleAction.newBuilder()
+                      .setActionType(RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+                      .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+                      .build())
+              .addConditions(
+                  MaliciousSourcesRuleCondition.newBuilder()
+                      .setIpRangeCondition(
+                          IpAddressCondition.newBuilder().addIpAddresses("255.255.255.0").build())
+                      .build())
+              .build();
+      MaliciousSourcesRule rule =
+          MaliciousSourcesRule.newBuilder()
+              .setId("First-test")
+              .setRuleInfo(maliciousSourcesRuleInfo)
+              .setRuleScope(
+                  MaliciousSourcesRuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env1", "env2"))))
+              .build();
+      CreateMaliciousSourcesRuleRequest createMaliciousSourcesRuleRequest =
+          CreateMaliciousSourcesRuleRequest.newBuilder()
+              .setRuleInfo(maliciousSourcesRuleInfo1)
+              .setRuleScope(
+                  MaliciousSourcesRuleScope.newBuilder()
+                      .setEnvironmentScope(
+                          EnvironmentScope.newBuilder()
+                              .addAllEnvironmentIds(List.of("env3", "env4"))))
+              .build();
+      Status status = rulesValidator.validate(createMaliciousSourcesRuleRequest, List.of(rule));
+      // block all except rule exists only for env1 and env2, not for env3 and env4
+      assertEquals(Status.Code.OK, status.getCode());
     }
 
     @Test

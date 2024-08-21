@@ -45,7 +45,9 @@ class RegionRulesValidator implements RulesValidator {
     }
     if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             request.getActionType())
-        && isDuplicateBlockAllExceptRuleCreate(existingRegionRulesSupplier)) {
+        && isDuplicateBlockAllExceptRuleCreate(
+            request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+            existingRegionRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to create duplicate rule for action "
               + RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
@@ -92,7 +94,10 @@ class RegionRulesValidator implements RulesValidator {
 
     if (RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
             request.getActionType())
-        && isDuplicateBlockAllExceptRuleUpdate(request.getId(), existingRegionRulesSupplier)) {
+        && isDuplicateBlockAllExceptRuleUpdate(
+            request.getId(),
+            request.getRuleScope().getEnvironmentScope().getEnvironmentIdsList(),
+            existingRegionRulesSupplier)) {
       return Status.ALREADY_EXISTS.withDescription(
           "Trying to change rule action to "
               + RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT
@@ -163,22 +168,34 @@ class RegionRulesValidator implements RulesValidator {
   }
 
   private boolean isDuplicateBlockAllExceptRuleCreate(
+      List<String> environmentIds, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
+    return existingRegionRulesSupplier.get().stream()
+        .anyMatch(regionRule -> isDuplicateBlockAllExceptRule(regionRule, environmentIds));
+  }
+
+  private boolean isDuplicateBlockAllExceptRuleUpdate(
+      String id,
+      List<String> environmentIds,
       Supplier<List<RegionRule>> existingRegionRulesSupplier) {
     return existingRegionRulesSupplier.get().stream()
         .anyMatch(
             regionRule ->
-                RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
-                    regionRule.getActionType()));
+                !id.equals(regionRule.getId())
+                    && isDuplicateBlockAllExceptRule(regionRule, environmentIds));
   }
 
-  private boolean isDuplicateBlockAllExceptRuleUpdate(
-      String id, Supplier<List<RegionRule>> existingRegionRulesSupplier) {
-    return existingRegionRulesSupplier.get().stream()
-        .anyMatch(
-            regionRule ->
-                RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT.equals(
-                        regionRule.getActionType())
-                    && !id.equals(regionRule.getId()));
+  private boolean isDuplicateBlockAllExceptRule(RegionRule rule, List<String> environmentIds) {
+    List<String> ruleEnvironmentIds =
+        rule.getRuleScope().getEnvironmentScope().getEnvironmentIdsList();
+    return rule.getActionType()
+            .equals(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+        && ( // Not allowing all environments block all except in case a rule already exists
+        environmentIds.isEmpty()
+            || // Not allowing any block all except rule if already an all environments one exists
+            ruleEnvironmentIds.isEmpty()
+            || // Only allowing another block all except rule if it has no environment intersection
+            // with an existing rule
+            ruleEnvironmentIds.stream().anyMatch(environmentIds::contains));
   }
 
   private Status validate(RegionIdentifier identifier) {
