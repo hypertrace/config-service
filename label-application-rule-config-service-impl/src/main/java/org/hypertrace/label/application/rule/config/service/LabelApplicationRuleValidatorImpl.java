@@ -266,7 +266,8 @@ public class LabelApplicationRuleValidatorImpl implements LabelApplicationRuleVa
       Action.DynamicLabel.TokenExtractionRule tokenExtractionRule) {
     validateNonDefaultPresenceOrThrow(tokenExtractionRule, tokenExtractionRule.KEY_FIELD_NUMBER);
     if (tokenExtractionRule.hasRegexCapture()) {
-      Status status = RegexValidator.validateCaptureGroupCount(tokenExtractionRule.getRegexCapture(), 1);
+      Status status =
+          RegexValidator.validateCaptureGroupCount(tokenExtractionRule.getRegexCapture(), 1);
       if (!status.isOk()) {
         throw status.asRuntimeException();
       }
