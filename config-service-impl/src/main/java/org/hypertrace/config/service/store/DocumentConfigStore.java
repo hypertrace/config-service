@@ -71,7 +71,7 @@ public class DocumentConfigStore implements ConfigStore {
 
     // reject create config with condition
     if (optionalPreviousConfig.isEmpty() && request.hasUpsertCondition()) {
-      throw Status.INVALID_ARGUMENT
+      throw Status.FAILED_PRECONDITION
           .withDescription("No upsert condition required for creating config")
           .asRuntimeException();
     }
