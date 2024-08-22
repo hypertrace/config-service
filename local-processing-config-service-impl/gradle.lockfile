@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.574=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.630=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.41=runtimeClasspath,testRuntimeClasspath
@@ -12,10 +12,10 @@ ai.traceable.platform-gateway:event-invalidation-cache:0.8.41=compileClasspath,r
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.41=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:training-evaluation-framework:0.8.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:xml-utils:0.8.41=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-model:5.0.37=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform:enriched-span-constants:4.0.85=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:trace-enricher-api:4.0.85=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:trace-enricher-constants:4.0.85=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-model:5.0.40=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:enriched-span-constants:4.0.93=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:trace-enricher-api:4.0.93=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:trace-enricher-constants:4.0.93=runtimeClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ch.qos.logback:logback-classic:1.2.13=runtimeClasspath,testRuntimeClasspath
 ch.qos.logback:logback-core:1.2.13=runtimeClasspath,testRuntimeClasspath
