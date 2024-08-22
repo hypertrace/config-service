@@ -193,7 +193,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
             wrap(
                 ApiAttributeOverridesServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
-            wrap(new EventConditionConfigServiceImpl(providers.getLocalChannel())),
+            wrap(
+                new EventConditionConfigServiceImpl(
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    providers.getFeatureCachingClient())),
             wrap(
                 ai.traceable.reporting.config.service.v1.ReportingConfigServiceFactory.build( // v1
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),

@@ -1,11 +1,11 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.activity.event.service:activity-event-api:4.0.55=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.563=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.activity.event.service:activity-event-api:5.0.9=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.574=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
-ai.traceable.iam.v2:iam-service-api-v2:0.13.80=runtimeClasspath,testRuntimeClasspath
+ai.traceable.iam.v2:iam-service-api-v2:0.13.81=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:xss:0.4.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath,testRuntimeClasspath
@@ -21,8 +21,8 @@ ai.traceable.platform-gateway:xml-utils:0.8.41=runtimeClasspath,testRuntimeClass
 ai.traceable.platform:actor-service-api:0.2.144=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:3.0.94=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:1.0.306=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-constants:5.0.36=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-model:5.0.36=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-constants:5.0.37=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-model:5.0.37=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:conditions-matcher:1.0.306=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:config-providers:1.0.306=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.85=runtimeClasspath,testRuntimeClasspath

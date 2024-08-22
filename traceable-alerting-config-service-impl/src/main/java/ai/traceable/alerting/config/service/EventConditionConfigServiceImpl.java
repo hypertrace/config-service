@@ -16,6 +16,7 @@ import ai.traceable.alerting.config.service.v2.GetAllEventConditionsResponse;
 import ai.traceable.alerting.config.service.v2.NewDeployment;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionRequest;
 import ai.traceable.alerting.config.service.v2.UpdateEventConditionResponse;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Channel;
 import io.grpc.Status;
@@ -26,7 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -37,8 +38,12 @@ public class EventConditionConfigServiceImpl
   private final EventConditionConfigServiceRequestValidator validator;
   private final UuidGenerator uuidGenerator;
 
-  public EventConditionConfigServiceImpl(Channel configChannel) {
-    this.eventConditionStore = new EventConditionStore(configChannel);
+  public EventConditionConfigServiceImpl(
+      Channel configChannel,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
+    this.eventConditionStore =
+        new EventConditionStore(configChannel, configChangeEventGenerator, featureCachingClient);
     this.validator = new EventConditionConfigServiceRequestValidator();
     this.uuidGenerator = new UuidGenerator();
   }
@@ -106,11 +111,7 @@ public class EventConditionConfigServiceImpl
       validator.validateGetAllEventConditionsRequest(requestContext, request);
       responseObserver.onNext(
           GetAllEventConditionsResponse.newBuilder()
-              .addAllEventConditions(
-                  eventConditionStore.getAllObjects(requestContext).stream()
-                      .map(ContextualConfigObject::getData)
-                      .map(this::adaptForRead)
-                      .collect(Collectors.toUnmodifiableList()))
+              .addAllEventConditions(eventConditionStore.getAllConfigData(requestContext))
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

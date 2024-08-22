@@ -36,6 +36,8 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_TPA_CORAZA_BASED_EVALUATION = true;
   private static final boolean DEFAULT_TPA_CRS_MSG_HIDE_MATCH_VALUE = false;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
+  private static final boolean DEFAULT_THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG_VALUE =
+      false;
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
   private static final String DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG =
@@ -49,6 +51,8 @@ public class FeatureCachingClient {
   private static final String TPA_CORAZA_BASED_EVALUATION = "tpa.coraza-based-evaluation";
   private static final String TPA_CRS_MSG_HIDE_MATCH_VALUE = "tpa.crs-msg-hide-match-value";
   private static final String RASP_INSPECTION = "enricher.rasp-inspection";
+  private static final String THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG =
+      "notifications.threat-scoring-configuration";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -61,7 +65,8 @@ public class FeatureCachingClient {
           TPA_MODSEC_PROCESSING_DISABLED,
           TPA_CORAZA_BASED_EVALUATION,
           TPA_CRS_MSG_HIDE_MATCH_VALUE,
-          RASP_INSPECTION);
+          RASP_INSPECTION,
+          THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -84,6 +89,20 @@ public class FeatureCachingClient {
                     CacheLoader.from(this::getFeatureFlagMap),
                     Executors.newFixedThreadPool(
                         config.getThreadPoolSize(), this.buildThreadFactory())));
+  }
+
+  public boolean isThreatScoringNotificationRuleMigrationEnabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG));
+    } catch (Exception exception) {
+      log.error(
+          "Failed to retrieve current feature flag value for Threat Scoring Notification Rule Migration",
+          exception);
+      return DEFAULT_THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG_VALUE;
+    }
   }
 
   public boolean isDataClassificationEnhancedObfuscationEnabled(RequestContext requestContext) {

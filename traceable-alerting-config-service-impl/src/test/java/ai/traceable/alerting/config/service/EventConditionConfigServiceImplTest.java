@@ -3,9 +3,11 @@ package ai.traceable.alerting.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.mockito.Mockito.mock;
 
 import ai.traceable.alerting.config.service.v2.*;
 import ai.traceable.alerting.config.service.v2.EventConditionConfigServiceGrpc.EventConditionConfigServiceBlockingStub;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import java.util.Collections;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -17,14 +19,19 @@ public class EventConditionConfigServiceImplTest {
 
   EventConditionConfigServiceBlockingStub eventConditionsStub;
   MockGenericConfigService mockGenericConfigService;
+  FeatureCachingClient mockFeatureCachingClient;
 
   @BeforeEach
   void beforeEach() {
+    this.mockFeatureCachingClient = mock(FeatureCachingClient.class);
+
     this.mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGetAll().mockDelete();
+        new MockGenericConfigService().mockUpsert().mockGetAll().mockDelete().mockUpsertAll();
 
     this.mockGenericConfigService
-        .addService(new EventConditionConfigServiceImpl(this.mockGenericConfigService.channel()))
+        .addService(
+            new EventConditionConfigServiceImpl(
+                this.mockGenericConfigService.channel(), null, this.mockFeatureCachingClient))
         .start();
 
     this.eventConditionsStub =
