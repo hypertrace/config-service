@@ -236,7 +236,11 @@ public class ModsecRulesRegistryTest {
   @Test
   public void testSubRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos =
-        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3);
+
+    Map<String, AnomalyRuleInfo> testAnomalyRuleInfos =
+        modsecRulesRegistry.getModsecRuleInfos(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3);
 
     // check correctness of sub-rules..
     anomalyRuleInfos.forEach(
@@ -260,7 +264,7 @@ public class ModsecRulesRegistryTest {
     assertEquals(expectedIdMatches.size(), idMatches.size());
     idMatches.forEach(id -> assertTrue(expectedIdMatches.contains(id)));
 
-    // check for no duplicate names..
+    // check for no duplicate names accross both files. Normal and Test.
     Set<String> subRuleNames = new HashSet<>();
     anomalyRuleInfos.values().stream()
         .flatMap(rule -> rule.getSubRuleInfosList().stream())
@@ -268,6 +272,18 @@ public class ModsecRulesRegistryTest {
             anomalySubRuleInfo -> {
               assertFalse(subRuleNames.contains(anomalySubRuleInfo.getRuleName()));
               subRuleNames.add(anomalySubRuleInfo.getRuleName());
+            });
+
+    Set<String> testSubRuleNames = new HashSet<>();
+    testAnomalyRuleInfos.values().stream()
+        .flatMap(rule -> rule.getSubRuleInfosList().stream())
+        .forEach(
+            anomalySubRuleInfo -> {
+              assertFalse(
+                  testSubRuleNames.contains(anomalySubRuleInfo.getRuleName()),
+                  "Duplicate Rule Name in Test File at "
+                      + anomalySubRuleInfo.getRuleId().toString());
+              testSubRuleNames.add(anomalySubRuleInfo.getRuleName());
             });
 
     // check labels
@@ -300,6 +316,7 @@ public class ModsecRulesRegistryTest {
                 })
             .sorted()
             .collect(Collectors.toList());
+
     // assertEquals(subRulesRead, subRulesCollected);
     for (int i = 0; i < subRulesRead.size(); i++) {
       assertEquals(subRulesRead.get(i), subRulesCollected.get(i));
@@ -370,13 +387,40 @@ public class ModsecRulesRegistryTest {
                     anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
             .sorted()
             .collect(Collectors.toList());
+
     // assertEquals(subRulesRead, subRulesCollected);
     for (int i = 0; i < subRulesRead.size(); i++) {
       assertEquals(
           subRulesRead.get(i), subRulesCollected.get(i), "Blocking rule mismatch at index " + i);
     }
     assertEquals(subRulesRead.size(), subRulesCollected.size(), "Blocking rule count mismatch");
+
+    subRulesCollected =
+        testAnomalyRuleInfos.values().stream()
+            .flatMap(rule -> rule.getSubRuleInfosList().stream())
+            .filter(
+                subRule ->
+                    subRule
+                        .getSubRuleTypesList()
+                        .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+            .map(
+                anomalySubRuleInfo ->
+                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
+            .sorted()
+            .collect(Collectors.toList());
+    // assertEquals(subRulesRead, subRulesCollected);
+    for (int i = 0; i < subRulesRead.size(); i++) {
+      assertEquals(
+          subRulesRead.get(i),
+          subRulesCollected.get(i),
+          "Blocking rule mismatch at index " + i + " in Test File");
+    }
+    assertEquals(
+        subRulesRead.size(), subRulesCollected.size(), "Blocking rule count mismatch in Test File");
   }
+
+  @Test
+  void testName() {}
 
   @Test
   public void testSubRuleInfoConsistencyAcrossVersions() {
