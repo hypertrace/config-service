@@ -14,6 +14,7 @@ import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.DeleteConfigRequest;
 import org.hypertrace.config.service.v1.DeleteConfigsRequest;
 import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
+import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
@@ -153,22 +154,37 @@ public abstract class IdentifiedObjectStore<T> {
     return getObject(context, id).map(ConfigObject::getData);
   }
 
-  public ContextualConfigObject<T> upsertObject(RequestContext context, T data) {
+  private ContextualConfigObject<T> upsertObject(
+      RequestContext context, UpsertConfigRequest request) {
     UpsertConfigResponse response =
         context.call(
-            () ->
-                this.configServiceBlockingStub
-                    .withDeadline(getDeadline())
-                    .upsertConfig(
-                        UpsertConfigRequest.newBuilder()
-                            .setResourceName(this.resourceName)
-                            .setResourceNamespace(this.resourceNamespace)
-                            .setContext(this.getContextFromData(data))
-                            .setConfig(this.buildValueFromData(data))
-                            .build()));
+            () -> this.configServiceBlockingStub.withDeadline(getDeadline()).upsertConfig(request));
 
     return this.processUpsertResult(context, response)
         .orElseThrow(Status.INTERNAL::asRuntimeException);
+  }
+
+  public ContextualConfigObject<T> upsertObject(RequestContext context, T data) {
+    return this.upsertObject(
+        context,
+        UpsertConfigRequest.newBuilder()
+            .setResourceName(this.resourceName)
+            .setResourceNamespace(this.resourceNamespace)
+            .setContext(this.getContextFromData(data))
+            .setConfig(this.buildValueFromData(data))
+            .build());
+  }
+
+  public ContextualConfigObject<T> upsertObject(RequestContext context, T data, Filter filter) {
+    return this.upsertObject(
+        context,
+        UpsertConfigRequest.newBuilder()
+            .setResourceName(this.resourceName)
+            .setResourceNamespace(this.resourceNamespace)
+            .setContext(this.getContextFromData(data))
+            .setConfig(this.buildValueFromData(data))
+            .setUpsertCondition(filter)
+            .build());
   }
 
   public Optional<DeletedContextualConfigObject<T>> deleteObject(

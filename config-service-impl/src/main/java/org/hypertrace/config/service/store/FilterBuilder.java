@@ -2,7 +2,14 @@ package org.hypertrace.config.service.store;
 
 import static org.hypertrace.config.service.store.ConfigDocument.CONFIG_FIELD_NAME;
 
+import com.google.protobuf.ListValue;
+import com.google.protobuf.Struct;
+import com.google.protobuf.Value;
 import io.grpc.Status;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.hypertrace.config.service.v1.LogicalFilter;
 import org.hypertrace.config.service.v1.RelationalFilter;
 import org.hypertrace.core.documentstore.Filter;
@@ -54,12 +61,11 @@ class FilterBuilder {
   }
 
   private Filter evaluateLeafExpression(RelationalFilter relationalFilter) {
+    Object value = this.convertValueToObject(relationalFilter.getValue());
     switch (relationalFilter.getOperator()) {
       case RELATIONAL_OPERATOR_EQ:
         return new Filter(
-            Filter.Op.EQ,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.EQ, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case RELATIONAL_OPERATOR_NEQ:
         return new Filter(
             Filter.Op.NEQ,
@@ -67,34 +73,22 @@ class FilterBuilder {
             relationalFilter.getValue());
       case RELATIONAL_OPERATOR_IN:
         return new Filter(
-            Filter.Op.IN,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.IN, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case RELATIONAL_OPERATOR_NOT_IN:
         return new Filter(
-            Filter.Op.NOT_IN,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.NOT_IN, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case RELATIONAL_OPERATOR_LT:
         return new Filter(
-            Filter.Op.LT,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.LT, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case RELATIONAL_OPERATOR_GT:
         return new Filter(
-            Filter.Op.GT,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.GT, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case RELATIONAL_OPERATOR_LTE:
         return new Filter(
-            Filter.Op.LTE,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.LTE, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case RELATIONAL_OPERATOR_GTE:
         return new Filter(
-            Filter.Op.GTE,
-            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
-            relationalFilter.getValue());
+            Filter.Op.GTE, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
       case UNRECOGNIZED:
       default:
         throw Status.INVALID_ARGUMENT
@@ -105,5 +99,40 @@ class FilterBuilder {
 
   private String buildConfigFieldPath(String configJsonPath) {
     return String.format("%s.%s", CONFIG_FIELD_NAME, configJsonPath);
+  }
+
+  public Object convertValueToObject(Value value) {
+    switch (value.getKindCase()) {
+      case NULL_VALUE:
+        return null;
+      case BOOL_VALUE:
+        return value.getBoolValue();
+      case NUMBER_VALUE:
+        return value.getNumberValue();
+      case STRING_VALUE:
+        return value.getStringValue();
+      case STRUCT_VALUE:
+        return convertStructToMap(value.getStructValue());
+      case LIST_VALUE:
+        return convertListValueToList(value.getListValue());
+      default:
+        throw new IllegalArgumentException("Unknown value type: " + value.getKindCase());
+    }
+  }
+
+  private Map<String, Object> convertStructToMap(Struct struct) {
+    Map<String, Object> map = new HashMap<>();
+    for (Map.Entry<String, Value> entry : struct.getFieldsMap().entrySet()) {
+      map.put(entry.getKey(), convertValueToObject(entry.getValue()));
+    }
+    return map;
+  }
+
+  private List<Object> convertListValueToList(ListValue listValue) {
+    List<Object> list = new ArrayList<>();
+    for (Value value : listValue.getValuesList()) {
+      list.add(convertValueToObject(value));
+    }
+    return list;
   }
 }
