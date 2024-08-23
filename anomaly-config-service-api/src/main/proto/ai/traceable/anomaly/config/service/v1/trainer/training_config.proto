@@ -513,6 +513,7 @@ message ThresholdFamilyConfig {
   ThresholdCountConfig diverse_ip_diverse_user_family_config = 1;
   ThresholdCountConfig diverse_ip_limited_user_family_config = 2;
   ThresholdCountConfig limited_ip_family_config = 3;
+  ThresholdCountConfig limited_ip_diverse_user_family_config = 4;
 }
 
 message MinOccurrenceConfig {

@@ -166,6 +166,8 @@ public class TrainerConfigServiceConfigTest {
         digitLengthThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig digitLengthLimitedIpFamilyConfig =
         digitLengthThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig digitLengthLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, digitLengthDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(10, digitLengthDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(10, digitLengthDiverseIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
@@ -175,6 +177,9 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, digitLengthLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, digitLengthLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, digitLengthLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, digitLengthLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, digitLengthLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, digitLengthLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(1).getDisabled());
     ThresholdFamilyConfig specialCharsThresholdFamilyConfig =
@@ -189,6 +194,8 @@ public class TrainerConfigServiceConfigTest {
         specialCharsThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig specialCharsLimitedIpFamilyConfig =
         specialCharsThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig specialCharsLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, specialCharsDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(10, specialCharsDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(10, specialCharsDiverseIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
@@ -198,6 +205,9 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, specialCharsLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, specialCharsLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, specialCharsLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, specialCharsLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, specialCharsLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, specialCharsLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(2).getDisabled());
     ThresholdFamilyConfig htmlTagsThresholdFamilyConfig =
@@ -212,6 +222,8 @@ public class TrainerConfigServiceConfigTest {
         htmlTagsThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig htmlTagsLimitedIpFamilyConfig =
         htmlTagsThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig htmlTagsLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, htmlTagsDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(10, htmlTagsDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(10, htmlTagsDiverseIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
@@ -221,6 +233,9 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, htmlTagsLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, htmlTagsLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, htmlTagsLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, htmlTagsLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, htmlTagsLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, htmlTagsLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(3).getDisabled());
     ThresholdFamilyConfig htmlTagAttributesThresholdFamilyConfig =
@@ -235,6 +250,8 @@ public class TrainerConfigServiceConfigTest {
         htmlTagAttributesThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig htmlTagAttributesLimitedIpFamilyConfig =
         htmlTagAttributesThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig htmlTagAttributesLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, htmlTagAttributesDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
         10, htmlTagAttributesDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
@@ -246,6 +263,10 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, htmlTagAttributesLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, htmlTagAttributesLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, htmlTagAttributesLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, htmlTagAttributesLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10, htmlTagAttributesLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, htmlTagAttributesLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(4).getDisabled());
     ThresholdFamilyConfig httpStatusThresholdFamilyConfig =
@@ -260,6 +281,8 @@ public class TrainerConfigServiceConfigTest {
         httpStatusThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig httpStatusLimitedIpFamilyConfig =
         httpStatusThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig httpStatusLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, httpStatusDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(10, httpStatusDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(10, httpStatusDiverseIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
@@ -269,6 +292,9 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, httpStatusLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, httpStatusLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, httpStatusLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, httpStatusLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, httpStatusLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, httpStatusLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(5).getDisabled());
     ThresholdFamilyConfig deviceThresholdFamilyConfig =
@@ -283,6 +309,8 @@ public class TrainerConfigServiceConfigTest {
         deviceThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig deviceLimitedIpFamilyConfig =
         deviceThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig deviceLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, deviceDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(10, deviceDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(10, deviceDiverseIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
@@ -292,6 +320,9 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, deviceLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, deviceLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, deviceLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, deviceLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, deviceLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, deviceLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(6).getDisabled());
     assertEquals(
@@ -309,6 +340,8 @@ public class TrainerConfigServiceConfigTest {
         protocolThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig protocolThresholdLimitedIpFamilyConfig =
         protocolThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig protocolThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(20, protocolThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
         5, protocolThresholdDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
@@ -320,6 +353,10 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(20, protocolThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, protocolThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, protocolThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, protocolThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10, protocolThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, protocolThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(7).getDisabled());
     ContentSizeTrainingConfig contentSizeTrainingConfig =
@@ -338,6 +375,8 @@ public class TrainerConfigServiceConfigTest {
         apiThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig apiThresholdLimitedIpFamilyConfig =
         apiThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig apiThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(100, apiThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(10, apiThresholdDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(10, apiThresholdDiverseIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
@@ -347,6 +386,10 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(100, apiThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, apiThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, apiThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, apiThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(10, apiThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, apiThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
+
     ThresholdFamilyConfig queryParamThresholdFamilyConfig =
         accessorsTrainingConfig.getQueryParamThresholdFamilyConfig();
     ThresholdCountConfig queryParamThresholdDiverseIpDiverseUserFamilyConfig =
@@ -355,6 +398,8 @@ public class TrainerConfigServiceConfigTest {
         queryParamThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig queryParamThresholdLimitedIpFamilyConfig =
         queryParamThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig queryParamThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(100, queryParamThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
         10, queryParamThresholdDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
@@ -368,6 +413,12 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(100, queryParamThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, queryParamThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, queryParamThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, queryParamThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10, queryParamThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(
+        0, queryParamThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
+
     ThresholdFamilyConfig requestHeaderThresholdFamilyConfig =
         accessorsTrainingConfig.getRequestHeaderThresholdFamilyConfig();
     ThresholdCountConfig requestHeaderThresholdDiverseIpDiverseUserFamilyConfig =
@@ -376,6 +427,8 @@ public class TrainerConfigServiceConfigTest {
         requestHeaderThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig requestHeaderThresholdLimitedIpFamilyConfig =
         requestHeaderThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig requestHeaderThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(
         100, requestHeaderThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
@@ -391,6 +444,13 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(100, requestHeaderThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, requestHeaderThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, requestHeaderThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(
+        20, requestHeaderThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10, requestHeaderThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(
+        0, requestHeaderThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
+
     ThresholdFamilyConfig requestCookieThresholdFamilyConfig =
         accessorsTrainingConfig.getRequestCookieThresholdFamilyConfig();
     ThresholdCountConfig requestCookieThresholdDiverseIpDiverseUserFamilyConfig =
@@ -399,6 +459,8 @@ public class TrainerConfigServiceConfigTest {
         requestCookieThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig requestCookieThresholdLimitedIpFamilyConfig =
         requestCookieThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig requestCookieThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(
         100, requestCookieThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
@@ -414,6 +476,13 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(100, requestCookieThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, requestCookieThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, requestCookieThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(
+        20, requestCookieThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10, requestCookieThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(
+        0, requestCookieThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
+
     ThresholdFamilyConfig requestBodyParamThresholdFamilyConfig =
         accessorsTrainingConfig.getRequestBodyParamThresholdFamilyConfig();
     ThresholdCountConfig requestBodyParamThresholdDiverseIpDiverseUserFamilyConfig =
@@ -422,6 +491,8 @@ public class TrainerConfigServiceConfigTest {
         requestBodyParamThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig requestBodyParamThresholdLimitedIpFamilyConfig =
         requestBodyParamThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig requestBodyParamThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(
         50, requestBodyParamThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
@@ -439,6 +510,14 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(50, requestBodyParamThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, requestBodyParamThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, requestBodyParamThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(
+        20, requestBodyParamThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10,
+        requestBodyParamThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(
+        0, requestBodyParamThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
+
     ThresholdFamilyConfig paramTypeThresholdFamilyConfig =
         accessorsTrainingConfig.getParamTypeThresholdFamilyConfig();
     ThresholdCountConfig paramTypeThresholdDiverseIpDiverseUserFamilyConfig =
@@ -447,6 +526,8 @@ public class TrainerConfigServiceConfigTest {
         paramTypeThresholdFamilyConfig.getDiverseIpLimitedUserFamilyConfig();
     ThresholdCountConfig paramTypeThresholdLimitedIpFamilyConfig =
         paramTypeThresholdFamilyConfig.getLimitedIpFamilyConfig();
+    ThresholdCountConfig paramTypeThresholdLimitedIpDiverseUserFamilyConfig =
+        digitLengthThresholdFamilyConfig.getLimitedIpDiverseUserFamilyConfig();
     assertEquals(50, paramTypeThresholdDiverseIpDiverseUserFamilyConfig.getRequiredCallsCount());
     assertEquals(
         5, paramTypeThresholdDiverseIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
@@ -458,6 +539,10 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(50, paramTypeThresholdLimitedIpFamilyConfig.getRequiredCallsCount());
     assertEquals(0, paramTypeThresholdLimitedIpFamilyConfig.getRequiredUniqueUserIdsCount());
     assertEquals(0, paramTypeThresholdLimitedIpFamilyConfig.getRequiredUniqueIpsCount());
+    assertEquals(20, paramTypeThresholdLimitedIpDiverseUserFamilyConfig.getRequiredCallsCount());
+    assertEquals(
+        10, paramTypeThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueUserIdsCount());
+    assertEquals(0, paramTypeThresholdLimitedIpDiverseUserFamilyConfig.getRequiredUniqueIpsCount());
 
     assertFalse(metadataTrainingConfigs.get(9).getDisabled());
     ThresholdsFamilyTrainingConfig thresholdsFamilyTrainingConfig =
