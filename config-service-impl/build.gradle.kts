@@ -15,7 +15,7 @@ dependencies {
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
 
-  implementation(commonLibs.hypertrace.documentstore)
+  implementation("org.hypertrace.core.documentstore:document-store:0.7.66-SNAPSHOT")
   implementation(commonLibs.hypertrace.grpcutils.context)
 
   annotationProcessor(commonLibs.lombok)
