@@ -2,19 +2,22 @@ package org.hypertrace.config.service.store;
 
 import static org.hypertrace.config.service.store.ConfigDocument.CONFIG_FIELD_NAME;
 
-import com.google.protobuf.ListValue;
-import com.google.protobuf.Struct;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Value;
 import io.grpc.Status;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import lombok.SneakyThrows;
+import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.v1.LogicalFilter;
 import org.hypertrace.config.service.v1.RelationalFilter;
 import org.hypertrace.core.documentstore.Filter;
 
 class FilterBuilder {
+  private final ObjectMapper objectMapper;
+
+  FilterBuilder() {
+    this.objectMapper = new ObjectMapper();
+  }
 
   public Filter buildDocStoreFilter(org.hypertrace.config.service.v1.Filter filter) {
     switch (filter.getTypeCase()) {
@@ -101,38 +104,9 @@ class FilterBuilder {
     return String.format("%s.%s", CONFIG_FIELD_NAME, configJsonPath);
   }
 
-  public Object convertValueToObject(Value value) {
-    switch (value.getKindCase()) {
-      case NULL_VALUE:
-        return null;
-      case BOOL_VALUE:
-        return value.getBoolValue();
-      case NUMBER_VALUE:
-        return value.getNumberValue();
-      case STRING_VALUE:
-        return value.getStringValue();
-      case STRUCT_VALUE:
-        return convertStructToMap(value.getStructValue());
-      case LIST_VALUE:
-        return convertListValueToList(value.getListValue());
-      default:
-        throw new IllegalArgumentException("Unknown value type: " + value.getKindCase());
-    }
-  }
-
-  private Map<String, Object> convertStructToMap(Struct struct) {
-    Map<String, Object> map = new HashMap<>();
-    for (Map.Entry<String, Value> entry : struct.getFieldsMap().entrySet()) {
-      map.put(entry.getKey(), convertValueToObject(entry.getValue()));
-    }
-    return map;
-  }
-
-  private List<Object> convertListValueToList(ListValue listValue) {
-    List<Object> list = new ArrayList<>();
-    for (Value value : listValue.getValuesList()) {
-      list.add(convertValueToObject(value));
-    }
-    return list;
+  @SneakyThrows
+  private Object convertValueToObject(Value value) {
+    return objectMapper.readValue(
+        ConfigProtoConverter.convertToJsonString(value), new TypeReference<>() {});
   }
 }

@@ -8,6 +8,7 @@ dependencies {
   api(projects.configServiceApi)
 
   implementation(projects.configServiceChangeEventGenerator)
+  implementation(projects.configProtoConverter)
 
   implementation(commonLibs.jackson.databind)
   implementation(commonLibs.guava)
