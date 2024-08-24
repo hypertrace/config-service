@@ -175,7 +175,7 @@ public abstract class IdentifiedObjectStore<T> {
             .build());
   }
 
-  public ContextualConfigObject<T> upsertObject(RequestContext context, T data, Filter filter) {
+  protected ContextualConfigObject<T> upsertObject(RequestContext context, T data, Filter filter) {
     return this.upsertObject(
         context,
         UpsertConfigRequest.newBuilder()
