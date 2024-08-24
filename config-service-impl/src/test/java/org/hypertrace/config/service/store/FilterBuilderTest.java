@@ -31,11 +31,11 @@ public class FilterBuilderTest {
                 RelationalFilter.newBuilder()
                     .setConfigJsonPath("key1")
                     .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
-                    .setValue(Value.newBuilder().setStringValue("value1")))
+                    .setValue(Values.of("value1")))
             .build();
 
     org.hypertrace.core.documentstore.Filter docFilter =
-        org.hypertrace.core.documentstore.Filter.eq("config.key1", Values.of("value1"));
+        org.hypertrace.core.documentstore.Filter.eq("config.key1", "value1");
     assertEquals(docFilter.toString(), filterBuilder.buildDocStoreFilter(filter).toString());
 
     Filter filter2 =
@@ -44,11 +44,11 @@ public class FilterBuilderTest {
                 RelationalFilter.newBuilder()
                     .setConfigJsonPath("key2")
                     .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
-                    .setValue(Value.newBuilder().setNumberValue(300)))
+                    .setValue(Values.of(300)))
             .build();
 
     org.hypertrace.core.documentstore.Filter docFilter2 =
-        org.hypertrace.core.documentstore.Filter.eq("config.key2", Values.of(300));
+        org.hypertrace.core.documentstore.Filter.eq("config.key2", 300.0);
     assertEquals(docFilter2.toString(), filterBuilder.buildDocStoreFilter(filter2).toString());
   }
 
@@ -76,12 +76,10 @@ public class FilterBuilderTest {
             .build();
 
     org.hypertrace.core.documentstore.Filter docFilter =
-        org.hypertrace.core.documentstore.Filter.eq("config.key3", Values.of(true))
+        org.hypertrace.core.documentstore.Filter.eq("config.key3", true)
             .and(
                 new org.hypertrace.core.documentstore.Filter(
-                    org.hypertrace.core.documentstore.Filter.Op.LTE,
-                    "config.key4",
-                    Values.of(100)));
+                    org.hypertrace.core.documentstore.Filter.Op.LTE, "config.key4", 100.0));
     assertEquals(docFilter.toString(), filterBuilder.buildDocStoreFilter(filter).toString());
   }
 
@@ -133,11 +131,11 @@ public class FilterBuilderTest {
         new org.hypertrace.core.documentstore.Filter(
                 org.hypertrace.core.documentstore.Filter.Op.IN,
                 "config.key5",
-                Values.of(List.of(Values.of("listValue1"), Values.of("listValue2"))))
+                List.of("listValue1", "listValue2"))
             .and(
                 new org.hypertrace.core.documentstore.Filter(
-                    org.hypertrace.core.documentstore.Filter.Op.GTE, "config.key6", Values.of(100)))
-            .or(org.hypertrace.core.documentstore.Filter.eq("config.key7", Values.of("value7")));
+                    org.hypertrace.core.documentstore.Filter.Op.GTE, "config.key6", 100.0))
+            .or(org.hypertrace.core.documentstore.Filter.eq("config.key7", "value7"));
 
     assertEquals(docFilter.toString(), filterBuilder.buildDocStoreFilter(filter).toString());
   }
