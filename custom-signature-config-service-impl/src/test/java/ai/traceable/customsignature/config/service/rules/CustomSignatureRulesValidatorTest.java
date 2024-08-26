@@ -44,6 +44,7 @@ public class CustomSignatureRulesValidatorTest {
   public void setup() {
     this.modsecRulesManager = mock(ModsecRulesManager.class);
     when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
+    when(modsecRulesManager.isModsecRuleMappingSupported(any())).thenReturn(true);
     this.rulesValidator = new CustomSignatureRulesValidator(modsecRulesManager);
   }
 

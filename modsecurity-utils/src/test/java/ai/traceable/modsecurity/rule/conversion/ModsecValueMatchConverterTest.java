@@ -9,13 +9,16 @@ import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.M
 import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY;
+import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY_SIZE;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HOST;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_URL;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_USER_AGENT;
 import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY;
+import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE;
 import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.modsecurity.RuleEngine;
@@ -35,9 +38,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.Value;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,116 +105,95 @@ public class ModsecValueMatchConverterTest {
             "http.response.body",
             "21");
 
-    Map<String, RuleMatch> ruleMatches =
+    Set<RuleMatchInfo> ruleMatchInfos =
         ModsecRuleEngineUtils.getModsecRuleMatches(ruleEngine, attributesMap).stream()
-            .collect(Collectors.toMap(RuleMatch::getRuleId, Function.identity()));
-    assertEquals(31, ruleMatches.size());
+            .map(RuleMatchInfo::new)
+            .collect(Collectors.toUnmodifiableSet());
+    assertEquals(31, ruleMatchInfos.size());
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100053"),
+        ruleMatchInfos,
+        List.of(
             REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            ruleMatches.get("100055"),
             REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            ruleMatches.get("100005"),
             REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            ruleMatches.get("100020"),
             REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_MATCHES_REGEX),
         "http.url",
         "/haha/xyz.txt?param1=test");
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100058"),
+        ruleMatchInfos,
+        List.of(
             REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            ruleMatches.get("100039"),
             REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_MATCHES_REGEX,
-            ruleMatches.get("100019"),
             REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_CONTAINS,
-            ruleMatches.get("100025"),
             REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
         "http.request.header.user-agent",
         "Chrome x/10");
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100004"),
+        ruleMatchInfos,
+        List.of(
             REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_EQUALS,
-            ruleMatches.get("100002"),
             REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_MATCHES_REGEX,
-            ruleMatches.get("100023"),
             REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_CONTAINS,
-            ruleMatches.get("100033"),
             REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
         "", // TODO: Needs to be fixed in modsecurity
         "get");
-    /*
-    TODO: Debug and fix the test - Intermittently failing
+
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100029"),
+        ruleMatchInfos,
+        List.of(
             REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            ruleMatches.get("100011"),
             REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            ruleMatches.get("100049"),
             REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            ruleMatches.get("100050"),
             REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
         "default.",
         "");
-     */
+
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100048"),
+        ruleMatchInfos,
+        List.of(
             RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            ruleMatches.get("100013"),
             RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            ruleMatches.get("100022"),
             RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            ruleMatches.get("100047"),
             RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_GREATER_THAN,
-            ruleMatches.get("100014"),
             RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
         "http.response.body",
         "21");
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100007"),
+        ruleMatchInfos,
+        List.of(
             RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            ruleMatches.get("100042"),
             RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            ruleMatches.get("100018"),
             RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            ruleMatches.get("100008"),
             RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_LESS_THAN,
-            ruleMatches.get("100043"),
             RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
         "http.response.status_code",
         "200");
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100040"),
-                REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            ruleMatches.get("100034"),
-                REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            ruleMatches.get("100035"),
-                REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            ruleMatches.get("100015"),
-                REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_CONTAIN),
+        ruleMatchInfos,
+        List.of(
+            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_EQUAL,
+            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_CONTAIN),
         "http.request.header.x-forwarded-host",
         "198.23.1.2");
     verifyRuleMatches(
-        Map.of(
-            ruleMatches.get("100056"),
-            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_MATCHES_REGEX),
+        ruleMatchInfos,
+        List.of(REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_MATCHES_REGEX),
         "http.request.header.host",
         "my-home-hostnames");
   }
 
   private void verifyRuleMatches(
-      Map<RuleMatch, String> ruleMatches, String matchAttribute, String matchAttributeValue) {
-    ruleMatches.forEach(
-        (ruleMatch, ruleMsg) -> {
-          assertEquals(ruleMsg, ruleMatch.getRuleMessage());
-          assertEquals(matchAttribute, ruleMatch.getMatchAttribute());
-          assertEquals(matchAttributeValue, ruleMatch.getMatchAttributeValue());
+      Set<RuleMatchInfo> ruleMatchInfos,
+      List<String> ruleMsgs,
+      String matchAttribute,
+      String matchAttributeValue) {
+    ruleMsgs.forEach(
+        ruleMsg -> {
+          assertTrue(
+              ruleMatchInfos.contains(
+                  new RuleMatchInfo(ruleMsg, matchAttribute, matchAttributeValue)));
         });
   }
 
@@ -237,6 +220,15 @@ public class ModsecValueMatchConverterTest {
                 MATCH_OPERATOR_NOT_MATCH_REGEX,
                 MATCH_OPERATOR_CONTAINS,
                 MATCH_OPERATOR_NOT_CONTAIN)));
+
+    customModsecRules.addAll(
+        createCustomModsecRequestValueMatchRules(
+            Map.of(REQUEST_VALUE_MATCH_METADATA_BODY_SIZE, "1"),
+            List.of(
+                MATCH_OPERATOR_EQUALS,
+                MATCH_OPERATOR_NOT_EQUAL,
+                MATCH_OPERATOR_GREATER_THAN,
+                MATCH_OPERATOR_LESS_THAN)));
 
     customModsecRules.addAll(
         createCustomModsecRequestValueMatchRules(
@@ -267,6 +259,15 @@ public class ModsecValueMatchConverterTest {
                 MATCH_OPERATOR_NOT_MATCH_REGEX,
                 MATCH_OPERATOR_CONTAINS,
                 MATCH_OPERATOR_NOT_CONTAIN,
+                MATCH_OPERATOR_GREATER_THAN,
+                MATCH_OPERATOR_LESS_THAN)));
+
+    customModsecRules.addAll(
+        createCustomModsecResponseValueMatchRules(
+            Map.of(RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE, "1"),
+            List.of(
+                MATCH_OPERATOR_EQUALS,
+                MATCH_OPERATOR_NOT_EQUAL,
                 MATCH_OPERATOR_GREATER_THAN,
                 MATCH_OPERATOR_LESS_THAN)));
 
@@ -372,5 +373,24 @@ public class ModsecValueMatchConverterTest {
     return createCustomModsecRule(responseMetadata, operator, value).toBuilder()
         .setRuleId(ruleId)
         .build();
+  }
+
+  @Value
+  static class RuleMatchInfo {
+    String ruleMsg;
+    String matchAttribute;
+    String matchAttributeValue;
+
+    RuleMatchInfo(RuleMatch ruleMatch) {
+      this.ruleMsg = ruleMatch.getRuleMessage();
+      this.matchAttribute = ruleMatch.getMatchAttribute();
+      this.matchAttributeValue = ruleMatch.getMatchAttributeValue();
+    }
+
+    public RuleMatchInfo(String ruleMsg, String matchAttribute, String matchAttributeValue) {
+      this.ruleMsg = ruleMsg;
+      this.matchAttribute = matchAttribute;
+      this.matchAttributeValue = matchAttributeValue;
+    }
   }
 }

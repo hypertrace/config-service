@@ -3,11 +3,13 @@ package ai.traceable.customsignature.config.service.modsec;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
 import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import io.grpc.Status;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private static final long MODSEC_ID_SEED = 10000000;
   private static final String RANDOM_RULE_ID = UUID.randomUUID().toString();
   private static final String NEW_LINES_DELIMITER = "\n\n";
+  private static final String COOKIE_KEYWORD = "COOKIE";
 
   private final CustomModsecRuleConverter customModsecRuleConverter;
   private final ModsecDirectivesManager modsecDirectivesManager;
@@ -48,11 +51,9 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     long modsecIdAssignment = MODSEC_ID_SEED;
 
     for (CustomSignatureRule rule : customSignatureRules) {
-      // drop rule with attribute key value expression.
-      if (rule.getDefinition().getClauseGroup().getClausesList().stream()
-          .anyMatch(Clause::hasAttributeKeyValueExpression)) {
+      if (!isModsecRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
         log.debug(
-            "Modsec conversion not supported for attribute criteria - rule ID: {} tenant ID: {}",
+            "Modsec rule mapping is not supported for rule - rule ID: {} tenant ID: {}",
             rule,
             requestContext.getTenantId().orElse("Unknown"));
         continue;
@@ -119,6 +120,32 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
           .withDescription(
               String.format("Modsec rule could not be created for rule: [%s]", ruleName));
     }
+  }
+
+  @Override
+  public boolean isModsecRuleMappingSupported(ClauseGroup clauseGroup) {
+    for (Clause clause : clauseGroup.getClausesList()) {
+      // attribute clause can not be converted to modsec
+      if (clause.hasAttributeKeyValueExpression()) {
+        return false;
+      }
+      // response-cookie metadata is not supported in modsec
+      if (clause
+              .getKeyValueExpression()
+              .getMatchCategory()
+              .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
+          && clause.getKeyValueExpression().getTag().name().contains(COOKIE_KEYWORD)) {
+        return false;
+      }
+      if (clause
+              .getMatchExpression()
+              .getMatchCategory()
+              .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
+          && clause.getMatchExpression().getMatchKey().name().contains(COOKIE_KEYWORD)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private String getModsecDirective(CustomModsecRuleVersion customModsecRuleVersion) {

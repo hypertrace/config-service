@@ -33,6 +33,9 @@ public class ModsecVariableConverter {
             createModsecVariable(ModsecVariableMetadata.REQUEST_HEADERS, USER_AGENT_HEADER));
       case REQUEST_VALUE_MATCH_METADATA_BODY:
         return Collections.singletonList(new ModsecVariable(ModsecVariableMetadata.REQUEST_BODY));
+      case REQUEST_VALUE_MATCH_METADATA_BODY_SIZE:
+        return Collections.singletonList(
+            new ModsecVariable(ModsecVariableMetadata.REQUEST_BODY_LENGTH));
       default:
         throw new IllegalArgumentException(
             String.format("Unsupported RequestValueMatchMetadata: %s", metadata));
@@ -46,6 +49,9 @@ public class ModsecVariableConverter {
             new ModsecVariable(ModsecVariableMetadata.RESPONSE_STATUS));
       case RESPONSE_VALUE_MATCH_METADATA_BODY:
         return Collections.singletonList(new ModsecVariable(ModsecVariableMetadata.RESPONSE_BODY));
+      case RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE:
+        return Collections.singletonList(
+            new ModsecVariable(ModsecVariableMetadata.RESPONSE_CONTENT_LENGTH));
       default:
         throw new IllegalArgumentException(
             String.format("Unsupported ResponseValueMatchMetadata: %s", metadata));

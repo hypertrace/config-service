@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirectivesManager;
+import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -24,6 +26,7 @@ import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
@@ -105,6 +108,54 @@ public class CustomSignatureModsecRulesManagerTest {
     assertTrue(response.getRulesList().isEmpty());
     verify(customModsecRuleConverter, times(3))
         .getValidatedModsecRule(anyLong(), anyString(), anyString(), anyList());
+  }
+
+  @Test
+  public void testConversionNotSupported() {
+    CustomSignatureModsecRulesManager modsecRulesManager = getCustomSignatureModsecRulesManager();
+
+    ClauseGroup clauseGroup =
+        ClauseGroup.newBuilder()
+            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+            .addClauses(
+                Clause.newBuilder()
+                    .setKeyValueExpression(
+                        KeyValueExpression.newBuilder().setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)))
+            .addClauses(
+                Clause.newBuilder()
+                    .setMatchExpression(
+                        MatchExpression.newBuilder().setMatchKey(MatchKey.MATCH_KEY_BODY)))
+            .build();
+
+    assertTrue(modsecRulesManager.isModsecRuleMappingSupported(clauseGroup));
+    assertFalse(
+        modsecRulesManager.isModsecRuleMappingSupported(
+            clauseGroup.toBuilder()
+                .addClauses(
+                    Clause.newBuilder()
+                        .setAttributeKeyValueExpression(
+                            AttributeKeyValueExpression.getDefaultInstance()))
+                .build()));
+    assertFalse(
+        modsecRulesManager.isModsecRuleMappingSupported(
+            clauseGroup.toBuilder()
+                .addClauses(
+                    Clause.newBuilder()
+                        .setKeyValueExpression(
+                            KeyValueExpression.newBuilder()
+                                .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                                .setTag(KeyValueTag.KEY_VALUE_TAG_COOKIE)))
+                .build()));
+    assertFalse(
+        modsecRulesManager.isModsecRuleMappingSupported(
+            clauseGroup.toBuilder()
+                .addClauses(
+                    Clause.newBuilder()
+                        .setMatchExpression(
+                            MatchExpression.newBuilder()
+                                .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
+                                .setMatchKey(MatchKey.MATCH_KEY_COOKIE_VALUE)))
+                .build()));
   }
 
   @Test

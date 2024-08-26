@@ -76,13 +76,15 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
 
     Status status;
-    List<Clause> clauses = request.getDefinition().getClauseGroup().getClausesList();
-    boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
+    ClauseGroup clauseGroup = request.getDefinition().getClauseGroup();
     if (!request.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
-    if ((status = validateRuleEffect(request.getEffect(), hasResponseOrAttribute)) != Status.OK) {
+    if ((status =
+            validateRuleEffect(
+                request.getEffect(), hasResponseOrAttribute(clauseGroup.getClausesList())))
+        != Status.OK) {
       return status;
     }
 
@@ -101,7 +103,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (clauses.stream().noneMatch(Clause::hasAttributeKeyValueExpression)) {
+    if (modsecRulesManager.isModsecRuleMappingSupported(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
     }
     return Status.OK;

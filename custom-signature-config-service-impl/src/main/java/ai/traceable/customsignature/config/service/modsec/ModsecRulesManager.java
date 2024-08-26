@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.modsec;
 
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
@@ -16,4 +17,6 @@ public interface ModsecRulesManager {
       CustomModsecRuleVersion customModsecRuleVersion);
 
   Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition);
+
+  boolean isModsecRuleMappingSupported(ClauseGroup clauseGroup);
 }
