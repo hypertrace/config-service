@@ -1,0 +1,64 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.servicenow.itsm.integration.config.service.api.v1;
+
+import "ai/traceable/servicenow/itsm/integration/config/service/v1/servicenow_itsm_integration.proto";
+
+service ServiceNowIntegrationConfigService {
+  rpc CreateServiceNowIntegration(CreateServiceNowIntegrationRequest) returns (CreateServiceNowIntegrationResponse) {}
+  rpc UpdateServiceNowIntegration(UpdateServiceNowIntegrationRequest) returns (UpdateServiceNowIntegrationResponse) {}
+  rpc DeleteServiceNowIntegration(DeleteServiceNowIntegrationRequest) returns (DeleteServiceNowIntegrationResponse) {}
+
+  // this get API will return integration details without the credentials - perfect for Graphql
+  rpc GetServiceNowIntegration(GetServiceNowIntegrationRequest) returns (GetServiceNowIntegrationResponse) {}
+
+  // and this get API is intended to be used with services that require the credentials
+  rpc GetServiceNowIntegrationWithAuthCredentials(GetServiceNowIntegrationWithAuthCredentialsRequest) returns (GetServiceNowIntegrationWithAuthCredentialsResponse) {}
+}
+
+message CreateServiceNowIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  ServiceNowIntegrationScope scope = 3;
+  string server_url = 4;
+  ServiceNowAuthCredentials auth_credentials = 5;
+}
+
+message CreateServiceNowIntegrationResponse {
+  ServiceNowIntegration service_now_integration = 1;
+}
+
+message UpdateServiceNowIntegrationRequest {
+  string service_now_integration_id = 1;
+  string name = 2;
+  string description = 3;
+  ServiceNowIntegrationScope scope = 4;
+  string server_url = 5;
+  ServiceNowAuthCredentials auth_credentials = 6;
+}
+
+message UpdateServiceNowIntegrationResponse {
+  ServiceNowIntegration service_now_integration = 1;
+}
+
+message DeleteServiceNowIntegrationRequest {
+  string service_now_integration_id = 1;
+}
+
+message DeleteServiceNowIntegrationResponse {}
+
+message GetServiceNowIntegrationRequest {
+  ServiceNowIntegrationFilter filter = 1;
+}
+
+message GetServiceNowIntegrationResponse {
+  repeated ServiceNowIntegration service_now_integration = 1;
+}
+
+message GetServiceNowIntegrationWithAuthCredentialsRequest {
+  ServiceNowIntegrationFilter filter = 1;
+}
+
+message GetServiceNowIntegrationWithAuthCredentialsResponse {
+  repeated ServiceNowIntegrationWithAuthCredentials service_now_integration_with_auth_credentials = 1;
+}

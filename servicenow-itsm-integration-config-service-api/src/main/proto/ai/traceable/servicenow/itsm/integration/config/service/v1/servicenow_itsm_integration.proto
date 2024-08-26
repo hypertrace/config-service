@@ -1,0 +1,47 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.servicenow.itsm.integration.config.service.api.v1;
+
+// this message is intended for apis where we don't want to expose the credentials
+message ServiceNowIntegration {
+  string id = 1;
+  ServiceNowIntegrationDetails integration_details = 2;
+}
+
+// this message is intended for apis where we do want to return the credentials
+message ServiceNowIntegrationWithAuthCredentials {
+  string id = 1;
+  ServiceNowIntegrationDetails integration_details = 2;
+  ServiceNowAuthCredentials auth_credentials = 3;
+}
+
+message ServiceNowIntegrationDetails {
+  string name = 1;
+  string description = 2;
+  string server_url = 3;
+  ServiceNowIntegrationScope scope = 4;
+}
+
+message ServiceNowAuthCredentials {
+  string client_id = 1;
+  string user_name = 2;
+  string encryption_key_id = 3;
+  string encrypted_user_password = 4;
+  string encrypted_client_secret = 5;
+}
+
+message ServiceNowIntegrationFilter {
+  // filtering with scope with environment-ids a,b,c,...
+  // will fetch integrations containing at-least one matching environment
+  ServiceNowIntegrationScope scope = 1;
+}
+
+message ServiceNowIntegrationScope {
+  oneof scope {
+    StringList environment_ids = 1;
+  }
+}
+
+message StringList {
+  repeated string values = 1;
+}
