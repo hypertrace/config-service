@@ -65,12 +65,15 @@ class ConfigServiceGrpcImplTest {
   void upsertConfig() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
     when(configStore.writeConfig(
-            any(ConfigResourceContext.class), anyString(), any(Value.class), anyString()))
+            any(ConfigResourceContext.class),
+            anyString(),
+            any(UpsertConfigRequest.class),
+            anyString()))
         .thenAnswer(
             invocation -> {
-              Value config = invocation.getArgument(2, Value.class);
+              UpsertConfigRequest request = invocation.getArgument(2, UpsertConfigRequest.class);
               return UpsertedConfig.newBuilder()
-                  .setConfig(config)
+                  .setConfig(request.getConfig())
                   .setCreationTimestamp(123)
                   .setUpdateTimestamp(456)
                   .build();
@@ -300,7 +303,11 @@ class ConfigServiceGrpcImplTest {
     assertEquals(Status.NOT_FOUND, ((StatusException) throwable).getStatus());
 
     verify(configStore, never())
-        .writeConfig(any(ConfigResourceContext.class), anyString(), any(Value.class), anyString());
+        .writeConfig(
+            any(ConfigResourceContext.class),
+            anyString(),
+            any(UpsertConfigRequest.class),
+            anyString());
     verify(responseObserver, never()).onNext(any(DeleteConfigResponse.class));
     verify(responseObserver, never()).onCompleted();
   }

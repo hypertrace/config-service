@@ -10,6 +10,7 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
+import org.hypertrace.config.service.v1.UpsertConfigRequest;
 
 /**
  * Abstraction for the backend which stores and serves the configuration data for multiple
@@ -25,7 +26,10 @@ public interface ConfigStore {
    * @return the config written to the store
    */
   UpsertedConfig writeConfig(
-      ConfigResourceContext configResourceContext, String userId, Value config, String userEmail)
+      ConfigResourceContext configResourceContext,
+      String userId,
+      UpsertConfigRequest request,
+      String userEmail)
       throws IOException;
 
   /**
