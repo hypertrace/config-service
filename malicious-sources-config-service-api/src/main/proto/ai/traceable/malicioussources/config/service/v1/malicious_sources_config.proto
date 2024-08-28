@@ -60,7 +60,7 @@ message AgentModification {
 }
 
 message HeaderInjection {
-  Location header_location = 1;
+  PredicateLocation header_location = 1;
   string header_name = 2;
   FieldValue value = 3;
 }
@@ -71,10 +71,10 @@ message FieldValue {
   }
 }
 
-enum Location {
-  LOCATION_UNSPECIFIED = 0;
-  LOCATION_REQUEST = 1;
-  LOCATION_RESPONSE = 2;
+enum PredicateLocation {
+  PREDICATE_LOCATION_UNSPECIFIED = 0;
+  PREDICATE_LOCATION_REQUEST = 1;
+  PREDICATE_LOCATION_RESPONSE = 2;
 }
 
 message MaliciousSourcesRuleCondition {
