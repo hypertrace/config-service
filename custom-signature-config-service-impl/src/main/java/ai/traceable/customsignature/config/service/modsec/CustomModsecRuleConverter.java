@@ -189,6 +189,10 @@ public class CustomModsecRuleConverter {
         if (!category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
           return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY);
         }
+      case MATCH_KEY_BODY_SIZE:
+        if (!category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
+          return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY_SIZE);
+        }
       default:
         return Optional.empty();
     }
@@ -243,6 +247,10 @@ public class CustomModsecRuleConverter {
       case MATCH_KEY_BODY:
         if (category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
           return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY);
+        }
+      case MATCH_KEY_BODY_SIZE:
+        if (category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
+          return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE);
         }
       default:
         return Optional.empty();
