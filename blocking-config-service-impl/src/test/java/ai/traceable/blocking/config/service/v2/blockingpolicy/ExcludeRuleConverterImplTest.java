@@ -113,7 +113,7 @@ class ExcludeRuleConverterImplTest {
     SystemDefinedEvent systemEvent2 =
         SystemDefinedEvent.newBuilder()
             .setEventFamily(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
-            .setEventSubTypeId("160")
+            .setEventSubTypeId("crs92160")
             .build();
 
     CustomRuleEvent customRuleEvent1 =
@@ -162,24 +162,22 @@ class ExcludeRuleConverterImplTest {
     ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
-    assertEquals(5, exclusionRule.getEventConditionsCount());
+    assertEquals(4, exclusionRule.getEventConditionsCount());
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY, exclusionRule.getEventConditions(0).getBlockingCategory());
-    assertEquals(List.of("crs921"), exclusionRule.getEventConditions(0).getIdsList());
-    assertEquals(
-        BLOCKING_CATEGORY_MODSECURITY, exclusionRule.getEventConditions(1).getBlockingCategory());
-    assertEquals(List.of("160"), exclusionRule.getEventConditions(1).getIdsList());
+    assertEquals(List.of("crs921"), exclusionRule.getEventConditions(0).getIdPrefixesList());
+    assertEquals(List.of("crs92160"), exclusionRule.getEventConditions(0).getIdsList());
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
-        exclusionRule.getEventConditions(2).getBlockingCategory());
-    assertEquals(List.of("rule1"), exclusionRule.getEventConditions(2).getIdsList());
+        exclusionRule.getEventConditions(1).getBlockingCategory());
+    assertEquals(List.of("rule1"), exclusionRule.getEventConditions(1).getIdsList());
     assertEquals(
-        BLOCKING_CATEGORY_RATE_LIMIT, exclusionRule.getEventConditions(3).getBlockingCategory());
-    assertEquals(List.of("rule2"), exclusionRule.getEventConditions(3).getIdsList());
+        BLOCKING_CATEGORY_RATE_LIMIT, exclusionRule.getEventConditions(2).getBlockingCategory());
+    assertEquals(List.of("rule2"), exclusionRule.getEventConditions(2).getIdsList());
     assertEquals(
         BLOCKING_CATEGORY_TRANSACTION_BASED_DLP,
-        exclusionRule.getEventConditions(4).getBlockingCategory());
-    assertEquals(List.of("dlp-rule-id"), exclusionRule.getEventConditions(4).getIdsList());
+        exclusionRule.getEventConditions(3).getBlockingCategory());
+    assertEquals(List.of("dlp-rule-id"), exclusionRule.getEventConditions(3).getIdsList());
   }
 
   @Test

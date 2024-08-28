@@ -50,6 +50,7 @@ message ExclusionRule {
   message EventCondition {
     BlockingCategory blocking_category = 1;
     repeated string ids = 2;
+    repeated string id_prefixes = 3;
   }
 
   enum ExclusionTarget {

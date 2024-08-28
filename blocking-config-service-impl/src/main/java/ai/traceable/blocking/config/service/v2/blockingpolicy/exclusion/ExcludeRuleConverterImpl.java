@@ -8,6 +8,7 @@ import ai.traceable.blocking.config.service.v2.CustomSignatureDetails;
 import ai.traceable.blocking.config.service.v2.ExclusionRule;
 import ai.traceable.blocking.config.service.v2.ExclusionRule.AnomalousAttributeCondition;
 import ai.traceable.blocking.config.service.v2.ExclusionRule.EventCondition;
+import ai.traceable.blocking.config.service.v2.ExclusionRule.EventCondition.Builder;
 import ai.traceable.blocking.config.service.v2.IpDetails;
 import ai.traceable.blocking.config.service.v2.IpType;
 import ai.traceable.blocking.config.service.v2.IpTypeDetails;
@@ -23,7 +24,6 @@ import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
-import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import java.util.ArrayList;
 import java.util.List;
@@ -154,21 +154,26 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
     List<EventCondition> eventConditions = new ArrayList<>();
 
     // Convert SystemDefinedEvent to EventCondition
-    condition
-        .getSystemDefinedEventsList()
+    Builder systemEventCondition =
+        EventCondition.newBuilder()
+            .setBlockingCategory(BlockingCategory.BLOCKING_CATEGORY_MODSECURITY);
+    condition.getSystemDefinedEventsList().stream()
+        .filter(
+            systemEvent ->
+                systemEvent.getEventFamily()
+                    == SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
         .forEach(
             systemEvent -> {
-              if (systemEvent.getEventFamily()
-                  == SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC) {
-                eventConditions.add(
-                    EventCondition.newBuilder()
-                        .setBlockingCategory(BlockingCategory.BLOCKING_CATEGORY_MODSECURITY)
-                        .addAllIds(getEventIds(systemEvent))
-                        .build());
-              } else {
-                log.warn("Unrecognized system event family: {}", systemEvent.getEventFamily());
+              if (systemEvent.hasEventTypeId()) {
+                systemEventCondition.addIdPrefixes(systemEvent.getEventTypeId());
+              } else if (systemEvent.hasEventSubTypeId()) {
+                systemEventCondition.addIds(systemEvent.getEventSubTypeId());
               }
             });
+    if (!systemEventCondition.getIdsList().isEmpty()
+        || !systemEventCondition.getIdPrefixesList().isEmpty()) {
+      eventConditions.add(systemEventCondition.build());
+    }
 
     condition
         .getCustomRuleEventsList()
@@ -220,17 +225,6 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
         .setOperator(convertOperator(condition.getOperator()))
         .setValue(condition.getValue())
         .build();
-  }
-
-  private List<String> getEventIds(SystemDefinedEvent systemEvent) {
-    List<String> eventIds = new ArrayList<>();
-    if (!systemEvent.getEventTypeId().isEmpty()) {
-      // TODO fetch and fill all sub-rule ids
-      eventIds.add(systemEvent.getEventTypeId());
-    } else if (!systemEvent.getEventSubTypeId().isEmpty()) {
-      eventIds.add(systemEvent.getEventSubTypeId());
-    }
-    return eventIds;
   }
 
   private BlockingCategory getBlockingCategory(CustomRuleEvent event) {

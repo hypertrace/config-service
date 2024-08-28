@@ -8,6 +8,8 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
@@ -22,6 +24,7 @@ import io.grpc.Status;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -113,6 +116,17 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
                 exclusionTarget ->
                     exclusionTarget.equals(EXCLUSION_TARGET_BLOCK)
                         || exclusionTarget.equals(EXCLUSION_TARGET_ALLOW));
+    if (isBlockOrAllowTargetPresent
+        && ruleInfo.getConditionsList().stream()
+                .map(DetectionExclusionCondition::getConditionCase)
+                .filter(Predicate.isEqual(ConditionCase.EVENT_CONDITION))
+                .count()
+            > 1) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "DetectionExclusionRule for blocking supports at max one event condition")
+          .asRuntimeException();
+    }
     ruleInfo
         .getConditionsList()
         .forEach(

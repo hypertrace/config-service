@@ -217,10 +217,7 @@ class DetectionExclusionRulesValidatorTest {
                                       .setRuleCreationSource(RuleSource.RULE_SOURCE_DEFAULT)
                                       .setDisabled(true)
                                       .setHidden(true)
-                                      .setGenerateInternalEvents(false)
-                                      .build())
-                              .build())
-                      .build())
+                                      .setGenerateInternalEvents(false))))
               .build();
       assertThrows(
           StatusRuntimeException.class,
