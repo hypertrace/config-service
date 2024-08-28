@@ -147,7 +147,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(rule.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (clauses.stream().noneMatch(Clause::hasAttributeKeyValueExpression)) {
+    if (modsecRulesManager.isModsecRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
       return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
     }
     return Status.OK;
