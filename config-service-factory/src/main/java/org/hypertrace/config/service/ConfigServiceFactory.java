@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
+import org.hypertrace.config.service.metric.ConfigMetricsReporter;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.documentstore.Datastore;
@@ -91,6 +92,8 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
   protected ConfigStore buildConfigStore(Config config) {
     try {
       Datastore datastore = initDataStore(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
+      new ConfigMetricsReporter(datastore, grpcServiceContainerEnvironment.getLifecycle())
+          .monitor();
       ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
       this.store = configStore;
       return configStore;
