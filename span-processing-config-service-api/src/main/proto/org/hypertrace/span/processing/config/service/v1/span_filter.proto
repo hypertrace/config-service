@@ -8,12 +8,21 @@ message SpanFilter {
   oneof span_filter_expression {
     LogicalSpanFilterExpression logical_span_filter = 1;
     RelationalSpanFilterExpression relational_span_filter = 2;
+    UnarySpanFilterExpression unary_span_filter = 3;
   }
 }
 
 message LogicalSpanFilterExpression {
   LogicalOperator operator = 1;
   repeated SpanFilter operands = 2;
+}
+
+message UnarySpanFilterExpression {
+  oneof left_operand {
+    string span_attribute_key = 1;
+    Field field = 2;
+  }
+  UnaryOperator operator = 3;
 }
 
 message RelationalSpanFilterExpression {
@@ -60,4 +69,10 @@ enum RelationalOperator {
   RELATIONAL_OPERATOR_ENDS_WITH = 5;
   RELATIONAL_OPERATOR_REGEX_MATCH = 6;
   RELATIONAL_OPERATOR_IN = 7;
+}
+
+enum UnaryOperator {
+  UNARY_OPERATOR_UNSPECIFIED = 0;
+  UNARY_OPERATOR_EXISTS = 1;
+  UNARY_OPERATOR_NOT_EXISTS = 2;
 }
