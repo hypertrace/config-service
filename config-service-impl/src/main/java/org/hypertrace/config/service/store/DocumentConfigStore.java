@@ -94,7 +94,7 @@ public class DocumentConfigStore implements ConfigStore {
             .asRuntimeException();
       }
     } else {
-      collection.createOrReplace(latestDocKey, latestConfigDocument);
+      collection.upsert(latestDocKey, latestConfigDocument);
     }
 
     return optionalPreviousConfig
