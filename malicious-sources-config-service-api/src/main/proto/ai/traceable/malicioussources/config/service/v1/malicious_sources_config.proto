@@ -40,6 +40,41 @@ message MaliciousSourcesRuleAction {
   RuleActionType action_type = 1;
   ExpirationDetails expiration_details = 2;
   EventSeverity event_severity = 3;
+  repeated RuleEffectWithModifications effects = 4;
+}
+
+message RuleEffectWithModifications {
+  oneof effect {
+    AgentRuleEffect agent_rule_effect = 1;
+  }
+}
+
+message AgentRuleEffect {
+  repeated AgentModification agent_modifications = 1;
+}
+
+message AgentModification {
+  oneof modification {
+    HeaderInjection header_injection = 1;
+  }
+}
+
+message HeaderInjection {
+  Location header_location = 1;
+  string header_name = 2;
+  FieldValue value = 3;
+}
+
+message FieldValue {
+  oneof value {
+    string static_value = 1;
+  }
+}
+
+enum Location {
+  LOCATION_UNSPECIFIED = 0;
+  LOCATION_REQUEST = 1;
+  LOCATION_RESPONSE = 2;
 }
 
 message MaliciousSourcesRuleCondition {
