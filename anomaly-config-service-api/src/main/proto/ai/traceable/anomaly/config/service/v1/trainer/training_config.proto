@@ -180,6 +180,7 @@ message MetadataTrainingConfig {
     StartTimeTrainingConfig start_time = 19;
     UserAgentTrainingConfig user_agent = 20;
     UserRoleTrainingConfig user_role = 21;
+    UserScopeTrainingConfig user_scope = 30;
     HtmlTagsTrainingConfig html_tags = 22;
     HtmlTagAttributesTrainingConfig html_tag_attributes = 23;
     JwtParamsTrainingConfig jwt_params = 24;
@@ -336,7 +337,13 @@ message StartTimeTrainingConfig {}
 
 message UserAgentTrainingConfig {}
 
-message UserRoleTrainingConfig {}
+message UserRoleTrainingConfig {
+  MinOccurrenceConfig min_occurrence_config = 1;
+}
+
+message UserScopeTrainingConfig {
+  MinOccurrenceConfig min_occurrence_config = 2;
+}
 
 message JwtExpiryIssueAtTrainingConfig {};
 
