@@ -124,9 +124,8 @@ class DashboardConfigServiceImpl extends DashboardConfigServiceGrpc.DashboardCon
       responseObserver.onNext(
           UpdateDashboardResponse.newBuilder()
               .setDashboard(
-                  this.dashboardStore
-                      .upsertObject(requestContext, dashboardBuilder.build())
-                      .getData())
+                  this.dashboardStore.updateDashboard(
+                      requestContext, request, dashboardBuilder.build()))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
