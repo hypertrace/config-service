@@ -14,6 +14,7 @@ message Mutation {
   map<string, string> data = 5;
   google.protobuf.Value original_value = 6;
   bool is_enabled = 7;
+  string description = 8;
 }
 
 enum MutationAction {

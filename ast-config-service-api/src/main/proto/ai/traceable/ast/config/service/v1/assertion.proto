@@ -17,6 +17,7 @@ message Assertion {
   oneof type {
     AssertionTypeImmediateResponse assertion_type_immediate_response = 10;
   }
+  string description = 11;
 }
 
 message AssertionTypeImmediateResponse {}
