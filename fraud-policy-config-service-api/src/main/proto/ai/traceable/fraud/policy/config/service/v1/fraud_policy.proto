@@ -99,6 +99,9 @@ message FraudPolicy {
 
   // set the fraud policy stage, it will determine the visibility of the policy's detection output.
   FraudPolicyStage fraud_policy_stage = 11;
+
+  // a static description of the intent of the policy.
+  string description = 12;
 }
 
 message FraudWatcherPolicy {
