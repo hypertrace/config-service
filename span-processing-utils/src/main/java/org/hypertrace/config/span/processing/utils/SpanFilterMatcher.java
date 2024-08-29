@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.span.processing.config.service.v1.Field;
 import org.hypertrace.span.processing.config.service.v1.ListValue;
 import org.hypertrace.span.processing.config.service.v1.LogicalOperator;
+import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.RelationalOperator;
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
@@ -16,6 +17,9 @@ import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
 public class SpanFilterMatcher {
 
   public boolean matchesEnvironment(SpanFilter spanFilter, Optional<String> environment) {
+    if (spanFilter.hasUnarySpanFilter()) {
+      return true;
+    }
     if (spanFilter.hasRelationalSpanFilter()) {
       return matchesEnvironment(spanFilter.getRelationalSpanFilter(), environment);
     } else {
@@ -23,11 +27,14 @@ public class SpanFilterMatcher {
           .getLogicalSpanFilter()
           .getOperator()
           .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
+        if (hasNoRelationalFilters(spanFilter.getLogicalSpanFilter())) {
+          return true;
+        }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
             .filter(SpanFilter::hasRelationalSpanFilter)
             .allMatch(filter -> matchesEnvironment(filter.getRelationalSpanFilter(), environment));
       } else {
-        if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
+        if (hasNoRelationalFilters(spanFilter.getLogicalSpanFilter())) {
           return true;
         }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
@@ -38,6 +45,9 @@ public class SpanFilterMatcher {
   }
 
   public boolean matchesServiceName(SpanFilter spanFilter, String serviceName) {
+    if (spanFilter.hasUnarySpanFilter()) {
+      return true;
+    }
     if (spanFilter.hasRelationalSpanFilter()) {
       return matchesServiceName(spanFilter.getRelationalSpanFilter(), serviceName);
     } else {
@@ -45,11 +55,14 @@ public class SpanFilterMatcher {
           .getLogicalSpanFilter()
           .getOperator()
           .equals(LogicalOperator.LOGICAL_OPERATOR_AND)) {
+        if (hasNoRelationalFilters(spanFilter.getLogicalSpanFilter())) {
+          return true;
+        }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
             .filter(SpanFilter::hasRelationalSpanFilter)
             .allMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       } else {
-        if (spanFilter.getLogicalSpanFilter().getOperandsCount() == 0) {
+        if (hasNoRelationalFilters(spanFilter.getLogicalSpanFilter())) {
           return true;
         }
         return spanFilter.getLogicalSpanFilter().getOperandsList().stream()
@@ -57,6 +70,12 @@ public class SpanFilterMatcher {
             .anyMatch(filter -> matchesServiceName(filter.getRelationalSpanFilter(), serviceName));
       }
     }
+  }
+
+  private boolean hasNoRelationalFilters(LogicalSpanFilterExpression logicalSpanFilterExpression) {
+    return logicalSpanFilterExpression.getOperandsCount() == 0
+        || logicalSpanFilterExpression.getOperandsList().stream()
+            .noneMatch(SpanFilter::hasRelationalSpanFilter);
   }
 
   private boolean matchesEnvironment(
