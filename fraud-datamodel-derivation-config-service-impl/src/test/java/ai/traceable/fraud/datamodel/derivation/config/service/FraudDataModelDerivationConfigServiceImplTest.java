@@ -24,6 +24,7 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMer
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetUserAgentMergeMappingConfigsResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.TenantScope;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateUserAgentMergeMappingConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateUserAgentMergeMappingConfigResponse;
@@ -167,12 +168,11 @@ class FraudDataModelDerivationConfigServiceImplTest {
   }
 
   @Test
-  public void testUserAgentMappingConfigCrud() {
+  public void testUserAgentMappingConfigCrudAtTenantScope() {
     RequestContext requestContext = buildRequestContext();
 
-    String apiId = "api_id_2";
     Map<String, List<String>> map = Map.of("a", List.of("b", "c"), "d", List.of("e", "f"));
-    UserAgentMergeMappingConfig config = convertToUserAgentMergeMappingConfig(map, null, apiId);
+    UserAgentMergeMappingConfig config = convertToUserAgentMergeMappingConfig(map, null, null);
 
     CreateUserAgentMergeMappingConfigResponse createUserAgentMergeMappingConfigResponse =
         requestContext.call(
@@ -181,20 +181,96 @@ class FraudDataModelDerivationConfigServiceImplTest {
                     .createUserAgentMergeMappingConfig(
                         CreateUserAgentMergeMappingConfigRequest.newBuilder()
                             .putAllPairs(config.getPairsMap())
-                            .setApiScope(ApiScope.newBuilder().setApiId(apiId).build())
+                            .setTenantScope(TenantScope.newBuilder().build())
                             .build()));
     assertNotNull(createUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig());
-    assertEquals(
-        apiId,
-        createUserAgentMergeMappingConfigResponse
-            .getUserAgentMergeMappingConfig()
-            .getApiScope()
-            .getApiId());
+
     String id = createUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId();
     System.out.println("Created config with id=" + id);
 
     map = Map.of("a1", List.of("b1", "c1"), "d1", List.of("e1", "f1"));
-    UserAgentMergeMappingConfig updateConfig = convertToUserAgentMergeMappingConfig(map, id, apiId);
+    UserAgentMergeMappingConfig updateConfig = convertToUserAgentMergeMappingConfig(map, id, null);
+
+    UpdateUserAgentMergeMappingConfigResponse updateUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .updateUserAgentMergeMappingConfig(
+                        UpdateUserAgentMergeMappingConfigRequest.newBuilder()
+                            .setUserAgentMergeMappingConfig(updateConfig)
+                            .build()));
+
+    assertEquals(
+        id, updateUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId());
+    assertEquals(
+        map,
+        convertToMap(
+            updateUserAgentMergeMappingConfigResponse
+                .getUserAgentMergeMappingConfig()
+                .getPairsMap()));
+
+    GetUserAgentMergeMappingConfigResponse getUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .getUserAgentMergeMappingConfig(
+                        GetUserAgentMergeMappingConfigRequest.newBuilder().setId(id).build()));
+
+    assertEquals(
+        id, getUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId());
+
+    DeleteUserAgentMergeMappingConfigResponse deleteUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .deleteUserAgentMergeMappingConfig(
+                        DeleteUserAgentMergeMappingConfigRequest.newBuilder()
+                            .setId(
+                                createUserAgentMergeMappingConfigResponse
+                                    .getUserAgentMergeMappingConfig()
+                                    .getId())
+                            .build()));
+
+    GetUserAgentMergeMappingConfigsResponse getUserAgentMergeMappingConfigsResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .getUserAgentMergeMappingConfigs(
+                        GetUserAgentMergeMappingConfigsRequest.newBuilder().build()));
+
+    assertEquals(0, getUserAgentMergeMappingConfigsResponse.getUserAgentMergeMappingConfigCount());
+  }
+
+  @Test
+  public void testUserAgentMappingConfigCrudAtApiScope() {
+    RequestContext requestContext = buildRequestContext();
+
+    List<String> apiIds = List.of("api-id-1", "api-id-2");
+    Map<String, List<String>> map = Map.of("a", List.of("b", "c"), "d", List.of("e", "f"));
+    UserAgentMergeMappingConfig config = convertToUserAgentMergeMappingConfig(map, null, apiIds);
+
+    CreateUserAgentMergeMappingConfigResponse createUserAgentMergeMappingConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .createUserAgentMergeMappingConfig(
+                        CreateUserAgentMergeMappingConfigRequest.newBuilder()
+                            .putAllPairs(config.getPairsMap())
+                            .setApiScope(ApiScope.newBuilder().addAllApiIds(apiIds).build())
+                            .build()));
+    assertNotNull(createUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig());
+    assertEquals(
+        apiIds,
+        createUserAgentMergeMappingConfigResponse
+            .getUserAgentMergeMappingConfig()
+            .getApiScope()
+            .getApiIdsList());
+    String id = createUserAgentMergeMappingConfigResponse.getUserAgentMergeMappingConfig().getId();
+    System.out.println("Created config with id=" + id);
+
+    map = Map.of("a1", List.of("b1", "c1"), "d1", List.of("e1", "f1"));
+    UserAgentMergeMappingConfig updateConfig =
+        convertToUserAgentMergeMappingConfig(map, id, apiIds);
 
     UpdateUserAgentMergeMappingConfigResponse updateUserAgentMergeMappingConfigResponse =
         requestContext.call(
@@ -214,11 +290,11 @@ class FraudDataModelDerivationConfigServiceImplTest {
                 .getUserAgentMergeMappingConfig()
                 .getPairsMap()));
     assertEquals(
-        apiId,
+        apiIds,
         updateUserAgentMergeMappingConfigResponse
             .getUserAgentMergeMappingConfig()
             .getApiScope()
-            .getApiId());
+            .getApiIdsList());
 
     GetUserAgentMergeMappingConfigResponse getUserAgentMergeMappingConfigResponse =
         requestContext.call(
@@ -253,13 +329,14 @@ class FraudDataModelDerivationConfigServiceImplTest {
   }
 
   private UserAgentMergeMappingConfig convertToUserAgentMergeMappingConfig(
-      Map<String, List<String>> map, String id, String apiId) {
+      Map<String, List<String>> map, String id, List<String> apiIds) {
     UserAgentMergeMappingConfig.Builder builder = UserAgentMergeMappingConfig.newBuilder();
     if (id != null) {
       builder.setId(id);
     }
-
-    builder.setApiScope(ApiScope.newBuilder().setApiId(apiId).build());
+    if (apiIds != null) {
+      builder.setApiScope(ApiScope.newBuilder().addAllApiIds(apiIds).build());
+    }
 
     for (Map.Entry<String, List<String>> entry : map.entrySet()) {
       String key = entry.getKey();

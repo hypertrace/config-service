@@ -33,9 +33,14 @@ message UserAgentMergeMappingConfig {
   map<string, google.protobuf.ListValue> pairs = 2;
   oneof scope {
     ApiScope api_scope = 3;
+    TenantScope tenant_scope = 4; // redundant as no scope implies tenant scope automatically. But making it explicit makes it apparent.
   }
 }
 
 message ApiScope {
-  string api_id = 1;
+  string api_id = 1 [deprecated = true];
+  repeated string api_ids = 2;
+}
+
+message TenantScope {
 }

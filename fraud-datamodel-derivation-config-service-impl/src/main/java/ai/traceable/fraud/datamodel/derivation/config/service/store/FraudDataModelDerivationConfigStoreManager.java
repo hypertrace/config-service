@@ -114,25 +114,22 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public CreateUserAgentMergeMappingConfigResponse createUserAgentMergeMappingConfig(
       RequestContext requestContext, CreateUserAgentMergeMappingConfigRequest request) {
-    UserAgentMergeMappingConfig config =
-        UserAgentMergeMappingConfig.newBuilder()
-            .setId(uuidGenerator.generateRandomId())
-            .setApiScope(ApiScope.newBuilder().setApiId(request.getApiScope().getApiId()).build())
-            .putAllPairs(request.getPairsMap())
-            .build();
+    UserAgentMergeMappingConfig.Builder configBuilder = UserAgentMergeMappingConfig.newBuilder();
 
+    configBuilder.setId(uuidGenerator.generateRandomId());
+    configBuilder.putAllPairs(request.getPairsMap());
+    if (request.hasApiScope()) {
+      configBuilder.setApiScope(
+          ApiScope.newBuilder().addAllApiIds(request.getApiScope().getApiIdsList()));
+    } else {
+      configBuilder.setTenantScope(TenantScope.newBuilder().build());
+    }
+
+    UserAgentMergeMappingConfig config = configBuilder.build();
     ContextualConfigObject<UserAgentMergeMappingConfig> configObject =
         fraudDataModelDerivationTransformConfigStore.upsertObject(requestContext, config);
     return CreateUserAgentMergeMappingConfigResponse.newBuilder()
-        .setUserAgentMergeMappingConfig(
-            UserAgentMergeMappingConfig.newBuilder()
-                .setId(configObject.getData().getId())
-                .setApiScope(
-                    ApiScope.newBuilder()
-                        .setApiId(configObject.getData().getApiScope().getApiId())
-                        .build())
-                .putAllPairs(configObject.getData().getPairsMap())
-                .build())
+        .setUserAgentMergeMappingConfig(configObject.getData())
         .build();
   }
 
@@ -163,28 +160,24 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public UpdateUserAgentMergeMappingConfigResponse updateUserAgentMergeMappingConfig(
       RequestContext requestContext, UpdateUserAgentMergeMappingConfigRequest request) {
-    UserAgentMergeMappingConfig config =
-        UserAgentMergeMappingConfig.newBuilder()
-            .setId(request.getUserAgentMergeMappingConfig().getId())
-            .setApiScope(
-                ApiScope.newBuilder()
-                    .setApiId(request.getUserAgentMergeMappingConfig().getApiScope().getApiId())
-                    .build())
-            .putAllPairs(request.getUserAgentMergeMappingConfig().getPairsMap())
-            .build();
+    UserAgentMergeMappingConfig.Builder configBuilder = UserAgentMergeMappingConfig.newBuilder();
+    configBuilder.setId(request.getUserAgentMergeMappingConfig().getId());
+    configBuilder.putAllPairs(request.getUserAgentMergeMappingConfig().getPairsMap());
+    if (request.getUserAgentMergeMappingConfig().hasApiScope()) {
+      configBuilder.setApiScope(
+          ApiScope.newBuilder()
+              .addAllApiIds(request.getUserAgentMergeMappingConfig().getApiScope().getApiIdsList())
+              .build());
+    } else {
+      configBuilder.setTenantScope(TenantScope.newBuilder().build());
+    }
+    UserAgentMergeMappingConfig config = configBuilder.build();
 
     ContextualConfigObject<UserAgentMergeMappingConfig> configObject =
         fraudDataModelDerivationTransformConfigStore.upsertObject(requestContext, config);
+
     return UpdateUserAgentMergeMappingConfigResponse.newBuilder()
-        .setUserAgentMergeMappingConfig(
-            UserAgentMergeMappingConfig.newBuilder()
-                .setId(configObject.getData().getId())
-                .setApiScope(
-                    ApiScope.newBuilder()
-                        .setApiId(configObject.getData().getApiScope().getApiId())
-                        .build())
-                .putAllPairs(configObject.getData().getPairsMap())
-                .build())
+        .setUserAgentMergeMappingConfig(configObject.getData())
         .build();
   }
 

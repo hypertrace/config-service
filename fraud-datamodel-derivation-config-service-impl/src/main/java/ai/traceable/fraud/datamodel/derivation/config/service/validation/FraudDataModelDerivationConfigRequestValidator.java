@@ -61,6 +61,52 @@ public class FraudDataModelDerivationConfigRequestValidator {
     validateRequestContext(requestContext);
   }
 
+  public void validateCreateUserAgentMergeMappingConfigRequest(
+      RequestContext requestContext, CreateUserAgentMergeMappingConfigRequest request) {
+    validateRequestContext(requestContext);
+    if (request.hasApiScope() && !(request.getApiScope().getApiIdsCount() > 0)) {
+      throw Status.INVALID_ARGUMENT.withDescription("API ids cannot be empty").asRuntimeException();
+    }
+    if (request.getPairsMap().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Pairs map cannot be empty")
+          .asRuntimeException();
+    }
+  }
+
+  public void validateUpdateUserAgentMergeMappingConfigRequest(
+      RequestContext requestContext, UpdateUserAgentMergeMappingConfigRequest request) {
+    validateRequestContext(requestContext);
+    if (request.getUserAgentMergeMappingConfig().getId().isBlank()) {
+      throw Status.INVALID_ARGUMENT.withDescription("Id cannot be empty").asRuntimeException();
+    }
+    if (request.getUserAgentMergeMappingConfig().hasApiScope()
+        && !(request.getUserAgentMergeMappingConfig().getApiScope().getApiIdsCount() > 0)) {
+      throw Status.INVALID_ARGUMENT.withDescription("API ids cannot be empty").asRuntimeException();
+    }
+    if (request.getUserAgentMergeMappingConfig().getPairsMap().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Pairs map cannot be empty")
+          .asRuntimeException();
+    }
+  }
+
+  public void validateGetUserAgentMergeMappingConfigRequest(
+      RequestContext requestContext, GetUserAgentMergeMappingConfigRequest request) {
+    validateRequestContext(requestContext);
+    if (request.getId().isBlank()) {
+      throw Status.INVALID_ARGUMENT.withDescription("Id cannot be empty").asRuntimeException();
+    }
+  }
+
+  public void validateDeleteUserAgentMergeMappingConfigRequest(
+      RequestContext requestContext, DeleteUserAgentMergeMappingConfigRequest request) {
+    validateRequestContext(requestContext);
+    if (request.getId().isBlank()) {
+      throw Status.INVALID_ARGUMENT.withDescription("Id cannot be empty").asRuntimeException();
+    }
+  }
+
   private static void validateRequestContext(RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
     if (requestContext.getTenantId().isEmpty()) {

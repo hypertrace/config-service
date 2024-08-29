@@ -164,7 +164,8 @@ class FraudDataModelDerivationConfigServiceImpl
           responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateOrThrow(requestContext, request);
+      this.requestValidator.validateCreateUserAgentMergeMappingConfigRequest(
+          requestContext, request);
       responseObserver.onNext(
           fraudDataModelDerivationConfigStoreManager.createUserAgentMergeMappingConfig(
               requestContext, request));
@@ -191,7 +192,7 @@ class FraudDataModelDerivationConfigServiceImpl
           responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateOrThrow(requestContext, request);
+      this.requestValidator.validateGetUserAgentMergeMappingConfigRequest(requestContext, request);
       responseObserver.onNext(
           fraudDataModelDerivationConfigStoreManager.getUserAgentMergeMappingConfig(
               requestContext, request));
@@ -246,7 +247,8 @@ class FraudDataModelDerivationConfigServiceImpl
           responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateOrThrow(requestContext, request);
+      this.requestValidator.validateUpdateUserAgentMergeMappingConfigRequest(
+          requestContext, request);
       responseObserver.onNext(
           fraudDataModelDerivationConfigStoreManager.updateUserAgentMergeMappingConfig(
               requestContext, request));
@@ -274,7 +276,8 @@ class FraudDataModelDerivationConfigServiceImpl
           responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateOrThrow(requestContext, request);
+      this.requestValidator.validateDeleteUserAgentMergeMappingConfigRequest(
+          requestContext, request);
       fraudDataModelDerivationConfigStoreManager.deleteUserAgentMergeMappingConfig(
           requestContext, request);
       responseObserver.onNext(DeleteUserAgentMergeMappingConfigResponse.newBuilder().build());

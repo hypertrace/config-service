@@ -81,6 +81,7 @@ message CreateUserAgentMergeMappingConfigRequest {
   map<string, google.protobuf.ListValue> pairs = 2;
   oneof scope {
     ApiScope api_scope = 3;
+    TenantScope tenant_scope = 4;
   }
 }
 
