@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DemoApplicationConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.LocalTrainingConfig;
@@ -105,6 +106,9 @@ public class TrainingConfigValidator {
 
     EnumMap<VolumetricTrainingConfig.ConfigCase, TrainingConfig> volumetricTrainingConfigMap =
         new EnumMap<>(VolumetricTrainingConfig.ConfigCase.class);
+
+    EnumMap<DemoApplicationConfig.ConfigCase, TrainingConfig> demoApplicationConfigMap =
+        new EnumMap<>(DemoApplicationConfig.ConfigCase.class);
 
     for (TrainingConfig trainingConfig : trainingConfigs) {
       Status status;
@@ -222,6 +226,18 @@ public class TrainingConfigValidator {
                     + volumetricTrainingConfigCase);
           } else {
             volumetricTrainingConfigMap.put(volumetricTrainingConfigCase, trainingConfig);
+          }
+          break;
+
+        case DEMO_APPLICATION_CONFIG:
+          DemoApplicationConfig.ConfigCase demoApplicationConfigCase =
+              trainingConfig.getDemoApplicationConfig().getConfigCase();
+          if (demoApplicationConfigMap.containsKey(demoApplicationConfigCase)) {
+            return Status.INVALID_ARGUMENT.withDescription(
+                "UpdateScopedTrainingConfigRequest should have only one training config for demoApplicationConfig: "
+                    + demoApplicationConfigCase);
+          } else {
+            demoApplicationConfigMap.put(demoApplicationConfigCase, trainingConfig);
           }
           break;
 

@@ -15,6 +15,7 @@ enum TrainingConfigType {
   TRAINING_CONFIG_TYPE_SENSITIVE_DATA = 5;
   TRAINING_CONFIG_TYPE_LOCAL_TRAINING = 6;
   TRAINING_CONFIG_TYPE_VOLUMETRIC_TRAINING = 7;
+  TRAINING_CONFIG_TYPE_DEMO_APPLICATION_CONFIG = 8;
 }
 
 message GetTrainingConfigsFilter {
@@ -92,7 +93,18 @@ message TrainingConfig {
     SensitiveDataTrainingConfig sensitive_data_training_config = 6;
     LocalTrainingConfig local_training_config = 7;
     VolumetricTrainingConfig volumetric_training_config = 8;
+    DemoApplicationConfig demo_application_config = 9;
   }
+}
+
+message DemoApplicationConfig {
+  oneof config {
+    DemoApplicationDefinition demo_application_definition = 1;
+  }
+}
+
+message DemoApplicationDefinition {
+  repeated DemoApplicationType demo_application_types = 1;
 }
 
 message VolumetricTrainingConfig {

@@ -84,6 +84,13 @@ message AnomalyBackendScope {
   AnomalyEnvironmentScope environment_scope = 2; //optional
 }
 
+enum DemoApplicationType {
+  DEMO_APPLICATION_TYPE_UNSPECIFIED = 0;
+  DEMO_APPLICATION_TYPE_CRAPI = 1;
+  DEMO_APPLICATION_TYPE_VAPI = 2;
+  DEMO_APPLICATION_TYPE_VAMPI = 3;
+}
+
 enum AnomalyConfigScopeType {
   ANOMALY_CONFIG_SCOPE_TYPE_UNSPECIFIED = 0;
   ANOMALY_CONFIG_SCOPE_TYPE_CUSTOMER = 1;
