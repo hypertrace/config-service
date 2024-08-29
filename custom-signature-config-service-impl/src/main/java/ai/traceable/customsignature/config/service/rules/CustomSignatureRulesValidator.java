@@ -35,6 +35,7 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.re2j.Matcher;
@@ -119,6 +120,14 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if (rule.getName().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Update custom signature rule should have a valid name.");
+    }
+    if (!rule.getRuleSource().equals(RuleSource.RULE_SOURCE_UNSPECIFIED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Update request does not allow to update rule source for rule with id: %s",
+                  rule.getId()))
+          .asRuntimeException();
     }
 
     Status status;

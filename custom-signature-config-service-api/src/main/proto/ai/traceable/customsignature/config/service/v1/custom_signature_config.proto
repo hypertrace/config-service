@@ -12,6 +12,7 @@ message CreateCustomSignatureRuleRequest {
   ExpiryDetails blocking_expiry_details = 5;
   RuleScope rule_scope = 6;
   bool internal = 7;
+  RuleSource rule_source = 8;
 }
 
 message CreateCustomSignatureRuleResponse {
@@ -58,6 +59,9 @@ message GetRulesFilter {
   optional bool internal = 4;
   RuleScope rule_scope = 5;
   optional bool contains_sec_rule_clause = 6;
+  repeated RuleSource rule_sources = 7;
+  // rules having all these label keys will pass the filter
+  repeated string label_keys = 8;
 }
 
 message CustomSignatureRule {
@@ -70,6 +74,7 @@ message CustomSignatureRule {
   bool internal = 7;
   ExpiryDetails blocking_expiry_details = 8;
   RuleScope rule_scope = 9;
+  RuleSource rule_source = 10;
 }
 
 message CustomSignatureRuleDetails {
@@ -95,6 +100,7 @@ message EnvironmentScope {
 message RuleDefinition {
   ClauseGroup clause_group = 1;
   CustomSignatureScopeConfig scope_config = 2;
+  map<string, string> labels = 3;
 }
 
 message RuleEffect {
@@ -292,4 +298,11 @@ enum CustomModsecRuleVersion {
   CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3 = 3;
   CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE = 4;
   CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE = 5;
+}
+
+enum RuleSource{
+  RULE_SOURCE_UNSPECIFIED = 0;
+  RULE_SOURCE_CUSTOMER = 1;
+  RULE_SOURCE_TRACEABLE = 2;
+  RULE_SOURCE_SYSTEM = 3;
 }

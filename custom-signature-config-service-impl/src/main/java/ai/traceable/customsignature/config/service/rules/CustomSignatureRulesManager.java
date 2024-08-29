@@ -46,7 +46,8 @@ class CustomSignatureRulesManager implements RulesManager {
             .setEffect(createRuleRequest.getEffect())
             .setRuleScope(createRuleRequest.getRuleScope())
             .setDisabled(false)
-            .setInternal(createRuleRequest.getInternal());
+            .setInternal(createRuleRequest.getInternal())
+            .setRuleSource(createRuleRequest.getRuleSource());
     if (createRuleRequest.hasBlockingExpiryDetails()) {
       updateExpiryDetails(customSignatureRuleBuilder, createRuleRequest.getBlockingExpiryDetails());
     }
@@ -57,7 +58,8 @@ class CustomSignatureRulesManager implements RulesManager {
   public Optional<CustomSignatureRule> updateCustomSignatureRule(
       RequestContext requestContext, CustomSignatureRule customSignatureRule) {
     String ruleId = customSignatureRule.getId();
-    if (getCustomSignatureRule(requestContext, ruleId).isEmpty()) {
+    Optional<CustomSignatureRule> originalRule = getCustomSignatureRule(requestContext, ruleId);
+    if (originalRule.isEmpty()) {
       return Optional.empty();
     }
     Builder customSignatureRuleBuilder = CustomSignatureRule.newBuilder(customSignatureRule);
@@ -65,6 +67,7 @@ class CustomSignatureRulesManager implements RulesManager {
       updateExpiryDetails(
           customSignatureRuleBuilder, customSignatureRule.getBlockingExpiryDetails());
     }
+    customSignatureRuleBuilder.setRuleSource(originalRule.get().getRuleSource());
     return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 

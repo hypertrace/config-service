@@ -24,6 +24,7 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -41,7 +42,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CustomSignatureRulesManagerTest {
+class CustomSignatureRulesManagerTest {
 
   private MockGenericConfigService mockConfigService;
   private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
@@ -50,7 +51,7 @@ public class CustomSignatureRulesManagerTest {
   private RequestContext requestContext;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     mockConfigService =
         new MockGenericConfigService()
             .mockUpsert()
@@ -69,12 +70,12 @@ public class CustomSignatureRulesManagerTest {
   }
 
   @AfterEach
-  public void teardown() {
+  void teardown() {
     mockConfigService.shutdown();
   }
 
   @Test
-  public void testGetRules() {
+  void testGetRules() {
     List<CustomSignatureRule> expectedRules =
         List.of(
             CustomSignatureRule.newBuilder()
@@ -86,6 +87,7 @@ public class CustomSignatureRulesManagerTest {
                     RuleEffect.newBuilder()
                         .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
                 .setRuleScope(getRuleScope(List.of("dev", "prod")))
+                .setRuleSource(RuleSource.RULE_SOURCE_SYSTEM)
                 .build(),
             CustomSignatureRule.newBuilder()
                 .setId("id2")
@@ -97,6 +99,8 @@ public class CustomSignatureRulesManagerTest {
             CustomSignatureRule.newBuilder()
                 .setId("id3")
                 .setName("name-3")
+                .setDefinition(
+                    RuleDefinition.newBuilder().putLabels("label-key-3", "label-value-3"))
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .build(),
@@ -114,7 +118,8 @@ public class CustomSignatureRulesManagerTest {
                                                 .setKeyMatchOperator(MATCH_OPERATOR_NOT_EQUAL)
                                                 .setMatchKey("key")
                                                 .setValueMatchOperator(MATCH_OPERATOR_NOT_EQUAL)
-                                                .setMatchValue("value")))))
+                                                .setMatchValue("value"))))
+                        .putLabels("label-key-4", "label-value-4"))
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .build());
@@ -125,7 +130,11 @@ public class CustomSignatureRulesManagerTest {
         .thenReturn("id3")
         .thenReturn("id4");
     rulesManager.createCustomSignatureRule(
-        requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-1").build());
+        requestContext,
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name-1")
+            .setRuleSource(RuleSource.RULE_SOURCE_SYSTEM)
+            .build());
     rulesManager.createCustomSignatureRule(
         requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-2").build());
     rulesManager.createCustomSignatureRule(
@@ -180,7 +189,8 @@ public class CustomSignatureRulesManagerTest {
                                             .setValueCondition(
                                                 StringCondition.newBuilder()
                                                     .setValue("value")
-                                                    .setOperator(MATCH_OPERATOR_NOT_EQUAL))))))
+                                                    .setOperator(MATCH_OPERATOR_NOT_EQUAL)))))
+                    .putLabels("label-key-4", "label-value-4"))
             .setEffect(RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
             .build();
     assertEquals(4, results.size());
@@ -280,10 +290,25 @@ public class CustomSignatureRulesManagerTest {
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
+
+    // Filter on rule source
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().addRuleSources(RuleSource.RULE_SOURCE_SYSTEM).build());
+    assertEquals(1, results.size());
+    assertEquals(expectedRules.get(0), results.get(0));
+
+    // Filter on labels
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext, GetRulesFilter.newBuilder().addLabelKeys("label-key-3").build());
+    assertEquals(1, results.size());
+    assertEquals(expectedRules.get(2), results.get(0));
   }
 
   @Test
-  public void testCreateRule() throws InvalidProtocolBufferException {
+  void testCreateRule() throws InvalidProtocolBufferException {
     when(rulesManager.generateRuleId()).thenReturn("id");
 
     CustomSignatureRule customSignatureRule =
@@ -317,7 +342,7 @@ public class CustomSignatureRulesManagerTest {
   }
 
   @Test
-  public void testUpdateRule() throws InvalidProtocolBufferException {
+  void testUpdateRule() throws InvalidProtocolBufferException {
     CustomSignatureRule customSignatureRule =
         CustomSignatureRule.newBuilder().setId("id").setName("name").build();
     assertTrue(
@@ -343,7 +368,7 @@ public class CustomSignatureRulesManagerTest {
   }
 
   @Test
-  public void testDeleteRule() {
+  void testDeleteRule() {
     String id = "id-1";
     Value mockRegionRuleConfig = mockRuleConfig(id, "name-1");
 

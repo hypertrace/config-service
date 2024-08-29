@@ -8,6 +8,7 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -97,7 +98,18 @@ public class CustomSignatureRulesStore
         .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
         .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
         .filter(rule -> filterOnCustomSecRulePresent(rule, filter))
-        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
+        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()))
+        .filter(rule -> filterRuleOnSource(rule, filter.getRuleSourcesList()))
+        .filter(rule -> filterRuleOnLabels(rule, filter.getLabelKeysList()));
+  }
+
+  private boolean filterRuleOnSource(CustomSignatureRule rule, List<RuleSource> ruleSources) {
+    return ruleSources.isEmpty() || ruleSources.contains(rule.getRuleSource());
+  }
+
+  private boolean filterRuleOnLabels(CustomSignatureRule rule, List<String> labelKeys) {
+    return labelKeys.isEmpty()
+        || rule.getDefinition().getLabelsMap().keySet().containsAll(labelKeys);
   }
 
   /**
