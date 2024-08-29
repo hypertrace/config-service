@@ -9,14 +9,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.iprange.config.service.utils.UuidGenerator;
+import ai.traceable.iprange.config.service.v1.AgentModification;
+import ai.traceable.iprange.config.service.v1.AgentRuleEffect;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.EventSeverity;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
+import ai.traceable.iprange.config.service.v1.FieldValue;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
+import ai.traceable.iprange.config.service.v1.HeaderInjection;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
+import ai.traceable.iprange.config.service.v1.PredicateLocation;
 import ai.traceable.iprange.config.service.v1.RuleAction;
+import ai.traceable.iprange.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.iprange.config.service.v1.UpdateIpRangeRuleRequest;
 import java.time.Clock;
@@ -209,6 +215,19 @@ class IpRangeRulesManagerTest {
     @Test
     @DisplayName("should be able to create an Ip Range Rule if given valid arguments")
     void shouldCreateIpRangeRule() {
+      RuleEffectWithModifications ruleEffectWithModifications =
+          RuleEffectWithModifications.newBuilder()
+              .setAgentRuleEffect(
+                  AgentRuleEffect.newBuilder()
+                      .addAgentModifications(
+                          AgentModification.newBuilder()
+                              .setHeaderInjection(
+                                  HeaderInjection.newBuilder()
+                                      .setHeaderLocation(
+                                          PredicateLocation.PREDICATE_LOCATION_REQUEST)
+                                      .setHeaderName("name")
+                                      .setValue(FieldValue.newBuilder().setStaticValue("value")))))
+              .build();
       IpRangeRuleDetails ipRangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester-1")
@@ -218,6 +237,7 @@ class IpRangeRulesManagerTest {
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
               .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+              .addEffects(ruleEffectWithModifications)
               .build();
 
       long now = Clock.systemUTC().millis();
@@ -293,6 +313,19 @@ class IpRangeRulesManagerTest {
     @Test
     @DisplayName("should be able to update an Ip Range Rule if given valid arguments")
     void shouldUpdateIpRangeRule() {
+      RuleEffectWithModifications ruleEffectWithModifications =
+          RuleEffectWithModifications.newBuilder()
+              .setAgentRuleEffect(
+                  AgentRuleEffect.newBuilder()
+                      .addAgentModifications(
+                          AgentModification.newBuilder()
+                              .setHeaderInjection(
+                                  HeaderInjection.newBuilder()
+                                      .setHeaderLocation(
+                                          PredicateLocation.PREDICATE_LOCATION_REQUEST)
+                                      .setHeaderName("name")
+                                      .setValue(FieldValue.newBuilder().setStaticValue("value")))))
+              .build();
       IpRangeRuleDetails updatedRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Updated-Tester-1")
@@ -302,6 +335,7 @@ class IpRangeRulesManagerTest {
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
               .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH)
+              .addEffects(ruleEffectWithModifications)
               .build();
       long now = Clock.systemUTC().millis();
 

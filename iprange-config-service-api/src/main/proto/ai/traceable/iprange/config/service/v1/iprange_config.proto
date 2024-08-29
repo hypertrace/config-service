@@ -77,6 +77,41 @@ message IpRangeRuleDetails {
   ExpirationDetails expiration_details = 5;
   EventSeverity event_severity = 6;
   IpRangeRuleConditions conditions = 7 [deprecated = true]; //unused
+  repeated RuleEffectWithModifications effects = 8;
+}
+
+message RuleEffectWithModifications {
+  oneof effect {
+    AgentRuleEffect agent_rule_effect = 1;
+  }
+}
+
+message AgentRuleEffect {
+  repeated AgentModification agent_modifications = 1;
+}
+
+message AgentModification {
+  oneof modification {
+    HeaderInjection header_injection = 1;
+  }
+}
+
+message HeaderInjection {
+  PredicateLocation header_location = 1;
+  string header_name = 2;
+  FieldValue value = 3;
+}
+
+message FieldValue {
+  oneof value {
+    string static_value = 1;
+  }
+}
+
+enum PredicateLocation {
+  PREDICATE_LOCATION_UNSPECIFIED = 0;
+  PREDICATE_LOCATION_REQUEST = 1;
+  PREDICATE_LOCATION_RESPONSE = 2;
 }
 
 message IpRangeRuleConditions {

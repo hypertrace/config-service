@@ -7,15 +7,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.region.config.service.v1.AgentModification;
+import ai.traceable.region.config.service.v1.AgentRuleEffect;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EnvironmentScope;
 import ai.traceable.region.config.service.v1.EventSeverity;
+import ai.traceable.region.config.service.v1.FieldValue;
 import ai.traceable.region.config.service.v1.GetRegionRulesFilter;
+import ai.traceable.region.config.service.v1.HeaderInjection;
 import ai.traceable.region.config.service.v1.IpReputationCondition;
 import ai.traceable.region.config.service.v1.IpReputationSeverity;
+import ai.traceable.region.config.service.v1.PredicateLocation;
 import ai.traceable.region.config.service.v1.RegionRule;
 import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionRuleConditions;
+import ai.traceable.region.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.region.config.service.v1.RuleScope;
 import ai.traceable.region.config.service.v1.UpdateRegionRuleRequest;
 import com.google.common.collect.ImmutableSortedMap;
@@ -196,6 +202,19 @@ class RegionRulesManagerTest {
 
     @Test
     void shouldCreateRegionRule() {
+      RuleEffectWithModifications ruleEffectWithModifications =
+          RuleEffectWithModifications.newBuilder()
+              .setAgentRuleEffect(
+                  AgentRuleEffect.newBuilder()
+                      .addAgentModifications(
+                          AgentModification.newBuilder()
+                              .setHeaderInjection(
+                                  HeaderInjection.newBuilder()
+                                      .setHeaderLocation(
+                                          PredicateLocation.PREDICATE_LOCATION_REQUEST)
+                                      .setHeaderName("name")
+                                      .setValue(FieldValue.newBuilder().setStaticValue("value")))))
+              .build();
       when(uuidGenerator.generateRandomId()).thenReturn("id-1");
       RegionRuleConditions conditions =
           RegionRuleConditions.newBuilder()
@@ -211,6 +230,7 @@ class RegionRulesManagerTest {
               .setRuleScope(ruleScope)
               .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
               .setConditions(conditions)
+              .addEffects(ruleEffectWithModifications)
               .build();
       RegionRule createdRegionRule =
           rulesManager
@@ -222,6 +242,7 @@ class RegionRulesManagerTest {
                       .setRuleScope(ruleScope)
                       .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
                       .setConditions(conditions)
+                      .addEffects(ruleEffectWithModifications)
                       .build())
               .get();
       assertEquals(regionRule, createdRegionRule);
@@ -233,7 +254,19 @@ class RegionRulesManagerTest {
 
     @Test
     void shouldUpdateRegionRule() {
-
+      RuleEffectWithModifications ruleEffectWithModifications =
+          RuleEffectWithModifications.newBuilder()
+              .setAgentRuleEffect(
+                  AgentRuleEffect.newBuilder()
+                      .addAgentModifications(
+                          AgentModification.newBuilder()
+                              .setHeaderInjection(
+                                  HeaderInjection.newBuilder()
+                                      .setHeaderLocation(
+                                          PredicateLocation.PREDICATE_LOCATION_REQUEST)
+                                      .setHeaderName("name")
+                                      .setValue(FieldValue.newBuilder().setStaticValue("value")))))
+              .build();
       RegionRule originalRegionRule =
           RegionRule.newBuilder().setId("id-1").setName("name-1").build();
       RegionRuleConditions conditions =
@@ -252,6 +285,7 @@ class RegionRulesManagerTest {
               .setRuleScope(ruleScope)
               .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
               .setConditions(conditions)
+              .addEffects(ruleEffectWithModifications)
               .build();
       UpdateRegionRuleRequest request =
           UpdateRegionRuleRequest.newBuilder()
@@ -262,6 +296,7 @@ class RegionRulesManagerTest {
               .setRuleScope(ruleScope)
               .setEventSeverity(EventSeverity.EVENT_SEVERITY_CRITICAL)
               .setConditions(conditions)
+              .addEffects(ruleEffectWithModifications)
               .build();
       assertEquals(updatedRegionRule, rulesManager.updateRegionRule(requestContext, request).get());
     }

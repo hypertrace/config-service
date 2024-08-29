@@ -72,7 +72,8 @@ class RegionRulesManager implements RulesManager {
         .setInternal(request.getInternal())
         .setRuleScope(request.getRuleScope())
         .setEventSeverity(request.getEventSeverity())
-        .setConditions(request.getConditions());
+        .setConditions(request.getConditions())
+        .addAllEffects(request.getEffectsList());
     if (request.hasExpirationDetails()) {
       updateExpirationDetails(regionRuleBuilder, request.getExpirationDetails().getDuration());
     }
@@ -123,6 +124,7 @@ class RegionRulesManager implements RulesManager {
         .setRuleScope(createRuleRequest.getRuleScope())
         .setEventSeverity(createRuleRequest.getEventSeverity())
         .setConditions(createRuleRequest.getConditions())
+        .addAllEffects(createRuleRequest.getEffectsList())
         .build();
   }
 

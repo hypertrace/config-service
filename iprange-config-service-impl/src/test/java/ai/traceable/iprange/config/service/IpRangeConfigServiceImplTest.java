@@ -104,6 +104,19 @@ class IpRangeConfigServiceImplTest {
     @Test
     @DisplayName("should create a IP Range Rule if everything is fine")
     void shouldCreateIpRangeRule_onValidRequest() {
+      RuleEffectWithModifications ruleEffectWithModifications =
+          RuleEffectWithModifications.newBuilder()
+              .setAgentRuleEffect(
+                  AgentRuleEffect.newBuilder()
+                      .addAgentModifications(
+                          AgentModification.newBuilder()
+                              .setHeaderInjection(
+                                  HeaderInjection.newBuilder()
+                                      .setHeaderLocation(
+                                          PredicateLocation.PREDICATE_LOCATION_REQUEST)
+                                      .setHeaderName("name")
+                                      .setValue(FieldValue.newBuilder().setStaticValue("value")))))
+              .build();
       IpRangeRuleDetails ipRangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester-1")
@@ -112,6 +125,7 @@ class IpRangeConfigServiceImplTest {
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .addEffects(ruleEffectWithModifications)
               .build();
 
       IpRangeRule ipRangeRule =
@@ -236,6 +250,19 @@ class IpRangeConfigServiceImplTest {
     @Test
     @DisplayName("should update a IP Range Rule if everything is fine")
     void shouldUpdateIpRangeRule_onValidRequest() {
+      RuleEffectWithModifications ruleEffectWithModifications =
+          RuleEffectWithModifications.newBuilder()
+              .setAgentRuleEffect(
+                  AgentRuleEffect.newBuilder()
+                      .addAgentModifications(
+                          AgentModification.newBuilder()
+                              .setHeaderInjection(
+                                  HeaderInjection.newBuilder()
+                                      .setHeaderLocation(
+                                          PredicateLocation.PREDICATE_LOCATION_REQUEST)
+                                      .setHeaderName("name")
+                                      .setValue(FieldValue.newBuilder().setStaticValue("value")))))
+              .build();
       IpRangeRuleDetails ipRangeRuleDetails =
           IpRangeRuleDetails.newBuilder()
               .setName("Tester-1")
@@ -244,6 +271,7 @@ class IpRangeConfigServiceImplTest {
               .setRuleAction(RuleAction.RULE_ACTION_BLOCK)
               .setExpirationDetails(
                   ExpirationDetails.newBuilder().setExpirationDuration("PT1H2M34S").build())
+              .addEffects(ruleEffectWithModifications)
               .build();
 
       IpRangeRule ipRangeRule =
