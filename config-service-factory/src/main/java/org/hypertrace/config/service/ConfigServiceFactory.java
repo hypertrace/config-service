@@ -42,12 +42,12 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
   @Override
   public List<GrpcPlatformService> buildServices(
       GrpcServiceContainerEnvironment grpcServiceContainerEnvironment) {
-    this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     Config config = grpcServiceContainerEnvironment.getConfig(SERVICE_NAME);
     return this.buildServices(
         this.getLocalChannel(),
         config,
         this.buildChangeEventGenerator(config),
+        grpcServiceContainerEnvironment,
         Collections.emptyList());
   }
 
@@ -69,7 +69,9 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       Channel localChannel,
       Config config,
       ConfigChangeEventGenerator configChangeEventGenerator,
+      GrpcServiceContainerEnvironment grpcServiceContainerEnvironment,
       List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
+    this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     return Stream.of(
             new ConfigServiceGrpcImpl(this.buildConfigStore(config, configurationCounterConfig)),
             new SpacesConfigServiceImpl(localChannel),
