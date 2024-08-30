@@ -42,6 +42,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
   @Override
   public List<GrpcPlatformService> buildServices(
       GrpcServiceContainerEnvironment grpcServiceContainerEnvironment) {
+    this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     Config config = grpcServiceContainerEnvironment.getConfig(SERVICE_NAME);
     return this.buildServices(
         this.getLocalChannel(),
