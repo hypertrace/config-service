@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public abstract class MaliciousSourceDataHandler {
+  private static final String NON_BLOCKING_RULE_INFO = "Rule has some non-blocking agent action";
+
   private final BlockingRulesUtils blockingRulesUtils;
 
   protected MaliciousSourceDataHandler(BlockingRulesUtils blockingRulesUtils) {
@@ -45,13 +47,7 @@ public abstract class MaliciousSourceDataHandler {
     BlockingPolicyData blockingPolicyData =
         BlockingPolicyData.builder()
             .ruleType(ruleType.get())
-            .info(
-                ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
-                    rule.getId(),
-                    rule.getRuleInfo().getName(),
-                    rule.getRuleInfo().getRuleAction().getEventSeverity().name(),
-                    Optional.empty(),
-                    List.of(rule.getRuleInfo().getConditions(0).getConditionCase())))
+            .info(generateRuleInfo(rule))
             .timestamp(expirationTimestampMillis)
             .status(
                 blockingRulesUtils.generateBlockingStatus(
@@ -59,8 +55,26 @@ public abstract class MaliciousSourceDataHandler {
             .category(getCategory())
             .bucket(bucket.get())
             .blockingDetails(generateBlockingDetails(rule))
+            .action(
+                MaliciousSourceRuleEffectConverter.convert(
+                    rule.getRuleInfo().getRuleAction().getEffectsList()))
             .build();
     return Optional.of(blockingPolicyData);
+  }
+
+  private static String generateRuleInfo(MaliciousSourcesRule rule) {
+    if (rule.getRuleInfo()
+        .getRuleAction()
+        .getActionType()
+        .equals(RuleActionType.RULE_ACTION_TYPE_ALERT)) {
+      return NON_BLOCKING_RULE_INFO;
+    }
+    return ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
+        rule.getId(),
+        rule.getRuleInfo().getName(),
+        rule.getRuleInfo().getRuleAction().getEventSeverity().name(),
+        Optional.empty(),
+        List.of(rule.getRuleInfo().getConditions(0).getConditionCase()));
   }
 
   private static Optional<BlockingPolicyData.RuleType> getRuleType(
@@ -72,6 +86,8 @@ public abstract class MaliciousSourceDataHandler {
         return Optional.of(BlockingPolicyData.RuleType.BLOCK_ALL_EXCEPT);
       case RULE_ACTION_TYPE_BLOCK:
         return Optional.of(BlockingPolicyData.RuleType.BLOCK);
+      case RULE_ACTION_TYPE_ALERT:
+        return Optional.of(BlockingPolicyData.RuleType.ANALYTICS);
       default:
         log.error("Invalid rule action type: {} for rule with rule id: {}", actionType, id);
         return Optional.empty();

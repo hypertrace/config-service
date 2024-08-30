@@ -11,6 +11,8 @@ import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleCondition;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
+import ai.traceable.malicioussources.config.service.v1.RuleEffectWithModifications;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,6 +25,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
+  private static final List<RuleActionType> BLOCKING_EVENT_TYPES_LIST =
+      ImmutableList.of(
+          RuleActionType.RULE_ACTION_TYPE_BLOCK,
+          RuleActionType.RULE_ACTION_TYPE_ALLOW,
+          RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT);
+
   private final MaliciousSourcesConfigServiceBlockingStub maliciousSourcesConfigServiceBlockingStub;
   private final ClientConfig clientConfig;
   private final Map<MaliciousSourcesRuleCondition.ConditionCase, MaliciousSourceDataHandler>
@@ -46,7 +54,7 @@ class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFet
       BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
     List<MaliciousSourcesRule> ruleList = fetchMaliciousSourceRules(requestContext, environmentId);
-    return new BlockingPolicyAggregate(
+    return new BlockingPolicyAggregate<>(
         ruleList.stream()
             .map(
                 maliciousSourcesRule ->
@@ -69,11 +77,6 @@ class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFet
             .setFilter(
                 GetRulesFilter.newBuilder()
                     .setDisabled(false)
-                    .addAllRuleActionTypes(
-                        List.of(
-                            RuleActionType.RULE_ACTION_TYPE_BLOCK,
-                            RuleActionType.RULE_ACTION_TYPE_ALLOW,
-                            RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
                     .setRuleScope(
                         MaliciousSourcesRuleScope.newBuilder()
                             .setEnvironmentScope(
@@ -92,6 +95,20 @@ class MaliciousSourcesBlockingPolicyDataFetcher implements BlockingPolicyDataFet
                 maliciousSourcesConfigServiceBlockingStub
                     .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getMaliciousSourcesRules(rulesRequest))
-        .getRulesList();
+        .getRulesList()
+        .stream()
+        .filter(this::filterRules)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean filterRules(MaliciousSourcesRule maliciousSourcesRule) {
+    // If the rule type is blocking filter
+    if (BLOCKING_EVENT_TYPES_LIST.contains(
+        maliciousSourcesRule.getRuleInfo().getRuleAction().getActionType())) {
+      return true;
+    }
+    // If there is some agent rule effect then filter
+    return maliciousSourcesRule.getRuleInfo().getRuleAction().getEffectsList().stream()
+        .anyMatch(RuleEffectWithModifications::hasAgentRuleEffect);
   }
 }
