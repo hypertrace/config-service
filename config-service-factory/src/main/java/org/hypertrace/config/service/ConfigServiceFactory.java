@@ -6,16 +6,19 @@ import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 import java.time.Clock;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.alerting.config.service.EventConditionConfigServiceImpl;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.change.event.impl.ConfigChangeEventGeneratorFactory;
+import org.hypertrace.config.service.metric.ConfigMetricsReporter;
 import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
+import org.hypertrace.core.serviceframework.docstore.metrics.DocStoreCustomMetricReportingConfig;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
@@ -42,7 +45,11 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
     this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     Config config = grpcServiceContainerEnvironment.getConfig(SERVICE_NAME);
     return this.buildServices(
-        this.getLocalChannel(), config, this.buildChangeEventGenerator(config));
+        this.getLocalChannel(),
+        config,
+        this.buildChangeEventGenerator(config),
+        grpcServiceContainerEnvironment,
+        Collections.emptyList());
   }
 
   public void checkAndReportStoreHealth() {
@@ -60,9 +67,14 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
   }
 
   public List<GrpcPlatformService> buildServices(
-      Channel localChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel localChannel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      GrpcServiceContainerEnvironment grpcServiceContainerEnvironment,
+      List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
+    this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     return Stream.of(
-            new ConfigServiceGrpcImpl(this.buildConfigStore(config)),
+            new ConfigServiceGrpcImpl(this.buildConfigStore(config, configurationCounterConfig)),
             new SpacesConfigServiceImpl(localChannel),
             new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
             new LabelApplicationRuleConfigServiceImpl(
@@ -88,9 +100,13 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
         .createConfigChangeEventGenerator(config, Clock.systemUTC());
   }
 
-  protected ConfigStore buildConfigStore(Config config) {
+  protected ConfigStore buildConfigStore(
+      Config config, List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
     try {
       Datastore datastore = initDataStore(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
+      new ConfigMetricsReporter(
+              datastore, grpcServiceContainerEnvironment.getLifecycle(), configurationCounterConfig)
+          .monitor();
       ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
       this.store = configStore;
       return configStore;
