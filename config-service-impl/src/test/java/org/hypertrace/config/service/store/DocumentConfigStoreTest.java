@@ -89,7 +89,7 @@ class DocumentConfigStoreTest {
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
-    verify(collection, times(1)).createOrReplace(keyCaptor.capture(), documentCaptor.capture());
+    verify(collection, times(1)).upsert(keyCaptor.capture(), documentCaptor.capture());
 
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();
@@ -129,7 +129,7 @@ class DocumentConfigStoreTest {
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
-    verify(collection, times(1)).createOrReplace(keyCaptor.capture(), documentCaptor.capture());
+    verify(collection, times(1)).upsert(keyCaptor.capture(), documentCaptor.capture());
 
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();

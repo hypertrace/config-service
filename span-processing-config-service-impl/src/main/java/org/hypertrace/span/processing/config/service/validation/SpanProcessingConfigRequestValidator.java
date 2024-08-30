@@ -18,6 +18,8 @@ import org.hypertrace.span.processing.config.service.v1.LogicalSpanFilterExpress
 import org.hypertrace.span.processing.config.service.v1.RelationalSpanFilterExpression;
 import org.hypertrace.span.processing.config.service.v1.SpanFilter;
 import org.hypertrace.span.processing.config.service.v1.SpanFilterValue;
+import org.hypertrace.span.processing.config.service.v1.UnarySpanFilterExpression;
+import org.hypertrace.span.processing.config.service.v1.UnarySpanFilterExpression.LeftOperandCase;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRule;
 import org.hypertrace.span.processing.config.service.v1.UpdateExcludeSpanRuleRequest;
 
@@ -70,6 +72,9 @@ public class SpanProcessingConfigRequestValidator {
       case RELATIONAL_SPAN_FILTER:
         validateRelationalSpanFilter(filter);
         break;
+      case UNARY_SPAN_FILTER:
+        validateUnarySpanFilter(filter);
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription("Unexpected filter case: " + printMessage(filter))
@@ -93,6 +98,19 @@ public class SpanProcessingConfigRequestValidator {
     if (filter.getRelationalSpanFilter().getOperator().equals(RELATIONAL_OPERATOR_REGEX_MATCH)) {
       validateNonDefaultPresenceOrThrow(rhs, SpanFilterValue.STRING_VALUE_FIELD_NUMBER);
       validateRegex(rhs.getStringValue());
+    }
+  }
+
+  private void validateUnarySpanFilter(SpanFilter filter) {
+    validateNonDefaultPresenceOrThrow(
+        filter.getUnarySpanFilter(), UnarySpanFilterExpression.OPERATOR_FIELD_NUMBER);
+
+    final LeftOperandCase leftOperandCase = filter.getUnarySpanFilter().getLeftOperandCase();
+    if (LeftOperandCase.FIELD.equals(leftOperandCase)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Unary operator is not supported on Field operand: " + printMessage(filter))
+          .asRuntimeException();
     }
   }
 
