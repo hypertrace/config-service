@@ -1,12 +1,22 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import static java.util.function.Function.identity;
+
+import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -27,29 +37,42 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  static final String LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG =
+  private static final String LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG =
       "label.application.rule.config.service";
-  static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
+  private static final String MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT =
       "max.dynamic.label.application.rules.per.tenant";
-  static final int DEFAULT_MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT = 100;
+  private static final String SYSTEM_LABEL_APPLICATION_RULES = "system.label.application.rules";
+  private static final int DEFAULT_MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT = 100;
+
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
   private final int maxDynamicLabelApplicationRulesAllowed;
+  private final List<LabelApplicationRule> systemLabelApplicationRules;
+  private final Map<String, LabelApplicationRule> systemLabelApplicationRulesMap;
 
   public LabelApplicationRuleConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
-    int maxDynamicRules = DEFAULT_MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT;
-    if (config.hasPath(LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG)) {
-      Config labelApplicationRuleConfig =
-          config.getConfig(LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG);
-      if (labelApplicationRuleConfig.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)) {
-        maxDynamicRules =
-            labelApplicationRuleConfig.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT);
-      }
+    Config labelApplicationRuleConfig =
+        config.hasPath(LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG)
+            ? config.getConfig(LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG)
+            : ConfigFactory.empty();
+    this.maxDynamicLabelApplicationRulesAllowed =
+        labelApplicationRuleConfig.hasPath(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
+            ? labelApplicationRuleConfig.getInt(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT)
+            : DEFAULT_MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT;
+    if (labelApplicationRuleConfig.hasPath(SYSTEM_LABEL_APPLICATION_RULES)) {
+      final List<? extends com.typesafe.config.ConfigObject> systemLabelApplicationRulesObjectList =
+          labelApplicationRuleConfig.getObjectList(SYSTEM_LABEL_APPLICATION_RULES);
+      this.systemLabelApplicationRules =
+          buildSystemLabelApplicationRuleList(systemLabelApplicationRulesObjectList);
+      this.systemLabelApplicationRulesMap =
+          this.systemLabelApplicationRules.stream()
+              .collect(Collectors.toUnmodifiableMap(LabelApplicationRule::getId, identity()));
+    } else {
+      this.systemLabelApplicationRules = Collections.emptyList();
+      this.systemLabelApplicationRulesMap = Collections.emptyMap();
     }
-    this.maxDynamicLabelApplicationRulesAllowed = maxDynamicRules;
-
-    ConfigServiceBlockingStub configServiceBlockingStub =
+    final ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
@@ -96,9 +119,18 @@ public class LabelApplicationRuleConfigServiceImpl
           this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
               .map(ConfigObject::getData)
               .collect(Collectors.toUnmodifiableList());
+      Set<String> labelApplicationRuleIds =
+          labelApplicationRules.stream()
+              .map(LabelApplicationRule::getId)
+              .collect(Collectors.toUnmodifiableSet());
+      List<LabelApplicationRule> filteredSystemLabelApplicationRules =
+          systemLabelApplicationRules.stream()
+              .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
+              .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
               .addAllLabelApplicationRules(labelApplicationRules)
+              .addAllLabelApplicationRules(filteredSystemLabelApplicationRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -116,6 +148,7 @@ public class LabelApplicationRuleConfigServiceImpl
       LabelApplicationRule existingRule =
           this.labelApplicationRuleStore
               .getData(requestContext, request.getId())
+              .or(() -> Optional.ofNullable(systemLabelApplicationRulesMap.get(request.getId())))
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       LabelApplicationRule updateLabelApplicationRule =
           existingRule.toBuilder().setData(request.getData()).build();
@@ -140,6 +173,12 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
+      String labelApplicationRuleId = request.getId();
+      if (systemLabelApplicationRulesMap.containsKey(labelApplicationRuleId)) {
+        // Deleting a system label application rule is not allowed
+        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
+        return;
+      }
       this.labelApplicationRuleStore
           .deleteObject(requestContext, request.getId())
           .orElseThrow(Status.NOT_FOUND::asRuntimeException);
@@ -165,5 +204,21 @@ public class LabelApplicationRuleConfigServiceImpl
         throw Status.RESOURCE_EXHAUSTED.asRuntimeException();
       }
     }
+  }
+
+  private List<LabelApplicationRule> buildSystemLabelApplicationRuleList(
+      List<? extends com.typesafe.config.ConfigObject> configObjectList) {
+    return configObjectList.stream()
+        .map(LabelApplicationRuleConfigServiceImpl::buildLabelApplicationRuleFromConfig)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @SneakyThrows
+  private static LabelApplicationRule buildLabelApplicationRuleFromConfig(
+      com.typesafe.config.ConfigObject configObject) {
+    String jsonString = configObject.render();
+    LabelApplicationRule.Builder builder = LabelApplicationRule.newBuilder();
+    JsonFormat.parser().merge(jsonString, builder);
+    return builder.build();
   }
 }
