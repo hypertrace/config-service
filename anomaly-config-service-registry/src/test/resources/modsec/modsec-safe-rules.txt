@@ -10,6 +10,7 @@ crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion)
 crs_921140 :: HTTP Header Injection Attack via headers
 crs_9300010 :: Rails Action View LFI: Accept header: (CVE-2019-5418)
 crs_9300120 :: OS File Access Attempt (T120)
+crs_9300150 :: Possible Information Disclosure in ownCloud Graph API: (CVE-2023-49103)
 crs_930100 :: Path Traversal Attack (/../) (100)
 crs_930110 :: Path Traversal Attack (/../) (110)
 crs_930130 :: Restricted File Access Attempt

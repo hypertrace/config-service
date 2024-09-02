@@ -91,3 +91,4 @@ crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Of
 crs_9210400 :: Mail Injection Detected
 crs_9440950 :: PAN-OS GlobalProtect Portal: RCE Exploitation (CVE-2024-3400)
 crs_9330111 :: PHP CGI argument Injection: (CVE-2024-4577)
+crs_9300150 :: Possible Information Disclosure in ownCloud Graph API: (CVE-2023-49103)
