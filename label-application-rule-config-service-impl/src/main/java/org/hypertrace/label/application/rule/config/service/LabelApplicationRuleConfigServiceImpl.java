@@ -1,6 +1,5 @@
 package org.hypertrace.label.application.rule.config.service;
 
-import com.typesafe.config.Config;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -35,8 +34,10 @@ public class LabelApplicationRuleConfigServiceImpl
   private final LabelApplicationRuleConfig labelApplicationRuleConfig;
 
   public LabelApplicationRuleConfigServiceImpl(
-      Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
-    this.labelApplicationRuleConfig = new LabelApplicationRuleConfig(config);
+      Channel configChannel,
+      LabelApplicationRuleConfig labelApplicationRuleConfig,
+      ConfigChangeEventGenerator configChangeEventGenerator) {
+    this.labelApplicationRuleConfig = labelApplicationRuleConfig;
 
     final ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)

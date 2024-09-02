@@ -22,6 +22,7 @@ import org.hypertrace.core.serviceframework.docstore.metrics.DocStoreCustomMetri
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
+import org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfig;
 import org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfigServiceImpl;
 import org.hypertrace.label.config.service.LabelsConfigServiceImpl;
 import org.hypertrace.notification.config.service.NotificationChannelConfigServiceImpl;
@@ -78,7 +79,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
             new SpacesConfigServiceImpl(localChannel),
             new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
             new LabelApplicationRuleConfigServiceImpl(
-                localChannel, config, configChangeEventGenerator),
+                localChannel, new LabelApplicationRuleConfig(config), configChangeEventGenerator),
             new EventConditionConfigServiceImpl(localChannel, configChangeEventGenerator),
             new NotificationRuleConfigServiceImpl(localChannel, configChangeEventGenerator),
             new NotificationChannelConfigServiceImpl(

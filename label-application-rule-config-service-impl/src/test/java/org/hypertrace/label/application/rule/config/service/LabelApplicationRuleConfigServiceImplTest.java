@@ -4,11 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -56,17 +55,14 @@ public class LabelApplicationRuleConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    String configStr =
-        "label.application.rule.config.service {\n"
-            + "max.dynamic.label.application.rules.per.tenant = 2\n"
-            + "system.label.application.rules = [\n"
-            + SYSTEM_LABEL_APPLICATION_RULE_STR
-            + "\n]\n"
-            + "}\n";
-    Config config = ConfigFactory.parseString(configStr);
     LabelApplicationRule.Builder builder = LabelApplicationRule.newBuilder().clear();
     JsonFormat.parser().merge(SYSTEM_LABEL_APPLICATION_RULE_STR, builder);
     systemLabelApplicationRule = builder.build();
+    LabelApplicationRuleConfig config = mock(LabelApplicationRuleConfig.class);
+    when(config.getSystemLabelApplicationRules()).thenReturn(List.of(systemLabelApplicationRule));
+    when(config.getSystemLabelApplicationRulesMap())
+        .thenReturn(Map.of(systemLabelApplicationRule.getId(), systemLabelApplicationRule));
+    when(config.getMaxDynamicLabelApplicationRulesAllowed()).thenReturn(2);
     mockGenericConfigService
         .addService(
             new LabelApplicationRuleConfigServiceImpl(channel, config, configChangeEventGenerator))
