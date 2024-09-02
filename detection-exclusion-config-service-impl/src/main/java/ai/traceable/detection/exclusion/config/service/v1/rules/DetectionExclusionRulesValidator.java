@@ -6,6 +6,8 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.detection.exclusion.config.service.v1.BulkCreateDetectionExclusionRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.BulkDeleteDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
@@ -78,19 +80,24 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
   @Override
   public void validateOrThrow(
       RequestContext requestContext,
+      BulkCreateDetectionExclusionRulesRequest request,
+      List<DetectionExclusionRule> existingRules) {
+    validateRequestContextOrThrow(requestContext);
+    request
+        .getRuleDataList()
+        .forEach(
+            ruleData ->
+                validateCreateRequest(
+                    ruleData.getRuleInfo(), ruleData.getRuleScope(), existingRules));
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext,
       CreateDetectionExclusionRuleRequest request,
       List<DetectionExclusionRule> existingRules) {
     validateRequestContextOrThrow(requestContext);
-    String ruleName = request.getRuleInfo().getName();
-    Optional<DetectionExclusionRule> existingRuleWithSameName =
-        getRuleForName(ruleName, existingRules);
-    if (existingRuleWithSameName.isPresent()) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("Rule with name %s already exists", ruleName))
-          .asRuntimeException();
-    }
-    validateRuleInfo(request.getRuleInfo());
-    validateRuleScope(request.getRuleScope());
+    validateCreateRequest(request.getRuleInfo(), request.getRuleScope(), existingRules);
   }
 
   @Override
@@ -98,6 +105,14 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
       RequestContext requestContext, DeleteDetectionExclusionRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, DeleteDetectionExclusionRuleRequest.ID_FIELD_NUMBER);
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, BulkDeleteDetectionExclusionRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateNonDefaultPresenceOrThrow(
+        request, BulkDeleteDetectionExclusionRulesRequest.IDS_FIELD_NUMBER);
   }
 
   @VisibleForTesting
@@ -132,6 +147,22 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
         .forEach(
             condition ->
                 conditionValidator.validateRuleCondition(isBlockOrAllowTargetPresent, condition));
+  }
+
+  private void validateCreateRequest(
+      DetectionExclusionRuleInfo ruleInfo,
+      DetectionExclusionRuleScope ruleScope,
+      List<DetectionExclusionRule> existingRules) {
+    String ruleName = ruleInfo.getName();
+    Optional<DetectionExclusionRule> existingRuleWithSameName =
+        getRuleForName(ruleName, existingRules);
+    if (existingRuleWithSameName.isPresent()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("Rule with name %s already exists", ruleName))
+          .asRuntimeException();
+    }
+    validateRuleInfo(ruleInfo);
+    validateRuleScope(ruleScope);
   }
 
   private void validateExclusionTargets(List<ExclusionTarget> exclusionTargets) {

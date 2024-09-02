@@ -4,6 +4,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DetectionExclusionRulesManager implements RulesManager {
@@ -84,10 +86,34 @@ public class DetectionExclusionRulesManager implements RulesManager {
   }
 
   @Override
+  public List<DetectionExclusionRule> bulkCreateDetectionExclusionRule(
+      RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList) {
+    List<DetectionExclusionRule> rules =
+        ruleDataList.stream()
+            .map(
+                request ->
+                    DetectionExclusionRule.newBuilder()
+                        .setId(uuidGenerator.generateRandomId())
+                        .setRuleInfo(processDetectionExclusionRuleInfo(request.getRuleInfo()))
+                        .setRuleScope(request.getRuleScope())
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    return rulesStore.upsertObjects(requestContext, rules).stream()
+        .map(ConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
   public void deleteDetectionExclusionRule(RequestContext requestContext, String ruleId) {
     rulesStore
         .deleteObject(requestContext, ruleId)
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+  }
+
+  @Override
+  public void bulkDeleteDetectionExclusionRules(
+      RequestContext requestContext, List<String> ruleIds) {
+    rulesStore.deleteObjects(requestContext, ruleIds);
   }
 
   private DetectionExclusionRule processDetectionExclusionRule(

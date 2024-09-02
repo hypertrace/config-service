@@ -159,4 +159,44 @@ class DetectionExclusionConfigServiceImplTest {
         .onNext(DeleteDetectionExclusionRuleResponse.getDefaultInstance());
     verify(streamObserver, times(1)).onCompleted();
   }
+
+  @Test
+  void testBulkDeleteDetectionExclusionRules() {
+    BulkDeleteDetectionExclusionRulesRequest request =
+        BulkDeleteDetectionExclusionRulesRequest.getDefaultInstance();
+    StreamObserver<BulkDeleteDetectionExclusionRulesResponse> streamObserver =
+        mock(StreamObserver.class);
+
+    // validation succeeds
+    doNothing().when(rulesValidator).validateOrThrow(requestContext, request);
+
+    requestContext.run(
+        () ->
+            detectionExclusionConfigService.bulkDeleteDetectionExclusionRules(
+                request, streamObserver));
+    verify(rulesManager, times(1)).bulkDeleteDetectionExclusionRules(eq(requestContext), any());
+    verify(streamObserver, times(1))
+        .onNext(BulkDeleteDetectionExclusionRulesResponse.getDefaultInstance());
+    verify(streamObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testBulkCreateDetectionExclusionRules() {
+    BulkCreateDetectionExclusionRulesRequest request =
+        BulkCreateDetectionExclusionRulesRequest.getDefaultInstance();
+    StreamObserver<BulkCreateDetectionExclusionRulesResponse> streamObserver =
+        mock(StreamObserver.class);
+
+    // validation succeeds
+    doNothing().when(rulesValidator).validateOrThrow(requestContext, request, List.of());
+
+    requestContext.run(
+        () ->
+            detectionExclusionConfigService.bulkCreateDetectionExclusionRules(
+                request, streamObserver));
+    verify(rulesManager, times(1)).bulkCreateDetectionExclusionRule(eq(requestContext), any());
+    verify(streamObserver, times(1))
+        .onNext(BulkCreateDetectionExclusionRulesResponse.getDefaultInstance());
+    verify(streamObserver, times(1)).onCompleted();
+  }
 }

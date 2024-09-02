@@ -68,6 +68,29 @@ public class DetectionExclusionConfigServiceImpl
   }
 
   @Override
+  public void bulkCreateDetectionExclusionRules(
+      BulkCreateDetectionExclusionRulesRequest request,
+      StreamObserver<BulkCreateDetectionExclusionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      List<DetectionExclusionRule> existingRules = getExistingRules(context);
+      rulesValidator.validateOrThrow(context, request, existingRules);
+
+      BulkCreateDetectionExclusionRulesResponse response =
+          BulkCreateDetectionExclusionRulesResponse.newBuilder()
+              .addAllRules(
+                  rulesManager.bulkCreateDetectionExclusionRule(context, request.getRuleDataList()))
+              .build();
+
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
   public void updateDetectionExclusionRule(
       UpdateDetectionExclusionRuleRequest request,
       StreamObserver<UpdateDetectionExclusionRuleResponse> responseObserver) {
@@ -100,6 +123,24 @@ public class DetectionExclusionConfigServiceImpl
       rulesManager.deleteDetectionExclusionRule(context, request.getId());
 
       responseObserver.onNext(DeleteDetectionExclusionRuleResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void bulkDeleteDetectionExclusionRules(
+      BulkDeleteDetectionExclusionRulesRequest request,
+      StreamObserver<BulkDeleteDetectionExclusionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrow(context, request);
+
+      rulesManager.bulkDeleteDetectionExclusionRules(context, request.getIdsList());
+
+      responseObserver.onNext(BulkDeleteDetectionExclusionRulesResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);
