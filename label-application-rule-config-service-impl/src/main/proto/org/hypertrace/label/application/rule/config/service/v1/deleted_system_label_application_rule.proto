@@ -1,0 +1,9 @@
+syntax="proto3";
+
+package org.hypertrace.label.application.rule.config.service.impl.v1;
+
+option java_multiple_files = true;
+
+message DeletedSystemLabelApplicationRule {
+  string id = 1;
+}

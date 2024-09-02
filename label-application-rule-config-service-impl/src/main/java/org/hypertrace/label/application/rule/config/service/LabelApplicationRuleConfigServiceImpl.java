@@ -2,7 +2,6 @@ package org.hypertrace.label.application.rule.config.service;
 
 import io.grpc.Channel;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +15,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.label.application.rule.config.service.impl.v1.DeletedSystemLabelApplicationRule;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
@@ -30,6 +30,8 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
   private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
+  private final IdentifiedObjectStore<DeletedSystemLabelApplicationRule>
+      deletedSystemLabelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
   private final LabelApplicationRuleConfig labelApplicationRuleConfig;
 
@@ -45,6 +47,9 @@ public class LabelApplicationRuleConfigServiceImpl
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
     this.labelApplicationRuleStore =
         new LabelApplicationRuleStore(configServiceBlockingStub, configChangeEventGenerator);
+    this.deletedSystemLabelApplicationRuleStore =
+        new DeletedSystemLabelApplicationRuleStore(
+            configServiceBlockingStub, configChangeEventGenerator);
     this.requestValidator = new LabelApplicationRuleValidatorImpl();
   }
 
@@ -90,9 +95,12 @@ public class LabelApplicationRuleConfigServiceImpl
           labelApplicationRules.stream()
               .map(LabelApplicationRule::getId)
               .collect(Collectors.toUnmodifiableSet());
+      Set<String> deletedSystemLabelApplicationRuleIds =
+          getDeletedSystemLabelApplicationRuleIds(requestContext);
       List<LabelApplicationRule> filteredSystemLabelApplicationRules =
           this.labelApplicationRuleConfig.getSystemLabelApplicationRules().stream()
               .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
+              .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
               .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
@@ -115,12 +123,7 @@ public class LabelApplicationRuleConfigServiceImpl
       LabelApplicationRule existingRule =
           this.labelApplicationRuleStore
               .getData(requestContext, request.getId())
-              .or(
-                  () ->
-                      Optional.ofNullable(
-                          this.labelApplicationRuleConfig
-                              .getSystemLabelApplicationRulesMap()
-                              .get(request.getId())))
+              .or(() -> getSystemLabelApplicationRule(requestContext, request.getId()))
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       LabelApplicationRule updateLabelApplicationRule =
           existingRule.toBuilder().setData(request.getData()).build();
@@ -146,18 +149,20 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       String labelApplicationRuleId = request.getId();
-      if (this.labelApplicationRuleConfig
-          .getSystemLabelApplicationRulesMap()
-          .containsKey(labelApplicationRuleId)) {
-        // Deleting a system label application rule is not allowed
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-        return;
+      boolean customRuleDeleted =
+          this.labelApplicationRuleStore.deleteObject(requestContext, request.getId()).isPresent();
+      Optional<LabelApplicationRule> systemLabelApplicationRule =
+          getSystemLabelApplicationRule(requestContext, labelApplicationRuleId);
+      if (systemLabelApplicationRule.isPresent()) {
+        deletedSystemLabelApplicationRuleStore.upsertObject(
+            requestContext,
+            DeletedSystemLabelApplicationRule.newBuilder().setId(labelApplicationRuleId).build());
       }
-      this.labelApplicationRuleStore
-          .deleteObject(requestContext, request.getId())
-          .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
-      responseObserver.onCompleted();
+      if (customRuleDeleted || systemLabelApplicationRule.isPresent()) {
+        responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
+        responseObserver.onCompleted();
+      }
+      throw Status.NOT_FOUND.asRuntimeException();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
@@ -179,5 +184,21 @@ public class LabelApplicationRuleConfigServiceImpl
         throw Status.RESOURCE_EXHAUSTED.asRuntimeException();
       }
     }
+  }
+
+  private Set<String> getDeletedSystemLabelApplicationRuleIds(RequestContext requestContext) {
+    return this.deletedSystemLabelApplicationRuleStore.getAllObjects(requestContext).stream()
+        .map(ConfigObject::getData)
+        .map(DeletedSystemLabelApplicationRule::getId)
+        .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private Optional<LabelApplicationRule> getSystemLabelApplicationRule(
+      RequestContext requestContext, String id) {
+    return this.labelApplicationRuleConfig
+        .getSystemLabelApplicationRule(id)
+        .filter(
+            unused ->
+                this.deletedSystemLabelApplicationRuleStore.getData(requestContext, id).isEmpty());
   }
 }

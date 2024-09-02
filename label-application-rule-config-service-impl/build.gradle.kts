@@ -1,7 +1,14 @@
 plugins {
   `java-library`
+  alias(commonLibs.plugins.google.protobuf)
   jacoco
   alias(commonLibs.plugins.hypertrace.jacoco)
+}
+
+protobuf {
+  protoc {
+    artifact = "com.google.protobuf:protoc:${commonLibs.versions.protoc.get()}"
+  }
 }
 
 dependencies {

@@ -3,6 +3,7 @@ directories:
   - alerting-config-service-api/src/main/proto
   - config-service-api/src/main/proto
   - label-application-rule-config-service-api/src/main/proto
+  - label-application-rule-config-service-impl/src/main/proto
   - labels-config-service-api/src/main/proto
   - notification-channel-config-service-api/src/main/proto
   - notification-rule-config-service-api/src/main/proto
