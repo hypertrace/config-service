@@ -1,14 +1,12 @@
 package org.hypertrace.label.application.rule.config.service;
 
-import static org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfigServiceImpl.LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG;
-import static org.hypertrace.label.application.rule.config.service.LabelApplicationRuleConfigServiceImpl.MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -46,18 +44,24 @@ import org.junit.jupiter.api.Test;
 public class LabelApplicationRuleConfigServiceImplTest {
   MockGenericConfigService mockGenericConfigService;
   LabelApplicationRuleConfigServiceBlockingStub labelApplicationRuleConfigServiceBlockingStub;
+  LabelApplicationRule systemLabelApplicationRule;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws InvalidProtocolBufferException {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    Config config =
-        ConfigFactory.parseMap(
-            Map.of(
-                LABEL_APPLICATION_RULE_CONFIG_SERVICE_CONFIG,
-                Map.of(MAX_DYNAMIC_LABEL_APPLICATION_RULES_PER_TENANT, 2)));
+    systemLabelApplicationRule =
+        LabelApplicationRule.newBuilder()
+            .setId("system-label-rule-id-1")
+            .setData(LabelApplicationRuleData.newBuilder().setName("SystemLabelApplicationRule1"))
+            .build();
+    LabelApplicationRuleConfig config = mock(LabelApplicationRuleConfig.class);
+    when(config.getSystemLabelApplicationRules()).thenReturn(List.of(systemLabelApplicationRule));
+    when(config.getSystemLabelApplicationRulesMap())
+        .thenReturn(Map.of(systemLabelApplicationRule.getId(), systemLabelApplicationRule));
+    when(config.getMaxDynamicLabelApplicationRulesAllowed()).thenReturn(2);
     mockGenericConfigService
         .addService(
             new LabelApplicationRuleConfigServiceImpl(channel, config, configChangeEventGenerator))
@@ -109,7 +113,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
   void getLabelApplicationRules() {
     LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
     LabelApplicationRule compositeRule = createCompositeRule();
-    Set<LabelApplicationRule> expectedRules = Set.of(simpleRule, compositeRule);
+    Set<LabelApplicationRule> expectedRules =
+        Set.of(simpleRule, compositeRule, systemLabelApplicationRule);
     GetLabelApplicationRulesResponse response =
         labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRules(
             GetLabelApplicationRulesRequest.getDefaultInstance());
@@ -130,6 +135,20 @@ public class LabelApplicationRuleConfigServiceImplTest {
             .build();
     UpdateLabelApplicationRuleResponse response =
         labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(request);
+    assertEquals(expectedData, response.getLabelApplicationRule().getData());
+  }
+
+  @Test
+  void updateSystemLabelApplicationRule() {
+    LabelApplicationRuleData expectedData = buildSimpleRuleData("auth", "not-valid");
+    UpdateLabelApplicationRuleRequest request =
+        UpdateLabelApplicationRuleRequest.newBuilder()
+            .setId(systemLabelApplicationRule.getId())
+            .setData(expectedData)
+            .build();
+    UpdateLabelApplicationRuleResponse response =
+        labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(request);
+    assertEquals(systemLabelApplicationRule.getId(), response.getLabelApplicationRule().getId());
     assertEquals(expectedData, response.getLabelApplicationRule().getData());
   }
 
@@ -177,6 +196,21 @@ public class LabelApplicationRuleConfigServiceImplTest {
               labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
             });
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
+  @Test
+  void deleteSystemApplicationRuleError() {
+    DeleteLabelApplicationRuleRequest request =
+        DeleteLabelApplicationRuleRequest.newBuilder()
+            .setId(systemLabelApplicationRule.getId())
+            .build();
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> {
+              labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
+            });
+    assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
   }
 
   private LabelApplicationRuleData buildCompositeRuleData() {
