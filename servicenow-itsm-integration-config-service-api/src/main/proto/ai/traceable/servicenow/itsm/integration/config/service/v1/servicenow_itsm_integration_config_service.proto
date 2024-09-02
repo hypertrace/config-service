@@ -4,61 +4,61 @@ package ai.traceable.servicenow.itsm.integration.config.service.api.v1;
 
 import "ai/traceable/servicenow/itsm/integration/config/service/v1/servicenow_itsm_integration.proto";
 
-service ServiceNowIntegrationConfigService {
-  rpc CreateServiceNowIntegration(CreateServiceNowIntegrationRequest) returns (CreateServiceNowIntegrationResponse) {}
-  rpc UpdateServiceNowIntegration(UpdateServiceNowIntegrationRequest) returns (UpdateServiceNowIntegrationResponse) {}
-  rpc DeleteServiceNowIntegration(DeleteServiceNowIntegrationRequest) returns (DeleteServiceNowIntegrationResponse) {}
+service ServiceNowItsmIntegrationConfigService {
+  rpc CreateServiceNowItsmIntegration(CreateServiceNowItsmIntegrationRequest) returns (CreateServiceNowItsmIntegrationResponse) {}
+  rpc UpdateServiceNowItsmIntegration(UpdateServiceNowItsmIntegrationRequest) returns (UpdateServiceNowItsmIntegrationResponse) {}
+  rpc DeleteServiceNowItsmIntegration(DeleteServiceNowItsmIntegrationRequest) returns (DeleteServiceNowItsmIntegrationResponse) {}
 
   // this get API will return integration details without the credentials - perfect for Graphql
-  rpc GetServiceNowIntegration(GetServiceNowIntegrationRequest) returns (GetServiceNowIntegrationResponse) {}
+  rpc GetServiceNowItsmIntegration(GetServiceNowItsmIntegrationRequest) returns (GetServiceNowItsmIntegrationResponse) {}
 
   // and this get API is intended to be used with services that require the credentials
-  rpc GetServiceNowIntegrationWithAuthCredentials(GetServiceNowIntegrationWithAuthCredentialsRequest) returns (GetServiceNowIntegrationWithAuthCredentialsResponse) {}
+  rpc GetServiceNowItsmIntegrationWithAuthCredentials(GetServiceNowItsmIntegrationWithAuthCredentialsRequest) returns (GetServiceNowItsmIntegrationWithAuthCredentialsResponse) {}
 }
 
-message CreateServiceNowIntegrationRequest {
+message CreateServiceNowItsmIntegrationRequest {
   string name = 1;
   optional string description = 2;
-  ServiceNowIntegrationScope scope = 3;
+  ServiceNowItsmIntegrationScope scope = 3;
   string server_url = 4;
-  ServiceNowAuthCredentials auth_credentials = 5;
+  ServiceNowItsmAuthCredentials auth_credentials = 5;
 }
 
-message CreateServiceNowIntegrationResponse {
-  ServiceNowIntegration service_now_integration = 1;
+message CreateServiceNowItsmIntegrationResponse {
+  ServiceNowItsmIntegration service_now_itsm_integration = 1;
 }
 
-message UpdateServiceNowIntegrationRequest {
-  string service_now_integration_id = 1;
+message UpdateServiceNowItsmIntegrationRequest {
+  string integration_id = 1;
   string name = 2;
   string description = 3;
-  ServiceNowIntegrationScope scope = 4;
+  ServiceNowItsmIntegrationScope scope = 4;
   string server_url = 5;
-  ServiceNowAuthCredentials auth_credentials = 6;
+  ServiceNowItsmAuthCredentials auth_credentials = 6;
 }
 
-message UpdateServiceNowIntegrationResponse {
-  ServiceNowIntegration service_now_integration = 1;
+message UpdateServiceNowItsmIntegrationResponse {
+  ServiceNowItsmIntegration service_now_itsm_integration = 1;
 }
 
-message DeleteServiceNowIntegrationRequest {
-  string service_now_integration_id = 1;
+message DeleteServiceNowItsmIntegrationRequest {
+  string integration_id = 1;
 }
 
-message DeleteServiceNowIntegrationResponse {}
+message DeleteServiceNowItsmIntegrationResponse {}
 
-message GetServiceNowIntegrationRequest {
-  ServiceNowIntegrationFilter filter = 1;
+message GetServiceNowItsmIntegrationRequest {
+  ServiceNowItsmIntegrationFilter filter = 1;
 }
 
-message GetServiceNowIntegrationResponse {
-  repeated ServiceNowIntegration service_now_integration = 1;
+message GetServiceNowItsmIntegrationResponse {
+  repeated ServiceNowItsmIntegration service_now_itsm_integration = 1;
 }
 
-message GetServiceNowIntegrationWithAuthCredentialsRequest {
-  ServiceNowIntegrationFilter filter = 1;
+message GetServiceNowItsmIntegrationWithAuthCredentialsRequest {
+  ServiceNowItsmIntegrationFilter filter = 1;
 }
 
-message GetServiceNowIntegrationWithAuthCredentialsResponse {
-  repeated ServiceNowIntegrationWithAuthCredentials service_now_integration_with_auth_credentials = 1;
+message GetServiceNowItsmIntegrationWithAuthCredentialsResponse {
+  repeated ServiceNowItsmIntegrationWithAuthCredentials service_now_itsm_integration_with_auth_credentials = 1;
 }
