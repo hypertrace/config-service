@@ -4,6 +4,7 @@ import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STA
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_IN_PROGRESS;
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UPLOAD_COMPLETED;
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UPLOAD_IN_PROGRESS;
+import static ai.traceable.api.spec.config.service.v1.OpenApiSpecResolutionState.OPEN_API_SPEC_RESOLUTION_STATE_INCOMPLETE;
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_OPEN_API_SPEC;
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_POSTMAN_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,6 +39,7 @@ import ai.traceable.api.spec.config.service.v1.ReferenceApiSpec;
 import ai.traceable.api.spec.config.service.v1.ReferenceApiSpecFilter;
 import ai.traceable.api.spec.config.service.v1.ReferenceType;
 import ai.traceable.api.spec.config.service.v1.ReferenceTypeFilter;
+import ai.traceable.api.spec.config.service.v1.SpecResolutionStateFilter;
 import ai.traceable.api.spec.config.service.v1.SpecType;
 import ai.traceable.api.spec.config.service.v1.SpecTypeFilter;
 import ai.traceable.api.spec.config.service.v1.StringList;
@@ -436,7 +438,8 @@ class ApiSpecConfigServiceImplTest {
                             .setStatus(API_SPEC_STATUS_IN_PROGRESS)
                             .setSpecPath("/test/spec1.json")
                             .setFileContentSha256(
-                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
+                                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+                            .setSpecType(SPEC_TYPE_OPEN_API_SPEC))
                     .build())
             .getApiSpec();
     // Filter by file hash
@@ -466,8 +469,8 @@ class ApiSpecConfigServiceImplTest {
                             .setSpecPath("/test/spec2.json")
                             .setFileContentSha256(
                                 "5e50280084181a7a3e44c8093b367d4b79e6b6d19e575bfc956a7714b58196ab")
-                            .setApiInspectorDisabled(
-                                !firstCreatedApiSpec.getApiInspectorDisabled()))
+                            .setApiInspectorDisabled(!firstCreatedApiSpec.getApiInspectorDisabled())
+                            .setSpecType(SPEC_TYPE_OPEN_API_SPEC))
                     .build())
             .getApiSpec();
     secondCreatedApiSpec =
@@ -485,6 +488,8 @@ class ApiSpecConfigServiceImplTest {
                                                 ApiSpecMetadata.newBuilder()
                                                     .setOpenApiSpecMetadata(
                                                         OpenApiSpecMetadata.newBuilder()
+                                                            .setOpenApiSpecResolutionState(
+                                                                OPEN_API_SPEC_RESOLUTION_STATE_INCOMPLETE)
                                                             .addAllOpenApiSpecReferences(
                                                                 List.of(
                                                                     OpenApiSpecReference
@@ -571,6 +576,37 @@ class ApiSpecConfigServiceImplTest {
             .getApiSpecsList();
     assertTrue(getApiSpecs.contains(firstCreatedApiSpec));
     assertFalse(getApiSpecs.contains(secondCreatedApiSpec));
+
+    // Filter based on spec name filter
+    getApiSpecs =
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setNames(
+                                StringList.newBuilder()
+                                    .addAllValues(List.of(firstCreatedApiSpec.getName()))))
+                    .build())
+            .getApiSpecsList();
+    assertTrue(getApiSpecs.contains(firstCreatedApiSpec));
+    assertFalse(getApiSpecs.contains(secondCreatedApiSpec));
+
+    // Filter based on spec resolution state filter
+    getApiSpecs =
+        this.apiSpecConfigServiceBlockingStub
+            .getApiSpecs(
+                GetApiSpecsRequest.newBuilder()
+                    .setApiSpecFilter(
+                        ApiSpecFilter.newBuilder()
+                            .setSpecResolutionStateFilter(
+                                SpecResolutionStateFilter.newBuilder()
+                                    .addAllSpecResolutionStates(
+                                        List.of(OPEN_API_SPEC_RESOLUTION_STATE_INCOMPLETE))))
+                    .build())
+            .getApiSpecsList();
+    assertFalse(getApiSpecs.contains(firstCreatedApiSpec));
+    assertTrue(getApiSpecs.contains(secondCreatedApiSpec));
   }
 
   @Test

@@ -1,6 +1,7 @@
 package ai.traceable.api.spec.config.service;
 
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UNSPECIFIED;
+import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_OPEN_API_SPEC;
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_UNSPECIFIED;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -25,6 +26,7 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecResponse;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
 import ai.traceable.api.spec.config.service.v1.OpenApiSpecReference;
+import ai.traceable.api.spec.config.service.v1.OpenApiSpecResolutionState;
 import ai.traceable.api.spec.config.service.v1.ReferenceApiSpec;
 import ai.traceable.api.spec.config.service.v1.ReferenceType;
 import ai.traceable.api.spec.config.service.v1.SpecType;
@@ -179,6 +181,16 @@ public class ApiSpecConfigServiceImpl
                     spec ->
                         !request.getApiSpecFilter().hasStatusFilter()
                             || convertedStatuses.contains(spec.getStatus()))
+                // filter based on spec resolution state
+                .filter(
+                    spec ->
+                        !request.getApiSpecFilter().hasSpecResolutionStateFilter()
+                            || checkAnySpecResolutionStateMatch(
+                                request
+                                    .getApiSpecFilter()
+                                    .getSpecResolutionStateFilter()
+                                    .getSpecResolutionStatesList(),
+                                spec))
                 .collect(Collectors.toUnmodifiableList());
         getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
       }
@@ -580,5 +592,19 @@ public class ApiSpecConfigServiceImpl
       return referenceSpec.getSpecPath().equals(specMetaDataReference.getResolvedSpecPath());
     }
     return false;
+  }
+
+  private boolean checkAnySpecResolutionStateMatch(
+      List<OpenApiSpecResolutionState> apiSpecResolutionStates, ApiSpec spec) {
+    if (!SPEC_TYPE_OPEN_API_SPEC.equals(spec.getSpecType())) {
+      return false;
+    }
+
+    if (!spec.hasApiSpecMetadata() || !spec.getApiSpecMetadata().hasOpenApiSpecMetadata()) {
+      return false;
+    }
+
+    return apiSpecResolutionStates.contains(
+        spec.getApiSpecMetadata().getOpenApiSpecMetadata().getOpenApiSpecResolutionState());
   }
 }

@@ -23,6 +23,7 @@ message ApiSpecFilter {
   ReferenceTypeFilter reference_type = 7;
   StringList names = 8;
   ApiSpecStatusFilter status_filter = 9;
+  SpecResolutionStateFilter spec_resolution_state_filter = 10;
 }
 
 message ReferenceApiSpecFilter {
@@ -54,6 +55,10 @@ message SpecTypeFilter {
 
 message ApiSpecStatusFilter {
   repeated ApiSpecStatus statuses = 1;
+}
+
+message SpecResolutionStateFilter {
+  repeated OpenApiSpecResolutionState spec_resolution_states = 1;
 }
 
 message GetApiSpecsResponse {
