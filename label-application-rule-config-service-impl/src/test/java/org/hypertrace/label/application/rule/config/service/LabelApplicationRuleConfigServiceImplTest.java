@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.util.JsonFormat;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -43,8 +42,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class LabelApplicationRuleConfigServiceImplTest {
-  private static final String SYSTEM_LABEL_APPLICATION_RULE_STR =
-      "{\"id\":\"system-label-application-rule-1\",\"data\":{\"name\":\"SystemLabelApplicationRule1\",\"matching_condition\":{\"leaf_condition\":{\"key_condition\":{\"operator\":\"OPERATOR_EQUALS\",\"value\":\"test.key\"},\"unary_condition\":{\"operator\":\"OPERATOR_EXISTS\"}}},\"label_action\":{\"entity_types\":[\"API\"],\"operation\":\"OPERATION_MERGE\",\"static_labels\":{\"ids\":[\"static-label-id-1\"]}},\"enabled\":false}}";
   MockGenericConfigService mockGenericConfigService;
   LabelApplicationRuleConfigServiceBlockingStub labelApplicationRuleConfigServiceBlockingStub;
   LabelApplicationRule systemLabelApplicationRule;
@@ -55,9 +52,11 @@ public class LabelApplicationRuleConfigServiceImplTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     Channel channel = mockGenericConfigService.channel();
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
-    LabelApplicationRule.Builder builder = LabelApplicationRule.newBuilder().clear();
-    JsonFormat.parser().merge(SYSTEM_LABEL_APPLICATION_RULE_STR, builder);
-    systemLabelApplicationRule = builder.build();
+    systemLabelApplicationRule =
+        LabelApplicationRule.newBuilder()
+            .setId("system-label-rule-id-1")
+            .setData(LabelApplicationRuleData.newBuilder().setName("SystemLabelApplicationRule1"))
+            .build();
     LabelApplicationRuleConfig config = mock(LabelApplicationRuleConfig.class);
     when(config.getSystemLabelApplicationRules()).thenReturn(List.of(systemLabelApplicationRule));
     when(config.getSystemLabelApplicationRulesMap())
