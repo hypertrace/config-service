@@ -9,7 +9,7 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.label.application.rule.config.service.impl.v1.DeletedSystemLabelApplicationRule;
 
-public class DeletedSystemLabelApplicationRuleStore
+class DeletedSystemLabelApplicationRuleStore
     extends IdentifiedObjectStore<DeletedSystemLabelApplicationRule> {
 
   private static final String DELETED_SYSTEM_LABEL_APPLICATION_RULE_CONFIG_RESOURCE_NAME =
