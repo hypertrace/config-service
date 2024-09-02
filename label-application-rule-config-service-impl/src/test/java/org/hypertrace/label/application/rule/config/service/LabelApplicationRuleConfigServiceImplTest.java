@@ -1,5 +1,6 @@
 package org.hypertrace.label.application.rule.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -59,8 +61,8 @@ public class LabelApplicationRuleConfigServiceImplTest {
             .build();
     LabelApplicationRuleConfig config = mock(LabelApplicationRuleConfig.class);
     when(config.getSystemLabelApplicationRules()).thenReturn(List.of(systemLabelApplicationRule));
-    when(config.getSystemLabelApplicationRulesMap())
-        .thenReturn(Map.of(systemLabelApplicationRule.getId(), systemLabelApplicationRule));
+    when(config.getSystemLabelApplicationRule(systemLabelApplicationRule.getId()))
+        .thenReturn(Optional.of(systemLabelApplicationRule));
     when(config.getMaxDynamicLabelApplicationRulesAllowed()).thenReturn(2);
     mockGenericConfigService
         .addService(
@@ -204,13 +206,66 @@ public class LabelApplicationRuleConfigServiceImplTest {
         DeleteLabelApplicationRuleRequest.newBuilder()
             .setId(systemLabelApplicationRule.getId())
             .build();
+    assertDoesNotThrow(
+        () -> labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request));
+    // deleting an already deleted system label application rule should throw error
     Throwable exception =
         assertThrows(
             StatusRuntimeException.class,
-            () -> {
-              labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request);
-            });
-    assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
+            () ->
+                labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
+  @Test
+  void updateDeletedSystemLabelApplicationRule() {
+    DeleteLabelApplicationRuleRequest request =
+        DeleteLabelApplicationRuleRequest.newBuilder()
+            .setId(systemLabelApplicationRule.getId())
+            .build();
+    assertDoesNotThrow(
+        () -> labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request));
+    // updating an already deleted system label application rule should throw error
+    LabelApplicationRuleData expectedData = buildSimpleRuleData("auth", "not-valid");
+    UpdateLabelApplicationRuleRequest updateRequest =
+        UpdateLabelApplicationRuleRequest.newBuilder()
+            .setId(systemLabelApplicationRule.getId())
+            .setData(expectedData)
+            .build();
+    Throwable exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                labelApplicationRuleConfigServiceBlockingStub.updateLabelApplicationRule(
+                    updateRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
+  @Test
+  void getLabelApplicationRulesAfterDeletingSystemLabelApplicationRule() {
+    LabelApplicationRule simpleRule = createSimpleRule("auth", "valid");
+    LabelApplicationRule compositeRule = createCompositeRule();
+    Set<LabelApplicationRule> expectedRules =
+        Set.of(simpleRule, compositeRule, systemLabelApplicationRule);
+    GetLabelApplicationRulesResponse response =
+        labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRules(
+            GetLabelApplicationRulesRequest.getDefaultInstance());
+    assertEquals(
+        expectedRules,
+        response.getLabelApplicationRulesList().stream().collect(Collectors.toUnmodifiableSet()));
+    DeleteLabelApplicationRuleRequest request =
+        DeleteLabelApplicationRuleRequest.newBuilder()
+            .setId(systemLabelApplicationRule.getId())
+            .build();
+    assertDoesNotThrow(
+        () -> labelApplicationRuleConfigServiceBlockingStub.deleteLabelApplicationRule(request));
+    expectedRules = Set.of(simpleRule, compositeRule);
+    response =
+        labelApplicationRuleConfigServiceBlockingStub.getLabelApplicationRules(
+            GetLabelApplicationRulesRequest.getDefaultInstance());
+    assertEquals(
+        expectedRules,
+        response.getLabelApplicationRulesList().stream().collect(Collectors.toUnmodifiableSet()));
   }
 
   private LabelApplicationRuleData buildCompositeRuleData() {

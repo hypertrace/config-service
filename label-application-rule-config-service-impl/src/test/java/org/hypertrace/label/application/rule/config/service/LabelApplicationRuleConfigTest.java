@@ -1,6 +1,7 @@
 package org.hypertrace.label.application.rule.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -9,6 +10,7 @@ import com.typesafe.config.ConfigFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,8 +55,12 @@ public class LabelApplicationRuleConfigTest {
 
   @Test
   void test_getSystemLabelApplicationRulesMap() {
-    assertEquals(
-        stringLabelApplicationRuleMap,
-        labelApplicationRuleConfig.getSystemLabelApplicationRulesMap());
+    Optional<LabelApplicationRule> rule =
+        labelApplicationRuleConfig.getSystemLabelApplicationRule(
+            systemLabelApplicationRule.getId());
+    assertTrue(rule.isPresent());
+    assertEquals(systemLabelApplicationRule, rule.get());
+    assertTrue(
+        labelApplicationRuleConfig.getSystemLabelApplicationRule("id-does-not-exist").isEmpty());
   }
 }

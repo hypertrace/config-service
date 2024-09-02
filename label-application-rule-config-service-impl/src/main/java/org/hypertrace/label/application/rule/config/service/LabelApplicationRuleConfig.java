@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigObject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -24,7 +25,7 @@ public class LabelApplicationRuleConfig {
 
   @Getter private final int maxDynamicLabelApplicationRulesAllowed;
   @Getter private final List<LabelApplicationRule> systemLabelApplicationRules;
-  @Getter private final Map<String, LabelApplicationRule> systemLabelApplicationRulesMap;
+  private final Map<String, LabelApplicationRule> systemLabelApplicationRulesMap;
 
   public LabelApplicationRuleConfig(Config config) {
     Config labelApplicationRuleConfig =
@@ -63,5 +64,9 @@ public class LabelApplicationRuleConfig {
     LabelApplicationRule.Builder builder = LabelApplicationRule.newBuilder();
     JsonFormat.parser().merge(jsonString, builder);
     return builder.build();
+  }
+
+  public Optional<LabelApplicationRule> getSystemLabelApplicationRule(String id) {
+    return Optional.ofNullable(systemLabelApplicationRulesMap.get(id));
   }
 }
