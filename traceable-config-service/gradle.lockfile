@@ -266,6 +266,7 @@ org.hypertrace.core.grpcutils:grpc-server-rx-utils:0.13.4=runtimeClasspath,testR
 org.hypertrace.core.grpcutils:grpc-server-utils:0.13.4=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.4.11=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-event-listener:0.4.11=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.serviceframework:docstore-metrics:0.1.77=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-grpc-service-framework:0.1.77=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-metrics:0.1.77=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-service-framework:0.1.77=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath

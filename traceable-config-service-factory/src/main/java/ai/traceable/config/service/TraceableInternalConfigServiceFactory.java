@@ -1,5 +1,7 @@
 package ai.traceable.config.service;
 
+import static ai.traceable.config.service.metric.TraceableConfigMetricsReporter.getConfigurationCounterConfig;
+
 import ai.traceable.alerting.config.service.EventConditionConfigServiceImpl;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.anomalyscoring.config.service.AnomalyScoringConfigServiceFactory;
@@ -71,7 +73,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 .buildServices(
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getChangeEventGenerator())
+                    providers.getChangeEventGenerator(),
+                    environment,
+                    getConfigurationCounterConfig())
                 .stream(),
             wrap(
                 new SensitiveDataConfigServicesProvider(

@@ -10,6 +10,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(commonLibs.typesafe.config)
   implementation(localLibs.hypertrace.configservice.partitioner.config.impl)
+  implementation(commonLibs.hypertrace.framework.documentstore.metrics)
 
   implementation(projects.activityEventProducer)
   implementation(projects.sensitiveDataConfigServiceImpl)
