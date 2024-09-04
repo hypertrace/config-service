@@ -1,11 +1,21 @@
 package ai.traceable.span.processing.config.service.store;
 
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.API_SPEC_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.AST_SCAN_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase.SEGMENT_MATCHING_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_API_SPEC_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_AST_SCAN_BASED_CONFIG;
+import static ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType.API_NAMING_RULE_CONFIG_TYPE_SEGMENT_MATCHING_BASED_CONFIG;
+
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigConstants;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig.RuleConfigCase;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfigType;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleMetadata;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRulesFilter;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import java.util.List;
@@ -22,6 +32,16 @@ public class ApiNamingRulesConfigStore
     extends IdentifiedObjectStoreWithFilter<ApiNamingRule, ApiNamingRulesFilter> {
 
   private static final String API_NAMING_RULES_RESOURCE_NAME = "api-naming-rules";
+  private static final ImmutableBiMap<ApiNamingRuleConfigType, RuleConfigCase>
+      RULE_CONFIG_TYPE_RULE_CONFIG_CASE_BI_MAP =
+          ImmutableBiMap.<ApiNamingRuleConfigType, RuleConfigCase>builder()
+              .put(
+                  API_NAMING_RULE_CONFIG_TYPE_SEGMENT_MATCHING_BASED_CONFIG,
+                  SEGMENT_MATCHING_BASED_CONFIG)
+              .put(API_NAMING_RULE_CONFIG_TYPE_API_SPEC_BASED_CONFIG, API_SPEC_BASED_CONFIG)
+              .put(API_NAMING_RULE_CONFIG_TYPE_AST_SCAN_BASED_CONFIG, AST_SCAN_BASED_CONFIG)
+              .build();
+
   private final TimestampConverter timestampConverter;
 
   @Inject
@@ -87,7 +107,10 @@ public class ApiNamingRulesConfigStore
   }
 
   private boolean matchFilter(ApiNamingRule rule, ApiNamingRulesFilter filter) {
-    return matchIds(rule, filter) && matchApiSpecIds(rule, filter) && matchDisabled(rule, filter);
+    return matchIds(rule, filter)
+        && matchApiSpecIds(rule, filter)
+        && matchDisabled(rule, filter)
+        && matchRuleConfigType(rule, filter);
   }
 
   private boolean matchIds(ApiNamingRule rule, ApiNamingRulesFilter filter) {
@@ -108,5 +131,21 @@ public class ApiNamingRulesConfigStore
 
   private boolean matchDisabled(ApiNamingRule rule, ApiNamingRulesFilter filter) {
     return !filter.hasDisabled() || filter.getDisabled() == rule.getRuleInfo().getDisabled();
+  }
+
+  private boolean matchRuleConfigType(ApiNamingRule rule, ApiNamingRulesFilter filter) {
+    return filter.getRuleConfigTypesList().isEmpty()
+        || filter.getRuleConfigTypesList().stream()
+            .map(this::convert)
+            .anyMatch(rule.getRuleInfo().getRuleConfig().getRuleConfigCase()::equals);
+  }
+
+  private RuleConfigCase convert(ApiNamingRuleConfigType apiNamingRuleConfigType) {
+    return Optional.ofNullable(
+            RULE_CONFIG_TYPE_RULE_CONFIG_CASE_BI_MAP.get(apiNamingRuleConfigType))
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Unsupported rule config type: " + apiNamingRuleConfigType));
   }
 }

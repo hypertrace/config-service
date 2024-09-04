@@ -279,10 +279,19 @@ message ApiNamingRuleConfig {
   }
 }
 
+// one-on-one enum mapping with the ApiNamingRuleConfig: rule_config one-of
+enum ApiNamingRuleConfigType {
+  API_NAMING_RULE_CONFIG_TYPE_UNSPECIFIED = 0;
+  API_NAMING_RULE_CONFIG_TYPE_SEGMENT_MATCHING_BASED_CONFIG = 1;
+  API_NAMING_RULE_CONFIG_TYPE_API_SPEC_BASED_CONFIG = 2;
+  API_NAMING_RULE_CONFIG_TYPE_AST_SCAN_BASED_CONFIG = 3;
+}
+
 message ApiNamingRulesFilter {
   repeated string ids = 1;
   repeated string api_spec_ids = 2;
   optional bool disabled = 3;
+  repeated ApiNamingRuleConfigType rule_config_types = 4;
 }
 
 message SegmentMatchingBasedConfig {
