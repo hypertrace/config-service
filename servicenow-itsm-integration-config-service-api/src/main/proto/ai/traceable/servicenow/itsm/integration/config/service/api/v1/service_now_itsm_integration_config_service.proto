@@ -13,6 +13,7 @@ service ServiceNowItsmIntegrationConfigService {
   rpc GetServiceNowItsmIntegration(GetServiceNowItsmIntegrationRequest) returns (GetServiceNowItsmIntegrationResponse) {}
 
   // and this get API is intended to be used with services that require the credentials
+  rpc GetServiceNowItsmIntegrationsWithAuthCredentials(GetServiceNowItsmIntegrationsWithAuthCredentialsRequest) returns (GetServiceNowItsmIntegrationsWithAuthCredentialsResponse) {}
   rpc GetServiceNowItsmIntegrationWithAuthCredentials(GetServiceNowItsmIntegrationWithAuthCredentialsRequest) returns (GetServiceNowItsmIntegrationWithAuthCredentialsResponse) {}
 }
 
@@ -55,10 +56,18 @@ message GetServiceNowItsmIntegrationResponse {
   repeated ServiceNowItsmIntegration service_now_itsm_integration = 1;
 }
 
-message GetServiceNowItsmIntegrationWithAuthCredentialsRequest {
+message GetServiceNowItsmIntegrationsWithAuthCredentialsRequest {
   ServiceNowItsmIntegrationFilter filter = 1;
 }
 
-message GetServiceNowItsmIntegrationWithAuthCredentialsResponse {
+message GetServiceNowItsmIntegrationsWithAuthCredentialsResponse {
   repeated ServiceNowItsmIntegrationWithAuthCredentials service_now_itsm_integration_with_auth_credentials = 1;
+}
+
+message GetServiceNowItsmIntegrationWithAuthCredentialsRequest {
+  string integration_id = 1;
+}
+
+message GetServiceNowItsmIntegrationWithAuthCredentialsResponse {
+  ServiceNowItsmIntegrationWithAuthCredentials service_now_itsm_integration_with_auth_credentials = 1;
 }
