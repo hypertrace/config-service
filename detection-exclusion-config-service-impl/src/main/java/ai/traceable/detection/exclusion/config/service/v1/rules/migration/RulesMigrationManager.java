@@ -8,4 +8,6 @@ public interface RulesMigrationManager {
   void migrateFromChangeLog2IfApplicable(RequestContext requestContext);
 
   void migrateFromChangeLog3IfApplicable(RequestContext requestContext);
+
+  void migrateFromChangeLog4IfApplicable(RequestContext requestContext);
 }

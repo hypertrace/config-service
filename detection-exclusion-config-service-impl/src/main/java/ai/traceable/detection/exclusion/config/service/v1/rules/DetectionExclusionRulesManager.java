@@ -47,6 +47,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesMigrationManager.migrateFromOldStoreIfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog3IfApplicable(requestContext);
+    rulesMigrationManager.migrateFromChangeLog4IfApplicable(requestContext);
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       return rulesStore.getAllConfigData(requestContext);
     }

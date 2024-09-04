@@ -21,11 +21,14 @@ public class DetectionExclusionConfigServiceConfig {
       "changeLog2." + MIGRATION_DISABLED_KEY;
   private static final String CHANGE_LOG_3_MIGRATION_DISABLED_KEY =
       "changeLog3." + MIGRATION_DISABLED_KEY;
+  private static final String CHANGE_LOG_4_MIGRATION_DISABLED_KEY =
+      "changeLog4." + MIGRATION_DISABLED_KEY;
 
   private final Config config;
   private final boolean migrationDisabled;
   private final boolean changeLog2MigrationDisabled;
   private final boolean changeLog3MigrationDisabled;
+  private final boolean changeLog4MigrationDisabled;
 
   public DetectionExclusionConfigServiceConfig(Config config) {
     this.config =
@@ -40,6 +43,9 @@ public class DetectionExclusionConfigServiceConfig {
     changeLog3MigrationDisabled =
         config.hasPath(CHANGE_LOG_3_MIGRATION_DISABLED_KEY)
             && config.getBoolean(CHANGE_LOG_3_MIGRATION_DISABLED_KEY);
+    changeLog4MigrationDisabled =
+        config.hasPath(CHANGE_LOG_4_MIGRATION_DISABLED_KEY)
+            && config.getBoolean(CHANGE_LOG_4_MIGRATION_DISABLED_KEY);
   }
 
   public List<DetectionExclusionRule> getDefaultDetectionExclusionRules() {
@@ -58,6 +64,10 @@ public class DetectionExclusionConfigServiceConfig {
 
   public boolean isChangeLog3MigrationDisabled() {
     return changeLog3MigrationDisabled;
+  }
+
+  public boolean isChangeLog4MigrationDisabled() {
+    return changeLog4MigrationDisabled;
   }
 
   private List<DetectionExclusionRule> convertToDetectionExclusionRules(
