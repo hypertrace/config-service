@@ -25,6 +25,7 @@ enum IntegrationActionType {
 message AuthCredentials {
   string access_key_id = 1;
   string encrypted_secret_access_key = 2;
+  string encryption_key_id = 3;
 }
 
 message WebIdentityAuthenticationCredentials {
