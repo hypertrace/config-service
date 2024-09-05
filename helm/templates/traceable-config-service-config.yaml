@@ -266,7 +266,7 @@ data:
       include "risk.conf"
     }
     label.application.rule.config.service {
-      max.dynamic.label.application.rules.per.tenant = {{ int .Values.traceableConfigServiceConfig.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant }}
+      include "label-application-rule.conf"
     }
     notification.channel.config.service {
       webhook.exclusion.domains = {{ .Values.traceableConfigServiceConfig.notificationChannelConfigServiceConfig.webhookExclusionDomains | toJson }}
@@ -381,3 +381,10 @@ data:
         riskFactorGridConfigValues = {{- .Values.riskConfigServiceConfig.riskFactorGridConfigValues | indent 2 }}
       {{- end }}
     {{- end }}
+
+  label-application-rule.conf: |-
+    {{- if hasKey .Values "labelApplicationRuleConfigServiceConfig" }}
+      {{- if hasKey .Values.labelApplicationRuleConfigServiceConfig "maxDynamicLabelApplicationRulesPerTenant" }}
+        max.dynamic.label.application.rules.per.tenant = {{- .Values.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant | indent 2 }}
+      {{- end }}
+    {{- end }}    
