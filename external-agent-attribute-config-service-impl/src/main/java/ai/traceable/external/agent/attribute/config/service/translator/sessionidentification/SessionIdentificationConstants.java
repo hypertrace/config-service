@@ -3,6 +3,7 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 public class SessionIdentificationConstants {
   public static final String SESSION_NEW_PREFIX_KEY = "traceableai.session.new";
   public static final String SESSION_PREFIX_KEY = "traceableai.session";
+  public static final String SESSION_ATTRIBUTE_REGEX = "traceableai.session.*";
   private static final String DOT = ".";
   private static final String EXPIRATION_VALUE_KEY = "expiration.value";
   private static final String ID = "id";

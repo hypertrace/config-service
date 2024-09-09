@@ -1,90 +1,98 @@
 {
   "projector": {
-    "firstMatchingProjector": {
+    "eachMatchingProjector": {
       "attributeRules": [{
         "projector": {
           "conditionalProjector": {
             "predicate": {
-              "logicalPredicate": {
-                "operator": "LOGICAL_OPERATOR_AND",
-                "children": [{
-                  "logicalPredicate": {
-                    "operator": "LOGICAL_OPERATOR_OR",
-                    "children": [{
-                      "attributePredicate": {
-                        "namePredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "http.url"
-                        },
-                        "valuePredicate": {
-                          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                          "value": "url.*"
-                        }
-                      }
-                    }, {
-                      "attributePredicate": {
-                        "namePredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "http.target"
-                        },
-                        "valuePredicate": {
-                          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                          "value": "url.*"
-                        }
-                      }
-                    }, {
-                      "attributePredicate": {
-                        "namePredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "http.path"
-                        },
-                        "valuePredicate": {
-                          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                          "value": "url.*"
-                        }
-                      }
-                    }, {
-                      "attributePredicate": {
-                        "namePredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "url.full"
-                        },
-                        "valuePredicate": {
-                          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                          "value": "url.*"
-                        }
-                      }
-                    }, {
-                      "attributePredicate": {
-                        "namePredicate": {
-                          "operator": "COMPARISON_OPERATOR_EQUALS",
-                          "value": "url.path"
-                        },
-                        "valuePredicate": {
-                          "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                          "value": "url.*"
-                        }
-                      }
-                    }]
-                  }
-                }, {
-                  "attributePredicate": {
-                    "namePredicate": {
-                      "operator": "COMPARISON_OPERATOR_EQUALS",
-                      "value": "service.name"
-                    },
-                    "valuePredicate": {
-                      "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
-                      "value": "service1.*"
-                    }
-                  }
-                }]
+              "attributePredicate": {
+                "namePredicate": {
+                  "operator": "COMPARISON_OPERATOR_NOT_MATCHES_REGEX",
+                  "value": "traceableai.session.*"
+                }
               }
             },
             "attributeRule": {
               "projector": {
-                "eachMatchingProjector": {
-                  "attributeRules": [{
+                "conditionalProjector": {
+                  "predicate": {
+                    "logicalPredicate": {
+                      "operator": "LOGICAL_OPERATOR_AND",
+                      "children": [{
+                        "logicalPredicate": {
+                          "operator": "LOGICAL_OPERATOR_OR",
+                          "children": [{
+                            "attributePredicate": {
+                              "namePredicate": {
+                                "operator": "COMPARISON_OPERATOR_EQUALS",
+                                "value": "http.url"
+                              },
+                              "valuePredicate": {
+                                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                "value": "url.*"
+                              }
+                            }
+                          }, {
+                            "attributePredicate": {
+                              "namePredicate": {
+                                "operator": "COMPARISON_OPERATOR_EQUALS",
+                                "value": "http.target"
+                              },
+                              "valuePredicate": {
+                                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                "value": "url.*"
+                              }
+                            }
+                          }, {
+                            "attributePredicate": {
+                              "namePredicate": {
+                                "operator": "COMPARISON_OPERATOR_EQUALS",
+                                "value": "http.path"
+                              },
+                              "valuePredicate": {
+                                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                "value": "url.*"
+                              }
+                            }
+                          }, {
+                            "attributePredicate": {
+                              "namePredicate": {
+                                "operator": "COMPARISON_OPERATOR_EQUALS",
+                                "value": "url.full"
+                              },
+                              "valuePredicate": {
+                                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                "value": "url.*"
+                              }
+                            }
+                          }, {
+                            "attributePredicate": {
+                              "namePredicate": {
+                                "operator": "COMPARISON_OPERATOR_EQUALS",
+                                "value": "url.path"
+                              },
+                              "valuePredicate": {
+                                "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                                "value": "url.*"
+                              }
+                            }
+                          }]
+                        }
+                      }, {
+                        "attributePredicate": {
+                          "namePredicate": {
+                            "operator": "COMPARISON_OPERATOR_EQUALS",
+                            "value": "service.name"
+                          },
+                          "valuePredicate": {
+                            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                            "value": "service1.*"
+                          }
+                        }
+                      }]
+                    }
+                  },
+                  "attributeRule": {
                     "initialActions": [{
                       "attributeAddition": {
                         "attributeKey": "traceableai.session.rule-id.0.id",
@@ -127,7 +135,7 @@
                         }
                       }
                     }]
-                  }]
+                  }
                 }
               }
             }
