@@ -36,6 +36,7 @@ public class TraceableConfigMetricsReporter {
   private static final String API_SPEC_REFERENCE_TYPE_PATH = "config.referenceType";
   private static final String API_SPEC_BASED_API_NAMING_RULE_API_SPEC_IDS_PATH =
       "config.ruleInfo.ruleConfig.apiSpecBasedConfig.apiSpecIds";
+  private static final String API_NAMING_RULES_DISABLED_PATH = "config.ruleInfo.disabled";
 
   private static final String API_SPEC_SPEC_TYPE = "specType";
   private static final String API_SPEC_STATUS = "status";
@@ -43,6 +44,7 @@ public class TraceableConfigMetricsReporter {
   private static final String API_SPEC_API_INSPECTOR_DISABLED = "apiInspectorDisabled";
   private static final String API_SPEC_REFERENCE_TYPE = "referenceType";
   private static final String API_SPEC_ID = "apiSpecId";
+  private static final String API_NAMING_RULES_DISABLED = "disabled";
 
   public static List<DocStoreCustomMetricReportingConfig> getConfigurationCounterConfig() {
     return List.of(
@@ -99,7 +101,11 @@ public class TraceableConfigMetricsReporter {
                                 TENANT_ID_ENTITY_PATH)
                             .addSelection(
                                 AggregateExpression.of(COUNT, ConstantExpression.of(1)), VALUE_KEY)
+                            .addSelection(
+                                IdentifierExpression.of(API_NAMING_RULES_DISABLED_PATH),
+                                API_NAMING_RULES_DISABLED)
                             .addAggregation(IdentifierExpression.of(TENANT_ID_ENTITY_PATH))
+                            .addAggregation(IdentifierExpression.of(API_NAMING_RULES_DISABLED_PATH))
                             .build())
                     .build())
             .build(),
@@ -117,7 +123,11 @@ public class TraceableConfigMetricsReporter {
                                 TENANT_ID_ENTITY_PATH)
                             .addSelection(
                                 AggregateExpression.of(COUNT, ConstantExpression.of(1)), VALUE_KEY)
+                            .addSelection(
+                                IdentifierExpression.of(API_NAMING_RULES_DISABLED_PATH),
+                                API_NAMING_RULES_DISABLED)
                             .addAggregation(IdentifierExpression.of(TENANT_ID_ENTITY_PATH))
+                            .addAggregation(IdentifierExpression.of(API_NAMING_RULES_DISABLED_PATH))
                             .build())
                     .build())
             .build(),
@@ -145,10 +155,14 @@ public class TraceableConfigMetricsReporter {
                                 IdentifierExpression.of(
                                     API_SPEC_BASED_API_NAMING_RULE_API_SPEC_IDS_PATH),
                                 API_SPEC_ID)
+                            .addSelection(
+                                IdentifierExpression.of(API_NAMING_RULES_DISABLED_PATH),
+                                API_NAMING_RULES_DISABLED)
                             .addAggregation(IdentifierExpression.of(TENANT_ID_ENTITY_PATH))
                             .addAggregation(
                                 IdentifierExpression.of(
                                     API_SPEC_BASED_API_NAMING_RULE_API_SPEC_IDS_PATH))
+                            .addAggregation(IdentifierExpression.of(API_NAMING_RULES_DISABLED_PATH))
                             .build())
                     .build())
             .build());
