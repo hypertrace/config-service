@@ -42,8 +42,6 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
           .setFilter(
               GetRulesFilter.newBuilder()
                   .setDisabled(false)
-                  .addAllRuleActions(
-                      List.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT))
                   .setRuleScope(
                       RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
                   .build())
@@ -167,17 +165,11 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .setDisabled(false)
-                        .addAllRuleActions(
-                            List.of(
-                                RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT))
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(
                                     EnvironmentScope.newBuilder()
-                                        .addEnvironmentIds(ENVIRONMENT_ID)
-                                        .build())
-                                .build())
-                        .build())
+                                        .addEnvironmentIds(ENVIRONMENT_ID))))
                 .build());
 
     List<BlockingPolicyData> customIpBasedRuleList =

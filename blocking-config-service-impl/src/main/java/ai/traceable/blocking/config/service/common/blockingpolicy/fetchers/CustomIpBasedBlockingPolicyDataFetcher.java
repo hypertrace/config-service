@@ -1,5 +1,6 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_ANALYTICS;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_EXEMPTIONS;
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.IP_RANGE_VIOLATIONS;
@@ -19,6 +20,7 @@ import ai.traceable.iprange.config.service.v1.GetRulesFilter;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.RuleAction;
+import ai.traceable.iprange.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -34,7 +36,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
-  private static final List<RuleAction> SUPPORTED_RULE_ACTIONS =
+  private static final String NON_BLOCKING_RULE_INFO = "Rule has some non-blocking agent action";
+
+  private static final List<RuleAction> BLOCKING_RULE_ACTIONS =
       ImmutableList.of(RULE_ACTION_BLOCK, RULE_ACTION_ALLOW, RULE_ACTION_BLOCK_ALL_EXCEPT);
   private final IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
   private final BlockingRulesUtils blockingRulesUtils;
@@ -57,7 +61,7 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
       BlockingRulesSupplier blockingRulesSupplier) {
     Optional<String> environmentId = filter.getEnvironmentId();
     List<IpRangeRule> ruleList = fetchIpRangeRules(requestContext, environmentId);
-    return new BlockingPolicyAggregate(
+    return new BlockingPolicyAggregate<>(
         ruleList.stream()
             .map(this::getBlockingDetails)
             .filter(Optional::isPresent)
@@ -110,7 +114,7 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
             ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo(
                 ipRangeRule.getId(), ipRangeRule.getRuleDetails().getName()));
       case RULE_ACTION_ALERT:
-        return Optional.empty();
+        return Optional.of(NON_BLOCKING_RULE_INFO);
       default:
         log.info(
             "No info exist for rule with rule action type: {}  with rule id: {}",
@@ -130,7 +134,7 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
       case RULE_ACTION_BLOCK:
         return Optional.of(IP_RANGE_VIOLATIONS);
       case RULE_ACTION_ALERT:
-        return Optional.empty();
+        return Optional.of(IP_RANGE_ANALYTICS);
       default:
         log.info(
             "No Bucket exist for rule with rule action type: {}  with rule id: {}", ruleAction, id);
@@ -148,7 +152,7 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
       case RULE_ACTION_BLOCK:
         return Optional.of(BlockingPolicyData.RuleType.BLOCK);
       case RULE_ACTION_ALERT:
-        return Optional.empty();
+        return Optional.of(BlockingPolicyData.RuleType.ANALYTICS);
       default:
         log.info("Invalid rule action type: {} for rule with rule id: {}", ruleAction, id);
         return Optional.empty();
@@ -169,7 +173,6 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
             .setFilter(
                 GetRulesFilter.newBuilder()
                     .setDisabled(false)
-                    .addAllRuleActions(SUPPORTED_RULE_ACTIONS)
                     .setRuleScope(
                         RuleScope.newBuilder()
                             .setEnvironmentScope(
@@ -184,6 +187,18 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
                 ipRangeConfigServiceStub
                     .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getIpRangeRules(getIpRangeRulesRequest));
-    return response.getRulesList();
+    return response.getRulesList().stream()
+        .filter(this::checkIfRuleIsApplicableToAgents)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean checkIfRuleIsApplicableToAgents(IpRangeRule ipRangeRule) {
+    // If the rule type is blocking filter
+    if (BLOCKING_RULE_ACTIONS.contains(ipRangeRule.getRuleDetails().getRuleAction())) {
+      return true;
+    }
+    // If there is some agent rule effect then filter
+    return ipRangeRule.getRuleDetails().getEffectsList().stream()
+        .anyMatch(RuleEffectWithModifications::hasAgentRuleEffect);
   }
 }
