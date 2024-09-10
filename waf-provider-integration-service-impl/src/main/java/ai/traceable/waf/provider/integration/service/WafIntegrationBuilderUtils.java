@@ -362,20 +362,14 @@ public class WafIntegrationBuilderUtils {
                         : awsIntegrationUpdateParams
                             .getAuthCredentials()
                             .getEncryptedSecretAccessKey())
+                .setEncryptionKeyId(
+                    !awsIntegrationUpdateParams.getAuthCredentials().getEncryptionKeyId().isEmpty()
+                        ? awsIntegrationUpdateParams.getAuthCredentials().getEncryptionKeyId()
+                        : existingWafIntegrationBuilder
+                            .getAwsIntegrationParams()
+                            .getAuthCredentials()
+                            .getEncryptionKeyId())
                 .build());
-        if (!existingWafIntegrationBuilder
-            .getAwsIntegrationParams()
-            .getAuthCredentials()
-            .getEncryptionKeyId()
-            .isEmpty()) {
-          builder
-              .getAuthCredentialsBuilder()
-              .setEncryptionKeyId(
-                  existingWafIntegrationBuilder
-                      .getAwsIntegrationParams()
-                      .getAuthCredentials()
-                      .getEncryptionKeyId());
-        }
         return;
       case WEB_IDENTITY_AUTH_CREDENTIALS:
         builder.setWebIdentityAuthCredentials(
