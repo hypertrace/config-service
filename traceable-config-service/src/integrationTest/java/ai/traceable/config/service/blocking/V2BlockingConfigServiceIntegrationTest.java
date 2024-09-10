@@ -1048,32 +1048,6 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
     index++;
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
-    assertEquals(
-        1,
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(index)
-            .getAction()
-            .getInlineModificationsCount());
-    assertEquals(
-        ai.traceable.blocking.config.service.v2.HeaderInjection.newBuilder()
-            .setScope(AttributeScope.ATTRIBUTE_SCOPE_REQUEST)
-            .setHeaderName("sample-header")
-            .setValue(
-                ai.traceable.blocking.config.service.v2.FieldValue.newBuilder()
-                    .setStaticValue("sample-value"))
-            .build(),
-        blockingPolicyConfiguration
-            .getBlockingDetailsList(index)
-            .getAction()
-            .getInlineModifications(0)
-            .getHeaderInjection());
-    assertEquals(
-        BLOCKING_STATUS_DENIED,
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
-    index++;
-    assertEquals(
         BLOCKING_CATEGORY_MODSECURITY,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
@@ -1230,6 +1204,32 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getBlockingDetailsList(index)
             .getActorDetails()
             .getIpAddressesList());
+    index++;
+    assertEquals(
+        BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
+    assertEquals(
+        1,
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(index)
+            .getAction()
+            .getInlineModificationsCount());
+    assertEquals(
+        ai.traceable.blocking.config.service.v2.HeaderInjection.newBuilder()
+            .setScope(AttributeScope.ATTRIBUTE_SCOPE_REQUEST)
+            .setHeaderName("sample-header")
+            .setValue(
+                ai.traceable.blocking.config.service.v2.FieldValue.newBuilder()
+                    .setStaticValue("sample-value"))
+            .build(),
+        blockingPolicyConfiguration
+            .getBlockingDetailsList(index)
+            .getAction()
+            .getInlineModifications(0)
+            .getHeaderInjection());
+    assertEquals(
+        BLOCKING_STATUS_DENIED,
+        blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
   }
 
   List<BlockingConfigResponseElement> filterElements(

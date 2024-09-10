@@ -1,7 +1,8 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy;
 
 /**
- * Rules follow the precedence mentioned here <a
+ * Analytics rule should be added at the bottom so that they don't interfere with the blocking
+ * decision Rules follow the precedence mentioned here <a
  * href="https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1265139838/Blocking+rules+-+evaluation+order+of+precedence">...</a>
  * Current order - "malicious-source-ip-range-exemption", "custom-ip-based-exemption",
  * "threat-actor-exemption", "email-domain-exemption", "custom-signature-exemption",
@@ -19,18 +20,18 @@ public enum BlockingPolicyDataBucket {
   EMAIL_DOMAIN_BASED_EXEMPTIONS,
   CUSTOM_SIGNATURE_EXEMPTIONS,
   CUSTOM_SIGNATURE_VIOLATIONS,
-  CUSTOM_SIGNATURE_ANALYTICS,
   MODSEC_VIOLATIONS,
   IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS,
   DATA_LOSS_PREVENTION_VIOLATIONS,
   IP_RANGE_VIOLATIONS,
-  IP_RANGE_ANALYTICS,
   THREAT_ACTOR_BASED_IP_VIOLATIONS,
   EMAIL_DOMAIN_BASED_VIOLATIONS,
   IP_TYPE_VIOLATIONS,
-  IP_TYPE_ANALYTICS,
   REGION_BLOCK_ALL_EXCEPT_VIOLATIONS,
   REGION_VIOLATIONS,
-  REGION_ANALYTICS,
-  RATE_LIMITING_BASED_IP_VIOLATIONS
+  RATE_LIMITING_BASED_IP_VIOLATIONS,
+  CUSTOM_SIGNATURE_ANALYTICS,
+  IP_RANGE_ANALYTICS,
+  IP_TYPE_ANALYTICS,
+  REGION_ANALYTICS
 }
