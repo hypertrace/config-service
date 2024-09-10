@@ -69,6 +69,20 @@ enum FraudPolicyStage {
   FRAUD_POLICY_STAGE_INTERNAL = 3;
 }
 
+enum FraudRiskSeverity {
+  FRAUD_RISK_SEVERITY_UNSPECIFIED = 0;
+  FRAUD_RISK_SEVERITY_LOW = 1;
+  FRAUD_RISK_SEVERITY_MEDIUM = 2;
+  FRAUD_RISK_SEVERITY_HIGH = 3;
+}
+
+message FraudRiskSpec {
+  // risk score (a number between 1-10)
+  // Low (1-3); Med (4-7); High (7-10)
+  int32 score = 1;
+  FraudRiskSeverity severity = 2;
+}
+
 // policy is a set of rules
 message FraudPolicy {
   string id = 1;
@@ -102,6 +116,12 @@ message FraudPolicy {
 
   // a static description of the intent of the policy.
   string description = 12;
+
+  // describe the risk associated with this policy detections
+  FraudRiskSpec risk_spec = 13;
+
+  // specify the category to which this risk must be associated (usually determined by the endpoints used for detection)
+  string fraud_risk_category = 14;
 }
 
 message FraudWatcherPolicy {
@@ -170,6 +190,8 @@ message FraudRule {
     EntityGraphBasedFraudRule entity_graph_fraud_rule = 2;
     EntityMetricBasedFraudRule entity_metric_fraud_rule = 3;
     MetricBasedFraudRule metric_fraud_rule = 4;
+    // currently, fraud detection event derivation config.
+    string inline_detection_config = 5;
   }
 }
 
