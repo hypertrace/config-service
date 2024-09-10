@@ -224,6 +224,9 @@ public class WafIntegrationBuilderUtils {
         .clearIntegrationTargets()
         .addAllIntegrationTargets(
             request.getUpdatedWafIntegrationDetails().getIntegrationTargetsList());
+    if (builder.getIntegrationParamsCase() == IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS) {
+      return populateAllTargetsIfEmptyList(builder.build()).toBuilder();
+    }
     if (builder.getIntegrationParamsCase() != IntegrationParamsCase.AWS_INTEGRATION_PARAMS) {
       return populateTargetsIfEmptyList(builder.build()).toBuilder();
     }
@@ -426,6 +429,11 @@ public class WafIntegrationBuilderUtils {
                     .setAwsIntegrationParams(convertedAwsIntegrationParamsBuilder.build())
                     .build())
             .build();
+      case AKAMAI_INTEGRATION_PARAMS:
+        return wafIntegration.toBuilder()
+            .setWafIntegrationDetails(
+                populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+            .build();
       default:
         return wafIntegration.toBuilder()
             .setWafIntegrationDetails(
@@ -590,6 +598,11 @@ public class WafIntegrationBuilderUtils {
                         .setAzureIntegrationParams(convertedAzureIntegrationParams)
                         .build()))
             .build();
+      case AKAMAI_INTEGRATION_PARAMS:
+        return wafIntegration.toBuilder()
+            .setWafIntegrationDetails(
+                populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
+            .build();
       default:
         return wafIntegration.toBuilder()
             .setWafIntegrationDetails(
@@ -606,6 +619,25 @@ public class WafIntegrationBuilderUtils {
       return wafIntegrationDetails.toBuilder()
           .addIntegrationTargets(
               WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_IP_RANGE).build())
+          .addIntegrationTargets(
+              WafIntegrationTarget.newBuilder()
+                  .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                  .build())
+          .build();
+    }
+    return wafIntegrationDetails;
+  }
+
+  private static WafIntegrationDetails populateAllTargetsIfEmptyList(
+      WafIntegrationDetails wafIntegrationDetails) {
+    // if waf-integration targets are empty then populate it with
+    // values [ip_range, threat_actor, custom_signature]
+    if (wafIntegrationDetails.getIntegrationTargetsList().isEmpty()) {
+      return wafIntegrationDetails.toBuilder()
+          .addIntegrationTargets(
+              WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_IP_RANGE).build())
+          .addIntegrationTargets(
+              WafIntegrationTarget.newBuilder().setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE))
           .addIntegrationTargets(
               WafIntegrationTarget.newBuilder()
                   .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
