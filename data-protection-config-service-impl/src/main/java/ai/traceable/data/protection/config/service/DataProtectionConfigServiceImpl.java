@@ -1,6 +1,8 @@
 package ai.traceable.data.protection.config.service;
 
+import ai.traceable.data.protection.config.service.v1.DataProtectionConfig;
 import ai.traceable.data.protection.config.service.v1.DataProtectionConfigServiceGrpc;
+import ai.traceable.data.protection.config.service.v1.DataSensitivity;
 import ai.traceable.data.protection.config.service.v1.DeleteScopedDataProtectionConfigRequest;
 import ai.traceable.data.protection.config.service.v1.DeleteScopedDataProtectionConfigResponse;
 import ai.traceable.data.protection.config.service.v1.GetResolvedScopedDataProtectionConfigRequest;
@@ -18,6 +20,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class DataProtectionConfigServiceImpl
     extends DataProtectionConfigServiceGrpc.DataProtectionConfigServiceImplBase {
+  private static final ScopedDataProtectionConfig DEFAULT_SCOPED_DATA_PROTECTION_CONFIG =
+      ScopedDataProtectionConfig.newBuilder()
+          .setConfig(
+              DataProtectionConfig.newBuilder()
+                  .setMinDataSensitivity(DataSensitivity.DATA_SENSITIVITY_LOW)
+                  .build())
+          .build();
   private ConfigValidator dataProtectionConfigValidator;
   private ConfigManager configManager;
 
@@ -33,7 +42,7 @@ public class DataProtectionConfigServiceImpl
               .setConfig(
                   configManager
                       .getResolvedScopedDataProtectionConfig(request, requestContext)
-                      .orElse(ScopedDataProtectionConfig.getDefaultInstance()))
+                      .orElse(DEFAULT_SCOPED_DATA_PROTECTION_CONFIG))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
