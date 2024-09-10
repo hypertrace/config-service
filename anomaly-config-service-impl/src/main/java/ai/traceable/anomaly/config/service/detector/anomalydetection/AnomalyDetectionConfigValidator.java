@@ -478,16 +478,6 @@ public class AnomalyDetectionConfigValidator {
             String.format("Invalid subRuleId: %s for modsec ruleId: %s", subRuleId, ruleId));
       }
 
-      if (subRuleConfig.hasBlockingEnabled()) {
-        List<AnomalySubRuleType> subRuleTypes = subRuleInfoMap.get(subRuleId);
-        if (!subRuleTypes.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)) {
-          return Status.INVALID_ARGUMENT.withDescription(
-              String.format(
-                  "SubRuleId: %s not available for blocking for modsec ruleId: %s",
-                  subRuleId, ruleId));
-        }
-      }
-
       if (subRuleIds.contains(subRuleId)) {
         return Status.INVALID_ARGUMENT.withDescription(
             String.format(

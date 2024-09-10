@@ -297,32 +297,6 @@ public class AnomalyDetectionConfigValidatorTest {
 
     subRuleConfig1 =
         AnomalySubRuleConfig.newBuilder()
-            .setSubRuleId("crs_931100")
-            .setBlockingEnabled(true)
-            .build();
-    anomalyDetectionConfig1 =
-        AnomalyDetectionConfig.newBuilder()
-            .setModsecurityAnomalyDetectionConfig(
-                ModsecurityAnomalyDetectionConfig.newBuilder()
-                    .setModsecAnomalyRule(
-                        ModsecurityAnomalyRuleConfig.newBuilder()
-                            .setAnomalyRuleId("crs_931")
-                            .addSubRuleConfigs(subRuleConfig1)
-                            .build()))
-            .build();
-
-    updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig1));
-    status = validator.validate(updateRequest);
-
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertTrue(
-        status
-            .getDescription()
-            .contains(
-                "SubRuleId: crs_931100 not available for blocking for modsec ruleId: crs_931"));
-
-    subRuleConfig1 =
-        AnomalySubRuleConfig.newBuilder()
             .setSubRuleId("crs_9440900")
             .setBlockingEnabled(true)
             .build();

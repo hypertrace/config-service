@@ -61,6 +61,7 @@ message ScopedAnomalyConfigStatus {
   ExcludedEventsGenerationConfig excluded_events_config = 3;
   AnomalyConfidenceLevel min_confidence_level = 4;
   bool enabled_for_exit_spans = 5;
+  ModsecGlobalConfig modsec_global_config = 6;
 }
 
 // any addition here requires update in ScopedGlobalConfigStatusChangeConverter logic
@@ -70,6 +71,7 @@ message ScopedAnomalyConfigStatusChange {
   ExcludedEventsGenerationConfig excluded_events_config = 3;
   optional AnomalyConfidenceLevel min_confidence_level = 4;
   optional bool enabled_for_exit_spans = 5;
+  ModsecGlobalConfig modsec_global_config = 6;
 }
 
 message ExcludedEventsGenerationConfig {
@@ -77,6 +79,11 @@ message ExcludedEventsGenerationConfig {
     bool enabled_for_all = 1;
     StringList exclusion_rule_ids = 2;
   }
+}
+
+message ModsecGlobalConfig {
+  optional bool blocking_available_for_regular_rules = 1;
+  optional bool use_test_rules = 2;
 }
 
 message DeleteScopedAnomalyGlobalConfigStatusRequest {
