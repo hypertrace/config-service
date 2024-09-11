@@ -312,6 +312,11 @@ data:
     span.exclusion.rules = {
       agent.unsupported.rule.ids = {{ .Values.traceableConfigServiceConfig.spanExclusionRules.agentUnsupportedRuleIds | toJson }}
     }
+    
+    api.spec.config = {
+      maxAllowedSpecsPerTenant = {{ .Values.traceableConfigServiceConfig.apiSpecConfig.maxAllowedSpecsPerTenant }}
+    }
+    
     local.api.naming.config = {
       agent.polling.frequency = {{ .Values.localApiNamingConfig.agentPollingFrequency }}
       {{- if hasKey $.Values.localApiNamingConfig "fullTrieReloadConfig" }}

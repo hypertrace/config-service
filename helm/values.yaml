@@ -564,6 +564,9 @@ traceableConfigServiceConfig:
 
   spanExclusionRules:
     agentUnsupportedRuleIds: ["24a6ccce-1ccf-4a3a-b93f-30a988ffb41f"]
+  apiSpecConfig:
+    maxAllowedSpecsPerTenant: 2000
+
 localApiNamingConfig:
   agentPollingFrequency: 5m
   fullTrieReloadConfig:
