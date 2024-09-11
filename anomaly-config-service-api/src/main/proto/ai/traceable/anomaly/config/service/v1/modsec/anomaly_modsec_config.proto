@@ -8,14 +8,23 @@ option java_multiple_files = true;
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 
 message GetModsecCrsRulesRequest {
-  repeated AnomalySubRuleType sub_rule_types = 1;
+  repeated AnomalySubRuleType sub_rule_types = 1 [deprecated = true];
   bool remove_disabled_rules = 2;
   ModsecRuleVersion rule_version = 3;
   AnomalyConfigScope config_scope = 4;
+  ModsecCrsRulesTarget target = 5;
 }
 
 message GetModsecCrsRulesResponse {
   repeated ModsecCrsRulesData modsec_crs_rules = 1;
+  string aggregated_modsec_crs_rules_blob = 2;
+}
+
+enum ModsecCrsRulesTarget {
+  MODSEC_CRS_RULES_TARGET_UNSPECIFIED = 0;
+  MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION = 1;
+  MODSEC_CRS_RULES_TARGET_TPA_DETECTION = 2;
+  MODSEC_CRS_RULES_TARGET_TA_BLOCKING = 3;
 }
 
 message ModsecCrsRulesData {

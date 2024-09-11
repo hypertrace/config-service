@@ -52,20 +52,16 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
 
   @Override
   public String getModsecCrsRulesBlob(
-      AnomalySubRuleType subRuleType,
+      List<AnomalySubRuleType> subRuleTypes,
       ModsecRuleVersion ruleVersion,
       Set<String> disabledModsecRuleIds) {
-    if (!SUPPORTED_SUB_RULE_TYPES.contains(subRuleType)) {
-      throw new IllegalArgumentException(
-          String.format("Invalid SubRuleType %s to fetch Modsec CRS rules", subRuleType));
-    }
     ModsecCrsConfig modsecCrsConfig = getModsecCrsConfig(ruleVersion);
     return modsecCrsRulesHandler.getModsecCrsBlob(
         modsecCrsConfig.getDirectivesFilePath(),
         modsecCrsConfig.getInitializationRulesFilePath(),
         modsecCrsConfig.getRulesFilePath(),
         versionedModsecRules.get(ruleVersion),
-        subRuleType,
+        subRuleTypes,
         disabledModsecRuleIds);
   }
 

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -55,16 +54,15 @@ public class ModsecRulesRegistryTest {
           try {
             if (subRuleType.equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED)
                 || subRuleType.equals(AnomalySubRuleType.UNRECOGNIZED)) {
-              assertThrows(
-                  IllegalArgumentException.class,
-                  () ->
-                      RuleEngine.create(
-                          modsecRulesRegistry.getModsecCrsRulesBlob(
-                              subRuleType, version, Set.of())));
+              assertTrue(
+                  modsecRulesRegistry
+                      .getModsecCrsRulesBlob(List.of(subRuleType), version, Set.of())
+                      .isEmpty());
             } else {
               assertNotNull(
                   RuleEngine.create(
-                      modsecRulesRegistry.getModsecCrsRulesBlob(subRuleType, version, Set.of())),
+                      modsecRulesRegistry.getModsecCrsRulesBlob(
+                          List.of(subRuleType), version, Set.of())),
                   "Failed for version:" + version + " subRuleType:" + subRuleType);
             }
           } catch (Exception e) {
@@ -102,7 +100,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR, version, Set.of());
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR), version, Set.of());
       if (regularRulesCount == 0) {
         assertTrue(crsRulesBlob.isEmpty(), "Regular rules empty for version " + version);
       } else {
@@ -115,7 +113,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE, version, Set.of());
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE), version, Set.of());
       assertEquals(
           allRulesCount - safeRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
@@ -124,7 +122,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK, version, Set.of());
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK), version, Set.of());
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - blockingRulesCount,
@@ -161,7 +159,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
               ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
               Set.of());
       assertEquals(-1, crsRulesBlob.indexOf("SecArgumentsLimit 1000"));
@@ -169,7 +167,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
               ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
               Set.of());
       assertNotEquals(-1, crsRulesBlob.indexOf("SecArgumentsLimit 1000"));

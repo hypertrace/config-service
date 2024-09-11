@@ -1,8 +1,10 @@
 package ai.traceable.anomaly.config.service.modsec;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -19,6 +21,7 @@ import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +37,9 @@ class AnomalyModsecConfigServiceImplTest {
   void setUp() {
     modsecValidator = mock(ModsecValidator.class);
     modsecManager = mock(ModsecManager.class);
+    doReturn(new ModsecManager.ModsecCrsRules())
+        .when(modsecManager)
+        .getModsecCrsRules(any(), any(), any(), any(), anyBoolean(), any());
     modsecConfigService =
         new AnomalyModsecConfigServiceImpl(
             modsecValidator, modsecManager, ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
@@ -67,14 +73,23 @@ class AnomalyModsecConfigServiceImplTest {
 
     reset(responseStreamObserver);
 
-    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false), any()))
-        .thenReturn(List.of(rule1, rule2));
+    when(modsecManager.getModsecCrsRules(any(), any(), any(), any(), eq(false), any()))
+        .thenReturn(
+            new ModsecManager.ModsecCrsRules(
+                Map.of(
+                    rule1.getSubRuleType(),
+                    rule1.getModsecCrsRulesBlob(),
+                    rule2.getSubRuleType(),
+                    rule2.getModsecCrsRulesBlob()),
+                rule1.getModsecCrsRulesBlob() + rule2.getSubRuleType()));
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseStreamObserver, times(1))
         .onNext(
             GetModsecCrsRulesResponse.newBuilder()
                 .addAllModsecCrsRules(List.of(rule1, rule2))
+                .setAggregatedModsecCrsRulesBlob(
+                    rule1.getModsecCrsRulesBlob() + rule2.getSubRuleType())
                 .build());
     verify(responseStreamObserver, times(1)).onCompleted();
   }
@@ -100,7 +115,7 @@ class AnomalyModsecConfigServiceImplTest {
   @DisplayName("Should propagate expection on occured manager")
   void should_propagate_error() {
     when(modsecValidator.validate(any())).thenReturn(Status.OK);
-    when(modsecManager.getModsecCrsRules(any(), any(), any(), eq(false), any()))
+    when(modsecManager.getModsecCrsRules(any(), any(), any(), any(), eq(false), any()))
         .thenThrow(RuntimeException.class);
 
     StreamObserver<GetModsecCrsRulesResponse> responseStreamObserver = mock(StreamObserver.class);
