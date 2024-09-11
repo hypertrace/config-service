@@ -83,6 +83,20 @@ message FraudRiskSpec {
   FraudRiskSeverity severity = 2;
 }
 
+message FraudPolicyScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+    TenantScope tenant_scope = 2;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+message TenantScope {
+}
+
 // policy is a set of rules
 message FraudPolicy {
   string id = 1;
@@ -122,6 +136,8 @@ message FraudPolicy {
 
   // specify the category to which this risk must be associated (usually determined by the endpoints used for detection)
   string fraud_risk_category = 14;
+
+  FraudPolicyScope scope = 15;
 }
 
 message FraudWatcherPolicy {
