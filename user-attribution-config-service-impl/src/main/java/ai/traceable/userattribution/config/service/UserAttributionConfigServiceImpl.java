@@ -20,6 +20,7 @@ import ai.traceable.userattribution.config.service.validation.UserAttributionCon
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -105,11 +106,17 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
+      String ruleId = request.getRule().getId();
       UserAttributionRule existingRule =
-          this.ruleStore
-              .getData(requestContext, request.getRule().getId())
-              .orElseThrow(Status.NOT_FOUND::asException);
+          this.ruleStore.getData(requestContext, ruleId).orElseThrow(Status.NOT_FOUND::asException);
       this.validator.validateUpdateOrThrow(existingRule, request.getRule());
+
+      List<UserAttributionRule> allExistingRules = this.ruleStore.getAllData(requestContext);
+      List<UserAttributionRule> existingRules =
+          allExistingRules.stream()
+              .filter(rule -> !rule.getId().equals(ruleId))
+              .collect(Collectors.toUnmodifiableList());
+      this.validator.validateOrThrow(existingRules, request.getRule());
 
       responseObserver.onNext(
           UpdateUserAttributionRuleResponse.newBuilder()
