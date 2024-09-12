@@ -6,8 +6,8 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
-import ai.traceable.detection.exclusion.config.service.v1.BulkCreateDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.BulkDeleteDetectionExclusionRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
@@ -79,16 +79,13 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
 
   @Override
   public void validateOrThrow(
-      RequestContext requestContext,
-      BulkCreateDetectionExclusionRulesRequest request,
-      List<DetectionExclusionRule> existingRules) {
+      RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList) {
     validateRequestContextOrThrow(requestContext);
-    request
-        .getRuleDataList()
-        .forEach(
-            ruleData ->
-                validateCreateRequest(
-                    ruleData.getRuleInfo(), ruleData.getRuleScope(), existingRules));
+    ruleDataList.forEach(
+        ruleData -> {
+          validateRuleInfo(ruleData.getRuleInfo());
+          validateRuleScope(ruleData.getRuleScope());
+        });
   }
 
   @Override

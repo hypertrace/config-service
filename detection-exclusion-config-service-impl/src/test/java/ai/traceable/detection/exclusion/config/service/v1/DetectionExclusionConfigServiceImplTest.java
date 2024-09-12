@@ -188,7 +188,7 @@ class DetectionExclusionConfigServiceImplTest {
         mock(StreamObserver.class);
 
     // validation succeeds
-    doNothing().when(rulesValidator).validateOrThrow(requestContext, request, List.of());
+    doNothing().when(rulesValidator).validateOrThrow(requestContext, request.getRuleDataList());
 
     requestContext.run(
         () ->
