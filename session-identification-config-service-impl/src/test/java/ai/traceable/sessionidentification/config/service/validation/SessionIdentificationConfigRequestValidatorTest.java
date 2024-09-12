@@ -21,6 +21,7 @@ import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenValueRule;
 import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentificationRuleRequest;
 import io.grpc.Status;
+import io.grpc.Status.Code;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Objects;
@@ -108,16 +109,18 @@ class SessionIdentificationConfigRequestValidatorTest {
   @Test
   void validateCreate_same_name() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertInvalidArgStatusContaining(
-        "Session Identification rule with name",
-        () ->
-            validator.validateCreateRequest(
-                mockRequestContext,
-                CreateSessionIdentificationRuleRequest.newBuilder()
-                    .setName("rule1")
-                    .addTokenRules(RULE)
-                    .build(),
-                List.of(SessionIdentificationRule.newBuilder().setName("rule1").build())));
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateCreateRequest(
+                    mockRequestContext,
+                    CreateSessionIdentificationRuleRequest.newBuilder()
+                        .setName("rule1")
+                        .addTokenRules(RULE)
+                        .build(),
+                    List.of(SessionIdentificationRule.newBuilder().setName("rule1").build())));
+    assertEquals(Code.ALREADY_EXISTS, exception.getStatus().getCode());
   }
 
   @Test
@@ -194,17 +197,19 @@ class SessionIdentificationConfigRequestValidatorTest {
   @Test
   void validateUpdate_same_name() {
     when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
-    assertInvalidArgStatusContaining(
-        "Session Identification rule with name",
-        () ->
-            validator.validateUpdateRequest(
-                mockRequestContext,
-                UpdateSessionIdentificationRuleRequest.newBuilder()
-                    .setId("id")
-                    .setName("rule1")
-                    .addTokenRules(RULE)
-                    .build(),
-                List.of(SessionIdentificationRule.newBuilder().setName("rule1").build())));
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateUpdateRequest(
+                    mockRequestContext,
+                    UpdateSessionIdentificationRuleRequest.newBuilder()
+                        .setId("id")
+                        .setName("rule1")
+                        .addTokenRules(RULE)
+                        .build(),
+                    List.of(SessionIdentificationRule.newBuilder().setName("rule1").build())));
+    assertEquals(Code.ALREADY_EXISTS, exception.getStatus().getCode());
   }
 
   @Test

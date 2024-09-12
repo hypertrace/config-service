@@ -74,6 +74,7 @@ class UserAttributionConfigServiceImpl extends UserAttributionConfigServiceImplB
 
       UserAttributionRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
       List<UserAttributionRule> existingRules = this.ruleStore.getAllData(requestContext);
+      this.validator.validateOrThrow(existingRules, newRule);
       List<UserAttributionRule> mergedAndRankedRules =
           this.rankCalculator.rankAndMergeNewObject(newRule, existingRules);
       this.ruleStore.upsertObjects(

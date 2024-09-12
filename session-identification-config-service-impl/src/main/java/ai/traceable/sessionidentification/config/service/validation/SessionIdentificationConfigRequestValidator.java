@@ -119,7 +119,7 @@ public class SessionIdentificationConfigRequestValidator {
         && ruleIdOptional
             .map(ruleId -> !ruleId.equals(existingRuleWithSameName.get().getId()))
             .orElse(true)) {
-      throw Status.INVALID_ARGUMENT
+      throw Status.ALREADY_EXISTS
           .withDescription(
               String.format("Session Identification rule with name %s already exists", ruleName))
           .asRuntimeException();

@@ -76,6 +76,18 @@ public class UserAttributionConfigRequestValidator {
     }
   }
 
+  public void validateOrThrow(List<UserAttributionRule> existing, UserAttributionRule newRule) {
+    boolean sameRuleExists =
+        existing.stream()
+            .anyMatch(existingRule -> existingRule.getName().equals(newRule.getName()));
+    if (sameRuleExists) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              String.format("User Attribution rule with name %s already exists", newRule.getName()))
+          .asRuntimeException();
+    }
+  }
+
   public void validateOrThrow(
       RequestContext requestContext, DeleteUserAttributionRuleRequest request) {
     validateRequestContextOrThrow(requestContext);
