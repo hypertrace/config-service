@@ -21,7 +21,7 @@ class CredentialStuffingRulesRegistryTest {
         credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos();
     assertEquals(1, anomalyRuleInfoMap.size());
     assertEquals(
-        "credentialStuffing :: Credential Stuffing",
+        "credentialStuffing :: Account Takeover",
         anomalyRuleInfoMap.values().stream()
             .map(
                 anomalyRuleInfo ->
