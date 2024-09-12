@@ -60,6 +60,17 @@ class WafIntegrationConfigRequestValidatorTest {
   private final WafIntegrationConfigRequestValidator wafIntegrationConfigRequestValidator;
   private List<WafIntegration> existingWafIntegrations = List.of();
 
+  private static final String TENANT_ID = "azureTenantId";
+  private static final String SUBSCRIPTION_ID = "azureSubscriptionId";
+  private static final String AZURE_ENVIRONMENT = "azureEnvironment";
+  private static final String CLIENT_ID = "clientId";
+  private static final String CLIENT_SECRET = "clientSecret";
+  private static final String ACCESS_KEY = "accessKeyId";
+  private static final String WAF_POLICY = "wafPolicyName";
+  private static final String WAF_POLICY_RESOURCE_GROUP = "wafPolicyResourceGroup";
+  private static final String AZURE_WAF_NAME = "azure-waf";
+  private static final String WAF_INTEGRATION_ID = "wafIntegrationId";
+
   public WafIntegrationConfigRequestValidatorTest() {
     wafIntegrationConfigRequestValidator = new WafIntegrationConfigRequestValidator();
   }
@@ -801,12 +812,13 @@ class WafIntegrationConfigRequestValidatorTest {
 
   @Test
   void invalidCreateAzureRequestTest() {
+
     // empty azure integration params list
     CreateWafIntegrationRequest request1 =
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(AzureIntegrationParams.getDefaultInstance()))
             .build();
     assertThrows(
@@ -820,25 +832,26 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -851,25 +864,26 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -882,25 +896,26 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -913,25 +928,26 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -944,25 +960,26 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -975,25 +992,26 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setAzureIntegrationParams(
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -1006,7 +1024,7 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setWafIntegrationScope(
                         WafIntegrationScope.newBuilder()
                             .setEnvironmentScope(
@@ -1015,20 +1033,21 @@ class WafIntegrationConfigRequestValidatorTest {
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -1041,7 +1060,7 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setWafIntegrationScope(
                         WafIntegrationScope.newBuilder()
                             .setEnvironmentScope(
@@ -1050,20 +1069,20 @@ class WafIntegrationConfigRequestValidatorTest {
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
+                                            .setWafPolicyName(WAF_POLICY)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -1076,7 +1095,7 @@ class WafIntegrationConfigRequestValidatorTest {
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setWafIntegrationScope(
                         WafIntegrationScope.newBuilder()
                             .setEnvironmentScope(
@@ -1085,18 +1104,19 @@ class WafIntegrationConfigRequestValidatorTest {
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name"))
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertThrows(
         StatusRuntimeException.class,
@@ -1104,12 +1124,34 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request13, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // valid request
-    CreateWafIntegrationRequest validRequest =
+    // getting an existing azure waf integration to check for invalid cases of name-match or
+    // match of a combination of tenantId, resourceGroup and policyType
+    WafIntegration existingAzureWafIntegration = getExistingAzureWafIntegration();
+
+    // invalid request - create azure integration of same name
+    CreateWafIntegrationRequest request14 =
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                    .setAzureIntegrationParams(getAzureIntegrationParams()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request14, REQUEST_CONTEXT, List.of(existingAzureWafIntegration)));
+
+    // invalid request - create azure integration having the same values of tenantId, resourceGroup
+    // and policyName
+    CreateWafIntegrationRequest request15 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName(AZURE_WAF_NAME)
                     .setWafIntegrationScope(
                         WafIntegrationScope.newBuilder()
                             .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
@@ -1117,26 +1159,104 @@ class WafIntegrationConfigRequestValidatorTest {
                         AzureIntegrationParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)
+                                            .build())
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
+                                            .setAzureWafPolicyType(
+                                                AzureWafPolicyType
+                                                    .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY)
+                                            .build())
+                                    .build())))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request15, REQUEST_CONTEXT, List.of(existingAzureWafIntegration)));
+
+    // valid request - 1 out of the 3 values of tenantId, policyResourceGroup or wafPolicyName is
+    // different
+    CreateWafIntegrationRequest validRequest1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName(AZURE_WAF_NAME)
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
+                                    .setAuthCredentials(
+                                        AzureAuthCredentials.newBuilder()
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)
+                                            .build())
+                                    .setAzureWafPolicyDetails(
+                                        AzureWafPolicyDetails.newBuilder()
+                                            .setWafPolicyName(WAF_POLICY + "1")
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
+                                            .setAzureWafPolicyType(
+                                                AzureWafPolicyType.AZURE_WAF_POLICY_TYPE_FRONT_DOOR)
+                                            .build())
+                                    .build())))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest1, REQUEST_CONTEXT, List.of(existingAzureWafIntegration)));
+
+    // valid request
+    CreateWafIntegrationRequest validRequest2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName(AZURE_WAF_NAME)
+                    .setWafIntegrationScope(
+                        WafIntegrationScope.newBuilder()
+                            .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
+                    .setAzureIntegrationParams(
+                        AzureIntegrationParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
+                                    .setAzureWafPolicyDetails(
+                                        AzureWafPolicyDetails.newBuilder()
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setEncryptedClientSecret("secret")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setEncryptedClientSecret(CLIENT_SECRET)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertDoesNotThrow(
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
-                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
   @Test
@@ -1659,13 +1779,14 @@ class WafIntegrationConfigRequestValidatorTest {
 
   @Test
   void invalidUpdateAzureRequestTest() {
+
     // empty azure integration params list
     UpdateWafIntegrationRequest request1 =
         UpdateWafIntegrationRequest.newBuilder()
-            .setId("id")
+            .setId(WAF_INTEGRATION_ID)
             .setUpdatedWafIntegrationDetails(
                 UpdatedWafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setUpdatedAzureIntegrationParams(
                         AzureIntegrationUpdateParams.getDefaultInstance()))
             .build();
@@ -1675,36 +1796,144 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request1, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // valid request
-    UpdateWafIntegrationRequest validRequest =
+    // fetching an existing azure waf integration to check against cases of updation to a name that
+    // already exists
+    // or a combination of tenantId, policyResourceGroup
+    WafIntegration existingAzureWafIntegration = getExistingAzureWafIntegration();
+
+    // updation to a name that already belongs to another azure waf
+    UpdateWafIntegrationRequest request2 =
         UpdateWafIntegrationRequest.newBuilder()
-            .setId("id")
+            .setId(WAF_INTEGRATION_ID)
             .setUpdatedWafIntegrationDetails(
                 UpdatedWafIntegrationDetails.newBuilder()
-                    .setName("name")
+                    .setName(AZURE_WAF_NAME)
                     .setUpdatedAzureIntegrationParams(
                         AzureIntegrationUpdateParams.newBuilder()
                             .addAzureIntegrationDetails(
                                 AzureIntegrationDetails.newBuilder()
-                                    .setAzureTenantId("tenant-id")
-                                    .setSubscriptionId("subscription-id")
-                                    .setAzureEnvironment("azure-env")
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
+                                    .setAuthCredentials(getAzureAuthCredentials())
                                     .setAzureWafPolicyDetails(
                                         AzureWafPolicyDetails.newBuilder()
-                                            .setWafPolicyName("policy-name")
-                                            .setWafPolicyResourceGroupName("policy-rg-name")
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
+                                            .setAzureWafPolicyType(
+                                                AzureWafPolicyType
+                                                    .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request2, REQUEST_CONTEXT, List.of(existingAzureWafIntegration)));
+
+    // updation of a waf that contains the same combination of tenantId, wafPolicyResourceGroup and
+    // wafPolicyType
+    UpdateWafIntegrationRequest request3 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(WAF_INTEGRATION_ID)
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName(AZURE_WAF_NAME)
+                    .setUpdatedAzureIntegrationParams(
+                        AzureIntegrationUpdateParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
+                                    .setAuthCredentials(getAzureAuthCredentials())
+                                    .setAzureWafPolicyDetails(
+                                        AzureWafPolicyDetails.newBuilder()
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
+                                            .setAzureWafPolicyType(
+                                                AzureWafPolicyType
+                                                    .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request3, REQUEST_CONTEXT, List.of(existingAzureWafIntegration)));
+
+    // valid request - 1 of the above 3 parameters is different
+    UpdateWafIntegrationRequest validRequest1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(WAF_INTEGRATION_ID)
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName(AZURE_WAF_NAME)
+                    .setUpdatedAzureIntegrationParams(
+                        AzureIntegrationUpdateParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_WAF_NAME)
+                                    .setAuthCredentials(getAzureAuthCredentials())
+                                    .setAzureWafPolicyDetails(
+                                        AzureWafPolicyDetails.newBuilder()
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP + "1")
+                                            .setAzureWafPolicyType(
+                                                AzureWafPolicyType
+                                                    .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY)
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest1, REQUEST_CONTEXT, List.of(existingAzureWafIntegration)));
+
+    // valid request
+    UpdateWafIntegrationRequest validRequest2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(WAF_INTEGRATION_ID)
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName(AZURE_WAF_NAME)
+                    .setUpdatedAzureIntegrationParams(
+                        AzureIntegrationUpdateParams.newBuilder()
+                            .addAzureIntegrationDetails(
+                                AzureIntegrationDetails.newBuilder()
+                                    .setAzureTenantId(TENANT_ID)
+                                    .setSubscriptionId(SUBSCRIPTION_ID)
+                                    .setAzureEnvironment(AZURE_ENVIRONMENT)
+                                    .setAzureWafPolicyDetails(
+                                        AzureWafPolicyDetails.newBuilder()
+                                            .setWafPolicyName(WAF_POLICY)
+                                            .setWafPolicyResourceGroupName(
+                                                WAF_POLICY_RESOURCE_GROUP)
                                             .setAzureWafPolicyType(
                                                 AzureWafPolicyType
                                                     .AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY))
                                     .setAuthCredentials(
                                         AzureAuthCredentials.newBuilder()
-                                            .setClientId("client-id")
-                                            .setAccessKeyId("key-id")))))
+                                            .setClientId(CLIENT_ID)
+                                            .setAccessKeyId(ACCESS_KEY)))))
             .build();
     assertDoesNotThrow(
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
-                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
   @Test
@@ -2017,6 +2246,49 @@ class WafIntegrationConfigRequestValidatorTest {
                                 .setAkamaiPolicyDetails(
                                     AkamaiPolicyDetails.newBuilder()
                                         .setPolicyId(EXISTING_POLICY_ID)))))
+        .build();
+  }
+
+  private WafIntegration getExistingAzureWafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setName("name")
+                .setAzureIntegrationParams(getAzureIntegrationParams())
+                .build())
+        .build();
+  }
+
+  private AzureIntegrationParams getAzureIntegrationParams() {
+    return AzureIntegrationParams.newBuilder()
+        .addAzureIntegrationDetails(getAzureIntegrationDetails())
+        .build();
+  }
+
+  private AzureIntegrationDetails getAzureIntegrationDetails() {
+    return AzureIntegrationDetails.newBuilder()
+        .setAzureTenantId(TENANT_ID)
+        .setSubscriptionId(SUBSCRIPTION_ID)
+        .setAzureEnvironment(AZURE_ENVIRONMENT)
+        .setAzureWafPolicyDetails(getAzureWafPolicyDetails())
+        .setAuthCredentials(getAzureAuthCredentials())
+        .build();
+  }
+
+  private AzureAuthCredentials getAzureAuthCredentials() {
+    return AzureAuthCredentials.newBuilder()
+        .setClientId(CLIENT_ID)
+        .setEncryptedClientSecret(CLIENT_SECRET)
+        .setAccessKeyId(ACCESS_KEY)
+        .build();
+  }
+
+  private AzureWafPolicyDetails getAzureWafPolicyDetails() {
+    return AzureWafPolicyDetails.newBuilder()
+        .setWafPolicyName(WAF_POLICY)
+        .setWafPolicyResourceGroupName(WAF_POLICY_RESOURCE_GROUP)
+        .setAzureWafPolicyType(AzureWafPolicyType.AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY)
         .build();
   }
 }

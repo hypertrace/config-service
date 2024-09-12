@@ -18,7 +18,7 @@ message AzureIntegrationDetails {
   string azure_environment = 3;
   repeated AzureResourceGroupDetails azure_resource_group_details = 4 [deprecated = true];
   AzureAuthCredentials auth_credentials = 5;
-  string id = 6;
+  string id = 6 [deprecated = true];
   oneof waf_endpoint_type {
     AzureFrontDoorWafDetails front_door_waf_details = 7 [deprecated = true];
     AzureApplicationGatewayWafDetails application_gateway_waf_details = 8 [deprecated = true];
@@ -37,6 +37,7 @@ enum AzureWafPolicyType {
   AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY = 1;
   AZURE_WAF_POLICY_TYPE_FRONT_DOOR = 2;
 }
+
 message AzureFrontDoorWafDetails {
   option deprecated = true;
   repeated string front_door_names = 1;

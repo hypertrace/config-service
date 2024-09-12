@@ -223,12 +223,17 @@ public class WafIntegrationConfigRequestValidator {
             updatedWafIntegrationDetails.getUpdatedImpervaIntegrationParams());
         break;
       case UPDATED_AZURE_INTEGRATION_PARAMS:
-        existingWafIntegrations =
+        final List<WafIntegration> existingAzureWafIntegrations =
             getOtherWafIntegrationOfSameType(id, AZURE_INTEGRATION_PARAMS, existingWafIntegrations);
         validateUniqueIntegrationName(
             updatedWafIntegrationDetails.getName(),
-            existingWafIntegrations,
+            existingAzureWafIntegrations,
             AZURE_INTEGRATION_PARAMS);
+        validateUpdatedAzureIntegrationDetails(
+            updatedWafIntegrationDetails
+                .getUpdatedAzureIntegrationParams()
+                .getAzureIntegrationDetailsList(),
+            existingAzureWafIntegrations);
         validateUpdatedAzureIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedAzureIntegrationParams());
         break;
@@ -294,7 +299,7 @@ public class WafIntegrationConfigRequestValidator {
         wafIntegration -> {
           if (wafIntegration.getWafIntegrationDetails().getName().equals(name)) {
             throw Status.ALREADY_EXISTS
-                .withDescription(wafIntegrationType + " + with name " + name + " already exists.")
+                .withDescription(wafIntegrationType + " with name " + name + " already exists.")
                 .asRuntimeException();
           }
         });
@@ -404,11 +409,16 @@ public class WafIntegrationConfigRequestValidator {
             WafIntegrationDetails.IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
         break;
       case AZURE_INTEGRATION_PARAMS:
-        existingWafIntegrations =
+        final List<WafIntegration> existingAzureWafIntegrations =
             getOtherWafIntegrationOfSameType(
                 null, AZURE_INTEGRATION_PARAMS, existingWafIntegrations);
         validateUniqueIntegrationName(
-            wafIntegrationDetails.getName(), existingWafIntegrations, AZURE_INTEGRATION_PARAMS);
+            wafIntegrationDetails.getName(),
+            existingAzureWafIntegrations,
+            AZURE_INTEGRATION_PARAMS);
+        validateAzureIntegrationDetailsList(
+            wafIntegrationDetails.getAzureIntegrationParams().getAzureIntegrationDetailsList(),
+            existingAzureWafIntegrations);
         validateAzureIntegrationParam(wafIntegrationDetails.getAzureIntegrationParams());
         validateNonCustomSignatureIntegrationTargets(
             wafIntegrationDetails,
@@ -686,6 +696,24 @@ public class WafIntegrationConfigRequestValidator {
         .forEach(this::validateUpdatedAzureAuthCredentials);
   }
 
+  private void validateUpdatedAzureIntegrationDetails(
+      List<AzureIntegrationDetails> azureIntegrationDetailsList,
+      List<WafIntegration> existingAzureWafIntegrations) {
+
+    azureIntegrationDetailsList.stream()
+        .findFirst()
+        .ifPresent(
+            updatedIntegrationDetails -> {
+              AzureWafPolicyDetails updatedPolicyDetails =
+                  updatedIntegrationDetails.getAzureWafPolicyDetails();
+              validateAzureIdentifiersCombinationDoesntExist(
+                  updatedIntegrationDetails.getAzureTenantId(),
+                  updatedPolicyDetails.getWafPolicyResourceGroupName(),
+                  updatedPolicyDetails.getWafPolicyName(),
+                  existingAzureWafIntegrations);
+            });
+  }
+
   private void validateUpdatedImpervaIntegrationParam(
       ImpervaIntegrationUpdateParams impervaIntegrationParams) {
     if (impervaIntegrationParams.hasApiId()) {
@@ -740,6 +768,23 @@ public class WafIntegrationConfigRequestValidator {
     validateAzureWafPolicyDetails(azureIntegrationDetails.getAzureWafPolicyDetails());
   }
 
+  private void validateAzureIntegrationDetailsList(
+      List<AzureIntegrationDetails> azureIntegrationDetailsList,
+      List<WafIntegration> existingAzureWafIntegrations) {
+
+    azureIntegrationDetailsList.stream()
+        .findFirst()
+        .ifPresent(
+            integrationDetails -> {
+              AzureWafPolicyDetails policyDetails = integrationDetails.getAzureWafPolicyDetails();
+              validateAzureIdentifiersCombinationDoesntExist(
+                  integrationDetails.getAzureTenantId(),
+                  policyDetails.getWafPolicyResourceGroupName(),
+                  policyDetails.getWafPolicyName(),
+                  existingAzureWafIntegrations);
+            });
+  }
+
   private void validateAzureWafPolicyDetails(AzureWafPolicyDetails azureWafPolicyDetails) {
     validateNonDefaultPresenceOrThrow(
         azureWafPolicyDetails, AzureWafPolicyDetails.WAF_POLICY_NAME_FIELD_NUMBER);
@@ -763,6 +808,46 @@ public class WafIntegrationConfigRequestValidator {
         azureAuthCredentials, AzureAuthCredentials.CLIENT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         azureAuthCredentials, AzureAuthCredentials.ACCESS_KEY_ID_FIELD_NUMBER);
+  }
+
+  private void validateAzureIdentifiersCombinationDoesntExist(
+      String tenantId,
+      String wafPolicyResourceGroupName,
+      String policyName,
+      List<WafIntegration> existingIntegrations) {
+
+    if (doesAzureIdentifiersCombinationExist(
+        tenantId, wafPolicyResourceGroupName, policyName, existingIntegrations)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Integration with the given combination of tenantId, policyResourceGroup and policyName already exists")
+          .asRuntimeException();
+    }
+  }
+
+  private boolean doesAzureIdentifiersCombinationExist(
+      String tenantId,
+      String wafPolicyResourceGroupName,
+      String policyName,
+      List<WafIntegration> existingIntegrations) {
+
+    return existingIntegrations.stream()
+        .flatMap(
+            integration ->
+                integration
+                    .getWafIntegrationDetails()
+                    .getAzureIntegrationParams()
+                    .getAzureIntegrationDetailsList()
+                    .stream())
+        .anyMatch(
+            integrationDetails -> {
+              AzureWafPolicyDetails policyDetails = integrationDetails.getAzureWafPolicyDetails();
+              return integrationDetails.getAzureTenantId().equals(tenantId)
+                  && policyDetails
+                      .getWafPolicyResourceGroupName()
+                      .equals(wafPolicyResourceGroupName)
+                  && policyDetails.getWafPolicyName().equals(policyName);
+            });
   }
 
   private void validateCloudFlareIntegrationParams(
