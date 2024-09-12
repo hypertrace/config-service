@@ -110,12 +110,18 @@ public class ModsecCrsRulesHandler {
       String modsecCrsInitializationRulesFilePath,
       String modsecCrsRulesFilePath,
       Map<String, AnomalyRuleInfo> modsecRules,
-      List<AnomalySubRuleType> anomalySubRuleTypes,
+      AnomalySubRuleType anomalySubRuleType,
       Set<String> disabledModsecRuleIds) {
 
     // Ids to be removed should be ordered to ensure the ModSec blob doesn't keep changing on
     // subsequent calls.
     Set<String> idsToBeRemoved = new TreeSet<>();
+    disabledModsecRuleIds.forEach(
+        ruleId ->
+            idsToBeRemoved.add(
+                String.format(
+                    SEC_RULE_REMOVE_BY_ID_FORMAT,
+                    modsecRuleUtils.getModsecCrsRuleIdNumber(ruleId))));
 
     List<AnomalySubRuleInfo> anomalySubRuleInfoList =
         modsecRules.values().stream()
@@ -123,9 +129,7 @@ public class ModsecCrsRulesHandler {
             .collect(Collectors.toList());
 
     anomalySubRuleInfoList.stream()
-        .filter(
-            anomalySubRuleInfo ->
-                removeModsecRule(anomalySubRuleInfo, anomalySubRuleTypes, disabledModsecRuleIds))
+        .filter(anomalySubRuleInfo -> !matchModsecRule(anomalySubRuleInfo, anomalySubRuleType))
         .forEach(
             anomalySubRuleInfo ->
                 idsToBeRemoved.add(
@@ -173,16 +177,15 @@ public class ModsecCrsRulesHandler {
     }
   }
 
-  private boolean removeModsecRule(
-      AnomalySubRuleInfo anomalySubRuleInfo,
-      List<AnomalySubRuleType> anomalySubRuleTypes,
-      Set<String> disabledModsecRuleIds) {
-    if (disabledModsecRuleIds.contains(anomalySubRuleInfo.getRuleId())) {
-      return true;
+  private boolean matchModsecRule(
+      AnomalySubRuleInfo anomalySubRuleInfo, AnomalySubRuleType anomalySubRuleType) {
+    List<AnomalySubRuleType> anomalySubRuleTypeList = anomalySubRuleInfo.getSubRuleTypesList();
+    if (anomalySubRuleType == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE) {
+      return anomalySubRuleTypeList.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+          && !anomalySubRuleTypeList.contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+    } else {
+      return anomalySubRuleTypeList.contains(anomalySubRuleType);
     }
-    return !anomalySubRuleTypes.isEmpty()
-        && anomalySubRuleInfo.getSubRuleTypesList().stream()
-            .noneMatch(anomalySubRuleTypes::contains);
   }
 
   private AnomalySeverityLevel getAnomalySeverityLevel(String severity) {

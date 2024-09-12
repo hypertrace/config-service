@@ -3,7 +3,6 @@ package ai.traceable.anomaly.config.service.modsec.rules;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,14 +30,11 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleCon
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -68,25 +64,20 @@ class ModsecManagerImplTest {
   @DisplayName("Should return same rule type")
   void getModsecCrsRules() {
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of()))
         .thenReturn("regular");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of()))
         .thenReturn("safe");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of()))
         .thenReturn("block");
-    when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            argThat(list -> list.size() > 1),
-            eq(ModsecRuleVersion.MODSEC_RULE_VERSION_V3),
-            eq(Set.of())))
-        .thenReturn("combined");
 
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
             eq(requestContext),
@@ -106,28 +97,33 @@ class ModsecManagerImplTest {
                 .build()))
         .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
 
+    List<AnomalySubRuleType> request =
+        List.of(
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
     List<ModsecCrsRulesData> expectedResponse =
         ImmutableList.of(
             ModsecCrsRulesData.newBuilder()
-                .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
-                .setModsecCrsRulesBlob("block")
-                .build(),
-            ModsecCrsRulesData.newBuilder()
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                 .setModsecCrsRulesBlob("safe")
+                .build(),
+            ModsecCrsRulesData.newBuilder()
+                .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                .setModsecCrsRulesBlob("regular")
                 .build());
-    ModsecManager.ModsecCrsRules crsRules =
+    List<ModsecCrsRulesData> response =
         modsecManager.getModsecCrsRules(
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING,
-            List.of(),
+            request,
             true,
             AnomalyConfigScope.newBuilder()
                 .setEnvironmentScope(
                     AnomalyEnvironmentScope.newBuilder().setEnvironmentId(environmentId))
                 .build());
-    verifyLists(expectedResponse, crsRules);
+    assertEquals(expectedResponse.size(), response.size());
+    assertTrue(response.containsAll(expectedResponse));
+    assertTrue(expectedResponse.containsAll(response));
 
     // using disabled modsec rules
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
@@ -140,54 +136,52 @@ class ModsecManagerImplTest {
     when(modsecRulesRegistry.getModsecRuleInfos(any())).thenReturn(getModsecRuleInfoMap());
     // config status for subRule1 and subRule4 is disabled, subRule2 is blockingDisabled
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of("subRule1", "subRule2", "subRule4")))
         .thenReturn("excluded_blocked");
 
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
-            List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of("subRule1", "subRule4")))
         .thenReturn("excluded_safe");
 
-    List<AnomalySubRuleType> subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
+    request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
     expectedResponse =
         ImmutableList.of(
             ModsecCrsRulesData.newBuilder()
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
                 .setModsecCrsRulesBlob("excluded_blocked")
                 .build());
-    crsRules =
+    response =
         modsecManager.getModsecCrsRules(
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_UNSPECIFIED,
-            subRuleTypes,
+            request,
             true,
             AnomalyConfigScope.newBuilder()
                 .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                 .build());
-    verifyLists(expectedResponse, crsRules);
+    assertEquals(expectedResponse, response);
 
-    subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+    request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
     expectedResponse =
         ImmutableList.of(
             ModsecCrsRulesData.newBuilder()
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
                 .setModsecCrsRulesBlob("excluded_safe")
                 .build());
-    crsRules =
+    response =
         modsecManager.getModsecCrsRules(
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_UNSPECIFIED,
-            subRuleTypes,
+            request,
             true,
             AnomalyConfigScope.newBuilder()
                 .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                 .build());
-    verifyLists(expectedResponse, crsRules);
+    assertEquals(expectedResponse, response);
 
     // global config disabled
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
@@ -196,18 +190,22 @@ class ModsecManagerImplTest {
             ScopedAnomalyConfigStatus.newBuilder()
                 .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
                 .build());
-    subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
-    crsRules =
+    request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+    expectedResponse =
+        ImmutableList.of(
+            ModsecCrsRulesData.newBuilder()
+                .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+                .build());
+    response =
         modsecManager.getModsecCrsRules(
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_UNSPECIFIED,
-            subRuleTypes,
+            request,
             true,
             AnomalyConfigScope.newBuilder()
                 .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                 .build());
-    assertTrue(crsRules.getModsecCrsRulesData().isEmpty());
+    assertEquals(expectedResponse, response);
 
     // default blocking rules
     modsecRulesRegistry =
@@ -224,24 +222,23 @@ class ModsecManagerImplTest {
     modsecManager =
         new ModsecManagerImpl(
             modsecRulesRegistry, anomalyDetectionConfigManager, globalAnomalyConfigStatusManager);
-    subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
+    request = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
     // crsBlob is empty
     expectedResponse =
         ImmutableList.of(
             ModsecCrsRulesData.newBuilder()
                 .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
                 .build());
-    crsRules =
+    response =
         modsecManager.getModsecCrsRules(
             requestContext,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_UNSPECIFIED,
-            subRuleTypes,
+            request,
             true,
             AnomalyConfigScope.newBuilder()
                 .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                 .build());
-    verifyLists(expectedResponse, crsRules);
+    assertEquals(expectedResponse, response);
   }
 
   private ScopedAnomalyDetectionConfig getModsecRules() {
@@ -316,20 +313,5 @@ class ModsecManagerImplTest {
                     .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
                     .build())
             .build());
-  }
-
-  private void verifyLists(
-      List<ModsecCrsRulesData> expected, ModsecManager.ModsecCrsRules crsRules) {
-    List<ModsecCrsRulesData> actual = crsRules.getModsecCrsRulesData();
-    assertEquals(expected.size(), actual.size());
-    Map<AnomalySubRuleType, ModsecCrsRulesData> expectedMap =
-        expected.stream()
-            .collect(Collectors.toMap(ModsecCrsRulesData::getSubRuleType, Function.identity()));
-    actual.forEach(data -> assertEquals(expectedMap.get(data.getSubRuleType()), data));
-    if (expected.size() > 1) {
-      assertEquals("combined", crsRules.getAggregatedModsecBlob());
-    } else {
-      assertEquals(expected.get(0).getModsecCrsRulesBlob(), crsRules.getAggregatedModsecBlob());
-    }
   }
 }

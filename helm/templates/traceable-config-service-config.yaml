@@ -133,7 +133,6 @@ data:
       request.timeout = {{ .Values.traceableConfigServiceConfig.actorService.request.timeout }}
     }
     blocking.config.service {
-      enableNewModsecCrsBlockingFlow = {{ .Values.traceableConfigServiceConfig.blockingConfigService.enableNewModsecCrsBlockingFlow }}
       agent.polling.frequency = {{ .Values.traceableConfigServiceConfig.blockingConfigService.agentPollingFrequency }}
       actor.fetcher.config = {
         host = {{ .Values.traceableConfigServiceConfig.blockingConfigService.actorFetcherConfig.host }}
