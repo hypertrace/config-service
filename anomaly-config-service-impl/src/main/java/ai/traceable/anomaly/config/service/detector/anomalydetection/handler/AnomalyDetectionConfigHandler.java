@@ -98,14 +98,17 @@ public class AnomalyDetectionConfigHandler {
           configCases.add(
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .CUSTOM_RULES_ANOMALY_DETECTION_CONFIG);
+          break;
         case ANOMALY_DETECTION_CONFIG_TYPE_VOLUMETRIC:
           configCases.add(
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .VOLUMETRIC_ANOMALY_DETECTION_CONFIG);
+          break;
         case ANOMALY_DETECTION_CONFIG_TYPE_CREDENTIAL_STUFFING:
           configCases.add(
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .CREDENTIAL_ANOMALY_DETECTION_CONFIG);
+          break;
         default:
           break;
       }
