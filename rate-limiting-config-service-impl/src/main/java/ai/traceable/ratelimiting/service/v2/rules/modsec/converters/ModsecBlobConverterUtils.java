@@ -240,7 +240,13 @@ public class ModsecBlobConverterUtils {
                       .MATCH_OPERATOR_CONTAINS,
                   MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
                   ai.traceable.customsignature.config.service.v1.MatchOperator
-                      .MATCH_OPERATOR_NOT_CONTAIN));
+                      .MATCH_OPERATOR_NOT_CONTAIN,
+                  MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+                  ai.traceable.customsignature.config.service.v1.MatchOperator
+                      .MATCH_OPERATOR_GREATER_THAN,
+                  MatchOperator.MATCH_OPERATOR_LESS_THAN,
+                  ai.traceable.customsignature.config.service.v1.MatchOperator
+                      .MATCH_OPERATOR_LESS_THAN));
 
   private static ai.traceable.customsignature.config.service.v1.MatchOperator convertOperator(
       MatchOperator matchOperator) {

@@ -10,9 +10,12 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
+import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
+import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import io.grpc.Status;
 import java.time.Clock;
@@ -27,6 +30,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
   private final DetectionExclusionRulesStore rulesStore;
   private final UuidGenerator uuidGenerator;
   private final RulesMigrationManager rulesMigrationManager;
+  private final ExclusionModsecRulesManager exclusionModsecRulesManager;
   private final Clock clock;
 
   @Inject
@@ -34,10 +38,12 @@ public class DetectionExclusionRulesManager implements RulesManager {
       DetectionExclusionRulesStore rulesStore,
       UuidGenerator uuidGenerator,
       RulesMigrationManager rulesMigrationManager,
+      ExclusionModsecRulesManager exclusionModsecRulesManager,
       Clock clock) {
     this.rulesStore = rulesStore;
     this.uuidGenerator = uuidGenerator;
     this.rulesMigrationManager = rulesMigrationManager;
+    this.exclusionModsecRulesManager = exclusionModsecRulesManager;
     this.clock = clock;
   }
 
@@ -109,6 +115,15 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesStore
         .deleteObject(requestContext, ruleId)
         .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+  }
+
+  @Override
+  public GetExclusionModsecRulesResponse getDetectionExclusionModsecRules(
+      RequestContext requestContext, GetExclusionModsecRulesRequest request) {
+    return exclusionModsecRulesManager.getModsecRules(
+        requestContext,
+        getDetectionExclusionRules(requestContext, request.getRulesFilter()),
+        request.getServiceNamesList());
   }
 
   @Override

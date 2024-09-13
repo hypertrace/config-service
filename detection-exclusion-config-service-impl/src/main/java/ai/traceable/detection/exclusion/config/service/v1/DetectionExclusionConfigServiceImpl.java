@@ -160,11 +160,9 @@ public class DetectionExclusionConfigServiceImpl
       StreamObserver<GetExclusionModsecRulesResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      //      rulesValidator.validateOrThrow(context, request);
-      //
-      //      rulesManager.deleteDetectionExclusionRule(context, request.getId());
+      rulesValidator.validateOrThrow(context, request);
 
-      responseObserver.onNext(GetExclusionModsecRulesResponse.getDefaultInstance());
+      responseObserver.onNext(rulesManager.getDetectionExclusionModsecRules(context, request));
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);

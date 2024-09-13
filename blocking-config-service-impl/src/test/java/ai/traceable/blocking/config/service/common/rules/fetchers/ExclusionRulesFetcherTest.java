@@ -16,6 +16,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRule
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.ModsecBlobData;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,14 @@ public class ExclusionRulesFetcherTest {
                                 .setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
                         .setDisabled(false)
                         .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
-                        .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK))
+                        .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                        .addAllRuleCreationSources(
+                            List.of(
+                                RuleSource.RULE_SOURCE_DEFAULT,
+                                RuleSource.RULE_SOURCE_CUSTOMER,
+                                RuleSource.RULE_SOURCE_TRACEABLE,
+                                RuleSource.RULE_SOURCE_SYSTEM,
+                                RuleSource.RULE_SOURCE_OLD_API)))
                 .addAllServiceNames(List.of("service1", "service2", "service3", "service-x"))
                 .build());
   }

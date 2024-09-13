@@ -164,7 +164,8 @@ public class BlockingRulesSupplierTest {
             GetCustomSignatureModsecRulesResponse.newBuilder().setModsecRulesBlob(blob2).build());
 
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     assertEquals(blob1, blockingRulesSupplier.getCustomSignatureModsecBlob(version1));
     verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
     assertEquals(blob2, blockingRulesSupplier.getCustomSignatureModsecBlob(version2));
@@ -196,7 +197,8 @@ public class BlockingRulesSupplierTest {
             GetCustomSignatureModsecRulesResponse.newBuilder().setModsecRulesBlob(blob2).build());
 
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     Map<String, String> modsecBlobs;
 
     // no dlp rules fetched..
@@ -213,8 +215,8 @@ public class BlockingRulesSupplierTest {
     assertEquals(3, modsecBlobs.size());
     // no dlp rule for service-x
     assertEquals(blob2, modsecBlobs.get("service-x"));
-    assertEquals(blob2 + "\nblobA" + "\nblobA0", modsecBlobs.get("service1"));
-    assertEquals(blob2 + "\nblobB", modsecBlobs.get("service2"));
+    assertEquals(blob2 + "\n\nblobA" + "\n\nblobA0", modsecBlobs.get("service1"));
+    assertEquals(blob2 + "\n\nblobB", modsecBlobs.get("service2"));
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
     verify(exclusionRulesFetcher, times(1))
@@ -226,7 +228,7 @@ public class BlockingRulesSupplierTest {
     assertEquals(2, modsecBlobs.size());
     // no dlp or exclusion rule for service-x
     assertEquals(blob2, modsecBlobs.get("service-x"));
-    assertEquals(blob2 + "\nblobA" + "\nblobA0", modsecBlobs.get("service1"));
+    assertEquals(blob2 + "\n\nblobA" + "\n\nblobA0", modsecBlobs.get("service1"));
     // fetchModsecRules will not be called again.
     verify(customSignatureRulesFetcher, times(2)).fetchModsecRules(any(), any(), any());
     // fetchDlpModsecRules will not be called again for the list of services.
@@ -240,15 +242,16 @@ public class BlockingRulesSupplierTest {
     verify(exclusionRulesFetcher, times(1)).fetchExclusionModsecRules(any(), any(), eq(Set.of()));
 
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     when(customSignatureRulesFetcher.fetchModsecRules(REQUEST_CONTEXT, ENVIRONMENT_ID, version2))
         .thenReturn(GetCustomSignatureModsecRulesResponse.getDefaultInstance());
     modsecBlobs = blockingRulesSupplier.getCustomModsecBlobs(version2, SERVICE_NAMES);
     assertEquals(3, modsecBlobs.size());
     // no dlp rule for service-x
     assertEquals("", modsecBlobs.get("service-x"));
-    assertEquals("directives\nblobA\nblobA0", modsecBlobs.get("service1"));
-    assertEquals("directives\nblobB", modsecBlobs.get("service2"));
+    assertEquals("directives\n\nblobA\n\nblobA0", modsecBlobs.get("service1"));
+    assertEquals("directives\n\nblobB", modsecBlobs.get("service2"));
   }
 
   @Test
@@ -278,7 +281,8 @@ public class BlockingRulesSupplierTest {
                 detailedRegion5));
 
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     assertEquals(
         List.of(detailedRegion1, detailedRegion2, detailedRegion3),
         blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptySet()));
@@ -359,7 +363,8 @@ public class BlockingRulesSupplierTest {
         .thenReturn(List.of(rule1, rule2, rule3));
 
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
 
     List<IpTypeRuleInfo.IpType> ipTypeRuleInfoList =
         blockingRulesSupplier
@@ -401,7 +406,8 @@ public class BlockingRulesSupplierTest {
   @Test
   public void test_getDlpRules() {
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     assertTrue(blockingRulesSupplier.getDlpRules(Collections.emptySet()).isEmpty());
 
     Map<String, List<RateLimitingModsecRule>> dlpRules =
@@ -419,7 +425,8 @@ public class BlockingRulesSupplierTest {
   @Test
   public void test_getExclusionRules() {
     blockingRulesSupplier =
-        new BlockingRulesSupplier(blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
+        new BlockingRulesSupplierImpl(
+            blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     assertTrue(blockingRulesSupplier.getExclusionRules(Collections.emptySet()).isEmpty());
 
     Map<String, List<DetectionExclusionModsecRule>> exclusionRules =

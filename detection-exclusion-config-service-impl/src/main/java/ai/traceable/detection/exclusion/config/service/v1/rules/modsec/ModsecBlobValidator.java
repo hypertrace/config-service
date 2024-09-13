@@ -1,16 +1,15 @@
-package ai.traceable.ratelimiting.service.v2.rules.modsec.validator;
+package ai.traceable.detection.exclusion.config.service.v1.rules.modsec;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
-import ai.traceable.ratelimiting.service.v2.rules.modsec.EnrichedRateLimitingModsecRule;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Status;
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 @Singleton
@@ -27,11 +26,7 @@ public class ModsecBlobValidator {
   }
 
   public boolean validate(
-      String modsecRuleBlob,
-      String tenantId,
-      List<String> serviceNames,
-      List<String> environmentIds,
-      Collection<EnrichedRateLimitingModsecRule> enrichedRateLimitingModsecRules) {
+      RequestContext requestContext, String modsecRuleBlob, String serviceNames) {
     if (modsecRuleBlob.isBlank()) {
       return true;
     }
@@ -39,39 +34,37 @@ public class ModsecBlobValidator {
     String modsecBlobHash = uuidGenerator.generateId(modsecRuleBlob);
     if (!modsecBlobCache.containsKey(modsecBlobHash)) {
       log.debug(
-          "For customer ID: {}, Created modsec blob: [{}] for the enrichedRateLimitingModsecRules: [{}]",
-          tenantId,
+          "For customer ID: {}, Created modsec blob: [{}] for the exclusion rules for service: [{}] which failed validation",
+          requestContext.getTenantId().orElse(""),
           modsecRuleBlob,
-          enrichedRateLimitingModsecRules);
+          serviceNames);
+
       modsecBlobCache.put(
           modsecBlobHash,
-          validateModsecBlob(modsecRuleBlob, tenantId, serviceNames, environmentIds));
+          validateModsecBlob(
+              modsecRuleBlob, requestContext.getTenantId().orElse(""), serviceNames));
     }
     return modsecBlobCache.get(modsecBlobHash);
   }
 
-  private boolean validateModsecBlob(
-      String modsecRuleBlob,
-      String tenantName,
-      List<String> serviceNames,
-      List<String> environmentIds) {
+  @VisibleForTesting
+  boolean validateModsecBlob(String modsecRuleBlob, String tenantName, String serviceName) {
     try {
       Status status = ModsecRuleEngineUtils.validate(modsecRuleBlob);
       return status.isOk() || status.equals(Status.UNKNOWN);
     } catch (Exception e) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(
-            "Invalid modsec rule was formed when trying to convert rate-limiting rule for tenant:{}, services:{} and environment: {}. Skipping.",
+            "Invalid modsec rule was formed when trying to convert exclusion rule for tenant:{}, service:{}. Skipping.",
             tenantName,
-            serviceNames,
-            environmentIds,
+            serviceName,
             e);
       } else {
         log.debug(
-            "Invalid modsec rule: {} was formed when trying to convert rate-limiting rule for tenant:{} and services:{}. Skipping.",
+            "Invalid modsec rule: {} was formed when trying to convert exclusion rule for tenant:{} and service:{}. Skipping.",
             modsecRuleBlob,
             tenantName,
-            serviceNames,
+            serviceName,
             e);
       }
       return false;

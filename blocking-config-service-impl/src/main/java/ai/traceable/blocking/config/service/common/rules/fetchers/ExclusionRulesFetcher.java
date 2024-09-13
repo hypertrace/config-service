@@ -9,7 +9,9 @@ import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +25,14 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class ExclusionRulesFetcher implements RulesFetcher {
+  private static final List<RuleSource> ruleSourceList =
+      List.of(
+          RuleSource.RULE_SOURCE_DEFAULT,
+          RuleSource.RULE_SOURCE_CUSTOMER,
+          RuleSource.RULE_SOURCE_TRACEABLE,
+          RuleSource.RULE_SOURCE_SYSTEM,
+          RuleSource.RULE_SOURCE_OLD_API);
+
   private final DetectionExclusionConfigServiceBlockingStub
       detectionExclusionConfigServiceBlockingStub;
   private final ClientConfig clientConfig;
@@ -58,7 +68,8 @@ public class ExclusionRulesFetcher implements RulesFetcher {
                                     .orElse(EnvironmentScope.getDefaultInstance())))
                     .setDisabled(false)
                     .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_ALLOW)
-                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK))
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK)
+                    .addAllRuleCreationSources(ruleSourceList))
             .addAllServiceNames(serviceNames)
             .build();
 

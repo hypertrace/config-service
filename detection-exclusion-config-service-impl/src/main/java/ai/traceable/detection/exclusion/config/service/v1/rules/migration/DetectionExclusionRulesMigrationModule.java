@@ -7,7 +7,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.typesafe.config.Config;
-import io.grpc.Channel;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class DetectionExclusionRulesMigrationModule extends AbstractModule {
@@ -15,17 +14,14 @@ public class DetectionExclusionRulesMigrationModule extends AbstractModule {
   private final FeatureCachingClient featureCachingClient;
   private final Config config;
   private final GrpcChannelRegistry grpcChannelRegistry;
-  private final Channel channel;
 
   public DetectionExclusionRulesMigrationModule(
       FeatureCachingClient featureCachingClient,
       Config config,
-      GrpcChannelRegistry grpcChannelRegistry,
-      Channel channel) {
+      GrpcChannelRegistry grpcChannelRegistry) {
     this.featureCachingClient = featureCachingClient;
     this.config = config;
     this.grpcChannelRegistry = grpcChannelRegistry;
-    this.channel = channel;
   }
 
   @Override

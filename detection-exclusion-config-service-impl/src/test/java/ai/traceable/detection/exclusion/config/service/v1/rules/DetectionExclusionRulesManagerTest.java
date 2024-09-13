@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
@@ -16,6 +17,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
+import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
@@ -23,6 +25,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondit
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
+import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
 import com.typesafe.config.ConfigFactory;
 import java.time.Clock;
 import java.util.List;
@@ -37,6 +40,7 @@ class DetectionExclusionRulesManagerTest {
 
   private UuidGenerator uuidGenerator;
   private DetectionExclusionRulesManager rulesManager;
+  private ExclusionModsecRulesManager exclusionModsecRulesManager;
   private final RequestContext requestContext = RequestContext.forTenantId("tenantId");
 
   @BeforeEach
@@ -61,9 +65,14 @@ class DetectionExclusionRulesManagerTest {
     uuidGenerator = mock(UuidGenerator.class);
     RulesMigrationManager rulesMigrationManager =
         mock(DetectionExclusionRulesMigrationManager.class);
+    exclusionModsecRulesManager = mock(ExclusionModsecRulesManager.class);
     rulesManager =
         new DetectionExclusionRulesManager(
-            rulesStore, uuidGenerator, rulesMigrationManager, mock(Clock.class));
+            rulesStore,
+            uuidGenerator,
+            rulesMigrationManager,
+            exclusionModsecRulesManager,
+            mock(Clock.class));
   }
 
   @Test
@@ -101,6 +110,19 @@ class DetectionExclusionRulesManagerTest {
             .getDetectionExclusionRules(
                 requestContext, GetRulesFilter.newBuilder().setDisabled(false).build())
             .contains(detectionExclusionRule));
+
+    // Testing modsec fetch
+    rulesManager.getDetectionExclusionModsecRules(
+        requestContext,
+        GetExclusionModsecRulesRequest.newBuilder()
+            .setRulesFilter(GetRulesFilter.newBuilder().setDisabled(false).build())
+            .addServiceNames("service-1")
+            .addServiceNames("service-2")
+            .build());
+
+    verify(exclusionModsecRulesManager)
+        .getModsecRules(
+            requestContext, List.of(detectionExclusionRule), List.of("service-1", "service-2"));
 
     detectionExclusionRule =
         DetectionExclusionRule.newBuilder()

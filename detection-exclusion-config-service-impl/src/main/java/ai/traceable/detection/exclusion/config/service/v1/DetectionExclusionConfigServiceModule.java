@@ -6,6 +6,7 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusi
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationModule;
+import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -47,7 +48,8 @@ class DetectionExclusionConfigServiceModule extends AbstractModule {
 
     install(
         new DetectionExclusionRulesMigrationModule(
-            featureCachingClient, config, grpcChannelRegistry, channel));
+            featureCachingClient, config, grpcChannelRegistry));
+    install(new ExclusionModsecRulesModule(channel, config, grpcChannelRegistry));
   }
 
   @Provides

@@ -3,6 +3,8 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_UNSPECIFIED;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleIntent.RULE_INTENT_UNSPECIFIED;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
@@ -19,7 +21,8 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
-import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
@@ -43,6 +46,7 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
   public void validateOrThrow(
       RequestContext requestContext, GetDetectionExclusionRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
+    validateFilter(request.getFilter());
   }
 
   @Override
@@ -56,7 +60,7 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     if (!rule.getRuleInfo()
         .getRuleStatus()
         .getRuleCreationSource()
-        .equals(RuleSource.RULE_SOURCE_UNSPECIFIED)) {
+        .equals(RULE_SOURCE_UNSPECIFIED)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
@@ -146,6 +150,13 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
                 conditionValidator.validateRuleCondition(isBlockOrAllowTargetPresent, condition));
   }
 
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, GetExclusionModsecRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateFilter(request.getRulesFilter());
+  }
+
   private void validateCreateRequest(
       DetectionExclusionRuleInfo ruleInfo,
       DetectionExclusionRuleScope ruleScope,
@@ -209,5 +220,24 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     return detectionExclusionRules.stream()
         .filter(rule -> rule.getRuleInfo().getName().equals(ruleName))
         .findFirst();
+  }
+
+  private void validateFilter(GetRulesFilter filter) {
+    if (filter.getExclusionTargetsList().contains(EXCLUSION_TARGET_UNSPECIFIED)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot filter for UNSPECIFIED exclusion target")
+          .asRuntimeException();
+    }
+    if (filter.getRuleCreationSourcesList().stream()
+        .anyMatch(Predicate.isEqual(RULE_SOURCE_UNSPECIFIED))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot filter for UNSPECIFIED rule scope")
+          .asRuntimeException();
+    }
+    if (filter.getRuleIntentsList().stream().anyMatch(Predicate.isEqual(RULE_INTENT_UNSPECIFIED))) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Cannot filter for UNSPECIFIED rule intent")
+          .asRuntimeException();
+    }
   }
 }

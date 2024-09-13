@@ -8,9 +8,14 @@ dependencies {
   api(projects.detectionExclusionConfigServiceApi)
   api(projects.anomalyConfigServiceImpl)
   api(projects.featureCachingClient)
+  api(projects.customSignatureConfigServiceApi)
   api(localLibs.hypertrace.configservice.api)
 
   implementation(projects.configUtils)
+  implementation(projects.customSignatureConfigServiceImpl)
+  implementation(projects.anomalyConfigServiceRegistry)
+  implementation(projects.entityFetcherCache)
+  implementation(projects.modsecurityUtils)
 
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
@@ -26,6 +31,7 @@ dependencies {
   implementation(commonLibs.traceable.platform.ipUtils)
   implementation(commonLibs.traceable.anomalydetection.configProviders)
   implementation(commonLibs.traceable.actorservice.api)
+  implementation(commonLibs.traceable.modsecurity.jni)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.v2;
 import ai.traceable.blocking.config.service.common.entity.EntityFetcher;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierContext;
+import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplierImpl;
 import ai.traceable.blocking.config.service.v2.BlockingConfigServiceGrpc.BlockingConfigServiceImplBase;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.Inject;
@@ -56,7 +57,8 @@ class BlockingConfigServiceImpl extends BlockingConfigServiceImplBase {
           entityFetcher.getEnvironmentId(requestContext, request.getEnvironment());
 
       BlockingRulesSupplier blockingRulesSupplier =
-          new BlockingRulesSupplier(blockingRulesSupplierContext, requestContext, environmentId);
+          new BlockingRulesSupplierImpl(
+              blockingRulesSupplierContext, requestContext, environmentId);
 
       List<BlockingConfigResponseElement> responseElements =
           blockingConfigManagers.stream()

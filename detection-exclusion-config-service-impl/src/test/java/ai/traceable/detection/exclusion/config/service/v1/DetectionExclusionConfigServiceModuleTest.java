@@ -1,12 +1,18 @@
 package ai.traceable.detection.exclusion.config.service.v1;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
+import com.google.inject.Stage;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
+import io.grpc.ManagedChannel;
+import java.util.Map;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.junit.jupiter.api.Test;
@@ -15,15 +21,53 @@ class DetectionExclusionConfigServiceModuleTest {
 
   @Test
   void testResolveBindings() {
+    Config mockConfig = mock(Config.class);
+    GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
+    when(mockConfig.getConfig("entity.service"))
+        .thenReturn(
+            ConfigFactory.parseString(
+                "config {\n"
+                    + "    host = localhost\n"
+                    + "    port = 50061\n"
+                    + "    timeout = 10s\n"
+                    + "  }\n"
+                    + "  attributeMap {\n"
+                    + "    service.id = \"SERVICE.id\"\n"
+                    + "    service.name = \"SERVICE.name\"\n"
+                    + "    service.environment = \"SERVICE.environment\"\n"
+                    + "  }"));
+
+    when(mockConfig.getConfig("actor.service.config"))
+        .thenReturn(
+            ConfigFactory.parseMap(
+                Map.of("host", "localhost", "port", "50059", "request.timeout", "10s")));
+    when(mockConfig.getConfig("entity.fetcher.cache.service.mapping.cache"))
+        .thenReturn(
+            ConfigFactory.parseString(
+                "entity.fetcher.cache = {\n"
+                    + "  service.mapping.cache = {\n"
+                    + "    maxSize = 1000\n"
+                    + "    refreshAfterWriteDuration = 10m\n"
+                    + "    expireAfterWriteDuration = 1h\n"
+                    + "  }\n"
+                    + "}\n"));
+    doReturn(mock(ManagedChannel.class))
+        .when(mockGrpcChannelRegistry)
+        .forPlaintextAddress("localhost", 50061);
+    doReturn(mock(ManagedChannel.class))
+        .when(mockGrpcChannelRegistry)
+        .forPlaintextAddress("localhost", 50059);
+
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
+                    Stage.PRODUCTION,
                     new DetectionExclusionConfigServiceModule(
                         mock(Channel.class),
                         mock(ConfigChangeEventGenerator.class),
                         mock(FeatureCachingClient.class),
-                        mock(Config.class),
-                        mock(GrpcChannelRegistry.class)))
+                        mockConfig,
+                        mockGrpcChannelRegistry))
                 .getAllBindings());
   }
 }

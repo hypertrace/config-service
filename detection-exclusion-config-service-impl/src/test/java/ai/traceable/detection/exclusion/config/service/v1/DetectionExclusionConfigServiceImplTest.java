@@ -161,6 +161,33 @@ class DetectionExclusionConfigServiceImplTest {
   }
 
   @Test
+  void testGetDetectionExclusionModsecRules() {
+    GetExclusionModsecRulesResponse exclusionModsecRulesResponse =
+        GetExclusionModsecRulesResponse.getDefaultInstance();
+    GetExclusionModsecRulesRequest request = GetExclusionModsecRulesRequest.getDefaultInstance();
+    StreamObserver<GetExclusionModsecRulesResponse> streamObserver = mock(StreamObserver.class);
+
+    when(rulesManager.getDetectionExclusionModsecRules(eq(requestContext), any()))
+        .thenReturn(exclusionModsecRulesResponse);
+
+    // validation throws error
+    Exception exception = Status.INVALID_ARGUMENT.asRuntimeException();
+    doThrow(exception).when(rulesValidator).validateOrThrow(requestContext, request);
+
+    requestContext.run(
+        () -> detectionExclusionConfigService.getExclusionModsecRules(request, streamObserver));
+    verify(streamObserver, times(1)).onError(exception);
+
+    // validation succeeds
+    doNothing().when(rulesValidator).validateOrThrow(requestContext, request);
+
+    requestContext.run(
+        () -> detectionExclusionConfigService.getExclusionModsecRules(request, streamObserver));
+    verify(streamObserver, times(1)).onNext(exclusionModsecRulesResponse);
+    verify(streamObserver, times(1)).onCompleted();
+  }
+
+  @Test
   void testBulkDeleteDetectionExclusionRules() {
     BulkDeleteDetectionExclusionRulesRequest request =
         BulkDeleteDetectionExclusionRulesRequest.getDefaultInstance();

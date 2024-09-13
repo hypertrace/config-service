@@ -18,6 +18,8 @@ import static ai.traceable.blocking.config.service.v2.BlockingStatus.BLOCKING_ST
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_QUERY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
+import static ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily.CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES;
+import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_HEADER;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
@@ -57,6 +59,9 @@ import ai.traceable.blocking.config.service.v2.Component;
 import ai.traceable.blocking.config.service.v2.CrsBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.CustomSignatureBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.CustomSignatureDetails;
+import ai.traceable.blocking.config.service.v2.ExclusionRule;
+import ai.traceable.blocking.config.service.v2.ExclusionRule.AnomalousAttributeCondition;
+import ai.traceable.blocking.config.service.v2.ExclusionRule.EventCondition;
 import ai.traceable.blocking.config.service.v2.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v2.GetBlockingRulesResponse;
 import ai.traceable.blocking.config.service.v2.IpType;
@@ -100,6 +105,21 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Location;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
+import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.CustomRuleEvent;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
+import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondition;
+import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
+import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub;
@@ -218,8 +238,11 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static MaliciousSourcesConfigServiceBlockingStub
       maliciousSourcesConfigServiceBlockingStub;
   private static DataClassificationConfigServiceBlockingStub dataClassificationConfigServiceStub;
+  private static DetectionExclusionConfigServiceBlockingStub detectionExclusionConfigServiceStub;
   private static final List<String> actorEntityId = new ArrayList<>();
   private static final List<String> customSignatureRuleId = new ArrayList<>();
+  private static final List<String> exclusionRuleId = new ArrayList<>();
+
   private static String serviceEntityId;
   private static String lastCreatedDLPRuleId;
 
@@ -262,6 +285,11 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     dataClassificationConfigServiceStub =
         DataClassificationConfigServiceGrpc.newBlockingStub(channelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+
+    detectionExclusionConfigServiceStub =
+        DetectionExclusionConfigServiceGrpc.newBlockingStub(channelForInternalServices)
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
 
@@ -818,6 +846,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     addIpRangeRule("ip-range-rule-2", Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
 
     createDLPPolicy(Optional.of(ENVIRONMENT_ID));
+    createExclusionRule();
 
     // Checking with environment
     response =
@@ -979,6 +1008,9 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 4
     // malicious-source) + 2 custom-ip + 3 ip-type + 1 DLP
     assertEquals(19, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    assertEquals(1, blockingPolicyConfiguration.getExclusionRulesCount());
+    checkExclusionPolicy(blockingPolicyConfiguration.getExclusionRules(0));
+
     int index = 0;
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_IP_RULE,
@@ -1658,5 +1690,122 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     return RequestContext.forTenantId(TENANT_ID)
         .call(() -> dataClassificationConfigServiceStub.createDataType(request))
         .getDataType();
+  }
+
+  private static void createExclusionRule() {
+    CreateDetectionExclusionRuleRequest request =
+        CreateDetectionExclusionRuleRequest.newBuilder()
+            .setRuleScope(
+                DetectionExclusionRuleScope.newBuilder()
+                    .setEnvironmentScope(
+                        ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope
+                            .newBuilder()
+                            .addEnvironmentIds(
+                                V2BlockingConfigServiceIntegrationTest.ENVIRONMENT_ID)))
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .setName("detection-exclusion")
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setIpAddressCondition(
+                                ai.traceable.detection.exclusion.config.service.v1
+                                    .IpAddressCondition.newBuilder()
+                                    .addIpAddresses("1.2.3.4")))
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setAttributeMatchCondition(
+                                SpanAttributeMatchCondition.newBuilder()
+                                    .setKeyMatchCondition(
+                                        KeyMetadataMatchCondition.newBuilder()
+                                            .setMetadata(KEY_METADATA_REQUEST_HEADER)
+                                            .setMatchCondition(
+                                                MatchCondition.newBuilder()
+                                                    .setOperator(
+                                                        ai.traceable.detection.exclusion.config
+                                                            .service.v1.MatchOperator
+                                                            .MATCH_OPERATOR_MATCHES_REGEX)
+                                                    .setValue(
+                                                        com.google.protobuf.Value.newBuilder()
+                                                            .setStringValue("^apple$"))))))
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setEventCondition(
+                                ai.traceable.detection.exclusion.config.service.v1.EventCondition
+                                    .newBuilder()
+                                    .addCustomRuleEvents(
+                                        CustomRuleEvent.newBuilder()
+                                            .setRuleId("region-id")
+                                            .setRuleFamily(CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES))
+                                    .addSystemDefinedEvents(
+                                        SystemDefinedEvent.newBuilder()
+                                            .setEventTypeId("crs931")
+                                            .setEventFamily(
+                                                SystemDefinedEventFamily
+                                                    .SYSTEM_DEFINED_EVENT_FAMILY_MODSEC))))
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setAnomalousAttributeCondition(
+                                ai.traceable.detection.exclusion.config.service.v1
+                                    .AnomalousAttributeCondition.newBuilder()
+                                    .setKeyMatchCondition(
+                                        MatchCondition.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.detection.exclusion.config.service.v1
+                                                    .MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setValue(
+                                                com.google.protobuf.Value.newBuilder()
+                                                    .setStringValue("abc")))))
+                    .setRuleStatus(
+                        DetectionExclusionRuleStatus.newBuilder()
+                            .setDisabled(false)
+                            .setRuleCreationSource(RuleSource.RULE_SOURCE_CUSTOMER))
+                    .addExclusionTargets(ExclusionTarget.EXCLUSION_TARGET_BLOCK))
+            .build();
+
+    RequestContext.forTenantId(TENANT_ID)
+        .call(() -> detectionExclusionConfigServiceStub.createDetectionExclusionRule(request))
+        .getRule()
+        .getId();
+  }
+
+  void checkExclusionPolicy(ExclusionRule exclusionRule) {
+    assertEquals(2, exclusionRule.getDetails().getDetailsConditionsCount());
+    assertFalse(
+        exclusionRule
+            .getDetails()
+            .getDetailsConditions(0)
+            .getCustomSignatureDetails()
+            .getRuleId()
+            .isEmpty());
+    assertEquals(
+        List.of("1.2.3.4"),
+        exclusionRule.getDetails().getDetailsConditions(1).getIpDetails().getIpAddressesList());
+    assertEquals(2, exclusionRule.getEventConditionsCount());
+    assertEquals(
+        EventCondition.newBuilder()
+            .addIdPrefixes("crs931")
+            .setBlockingCategory(BLOCKING_CATEGORY_MODSECURITY)
+            .build(),
+        exclusionRule.getEventConditions(0));
+    assertEquals(
+        EventCondition.newBuilder()
+            .addIds("region-id")
+            .setBlockingCategory(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE)
+            .build(),
+        exclusionRule.getEventConditions(1));
+    assertEquals(
+        List.of(
+            AnomalousAttributeCondition.newBuilder()
+                .setKeyExpression(
+                    ai.traceable.blocking.config.service.v2.MatchExpression.newBuilder()
+                        .setOperator(
+                            ai.traceable.blocking.config.service.v2.MatchOperator
+                                .MATCH_OPERATOR_EQUALS)
+                        .setValue(com.google.protobuf.Value.newBuilder().setStringValue("abc")))
+                .build()),
+        exclusionRule.getAnomalousAttributeConditionsList());
+    assertEquals(
+        List.of(ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_BLOCK),
+        exclusionRule.getTargetsList());
   }
 }

@@ -16,6 +16,7 @@ dependencies {
   implementation(projects.activityEventProducer)
   implementation(projects.entityFetcherCache)
   implementation(projects.configUtils)
+  implementation(projects.modsecurityUtils)
 
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
