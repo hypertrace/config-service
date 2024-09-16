@@ -13,6 +13,8 @@ enum FieldType {
   FIELD_TYPE_LIST = 5;
   FIELD_TYPE_MAP = 6;
   FIELD_TYPE_TIMESTAMP = 7;
+  FIELD_TYPE_BINARY = 8;
+  FIELD_TYPE_INT = 9;
 }
 
 enum Cardinality {
@@ -39,6 +41,8 @@ message PrimitiveFieldValue {
     string string_val = 3;
     bool boolean_val = 4;
     int64 timestamp_val = 5;
+    bytes binary_val = 6;
+    int32 int_val = 7;
   }
 }
 
