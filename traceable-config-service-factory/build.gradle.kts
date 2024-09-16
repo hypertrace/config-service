@@ -62,6 +62,7 @@ dependencies {
   implementation(projects.fraudDatamodelConfigServiceImpl)
   implementation(projects.fraudPolicyConfigServiceImpl)
   implementation(projects.vulnerabilityConfigServiceImpl)
+  implementation(projects.servicenowItsmIntegrationConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

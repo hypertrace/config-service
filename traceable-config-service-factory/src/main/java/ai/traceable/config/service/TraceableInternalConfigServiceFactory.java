@@ -36,6 +36,7 @@ import ai.traceable.runner.logs.config.service.RunnerLogsConfigServiceFactory;
 import ai.traceable.saved.filter.config.service.SavedFilterConfigServiceFactory;
 import ai.traceable.saved.query.config.service.SavedQueryConfigServiceFactory;
 import ai.traceable.sensitivedata.config.service.SensitiveDataConfigServicesProvider;
+import ai.traceable.servicenow.itsm.integration.config.service.ServiceNowItsmIntegrationConfigServiceFactory;
 import ai.traceable.sessionidentification.config.service.SessionIdentificationConfigServiceFactory;
 import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFactory;
 import ai.traceable.splunk.integration.config.service.SplunkIntegrationConfigServiceFactory;
@@ -276,6 +277,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 FraudPolicyConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                ServiceNowItsmIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
