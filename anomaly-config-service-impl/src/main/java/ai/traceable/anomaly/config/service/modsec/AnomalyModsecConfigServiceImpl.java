@@ -41,18 +41,20 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
     }
 
     try {
+      ModsecManager.ModsecCrsRules crsRules =
+          manager.getModsecCrsRules(
+              RequestContext.CURRENT.get(),
+              (request.getRuleVersion() == ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+                  ? defaultModsecRuleVersion
+                  : request.getRuleVersion(),
+              request.getTarget(),
+              request.getSubRuleTypesList(),
+              request.getRemoveDisabledRules(),
+              request.getConfigScope());
       GetModsecCrsRulesResponse response =
           GetModsecCrsRulesResponse.newBuilder()
-              .addAllModsecCrsRules(
-                  manager.getModsecCrsRules(
-                      RequestContext.CURRENT.get(),
-                      (request.getRuleVersion()
-                              == ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
-                          ? defaultModsecRuleVersion
-                          : request.getRuleVersion(),
-                      request.getSubRuleTypesList(),
-                      request.getRemoveDisabledRules(),
-                      request.getConfigScope()))
+              .addAllModsecCrsRules(crsRules.getModsecCrsRulesData())
+              .setAggregatedModsecCrsRulesBlob(crsRules.getAggregatedModsecBlob())
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

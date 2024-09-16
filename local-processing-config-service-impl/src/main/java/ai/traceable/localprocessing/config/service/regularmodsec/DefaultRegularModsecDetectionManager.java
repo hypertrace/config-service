@@ -7,12 +7,14 @@ import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -92,7 +94,13 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
       // The request was done for only one modsec type so we should be getting only 1 element
       regularCrsRulesBlob = response.getModsecCrsRulesList().get(0).getModsecCrsRulesBlob();
     } else {
-      throw (new RuntimeException("Unable to get modsec crs detection rules"));
+      throw (new RuntimeException(
+          String.format(
+              "Error in fetching modsec crs rules - received subRuleTypes: %s",
+              response.getModsecCrsRulesList().stream()
+                  .map(ModsecCrsRulesData::getSubRuleType)
+                  .map(AnomalySubRuleType::name)
+                  .collect(Collectors.joining()))));
     }
     String responseHash = uuidGenerator.generateId(regularCrsRulesBlob);
 

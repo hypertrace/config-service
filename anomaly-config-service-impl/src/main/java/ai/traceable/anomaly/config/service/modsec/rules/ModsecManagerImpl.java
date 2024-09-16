@@ -12,12 +12,11 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -49,81 +48,71 @@ public class ModsecManagerImpl implements ModsecManager {
   }
 
   @Override
-  public List<ModsecCrsRulesData> getModsecCrsRules(
+  public ModsecCrsRules getModsecCrsRules(
       RequestContext requestContext,
       ModsecRuleVersion modsecRuleVersion,
-      List<AnomalySubRuleType> requestTypes,
+      ModsecCrsRulesTarget rulesTarget,
+      List<AnomalySubRuleType> subRuleTypes,
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
+
+    ScopedAnomalyConfigStatus globalConfig;
+    if (rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION)) {
+      // Platform is tenant-agnostic
+      globalConfig = ScopedAnomalyConfigStatus.getDefaultInstance();
+    } else {
+      globalConfig =
+          globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+              requestContext, anomalyConfigScope);
+    }
+    Set<String> disabledModsecRuleIds;
+
     if (removeDisabledRules) {
-      if (isGlobalConfigDisabled(requestContext, anomalyConfigScope)) {
-        return requestTypes.stream()
-            .map(requestType -> ModsecCrsRulesData.newBuilder().setSubRuleType(requestType).build())
-            .collect(Collectors.toUnmodifiableList());
+      if (isGlobalConfigDisabled(globalConfig)) {
+        return new ModsecCrsRules();
       }
-
-      Set<String> configStatusDisabledModsecRuleIds = new HashSet<>();
-      Set<String> blockingDisabledModsecRuleIds = new HashSet<>();
-      populateDisabledModsecRuleIds(
-          requestContext,
-          configStatusDisabledModsecRuleIds,
-          blockingDisabledModsecRuleIds,
-          anomalyConfigScope,
-          modsecRuleVersion);
-
-      return requestTypes.stream()
-          .map(
-              requestType ->
-                  getModsecCrsRulesData(
-                      modsecRuleVersion,
-                      requestType,
-                      configStatusDisabledModsecRuleIds,
-                      blockingDisabledModsecRuleIds))
-          .collect(Collectors.toUnmodifiableList());
+      boolean checkBlockingStatus =
+          rulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING
+              || (subRuleTypes.size() == 1
+                  && subRuleTypes.get(0).equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK));
+      disabledModsecRuleIds =
+          getDisabledModsecRuleIds(
+              requestContext, checkBlockingStatus, anomalyConfigScope, modsecRuleVersion);
+    } else {
+      disabledModsecRuleIds = Set.of();
     }
 
-    return requestTypes.stream()
-        .map(
-            requestType ->
-                getModsecCrsRulesData(modsecRuleVersion, requestType, Set.of(), Set.of()))
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private ModsecCrsRulesData getModsecCrsRulesData(
-      ModsecRuleVersion modsecRuleVersion,
-      AnomalySubRuleType subRuleType,
-      Set<String> configStatusDisabledModsecRuleIds,
-      Set<String> blockingDisabledModsecRuleIds) {
-    // The disabled modsec rule ids should be ordered to ensure the blob doesn't keep changing on
-    // repeated calls
-    Set<String> disabledModsecRuleIds = new TreeSet<>(configStatusDisabledModsecRuleIds);
-
-    if (subRuleType.equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)) {
-      disabledModsecRuleIds.addAll(blockingDisabledModsecRuleIds);
+    subRuleTypes =
+        subRuleTypes.isEmpty() ? getSubRuleTypes(rulesTarget, globalConfig) : subRuleTypes;
+    ModsecCrsRules.ModsecCrsRulesBuilder builder = ModsecCrsRules.builder();
+    Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes =
+        subRuleTypes.stream()
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    Function.identity(),
+                    subRuleType ->
+                        modsecRulesRegistry.getModsecCrsRulesBlob(
+                            List.of(subRuleType), modsecRuleVersion, disabledModsecRuleIds)));
+    builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
+    if (subRuleTypes.size() == 1) {
+      builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
+    } else {
+      builder.aggregatedModsecBlob(
+          modsecRulesRegistry.getModsecCrsRulesBlob(
+              subRuleTypes, modsecRuleVersion, disabledModsecRuleIds));
     }
 
-    return ModsecCrsRulesData.newBuilder()
-        .setSubRuleType(subRuleType)
-        .setModsecCrsRulesBlob(
-            modsecRulesRegistry.getModsecCrsRulesBlob(
-                subRuleType, modsecRuleVersion, disabledModsecRuleIds))
-        .build();
+    return builder.build();
   }
 
-  private boolean isGlobalConfigDisabled(
-      RequestContext requestContext, AnomalyConfigScope anomalyConfigScope) {
-    AnomalyConfigStatus configStatus =
-        globalAnomalyConfigStatusManager
-            .getScopedAnomalyConfigStatus(requestContext, anomalyConfigScope)
-            .getConfigStatus();
-
+  private boolean isGlobalConfigDisabled(ScopedAnomalyConfigStatus globalConfig) {
+    AnomalyConfigStatus configStatus = globalConfig.getConfigStatus();
     return configStatus.getDisabled() && !configStatus.getInternal();
   }
 
-  private void populateDisabledModsecRuleIds(
+  private Set<String> getDisabledModsecRuleIds(
       RequestContext requestContext,
-      Set<String> configStatusDisabledModsecRuleIds,
-      Set<String> blockingDisabledModsecRuleIds,
+      boolean checkBlockingStatus,
       AnomalyConfigScope anomalyConfigScope,
       ModsecRuleVersion modsecRuleVersion) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
@@ -131,39 +120,31 @@ public class ModsecManagerImpl implements ModsecManager {
     Map<String, AnomalyRuleInfo> ruleInfoMap =
         modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion);
 
+    // The disabled modsec rule ids should be ordered to ensure that
+    // the blob doesn't keep changing on repeated calls
+    Set<String> disabledModsecRuleIds = new TreeSet<>();
+
     for (String ruleId : ruleInfoMap.keySet()) {
       AnomalyRuleInfo anomalyRuleInfo = ruleInfoMap.get(ruleId);
-      AnomalyDetectionConfig detectionConfig = anomalyRuleConfigMap.get(ruleId);
+      AnomalyDetectionConfig detectionConfig =
+          anomalyRuleConfigMap.getOrDefault(ruleId, AnomalyDetectionConfig.getDefaultInstance());
 
       Map<String, AnomalySubRuleConfig> subRuleConfigMap = getSubRuleConfigMap(detectionConfig);
       for (AnomalySubRuleInfo subRuleInfo : anomalyRuleInfo.getSubRuleInfosList()) {
         String subRuleId = subRuleInfo.getRuleId();
-        AnomalySubRuleConfig subRuleConfig = subRuleConfigMap.get(subRuleId);
+        AnomalySubRuleConfig subRuleConfig =
+            subRuleConfigMap.getOrDefault(subRuleId, AnomalySubRuleConfig.getDefaultInstance());
 
         boolean isDisabled =
-            Objects.nonNull(detectionConfig) && detectionConfig.getConfigStatus().getDisabled();
-
-        if (Objects.nonNull(subRuleConfig)) {
-          isDisabled = isDisabled || subRuleConfig.getConfigStatus().getDisabled();
-        }
+            detectionConfig.getConfigStatus().getDisabled()
+                || subRuleConfig.getConfigStatus().getDisabled()
+                || (checkBlockingStatus && !subRuleConfig.getBlockingEnabled());
         if (isDisabled) {
-          configStatusDisabledModsecRuleIds.add(subRuleId);
-        }
-
-        if (subRuleInfo
-            .getSubRuleTypesList()
-            .contains(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)) {
-          boolean isBlockingEnabled = false;
-
-          if (Objects.nonNull(subRuleConfig)) {
-            isBlockingEnabled = subRuleConfig.getBlockingEnabled();
-          }
-          if (!isBlockingEnabled) {
-            blockingDisabledModsecRuleIds.add(subRuleId);
-          }
+          disabledModsecRuleIds.add(subRuleId);
         }
       }
     }
+    return disabledModsecRuleIds;
   }
 
   private Map<String, AnomalyDetectionConfig> getAnomalyRuleConfigMap(
@@ -186,11 +167,27 @@ public class ModsecManagerImpl implements ModsecManager {
                 Function.identity()));
   }
 
+  private List<AnomalySubRuleType> getSubRuleTypes(
+      ModsecCrsRulesTarget rulesTarget, ScopedAnomalyConfigStatus globalConfig) {
+    switch (rulesTarget) {
+      case MODSEC_CRS_RULES_TARGET_TPA_DETECTION:
+        return List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+      case MODSEC_CRS_RULES_TARGET_TA_BLOCKING:
+        if (!globalConfig.getModsecGlobalConfig().getBlockingAvailableForRegularRules()) {
+          return List.of(
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
+              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+        }
+      default: // all sub-rule-types are accepted..
+        return List.of(
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+    }
+  }
+
   private Map<String, AnomalySubRuleConfig> getSubRuleConfigMap(
       AnomalyDetectionConfig detectionConfig) {
-    if (Objects.isNull(detectionConfig)) {
-      return Map.of();
-    }
     return detectionConfig
         .getModsecurityAnomalyDetectionConfig()
         .getModsecAnomalyRule()

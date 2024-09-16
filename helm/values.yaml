@@ -226,6 +226,7 @@ traceableConfigServiceConfig:
     modsecurity:
       ruleVersion: MODSEC_RULE_VERSION_V3
   blockingConfigService:
+    enableNewModsecCrsBlockingFlow: false
     agentPollingFrequency: 30s
     iptype:
       mode: VERSIONS_DIR
