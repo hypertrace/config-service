@@ -119,6 +119,7 @@ message AnomalyRuleInfo {
   AnomalyRuleCategory anomaly_rule_category = 6;
   map<string, string> event_labels = 7;
   AnomalyEventDetails event_details = 8;
+  AnomalySeverityLevel severity_level = 9;
 }
 
 message AnomalySubRuleInfo {
