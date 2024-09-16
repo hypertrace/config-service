@@ -11,6 +11,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
 import com.typesafe.config.Config;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +56,29 @@ class RateLimitingConfigServiceConfigTest {
                         .getRuleStatus()
                         .getRuleCreationSource()
                         .equals(RuleStatus.RuleSource.RULE_SOURCE_DEFAULT)));
+    assertTrue(
+        rateLimitingRules.stream()
+            .filter(
+                rule -> rule.getData().getCategory().equals(Category.CATEGORY_DATA_EXFILTRATION))
+            .flatMap(rule -> getLeafConditions(rule.getData().getCondition()).stream())
+            .filter(LeafCondition::hasDatatypeCondition)
+            .allMatch(
+                leafCondition ->
+                    leafCondition
+                        .getDatatypeCondition()
+                        .getDataLocation()
+                        .equals(DataLocation.DATA_LOCATION_RESPONSE)));
+    assertTrue(
+        rateLimitingRules.stream()
+            .filter(rule -> rule.getData().getCategory().equals(Category.CATEGORY_ENUMERATION))
+            .flatMap(rule -> getLeafConditions(rule.getData().getCondition()).stream())
+            .filter(LeafCondition::hasDatatypeCondition)
+            .allMatch(
+                leafCondition ->
+                    leafCondition
+                        .getDatatypeCondition()
+                        .getDataLocation()
+                        .equals(DataLocation.DATA_LOCATION_REQUEST)));
     // rule ids conform to UUID
     assertDoesNotThrow(() -> rateLimitingRules.forEach(rule -> UUID.fromString(rule.getId())));
     rateLimitingRules.forEach(
@@ -73,5 +97,18 @@ class RateLimitingConfigServiceConfigTest {
                   rulesValidator.validateOrThrow(
                       RequestContext.forTenantId("default tenant"), request, List.of()));
         });
+  }
+
+  private List<LeafCondition> getLeafConditions(Condition condition) {
+    switch (condition.getConditionCase()) {
+      case LEAF_CONDITION:
+        return List.of(condition.getLeafCondition());
+      case COMPOSITE_CONDITION:
+        return condition.getCompositeCondition().getChildrenList().stream()
+            .flatMap(condition1 -> getLeafConditions(condition1).stream())
+            .collect(Collectors.toUnmodifiableList());
+      default:
+        return List.of();
+    }
   }
 }
