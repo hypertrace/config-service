@@ -7,11 +7,15 @@ import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface ModsecManager {
+
+  String EMPTY_STRING = "";
+
   ModsecCrsRules getModsecCrsRules(
       RequestContext requestContext,
       ModsecRuleVersion modsecRuleVersion,
@@ -25,9 +29,11 @@ public interface ModsecManager {
     private final Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes;
     private final String aggregatedModsecBlob;
 
-    public ModsecCrsRules() {
-      modsecBlobsForRuleTypes = Map.of();
-      aggregatedModsecBlob = "";
+    public ModsecCrsRules(List<AnomalySubRuleType> subRuleTypes) {
+      modsecBlobsForRuleTypes =
+          subRuleTypes.stream()
+              .collect(Collectors.toUnmodifiableMap(Function.identity(), s -> EMPTY_STRING));
+      aggregatedModsecBlob = EMPTY_STRING;
     }
 
     public ModsecCrsRules(

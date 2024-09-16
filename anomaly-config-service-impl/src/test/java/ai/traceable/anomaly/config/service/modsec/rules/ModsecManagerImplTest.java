@@ -207,7 +207,13 @@ class ModsecManagerImplTest {
             AnomalyConfigScope.newBuilder()
                 .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                 .build());
-    assertTrue(crsRules.getModsecCrsRulesData().isEmpty());
+    assertTrue(crsRules.getAggregatedModsecBlob().isEmpty());
+    assertEquals(1, crsRules.getModsecCrsRulesData().size());
+    assertEquals(
+        ModsecCrsRulesData.newBuilder()
+            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+            .build(),
+        crsRules.getModsecCrsRulesData().get(0));
 
     // default blocking rules
     modsecRulesRegistry =

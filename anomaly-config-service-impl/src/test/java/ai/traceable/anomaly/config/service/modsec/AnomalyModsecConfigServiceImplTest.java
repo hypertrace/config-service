@@ -4,7 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -38,7 +40,7 @@ class AnomalyModsecConfigServiceImplTest {
   void setUp() {
     modsecValidator = mock(ModsecValidator.class);
     modsecManager = mock(ModsecManager.class);
-    doReturn(new ModsecManager.ModsecCrsRules())
+    doAnswer(args -> new ModsecManager.ModsecCrsRules(args.getArgument(3)))
         .when(modsecManager)
         .getModsecCrsRules(any(), any(), any(), any(), anyBoolean(), any());
     modsecConfigService =
@@ -77,11 +79,12 @@ class AnomalyModsecConfigServiceImplTest {
     Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes = new LinkedHashMap<>();
     modsecBlobsForRuleTypes.put(rule1.getSubRuleType(), rule1.getModsecCrsRulesBlob());
     modsecBlobsForRuleTypes.put(rule2.getSubRuleType(), rule2.getModsecCrsRulesBlob());
-    when(modsecManager.getModsecCrsRules(any(), any(), any(), any(), eq(false), any()))
-        .thenReturn(
+    doReturn(
             new ModsecManager.ModsecCrsRules(
                 modsecBlobsForRuleTypes,
-                rule1.getModsecCrsRulesBlob() + rule2.getModsecCrsRulesBlob()));
+                rule1.getModsecCrsRulesBlob() + rule2.getModsecCrsRulesBlob()))
+        .when(modsecManager)
+        .getModsecCrsRules(any(), any(), any(), any(), eq(false), any());
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseStreamObserver, times(1))
@@ -115,8 +118,9 @@ class AnomalyModsecConfigServiceImplTest {
   @DisplayName("Should propagate expection on occured manager")
   void should_propagate_error() {
     when(modsecValidator.validate(any())).thenReturn(Status.OK);
-    when(modsecManager.getModsecCrsRules(any(), any(), any(), any(), eq(false), any()))
-        .thenThrow(RuntimeException.class);
+    doThrow(RuntimeException.class)
+        .when(modsecManager)
+        .getModsecCrsRules(any(), any(), any(), any(), eq(false), any());
 
     StreamObserver<GetModsecCrsRulesResponse> responseStreamObserver = mock(StreamObserver.class);
 

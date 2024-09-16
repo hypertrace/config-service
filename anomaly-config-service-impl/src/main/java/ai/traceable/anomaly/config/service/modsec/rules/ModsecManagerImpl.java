@@ -65,11 +65,17 @@ public class ModsecManagerImpl implements ModsecManager {
           globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
               requestContext, anomalyConfigScope);
     }
-    Set<String> disabledModsecRuleIds;
 
+    subRuleTypes =
+        subRuleTypes.isEmpty() ? getSubRuleTypes(rulesTarget, globalConfig) : subRuleTypes;
+    if (subRuleTypes.isEmpty()) {
+      return new ModsecCrsRules(subRuleTypes);
+    }
+
+    Set<String> disabledModsecRuleIds;
     if (removeDisabledRules) {
       if (isGlobalConfigDisabled(globalConfig)) {
-        return new ModsecCrsRules();
+        return new ModsecCrsRules(subRuleTypes);
       }
       boolean checkBlockingStatus =
           rulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING
@@ -82,8 +88,6 @@ public class ModsecManagerImpl implements ModsecManager {
       disabledModsecRuleIds = Set.of();
     }
 
-    subRuleTypes =
-        subRuleTypes.isEmpty() ? getSubRuleTypes(rulesTarget, globalConfig) : subRuleTypes;
     ModsecCrsRules.ModsecCrsRulesBuilder builder = ModsecCrsRules.builder();
     Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes =
         subRuleTypes.stream()
@@ -178,11 +182,15 @@ public class ModsecManagerImpl implements ModsecManager {
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
         }
-      default: // all sub-rule-types are accepted..
+        // else will go to the next case block to return all 3 types..
+      case MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION:
         return List.of(
             AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
             AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
             AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+      default:
+        log.debug("Unknown ModsecCrsRulesTarget:{} received", rulesTarget);
+        return List.of();
     }
   }
 
