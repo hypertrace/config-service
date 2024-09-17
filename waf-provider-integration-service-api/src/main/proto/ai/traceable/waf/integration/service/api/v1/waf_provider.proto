@@ -10,6 +10,7 @@ import "ai/traceable/waf/integration/service/api/v1/imperva_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/gcp_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/f5_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/akamai_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/fortinet_waf_provider.proto";
 
 message WafIntegration {
   string id = 1;
@@ -27,6 +28,7 @@ message WafIntegrationDetails {
     GcpIntegrationParams gcp_integration_params = 8;
     F5IntegrationParams f5_integration_params = 9;
     AkamaiIntegrationParams akamai_integration_params = 10;
+    FortinetIntegrationParams fortinet_integration_params = 11;
   }
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20; //leaving numbers for oneof
@@ -56,6 +58,7 @@ message UpdatedWafIntegrationDetails {
     GcpIntegrationUpdateParams updated_gcp_integration_params = 8;
     F5IntegrationUpdateParams updated_f5_integration_params = 9;
     AkamaiIntegrationUpdateParams updated_akamai_integration_params = 10;
+    FortinetIntegrationUpdateParams updated_fortinet_integration_params = 11;
   }
   WafIntegrationScope waf_integration_scope = 7;
   repeated WafIntegrationTarget integration_targets = 20;

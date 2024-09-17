@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ai.traceable.waf.integration.service.api.v1;
+
+option java_multiple_files = true;
+
+message FortinetIntegrationParams {
+  FortinetIntegrationDetails fortinet_integration_details = 1;
+}
+
+message FortinetIntegrationUpdateParams {
+  FortinetIntegrationDetails fortinet_integration_details = 1;
+}
+
+
+message FortinetIntegrationDetails {
+  FortinetRuleDetails fortinet_rule_details = 1;
+  FortinetAuthCredentials fortinet_auth_credentials = 2;
+}
+
+message FortinetRuleDetails {
+  oneof rule_scope {
+    FortinetApplication fortinet_application = 1;
+    FortinetTemplate fortinet_template = 2;
+  }
+}
+
+message FortinetApplication {
+  string application_id = 1;
+}
+
+message FortinetTemplate {
+  string template_id = 1;
+}
+
+message FortinetAuthCredentials {
+  string encryption_key_id = 1; // Key used to encrypt the data.
+  string encrypted_api_key = 2;
+}
