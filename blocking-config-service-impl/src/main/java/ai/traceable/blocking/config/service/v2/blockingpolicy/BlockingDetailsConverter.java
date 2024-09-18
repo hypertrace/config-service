@@ -48,7 +48,8 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
             .setBlockingRuleType(convert(blockingPolicyData.getRuleType()))
             .setInfo(blockingPolicyData.getInfo())
             .setStatus(convert(blockingPolicyData.getStatus()))
-            .setCategory(convert(blockingPolicyData.getCategory()));
+            .setCategory(convert(blockingPolicyData.getCategory()))
+            .setRuleId(blockingPolicyData.getRuleId());
     if (blockingPolicyData.getTimestamp() != 0) {
       blockingDetailsBuilder.setExpirationTimestamp(blockingPolicyData.getTimestamp());
     }
@@ -110,14 +111,12 @@ final class BlockingDetailsConverter implements BlockingDetailsConverterBase<Blo
       case MODSECURITY:
         return BlockingCategory.BLOCKING_CATEGORY_MODSECURITY;
       case CUSTOM_IP_RULE:
-        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
       case CUSTOM_REGION_RULE:
-        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
-      case CUSTOM_SIGNATURE_RULE:
-        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
       case IP_TYPE_RULE:
       case EMAIL_DOMAIN_RULE:
         return BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
+      case CUSTOM_SIGNATURE_RULE:
+        return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
       case DATA_EXFILTRATION:
         return BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
       case ENUMERATION:

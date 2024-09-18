@@ -97,6 +97,7 @@ class RegionBlockingPolicyDataFetcherTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-1", "rule-name-1"),
         regionBasedRuleList.get(0).getInfo());
+    assertEquals("rule-id-1", regionBasedRuleList.get(0).getRuleId());
 
     assertEquals(
         RegionBlockingDetails.builder().regions(List.of("CH", "PK")).build(),
@@ -110,6 +111,7 @@ class RegionBlockingPolicyDataFetcherTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomRegionRuleViolationInfo("rule-id-3", "rule-name-3"),
         regionBasedRuleList.get(1).getInfo());
+    assertEquals("rule-id-3", regionBasedRuleList.get(1).getRuleId());
   }
 
   private static final List<RegionRule> sampleRegionAllEnvRulesResponse =

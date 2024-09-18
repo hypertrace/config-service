@@ -116,6 +116,7 @@ class DLPBlockingPolicyDataFetcherTest {
         ExemptionInfoEncoder.getEncodedDLPRuleExemptionInfo(
             "rule-id-1", "rule-name-1", EVENT_SEVERITY_UNSPECIFIED.name()),
         serviceScopeDLPRules.get("service1").get(0).getInfo());
+    assertEquals("rule-id-1", serviceScopeDLPRules.get("service1").get(0).getRuleId());
 
     assertEquals(1, serviceScopeDLPRules.get("service2").size());
     assertEquals(
@@ -134,6 +135,7 @@ class DLPBlockingPolicyDataFetcherTest {
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
             "rule-id-2", "rule-name-2", EVENT_SEVERITY_HIGH.name()),
         serviceScopeDLPRules.get("service2").get(0).getInfo());
+    assertEquals("rule-id-2", serviceScopeDLPRules.get("service2").get(0).getRuleId());
   }
 
   private static RateLimitingModsecRule buildSampleRateLimitingModsecRule(

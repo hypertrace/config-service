@@ -142,6 +142,7 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
             ModsecBlockingDetails.builder()
                 .ruleId(ruleId.replaceFirst(CRS_RULE_ID_REGEX, ""))
                 .build())
+        .ruleId(ruleId)
         .build();
   }
 }

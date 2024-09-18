@@ -97,7 +97,6 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
 
   @Test
   void ipTypeViolationsTest() {
-
     when((maliciousSourcesConfigServiceBlockingStub.getMaliciousSourcesRules(any())))
         .thenReturn(
             GetMaliciousSourcesRulesResponse.newBuilder()
@@ -154,6 +153,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
             Optional.empty(),
             List.of(MaliciousSourcesRuleCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION)),
         maliciousSourceIpTypeViolations.get(0).getInfo());
+    assertEquals("1", maliciousSourceIpTypeViolations.get(0).getRuleId());
 
     assertEquals(
         IpTypeBlockingDetails.builder()
@@ -176,6 +176,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
             Optional.empty(),
             List.of(MaliciousSourcesRuleCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION)),
         maliciousSourceIpTypeViolations.get(1).getInfo());
+    assertEquals("2", maliciousSourceIpTypeViolations.get(1).getRuleId());
   }
 
   @Test
@@ -251,6 +252,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
             Optional.empty(),
             List.of(MaliciousSourcesRuleCondition.ConditionCase.IP_RANGE_CONDITION)),
         maliciousSourceIpRangeViolations.get(0).getInfo());
+    assertEquals("1", maliciousSourceIpRangeViolations.get(0).getRuleId());
 
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_IP_RULE,
@@ -268,6 +270,7 @@ class MaliciousSourceRuleBlockingPolicyDataFetcherTest {
             Optional.empty(),
             List.of(MaliciousSourcesRuleCondition.ConditionCase.IP_RANGE_CONDITION)),
         maliciousSourceIpRangeViolations.get(1).getInfo());
+    assertEquals("2", maliciousSourceIpRangeViolations.get(1).getRuleId());
   }
 
   @Test

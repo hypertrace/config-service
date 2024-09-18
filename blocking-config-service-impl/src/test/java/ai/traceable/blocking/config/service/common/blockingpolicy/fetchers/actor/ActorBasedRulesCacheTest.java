@@ -95,6 +95,7 @@ class ActorBasedRulesCacheTest {
         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
             "entity-1", "rate-limit-id-1", "rate-limit-name-1", RATE_LIMIT_CATEGORY_RATE_LIMITING),
         response.get(0).getInfo());
+    assertEquals("actor-1", response.get(0).getRuleId());
 
     assertEquals(
         ActorBlockingDetails.builder().ipAddresses(List.of("2.2.2.2")).userId("actor-2").build(),
@@ -105,6 +106,7 @@ class ActorBasedRulesCacheTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedThreatActorViolationInfo("entity-2"),
         response.get(1).getInfo());
+    assertEquals("actor-2", response.get(1).getRuleId());
 
     assertEquals(
         ActorBlockingDetails.builder().ipAddresses(List.of("3.3.3.3")).userId("actor-3").build(),
@@ -115,6 +117,7 @@ class ActorBasedRulesCacheTest {
     assertEquals(
         ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo("entity-3"),
         response.get(2).getInfo());
+    assertEquals("actor-3", response.get(2).getRuleId());
 
     assertEquals(
         ActorBlockingDetails.builder().ipAddresses(List.of("5.5.5.5")).userId("actor-5").build(),
@@ -130,6 +133,7 @@ class ActorBasedRulesCacheTest {
             Optional.of("entity-5"),
             List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
         response.get(3).getInfo());
+    assertEquals("actor-5", response.get(3).getRuleId());
 
     assertEquals(
         ActorBlockingDetails.builder().ipAddresses(List.of("6.6.6.6")).userId("actor-6").build(),
@@ -145,6 +149,7 @@ class ActorBasedRulesCacheTest {
             Optional.of("entity-6"),
             List.of(MaliciousSourcesRuleCondition.ConditionCase.EMAIL_DOMAIN_CONDITION)),
         response.get(4).getInfo());
+    assertEquals("actor-6", response.get(4).getRuleId());
 
     assertEquals(
         ActorBlockingDetails.builder().ipAddresses(List.of("7.7.7.7")).userId("actor-7").build(),

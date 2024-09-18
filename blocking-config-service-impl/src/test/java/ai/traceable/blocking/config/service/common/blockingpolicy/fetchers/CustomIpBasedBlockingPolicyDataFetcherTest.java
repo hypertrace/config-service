@@ -43,8 +43,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
               GetRulesFilter.newBuilder()
                   .setDisabled(false)
                   .setRuleScope(
-                      RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
-                  .build())
+                      RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder())))
           .build();
 
   private IpRangeConfigServiceGrpc.IpRangeConfigServiceBlockingStub ipRangeConfigServiceStub;
@@ -129,6 +128,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo("rule-id-1", "rule-name-1"),
         customIpBasedRuleList.get(0).getInfo());
+    assertEquals("rule-id-1", customIpBasedRuleList.get(0).getRuleId());
 
     assertEquals(
         IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4", "11.22.33.44")).build(),
@@ -141,6 +141,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
     assertEquals(
         ExemptionInfoEncoder.getEncodedCustomIpRuleExemptionInfo("rule-id-5", "rule-name-5"),
         customIpBasedRuleList.get(2).getInfo());
+    assertEquals("rule-id-5", customIpBasedRuleList.get(2).getRuleId());
 
     assertEquals(
         IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4", "11.22.33.44")).build(),
@@ -154,6 +155,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo("rule-id-7", "rule-name-7"),
         customIpBasedRuleList.get(3).getInfo());
+    assertEquals("rule-id-7", customIpBasedRuleList.get(3).getRuleId());
   }
 
   @Test

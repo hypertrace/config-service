@@ -105,6 +105,7 @@ class ModsecBlockingPolicyDataFetcherTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedSafeCrsViolationInfo("crs_123456"),
         violations.get(0).getInfo());
+    assertEquals("crs_123456", violations.get(0).getRuleId());
 
     // If modsec rules are disabled
     doReturn(
@@ -169,6 +170,7 @@ class ModsecBlockingPolicyDataFetcherTest {
     assertEquals(
         ModsecBlockingDetails.builder().ruleId("123456").build(),
         violations.get(0).getBlockingDetails());
+    assertEquals("crs_123456", violations.get(0).getRuleId());
   }
 
   private static final GetScopedAnomalyDetectionConfigResponse

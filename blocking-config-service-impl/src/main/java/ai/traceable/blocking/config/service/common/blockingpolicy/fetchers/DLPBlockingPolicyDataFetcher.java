@@ -112,6 +112,7 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
             .timestamp(expirationTimestamp)
             .status(blockingRulesUtils.generateBlockingStatus(expirationTimestamp, ruleType))
             .blockingDetails(buildBlockingDetails(rateLimitingModsecRule))
+            .ruleId(rateLimitingModsecRule.getId())
             .build());
   }
 

@@ -103,31 +103,31 @@ public class ActorBasedRulesCache {
         .filter(
             actorStatusDetails -> !parseIpAddresses(actorStatusDetails.getIpAddresses()).isEmpty())
         .forEach(
-            actor -> {
-              if (actor.getStatus() == STATUS_ALWAYS_ALLOWED
-                  || actor.getStatus() == STATUS_SNOOZED) {
+            actorDetails -> {
+              if (actorDetails.getStatus() == STATUS_ALWAYS_ALLOWED
+                  || actorDetails.getStatus() == STATUS_SNOOZED) {
                 // Exemptions
-                if (actor.getStatusChangeSource()
+                if (actorDetails.getStatusChangeSource()
                     == StatusChangeSource.STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES) {
                   blockingPolicyDataList.add(
                       this.generateBlockingDetails(
                           Category.EMAIL_DOMAIN_RULE,
                           RuleType.ALLOW,
                           ExemptionInfoEncoder.getEncodedMaliciousSourcesExemptionInfo(
-                              actor
+                              actorDetails
                                   .getStatusChangeDetails()
                                   .getMaliciousSourcesDetails()
                                   .getRuleId(),
-                              actor
+                              actorDetails
                                   .getStatusChangeDetails()
                                   .getMaliciousSourcesDetails()
                                   .getRuleName(),
                               "",
-                              Optional.of(actor.getEntityId()),
+                              Optional.of(actorDetails.getEntityId()),
                               List.of(
                                   MaliciousSourcesRuleCondition.ConditionCase
                                       .EMAIL_DOMAIN_CONDITION)),
-                          actor,
+                          actorDetails,
                           BlockingPolicyDataBucket.EMAIL_DOMAIN_BASED_EXEMPTIONS));
                 } else {
                   blockingPolicyDataList.add(
@@ -135,32 +135,38 @@ public class ActorBasedRulesCache {
                           Category.THREAT_ACTOR,
                           RuleType.ALLOW,
                           ExemptionInfoEncoder.getEncodedThreatActorExemptionInfo(
-                              actor.getEntityId()),
-                          actor,
+                              actorDetails.getEntityId()),
+                          actorDetails,
                           BlockingPolicyDataBucket.THREAT_ACTOR_BASED_IP_EXEMPTIONS));
                 }
-              } else if (actor.getStatus() == STATUS_ALWAYS_DENIED
-                  || actor.getStatus() == STATUS_SUSPENDED) {
+              } else if (actorDetails.getStatus() == STATUS_ALWAYS_DENIED
+                  || actorDetails.getStatus() == STATUS_SUSPENDED) {
                 // Violations
-                switch (actor.getStatusChangeSource()) {
+                switch (actorDetails.getStatusChangeSource()) {
                   case STATUS_CHANGE_SOURCE_RATE_LIMIT:
                     blockingPolicyDataList.add(
                         this.generateBlockingDetails(
                             getBlockingCategory(
-                                actor
+                                actorDetails
                                     .getStatusChangeDetails()
                                     .getRateLimitDetails()
                                     .getRuleCategory()),
                             RuleType.BLOCK,
                             ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
-                                actor.getEntityId(),
-                                actor.getStatusChangeDetails().getRateLimitDetails().getRuleId(),
-                                actor.getStatusChangeDetails().getRateLimitDetails().getRuleName(),
-                                actor
+                                actorDetails.getEntityId(),
+                                actorDetails
+                                    .getStatusChangeDetails()
+                                    .getRateLimitDetails()
+                                    .getRuleId(),
+                                actorDetails
+                                    .getStatusChangeDetails()
+                                    .getRateLimitDetails()
+                                    .getRuleName(),
+                                actorDetails
                                     .getStatusChangeDetails()
                                     .getRateLimitDetails()
                                     .getRuleCategory()),
-                            actor,
+                            actorDetails,
                             BlockingPolicyDataBucket.RATE_LIMITING_BASED_IP_VIOLATIONS));
                     break;
                   case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
@@ -169,20 +175,20 @@ public class ActorBasedRulesCache {
                             Category.EMAIL_DOMAIN_RULE,
                             RuleType.BLOCK,
                             ViolationInfoEncoder.getEncodedMaliciousSourcesViolationInfo(
-                                actor
+                                actorDetails
                                     .getStatusChangeDetails()
                                     .getMaliciousSourcesDetails()
                                     .getRuleId(),
-                                actor
+                                actorDetails
                                     .getStatusChangeDetails()
                                     .getMaliciousSourcesDetails()
                                     .getRuleName(),
                                 "",
-                                Optional.of(actor.getEntityId()),
+                                Optional.of(actorDetails.getEntityId()),
                                 List.of(
                                     MaliciousSourcesRuleCondition.ConditionCase
                                         .EMAIL_DOMAIN_CONDITION)),
-                            actor,
+                            actorDetails,
                             BlockingPolicyDataBucket.EMAIL_DOMAIN_BASED_VIOLATIONS));
                     break;
                   default:
@@ -191,8 +197,8 @@ public class ActorBasedRulesCache {
                             Category.THREAT_ACTOR,
                             RuleType.BLOCK,
                             ViolationInfoEncoder.getEncodedThreatActorViolationInfo(
-                                actor.getEntityId()),
-                            actor,
+                                actorDetails.getEntityId()),
+                            actorDetails,
                             BlockingPolicyDataBucket.THREAT_ACTOR_BASED_IP_VIOLATIONS));
                 }
               }
@@ -227,6 +233,7 @@ public class ActorBasedRulesCache {
         .ruleType(ruleType)
         .bucket(bucket)
         .info(info)
+        .ruleId(actorStatusDetails.getActorId())
         .timestamp(actorStatusDetails.getExpirationTimestampMillis())
         .status(
             blockingRulesUtils.generateBlockingStatus(

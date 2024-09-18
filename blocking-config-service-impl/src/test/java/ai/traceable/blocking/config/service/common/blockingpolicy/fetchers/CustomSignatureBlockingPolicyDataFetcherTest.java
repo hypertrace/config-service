@@ -141,6 +141,7 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
         ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
             "rule-id-1", "rule-name-1", EVENT_SEVERITY_HIGH.name()),
         customSignatureRuleList.get(0).getInfo());
+    assertEquals("rule-id-1", customSignatureRuleList.get(0).getRuleId());
 
     assertEquals(
         CustomSignatureBlockingDetails.builder().ruleId("rule-id-3").build(),
@@ -156,6 +157,7 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
             "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name()),
         customSignatureRuleList.get(1).getInfo());
+    assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
   }
 
   @Test
@@ -199,6 +201,7 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
         BlockingPolicyDataBucket.CUSTOM_SIGNATURE_ANALYTICS,
         customSignatureRuleList.get(2).getBucket());
     assertEquals(RuleType.ANALYTICS, customSignatureRuleList.get(2).getRuleType());
+    assertEquals("rule-id-5", customSignatureRuleList.get(2).getRuleId());
     assertNotNull(customSignatureRuleList.get(2).getAction());
     assertEquals(1, customSignatureRuleList.get(2).getAction().getInlineModificationsList().size());
     assertEquals(

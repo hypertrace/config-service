@@ -31,9 +31,9 @@ class GenericBlockingDetailsAggregatorTest {
     BlockingPolicyDataFilter filter =
         BlockingPolicyDataFilter.builder().environmentId(Optional.of("environment")).build();
 
-    BlockingPolicyData blockingPolicyData1 = BlockingPolicyData.builder().info("one").build();
-    BlockingPolicyData blockingPolicyData2 = BlockingPolicyData.builder().info("two").build();
-    BlockingPolicyData blockingPolicyData3 = BlockingPolicyData.builder().info("three").build();
+    BlockingPolicyData blockingPolicyData1 = BlockingPolicyData.builder().ruleId("one").build();
+    BlockingPolicyData blockingPolicyData2 = BlockingPolicyData.builder().ruleId("two").build();
+    BlockingPolicyData blockingPolicyData3 = BlockingPolicyData.builder().ruleId("three").build();
 
     BlockingRulesSupplier blockingRulesSupplier = mock(BlockingRulesSupplier.class);
 

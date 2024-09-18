@@ -5,6 +5,7 @@ import ai.traceable.blocking.config.service.v2.RuleAction;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 
 @Builder
 @Getter
@@ -17,6 +18,7 @@ public final class BlockingPolicyData {
   BlockingPolicyDataBucket bucket;
   BlockingDetails blockingDetails;
   @Nullable RuleAction action;
+  @NonNull String ruleId;
 
   public enum Category {
     THREAT_ACTOR,

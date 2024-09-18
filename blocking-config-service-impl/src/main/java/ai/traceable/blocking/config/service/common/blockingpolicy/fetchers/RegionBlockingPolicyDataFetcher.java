@@ -74,6 +74,7 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                             .map(Country::getIsoCode)
                             .collect(Collectors.toUnmodifiableList()))
                     .build())
+            .ruleId(regionRule.getId())
             .build());
   }
 

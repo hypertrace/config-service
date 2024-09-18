@@ -99,6 +99,7 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
                     .ipAddresses(ipRule.getIpAddressesList())
                     .ipRanges(ipRule.getIpRangesList())
                     .build())
+            .ruleId(ipRule.getId())
             .build());
   }
 

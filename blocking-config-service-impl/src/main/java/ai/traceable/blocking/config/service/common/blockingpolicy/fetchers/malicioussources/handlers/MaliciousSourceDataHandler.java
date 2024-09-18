@@ -55,6 +55,7 @@ public abstract class MaliciousSourceDataHandler {
             .category(getCategory())
             .bucket(bucket.get())
             .blockingDetails(generateBlockingDetails(rule))
+            .ruleId(rule.getId())
             .action(
                 MaliciousSourceRuleEffectConverter.convert(
                     rule.getRuleInfo().getRuleAction().getEffectsList()))

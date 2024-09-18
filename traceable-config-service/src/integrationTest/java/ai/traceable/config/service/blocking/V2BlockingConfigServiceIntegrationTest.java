@@ -1,7 +1,5 @@
 package ai.traceable.config.service.blocking;
 
-import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE;
-import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
@@ -1013,7 +1011,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     int index = 0;
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_STATUS_ALLOWED,
@@ -1150,7 +1148,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     index++;
     List<String> ipAddress = new ArrayList<>();
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_STATUS_DENIED,
@@ -1159,7 +1157,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         blockingPolicyConfiguration.getBlockingDetailsList(index).getIpDetails().getIpAddresses(0));
     index++;
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_IP_RULE,
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_STATUS_DENIED,
@@ -1185,7 +1183,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     index += 3;
 
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT,
@@ -1195,7 +1193,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
     index++;
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_RULE_TYPE_BLOCK,
@@ -1205,7 +1203,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
     index += 2;
     assertEquals(
-        BLOCKING_CATEGORY_CUSTOM_REGION_RULE,
+        BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         BLOCKING_RULE_TYPE_BLOCK,

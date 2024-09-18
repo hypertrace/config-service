@@ -375,6 +375,7 @@ class BlockingDetailsConverterTest {
         .ruleType(ruleType)
         .category(category)
         .blockingDetails(blockingDetails)
+        .ruleId("id")
         .build();
   }
 

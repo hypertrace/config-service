@@ -95,6 +95,7 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                 CustomSignatureBlockingDetails.builder()
                     .ruleId(customSignatureRule.getId())
                     .build())
+            .ruleId(customSignatureRule.getId())
             .action(
                 CustomSignatureRuleEffectConverter.convert(
                     customSignatureRule.getEffect().getEffectsList()))

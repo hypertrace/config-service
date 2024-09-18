@@ -57,7 +57,8 @@ class BlockingDetailsConverterTest {
             "ip-range",
             BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_CUSTOM_IP_RULE);
+            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+            "ip-range");
     detailsBuilder.setIpDetails(
         IpDetails.newBuilder()
             .addAllIpAddresses(List.of("1.2.2.3", "1.2.3.4"))
@@ -73,6 +74,7 @@ class BlockingDetailsConverterTest {
                 RuleType.ALLOW,
                 100L,
                 Category.CUSTOM_IP_RULE,
+                "ip-range",
                 IpBlockingDetails.builder()
                     .ipRanges(List.of("11.22.33.44/5", "1.2.3.4/5"))
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
@@ -88,7 +90,8 @@ class BlockingDetailsConverterTest {
             "ip-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.empty(),
-            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE);
+            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+            "ip-type");
     detailsBuilder.setIpTypeDetails(
         IpTypeDetails.newBuilder()
             .addAllIpTypes(List.of(IpType.IP_TYPE_BOT, IpType.IP_TYPE_TOR))
@@ -103,6 +106,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 0L,
                 Category.IP_TYPE_RULE,
+                "ip-type",
                 IpTypeBlockingDetails.builder()
                     .ipTypes(
                         List.of(
@@ -120,7 +124,8 @@ class BlockingDetailsConverterTest {
             "region-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK_ALL_EXCEPT,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_CUSTOM_REGION_RULE);
+            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+            "id");
     detailsBuilder.setRegionDetails(
         RegionDetails.newBuilder().addAllRegions(List.of("Spain", "Morocco")).build());
 
@@ -133,6 +138,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK_ALL_EXCEPT,
                 100L,
                 Category.CUSTOM_REGION_RULE,
+                "id",
                 RegionBlockingDetails.builder().regions(List.of("Spain", "Morocco")).build()),
             filter));
   }
@@ -145,7 +151,8 @@ class BlockingDetailsConverterTest {
             "modsec-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.empty(),
-            BlockingCategory.BLOCKING_CATEGORY_MODSECURITY);
+            BlockingCategory.BLOCKING_CATEGORY_MODSECURITY,
+            "id");
     detailsBuilder.setModsecDetails(ModsecDetails.newBuilder().setRuleId("crs_123").build());
 
     assertEquals(
@@ -157,6 +164,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 0L,
                 Category.MODSECURITY,
+                "id",
                 ModsecBlockingDetails.builder().ruleId("crs_123").build()),
             filter));
   }
@@ -169,7 +177,8 @@ class BlockingDetailsConverterTest {
             "custom-signature-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_ALLOW,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE);
+            BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
+            "id");
     detailsBuilder.setCustomSignatureDetails(
         CustomSignatureDetails.newBuilder().setRuleId("cs-1").build());
 
@@ -182,6 +191,7 @@ class BlockingDetailsConverterTest {
                 RuleType.ALLOW,
                 100L,
                 Category.CUSTOM_SIGNATURE_RULE,
+                "id",
                 CustomSignatureBlockingDetails.builder().ruleId("cs-1").build()),
             filter));
   }
@@ -194,7 +204,8 @@ class BlockingDetailsConverterTest {
             "threat-actor-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR);
+            BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR,
+            "id");
     detailsBuilder.setActorDetails(
         ActorDetails.newBuilder()
             .setUserId("user-1")
@@ -211,6 +222,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 100L,
                 Category.THREAT_ACTOR,
+                "id",
                 ActorBlockingDetails.builder()
                     .userId("user-1")
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
@@ -231,6 +243,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 100L,
                 Category.THREAT_ACTOR,
+                "id",
                 IpBlockingDetails.builder().ipAddresses(List.of("1.2.2.3", "1.2.3.4")).build()),
             BlockingPolicyDataFilter.builder().build()));
   }
@@ -243,7 +256,8 @@ class BlockingDetailsConverterTest {
             "rate-limit-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT);
+            BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT,
+            "id");
     detailsBuilder.setActorDetails(
         ActorDetails.newBuilder()
             .setUserId("user-1")
@@ -263,6 +277,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 100L,
                 Category.RATE_LIMIT,
+                "id",
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
@@ -278,7 +293,8 @@ class BlockingDetailsConverterTest {
             "data-exfil-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION);
+            BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION,
+            "id");
     detailsBuilder.setActorDetails(
         ActorDetails.newBuilder()
             .setUserId("user-1")
@@ -298,6 +314,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 100L,
                 Category.DATA_EXFILTRATION,
+                "id",
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
@@ -313,7 +330,8 @@ class BlockingDetailsConverterTest {
             "enumeration-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_ENUMERATION);
+            BlockingCategory.BLOCKING_CATEGORY_ENUMERATION,
+            "id");
     detailsBuilder.setActorDetails(
         ActorDetails.newBuilder()
             .setUserId("user-1")
@@ -333,6 +351,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 100L,
                 Category.ENUMERATION,
+                "id",
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
@@ -348,7 +367,8 @@ class BlockingDetailsConverterTest {
             "email-domain-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE);
+            BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE,
+            "id");
     detailsBuilder.setActorDetails(
         ActorDetails.newBuilder()
             .setUserId("user-1")
@@ -368,6 +388,7 @@ class BlockingDetailsConverterTest {
                 RuleType.BLOCK,
                 100L,
                 Category.EMAIL_DOMAIN_RULE,
+                "id",
                 ActorBlockingDetails.builder()
                     .ipAddresses(List.of("1.2.2.3", "1.2.3.4"))
                     .userId("user-1")
@@ -384,6 +405,7 @@ class BlockingDetailsConverterTest {
             RuleType.BLOCK,
             100L,
             Category.DATA_EXFILTRATION,
+            "id",
             CombinationBlockingDetails.builder()
                 .operator(Operator.AND)
                 .blockingDetailsOperands(
@@ -426,7 +448,8 @@ class BlockingDetailsConverterTest {
             "transaction-based-type",
             BlockingRuleType.BLOCKING_RULE_TYPE_BLOCK,
             Optional.of(100L),
-            BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION);
+            BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION,
+            "id");
     detailsBuilder.setDetailsCombination(
         BlockingDetailsCombination.newBuilder()
             .setOperator(ConditionsOperator.CONDITIONS_OPERATOR_AND)
@@ -483,6 +506,7 @@ class BlockingDetailsConverterTest {
       RuleType ruleType,
       Long timestamp,
       Category category,
+      String ruleId,
       ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetails
           blockingDetails) {
     return BlockingPolicyData.builder()
@@ -493,6 +517,7 @@ class BlockingDetailsConverterTest {
         .category(category)
         .blockingDetails(blockingDetails)
         .action(mockRuleAction)
+        .ruleId(ruleId)
         .build();
   }
 
@@ -501,14 +526,16 @@ class BlockingDetailsConverterTest {
       String info,
       BlockingRuleType type,
       Optional<Long> timestamp,
-      BlockingCategory category) {
+      BlockingCategory category,
+      String ruleId) {
     Builder builder =
         BlockingDetails.newBuilder()
             .setCategory(category)
             .setStatus(status)
             .setInfo(info)
             .setBlockingRuleType(type)
-            .setAction(mockRuleAction);
+            .setAction(mockRuleAction)
+            .setRuleId(ruleId);
     return timestamp.map(builder::setExpirationTimestamp).orElse(builder);
   }
 }

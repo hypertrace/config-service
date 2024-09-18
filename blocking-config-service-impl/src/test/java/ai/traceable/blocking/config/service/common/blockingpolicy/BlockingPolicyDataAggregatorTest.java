@@ -125,6 +125,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(THREAT_ACTOR_BASED_IP_VIOLATIONS)
                         .info("threat-actor-violation")
+                        .ruleId("threat-actor-violation")
                         .build(),
                     BlockingPolicyData.builder()
                         .blockingDetails(
@@ -133,6 +134,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.ALLOW)
                         .bucket(THREAT_ACTOR_BASED_IP_EXEMPTIONS)
                         .info("threat-actor-exemption")
+                        .ruleId("threat-actor-exemption")
                         .build(),
                     BlockingPolicyData.builder()
                         .blockingDetails(
@@ -141,6 +143,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(RATE_LIMITING_BASED_IP_VIOLATIONS)
                         .info("rate-limit-violation")
+                        .ruleId("rate-limit-violation")
                         .build(),
                     BlockingPolicyData.builder()
                         .blockingDetails(
@@ -149,6 +152,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.ALLOW)
                         .bucket(EMAIL_DOMAIN_BASED_EXEMPTIONS)
                         .info("email-domain-exemption")
+                        .ruleId("email-domain-exemption")
                         .build(),
                     BlockingPolicyData.builder()
                         .blockingDetails(
@@ -157,6 +161,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(EMAIL_DOMAIN_BASED_VIOLATIONS)
                         .info("email-domain-violation")
+                        .ruleId("email-domain-violation")
                         .build())))
         .when(actorBasedDataFetcher)
         .getBlockingPolicyData(
@@ -174,6 +179,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.ALLOW)
                         .bucket(IP_RANGE_EXEMPTIONS)
                         .info("custom-ip-based-exemption")
+                        .ruleId("custom-ip-based-exemption")
                         .build())))
         .when(customIpBasedDataFetcher)
         .getBlockingPolicyData(
@@ -189,6 +195,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(CUSTOM_SIGNATURE_VIOLATIONS)
                         .info("custom-signature-violation")
+                        .ruleId("custom-signature-violation")
                         .blockingDetails(
                             CustomSignatureBlockingDetails.builder()
                                 .ruleId("custom-signature-rule-id")
@@ -199,6 +206,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.ALLOW)
                         .bucket(CUSTOM_SIGNATURE_EXEMPTIONS)
                         .info("custom-signature-exemption")
+                        .ruleId("custom-signature-exemption")
                         .blockingDetails(
                             CustomSignatureBlockingDetails.builder()
                                 .ruleId("custom-signature-rule-id")
@@ -220,6 +228,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(MODSEC_VIOLATIONS)
                         .info("modsec-violation")
+                        .ruleId("modsec-violation")
                         .build())))
         .when(modsecDataFetcher)
         .getBlockingPolicyData(
@@ -234,6 +243,7 @@ class BlockingPolicyDataAggregatorTest {
                         .category(Category.CUSTOM_REGION_RULE)
                         .ruleType(RuleType.BLOCK_ALL_EXCEPT)
                         .info("region-violation")
+                        .ruleId("region-violation")
                         .bucket(REGION_VIOLATIONS)
                         .blockingDetails(
                             RegionBlockingDetails.builder().regions(List.of("Bhutan")).build())
@@ -243,6 +253,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK_ALL_EXCEPT)
                         .bucket(REGION_BLOCK_ALL_EXCEPT_VIOLATIONS)
                         .info("region-block-all-except")
+                        .ruleId("region-block-all-except")
                         .blockingDetails(
                             RegionBlockingDetails.builder().regions(List.of("Bhutan")).build())
                         .build())))
@@ -268,6 +279,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(IP_TYPE_VIOLATIONS)
                         .info("malicious-source-ip-type-violation")
+                        .ruleId("malicious-source-ip-type-violation")
                         .build(),
                     BlockingPolicyData.builder()
                         .blockingDetails(
@@ -279,6 +291,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK)
                         .bucket(IP_RANGE_VIOLATIONS)
                         .info("malicious-source-ip-range-violation")
+                        .ruleId("malicious-source-ip-range-violation")
                         .build(),
                     BlockingPolicyData.builder()
                         .blockingDetails(
@@ -290,6 +303,7 @@ class BlockingPolicyDataAggregatorTest {
                         .ruleType(RuleType.BLOCK_ALL_EXCEPT)
                         .bucket(IP_RANGE_BLOCK_ALL_EXCEPT_VIOLATIONS)
                         .info("malicious-source-ip-range-block-all-except")
+                        .ruleId("malicious-source-ip-range-block-all-except")
                         .build())));
   }
 }
