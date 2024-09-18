@@ -19,6 +19,7 @@ import ai.traceable.ast.config.service.store.AstOverridesStore;
 import ai.traceable.ast.config.service.store.CustomTestPluginStore;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc;
 import ai.traceable.ast.config.service.v1.AstOverride;
+import ai.traceable.ast.config.service.v1.AstOverrideFilter;
 import ai.traceable.ast.config.service.v1.AstOverrideInfo;
 import ai.traceable.ast.config.service.v1.CodeSnippetDetails;
 import ai.traceable.ast.config.service.v1.CodeSnippetType;
@@ -44,6 +45,7 @@ import ai.traceable.ast.config.service.v1.GetScanPurgeConfigRequest;
 import ai.traceable.ast.config.service.v1.GetScanPurgeConfigResponse;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesRequest;
 import ai.traceable.ast.config.service.v1.GetVulnerabilityMetadataOverridesResponse;
+import ai.traceable.ast.config.service.v1.IdFilter;
 import ai.traceable.ast.config.service.v1.IdentifyingAttributes;
 import ai.traceable.ast.config.service.v1.MutationOverride;
 import ai.traceable.ast.config.service.v1.OverrideConfig;
@@ -867,12 +869,20 @@ class AstConfigServiceImplTest {
         astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
     assertEquals(1, getAstOverridesResponse.getAstOverridesCount());
 
-    System.out.println(createdAstOverride1);
     AstOverride createdAstOverride2 =
         astConfigServiceBlockingStub
             .createAstOverride(
                 CreateAstOverrideRequest.newBuilder().setAstOverrideInfo(astOverrideInfo2).build())
             .getAstOverride();
+    // test id filter
+    getAstOverridesResponse =
+        astConfigServiceBlockingStub.getAstOverrides(
+            GetAstOverridesRequest.newBuilder()
+                .setFilter(
+                    AstOverrideFilter.newBuilder()
+                        .setIdFilter(IdFilter.newBuilder().addIds(createdAstOverride1.getId())))
+                .build());
+    assertEquals(List.of(createdAstOverride1), getAstOverridesResponse.getAstOverridesList());
     getAstOverridesResponse =
         astConfigServiceBlockingStub.getAstOverrides(GetAstOverridesRequest.getDefaultInstance());
     assertEquals(2, getAstOverridesResponse.getAstOverridesCount());

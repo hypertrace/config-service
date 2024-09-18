@@ -355,7 +355,7 @@ class AstConfigServiceImpl extends AstConfigServiceImplBase {
       requestValidator.validateOrThrow(requestContext, request);
       responseObserver.onNext(
           GetAstOverridesResponse.newBuilder()
-              .addAllAstOverrides(astOverridesManager.getAstOverrides(requestContext))
+              .addAllAstOverrides(astOverridesManager.getAstOverrides(requestContext, request))
               .build());
       responseObserver.onCompleted();
     } catch (final Exception exception) {

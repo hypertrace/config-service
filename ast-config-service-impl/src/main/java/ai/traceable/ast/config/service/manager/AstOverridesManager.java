@@ -5,6 +5,7 @@ import ai.traceable.ast.config.service.v1.AstOverride;
 import ai.traceable.ast.config.service.v1.AstOverrideInfo;
 import ai.traceable.ast.config.service.v1.CreateAstOverrideRequest;
 import ai.traceable.ast.config.service.v1.DeleteAstOverridesRequest;
+import ai.traceable.ast.config.service.v1.GetAstOverridesRequest;
 import ai.traceable.ast.config.service.v1.UpdateAstOverrideRequest;
 import ai.traceable.config.utils.TimestampConverter;
 import java.util.List;
@@ -22,8 +23,9 @@ public class AstOverridesManager {
   private final AstOverridesStore astOverridesStore;
   private final TimestampConverter timestampConverter;
 
-  public List<AstOverride> getAstOverrides(final RequestContext requestContext) {
-    return astOverridesStore.getAllObjects(requestContext).stream()
+  public List<AstOverride> getAstOverrides(
+      final RequestContext requestContext, final GetAstOverridesRequest request) {
+    return astOverridesStore.getAllObjects(requestContext, request.getFilter()).stream()
         .map(this::convert)
         .collect(Collectors.toUnmodifiableList());
   }

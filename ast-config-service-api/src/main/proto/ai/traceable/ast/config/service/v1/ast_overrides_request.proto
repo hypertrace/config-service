@@ -7,7 +7,17 @@ option java_multiple_files = true;
 import "ai/traceable/ast/config/service/v1/ast_override.proto";
 import "ai/traceable/ast/config/service/v1/ast_override_scope.proto";
 
-message GetAstOverridesRequest {}
+message GetAstOverridesRequest {
+  AstOverrideFilter filter = 1;
+}
+
+message AstOverrideFilter {
+  IdFilter id_filter = 1;
+}
+
+message IdFilter {
+  repeated string ids = 1;
+}
 
 message CreateAstOverrideRequest {
   AstOverrideInfo ast_override_info = 1;
