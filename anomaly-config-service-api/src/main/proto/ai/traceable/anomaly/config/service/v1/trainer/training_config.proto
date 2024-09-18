@@ -690,6 +690,7 @@ enum LogicalOperator {
   LOGICAL_OPERATOR_UNSPECIFIED = 0;
   LOGICAL_OPERATOR_AND = 1;
   LOGICAL_OPERATOR_OR = 2;
+  LOGICAL_OPERATOR_NOT = 3;
 }
 
 enum RelationalOperator {
