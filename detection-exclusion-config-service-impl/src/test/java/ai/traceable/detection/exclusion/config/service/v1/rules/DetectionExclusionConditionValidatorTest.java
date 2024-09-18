@@ -34,6 +34,7 @@ import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchOperator;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RequestScannerTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
@@ -401,6 +402,14 @@ class DetectionExclusionConditionValidatorTest {
                       .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_BOT))
               .build();
       assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
+
+      DetectionExclusionCondition condition1 =
+          DetectionExclusionCondition.newBuilder()
+              .setIpLocationTypeCondition(
+                  IpLocationTypeCondition.newBuilder()
+                      .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_SCANNER))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition1));
     }
   }
 
@@ -1117,5 +1126,45 @@ class DetectionExclusionConditionValidatorTest {
 
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  void testValidateRequestScannerTypeTypeCondition() {
+    // condition not set
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setRequestScannerTypeCondition(RequestScannerTypeCondition.getDefaultInstance())
+              .build();
+      assertThrows(
+          StatusRuntimeException.class,
+          () -> conditionValidator.validateRuleCondition(false, condition));
+    }
+
+    // invalid request scanner type condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setRequestScannerTypeCondition(
+                  RequestScannerTypeCondition.newBuilder()
+                      .addAllScannerTypes(List.of("", "Scanner1")))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(false, condition));
+      assertTrue(throwable.getMessage().contains("should not contain blank string "));
+    }
+
+    // valid condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setRequestScannerTypeCondition(
+                  RequestScannerTypeCondition.newBuilder()
+                      .addAllScannerTypes(List.of("Scanner1", "Scanner2")))
+              .build();
+      assertDoesNotThrow(() -> conditionValidator.validateRuleCondition(false, condition));
+    }
   }
 }

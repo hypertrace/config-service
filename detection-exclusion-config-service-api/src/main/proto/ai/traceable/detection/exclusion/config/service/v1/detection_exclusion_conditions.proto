@@ -8,6 +8,10 @@ import "ai/traceable/detection/exclusion/config/service/v1/detection_match_condi
 import "ai/traceable/detection/exclusion/config/service/v1/detection_scope_details.proto";
 import "ai/traceable/detection/exclusion/config/service/v1/detection_event_details.proto";
 
+message RequestScannerTypeCondition {
+  repeated string scanner_types = 1;
+  bool exclude = 2;
+}
 
 message ScopeCondition {
   oneof scope {
@@ -35,6 +39,7 @@ enum IpLocationType {
   IP_LOCATION_TYPE_PUBLIC_PROXY = 3;
   IP_LOCATION_TYPE_TOR_EXIT_NODE = 4;
   IP_LOCATION_TYPE_BOT = 7;
+  IP_LOCATION_TYPE_SCANNER = 8;
 }
 
 message IpReputationCondition {

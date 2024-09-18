@@ -55,6 +55,7 @@ import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchOperator;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RequestScannerTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
@@ -178,11 +179,25 @@ public class DetectionExclusionConditionValidator {
       case USER_AGENT_CONDITION:
         validateUserAgentCondition(condition.getUserAgentCondition());
         break;
-
+      case REQUEST_SCANNER_TYPE_CONDITION:
+        validateRequestScannerTypeCondition(condition.getRequestScannerTypeCondition());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
                 "Invalid detection exclusion condition type : %s", condition.getConditionCase()));
+    }
+  }
+
+  private void validateRequestScannerTypeCondition(
+      RequestScannerTypeCondition requestScannerTypeCondition) {
+    validateNonDefaultPresenceOrThrow(
+        requestScannerTypeCondition, RequestScannerTypeCondition.SCANNER_TYPES_FIELD_NUMBER);
+    if (requestScannerTypeCondition.getScannerTypesList().stream().anyMatch(String::isBlank)) {
+      throwInvalidArgumentException(
+          String.format(
+              "RequestScannerTypeCondition should not contain blank string : {}",
+              requestScannerTypeCondition));
     }
   }
 

@@ -51,6 +51,7 @@ message DetectionExclusionCondition {
     RegionCondition region_condition = 15;
     EmailDomainCondition email_domain_condition = 16;
     UserAgentCondition user_agent_condition = 17;
+    RequestScannerTypeCondition request_scanner_type_condition = 18;
   }
 }
 
