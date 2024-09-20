@@ -100,7 +100,12 @@ message TrainingConfig {
 message DemoApplicationConfig {
   oneof config {
     DemoApplicationDefinition demo_application_definition = 1;
+    DemoApplicationAutomaticDetectionConfig demo_application_automatic_detection_config = 2;
   }
+}
+
+message DemoApplicationAutomaticDetectionConfig {
+  bool automatic_detection_disabled = 1;
 }
 
 message DemoApplicationDefinition {
