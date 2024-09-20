@@ -570,7 +570,8 @@ message RejectFilterConfig {
   SegmentFilterConfig segment_filter_config = 2;
   UserAgentFilterConfig user_agent_filter_config = 3;
   StatusCodeFilterConfig status_code_filter_config = 4;
-  SpanAttributeFilterConfig span_attribute_filter_config = 5;
+  SpanAttributeFilterConfig span_attribute_filter_config = 5 [deprecated = true];
+  SpanAttributeFilterConfigList span_attribute_filter_config_list = 6;
 }
 
 message StatusCodeFilterConfig {
@@ -634,6 +635,10 @@ message LevelThresholdConfig {
 
 message UserAgentFilterConfig {
   StringList bot_agent_list = 2;
+}
+
+message SpanAttributeFilterConfigList {
+  repeated SpanAttributeFilterConfig span_attribute_filter_configs = 1;
 }
 
 message SpanAttributeFilterConfig {
