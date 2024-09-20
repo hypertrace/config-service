@@ -45,6 +45,7 @@ message RateLimitingRuleData {
   TransactionActionConfig transaction_action_config = 9;
   RuleConfigScope rule_config_scope = 7;
   RuleStatus rule_status = 8;
+  map<string, string> labels = 10;
 }
 
 message RuleStatus {
