@@ -81,6 +81,7 @@ crs_944100 :: Remote Command Execution: Suspicious Java class
 crs_944130 :: Suspicious Java class
 crs_1020110 :: XML External Entity Injection: Entity Tags (T110)
 crs_921190 :: HTTP Splitting (CR/LF in request filename)
+crs_9420360 :: Concatenated basic SQL injection and SQLLFI attempts (T360)
 crs_942160 :: Blind sqli tests using sleep() or benchmark()
 crs_942500 :: MySQL in-line comment
 crs_944110 :: Remote Command Execution: Java process spawn (CVE-2017-9805)
