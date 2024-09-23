@@ -53,7 +53,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.hypertrace.config.service.ConfigServiceFactory;
-import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
@@ -63,7 +62,6 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
   @Nonnull SharedConfigServiceProvidersFactory providersFactory;
 
   private final ConfigServiceFactory hypertraceConfigServiceFactory = new ConfigServiceFactory();
-  private final GrpcChannelRegistry grpcChannelRegistry = new GrpcChannelRegistry();
 
   @Override
   public List<GrpcPlatformService> buildServices(GrpcServiceContainerEnvironment environment) {
@@ -266,7 +264,7 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getConfig(),
                     providers.getLocalChannel(),
                     providers.getChangeEventGenerator(),
-                    grpcChannelRegistry)),
+                    providers.getChannelRegistry())),
             wrap(
                 RunnerLogsConfigServiceFactory.build(
                     providers.getConfig(),
