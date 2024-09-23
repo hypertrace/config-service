@@ -39,6 +39,7 @@ import ai.traceable.waf.integration.service.api.v1.GlobalSecurityPolicyScope;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.RegionSecurityPolicyScope;
+import ai.traceable.waf.integration.service.api.v1.StringList;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.UpdatedWafIntegrationDetails;
@@ -299,8 +300,24 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request3, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // valid request
-    CreateWafIntegrationRequest validRequest =
+    // invalid request - same name as that of an existing imperva waf integration
+    WafIntegration existingImpervaWafIntegration = getExistingImpervaWafIntegration();
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(impervaIntegrationParamsBuilder.build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request4, REQUEST_CONTEXT, List.of(existingImpervaWafIntegration)));
+
+    // valid request - both account_id and website_params are absent
+    CreateWafIntegrationRequest validRequest1 =
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
                 WafIntegrationDetails.newBuilder()
@@ -318,7 +335,85 @@ class WafIntegrationConfigRequestValidatorTest {
     assertDoesNotThrow(
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
-                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+                validRequest1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request - only the account_id is absent
+    CreateWafIntegrationRequest validRequest2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(
+                        ImpervaIntegrationParams.newBuilder()
+                            .setApiId("id")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id")
+                                    .setValue("secret-value")
+                                    .build())
+                            .setWebsiteNames(
+                                StringList.newBuilder()
+                                    .addValues("website1.com")
+                                    .addValues("website2.com")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request - website_params is absent
+    CreateWafIntegrationRequest validRequest3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(
+                        ImpervaIntegrationParams.newBuilder()
+                            .setApiId("id")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id")
+                                    .setValue("secret-value")
+                                    .build())
+                            .setAccountId("account-id")
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request - all the parameters are present
+    CreateWafIntegrationRequest validRequest4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setImpervaIntegrationParams(
+                        ImpervaIntegrationParams.newBuilder()
+                            .setApiId("id")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id")
+                                    .setValue("secret-value")
+                                    .build())
+                            .setAccountId("imperva-account-id")
+                            .setWebsiteNames(
+                                StringList.newBuilder()
+                                    .addValues("website1.com")
+                                    .addValues("website2.com")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest4, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
   @Test
@@ -438,27 +533,125 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request8, REQUEST_CONTEXT, existingWafIntegrations));
 
-    UpdateWafIntegrationRequest validRequest =
+    // invalid request - same name as that of an already existing imperva waf integration
+    WafIntegration existingImpervaWafIntegration = getExistingImpervaWafIntegration();
+    UpdateWafIntegrationRequest request9 =
         UpdateWafIntegrationRequest.newBuilder()
             .setId("id")
             .setUpdatedWafIntegrationDetails(
                 UpdatedWafIntegrationDetails.newBuilder()
                     .setName("name")
+                    .setUpdatedImpervaIntegrationParams(impervaIntegrationUpdateParams)
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request9, REQUEST_CONTEXT, List.of(existingImpervaWafIntegration)));
+
+    // valid request - both account_id and website_params are absent
+    UpdateWafIntegrationRequest validRequest1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name1")
                     .setUpdatedImpervaIntegrationParams(
                         ImpervaIntegrationUpdateParams.newBuilder()
                             .setApiId("api-id")
                             .setApiKey(
                                 EncryptedText.newBuilder()
-                                    .setKeyId("secret-id")
-                                    .setValue("secret-value")
+                                    .setKeyId("secret-id1")
+                                    .setValue("secret-value1")
                                     .build())
                             .build()))
             .build();
-    // valid request
     assertDoesNotThrow(
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
-                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+                validRequest1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request - website_params is absent
+    UpdateWafIntegrationRequest validRequest2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name1")
+                    .setUpdatedImpervaIntegrationParams(
+                        ImpervaIntegrationUpdateParams.newBuilder()
+                            .setApiId("api-id1")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id1")
+                                    .setValue("secret-value1")
+                                    .build())
+                            .setAccountId("account-id1")
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request - account_id is absent
+    UpdateWafIntegrationRequest validRequest3 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name1")
+                    .setUpdatedImpervaIntegrationParams(
+                        ImpervaIntegrationUpdateParams.newBuilder()
+                            .setApiId("api-id1")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id1")
+                                    .setValue("secret-value1")
+                                    .build())
+                            .setWebsiteNames(
+                                StringList.newBuilder()
+                                    .addValues("website1.com")
+                                    .addValues("website2.com")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request - all parameters are present
+    UpdateWafIntegrationRequest validRequest4 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name1")
+                    .setUpdatedImpervaIntegrationParams(
+                        ImpervaIntegrationUpdateParams.newBuilder()
+                            .setApiId("api-id1")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id1")
+                                    .setValue("secret-value1")
+                                    .build())
+                            .setAccountId("account-id1")
+                            .setWebsiteNames(
+                                StringList.newBuilder()
+                                    .addValues("website1.com")
+                                    .addValues("website2.com")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest4, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
   @Test
@@ -2258,6 +2451,40 @@ class WafIntegrationConfigRequestValidatorTest {
                 .setAzureIntegrationParams(getAzureIntegrationParams())
                 .build())
         .build();
+  }
+
+  /*
+  .setApiId("api-id")
+                            .setApiKey(
+                                EncryptedText.newBuilder()
+                                    .setKeyId("secret-id1")
+                                    .setValue("secret-value1")
+                                    .build())
+   */
+
+  private WafIntegration getExistingImpervaWafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setName("name")
+                .setImpervaIntegrationParams(getImpervaIntegrationParams())
+                .build())
+        .build();
+  }
+
+  private ImpervaIntegrationParams getImpervaIntegrationParams() {
+    return ImpervaIntegrationParams.newBuilder()
+        .setApiId("api-id")
+        .setApiKey(getImpervaApiKey())
+        .setAccountId("account-id")
+        .setWebsiteNames(
+            StringList.newBuilder().addValues("website1.com").addValues("website2.com").build())
+        .build();
+  }
+
+  private EncryptedText getImpervaApiKey() {
+    return EncryptedText.newBuilder().setKeyId("secret-id").setValue("secret-value").build();
   }
 
   private AzureIntegrationParams getAzureIntegrationParams() {

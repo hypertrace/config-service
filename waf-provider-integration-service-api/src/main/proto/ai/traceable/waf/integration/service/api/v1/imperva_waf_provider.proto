@@ -7,6 +7,15 @@ option java_multiple_files = true;
 message ImpervaIntegrationParams {
   string api_id = 1;
   EncryptedText api_key = 2;
+  optional string account_id = 3;
+  oneof websites {
+    StringList website_ids = 4;
+    StringList website_names = 5;
+  }
+}
+
+message StringList {
+  repeated string values = 1;
 }
 
 message EncryptedText {
@@ -17,4 +26,9 @@ message EncryptedText {
 message ImpervaIntegrationUpdateParams {
   optional string api_id = 1;
   EncryptedText api_key = 2;
+  optional string account_id = 3;
+  oneof websites {
+    StringList website_ids = 4;
+    StringList website_names = 5;
+  }
 }

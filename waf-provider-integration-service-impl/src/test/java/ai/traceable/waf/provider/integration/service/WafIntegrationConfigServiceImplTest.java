@@ -48,6 +48,7 @@ import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.ImpervaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.IntegrationActionType;
 import ai.traceable.waf.integration.service.api.v1.RuleType;
+import ai.traceable.waf.integration.service.api.v1.StringList;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.UpdateWafIntegrationResponse;
 import ai.traceable.waf.integration.service.api.v1.UpdatedCloudflareIntegrationParams;
@@ -872,6 +873,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setKeyId("secret-key-id-1")
                             .setValue("secret-value-1")
                             .build())
+                    .setAccountId("account-id-1")
                     .build())
             .build();
     UpdateWafIntegrationRequest updateRequest =
@@ -889,13 +891,21 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals("id-1", impervaIntegrationParams.getApiId());
     assertEquals("secret-key-id-1", impervaIntegrationParams.getApiKey().getKeyId());
     assertEquals("secret-value-1", impervaIntegrationParams.getApiKey().getValue());
+    assertEquals("account-id-1", impervaIntegrationParams.getAccountId());
 
     updatedDetails =
         UpdatedWafIntegrationDetails.newBuilder()
             .setName("name2")
             .setDescription("des")
             .setUpdatedImpervaIntegrationParams(
-                ImpervaIntegrationUpdateParams.newBuilder().setApiId("id-2"))
+                ImpervaIntegrationUpdateParams.newBuilder()
+                    .setApiId("id-2")
+                    .setWebsiteNames(
+                        StringList.newBuilder()
+                            .addValues("website1.com")
+                            .addValues("website2.com")
+                            .build())
+                    .build())
             .build();
     updateRequest =
         UpdateWafIntegrationRequest.newBuilder()
@@ -911,6 +921,10 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals("id-2", impervaIntegrationParams.getApiId());
     assertEquals("secret-key-id-1", impervaIntegrationParams.getApiKey().getKeyId());
     assertEquals("secret-value-1", impervaIntegrationParams.getApiKey().getValue());
+    assertEquals("account-id-1", impervaIntegrationParams.getAccountId());
+    assertEquals(
+        List.of("website1.com", "website2.com"),
+        impervaIntegrationParams.getWebsiteNames().getValuesList());
   }
 
   @Test

@@ -260,19 +260,46 @@ public class WafIntegrationBuilderUtils {
 
   private static void updateImpervaWafIntegration(
       UpdateWafIntegrationRequest request, Builder detailsBuilder) {
+
     ImpervaIntegrationUpdateParams updatedImpervaIntegrationParams =
         request.getUpdatedWafIntegrationDetails().getUpdatedImpervaIntegrationParams();
+    ImpervaIntegrationParams.Builder impervaIntegrationParamsBuilder =
+        ImpervaIntegrationParams.newBuilder();
 
-    detailsBuilder.setImpervaIntegrationParams(
-        ImpervaIntegrationParams.newBuilder()
-            .setApiId(
-                updatedImpervaIntegrationParams.hasApiId()
-                    ? updatedImpervaIntegrationParams.getApiId()
-                    : detailsBuilder.getImpervaIntegrationParams().getApiId())
-            .setApiKey(
-                updatedImpervaIntegrationParams.hasApiKey()
-                    ? updatedImpervaIntegrationParams.getApiKey()
-                    : detailsBuilder.getImpervaIntegrationParams().getApiKey()));
+    impervaIntegrationParamsBuilder.setApiId(
+        updatedImpervaIntegrationParams.hasApiId()
+            ? updatedImpervaIntegrationParams.getApiId()
+            : detailsBuilder.getImpervaIntegrationParams().getApiId());
+
+    impervaIntegrationParamsBuilder.setApiKey(
+        updatedImpervaIntegrationParams.hasApiKey()
+            ? updatedImpervaIntegrationParams.getApiKey()
+            : detailsBuilder.getImpervaIntegrationParams().getApiKey());
+
+    if (updatedImpervaIntegrationParams.hasAccountId()) {
+      impervaIntegrationParamsBuilder.setAccountId(updatedImpervaIntegrationParams.getAccountId());
+    } else if (detailsBuilder.getImpervaIntegrationParams().hasAccountId()) {
+      impervaIntegrationParamsBuilder.setAccountId(
+          detailsBuilder.getImpervaIntegrationParams().getAccountId());
+    }
+
+    if (updatedImpervaIntegrationParams.hasWebsiteIds()) {
+      impervaIntegrationParamsBuilder.setWebsiteIds(
+          updatedImpervaIntegrationParams.getWebsiteIds());
+    } else if (updatedImpervaIntegrationParams.hasWebsiteNames()) {
+      impervaIntegrationParamsBuilder.setWebsiteNames(
+          updatedImpervaIntegrationParams.getWebsiteNames());
+    } else {
+      if (detailsBuilder.getImpervaIntegrationParams().hasWebsiteIds()) {
+        impervaIntegrationParamsBuilder.setWebsiteIds(
+            detailsBuilder.getImpervaIntegrationParams().getWebsiteIds());
+      } else if (detailsBuilder.getImpervaIntegrationParams().hasWebsiteNames()) {
+        impervaIntegrationParamsBuilder.setWebsiteNames(
+            detailsBuilder.getImpervaIntegrationParams().getWebsiteNames());
+      }
+    }
+
+    detailsBuilder.setImpervaIntegrationParams(impervaIntegrationParamsBuilder.build());
   }
 
   private static void updateAzureWafIntegration(
