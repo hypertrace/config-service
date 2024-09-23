@@ -48,6 +48,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final List<AnomalyDetectionConfig> defaultCustomRulesDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultVolumetricDetectionConfigs;
   private final List<AnomalyDetectionConfig> defaultCredentialStuffingDetectionConfigs;
+  private final List<AnomalyDetectionConfig> defaultAccountTakeoverDetectionConfigs;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
@@ -73,6 +74,8 @@ public class AnomalyDetectionConfigManagerImpl
     this.defaultCredentialStuffingDetectionConfigs =
         config.getDefaultCredentialStuffingDetectionConfigs();
     this.globalAnomalyConfigStatusManager = anomalyConfigStatusManager;
+    this.defaultAccountTakeoverDetectionConfigs =
+        config.getDefaultAccountTakeoverDetectionConfigs();
   }
 
   @Override
@@ -200,6 +203,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultVolumetricDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultCredentialStuffingDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultAccountTakeoverDetectionConfigs)
             .build());
 
     return scopedAnomalyDetectionConfigs.stream()
@@ -325,6 +329,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(defaultCustomRulesDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultVolumetricDetectionConfigs)
             .addAllAnomalyDetectionConfigs(defaultCredentialStuffingDetectionConfigs)
+            .addAllAnomalyDetectionConfigs(defaultAccountTakeoverDetectionConfigs)
             .build();
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =

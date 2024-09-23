@@ -132,7 +132,8 @@ message AnomalyDetectionConfig {
     BlockingMetadataAnomalyDetectionConfig blocking_metadata_anomaly_detection_config = 9;
     CustomRulesAnomalyDetectionConfig custom_rules_anomaly_detection_config = 10;
     VolumetricAnomalyDetectionConfig volumetric_anomaly_detection_config = 11;
-    CredentialStuffingAnomalyDetectionConfig credential_anomaly_detection_config = 12;
+    CredentialStuffingAnomalyDetectionConfig credential_anomaly_detection_config = 12 [deprecated = true];
+    AccountTakeoverAnomalyDetectionConfig account_takeover_anomaly_detection_config = 13;
   }
 }
 
@@ -254,6 +255,13 @@ message DetectionScopeConfig {
 }
 
 message CredentialStuffingAnomalyDetectionConfig {
+  string anomaly_rule_id = 1;
+  oneof config {
+    CredentialStuffingAnomalyConfig credential_stuffing = 2;
+  }
+}
+
+message AccountTakeoverAnomalyDetectionConfig {
   string anomaly_rule_id = 1;
   oneof config {
     CredentialStuffingAnomalyConfig credential_stuffing = 2;

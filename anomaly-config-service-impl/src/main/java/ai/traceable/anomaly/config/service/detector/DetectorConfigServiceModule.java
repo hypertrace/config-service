@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector;
 
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigModule;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -32,13 +33,15 @@ public class DetectorConfigServiceModule extends AbstractModule {
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionDefinitionRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
-      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
 
     return new DetectorConfigServiceConfig(
         config.getDetectorConfigServiceConfig(),
         apiDefinitionRegistry,
         sessionDefinitionRegistry,
         volumetricRulesRegistry,
-        credentialStuffingRulesRegistry);
+        credentialStuffingRulesRegistry,
+        accountTakeoverRulesRegistry);
   }
 }

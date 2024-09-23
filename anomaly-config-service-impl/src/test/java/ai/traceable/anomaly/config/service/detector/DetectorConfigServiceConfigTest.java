@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.detector;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
@@ -122,6 +123,17 @@ public class DetectorConfigServiceConfigTest {
                   + "      }\n"
                   + "    }\n"
                   + "]\n"
+                  + "accountTakeoverDetectionConfigs = [\n"
+                  + " {\n"
+                  + "   configStatus = {\n"
+                  + "        disabled = true\n"
+                  + "        internal = true\n"
+                  + "      }\n"
+                  + "      accountTakeoverAnomalyDetectionConfig = {\n"
+                  + "        anomalyRuleId = \"ato\"\n"
+                  + "      }\n"
+                  + "    }\n"
+                  + "]\n"
                   + "customRulesDetectionConfigs = [\n"
                   + "    {\n"
                   + "      categoryConfig = {\n"
@@ -154,7 +166,8 @@ public class DetectorConfigServiceConfigTest {
           new ApiDefinitionRegistryImpl(new ConfigConverter()),
           new SessionRulesRegistryImpl(new ConfigConverter()),
           new VolumetricRulesRegistryImpl(new ConfigConverter()),
-          new CredentialStuffingRulesRegistryImpl(new ConfigConverter()));
+          new CredentialStuffingRulesRegistryImpl(new ConfigConverter()),
+          new AccountTakeoverRulesRegistryImpl(new ConfigConverter()));
 
   @Test
   void testConfig() {

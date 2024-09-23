@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.detector;
 
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
@@ -21,6 +22,8 @@ public class DetectorConfigServiceConfig {
   private static final String VOLUMETRIC_DETECTION_CONFIGS_PATH = "volumetricDetectionConfigs";
   private static final String CREDENTIAL_STUFFING_DETECTION_CONFIGS_PATH =
       "credentialStuffingDetectionConfigs";
+  private static final String ACCOUNT_TAKEOVER_DETECTION_CONFIGS_PATH =
+      "accountTakeoverDetectionConfigs";
 
   private final List<AnomalyDetectionConfig> modsecDetectionConfigs;
   private final List<AnomalyDetectionConfig> apiDefinitionDetectionConfigs;
@@ -28,6 +31,7 @@ public class DetectorConfigServiceConfig {
   private final List<AnomalyDetectionConfig> customRulesDetectionConfigs;
   private final List<AnomalyDetectionConfig> volumetricDetectionConfigs;
   private final List<AnomalyDetectionConfig> credentialStuffingDetectionConfigs;
+  private final List<AnomalyDetectionConfig> accountTakeoverDetectionConfigs;
 
   private final ConfigConverter configConverter = new ConfigConverter();
 
@@ -36,7 +40,8 @@ public class DetectorConfigServiceConfig {
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionDefinitionRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
-      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
     this.modsecDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
@@ -87,6 +92,16 @@ public class DetectorConfigServiceConfig {
                             .setCredentialAnomalyDetectionConfig(detectionConfig)
                             .build())
                 .collect(Collectors.toList()));
+    this.accountTakeoverDetectionConfigs =
+        loadDefaultAccountTakeoverDetectionConfigs(
+            config,
+            accountTakeoverRulesRegistry.getAccountTakeoverRuleIdToConfigMap().values().stream()
+                .map(
+                    detectionConfig ->
+                        AnomalyDetectionConfig.newBuilder()
+                            .setAccountTakeoverAnomalyDetectionConfig(detectionConfig)
+                            .build())
+                .collect(Collectors.toList()));
   }
 
   public List<AnomalyDetectionConfig> getDefaultModsecDetectionConfigs() {
@@ -99,6 +114,10 @@ public class DetectorConfigServiceConfig {
 
   public List<AnomalyDetectionConfig> getDefaultSessionDefinitionDetectionConfigs() {
     return sessionDefinitionDetectionConfigs;
+  }
+
+  public List<AnomalyDetectionConfig> getDefaultAccountTakeoverDetectionConfigs() {
+    return accountTakeoverDetectionConfigs;
   }
 
   public List<AnomalyDetectionConfig> getDefaultCustomRulesDetectionConfigs() {
@@ -225,6 +244,35 @@ public class DetectorConfigServiceConfig {
             detectionConfig -> {
               String ruleId =
                   detectionConfig.getCredentialAnomalyDetectionConfig().getAnomalyRuleId();
+              if (configMap.containsKey(ruleId)) {
+                return detectionConfig.toBuilder().mergeFrom(configMap.get(ruleId)).build();
+              }
+              return detectionConfig;
+            })
+        .collect(Collectors.toList());
+  }
+
+  private List<AnomalyDetectionConfig> loadDefaultAccountTakeoverDetectionConfigs(
+      Config config, List<AnomalyDetectionConfig> accountTakeoverDetectionRegistryConfigs) {
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configConverter.convertToAnomalyDetectionConfigs(
+            config.getConfigList(ACCOUNT_TAKEOVER_DETECTION_CONFIGS_PATH));
+
+    Map<String, AnomalyDetectionConfig> configMap =
+        detectionConfigs.stream()
+            .collect(
+                Collectors.toMap(
+                    anomalyDetectionConfig ->
+                        anomalyDetectionConfig
+                            .getAccountTakeoverAnomalyDetectionConfig()
+                            .getAnomalyRuleId(),
+                    anomalyDetectionConfig -> anomalyDetectionConfig));
+
+    return accountTakeoverDetectionRegistryConfigs.stream()
+        .map(
+            detectionConfig -> {
+              String ruleId =
+                  detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getAnomalyRuleId();
               if (configMap.containsKey(ruleId)) {
                 return detectionConfig.toBuilder().mergeFrom(configMap.get(ruleId)).build();
               }

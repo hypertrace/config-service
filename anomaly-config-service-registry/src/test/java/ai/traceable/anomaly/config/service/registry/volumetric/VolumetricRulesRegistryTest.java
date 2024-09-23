@@ -1,13 +1,13 @@
 package ai.traceable.anomaly.config.service.registry.volumetric;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.detector.*;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class VolumetricRulesRegistryTest {
@@ -19,15 +19,17 @@ class VolumetricRulesRegistryTest {
 
     Map<String, AnomalyRuleInfo> anomalyRuleInfos =
         volumetricRulesRegistry.getVolumetricRuleInfos();
-    assertEquals(1, anomalyRuleInfos.size());
+    assertEquals(2, anomalyRuleInfos.size());
+    assertTrue(anomalyRuleInfos.containsKey("volumetricApiCallSpike"));
     assertEquals(
-        "volumetricApiCallSpike :: Unrestricted Resource Consumption",
-        anomalyRuleInfos.values().stream()
-            .map(
-                anomalyRuleInfo ->
-                    anomalyRuleInfo.getRuleId() + " :: " + anomalyRuleInfo.getRuleName())
-            .sorted()
-            .collect(Collectors.joining("\n")));
+        "Unrestricted Resource Consumption",
+        anomalyRuleInfos.get("volumetricApiCallSpike").getRuleName());
+    assertTrue(anomalyRuleInfos.containsKey("volumetric"));
+    assertEquals(
+        "Unrestricted Resource Consumption", anomalyRuleInfos.get("volumetric").getRuleName());
+    assertEquals(
+        "volumetric_apiCallSpike",
+        anomalyRuleInfos.get("volumetric").getSubRuleInfos(0).getRuleId());
   }
 
   @Test
@@ -43,6 +45,11 @@ class VolumetricRulesRegistryTest {
             "volumetricApiCallSpike",
             VolumetricAnomalyDetectionConfig.newBuilder()
                 .setAnomalyRuleId("volumetricApiCallSpike")
+                .setApiCallSpike(ApiCallSpikeAnomalyConfig.getDefaultInstance())
+                .build(),
+            "volumetric",
+            VolumetricAnomalyDetectionConfig.newBuilder()
+                .setAnomalyRuleId("volumetric")
                 .setApiCallSpike(ApiCallSpikeAnomalyConfig.getDefaultInstance())
                 .build());
 

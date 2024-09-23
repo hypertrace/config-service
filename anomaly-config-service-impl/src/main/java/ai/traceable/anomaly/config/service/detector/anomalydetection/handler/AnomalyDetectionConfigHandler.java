@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -32,13 +33,15 @@ public class AnomalyDetectionConfigHandler {
   private final VolumetricDetectionConfigHandler volumetricDetectionConfigHandler;
 
   private final CredentialStuffingDetectionConfigHandler credentialStuffingDetectionConfigHandler;
+  private final AccountTakeoverDetectionConfigHandler accountTakeoverDetectionConfigHandler;
 
   @Inject
   public AnomalyDetectionConfigHandler(
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionRulesRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
-      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
     this.apiDefinitionConfigHandler = new ApiDefinitionConfigHandler(apiDefinitionRegistry);
     this.sessionDefinitionConfigHandler = new SessionDefinitionConfigHandler(sessionRulesRegistry);
     this.apiStateBasedConfigHandler = new ApiStateBasedConfigHandler();
@@ -49,6 +52,8 @@ public class AnomalyDetectionConfigHandler {
         new VolumetricDetectionConfigHandler(volumetricRulesRegistry);
     this.credentialStuffingDetectionConfigHandler =
         new CredentialStuffingDetectionConfigHandler(credentialStuffingRulesRegistry);
+    this.accountTakeoverDetectionConfigHandler =
+        new AccountTakeoverDetectionConfigHandler(accountTakeoverRulesRegistry);
   }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
@@ -108,6 +113,9 @@ public class AnomalyDetectionConfigHandler {
           configCases.add(
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .CREDENTIAL_ANOMALY_DETECTION_CONFIG);
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase
+                  .ACCOUNT_TAKEOVER_ANOMALY_DETECTION_CONFIG);
           break;
         default:
           break;
@@ -136,6 +144,8 @@ public class AnomalyDetectionConfigHandler {
             volumetricDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             credentialStuffingDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            accountTakeoverDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -176,7 +186,9 @@ public class AnomalyDetectionConfigHandler {
     anomalyDetectionConfigs =
         credentialStuffingDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
-
+    anomalyDetectionConfigs =
+        accountTakeoverDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
+            anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     filteredConfigBuilder.addAllAnomalyDetectionConfigs(anomalyDetectionConfigs);
     return filteredConfigBuilder.build();
   }

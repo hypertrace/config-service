@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
@@ -29,6 +30,7 @@ class AnomalyRuleInfoManagerImplTest {
   private SessionRulesRegistry sessionRulesRegistry;
   private VolumetricRulesRegistryImpl volumetricRulesRegistry;
   private CredentialStuffingRulesRegistryImpl credentialStuffingRulesRegistry;
+  private AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
   private RuleInfoManager ruleInfoManager;
   private RequestContext requestContext;
 
@@ -39,13 +41,15 @@ class AnomalyRuleInfoManagerImplTest {
     sessionRulesRegistry = mock(SessionRulesRegistryImpl.class);
     volumetricRulesRegistry = mock(VolumetricRulesRegistryImpl.class);
     credentialStuffingRulesRegistry = mock(CredentialStuffingRulesRegistryImpl.class);
+    accountTakeoverRulesRegistry = mock(AccountTakeoverRulesRegistry.class);
     ruleInfoManager =
         new AnomalyRuleInfoManagerImpl(
             apiDefinitionRegistry,
             modsecRulesRegistry,
             sessionRulesRegistry,
             volumetricRulesRegistry,
-            credentialStuffingRulesRegistry);
+            credentialStuffingRulesRegistry,
+            accountTakeoverRulesRegistry);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 

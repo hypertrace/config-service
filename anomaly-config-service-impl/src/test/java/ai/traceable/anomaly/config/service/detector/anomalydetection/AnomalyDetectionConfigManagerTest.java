@@ -12,6 +12,8 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -62,12 +64,15 @@ public class AnomalyDetectionConfigManagerTest {
       new VolumetricRulesRegistryImpl(configConverter);
   private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry =
       new CredentialStuffingRulesRegistryImpl(configConverter);
+  private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry =
+      new AccountTakeoverRulesRegistryImpl(configConverter);
   private AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
           apiDefinitionRegistry,
           sessionRulesRegistry,
           volumetricRulesRegistry,
-          credentialStuffingRulesRegistry);
+          credentialStuffingRulesRegistry,
+          accountTakeoverRulesRegistry);
   private AnomalyDetectionConfigManager configManager;
   private final AnomalyEnvironmentScope environmentScope =
       AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
@@ -476,6 +481,7 @@ public class AnomalyDetectionConfigManagerTest {
     defaultDetectionConfigs.addAll(config.getDefaultCustomRulesDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultVolumetricDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultCredentialStuffingDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultAccountTakeoverDetectionConfigs());
 
     GetAnomalyDetectionConfigsFilter filter =
         GetAnomalyDetectionConfigsFilter.newBuilder()
@@ -888,6 +894,17 @@ public class AnomalyDetectionConfigManagerTest {
                 + "      }\n"
                 + "    }\n"
                 + "]\n"
+                + "accountTakeoverDetectionConfigs = [\n"
+                + " {\n"
+                + "   configStatus = {\n"
+                + "        disabled = true\n"
+                + "        internal = true\n"
+                + "      }\n"
+                + "      accountTakeoverAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"ato\"\n"
+                + "      }\n"
+                + "    }\n"
+                + "]\n"
                 + "customRulesDetectionConfigs = [\n"
                 + "    {\n"
                 + "      categoryConfig = {\n"
@@ -920,7 +937,8 @@ public class AnomalyDetectionConfigManagerTest {
         new ApiDefinitionRegistryImpl(new ConfigConverter()),
         new SessionRulesRegistryImpl(new ConfigConverter()),
         new VolumetricRulesRegistryImpl(new ConfigConverter()),
-        new CredentialStuffingRulesRegistryImpl(new ConfigConverter()));
+        new CredentialStuffingRulesRegistryImpl(new ConfigConverter()),
+        new AccountTakeoverRulesRegistryImpl(new ConfigConverter()));
   }
 
   private AnomalyDetectionConfig getModsecRuleConfig(

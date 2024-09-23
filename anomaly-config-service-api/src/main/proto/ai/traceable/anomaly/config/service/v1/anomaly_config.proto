@@ -166,7 +166,8 @@ enum AnomalyRuleCategory {
   ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS = 16 [(string_value) = "Authentication and Token Violations"];
   ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS = 17 [(string_value) = "GraphQL Attacks"];
   ANOMALY_RULE_CATEGORY_VOLUMETRIC = 18 [(string_value) = "Volumetric Anomalies"];
-  ANOMALY_RULE_CATEGORY_CREDENTIAL_STUFFING = 19 [(string_value) = "Credential Stuffing Attacks"];
+  ANOMALY_RULE_CATEGORY_CREDENTIAL_STUFFING = 19 [(string_value) = "Credential Stuffing Attacks", deprecated = true];
+  ANOMALY_RULE_CATEGORY_ACCOUNT_TAKEOVER = 20 [(string_value) = "Account Takeover"];
 }
 
 enum AnomalyConfidenceLevel {

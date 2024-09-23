@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
@@ -41,12 +43,15 @@ public class AnomalyDetectionConfigHandlerTest {
       new VolumetricRulesRegistryImpl(configConverter);
   private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry =
       new CredentialStuffingRulesRegistryImpl(configConverter);
+  private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry =
+      new AccountTakeoverRulesRegistryImpl(configConverter);
   private final AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
           apiDefinitionRegistry,
           sessionRulesRegistry,
           volumetricRulesRegistry,
-          credentialStuffingRulesRegistry);
+          credentialStuffingRulesRegistry,
+          accountTakeoverRulesRegistry);
 
   @Test
   void testModsecConfigConvert() throws InvalidProtocolBufferException {

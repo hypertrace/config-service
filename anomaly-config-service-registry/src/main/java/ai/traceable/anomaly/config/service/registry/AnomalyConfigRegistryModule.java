@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.registry;
 
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
@@ -20,5 +22,6 @@ public class AnomalyConfigRegistryModule extends AbstractModule {
     bind(SessionRulesRegistry.class).to(SessionRulesRegistryImpl.class);
     bind(VolumetricRulesRegistry.class).to(VolumetricRulesRegistryImpl.class);
     bind(CredentialStuffingRulesRegistry.class).to(CredentialStuffingRulesRegistryImpl.class);
+    bind(AccountTakeoverRulesRegistry.class).to(AccountTakeoverRulesRegistryImpl.class);
   }
 }

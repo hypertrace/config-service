@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.global.ruleinfo;
 
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
@@ -20,6 +21,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final SessionRulesRegistry sessionRulesRegistry;
   private final VolumetricRulesRegistry volumetricRulesRegistry;
   private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry;
+  private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
 
   @Inject
   AnomalyRuleInfoManagerImpl(
@@ -27,12 +29,14 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
       ModsecRulesRegistry modsecRulesRegistry,
       SessionRulesRegistry sessionRulesRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
-      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry) {
+      CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
     this.apiDefinitionRegistry = apiDefinitionRegistry;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.sessionRulesRegistry = sessionRulesRegistry;
     this.volumetricRulesRegistry = volumetricRulesRegistry;
     this.credentialStuffingRulesRegistry = credentialStuffingRulesRegistry;
+    this.accountTakeoverRulesRegistry = accountTakeoverRulesRegistry;
   }
 
   @Override
@@ -61,6 +65,8 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                 case ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING:
                   ruleInfos.addAll(
                       credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos().values());
+                  ruleInfos.addAll(
+                      accountTakeoverRulesRegistry.getAccountTakeoverRuleInfos().values());
                   break;
                 default:
                   throw new IllegalArgumentException(
