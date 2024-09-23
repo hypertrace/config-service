@@ -70,6 +70,7 @@ class ExcludeRuleConverterImplTest {
         DetectionExclusionModsecRule.newBuilder()
             .setRule(
                 DetectionExclusionRule.newBuilder()
+                    .setId("id-1")
                     .setRuleInfo(
                         DetectionExclusionRuleInfo.newBuilder()
                             .addConditions(
@@ -83,6 +84,7 @@ class ExcludeRuleConverterImplTest {
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(1, exclusionRule.getAnomalousAttributeConditionsCount());
+    assertEquals("id-1", exclusionRule.getRuleId());
 
     AnomalousAttributeCondition newCondition = exclusionRule.getAnomalousAttributeConditions(0);
 
@@ -103,7 +105,7 @@ class ExcludeRuleConverterImplTest {
   }
 
   @Test
-  public void testEventConditionConvert() {
+  void testEventConditionConvert() {
     SystemDefinedEvent systemEvent1 =
         SystemDefinedEvent.newBuilder()
             .setEventFamily(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
@@ -125,7 +127,6 @@ class ExcludeRuleConverterImplTest {
     CustomRuleEvent customRuleEvent2 =
         CustomRuleEvent.newBuilder()
             .setRuleFamily(CustomRuleFamily.CUSTOM_RULE_FAMILY_RATE_LIMIT)
-            .setRuleId("rule2")
             .build();
 
     // Create old event condition
@@ -173,7 +174,7 @@ class ExcludeRuleConverterImplTest {
     assertEquals(List.of("rule1"), exclusionRule.getEventConditions(1).getIdsList());
     assertEquals(
         BLOCKING_CATEGORY_RATE_LIMIT, exclusionRule.getEventConditions(2).getBlockingCategory());
-    assertEquals(List.of("rule2"), exclusionRule.getEventConditions(2).getIdsList());
+    assertTrue(exclusionRule.getEventConditions(2).getIdsList().isEmpty());
     assertEquals(
         BLOCKING_CATEGORY_TRANSACTION_BASED_DLP,
         exclusionRule.getEventConditions(3).getBlockingCategory());

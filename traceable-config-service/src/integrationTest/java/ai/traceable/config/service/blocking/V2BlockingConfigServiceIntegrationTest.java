@@ -17,6 +17,7 @@ import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Lo
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_BODY;
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily.CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES;
+import static ai.traceable.detection.exclusion.config.service.v1.CustomRuleFamily.CUSTOM_RULE_FAMILY_SIGNATURE;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_REQUEST_HEADER;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
@@ -1732,8 +1733,11 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .newBuilder()
                                     .addCustomRuleEvents(
                                         CustomRuleEvent.newBuilder()
-                                            .setRuleId("region-id")
                                             .setRuleFamily(CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES))
+                                    .addCustomRuleEvents(
+                                        CustomRuleEvent.newBuilder()
+                                            .setRuleId("cs-rule")
+                                            .setRuleFamily(CUSTOM_RULE_FAMILY_SIGNATURE))
                                     .addSystemDefinedEvents(
                                         SystemDefinedEvent.newBuilder()
                                             .setEventTypeId("crs931")
@@ -1778,7 +1782,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         List.of("1.2.3.4"),
         exclusionRule.getDetails().getDetailsConditions(1).getIpDetails().getIpAddressesList());
-    assertEquals(2, exclusionRule.getEventConditionsCount());
+    assertEquals(3, exclusionRule.getEventConditionsCount());
     assertEquals(
         EventCondition.newBuilder()
             .addIdPrefixes("crs931")
@@ -1787,10 +1791,15 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         exclusionRule.getEventConditions(0));
     assertEquals(
         EventCondition.newBuilder()
-            .addIds("region-id")
             .setBlockingCategory(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE)
             .build(),
         exclusionRule.getEventConditions(1));
+    assertEquals(
+        EventCondition.newBuilder()
+            .addIds("cs-rule")
+            .setBlockingCategory(BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE)
+            .build(),
+        exclusionRule.getEventConditions(2));
     assertEquals(
         List.of(
             AnomalousAttributeCondition.newBuilder()

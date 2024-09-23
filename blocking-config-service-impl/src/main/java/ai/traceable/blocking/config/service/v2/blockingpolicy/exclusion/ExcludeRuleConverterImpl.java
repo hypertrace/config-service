@@ -43,7 +43,8 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
 
   @Override
   public ExclusionRule convert(DetectionExclusionModsecRule detectionExclusionModsecRule) {
-    ExclusionRule.Builder exclusionRuleBuilder = ExclusionRule.newBuilder();
+    ExclusionRule.Builder exclusionRuleBuilder =
+        ExclusionRule.newBuilder().setRuleId(detectionExclusionModsecRule.getRule().getId());
 
     // Add match conditions corresponding to modsec rules
     exclusionRuleBuilder.setDetails(
@@ -178,12 +179,17 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
     condition
         .getCustomRuleEventsList()
         .forEach(
-            customRuleEvent ->
-                eventConditions.add(
-                    EventCondition.newBuilder()
-                        .setBlockingCategory(getBlockingCategory(customRuleEvent))
-                        .addIds(customRuleEvent.getRuleId())
-                        .build()));
+            customRuleEvent -> {
+              EventCondition.Builder eventConditionBuilder =
+                  EventCondition.newBuilder()
+                      .setBlockingCategory(getBlockingCategory(customRuleEvent));
+
+              if (!customRuleEvent.getRuleId().isBlank()) {
+                eventConditionBuilder.addIds(customRuleEvent.getRuleId());
+              }
+
+              eventConditions.add(eventConditionBuilder.build());
+            });
 
     return eventConditions;
   }
