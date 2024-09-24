@@ -161,6 +161,10 @@ public class ValidatorUtils {
     }
   }
 
+  public void throwAlreadyExistsException(String description) {
+    throw Status.ALREADY_EXISTS.withDescription(description).asRuntimeException();
+  }
+
   public void throwInvalidArgumentException(String description) {
     throw Status.INVALID_ARGUMENT.withDescription(description).asRuntimeException();
   }

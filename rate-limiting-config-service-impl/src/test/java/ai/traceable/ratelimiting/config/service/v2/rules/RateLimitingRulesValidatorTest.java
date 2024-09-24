@@ -1386,7 +1386,7 @@ public class RateLimitingRulesValidatorTest {
             StatusRuntimeException.class,
             () -> rulesValidator.validateOrThrow(requestContext, request, List.of(rule)));
     Status status = Status.fromThrowable(throwable);
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(Status.ALREADY_EXISTS.getCode(), status.getCode());
   }
 
   @Test
@@ -1442,7 +1442,7 @@ public class RateLimitingRulesValidatorTest {
             StatusRuntimeException.class,
             () -> rulesValidator.validateOrThrow(requestContext, request, List.of(rule, rule1)));
     Status status = Status.fromThrowable(throwable);
-    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertEquals(Status.ALREADY_EXISTS.getCode(), status.getCode());
   }
 
   @Test

@@ -65,7 +65,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
         getRuleOfSameNameAndCategory(
             requestData.getCategory(), requestData.getName(), existingRules);
     if (rule.isPresent() && !rule.get().getId().equals(request.getRuleId())) {
-      validatorUtils.throwInvalidArgumentException(
+      validatorUtils.throwAlreadyExistsException(
           String.format(
               "Rate limiting rule with name (%s) already exists for category : %s",
               requestData.getName(), requestData.getCategory()));
@@ -91,7 +91,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
         getRuleOfSameNameAndCategory(
             requestData.getCategory(), requestData.getName(), existingRules);
     if (rule.isPresent()) {
-      validatorUtils.throwInvalidArgumentException(
+      validatorUtils.throwAlreadyExistsException(
           String.format(
               "Rate limiting rule with name (%s) already exists for category : %s",
               requestData.getName(), requestData.getCategory()));
