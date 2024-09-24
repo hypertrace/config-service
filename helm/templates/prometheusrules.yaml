@@ -1,3 +1,4 @@
+{{- if .Values.prometheusRule.enabled }}
 {{- if .Capabilities.APIVersions.Has "monitoring.coreos.com/v1/PrometheusRule" }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -27,3 +28,5 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
   {{- end }}
+
+{{- end }}

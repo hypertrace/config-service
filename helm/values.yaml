@@ -668,3 +668,8 @@ hpa:
 
 savedQueriesConfig:
   userDataMigrationFlag: false
+
+containerSecurityContext: {}
+podSecurityContext: {}
+prometheusRule:
+  enabled: true

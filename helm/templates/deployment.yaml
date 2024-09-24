@@ -79,9 +79,9 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8}}
     {{- end }}
-    {{- with .Values.securityContext }}
+    {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml . | nindent 8}}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
     {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ .Values.serviceAccount.name }}
@@ -93,6 +93,10 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ $.Values.image.registry }}/{{ .Values.image.repository }}:{{ default $.Chart.AppVersion $.Values.image.tagOverride }}"
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: {{ .Values.internalContainerPortName }}
