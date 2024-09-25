@@ -27,6 +27,11 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class ModsecManagerImpl implements ModsecManager {
+  private static final List<AnomalySubRuleType> ALL_SUB_RULE_TYPES =
+      List.of(
+          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
+          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
   private static final GetAnomalyDetectionConfigsFilter ANOMALY_DETECTION_CONFIGS_FILTER =
       GetAnomalyDetectionConfigsFilter.newBuilder()
           .addAnomalyDetectionConfigTypes(
@@ -109,6 +114,36 @@ public class ModsecManagerImpl implements ModsecManager {
     return builder.build();
   }
 
+  @Override
+  public ModsecCrsRules getModsecCrsRules(
+      List<AnomalySubRuleType> subRuleTypes,
+      ModsecRuleVersion modsecRuleVersion,
+      boolean useTestModsecRules) {
+
+    if (subRuleTypes.isEmpty()) {
+      subRuleTypes = ALL_SUB_RULE_TYPES;
+    }
+
+    ModsecCrsRules.ModsecCrsRulesBuilder builder = ModsecCrsRules.builder();
+    Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes =
+        subRuleTypes.stream()
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    Function.identity(),
+                    subRuleType ->
+                        modsecRulesRegistry.getModsecCrsRulesBlob(
+                            List.of(subRuleType), modsecRuleVersion, Set.of())));
+    builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
+    if (subRuleTypes.size() == 1) {
+      builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
+    } else {
+      builder.aggregatedModsecBlob(
+          modsecRulesRegistry.getModsecCrsRulesBlob(subRuleTypes, modsecRuleVersion, Set.of()));
+    }
+
+    return builder.build();
+  }
+
   private boolean isGlobalConfigDisabled(ScopedAnomalyConfigStatus globalConfig) {
     AnomalyConfigStatus configStatus = globalConfig.getConfigStatus();
     return configStatus.getDisabled() && !configStatus.getInternal();
@@ -181,13 +216,11 @@ public class ModsecManagerImpl implements ModsecManager {
           return List.of(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
+        } else {
+          return ALL_SUB_RULE_TYPES;
         }
-        // else will go to the next case block to return all 3 types..
       case MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION:
-        return List.of(
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
-            AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+        return ALL_SUB_RULE_TYPES;
       default:
         log.debug("Unknown ModsecCrsRulesTarget:{} received", rulesTarget);
         return List.of();

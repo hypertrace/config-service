@@ -25,6 +25,7 @@ service AnomalyGlobalConfigService {
   rpc UpdateScopedAnomalyGlobalConfigStatus (UpdateScopedAnomalyGlobalConfigStatusRequest) returns (UpdateScopedAnomalyGlobalConfigStatusResponse) {
   }
 
+  // tenant-agnostic
   rpc GetAnomalyRuleInfos (GetAnomalyRuleInfosRequest) returns (GetAnomalyRuleInfosResponse) {
   }
 

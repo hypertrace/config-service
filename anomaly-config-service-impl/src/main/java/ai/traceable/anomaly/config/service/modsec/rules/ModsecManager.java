@@ -24,6 +24,11 @@ public interface ModsecManager {
       boolean removeDisabledRules,
       AnomalyConfigScope scope);
 
+  ModsecCrsRules getModsecCrsRules(
+      List<AnomalySubRuleType> subRuleTypes,
+      ModsecRuleVersion modsecRuleVersion,
+      boolean useTestModsecRules);
+
   @Builder
   class ModsecCrsRules {
     private final Map<AnomalySubRuleType, String> modsecBlobsForRuleTypes;

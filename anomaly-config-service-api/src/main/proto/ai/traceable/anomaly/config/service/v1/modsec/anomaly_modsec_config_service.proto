@@ -10,6 +10,11 @@ import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.prot
 
 service AnomalyModsecConfigService {
 
+  // tenant-specific
   rpc GetModsecCrsRules (GetModsecCrsRulesRequest) returns (GetModsecCrsRulesResponse) {
+  }
+
+  // tenant-agnostic
+  rpc GetDefaultModsecCrsRules (GetDefaultModsecCrsRulesRequest) returns (GetDefaultModsecCrsRulesResponse) {
   }
 }

@@ -88,6 +88,27 @@ class ModsecManagerImplTest {
             eq(Set.of())))
         .thenReturn("combined");
 
+    {
+      ModsecManager.ModsecCrsRules crsRules =
+          modsecManager.getModsecCrsRules(
+              List.of(), ModsecRuleVersion.MODSEC_RULE_VERSION_V3, false);
+      List<ModsecCrsRulesData> expectedResponse =
+          ImmutableList.of(
+              ModsecCrsRulesData.newBuilder()
+                  .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
+                  .setModsecCrsRulesBlob("block")
+                  .build(),
+              ModsecCrsRulesData.newBuilder()
+                  .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+                  .setModsecCrsRulesBlob("safe")
+                  .build(),
+              ModsecCrsRulesData.newBuilder()
+                  .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                  .setModsecCrsRulesBlob("regular")
+                  .build());
+      verifyLists(expectedResponse, crsRules);
+    }
+
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(
             eq(requestContext),
             eq(

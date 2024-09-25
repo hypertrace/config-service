@@ -23,15 +23,29 @@ class ModsecValidatorImplTest {
   @Test
   @DisplayName("Should return OK status when a given valid get modsec rule request")
   void validateOk() {
-    GetModsecCrsRulesRequest request =
-        GetModsecCrsRulesRequest.newBuilder()
-            .addAllSubRuleTypes(
-                List.of(
-                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
-                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
-            .build();
-    Status status = validator.validate(request);
-    assertEquals(Status.Code.OK, status.getCode());
+    {
+      GetModsecCrsRulesRequest request =
+          GetModsecCrsRulesRequest.newBuilder()
+              .addAllSubRuleTypes(
+                  List.of(
+                      AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                      AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+              .build();
+      Status status = validator.validate(request);
+      assertEquals(Status.Code.OK, status.getCode());
+    }
+
+    {
+      GetModsecCrsRulesRequest request =
+          GetModsecCrsRulesRequest.newBuilder()
+              .addAllSubRuleTypes(
+                  List.of(
+                      AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                      AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+              .build();
+      Status status = validator.validate(request);
+      assertEquals(Status.Code.OK, status.getCode());
+    }
   }
 
   @Test

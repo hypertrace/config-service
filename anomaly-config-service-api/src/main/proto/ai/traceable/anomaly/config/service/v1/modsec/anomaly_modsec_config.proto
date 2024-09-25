@@ -20,6 +20,17 @@ message GetModsecCrsRulesResponse {
   string aggregated_modsec_crs_rules_blob = 2;
 }
 
+message GetDefaultModsecCrsRulesRequest {
+  repeated AnomalySubRuleType sub_rule_types = 1;
+  ModsecRuleVersion rule_version = 2;
+  bool use_test_modsec_rules = 3;
+}
+
+message GetDefaultModsecCrsRulesResponse {
+  repeated ModsecCrsRulesData modsec_crs_rules = 1;
+  string aggregated_modsec_crs_rules_blob = 2;
+}
+
 enum ModsecCrsRulesTarget {
   MODSEC_CRS_RULES_TARGET_UNSPECIFIED = 0;
   MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION = 1;
@@ -39,11 +50,11 @@ enum ModsecRuleVersion {
   MODSEC_RULE_VERSION_CORAZA_V3 = 3;
   MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE = 4;
   MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE = 5;
-  MODSEC_RULE_VERSION_TEST_CORAZA_V3 = 6;
-  MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE = 7;
+  MODSEC_RULE_VERSION_TEST_CORAZA_V3 = 6 [deprecated = true];
+  MODSEC_RULE_VERSION_TEST_CORAZA_V3_DETECTION_ONLY_MODE = 7 [deprecated = true];
   MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3 = 8;
   MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3 = 9;
-  MODSEC_RULE_VERSION_TEST_V3 = 10;
-  MODSEC_RULE_VERSION_TEST_V3_SECARG_LIMITS = 11;
-  MODSEC_RULE_VERSION_TEST_V3_SECARG_LIMITS_DETECTION_ONLY_MODE = 12;
+  MODSEC_RULE_VERSION_TEST_V3 = 10 [deprecated = true];
+  MODSEC_RULE_VERSION_TEST_V3_SECARG_LIMITS = 11 [deprecated = true];
+  MODSEC_RULE_VERSION_TEST_V3_SECARG_LIMITS_DETECTION_ONLY_MODE = 12 [deprecated = true];
 }

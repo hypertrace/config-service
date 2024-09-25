@@ -51,7 +51,7 @@ class AnomalyModsecConfigServiceImplTest {
   @Test
   @DisplayName("Should get all the modsec rules if valid request")
   void getModsecRules() {
-    when(modsecValidator.validate(any())).thenReturn(Status.OK);
+    when(modsecValidator.validate(any(GetModsecCrsRulesRequest.class))).thenReturn(Status.OK);
 
     ModsecCrsRulesData rule1 =
         ModsecCrsRulesData.newBuilder()
@@ -100,7 +100,8 @@ class AnomalyModsecConfigServiceImplTest {
   @Test
   @DisplayName("Should return Invalid Argument if not a valid request")
   void should_fail_GetModsecRule_onInvalidRequest() {
-    when(modsecValidator.validate(any())).thenReturn(Status.INVALID_ARGUMENT);
+    when(modsecValidator.validate(any(GetModsecCrsRulesRequest.class)))
+        .thenReturn(Status.INVALID_ARGUMENT);
 
     StreamObserver<GetModsecCrsRulesResponse> responseStreamObserver = mock(StreamObserver.class);
 
@@ -117,7 +118,7 @@ class AnomalyModsecConfigServiceImplTest {
   @Test
   @DisplayName("Should propagate expection on occured manager")
   void should_propagate_error() {
-    when(modsecValidator.validate(any())).thenReturn(Status.OK);
+    when(modsecValidator.validate(any(GetModsecCrsRulesRequest.class))).thenReturn(Status.OK);
     doThrow(RuntimeException.class)
         .when(modsecManager)
         .getModsecCrsRules(any(), any(), any(), any(), eq(false), any());
