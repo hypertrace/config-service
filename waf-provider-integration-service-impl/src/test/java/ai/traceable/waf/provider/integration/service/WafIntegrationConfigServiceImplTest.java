@@ -32,6 +32,12 @@ import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.F5PolicyDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetApplication;
+import ai.traceable.waf.integration.service.api.v1.FortinetAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetRuleDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -250,6 +256,30 @@ class WafIntegrationConfigServiceImplTest {
     CreateWafIntegrationResponse response =
         wafProviderServiceBlockingStub.createWafIntegration(request);
     assertEquals(expectedDetails, response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
+  void createWafIntegrationFortinetTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(
+        stripFortinetSecrets(
+            expectedDetails.toBuilder()
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
+                        .build())
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                        .build())
+                .build()),
+        response.getWafIntegration().getWafIntegrationDetails());
   }
 
   @Test
@@ -674,6 +704,32 @@ class WafIntegrationConfigServiceImplTest {
                 GetWafIntegrationsFilter.newBuilder()
                     .addAllIds(List.of(id))
                     .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_AKAMAI))
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    WafIntegration expectedWafIntegration = createResponse.getWafIntegration();
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(expectedWafIntegration, response.getWafIntegrationList().get(0));
+  }
+
+  @Test
+  void getWafIntegrationsFortinetTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_FORTINET)
+                    .build())
             .build();
     GetWafIntegrationsResponse response =
         wafProviderServiceBlockingStub.getWafIntegrations(request);
@@ -1163,6 +1219,83 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void updateWafIntegrationFortinetTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des1")
+            .setUpdatedFortinetIntegrationParams(
+                FortinetIntegrationUpdateParams.newBuilder()
+                    .setFortinetIntegrationDetails(
+                        FortinetIntegrationDetails.newBuilder()
+                            .setFortinetAuthCredentials(
+                                FortinetAuthCredentials.newBuilder()
+                                    .setEncryptionKeyId("fortinet-encryption-key-id1")
+                                    .setEncryptedApiKey("fortinet-encrypted-api-key1")
+                                    .build())
+                            .setFortinetRuleDetails(
+                                FortinetRuleDetails.newBuilder()
+                                    .setFortinetApplication(
+                                        FortinetApplication.newBuilder()
+                                            .setApplicationId("fortinet-application-id1")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+
+    WafIntegrationDetails updatedWafIntegrationDetails =
+        updateResponse.getWafIntegration().getWafIntegrationDetails();
+    FortinetIntegrationDetails updatedFortinetIntegrationDetails =
+        updatedWafIntegrationDetails.getFortinetIntegrationParams().getFortinetIntegrationDetails();
+
+    assertEquals("name1", updatedWafIntegrationDetails.getName());
+    assertEquals("des1", updatedWafIntegrationDetails.getDescription());
+    assertEquals(
+        "fortinet-application-id1",
+        updatedFortinetIntegrationDetails
+            .getFortinetRuleDetails()
+            .getFortinetApplication()
+            .getApplicationId());
+
+    GetWafIntegrationsDetailsResponse wafIntegrationDetails =
+        wafProviderServiceBlockingStub.getWafIntegrationsDetails(
+            GetWafIntegrationsDetailsRequest.newBuilder()
+                .setFilter(
+                    GetWafIntegrationsFilter.newBuilder()
+                        .addIds(updateResponse.getWafIntegration().getId())
+                        .build())
+                .build());
+    FortinetAuthCredentials fortinetAuthCredentials =
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getFortinetIntegrationParams()
+            .getFortinetIntegrationDetails()
+            .getFortinetAuthCredentials();
+    assertEquals("fortinet-encrypted-api-key1", fortinetAuthCredentials.getEncryptedApiKey());
+    assertEquals("fortinet-encryption-key-id1", fortinetAuthCredentials.getEncryptionKeyId());
+  }
+
+  @Test
   void deleteWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -1276,6 +1409,29 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
+  @Test
+  void deleteWafIntegrationFortinetTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
   private WafIntegrationDetails createWebIdentityDetails(
       String name, IntegrationParamsCase paramsCase) {
     switch (paramsCase) {
@@ -1334,6 +1490,25 @@ class WafIntegrationConfigServiceImplTest {
             .build();
     return expectedDetails.toBuilder()
         .setAkamaiIntegrationParams(updatedAkamaiIntegrationParams)
+        .build();
+  }
+
+  private WafIntegrationDetails stripFortinetSecrets(WafIntegrationDetails expectedDetails) {
+    FortinetIntegrationDetails fortinetIntegrationDetails =
+        expectedDetails.getFortinetIntegrationParams().getFortinetIntegrationDetails();
+    FortinetAuthCredentials.Builder fortinetAuthCredentialsBuilder =
+        fortinetIntegrationDetails.toBuilder().getFortinetAuthCredentials().toBuilder()
+            .clearEncryptedApiKey();
+    FortinetIntegrationDetails updatedFortinetIntegrationDetails =
+        fortinetIntegrationDetails.toBuilder()
+            .setFortinetAuthCredentials(fortinetAuthCredentialsBuilder)
+            .build();
+    FortinetIntegrationParams updatedFortinetIntegrationParams =
+        expectedDetails.getFortinetIntegrationParams().toBuilder()
+            .setFortinetIntegrationDetails(updatedFortinetIntegrationDetails)
+            .build();
+    return expectedDetails.toBuilder()
+        .setFortinetIntegrationParams(updatedFortinetIntegrationParams)
         .build();
   }
 
@@ -1506,6 +1681,30 @@ class WafIntegrationConfigServiceImplTest {
                                     .setEncryptedClientToken("client-token")
                                     .setEncryptedAccessToken("access-token")
                                     .setEncryptionKeyId("key-id"))))
+            .build();
+      case FORTINET_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .setFortinetIntegrationParams(
+                FortinetIntegrationParams.newBuilder()
+                    .setFortinetIntegrationDetails(
+                        FortinetIntegrationDetails.newBuilder()
+                            .setFortinetAuthCredentials(
+                                FortinetAuthCredentials.newBuilder()
+                                    .setEncryptedApiKey("fortinet-encrypted-api-key")
+                                    .setEncryptionKeyId("fortinet-encryption-key-id")
+                                    .build())
+                            .setFortinetRuleDetails(
+                                FortinetRuleDetails.newBuilder()
+                                    .setFortinetApplication(
+                                        FortinetApplication.newBuilder()
+                                            .setApplicationId("fortinet-application-id")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
             .build();
       default:
         throw new RuntimeException();

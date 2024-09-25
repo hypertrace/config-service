@@ -15,6 +15,10 @@ import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -77,6 +81,9 @@ public class WafIntegrationBuilderUtils {
         break;
       case UPDATED_AKAMAI_INTEGRATION_PARAMS:
         updateAkamaiWafIntegration(request, updatedWafIntegrationDetailsBuilder);
+        break;
+      case UPDATED_FORTINET_INTEGRATION_PARAMS:
+        updateFortinetWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -161,6 +168,25 @@ public class WafIntegrationBuilderUtils {
             .build();
     return AkamaiIntegrationParams.newBuilder()
         .setAkamaiIntegrationDetails(akamaiIntegrationDetails)
+        .build();
+  }
+
+  private static FortinetIntegrationParams getUpdatedFortinetIntegrationParams(
+      FortinetIntegrationUpdateParams updatedFortinetIntegrationParams,
+      FortinetIntegrationParams fortinetIntegrationParams) {
+    FortinetIntegrationDetails updatedFortinetIntegrationDetails =
+        updatedFortinetIntegrationParams.getFortinetIntegrationDetails();
+    FortinetIntegrationDetails existingFortinetIntegrationDetails =
+        fortinetIntegrationParams.getFortinetIntegrationDetails();
+    FortinetIntegrationDetails fortinetIntegrationDetails =
+        updatedFortinetIntegrationDetails.toBuilder()
+            .setFortinetAuthCredentials(
+                updatedFortinetIntegrationDetails.hasFortinetAuthCredentials()
+                    ? updatedFortinetIntegrationDetails.getFortinetAuthCredentials()
+                    : existingFortinetIntegrationDetails.getFortinetAuthCredentials())
+            .build();
+    return FortinetIntegrationParams.newBuilder()
+        .setFortinetIntegrationDetails(fortinetIntegrationDetails)
         .build();
   }
 
@@ -320,6 +346,16 @@ public class WafIntegrationBuilderUtils {
     detailsBuilder.setGcpIntegrationParams(
         getUpdatedGcpIntegrationParams(
             updatedGcpIntegrationParams, detailsBuilder.getGcpIntegrationParams()));
+  }
+
+  private static void updateFortinetWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
+    FortinetIntegrationUpdateParams updatedFortinetIntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedFortinetIntegrationParams();
+
+    detailsBuilder.setFortinetIntegrationParams(
+        getUpdatedFortinetIntegrationParams(
+            updatedFortinetIntegrationParams, detailsBuilder.getFortinetIntegrationParams()));
   }
 
   private static AzureIntegrationParams getUpdatedAzureIntegrationParams(
@@ -517,6 +553,8 @@ public class WafIntegrationBuilderUtils {
         return getF5WafIntegrationWithSecretsStripped(wafIntegration);
       case AKAMAI_INTEGRATION_PARAMS:
         return getAkamaiWafIntegrationWithSecretsStripped(wafIntegration);
+      case FORTINET_INTEGRATION_PARAMS:
+        return getFortinetWafIntegrationWithSecretsStripped(wafIntegration);
       default:
         return wafIntegration;
     }
@@ -577,6 +615,28 @@ public class WafIntegrationBuilderUtils {
                 .setGcpIntegrationParams(
                     gcpIntegrationParams.toBuilder()
                         .setGcpIntegrationDetails(gcpIntegrationDetailsBuilder.build())
+                        .build())
+                .build())
+        .build();
+  }
+
+  private static WafIntegration getFortinetWafIntegrationWithSecretsStripped(
+      WafIntegration wafIntegration) {
+    FortinetIntegrationParams fortinetIntegrationParams =
+        wafIntegration.getWafIntegrationDetails().getFortinetIntegrationParams();
+    FortinetIntegrationDetails.Builder fortinetIntegrationDetailsBuilder =
+        fortinetIntegrationParams.getFortinetIntegrationDetails().toBuilder();
+    FortinetAuthCredentials fortinetAuthCredentials =
+        fortinetIntegrationParams.getFortinetIntegrationDetails().getFortinetAuthCredentials();
+    fortinetIntegrationDetailsBuilder.setFortinetAuthCredentials(
+        fortinetAuthCredentials.toBuilder().clearEncryptedApiKey());
+    return WafIntegration.newBuilder()
+        .setId(wafIntegration.getId())
+        .setWafIntegrationDetails(
+            wafIntegration.getWafIntegrationDetails().toBuilder()
+                .setFortinetIntegrationParams(
+                    fortinetIntegrationParams.toBuilder()
+                        .setFortinetIntegrationDetails(fortinetIntegrationDetailsBuilder.build())
                         .build())
                 .build())
         .build();

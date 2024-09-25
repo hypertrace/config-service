@@ -5,6 +5,7 @@ import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AZURE_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.F5_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.GCP_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
@@ -36,6 +37,13 @@ import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.F5PolicyDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetApplication;
+import ai.traceable.waf.integration.service.api.v1.FortinetAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetRuleDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetTemplate;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -172,6 +180,7 @@ public class WafIntegrationConfigRequestValidator {
       case WAF_PROVIDER_TYPE_GCP:
       case WAF_PROVIDER_TYPE_F5:
       case WAF_PROVIDER_TYPE_AKAMAI:
+      case WAF_PROVIDER_TYPE_FORTINET:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -265,6 +274,18 @@ public class WafIntegrationConfigRequestValidator {
             AKAMAI_INTEGRATION_PARAMS);
         validateUpdatedAkamaiIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedAkamaiIntegrationParams(),
+            existingWafIntegrations);
+        break;
+      case UPDATED_FORTINET_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                id, FORTINET_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            FORTINET_INTEGRATION_PARAMS);
+        validateUpdatedFortinetIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedFortinetIntegrationParams(),
             existingWafIntegrations);
         break;
       case INTEGRATIONPARAMS_NOT_SET:
@@ -364,6 +385,55 @@ public class WafIntegrationConfigRequestValidator {
     }
   }
 
+  private void validateUpdatedFortinetIntegrationParams(
+      FortinetIntegrationUpdateParams fortinetIntegrationUpdateParams,
+      List<WafIntegration> otherExistingWafIntegrations) {
+
+    FortinetIntegrationDetails fortinetIntegrationDetails =
+        fortinetIntegrationUpdateParams.getFortinetIntegrationDetails();
+    validateFortinetIntegrationDetails(fortinetIntegrationDetails);
+    validateFortinetIntegrationDetailsNoDuplicatesOrThrow(
+        fortinetIntegrationDetails, otherExistingWafIntegrations);
+  }
+
+  private void validateFortinetIntegrationDetails(
+      FortinetIntegrationDetails fortinetIntegrationDetails) {
+    validateFortinetAuthCredentials(fortinetIntegrationDetails.getFortinetAuthCredentials());
+    validateFortinetRuleDetails(fortinetIntegrationDetails.getFortinetRuleDetails());
+  }
+
+  private void validateFortinetAuthCredentials(FortinetAuthCredentials fortinetAuthCredentials) {
+    validateNonDefaultPresenceOrThrow(
+        fortinetAuthCredentials, FortinetAuthCredentials.ENCRYPTION_KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        fortinetAuthCredentials, FortinetAuthCredentials.ENCRYPTED_API_KEY_FIELD_NUMBER);
+  }
+
+  private void validateFortinetRuleDetails(FortinetRuleDetails fortinetRuleDetails) {
+    switch (fortinetRuleDetails.getRuleScopeCase()) {
+      case FORTINET_TEMPLATE:
+        validateNonDefaultPresenceOrThrow(
+            fortinetRuleDetails.getFortinetTemplate(), FortinetTemplate.TEMPLATE_ID_FIELD_NUMBER);
+        break;
+      case FORTINET_APPLICATION:
+        validateNonDefaultPresenceOrThrow(
+            fortinetRuleDetails.getFortinetApplication(),
+            FortinetApplication.APPLICATION_ID_FIELD_NUMBER);
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Fortinet rule details missing")
+            .asRuntimeException();
+    }
+  }
+
+  private void validateFortinetIntegrationDetailsNoDuplicatesOrThrow(
+      FortinetIntegrationDetails fortinetIntegrationDetails,
+      List<WafIntegration> otherExistingFortinetWafIntegrations) {
+    otherExistingFortinetWafIntegrations.forEach(
+        wafIntegration -> throwIfDuplicateParams(wafIntegration, fortinetIntegrationDetails));
+  }
+
   private void validateUpdatedGcpAuthCredentials(GcpAuthCredentials authCredentials) {
     if (authCredentials.hasEncryptedServiceAccountKey()) {
       validateGcpServiceAccountKey(authCredentials.getEncryptedServiceAccountKey());
@@ -452,6 +522,15 @@ public class WafIntegrationConfigRequestValidator {
         validateAkamaiIntegrationParams(
             wafIntegrationDetails.getAkamaiIntegrationParams(), existingWafIntegrations);
         break;
+      case FORTINET_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                null, FORTINET_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, FORTINET_INTEGRATION_PARAMS);
+        validateFortinetIntegrationParams(
+            wafIntegrationDetails.getFortinetIntegrationParams(), existingWafIntegrations);
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -482,6 +561,16 @@ public class WafIntegrationConfigRequestValidator {
     validateAkamaiIntegrationDetails(akamaiIntegrationParams.getAkamaiIntegrationDetails());
     validateAkamaiIntegrationDetailsNoDuplicatesOrThrow(
         akamaiIntegrationParams.getAkamaiIntegrationDetails(), existingAkamaiWafIntegrations);
+  }
+
+  private void validateFortinetIntegrationParams(
+      FortinetIntegrationParams fortinetIntegrationParams,
+      List<WafIntegration> existingFortinetWafIntegrations) {
+    FortinetIntegrationDetails fortinetIntegrationDetails =
+        fortinetIntegrationParams.getFortinetIntegrationDetails();
+    validateFortinetIntegrationDetails(fortinetIntegrationDetails);
+    validateFortinetIntegrationDetailsNoDuplicatesOrThrow(
+        fortinetIntegrationDetails, existingFortinetWafIntegrations);
   }
 
   private void validateGcpIntegrationDetails(
@@ -617,6 +706,43 @@ public class WafIntegrationConfigRequestValidator {
                   + " and project ID "
                   + gcpIntegrationDetails.getProjectId()
                   + " are already linked to an existing GCP WAF Integration")
+          .asRuntimeException();
+    }
+  }
+
+  private void throwIfDuplicateParams(
+      WafIntegration existingIntegration, FortinetIntegrationDetails fortinetIntegrationDetails) {
+    FortinetIntegrationDetails existingIntegrationDetails =
+        existingIntegration
+            .getWafIntegrationDetails()
+            .getFortinetIntegrationParams()
+            .getFortinetIntegrationDetails();
+    FortinetRuleDetails fortinetRuleDetails = fortinetIntegrationDetails.getFortinetRuleDetails();
+    FortinetRuleDetails existingRuleDetails = existingIntegrationDetails.getFortinetRuleDetails();
+
+    if (existingRuleDetails.hasFortinetApplication()
+        && fortinetRuleDetails.hasFortinetApplication()
+        && existingRuleDetails
+            .getFortinetApplication()
+            .getApplicationId()
+            .equals(fortinetRuleDetails.getFortinetApplication().getApplicationId())) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              "Fortinet Application ID "
+                  + fortinetRuleDetails.getFortinetApplication().getApplicationId()
+                  + " is already linked to an existing Fortinet WAF integration.")
+          .asRuntimeException();
+    } else if (existingRuleDetails.hasFortinetTemplate()
+        && fortinetRuleDetails.hasFortinetTemplate()
+        && existingRuleDetails
+            .getFortinetTemplate()
+            .getTemplateId()
+            .equals(fortinetRuleDetails.getFortinetTemplate().getTemplateId())) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              "Fortinet Template ID "
+                  + fortinetRuleDetails.getFortinetTemplate().getTemplateId()
+                  + " is already linked to an existing Fortinet WAF integration.")
           .asRuntimeException();
     }
   }

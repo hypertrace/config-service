@@ -27,6 +27,13 @@ import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.F5PolicyDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetApplication;
+import ai.traceable.waf.integration.service.api.v1.FortinetAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.FortinetRuleDetails;
+import ai.traceable.waf.integration.service.api.v1.FortinetTemplate;
 import ai.traceable.waf.integration.service.api.v1.GcpAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.GcpIntegrationParams;
@@ -71,6 +78,11 @@ class WafIntegrationConfigRequestValidatorTest {
   private static final String WAF_POLICY_RESOURCE_GROUP = "wafPolicyResourceGroup";
   private static final String AZURE_WAF_NAME = "azure-waf";
   private static final String WAF_INTEGRATION_ID = "wafIntegrationId";
+
+  private static final String ENCRYPTION_KEY_ID = "fortinet-encryption-key-id";
+  private static final String ENCRYPTED_API_KEY = "fortinet-encrypted-api-key";
+  private static final String APPLICATION_ID = "fortinet-application-id";
+  private static final String TEMPLATE_ID = "fortinet-template-id";
 
   public WafIntegrationConfigRequestValidatorTest() {
     wafIntegrationConfigRequestValidator = new WafIntegrationConfigRequestValidator();
@@ -1971,6 +1983,227 @@ class WafIntegrationConfigRequestValidatorTest {
   }
 
   @Test
+  void invalidCreateFortinetRequestTest() {
+
+    // empty FortinetIntegrationParams
+    CreateWafIntegrationRequest invalidRequest1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .clearFortinetIntegrationParams()
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty FortinetIntegrationDetails
+    CreateWafIntegrationRequest invalidRequest2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .clearFortinetIntegrationDetails()
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty FortinetAuthCredentials, but with FortinetApplicationRuleDetails
+    CreateWafIntegrationRequest invalidRequest3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .clearFortinetAuthCredentials()
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetApplication(
+                                                getFortinetApplicationRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty FortinetAuthCredentials, but with FortinetTemplateRuleDetails
+    CreateWafIntegrationRequest invalidRequest4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .clearFortinetAuthCredentials()
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetTemplate(getFortinetTemplateRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest4, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty FortinetApplicationRuleDetails, but with FortinetAuthCredentials
+    CreateWafIntegrationRequest invalidRequest5 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .clearFortinetApplication()
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest5, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty FortinetTemplateRuleDetails, but with FortinetAuthCredentials
+    CreateWafIntegrationRequest invalidRequest6 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .clearFortinetTemplate()
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest6, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // same name as that of an already existing fortinet waf integration
+    WafIntegration existingFortinetWafIntegration = getExistingFortinetWafIntegration();
+    CreateWafIntegrationRequest invalidRequest7 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(getFortinetIntegrationDetails())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest7, REQUEST_CONTEXT, List.of(existingFortinetWafIntegration)));
+
+    // valid request 1
+    CreateWafIntegrationRequest validRequest1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetApplication(
+                                                getFortinetApplicationRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request 2
+    CreateWafIntegrationRequest validRequest2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setFortinetIntegrationParams(
+                        FortinetIntegrationParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetTemplate(getFortinetTemplateRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
+  }
+
+  private FortinetAuthCredentials getFortinetAuthCredentials() {
+    return FortinetAuthCredentials.newBuilder()
+        .setEncryptionKeyId(ENCRYPTION_KEY_ID)
+        .setEncryptedApiKey(ENCRYPTED_API_KEY)
+        .build();
+  }
+
+  private FortinetApplication getFortinetApplicationRuleDetails() {
+    return FortinetApplication.newBuilder().setApplicationId(APPLICATION_ID).build();
+  }
+
+  private FortinetTemplate getFortinetTemplateRuleDetails() {
+    return FortinetTemplate.newBuilder().setTemplateId(TEMPLATE_ID).build();
+  }
+
+  @Test
   void invalidUpdateAzureRequestTest() {
 
     // empty azure integration params list
@@ -2315,6 +2548,151 @@ class WafIntegrationConfigRequestValidatorTest {
                 invalidRequest, REQUEST_CONTEXT, List.of(existingF5WafIntegration)));
   }
 
+  @Test
+  void invalidUpdateFortinetRequestTest() {
+
+    // empty integration params list
+    UpdateWafIntegrationRequest invalidRequest1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.getDefaultInstance())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty integration details
+    UpdateWafIntegrationRequest invalidRequest2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.newBuilder()
+                            .clearFortinetIntegrationDetails()
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty auth credentials
+    UpdateWafIntegrationRequest invalidRequest3 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .clearFortinetAuthCredentials()
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetApplication(
+                                                getFortinetApplicationRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // empty rule details
+    UpdateWafIntegrationRequest invalidRequest4 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .clearFortinetRuleDetails()
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest4, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // updation to an already existing name
+    WafIntegration existingFortinetWafIntegration = getExistingFortinetWafIntegration();
+    UpdateWafIntegrationRequest invalidRequest5 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetTemplate(getFortinetTemplateRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest5, REQUEST_CONTEXT, List.of(existingFortinetWafIntegration)));
+
+    // valid updation request
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id1")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name1")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .setFortinetAuthCredentials(getFortinetAuthCredentials())
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetApplication(
+                                                FortinetApplication.newBuilder()
+                                                    .setApplicationId("application-id1")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest, REQUEST_CONTEXT, List.of(existingFortinetWafIntegration)));
+  }
+
   private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {
     AwsResource.Builder awsResourceBuilder =
         AwsResource.newBuilder().setArn("arn").setRegion("region");
@@ -2516,6 +2894,33 @@ class WafIntegrationConfigRequestValidatorTest {
         .setWafPolicyName(WAF_POLICY)
         .setWafPolicyResourceGroupName(WAF_POLICY_RESOURCE_GROUP)
         .setAzureWafPolicyType(AzureWafPolicyType.AZURE_WAF_POLICY_TYPE_APPLICATION_GATEWAY)
+        .build();
+  }
+
+  private WafIntegration getExistingFortinetWafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setName("name")
+                .setFortinetIntegrationParams(getFortinetIntegrationParams())
+                .build())
+        .build();
+  }
+
+  private FortinetIntegrationParams getFortinetIntegrationParams() {
+    return FortinetIntegrationParams.newBuilder()
+        .setFortinetIntegrationDetails(getFortinetIntegrationDetails())
+        .build();
+  }
+
+  private FortinetIntegrationDetails getFortinetIntegrationDetails() {
+    return FortinetIntegrationDetails.newBuilder()
+        .setFortinetAuthCredentials(getFortinetAuthCredentials())
+        .setFortinetRuleDetails(
+            FortinetRuleDetails.newBuilder()
+                .setFortinetApplication(getFortinetApplicationRuleDetails())
+                .build())
         .build();
   }
 }
