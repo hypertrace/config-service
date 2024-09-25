@@ -28,8 +28,10 @@ public class ServiceNowItsmIntegrationCoordinator {
     ServiceNowIntegrationDetails.Builder integrationDetails =
         ServiceNowIntegrationDetails.newBuilder()
             .setName(request.getName())
-            .setServerUrl(request.getServerUrl())
-            .setScope(request.getScope());
+            .setServerUrl(request.getServerUrl());
+    if (request.hasScope()) {
+      integrationDetails.setScope(request.getScope());
+    }
     if (request.hasDescription()) {
       integrationDetails.setDescription(request.getDescription());
     }
