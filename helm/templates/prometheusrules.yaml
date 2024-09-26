@@ -27,6 +27,19 @@ spec:
             {{- with .Values.prometheusrule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+        - alert: ApiNamingRulesLimitExceeded
+          annotations:
+            summary: 'The total number of API Naming Rules created is too high.'
+            message: 'The number of API Naming Rules created for tenant {{`{{$labels.tenantId}}`}} exceeded the limit (10,000). Current value: {{`{{ $value }}`}} rules."'
+          expr: sum by (tenantId) (max by (tenantId, disabled) (spec_based_api_naming_rules_count)) > 10000
+          for: 0m
+          labels:
+            severity: warning
+            repository: config-service
+            team: catalog
+            { { - with .Values.prometheusrule.additionalRuleLabels } }
+            { { - toYaml . | nindent 12 } }
+            { { - end } }
   {{- end }}
 
 {{- end }}
