@@ -37,9 +37,9 @@ spec:
             severity: warning
             repository: config-service
             team: catalog
-            { { - with .Values.prometheusrule.additionalRuleLabels } }
-            { { - toYaml . | nindent 12 } }
-            { { - end } }
+            {{- with .Values.prometheusrule.additionalRuleLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
   {{- end }}
 
 {{- end }}
