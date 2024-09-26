@@ -89,6 +89,7 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
               .setInternal(rule.getInternal())
               .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
               .setRuleScope(rule.getRuleScope())
+              .putAllLabels(rule.getDefinition().getLabelsMap())
               .build());
     }
 

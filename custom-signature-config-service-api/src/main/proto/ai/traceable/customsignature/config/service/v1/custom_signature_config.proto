@@ -85,6 +85,7 @@ message CustomSignatureRuleDetails {
   bool internal = 7;
   ExpiryDetails blocking_expiry_details = 8;
   RuleScope rule_scope = 9;
+  map<string, string> labels = 10;
 }
 
 message RuleScope {
