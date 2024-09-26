@@ -1,5 +1,6 @@
 package ai.traceable.servicenow.itsm.integration.config.service;
 
+import static ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationFieldType.SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_STRING;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,8 +12,10 @@ import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNow
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegration;
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationConfigServiceGrpc;
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationConfigServiceGrpc.ServiceNowItsmIntegrationConfigServiceBlockingStub;
+import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationFieldsConfiguration;
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationFilter;
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationScope;
+import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationTablesConfiguration;
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.ServiceNowItsmIntegrationWithAuthCredentials;
 import ai.traceable.servicenow.itsm.integration.config.service.api.v1.StringList;
 import io.grpc.StatusRuntimeException;
@@ -242,7 +245,16 @@ class ServiceNowItsmIntegrationConfigServiceImplTest {
                 ServiceNowIntegrationDetails.newBuilder()
                     .setName("dummyIntegration" + sr)
                     .setDescription("dummyDescription")
-                    .setServerUrl("dummyServerUrl"));
+                    .setServerUrl("dummyServerUrl")
+                    .addTableConfigurations(
+                        ServiceNowItsmIntegrationTablesConfiguration.newBuilder()
+                            .setTableName("tableName")
+                            .addFieldsConfigurations(
+                                ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()
+                                    .setColumnName("columnName")
+                                    .setDisplayName("displayName")
+                                    .setFieldType(
+                                        SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_STRING))));
 
     if (environmentId.length > 0) {
       serviceNowIntegration
