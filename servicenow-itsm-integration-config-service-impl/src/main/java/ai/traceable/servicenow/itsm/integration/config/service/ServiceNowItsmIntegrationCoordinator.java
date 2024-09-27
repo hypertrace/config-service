@@ -210,6 +210,7 @@ public class ServiceNowItsmIntegrationCoordinator {
                         .putFields("displayName", Values.of("High")))
                 .build());
     return ServiceNowItsmIntegrationTablesConfiguration.newBuilder()
+        .setTableConfigurationId("defaultConfiguration")
         .setTableName("incident")
         .addFieldsConfigurations(
             ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()

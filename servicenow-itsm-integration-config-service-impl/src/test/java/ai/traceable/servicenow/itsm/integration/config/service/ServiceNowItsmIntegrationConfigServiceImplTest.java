@@ -248,6 +248,7 @@ class ServiceNowItsmIntegrationConfigServiceImplTest {
                     .setServerUrl("dummyServerUrl")
                     .addTableConfigurations(
                         ServiceNowItsmIntegrationTablesConfiguration.newBuilder()
+                            .setTableConfigurationId("somethingId")
                             .setTableName("tableName")
                             .addFieldsConfigurations(
                                 ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()
