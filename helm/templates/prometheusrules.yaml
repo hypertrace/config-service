@@ -24,7 +24,7 @@ spec:
             severity: SEV2
             repository: config-service
             team: common
-            {{- with .Values.prometheusrule.additionalRuleLabels }}
+            {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
         - alert: ApiNamingRulesLimitExceeded
@@ -37,9 +37,8 @@ spec:
             severity: warning
             repository: config-service
             team: catalog
-            {{- with .Values.prometheusrule.additionalRuleLabels }}
+            {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
   {{- end }}
-
 {{- end }}

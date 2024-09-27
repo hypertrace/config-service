@@ -1,0 +1,22 @@
+{{- if and .Values.podSecurityContext .Values.injectUserGroup.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traceable-config-service-etc-mount
+  labels:
+    app: traceable-config-service
+    release: {{ .Release.Name }}
+data:
+  passwd: |
+    root:x:0:0:root:/root:/sbin/nologin
+    nobody:x:65534:65534:nobody:/nonexistent:/sbin/nologin
+    nonroot:x:65532:65532:nonroot:/home/nonroot:/sbin/nologin
+    {{ .Values.injectUserGroup.userName }}:x:{{ int .Values.podSecurityContext.runAsUser }}:{{ int .Values.podSecurityContext.fsGroup }}:{{ .Values.injectUserGroup.userName }}:/home/{{ .Values.injectUserGroup.userName }}:/sbin/nologin
+  group: |
+    root:x:0:
+    nobody:x:65534:
+    tty:x:5:
+    staff:x:50:
+    nonroot:x:65532:
+    {{ .Values.injectUserGroup.groupName }}:x:{{ int .Values.podSecurityContext.fsGroup }}:
+{{- end }}

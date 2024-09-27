@@ -26,7 +26,6 @@ image:
 
 imagePullSecrets:
   - name: gcp-artifact-registry-dev
-  - name: regcred
 
 internalContainerPort: 50101
 externalContainerPort: 50102
@@ -53,7 +52,9 @@ topologySpreadConstraints: []
 
 hostNetwork: false
 
-securityContext: {}
+podSecurityContext: {}
+
+containerSecurityContext: {}
 
 initContainers: []
 
@@ -62,6 +63,10 @@ extraVolumes: []
 extraVolumeMounts: []
 
 extraEnvs: []
+
+commonPodLabels: {}
+
+commonPodAnnotations: {}
 
 javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError"
 
@@ -657,7 +662,8 @@ anomalyConfigServiceConfig:
 #    }
 #  ]
 
-prometheusrule:
+prometheusRule:
+  enabled: true
   additionalRuleLabels: {}
 
 hpa:
@@ -669,7 +675,7 @@ hpa:
 savedQueriesConfig:
   userDataMigrationFlag: false
 
-containerSecurityContext: {}
-podSecurityContext: {}
-prometheusRule:
-  enabled: true
+injectUserGroup:
+  enabled: false
+  userName: traceable
+  groupName: traceable
