@@ -7,17 +7,18 @@ import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.RegularModsecDetectionRules;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 public class DefaultRegularModsecDetectionManager implements RegularModsecDetectionManager {
   private static final AnomalyConfigScope CUSTOMER_CONFIG_SCOPE =
       AnomalyConfigScope.newBuilder()
@@ -73,6 +74,7 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
                     .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
                     .getModsecCrsRules(
                         GetModsecCrsRulesRequest.newBuilder()
+                            .setTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION)
                             .addAllSubRuleTypes(
                                 List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                             .setRemoveDisabledRules(true)
@@ -87,21 +89,15 @@ public class DefaultRegularModsecDetectionManager implements RegularModsecDetect
                                         .build())
                             .build()));
 
-    String regularCrsRulesBlob;
-    if (response.getModsecCrsRulesList().size() == 1
-        && response.getModsecCrsRulesList().get(0).getSubRuleType()
-            == AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE) {
-      // The request was done for only one modsec type so we should be getting only 1 element
-      regularCrsRulesBlob = response.getModsecCrsRulesList().get(0).getModsecCrsRulesBlob();
-    } else {
-      throw (new RuntimeException(
-          String.format(
-              "Error in fetching modsec crs rules - received subRuleTypes: %s",
-              response.getModsecCrsRulesList().stream()
-                  .map(ModsecCrsRulesData::getSubRuleType)
-                  .map(AnomalySubRuleType::name)
-                  .collect(Collectors.joining()))));
+    if (response.getAggregatedModsecCrsRulesBlob().isEmpty()) {
+      log.debug(
+          "Empty modsec crs blob returned for local processing for requestContext : {}",
+          requestContext);
+      ;
     }
+
+    String regularCrsRulesBlob = response.getAggregatedModsecCrsRulesBlob();
+
     String responseHash = uuidGenerator.generateId(regularCrsRulesBlob);
 
     RegularModsecDetectionRules.Builder builder =

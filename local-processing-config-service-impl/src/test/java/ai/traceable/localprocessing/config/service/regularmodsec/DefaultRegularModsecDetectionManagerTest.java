@@ -14,7 +14,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
@@ -92,20 +92,14 @@ class DefaultRegularModsecDetectionManagerTest {
 
     when(configServiceBlockingStub.getModsecCrsRules(
             GetModsecCrsRulesRequest.newBuilder()
+                .setTarget(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TPA_DETECTION)
                 .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE))
                 .setRemoveDisabledRules(true)
                 .setRuleVersion(version)
                 .setConfigScope(configScope)
                 .build()))
         .thenReturn(
-            GetModsecCrsRulesResponse.newBuilder()
-                .addAllModsecCrsRules(
-                    List.of(
-                        ModsecCrsRulesData.newBuilder()
-                            .setModsecCrsRulesBlob(blob)
-                            .setSubRuleType(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
-                            .build()))
-                .build());
+            GetModsecCrsRulesResponse.newBuilder().setAggregatedModsecCrsRulesBlob(blob).build());
 
     // When hash does not match we expect the blob
     assertEquals(
