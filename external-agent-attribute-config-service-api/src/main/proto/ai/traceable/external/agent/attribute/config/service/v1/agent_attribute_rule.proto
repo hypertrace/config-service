@@ -53,6 +53,7 @@ message AttributeRule {
       EachMatchingProjector each_matching_projector = 11;
       ConditionalProjector conditional_projector = 12;
       SubstitutionProjector substitution_projector = 13;
+      FullKeyAtCurrentLevelProjector full_key_at_current_level_projector = 14;
     }
 
     message SubstitutionProjector {
@@ -157,6 +158,8 @@ message AttributeRule {
       // key ideally should be in one of too but can't be moved for backwards compat. Only one of key or key_match will be set
       oneof key_match {
         ConditionalProjector.Predicate.StringPredicate key_predicate = 3;
+        // iterates over all keys and passes the full key at current level and value to attribute_rule
+        Iterator iterator = 4;
       }
 
       AttributeRule attribute_rule = 2;
@@ -180,11 +183,21 @@ message AttributeRule {
       AttributeRule attribute_rule = 2;
     }
 
+    // uses and returns the value of the full key at current level
+    // The full key will be of format: `KeyType:keyName, ...`, eg:
+    // `AttributeKey:http.request.header.cookie, Cookie:token, JwtClaim:sub, JsonPath:$.user.name`
+    // `AttributeKey:http.response.body, JsonPath:$.user.name`
+    message FullKeyAtCurrentLevelProjector {
+      AttributeRule attribute_rule = 1;
+    }
+
     message AttributeProjector {
       string attribute_key = 1;
       // attribute_key ideally should be in one of too but can't be moved for backwards compat. Only one of attribute_key or attribute_key_match will be set
       oneof attribute_key_match {
         ConditionalProjector.Predicate.StringPredicate attribute_key_predicate = 3;
+        // iterates over all keys and passes the full key at current level and value to attribute_rule
+        Iterator iterator = 4;
       }
 
       AttributeRule attribute_rule = 2;
@@ -201,6 +214,19 @@ message AttributeRule {
       }
 
       AttributeRule attribute_rule = 10;
+    }
+
+    // iterate after projection(as json, jwt, cookies, attributes etc),
+    // and pass the full key at current level and value to the attribute_rule
+    message Iterator {
+      // type of iterator
+      Type type = 1;
+
+      enum Type {
+        TYPE_UNSPECIFIED = 0;
+        TYPE_FIRST_MATCHING = 1;
+        TYPE_EACH_MATCHING = 2;
+      }
     }
   }
 }
