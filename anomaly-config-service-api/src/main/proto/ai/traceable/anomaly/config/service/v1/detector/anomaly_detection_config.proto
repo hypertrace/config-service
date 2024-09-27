@@ -459,6 +459,8 @@ message CustomRegionAnomalyConfig {}
 
 message CustomSignatureAnomalyConfig {
   CustomModsecRuleVersion modsec_rule_version = 1;
+  // this flag overrides the global config flag enabled_for_exit_spans
+  optional bool exit_span_evaluation_enabled = 2;
 }
 
 message RateLimitAnomalyConfig {}
