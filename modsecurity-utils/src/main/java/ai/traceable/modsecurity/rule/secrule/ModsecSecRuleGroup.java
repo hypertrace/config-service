@@ -15,6 +15,9 @@ import java.util.function.Predicate;
 import lombok.Setter;
 
 public class ModsecSecRuleGroup {
+  public static final String CHAIN = "chain";
+  public static final String MSG = "msg:";
+  public static final String LOGDATA = "logdata:";
   private final ModsecActions modsecActions;
   private final List<SecRuleContainer> rules;
 
@@ -47,6 +50,7 @@ public class ModsecSecRuleGroup {
               .get(rules.size() - 1)
               .getSecRuleString(modsecActions, ModsecActionsType.CHAINED_FINAL));
     }
+    validate(modsecRules);
     String modsecRuleString = String.join(NEW_LINE_DELIMITER, modsecRules);
     validate(modsecRuleString);
     return modsecRuleString;
@@ -56,6 +60,22 @@ public class ModsecSecRuleGroup {
     Status status = ModsecRuleEngineUtils.validate(modsecRuleString);
     if (Status.INVALID_ARGUMENT.getCode().equals(status.getCode())) {
       throw status.asRuntimeException();
+    }
+  }
+
+  private static void validate(List<String> modsecRules) {
+    for (String modsecRule : modsecRules) {
+      String[] modsecSubRules = modsecRule.split(CHAIN);
+      for (String modsecSubRule : modsecSubRules) {
+        if (!modsecSubRule.contains(MSG) && modsecSubRule.contains(LOGDATA)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Logdata and msg both should be present or absent for all the chained modsec sub rule for modsec rule %s",
+                      modsecRule))
+              .asRuntimeException();
+        }
+      }
     }
   }
 

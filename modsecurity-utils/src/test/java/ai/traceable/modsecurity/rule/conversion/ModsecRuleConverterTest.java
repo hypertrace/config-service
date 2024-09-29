@@ -1,6 +1,7 @@
 package ai.traceable.modsecurity.rule.conversion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRule;
@@ -15,6 +16,7 @@ import ai.traceable.modsecurity.rule.conversion.clause.ModsecVariableConverter;
 import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
 import com.google.common.io.Resources;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -290,5 +292,38 @@ public class ModsecRuleConverterTest {
             + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}',chain\"\n"
             + "SecRule REQUEST_METHOD \"@streq abc\" \"capture,block,t:none\"";
     assertEquals(expectedModsecRulesBlob, convertedModsecRulesBlob);
+
+    List<CustomModsecRule> modsecRules =
+        List.of(
+            CustomModsecRule.newBuilder()
+                .setRuleMsg("msg1")
+                .setRuleUuid("uuid1")
+                .setLogMessage("log1")
+                .setRuleId(12345)
+                .addAndClauses(
+                    CustomModsecRuleClause.newBuilder()
+                        .setCustomSecRuleClause(
+                            CustomSecRuleClause.newBuilder()
+                                .setInputSecRule(
+                                    "SecRule REQUEST_HEADERS \"@rx (\\\\u[0-9a-fA-F]{4}){4,}\" \\\n"
+                                        + "    \"id:9210104,\\\n"
+                                        + "    phase:1,\\\n"
+                                        + "    nolog,\\\n"
+                                        + "    noauditlog,\\\n"
+                                        + "    capture,\\\n"
+                                        + "    tag:'traceable/rank/1',\\\n"
+                                        + "    tag:'traceable/severity/HIGH',\\\n"
+                                        + "    setvar:TX.MATCH_NAME=%{MATCHED_VAR_NAME},\\\n"
+                                        + "    chain\"\n"
+                                        + "    SecRule TX:0 \"@rx .*\" \\\n"
+                                        + "        \"t:none,t:urlDecodeUni,t:htmlEntityDecode,t:jsDecode,\\\n"
+                                        + "logdata:'Found rds_data in encoded sign parameter with value - %{TX.0}'\\\n"
+                                        + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}'\"")))
+                .build());
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> {
+          modsecRuleConverter.getModsecRulesBlob(modsecRules);
+        });
   }
 }
