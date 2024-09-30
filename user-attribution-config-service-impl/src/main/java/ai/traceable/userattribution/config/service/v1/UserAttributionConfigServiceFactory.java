@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service;
+package ai.traceable.userattribution.config.service.v1;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

@@ -42,7 +42,7 @@ import ai.traceable.span.processing.config.service.SpanProcessingConfigServiceFa
 import ai.traceable.splunk.integration.config.service.SplunkIntegrationConfigServiceFactory;
 import ai.traceable.syslog.integration.config.service.SyslogIntegrationConfigServiceFactory;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
-import ai.traceable.userattribution.config.service.UserAttributionConfigServiceFactory;
+import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceFactory;
 import ai.traceable.vulnerability.config.service.VulnerabilityConfigServiceFactory;
 import ai.traceable.waf.provider.integration.service.WafIntegrationConfigServiceFactory;
 import io.grpc.BindableService;

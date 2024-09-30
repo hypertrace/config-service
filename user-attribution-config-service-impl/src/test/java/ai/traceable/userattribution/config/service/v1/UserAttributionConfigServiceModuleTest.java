@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service;
+package ai.traceable.userattribution.config.service.v1;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;

@@ -1,8 +1,7 @@
-package ai.traceable.userattribution.config.service;
+package ai.traceable.userattribution.config.service.v1;
 
 import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.config.utils.RankCalculator.RankConfig;
-import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;

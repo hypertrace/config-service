@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service.validation;
+package ai.traceable.userattribution.config.service.v1.validation;
 
 import ai.traceable.userattribution.config.service.v1.Authentication;
 import io.grpc.Status;

@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service.store;
+package ai.traceable.userattribution.config.service.v1.store;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

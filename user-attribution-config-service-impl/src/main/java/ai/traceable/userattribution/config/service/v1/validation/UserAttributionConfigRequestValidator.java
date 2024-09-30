@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service.validation;
+package ai.traceable.userattribution.config.service.v1.validation;
 
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;

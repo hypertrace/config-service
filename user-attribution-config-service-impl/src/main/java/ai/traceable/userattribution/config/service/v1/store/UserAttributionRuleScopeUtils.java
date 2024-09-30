@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service.store;
+package ai.traceable.userattribution.config.service.v1.store;
 
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;

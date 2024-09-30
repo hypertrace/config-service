@@ -1,6 +1,6 @@
-package ai.traceable.userattribution.config.service.store;
+package ai.traceable.userattribution.config.service.v1.store;
 
-import static ai.traceable.userattribution.config.service.store.UserAttributionRuleScopeUtils.setUserAttributionRuleScopeIfNotPresent;
+import static ai.traceable.userattribution.config.service.v1.store.UserAttributionRuleScopeUtils.setUserAttributionRuleScopeIfNotPresent;
 
 import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter;

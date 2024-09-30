@@ -1,22 +1,11 @@
-package ai.traceable.userattribution.config.service;
+package ai.traceable.userattribution.config.service.v1;
 
 import ai.traceable.config.utils.ObjectDiffer;
 import ai.traceable.config.utils.RankCalculator;
-import ai.traceable.userattribution.config.service.store.UserAttributionRuleGenerator;
-import ai.traceable.userattribution.config.service.store.UserAttributionRuleStore;
-import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
-import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleResponse;
-import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleRequest;
-import ai.traceable.userattribution.config.service.v1.DeleteUserAttributionRuleResponse;
-import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesRequest;
-import ai.traceable.userattribution.config.service.v1.GetUserAttributionRulesResponse;
-import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleRequest;
-import ai.traceable.userattribution.config.service.v1.RankUserAttributionRuleResponse;
-import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleRequest;
-import ai.traceable.userattribution.config.service.v1.UpdateUserAttributionRuleResponse;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceImplBase;
-import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
-import ai.traceable.userattribution.config.service.validation.UserAttributionConfigRequestValidator;
+import ai.traceable.userattribution.config.service.v1.store.UserAttributionRuleGenerator;
+import ai.traceable.userattribution.config.service.v1.store.UserAttributionRuleStore;
+import ai.traceable.userattribution.config.service.v1.validation.UserAttributionConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;

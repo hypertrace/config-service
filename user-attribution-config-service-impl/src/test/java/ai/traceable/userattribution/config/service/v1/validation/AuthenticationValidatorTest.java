@@ -1,4 +1,4 @@
-package ai.traceable.userattribution.config.service.validation;
+package ai.traceable.userattribution.config.service.v1.validation;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
