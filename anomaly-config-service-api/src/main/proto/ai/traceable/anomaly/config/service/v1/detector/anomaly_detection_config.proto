@@ -435,7 +435,8 @@ message ObjectBolaAnomalyConfig {
 
 message UserIdBolaAnomalyConfig {
   optional double min_correlation_probability = 1;
-  UserIdSource user_id_source = 2;
+  UserIdSource user_id_source = 2 [deprecated = true];
+  UserIdDataList user_id_data_list = 3;
 }
 
 message SequenceAnomalyConfig {
@@ -557,4 +558,16 @@ enum CustomModsecRuleVersion {
   CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3 = 3;
   CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE = 4;
   CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE = 5;
+}
+
+message UserIdDataList {
+  repeated UserIdData user_id_data = 1;
+}
+
+message UserIdData {
+  oneof user_id_source {
+    bool user_attribution_extracted_id = 1;
+    bool user_attribution_extracted_id_from_jwt = 2;
+    string user_id_custom_attribute = 3;
+  }
 }

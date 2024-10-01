@@ -515,8 +515,9 @@ message ObjectBolaTrainingConfig {
 }
 
 message UserIdBolaTrainingConfig {
-  UserIdSource user_id_source = 1;
+  UserIdSource user_id_source = 1 [deprecated = true];
   ThresholdCountConfig required_count_config = 2;
+  UserIdDataList user_id_data_list = 3;
 }
 
 message PiiSensitiveDataTrainingConfig {}
@@ -739,4 +740,16 @@ message MultiValuedStringParamRule {
   string key_regex = 1;
   string value_delimiter = 2;
   optional string value_regex = 3;
+}
+
+message UserIdDataList {
+  repeated UserIdData user_id_data = 1;
+}
+
+message UserIdData {
+  oneof user_id_source {
+    bool user_attribution_extracted_id = 1;
+    bool user_attribution_extracted_id_from_jwt = 2;
+    string user_id_custom_attribute = 3;
+  }
 }
