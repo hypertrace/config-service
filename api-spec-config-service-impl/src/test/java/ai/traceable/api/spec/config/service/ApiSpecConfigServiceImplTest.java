@@ -949,6 +949,9 @@ class ApiSpecConfigServiceImplTest {
                                             .build(),
                                         updatedApiSpecFieldBuilder
                                             .setApiInspectorDisabled(true)
+                                            .build(),
+                                        updatedApiSpecFieldBuilder
+                                            .setApiDiscoveryEnabledV2(true)
                                             .build()))
                                 .build(),
                             ApiSpecUpdate.newBuilder()
@@ -984,6 +987,9 @@ class ApiSpecConfigServiceImplTest {
                                                                                     firstCreatedApiSpec
                                                                                         .getSpecId()))
                                                                         .build()))))
+                                            .build(),
+                                        updatedApiSpecFieldBuilder
+                                            .setApiDiscoveryEnabledV2(false)
                                             .build()))
                                 .build()))
                     .build())
@@ -1003,6 +1009,7 @@ class ApiSpecConfigServiceImplTest {
             .setApiInspectorDisabled(true)
             .setReferenceType(ReferenceType.REFERENCE_TYPE_UNSPECIFIED)
             .setApiSpecMetadata(ApiSpecMetadata.getDefaultInstance())
+            .setApiDiscoveryEnabledV2(true)
             .build();
     ApiSpec updatedSecondApiSpec =
         ApiSpec.newBuilder()
@@ -1029,6 +1036,7 @@ class ApiSpecConfigServiceImplTest {
                                             IncompleteOpenApiSpecReference.newBuilder()
                                                 .setSpecId(firstCreatedApiSpec.getSpecId()))
                                         .build()))))
+            .setApiDiscoveryEnabledV2(false)
             .build();
 
     assertTrue(updatedApiSpecs.contains(updatedFirstApiSpec));

@@ -53,10 +53,11 @@ message UpdatedApiSpecField {
     string name = 1;
     bool api_naming_enabled = 2;
     ApiSpecStatus status = 3;
-    bool api_discovery_enabled = 4;
+    bool api_discovery_enabled = 4 [deprecated = true];
     bool api_inspector_disabled = 5;
     ReferenceType reference_type = 6;
     ApiSpecMetadata api_spec_metadata = 7;
     string spec_path = 8;
+    bool api_discovery_enabled_v2 = 9;
   }
 }

@@ -88,9 +88,10 @@ message CreateApiSpec {
   ApiSpecStatus status = 3;
   optional string file_content_sha256 = 4;
   optional string spec_path = 5;
-  bool api_discovery_enabled = 6;
+  bool api_discovery_enabled = 6 [deprecated = true];
   SpecType spec_type = 7;
   bool api_inspector_disabled = 8;
+  bool api_discovery_enabled_v2 = 9;
 }
 
 // update
@@ -115,7 +116,7 @@ message UpdateApiSpec {
   string name = 2;
   bool api_naming_enabled = 3;
   ApiSpecStatus status = 4;
-  bool api_discovery_enabled = 5;
+  bool api_discovery_enabled = 5 [deprecated = true];
   bool api_inspector_disabled = 6;
 }
 
@@ -143,11 +144,12 @@ message ApiSpec {
   google.protobuf.Timestamp last_updated_timestamp = 6;
   optional string file_content_sha256 = 7;
   optional string spec_path = 8;
-  bool api_discovery_enabled = 9;
+  bool api_discovery_enabled = 9 [deprecated = true];
   SpecType spec_type = 10;
   bool api_inspector_disabled = 11;
   ReferenceType reference_type = 12;
   ApiSpecMetadata api_spec_metadata = 13;
+  bool api_discovery_enabled_v2 = 14;
 }
 
 enum ReferenceType {

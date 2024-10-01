@@ -248,7 +248,8 @@ public class ApiSpecConfigServiceImpl
                       : createApiSpec.getSpecType())
               .setApiInspectorDisabled(createApiSpec.getApiInspectorDisabled())
               .setReferenceType(ReferenceType.REFERENCE_TYPE_UNSPECIFIED)
-              .setApiSpecMetadata(ApiSpecMetadata.getDefaultInstance());
+              .setApiSpecMetadata(ApiSpecMetadata.getDefaultInstance())
+              .setApiDiscoveryEnabledV2(createApiSpec.getApiDiscoveryEnabledV2());
 
       List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
 
@@ -543,6 +544,9 @@ public class ApiSpecConfigServiceImpl
           break;
         case SPEC_PATH:
           apiSpecBuilder.setSpecPath(updateApiSpecField.getSpecPath());
+          break;
+        case API_DISCOVERY_ENABLED_V2:
+          apiSpecBuilder.setApiDiscoveryEnabledV2(updateApiSpecField.getApiDiscoveryEnabledV2());
           break;
         case FIELD_NOT_SET:
         default:
