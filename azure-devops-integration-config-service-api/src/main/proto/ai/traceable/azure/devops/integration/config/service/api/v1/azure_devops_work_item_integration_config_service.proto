@@ -1,0 +1,74 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.azure.devops.integration.config.service.api.v1;
+
+import "ai/traceable/azure/devops/integration/config/service/api/v1/azure_devops_work_item_integration.proto";
+
+service AzureDevopsIntegrationConfigService {
+  rpc CreateAzureDevopsIntegration(CreateAzureDevopsIntegrationRequest) returns (CreateAzureDevopsIntegrationResponse) {}
+  rpc UpdateAzureDevopsIntegration(UpdateAzureDevopsIntegrationRequest) returns (UpdateAzureDevopsIntegrationResponse) {}
+  rpc DeleteAzureDevopsIntegration(DeleteAzureDevopsIntegrationRequest) returns (DeleteAzureDevopsIntegrationResponse) {}
+
+  //return details for integration
+  rpc GetAzureDevopsIntegrations(GetAzureDevopsIntegrationsRequest) returns (GetAzureDevopsIntegrationsResponse) {}
+
+  // and this get API is intended to be used with services that require the credentials
+  rpc GetAzureDevopsIntegrationsWithAuthCredentials(GetAzureDevopsIntegrationsWithAuthCredentialsRequest) returns (GetAzureDevopsIntegrationsWithAuthCredentialsResponse) {}
+  rpc GetAzureDevopsIntegrationWithAuthCredentials(GetAzureDevopsIntegrationWithAuthCredentialsRequest) returns (GetAzureDevopsIntegrationWithAuthCredentialsResponse) {}
+}
+
+
+message CreateAzureDevopsIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  AzureDevopsIntegrationScope azure_devops_integration_scope = 3;
+  string organization_url = 4;
+  AzureDevopsIntegrationAuthCredentials azure_devops_integration_auth_credentials = 5;
+}
+
+message CreateAzureDevopsIntegrationResponse {
+  AzureDevopsIntegration azure_devops_integration = 1;
+}
+
+message UpdateAzureDevopsIntegrationRequest {
+  string integration_id = 1;
+  string name = 2;
+  optional string description = 3;
+  AzureDevopsIntegrationScope azure_devops_integration_scope = 4;
+  string organization_url = 5;
+  AzureDevopsIntegrationAuthCredentials azure_devops_integration_auth_credentials = 6;
+}
+
+message UpdateAzureDevopsIntegrationResponse {
+  AzureDevopsIntegration azure_devops_integration = 1;
+}
+
+message DeleteAzureDevopsIntegrationRequest {
+  string integration_id = 1;
+}
+
+message DeleteAzureDevopsIntegrationResponse {}
+
+message GetAzureDevopsIntegrationsRequest {
+  AzureDevopsIntegrationFilter filter = 1;
+}
+
+message GetAzureDevopsIntegrationsResponse {
+  repeated AzureDevopsIntegration azure_devops_integration = 1;
+}
+
+message GetAzureDevopsIntegrationsWithAuthCredentialsRequest {
+  AzureDevopsIntegrationFilter filter = 1;
+}
+
+message GetAzureDevopsIntegrationsWithAuthCredentialsResponse {
+  repeated AzureDevopsIntegrationWithAuthCredentials azure_devops_integration_with_auth_credentials = 1;
+}
+
+message GetAzureDevopsIntegrationWithAuthCredentialsRequest {
+  string integration_id = 1;
+}
+
+message GetAzureDevopsIntegrationWithAuthCredentialsResponse {
+  AzureDevopsIntegrationWithAuthCredentials azure_devops_integration_with_auth_credentials = 1;
+}

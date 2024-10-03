@@ -1,0 +1,40 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.azure.devops.integration.config.service.api.v1;
+
+message AzureDevopsIntegrationDetails {
+  string name = 1;
+  string description = 2;
+  string organization_url = 3;
+  AzureDevopsIntegrationScope azure_devops_integration_scope = 4;
+}
+
+message AzureDevopsIntegrationAuthCredentials {
+  string encryption_key_id = 1;
+  string encrypted_pat = 2;
+}
+
+message AzureDevopsIntegration {
+  string id =  1;
+  AzureDevopsIntegrationDetails azure_devops_integration_details = 2;
+}
+
+message AzureDevopsIntegrationScope {
+  oneof scope {
+    StringList environment_ids = 1;
+  }
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+message AzureDevopsIntegrationFilter {
+  AzureDevopsIntegrationScope scope = 1;
+}
+
+message AzureDevopsIntegrationWithAuthCredentials {
+  string id = 1;
+  AzureDevopsIntegrationDetails integration_details = 2;
+  AzureDevopsIntegrationAuthCredentials auth_credentials = 3;
+}
