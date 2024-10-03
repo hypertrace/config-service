@@ -51,3 +51,4 @@ directories:
   - fraud-policy-config-service-api/src/main/proto
   - vulnerability-config-service-api/src/main/proto
   - servicenow-itsm-integration-config-service-api/src/main/proto
+  - azure-devops-integration-config-service-api/src/main/proto
