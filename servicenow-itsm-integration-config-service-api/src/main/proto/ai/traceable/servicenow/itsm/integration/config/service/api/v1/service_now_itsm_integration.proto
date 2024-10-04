@@ -39,6 +39,7 @@ message ServiceNowItsmIntegrationFieldsConfiguration {
   repeated google.protobuf.Value values = 5;
   optional google.protobuf.Value default_value = 6;
   ReferenceTableDetails reference_table_details = 7; // only present when field type is SERVICE_NOW_REFERENCE and the values are expected to be fetched by a secondary query
+  optional uint32 field_config_sequence = 8;
 }
 
 message ReferenceTableDetails {

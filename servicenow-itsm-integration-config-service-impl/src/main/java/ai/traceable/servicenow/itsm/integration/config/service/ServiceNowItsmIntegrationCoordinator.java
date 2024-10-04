@@ -189,7 +189,7 @@ public class ServiceNowItsmIntegrationCoordinator {
   }
 
   private ServiceNowItsmIntegrationTablesConfiguration getDefaultTableConfiguration() {
-    List<Value> impactAndSeverityValues =
+    List<Value> impactUrgencyAndSeverityValues =
         List.of(
             Value.newBuilder()
                 .setStructValue(
@@ -226,21 +226,31 @@ public class ServiceNowItsmIntegrationCoordinator {
             ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()
                 .setColumnName("assigned_to")
                 .setDisplayName("Assignee")
-                .setFieldType(SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_ASSIGNEE_REFERENCE))
+                .setFieldType(SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_ASSIGNEE_REFERENCE)
+                // field config sequence is 1 because assignee and assignee group cannot be set
+                // simultaneously in servicenow
+                .setFieldConfigSequence(1))
         .addFieldsConfigurations(
             ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()
                 .setColumnName("severity")
                 .setDisplayName("Severity")
                 .setFieldType(SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_ENUMERATED_CHOICE)
-                .setDefaultValue(impactAndSeverityValues.get(0))
-                .addAllValues(impactAndSeverityValues))
+                .setDefaultValue(impactUrgencyAndSeverityValues.get(0))
+                .addAllValues(impactUrgencyAndSeverityValues))
+        .addFieldsConfigurations(
+            ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()
+                .setColumnName("urgency")
+                .setDisplayName("Urgency")
+                .setFieldType(SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_ENUMERATED_CHOICE)
+                .setDefaultValue(impactUrgencyAndSeverityValues.get(0))
+                .addAllValues(impactUrgencyAndSeverityValues))
         .addFieldsConfigurations(
             ServiceNowItsmIntegrationFieldsConfiguration.newBuilder()
                 .setColumnName("impact")
                 .setDisplayName("Impact")
                 .setFieldType(SERVICE_NOW_ITSM_INTEGRATION_FIELD_TYPE_ENUMERATED_CHOICE)
-                .setDefaultValue(impactAndSeverityValues.get(0))
-                .addAllValues(impactAndSeverityValues))
+                .setDefaultValue(impactUrgencyAndSeverityValues.get(0))
+                .addAllValues(impactUrgencyAndSeverityValues))
         .build();
   }
 }
