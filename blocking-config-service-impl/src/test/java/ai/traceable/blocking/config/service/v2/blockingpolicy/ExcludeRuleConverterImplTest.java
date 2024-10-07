@@ -7,6 +7,7 @@ import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
@@ -66,6 +67,13 @@ class ExcludeRuleConverterImplTest {
             .setValueMatchCondition(oldValueMatchCondition)
             .build();
 
+    ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition
+        onlyKeyCondition =
+            ai.traceable.detection.exclusion.config.service.v1.AnomalousAttributeCondition
+                .newBuilder()
+                .setKeyMatchCondition(oldKeyMatchCondition)
+                .build();
+
     DetectionExclusionModsecRule detectionExclusionModsecRule =
         DetectionExclusionModsecRule.newBuilder()
             .setRule(
@@ -76,6 +84,9 @@ class ExcludeRuleConverterImplTest {
                             .addConditions(
                                 DetectionExclusionCondition.newBuilder()
                                     .setAnomalousAttributeCondition(oldCondition))
+                            .addConditions(
+                                DetectionExclusionCondition.newBuilder()
+                                    .setAnomalousAttributeCondition(onlyKeyCondition))
                             .addExclusionTargets(EXCLUSION_TARGET_ALLOW)
                             .addExclusionTargets(EXCLUSION_TARGET_BLOCK)))
             .build();
@@ -83,25 +94,29 @@ class ExcludeRuleConverterImplTest {
     ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
-    assertEquals(1, exclusionRule.getAnomalousAttributeConditionsCount());
     assertEquals("id-1", exclusionRule.getRuleId());
-
-    AnomalousAttributeCondition newCondition = exclusionRule.getAnomalousAttributeConditions(0);
-
-    assertTrue(newCondition.hasKeyExpression());
-    assertEquals(
-        MatchOperator.MATCH_OPERATOR_EQUALS, newCondition.getKeyExpression().getOperator());
-    assertEquals("testKeyValue", newCondition.getKeyExpression().getValue().getStringValue());
-
-    assertTrue(newCondition.hasValueExpression());
-    assertEquals(
-        MatchOperator.MATCH_OPERATOR_NOT_EQUALS, newCondition.getValueExpression().getOperator());
-    assertEquals("testValueValue", newCondition.getValueExpression().getValue().getStringValue());
     assertEquals(
         List.of(
             ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_ALLOW,
             ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_BLOCK),
         exclusionRule.getTargetsList());
+
+    assertEquals(2, exclusionRule.getAnomalousAttributeConditionsCount());
+
+    AnomalousAttributeCondition newCondition = exclusionRule.getAnomalousAttributeConditions(0);
+    assertTrue(newCondition.hasKeyExpression());
+    assertEquals(
+        MatchOperator.MATCH_OPERATOR_EQUALS, newCondition.getKeyExpression().getOperator());
+    assertEquals("testKeyValue", newCondition.getKeyExpression().getValue().getStringValue());
+    assertTrue(newCondition.hasValueExpression());
+    assertEquals(
+        MatchOperator.MATCH_OPERATOR_NOT_EQUALS, newCondition.getValueExpression().getOperator());
+    assertEquals("testValueValue", newCondition.getValueExpression().getValue().getStringValue());
+
+    assertEquals(
+        newCondition.getKeyExpression(),
+        exclusionRule.getAnomalousAttributeConditions(1).getKeyExpression());
+    assertFalse(exclusionRule.getAnomalousAttributeConditions(1).hasValueExpression());
   }
 
   @Test
@@ -109,13 +124,13 @@ class ExcludeRuleConverterImplTest {
     SystemDefinedEvent systemEvent1 =
         SystemDefinedEvent.newBuilder()
             .setEventFamily(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
-            .setEventTypeId("crs921")
+            .setEventTypeId("crs_921")
             .build();
 
     SystemDefinedEvent systemEvent2 =
         SystemDefinedEvent.newBuilder()
             .setEventFamily(SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
-            .setEventSubTypeId("crs92160")
+            .setEventSubTypeId("crs_92160")
             .build();
 
     CustomRuleEvent customRuleEvent1 =
@@ -166,8 +181,8 @@ class ExcludeRuleConverterImplTest {
     assertEquals(4, exclusionRule.getEventConditionsCount());
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY, exclusionRule.getEventConditions(0).getBlockingCategory());
-    assertEquals(List.of("crs921"), exclusionRule.getEventConditions(0).getIdPrefixesList());
-    assertEquals(List.of("crs92160"), exclusionRule.getEventConditions(0).getIdsList());
+    assertEquals(List.of("crs_921"), exclusionRule.getEventConditions(0).getIdPrefixesList());
+    assertEquals(List.of("crs_92160"), exclusionRule.getEventConditions(0).getIdsList());
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
         exclusionRule.getEventConditions(1).getBlockingCategory());

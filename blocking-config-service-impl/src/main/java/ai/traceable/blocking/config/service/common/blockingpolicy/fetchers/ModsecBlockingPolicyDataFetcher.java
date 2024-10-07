@@ -69,11 +69,11 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
     GetScopedAnomalyGlobalConfigStatusResponse statusResponse =
         getScopedAnomalyGlobalConfigStatus(requestContext, anomalyConfigScope);
     if (!statusResponse.getScopedConfig().getConfigStatus().getDisabled()) {
-      return new BlockingPolicyAggregate(
+      return new BlockingPolicyAggregate<>(
           parseModsecViolations(
               getScopedAnomalyDetectionConfig(requestContext, anomalyConfigScope)));
     }
-    return new BlockingPolicyAggregate(Collections.emptyList());
+    return new BlockingPolicyAggregate<>(Collections.emptyList());
   }
 
   private GetScopedAnomalyGlobalConfigStatusResponse getScopedAnomalyGlobalConfigStatus(
@@ -132,15 +132,17 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   }
 
   private static BlockingPolicyData generateBlockingDetails(String ruleId) {
-    final String parsedRuleId = ruleId.replaceFirst(CRS_RULE_ID_REGEX, "");
     return BlockingPolicyData.builder()
         .category(Category.MODSECURITY)
         .bucket(BlockingPolicyDataBucket.MODSEC_VIOLATIONS)
         .ruleType(RuleType.BLOCK)
         .info(ViolationInfoEncoder.getEncodedSafeCrsViolationInfo(ruleId))
         .status(Status.DENIED)
-        .blockingDetails(ModsecBlockingDetails.builder().ruleId(parsedRuleId).build())
-        .ruleId(parsedRuleId)
+        .blockingDetails(
+            ModsecBlockingDetails.builder()
+                .ruleId(ruleId.replaceFirst(CRS_RULE_ID_REGEX, ""))
+                .build())
+        .ruleId(ruleId)
         .build();
   }
 }
