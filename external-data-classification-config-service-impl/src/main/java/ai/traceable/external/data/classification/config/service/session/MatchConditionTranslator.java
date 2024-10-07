@@ -49,6 +49,21 @@ public class MatchConditionTranslator {
             .setOperator(Operator.OPERATOR_MATCHES_REGEX)
             .setValue(value)
             .build();
+      case MATCH_OPERATOR_NOT_CONTAINS:
+        return StringPredicate.newBuilder()
+            .setOperator(Operator.OPERATOR_NOT_MATCHES_REGEX)
+            .setValue(escapeRegex(value))
+            .build();
+      case MATCH_OPERATOR_NOT_STARTS_WITH:
+        return StringPredicate.newBuilder()
+            .setOperator(Operator.OPERATOR_NOT_MATCHES_REGEX)
+            .setValue("^" + escapeRegex(value))
+            .build();
+      case MATCH_OPERATOR_NOT_MATCHES_REGEX:
+        return StringPredicate.newBuilder()
+            .setOperator(Operator.OPERATOR_NOT_MATCHES_REGEX)
+            .setValue(value)
+            .build();
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(String.format("Unable to convert match operator %s", operator))
