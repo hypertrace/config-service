@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+package ai.traceable.userattribution.config.service.v2;
+
+option java_multiple_files = true;
+
+message UserAttributionRule {
+  string id = 1;
+  UserAttributionRuleData data = 2;
+  int32 rank = 3;
+}
+
+message UserAttributionRuleData {
+  string name = 1;
+  optional string description = 2;
+  UserAttributionRuleScope scope = 3;
+  bool disabled = 4;
+  UserAttributionRootTokenRule root_token_rule = 5;
+  UserAttributionTokenRule user_id_rule = 6;
+  UserAttributionTokenRule user_role_rule = 7;
+  UserAttributionTokenRule user_scope_rule = 8;
+  UserAttributionTokenRule auth_type_rule = 9;
+  map<string, UserAttributionTokenRule> custom_token_rules = 10; // map of token name to its associated rule
+  string template = 11;
+}
+
+message UserAttributionRuleScope {
+  // `AND` across different scopes
+  EnvironmentScope environment_scope = 1;
+  ServiceScope service_scope = 2;
+  UrlScope url_scope = 3;
+}
+
+message EnvironmentScope {
+  oneof environment_scope {
+    StringList environment_names = 1;
+  }
+}
+
+message ServiceScope {
+  oneof service_scope {
+    StringList service_names = 1;
+    StringList service_name_regexes = 2;
+  }
+}
+
+message UrlScope {
+  oneof url_scope {
+    StringList url_match_regexes = 1;
+  }
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+message UserAttributionRootTokenRule {
+  Predicate token_conditional_predicate = 1;
+  oneof projection {
+    AttributeProjection attribute_projection = 2;
+  }
+}
+
+message UserAttributionTokenRule {
+  Predicate token_conditional_predicate = 1;
+  oneof projection {
+    AttributeProjection attribute_projection = 2;
+    CustomProjection custom_projection = 3;
+    LiteralValueProjection literal_value_projection = 4;
+    RootRelativeProjection root_relative_projection = 5;
+  }
+  ObfuscationStrategy token_obfuscation_strategy = 6;
+}
+
+message Predicate {
+  oneof predicate {
+    AttributePredicate attribute_predicate = 1;
+    LogicalPredicate logical_predicate = 2;
+  }
+
+  message AttributePredicate {
+    Attribute attribute = 1;
+    oneof condition {
+      MatchCondition attribute_value_match_condition = 2;
+    }
+  }
+
+  message LogicalPredicate {
+    LogicalOperator operator = 1;
+    repeated Predicate children = 2;
+  }
+
+  enum LogicalOperator {
+    LOGICAL_OPERATOR_UNSPECIFIED = 0;
+    LOGICAL_OPERATOR_AND = 1;
+    LOGICAL_OPERATOR_OR = 2;
+  }
+}
+
+message Attribute {
+  oneof attribute {
+    KeyMatch request_header = 1;
+    KeyMatch request_cookie = 2;
+    KeyMatch request_query_parameter = 3;
+    PayloadMatch request_body = 4;
+    KeyMatch response_header = 5;
+    KeyMatch response_cookie = 6;
+    PayloadMatch response_body = 7;
+    KeyMatch span_attribute = 8;
+  }
+}
+
+message KeyMatch {
+  MatchOperator operator = 1;
+  string argument = 2;
+}
+
+message PayloadMatch {
+}
+
+message MatchCondition {
+  MatchOperator operator = 1;
+  LiteralValue match_value = 2;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUALS = 2;
+  MATCH_OPERATOR_STARTS_WITH = 3;
+  MATCH_OPERATOR_CONTAINS = 4;
+  MATCH_OPERATOR_MATCHES_REGEX = 5;
+}
+
+message LiteralValue {
+  oneof value {
+    string string_value = 1;
+    NullValue null_value = 2;
+  }
+
+  message NullValue {
+  }
+}
+
+enum ObfuscationStrategy {
+  OBFUSCATION_STRATEGY_UNSPECIFIED = 0;
+  OBFUSCATION_STRATEGY_HASH = 1;
+}
+
+message CustomProjection {
+  string custom_projection = 1; // This should directly translate into Projector in agentAttribute api
+}
+
+message AttributeProjection {
+  Attribute attribute = 1;
+  repeated ValueProjection value_projections = 2;  // Ordered value list of projections. Empty list means no projection, return the value as-is
+}
+
+message LiteralValueProjection {
+  LiteralValue literal_value = 1;
+}
+
+message RootRelativeProjection {
+  repeated ValueProjection value_projections = 1;
+}
+
+message ValueProjection {
+  oneof projection {
+    RegexCaptureGroupProjection regex_capture_group = 1;
+    JsonPathProjection json_path = 2;
+    JwtPayloadClaimProjection jwt_payload_claim = 3;
+    Base64Projection base64_projection = 4;
+  }
+
+  message RegexCaptureGroupProjection {
+    string regex_capture_group = 1;
+  }
+
+  message JsonPathProjection {
+    string path = 1;
+  }
+
+  message JwtPayloadClaimProjection {
+    string claim_key = 1;
+  }
+
+  message Base64Projection {
+  }
+}

@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package ai.traceable.userattribution.config.service.v2;
+
+option java_multiple_files = true;
+
+import "ai/traceable/userattribution/config/service/v2/user_attribution_rule.proto";
+
+service UserAttributionConfigService {
+  rpc GetUserAttributionRules (GetUserAttributionRulesRequest) returns (GetUserAttributionRulesResponse) {}
+  rpc CreateUserAttributionRule (CreateUserAttributionRuleRequest) returns (CreateUserAttributionRuleResponse) {}
+  rpc UpdateUserAttributionRule (UpdateUserAttributionRuleRequest) returns (UpdateUserAttributionRuleResponse) {}
+  rpc DeleteUserAttributionRule (DeleteUserAttributionRuleRequest) returns (DeleteUserAttributionRuleResponse) {}
+  rpc RankUserAttributionRule (RankUserAttributionRuleRequest) returns (RankUserAttributionRuleResponse) {}
+}
+
+message GetUserAttributionRulesRequest {
+  GetUserAttributionRulesFilter filter = 1;
+
+  message GetUserAttributionRulesFilter {
+    optional bool disabled = 1;
+    EnvironmentFilter environment_filter = 2;
+
+    message EnvironmentFilter {
+      repeated string environment_names = 1;
+    }
+  }
+}
+
+message GetUserAttributionRulesResponse {
+  repeated UserAttributionRule rules = 1;
+}
+
+message CreateUserAttributionRuleRequest {
+  UserAttributionRuleData data = 1;
+}
+
+message CreateUserAttributionRuleResponse {
+  // all rules are returned as a new rule may change the ranks of existing rules
+  repeated UserAttributionRule rules = 1;
+}
+
+message UpdateUserAttributionRuleRequest {
+  string id = 1;
+  UserAttributionRuleData data = 2;
+}
+
+message UpdateUserAttributionRuleResponse {
+  UserAttributionRule rule = 1;
+}
+
+message DeleteUserAttributionRuleRequest {
+  string id = 1;
+}
+
+message DeleteUserAttributionRuleResponse {
+}
+
+message RankUserAttributionRuleRequest {
+  string id_to_update = 1;
+  // The id of the rule that should immediately precede the target id. Omit if we're updating to highest rank.
+  optional string preceding_rule_id = 2;
+}
+
+message RankUserAttributionRuleResponse {
+  repeated UserAttributionRule rules = 1;
+}
