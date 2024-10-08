@@ -226,4 +226,26 @@ class DetectionExclusionConfigServiceImplTest {
         .onNext(BulkCreateDetectionExclusionRulesResponse.getDefaultInstance());
     verify(streamObserver, times(1)).onCompleted();
   }
+
+  @Test
+  void testBulkUpsertDetectionExclusionRules() {
+    BulkUpsertDetectionExclusionRulesRequest request =
+        BulkUpsertDetectionExclusionRulesRequest.getDefaultInstance();
+    StreamObserver<BulkUpsertDetectionExclusionRulesResponse> streamObserver =
+        mock(StreamObserver.class);
+
+    // validation succeeds
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrowBulkUpsertRequest(requestContext, request.getRulesList());
+
+    requestContext.run(
+        () ->
+            detectionExclusionConfigService.bulkUpsertDetectionExclusionRules(
+                request, streamObserver));
+    verify(rulesManager, times(1)).bulkUpsertDetectionExclusionRule(eq(requestContext), any());
+    verify(streamObserver, times(1))
+        .onNext(BulkUpsertDetectionExclusionRulesResponse.getDefaultInstance());
+    verify(streamObserver, times(1)).onCompleted();
+  }
 }

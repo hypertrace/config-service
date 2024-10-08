@@ -97,6 +97,28 @@ public class DetectionExclusionConfigServiceImpl
   }
 
   @Override
+  public void bulkUpsertDetectionExclusionRules(
+      BulkUpsertDetectionExclusionRulesRequest request,
+      StreamObserver<BulkUpsertDetectionExclusionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrowBulkUpsertRequest(context, request.getRulesList());
+
+      BulkUpsertDetectionExclusionRulesResponse response =
+          BulkUpsertDetectionExclusionRulesResponse.newBuilder()
+              .addAllRules(
+                  rulesManager.bulkUpsertDetectionExclusionRule(context, request.getRulesList()))
+              .build();
+
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
   public void updateDetectionExclusionRule(
       UpdateDetectionExclusionRuleRequest request,
       StreamObserver<UpdateDetectionExclusionRuleResponse> responseObserver) {

@@ -7,6 +7,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -25,6 +26,9 @@ public interface RulesManager {
 
   List<DetectionExclusionRule> bulkCreateDetectionExclusionRule(
       RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList);
+
+  List<DetectionExclusionRule> bulkUpsertDetectionExclusionRule(
+      RequestContext requestContext, List<UpsertDetectionExclusionRuleData> ruleDataList);
 
   void deleteDetectionExclusionRule(RequestContext requestContext, String ruleId);
 

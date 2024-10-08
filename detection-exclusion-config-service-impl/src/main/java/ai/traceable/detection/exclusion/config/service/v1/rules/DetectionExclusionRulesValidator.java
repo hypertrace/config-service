@@ -24,6 +24,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionR
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
+import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
 import java.time.format.DateTimeParseException;
@@ -84,6 +85,17 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
   @Override
   public void validateOrThrow(
       RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList) {
+    validateRequestContextOrThrow(requestContext);
+    ruleDataList.forEach(
+        ruleData -> {
+          validateRuleInfo(ruleData.getRuleInfo());
+          validateRuleScope(ruleData.getRuleScope());
+        });
+  }
+
+  @Override
+  public void validateOrThrowBulkUpsertRequest(
+      RequestContext requestContext, List<UpsertDetectionExclusionRuleData> ruleDataList) {
     validateRequestContextOrThrow(requestContext);
     ruleDataList.forEach(
         ruleData -> {

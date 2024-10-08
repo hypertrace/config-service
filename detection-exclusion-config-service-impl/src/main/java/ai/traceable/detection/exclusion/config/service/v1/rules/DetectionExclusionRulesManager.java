@@ -14,6 +14,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRule
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
@@ -101,6 +102,31 @@ public class DetectionExclusionRulesManager implements RulesManager {
                 request ->
                     DetectionExclusionRule.newBuilder()
                         .setId(uuidGenerator.generateRandomId())
+                        .setRuleInfo(processDetectionExclusionRuleInfo(request.getRuleInfo()))
+                        .setRuleScope(request.getRuleScope())
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    return rulesStore.upsertObjects(requestContext, rules).stream()
+        .map(ConfigObject::getData)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
+  public List<DetectionExclusionRule> bulkUpsertDetectionExclusionRule(
+      RequestContext requestContext, List<UpsertDetectionExclusionRuleData> ruleDataList) {
+    List<DetectionExclusionRule> rules =
+        ruleDataList.stream()
+            .map(
+                request ->
+                    DetectionExclusionRule.newBuilder()
+                        .setId(
+                            uuidGenerator.generateId(
+                                request.getRuleInfo().getName()
+                                    + request
+                                        .getRuleInfo()
+                                        .getRuleStatus()
+                                        .getRuleCreationSource()
+                                        .name()))
                         .setRuleInfo(processDetectionExclusionRuleInfo(request.getRuleInfo()))
                         .setRuleScope(request.getRuleScope())
                         .build())
