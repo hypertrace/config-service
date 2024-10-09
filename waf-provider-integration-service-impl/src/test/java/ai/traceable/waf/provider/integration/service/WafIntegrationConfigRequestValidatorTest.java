@@ -2587,33 +2587,6 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 invalidRequest2, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // empty auth credentials
-    UpdateWafIntegrationRequest invalidRequest3 =
-        UpdateWafIntegrationRequest.newBuilder()
-            .setId("id")
-            .setUpdatedWafIntegrationDetails(
-                UpdatedWafIntegrationDetails.newBuilder()
-                    .setName("name")
-                    .setUpdatedFortinetIntegrationParams(
-                        FortinetIntegrationUpdateParams.newBuilder()
-                            .setFortinetIntegrationDetails(
-                                FortinetIntegrationDetails.newBuilder()
-                                    .clearFortinetAuthCredentials()
-                                    .setFortinetRuleDetails(
-                                        FortinetRuleDetails.newBuilder()
-                                            .setFortinetApplication(
-                                                getFortinetApplicationRuleDetails())
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
-            .build();
-    assertThrows(
-        StatusRuntimeException.class,
-        () ->
-            wafIntegrationConfigRequestValidator.validateOrThrow(
-                invalidRequest3, REQUEST_CONTEXT, existingWafIntegrations));
-
     // empty rule details
     UpdateWafIntegrationRequest invalidRequest4 =
         UpdateWafIntegrationRequest.newBuilder()
@@ -2665,7 +2638,7 @@ class WafIntegrationConfigRequestValidatorTest {
                 invalidRequest5, REQUEST_CONTEXT, List.of(existingFortinetWafIntegration)));
 
     // valid updation request
-    UpdateWafIntegrationRequest validRequest =
+    UpdateWafIntegrationRequest validRequest1 =
         UpdateWafIntegrationRequest.newBuilder()
             .setId("id1")
             .setUpdatedWafIntegrationDetails(
@@ -2690,7 +2663,33 @@ class WafIntegrationConfigRequestValidatorTest {
     assertDoesNotThrow(
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
-                validRequest, REQUEST_CONTEXT, List.of(existingFortinetWafIntegration)));
+                validRequest1, REQUEST_CONTEXT, List.of(existingFortinetWafIntegration)));
+
+    // empty auth credentials
+    UpdateWafIntegrationRequest validRequest2 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedFortinetIntegrationParams(
+                        FortinetIntegrationUpdateParams.newBuilder()
+                            .setFortinetIntegrationDetails(
+                                FortinetIntegrationDetails.newBuilder()
+                                    .clearFortinetAuthCredentials()
+                                    .setFortinetRuleDetails(
+                                        FortinetRuleDetails.newBuilder()
+                                            .setFortinetApplication(
+                                                getFortinetApplicationRuleDetails())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
   private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {

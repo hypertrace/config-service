@@ -391,7 +391,7 @@ public class WafIntegrationConfigRequestValidator {
 
     FortinetIntegrationDetails fortinetIntegrationDetails =
         fortinetIntegrationUpdateParams.getFortinetIntegrationDetails();
-    validateFortinetIntegrationDetails(fortinetIntegrationDetails);
+    validateUpdatedFortinetIntegrationDetails(fortinetIntegrationDetails);
     validateFortinetIntegrationDetailsNoDuplicatesOrThrow(
         fortinetIntegrationDetails, otherExistingWafIntegrations);
   }
@@ -399,6 +399,14 @@ public class WafIntegrationConfigRequestValidator {
   private void validateFortinetIntegrationDetails(
       FortinetIntegrationDetails fortinetIntegrationDetails) {
     validateFortinetAuthCredentials(fortinetIntegrationDetails.getFortinetAuthCredentials());
+    validateFortinetRuleDetails(fortinetIntegrationDetails.getFortinetRuleDetails());
+  }
+
+  private void validateUpdatedFortinetIntegrationDetails(
+      FortinetIntegrationDetails fortinetIntegrationDetails) {
+    if (fortinetIntegrationDetails.hasFortinetAuthCredentials()) {
+      validateFortinetAuthCredentials(fortinetIntegrationDetails.getFortinetAuthCredentials());
+    }
     validateFortinetRuleDetails(fortinetIntegrationDetails.getFortinetRuleDetails());
   }
 
