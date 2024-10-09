@@ -141,6 +141,22 @@ class ServiceNowItsmIntegrationConfigServiceValidatorTest {
         () ->
             validator.validateCreateServiceNowItsmIntegration(
                 createServiceNowItsmIntegrationRequest5, requestContext2));
+
+    // Should fail for scope with empty environment-id string
+    CreateServiceNowItsmIntegrationRequest createServiceNowItsmIntegrationRequest7 =
+        minimalCreateServiceNowItsmIntegrationRequest(createServiceNowItsmIntegrationRequest)
+            .toBuilder()
+            .setScope(
+                ServiceNowItsmIntegrationScope.newBuilder()
+                    .setEnvironmentIds(StringList.newBuilder().addValues(""))
+                    .build())
+            .build();
+
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            validator.validateCreateServiceNowItsmIntegration(
+                createServiceNowItsmIntegrationRequest7, requestContext2));
   }
 
   private CreateServiceNowItsmIntegrationRequest minimalCreateServiceNowItsmIntegrationRequest(

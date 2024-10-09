@@ -179,6 +179,18 @@ public class ServiceNowItsmIntegrationConfigServiceValidator {
           throw Status.INVALID_ARGUMENT
               .withDescription("Environment-ids in Scope cannot be an empty list")
               .asRuntimeException();
+        } else {
+          scope
+              .getEnvironmentIds()
+              .getValuesList()
+              .forEach(
+                  environmentId -> {
+                    if (environmentId.isEmpty()) {
+                      throw Status.INVALID_ARGUMENT
+                          .withDescription("Environment-id cannot be empty string")
+                          .asRuntimeException();
+                    }
+                  });
         }
         break;
       case SCOPE_NOT_SET:
