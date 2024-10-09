@@ -43,6 +43,7 @@ import ai.traceable.splunk.integration.config.service.SplunkIntegrationConfigSer
 import ai.traceable.syslog.integration.config.service.SyslogIntegrationConfigServiceFactory;
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceFactory;
 import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServiceFactory;
+import ai.traceable.userattribution.config.service.v2.UserAttributionV2ConfigServiceFactory;
 import ai.traceable.vulnerability.config.service.VulnerabilityConfigServiceFactory;
 import ai.traceable.waf.provider.integration.service.WafIntegrationConfigServiceFactory;
 import io.grpc.BindableService;
@@ -118,6 +119,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getChangeEventGenerator())),
             wrap(
                 UserAttributionConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                UserAttributionV2ConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 DataProtectionConfigServiceFactory.build(
