@@ -29,6 +29,14 @@ service:
   type: ClusterIP
   port: 50101
 
+containerSecurityContext: {}
+
+podSecurityContext: {}
+
+commonPodLabels: {}
+
+commonPodAnnotations: {}
+
 nodeLabels: {}
 
 javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=75.0"
@@ -115,3 +123,7 @@ kafka-topic-creator:
     address: zookeeper:2181
   imagePullSecrets: []
   podAnnotations: {}
+  podSecurityContext: {}
+  commonPodLabels: {}
+  containerSecurityContext: {}
+
