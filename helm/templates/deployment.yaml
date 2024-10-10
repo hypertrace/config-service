@@ -20,15 +20,15 @@ spec:
     metadata:
       labels:
         release: {{ .Release.Name }}
-      {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
+      {{- with merge .Values.podLabels .Values.commonPodLabels }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config-service-config.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.containerAdminPort }}"
-      {{- with .Values.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
+      {{- with merge .Values.podAnnotations .Values.commonPodAnnotations }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
@@ -86,3 +86,7 @@ spec:
               port: {{ .Values.containerAdminPort }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
