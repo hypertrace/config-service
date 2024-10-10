@@ -695,6 +695,7 @@ enum KeyLocation {
   KEY_LOCATION_ATTRIBUTES = 5;
   KEY_LOCATION_STATUS_CODE = 6;
   KEY_LOCATION_URL_PATH = 7;
+  KEY_LOCATION_FULL_URL_PATH = 8;
 }
 
 enum LogicalOperator {
