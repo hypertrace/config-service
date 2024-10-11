@@ -228,6 +228,7 @@ message VolumetricAnomalyDetectionConfig {
     ApiCallSpikeAnomalyConfig api_call_spike = 1;
   }
   string anomaly_rule_id = 2;
+  AnomalySubRuleConfigMap sub_rule_configs = 3;
 }
 
 message ApiCallSpikeAnomalyConfig {
@@ -267,6 +268,7 @@ message AccountTakeoverAnomalyDetectionConfig {
   oneof config {
     CredentialStuffingAnomalyConfig credential_stuffing = 2;
   }
+  AnomalySubRuleConfigMap sub_rule_configs = 3;
 }
 
 message CredentialStuffingAnomalyConfig {
