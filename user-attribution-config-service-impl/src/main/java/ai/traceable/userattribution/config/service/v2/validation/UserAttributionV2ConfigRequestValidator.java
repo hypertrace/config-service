@@ -345,7 +345,6 @@ public class UserAttributionV2ConfigRequestValidator {
 
   private void validateAttributeMatchCondition(MatchCondition matchCondition) {
     validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.MATCH_VALUE_FIELD_NUMBER);
     MatchOperator operator = matchCondition.getOperator();
     if (matchCondition.getMatchValue().getValueCase() == LiteralValue.ValueCase.NULL_VALUE) {
       if (!(operator == MatchOperator.MATCH_OPERATOR_NOT_EQUALS
