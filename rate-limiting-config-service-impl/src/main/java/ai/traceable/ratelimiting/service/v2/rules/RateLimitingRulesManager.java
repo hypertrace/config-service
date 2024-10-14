@@ -79,9 +79,11 @@ public class RateLimitingRulesManager implements RulesManager {
   private RateLimitingRuleData processRateLimitRuleData(
       RateLimitingRuleData ruleData, RuleStatus ruleStatus) {
     RateLimitingRuleData data = processRateLimitRuleData(ruleData);
+    RuleStatus status = data.getRuleStatus();
     RuleStatus mergedRuleStatus =
         ruleStatus.toBuilder()
-            .mergeFrom(data.getRuleStatus())
+            .mergeFrom(status)
+            .setInternal(status.getInternal())
             .setRuleCreationSource(ruleStatus.getRuleCreationSource())
             .build();
     return data.toBuilder().setRuleStatus(mergedRuleStatus).build();
