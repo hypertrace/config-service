@@ -206,6 +206,7 @@ message MetadataTrainingConfig {
     StructuredContentDepthTrainingConfig structured_content_depth = 27;
     IsEncryptedApiTrainingConfig is_encrypted_api = 28;
     CorrelationAttributeTrainingConfig correlation_attribute = 29;
+    NonAsciiUnicodeCharactersTrainingConfig non_ascii_unicode_characters = 31;
   }
 }
 
@@ -353,6 +354,10 @@ message RailsOpenTrainingConfig {}
 message StartTimeTrainingConfig {}
 
 message UserAgentTrainingConfig {}
+
+message NonAsciiUnicodeCharactersTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
 
 message UserRoleTrainingConfig {
   MinOccurrenceConfig min_occurrence_config = 1;
