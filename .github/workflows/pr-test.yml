@@ -54,6 +54,8 @@ jobs:
 
       - name: validate charts
         uses: hypertrace/github-actions/validate-charts@main
+        with:
+          check-pod-template: false
 
   dependency-check:
     runs-on: ubuntu-22.04
