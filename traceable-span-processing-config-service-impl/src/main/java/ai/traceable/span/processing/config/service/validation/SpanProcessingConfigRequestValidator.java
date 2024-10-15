@@ -26,6 +26,7 @@ import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConf
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
+import ai.traceable.span.processing.config.service.v1.JobBasedConfig;
 import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
 import ai.traceable.span.processing.config.service.v1.RateLimit;
@@ -296,6 +297,32 @@ public class SpanProcessingConfigRequestValidator {
               .asRuntimeException();
         }
         validateRegex(astScanBasedConfig.getRegexesList());
+        break;
+      case JOB_BASED_CONFIG:
+        JobBasedConfig jobBasedConfig = ruleConfig.getJobBasedConfig();
+        if (jobBasedConfig.getJobMetadataList().isEmpty()) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(String.format("Invalid job metadata : %s", jobBasedConfig))
+              .asRuntimeException();
+        }
+        if (jobBasedConfig.getRegexesCount() == 0
+            || jobBasedConfig.getRegexesCount() != jobBasedConfig.getValuesCount()) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex count or segment matching count : %s", jobBasedConfig))
+              .asRuntimeException();
+        }
+        if (jobBasedConfig.getRegexesList().stream().anyMatch(String::isEmpty)
+            || jobBasedConfig.getValuesList().stream().anyMatch(String::isEmpty)) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription(
+                  String.format(
+                      "Invalid regex or value segment : %s. Regex/value segment must not be empty",
+                      jobBasedConfig))
+              .asRuntimeException();
+        }
+        validateRegex(jobBasedConfig.getRegexesList());
         break;
       default:
         throw Status.INVALID_ARGUMENT
