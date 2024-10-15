@@ -108,12 +108,20 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasAstScanBasedConfig())
             .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo));
 
+    Stream<ApiNamingRule> jobBasedApiNamingRulesStream =
+        request.getRulesInfoList().stream()
+            .filter(apiNamingRuleInfo -> apiNamingRuleInfo.getRuleConfig().hasJobBasedConfig())
+            .map(apiNamingRuleInfo -> buildApiNamingRule(requestContext, apiNamingRuleInfo));
+
     return buildApiNamingRuleDetails(
         this.apiNamingRulesConfigStore.upsertObjects(
             requestContext,
-            Stream.concat(
-                    Stream.concat(segmentMatchingBasedRuleStream, apiSpecBasedRuleStream),
-                    astScanBasedRuleStream)
+            Stream.of(
+                    segmentMatchingBasedRuleStream,
+                    apiSpecBasedRuleStream,
+                    astScanBasedRuleStream,
+                    jobBasedApiNamingRulesStream)
+                .flatMap(Function.identity())
                 .collect(toUnmodifiableList())));
   }
 
@@ -247,6 +255,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
       RequestContext requestContext, ApiNamingRuleInfo apiNamingRuleInfo) {
     switch (apiNamingRuleInfo.getRuleConfig().getRuleConfigCase()) {
       case SEGMENT_MATCHING_BASED_CONFIG:
+      case JOB_BASED_CONFIG:
       case AST_SCAN_BASED_CONFIG:
         return ApiNamingRule.newBuilder()
             .setId(UUID.randomUUID().toString())
