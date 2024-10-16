@@ -120,6 +120,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
     Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
     String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
     Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
+
     return DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
   }
 }
