@@ -194,8 +194,6 @@ public class UserAttributionV2ConfigRequestValidator {
     if (rootTokenRule.hasTokenConditionalPredicate()) {
       validateTokenConditionalPredicate(rootTokenRule.getTokenConditionalPredicate());
     }
-    validateNonDefaultPresenceOrThrow(
-        rootTokenRule, UserAttributionRootTokenRule.ATTRIBUTE_PROJECTION_FIELD_NUMBER);
     validateAttributeProjection(rootTokenRule.getAttributeProjection());
   }
 
@@ -218,23 +216,29 @@ public class UserAttributionV2ConfigRequestValidator {
     if (tokenRule.hasTokenConditionalPredicate()) {
       validateTokenConditionalPredicate(tokenRule.getTokenConditionalPredicate());
     }
-    if (tokenRule.hasAttributeProjection()) {
-      validateAttributeProjection(tokenRule.getAttributeProjection());
-    }
-    if (tokenRule.hasCustomProjection()) {
-      validateCustomProjection(tokenRule.getCustomProjection());
-    }
-    if (tokenRule.hasLiteralValueProjection()) {
-      validateLiteralValueProjection(tokenRule.getLiteralValueProjection());
-    }
-    if (tokenRule.hasRootRelativeProjection()) {
-      if (hasRootTokenRule) {
-        validateRootRelativeProjection(tokenRule.getRootRelativeProjection());
-      } else {
-        Status.INVALID_ARGUMENT
-            .withDescription("Root relative projection requires a root projection")
+    switch (tokenRule.getProjectionCase()) {
+      case ATTRIBUTE_PROJECTION:
+        validateAttributeProjection(tokenRule.getAttributeProjection());
+        break;
+      case CUSTOM_PROJECTION:
+        validateCustomProjection(tokenRule.getCustomProjection());
+        break;
+      case LITERAL_VALUE_PROJECTION:
+        validateLiteralValueProjection(tokenRule.getLiteralValueProjection());
+        break;
+      case ROOT_RELATIVE_PROJECTION:
+        if (hasRootTokenRule) {
+          validateRootRelativeProjection(tokenRule.getRootRelativeProjection());
+        } else {
+          Status.INVALID_ARGUMENT
+              .withDescription("Root relative projection requires a root projection")
+              .asRuntimeException();
+        }
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Projection case is not specified correctly")
             .asRuntimeException();
-      }
     }
   }
 
@@ -293,8 +297,6 @@ public class UserAttributionV2ConfigRequestValidator {
   }
 
   private void validateLiteralValueProjection(LiteralValueProjection literalValueProjection) {
-    validateNonDefaultPresenceOrThrow(
-        literalValueProjection, LiteralValueProjection.LITERAL_VALUE_FIELD_NUMBER);
     LiteralValue literalValue = literalValueProjection.getLiteralValue();
     switch (literalValue.getValueCase()) {
       case STRING_VALUE:
