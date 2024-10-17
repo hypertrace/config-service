@@ -14,7 +14,7 @@ data:
         {{- if .Values.database }}
         {{- $dst := .Values.database.type }}
         dataStoreType = {{ $dst }}
-        appName = {{ .Values.configServiceConfig.name }}
+        appName = {{ .Values.service.name }}
 
         {{- range $key, $value := (index .Values "database") }}
         {{- if ne $key $dst }}

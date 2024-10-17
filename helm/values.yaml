@@ -28,6 +28,7 @@ containerAdminPort: 50102
 service:
   type: ClusterIP
   port: 50101
+  name: config-service
 
 nodeLabels: {}
 
