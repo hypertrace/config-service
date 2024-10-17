@@ -76,6 +76,8 @@ spec:
                 secretKeyRef:
                   name: {{.secretName }}
                   key: {{.secretPasswordKey }}
+            {{- end }}
+            {{- end }}
           volumeMounts:
             - name: service-config
               mountPath: /app/resources/configs/{{ .Chart.Name }}/application.conf
