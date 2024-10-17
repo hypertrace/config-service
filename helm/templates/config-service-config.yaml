@@ -11,15 +11,29 @@ data:
 
     generic.config.service {
       document.store {
-        {{- $dst := .Values.configServiceConfig.dataStoreType }}
+        {{- if .Values.database }}
+        {{- $dst := .Values.database.type }}
         dataStoreType = {{ $dst }}
+        appName = {{ .Values.service.name }}
+
+        {{- range $key, $value := (index .Values "database") }}
+        {{- if ne $key $dst }}
+        {{ $key }} = {{- toJson $value }}
+        {{- end }}
+        {{- end }}
+    
         {{ $dst }} {
-          {{- range $key, $value := (index .Values "configServiceConfig" (printf "%s" $dst)) }}
+          {{- range $key, $value := (index .Values "database" (printf "%s" $dst)) }}
           {{- if $value }}
-          {{ $key }} = {{ $value | quote }}
+            {{- if hasPrefix "${?" (printf "%s" $value) }}
+          {{ $key }} = {{ $value }}
+            {{- else }}
+          {{ $key }} = {{- toJson $value }}
+            {{- end }}
           {{- end }}
           {{- end }}
         }
+        {{- end }}
       }
       publish.change.events = {{ .Values.configServiceConfig.publishChangeEvents }}
     }

@@ -12,6 +12,8 @@ dependencies {
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.hypertrace.documentstore)
+  implementation(commonLibs.hypertrace.framework.grpc)
+  implementation(commonLibs.hypertrace.framework.documentstore.metrics)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

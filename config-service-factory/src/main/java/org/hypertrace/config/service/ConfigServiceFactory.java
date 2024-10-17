@@ -18,6 +18,7 @@ import org.hypertrace.config.service.store.ConfigStore;
 import org.hypertrace.config.service.store.DocumentConfigStore;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.DatastoreProvider;
+import org.hypertrace.core.documentstore.model.config.TypesafeConfigDatastoreConfigExtractor;
 import org.hypertrace.core.serviceframework.docstore.metrics.DocStoreCustomMetricReportingConfig;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
@@ -118,8 +119,7 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
 
   private Datastore initDataStore(Config config) {
     Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
-    String dataStoreType = docStoreConfig.getString(DATA_STORE_TYPE);
-    Config dataStoreConfig = docStoreConfig.getConfig(dataStoreType);
-    return DatastoreProvider.getDatastore(dataStoreType, dataStoreConfig);
+    return DatastoreProvider.getDatastore(
+        TypesafeConfigDatastoreConfigExtractor.from(docStoreConfig, DATA_STORE_TYPE).extract());
   }
 }

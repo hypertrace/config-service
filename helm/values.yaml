@@ -28,6 +28,7 @@ containerAdminPort: 50102
 service:
   type: ClusterIP
   port: 50101
+  name: hypertrace-config-service
 
 nodeLabels: {}
 
@@ -80,10 +81,6 @@ serviceSelectorLabels:
 configServiceConfig:
   name: config-service-config
   publishChangeEvents: false
-  dataStoreType: "mongo"
-  mongo:
-    host: mongo
-    url: ""
 
 partitionerServiceConfig:
   defaultProfiles:
