@@ -9,6 +9,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.api)
   implementation(projects.configUtils)
   implementation(projects.externalAgentAttributeConfigServiceApi)
+  implementation(projects.featureCachingClient)
   implementation(commonLibs.guice)
   implementation(commonLibs.guava)
   implementation(commonLibs.re2j)

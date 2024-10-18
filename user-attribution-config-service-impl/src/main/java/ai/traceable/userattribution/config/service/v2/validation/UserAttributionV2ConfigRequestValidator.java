@@ -23,6 +23,7 @@ import ai.traceable.userattribution.config.service.v2.Predicate;
 import ai.traceable.userattribution.config.service.v2.RankUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v2.RootRelativeProjection;
 import ai.traceable.userattribution.config.service.v2.ServiceScope;
+import ai.traceable.userattribution.config.service.v2.StringList;
 import ai.traceable.userattribution.config.service.v2.UpdateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v2.UrlScope;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRootTokenRule;
@@ -144,11 +145,8 @@ public class UserAttributionV2ConfigRequestValidator {
   private void validateEnvironmentScope(EnvironmentScope scope) {
     switch (scope.getEnvironmentScopeCase()) {
       case ENVIRONMENT_NAMES:
-        if (scope.getEnvironmentNames().getValuesList().isEmpty()) {
-          throw Status.INVALID_ARGUMENT
-              .withDescription("Environment should not be empty for environment scope")
-              .asRuntimeException();
-        }
+        validateNonDefaultPresenceOrThrow(
+            scope.getEnvironmentNames(), StringList.VALUES_FIELD_NUMBER);
         break;
       default:
         throw Status.INVALID_ARGUMENT
@@ -160,10 +158,11 @@ public class UserAttributionV2ConfigRequestValidator {
   private void validateServiceScope(ServiceScope scope) {
     switch (scope.getServiceScopeCase()) {
       case SERVICE_NAMES:
-        validateNonDefaultPresenceOrThrow(scope, ServiceScope.SERVICE_NAMES_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(scope.getServiceNames(), StringList.VALUES_FIELD_NUMBER);
         break;
       case SERVICE_NAME_REGEXES:
-        validateNonDefaultPresenceOrThrow(scope, ServiceScope.SERVICE_NAME_REGEXES_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            scope.getServiceNameRegexes(), StringList.VALUES_FIELD_NUMBER);
         scope.getServiceNameRegexes().getValuesList().forEach(this::validatePattern);
         break;
       default:
@@ -176,11 +175,8 @@ public class UserAttributionV2ConfigRequestValidator {
   private void validateUrlScope(UrlScope scope) {
     switch (scope.getUrlScopeCase()) {
       case URL_MATCH_REGEXES:
-        if (scope.getUrlMatchRegexes().getValuesList().isEmpty()) {
-          throw Status.INVALID_ARGUMENT
-              .withDescription("Url regex should not be empty for url scope")
-              .asRuntimeException();
-        }
+        validateNonDefaultPresenceOrThrow(
+            scope.getUrlMatchRegexes(), StringList.VALUES_FIELD_NUMBER);
         scope.getUrlMatchRegexes().getValuesList().forEach(this::validatePattern);
         break;
       default:

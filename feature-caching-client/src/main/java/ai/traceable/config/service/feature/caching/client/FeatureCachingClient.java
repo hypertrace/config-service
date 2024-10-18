@@ -30,6 +30,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG_VALUE = false;
   private static final boolean DEFAULT_IPQS_ENABLED_VALUE = false;
   private static final boolean DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE = true;
+  private static final boolean DEFAULT_USER_ATTRIBUTION_V3_FLAG_VALUE = false;
   private static final boolean DEFAULT_DETECTION_EXCLUSION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE = false;
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
@@ -45,6 +46,7 @@ public class FeatureCachingClient {
   private static final String IPQS_ENABLED_FLAG = "enricher.ipqs-ip-intelligence";
   // Flag is no longer UI-only and has been renamed, but key can't be changed without creating anew
   private static final String USER_ATTRIBUTION_V2_FLAG = "ui.user-attribution-v2";
+  private static final String USER_ATTRIBUTION_V3_FLAG = "ui.user-attribution-v3";
   private static final String DETECTION_EXCLUSION_V2_FLAG = "ui.detection-exclusions-v2";
   private static final String SESSION_IDENTIFICATION_V2_FLAG = "session-identification.v2";
   private static final String TPA_MODSEC_PROCESSING_DISABLED = "tpa.modsec-processing-disabled";
@@ -60,6 +62,7 @@ public class FeatureCachingClient {
           DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG,
           IPQS_ENABLED_FLAG,
           USER_ATTRIBUTION_V2_FLAG,
+          USER_ATTRIBUTION_V3_FLAG,
           DETECTION_EXCLUSION_V2_FLAG,
           SESSION_IDENTIFICATION_V2_FLAG,
           TPA_MODSEC_PROCESSING_DISABLED,
@@ -154,6 +157,18 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for User Attribution V2", exception);
       return DEFAULT_USER_ATTRIBUTION_V2_FLAG_VALUE;
+    }
+  }
+
+  public boolean isUserAttributionV3Enabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(USER_ATTRIBUTION_V3_FLAG));
+    } catch (Exception exception) {
+      log.warn("Failed to retrieve current feature flag value for User Attribution V3", exception);
+      return DEFAULT_USER_ATTRIBUTION_V3_FLAG_VALUE;
     }
   }
 

@@ -1,5 +1,6 @@
 package ai.traceable.userattribution.config.service.v2;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import io.grpc.BindableService;
@@ -8,10 +9,13 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 
 public class UserAttributionV2ConfigServiceFactory {
   public static BindableService build(
-      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     Injector injector =
         Guice.createInjector(
-            new UserAttributionV2ConfigServiceModule(channel, configChangeEventGenerator));
+            new UserAttributionV2ConfigServiceModule(
+                channel, configChangeEventGenerator, featureCachingClient));
     return injector.getInstance(BindableService.class);
   }
 }

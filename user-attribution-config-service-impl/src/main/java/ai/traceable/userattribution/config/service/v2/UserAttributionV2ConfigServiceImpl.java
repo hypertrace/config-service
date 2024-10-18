@@ -1,38 +1,47 @@
 package ai.traceable.userattribution.config.service.v2;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.ObjectDiffer;
 import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceImplBase;
+import ai.traceable.userattribution.config.service.v2.migration.LegacyUserAttributionRuleTranslatingDao;
 import ai.traceable.userattribution.config.service.v2.store.UserAttributionV2RuleGenerator;
 import ai.traceable.userattribution.config.service.v2.store.UserAttributionV2RuleStore;
 import ai.traceable.userattribution.config.service.v2.validation.UserAttributionV2ConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImplBase {
+  private final FeatureCachingClient featureCachingClient;
   private final UserAttributionV2ConfigRequestValidator validator;
   private final UserAttributionV2RuleStore ruleStore;
   private final UserAttributionV2RuleGenerator ruleGenerator;
   private final RankCalculator<UserAttributionRule, String> rankCalculator;
   private final ObjectDiffer objectDiffer;
+  private final LegacyUserAttributionRuleTranslatingDao legacyRuleStore;
 
   @Inject
   UserAttributionV2ConfigServiceImpl(
+      FeatureCachingClient featureCachingClient,
       UserAttributionV2ConfigRequestValidator validator,
       UserAttributionV2RuleStore ruleStore,
       UserAttributionV2RuleGenerator ruleGenerator,
       RankCalculator<UserAttributionRule, String> rankCalculator,
-      ObjectDiffer objectDiffer) {
+      ObjectDiffer objectDiffer,
+      LegacyUserAttributionRuleTranslatingDao legacyRuleStore) {
+    this.featureCachingClient = featureCachingClient;
     this.validator = validator;
     this.ruleStore = ruleStore;
     this.ruleGenerator = ruleGenerator;
     this.rankCalculator = rankCalculator;
     this.objectDiffer = objectDiffer;
+    this.legacyRuleStore = legacyRuleStore;
   }
 
   @Override
@@ -42,10 +51,16 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
+      List<UserAttributionRule> allRules =
+          this.ruleStore.getAllConfigData(requestContext, request.getFilter());
+      // fallback to legacy rules if no rules are found in new store
+      if (allRules.isEmpty()) {
+        allRules =
+            this.legacyRuleStore.getUserAttributionRulesFromLegacyStore(
+                requestContext, request.getFilter());
+      }
       responseObserver.onNext(
-          GetUserAttributionRulesResponse.newBuilder()
-              .addAllRules(this.ruleStore.getAllConfigData(requestContext, request.getFilter()))
-              .build());
+          GetUserAttributionRulesResponse.newBuilder().addAllRules(allRules).build());
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error("Error retrieving user attribution rules", exception);
@@ -60,7 +75,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
-
+      migrateAndDeleteLegacyRules(requestContext);
       UserAttributionRule newRule = this.ruleGenerator.generateNewRuleWithoutRank(request);
       List<UserAttributionRule> existingRules = this.ruleStore.getAllConfigData(requestContext);
       this.validator.validateOrThrow(existingRules, newRule);
@@ -85,6 +100,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
+      migrateAndDeleteLegacyRules(requestContext);
       String ruleId = request.getId();
       UserAttributionRule existingRule =
           this.ruleStore.getData(requestContext, ruleId).orElseThrow(Status.NOT_FOUND::asException);
@@ -111,6 +127,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
+      migrateAndDeleteLegacyRules(requestContext);
       this.ruleStore
           .deleteObject(requestContext, request.getId())
           .orElseThrow(Status.NOT_FOUND::asRuntimeException);
@@ -138,6 +155,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
+      migrateAndDeleteLegacyRules(requestContext);
       List<UserAttributionRule> existingRules = this.ruleStore.getAllConfigData(requestContext);
       List<UserAttributionRule> rerankedRules =
           request.hasPrecedingRuleId()
@@ -156,6 +174,24 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
     } catch (Exception exception) {
       log.error("Error ranking user attribution rule: {}", request, exception);
       responseObserver.onError(exception);
+    }
+  }
+
+  private void migrateAndDeleteLegacyRules(RequestContext requestContext) {
+    // don't perform migration of feature flag is not enabled
+    if (!featureCachingClient.isUserAttributionV3Enabled(requestContext)) {
+      return;
+    }
+    List<UserAttributionRule> allLegacyRules =
+        this.legacyRuleStore.getAllUserAttributionRulesFromLegacyStore(requestContext);
+    if (!allLegacyRules.isEmpty()) {
+      this.ruleStore.upsertObjects(requestContext, allLegacyRules);
+      List<String> allLegacyRuleIds =
+          allLegacyRules.stream()
+              .map(UserAttributionRule::getId)
+              .collect(Collectors.toUnmodifiableList());
+      legacyRuleStore.deleteMultipleUserAttributionRulesFromLegacyStore(
+          requestContext, allLegacyRuleIds);
     }
   }
 }

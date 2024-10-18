@@ -122,7 +122,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 UserAttributionV2ConfigServiceFactory.build(
-                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    providers.getFeatureCachingClient())),
             wrap(
                 DataProtectionConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
