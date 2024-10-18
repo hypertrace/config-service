@@ -243,39 +243,7 @@ class DetectionExclusionConditionValidatorTest {
           assertThrows(
               StatusRuntimeException.class,
               () -> conditionValidator.validateRuleCondition(false, condition));
-      assertTrue(
-          throwable
-              .getMessage()
-              .contains("value should be string or list of strings for regex matching"));
-    }
-
-    // invalid list value for regex match condition
-    {
-      DetectionExclusionCondition condition =
-          DetectionExclusionCondition.newBuilder()
-              .setAttributeMatchCondition(
-                  SpanAttributeMatchCondition.newBuilder()
-                      .setKeyMatchCondition(
-                          KeyMetadataMatchCondition.newBuilder()
-                              .setMetadata(KeyMetadata.KEY_METADATA_QUERY_PARAMETER)
-                              .setMatchCondition(
-                                  MatchCondition.newBuilder()
-                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
-                                      .setValue(
-                                          Value.newBuilder()
-                                              .setListValue(
-                                                  ListValue.newBuilder()
-                                                      .addValues(Value.getDefaultInstance())))))
-                      .setValueMatchCondition(MatchCondition.getDefaultInstance()))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(false, condition));
-      assertTrue(
-          throwable
-              .getMessage()
-              .contains("value should be string or list of strings for regex matching"));
+      assertTrue(throwable.getMessage().contains("value should be string for regex matching"));
     }
 
     // invalid regex for match condition
@@ -298,6 +266,27 @@ class DetectionExclusionConditionValidatorTest {
               StatusRuntimeException.class,
               () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Invalid Regex"));
+    }
+
+    // invalid numerical match condition
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setAttributeMatchCondition(
+                  SpanAttributeMatchCondition.newBuilder()
+                      .setKeyMatchCondition(
+                          KeyMetadataMatchCondition.newBuilder()
+                              .setMetadata(KeyMetadata.KEY_METADATA_RESPONSE_BODY_SIZE))
+                      .setValueMatchCondition(
+                          MatchCondition.newBuilder()
+                              .setOperator(MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+                              .setValue(Value.newBuilder().setStringValue("abc"))))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () -> conditionValidator.validateRuleCondition(false, condition));
+      assertTrue(throwable.getMessage().contains("Numerical value should be present"));
     }
 
     // invalid condition
@@ -596,7 +585,7 @@ class DetectionExclusionConditionValidatorTest {
               () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("TypeId provided is empty"));
     }
-    // value not set for match condition
+    // invalid value set for match condition
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -606,7 +595,10 @@ class DetectionExclusionConditionValidatorTest {
                           SystemDefinedEvent.newBuilder()
                               .setDescriptionMatchCondition(
                                   MatchCondition.newBuilder()
-                                      .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
+                                      .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                      .setValue(
+                                          Value.newBuilder()
+                                              .setListValue(ListValue.getDefaultInstance())))
                               .setEventFamily(
                                   SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
                               .setEventTypeId("integer")))
@@ -616,61 +608,6 @@ class DetectionExclusionConditionValidatorTest {
               StatusRuntimeException.class,
               () -> conditionValidator.validateRuleCondition(false, condition));
       assertTrue(throwable.getMessage().contains("Match condition should have a valid value"));
-    }
-
-    // invalid value type for regex match condition
-    {
-      DetectionExclusionCondition condition =
-          DetectionExclusionCondition.newBuilder()
-              .setEventCondition(
-                  EventCondition.newBuilder()
-                      .addSystemDefinedEvents(
-                          SystemDefinedEvent.newBuilder()
-                              .setDescriptionMatchCondition(
-                                  MatchCondition.newBuilder()
-                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
-                                      .setValue(Value.newBuilder().setNumberValue(2)))
-                              .setEventFamily(
-                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
-                              .setEventTypeId("integer")))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(false, condition));
-      assertTrue(
-          throwable
-              .getMessage()
-              .contains("value should be string or list of strings for regex matching"));
-    }
-    // invalid list value for regex match condition
-    {
-      DetectionExclusionCondition condition =
-          DetectionExclusionCondition.newBuilder()
-              .setEventCondition(
-                  EventCondition.newBuilder()
-                      .addSystemDefinedEvents(
-                          SystemDefinedEvent.newBuilder()
-                              .setDescriptionMatchCondition(
-                                  MatchCondition.newBuilder()
-                                      .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
-                                      .setValue(
-                                          Value.newBuilder()
-                                              .setListValue(
-                                                  ListValue.newBuilder()
-                                                      .addValues(Value.getDefaultInstance()))))
-                              .setEventFamily(
-                                  SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_API_DEF)
-                              .setEventTypeId("integer")))
-              .build();
-      Throwable throwable =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> conditionValidator.validateRuleCondition(false, condition));
-      assertTrue(
-          throwable
-              .getMessage()
-              .contains("value should be string or list of strings for regex matching"));
     }
     // invalid regex for match condition
     {

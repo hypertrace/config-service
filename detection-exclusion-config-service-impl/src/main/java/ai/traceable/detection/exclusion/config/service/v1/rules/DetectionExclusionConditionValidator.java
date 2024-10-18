@@ -64,7 +64,6 @@ import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
 import ai.traceable.detection.exclusion.config.service.v1.UserAgentCondition;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
-import com.google.protobuf.ListValue;
 import com.google.protobuf.Message;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -344,6 +343,7 @@ public class DetectionExclusionConditionValidator {
             String.format(
                 "Value match condition should not be present for key meta data : %s", metadata));
       }
+      validateMatchCondition(condition.getValueMatchCondition());
     } else {
       if (!keyMetadataMatchCondition.hasMatchCondition()) {
         throwInvalidArgumentException(
@@ -502,33 +502,29 @@ public class DetectionExclusionConditionValidator {
   private void validateMatchCondition(MatchCondition matchCondition) {
     validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.OPERATOR_FIELD_NUMBER);
 
-    if (!matchCondition.hasValue()) {
+    if (!isValidValue(matchCondition.getValue())) {
       throwInvalidArgumentException("Match condition should have a valid value");
+    }
+
+    if (isInvalidMathematicalOperation(matchCondition)) {
+      throwInvalidArgumentException(
+          String.format(
+              "Numerical value should be present for match operator : %s",
+              matchCondition.getOperator()));
     }
 
     if (matchCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
         || matchCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)) {
       Value value = matchCondition.getValue();
-      if (!value.hasStringValue()
-          && !(value.hasListValue() && listValueContainsOnlyStrings(value.getListValue()))) {
-        throwInvalidArgumentException(
-            "Match condition value should be string or list of strings for regex matching");
+      if (!value.hasStringValue()) {
+        throwInvalidArgumentException("Match condition value should be string for regex matching");
       }
-      if (isInvalidMathematicalOperation(matchCondition)) {
-        throwInvalidArgumentException(
-            String.format(
-                "Numerical value should be present for match operator : %s",
-                matchCondition.getOperator()));
-      }
-      if (value.hasStringValue()) {
-        validateRegex(matchCondition.getValue().getStringValue());
-      }
-      if (value.hasListValue()) {
-        value.getListValue().getValuesList().stream()
-            .map(Value::getStringValue)
-            .forEach(this::validateRegex);
-      }
+      validateRegex(matchCondition.getValue().getStringValue());
     }
+  }
+
+  private boolean isValidValue(Value value) {
+    return value.hasStringValue() || value.hasNumberValue() || value.hasBoolValue();
   }
 
   private void validateIpAddressCondition(IpAddressCondition condition) {
@@ -573,10 +569,6 @@ public class DetectionExclusionConditionValidator {
     if (!cidrIpRanges.stream().allMatch(IpValidationUtils::isValidSubnet)) {
       throwInvalidArgumentException("IpAddressCondition should have valid CIDR IP ranges");
     }
-  }
-
-  private boolean listValueContainsOnlyStrings(ListValue listValue) {
-    return listValue.getValuesList().stream().allMatch(Value::hasStringValue);
   }
 
   private void validateRegex(String regexPattern) {
