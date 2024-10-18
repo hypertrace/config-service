@@ -2,12 +2,12 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:8.0.15=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.1270=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:api-attribute-override-service-api:0.36.433=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:data-classification-config-service-api:0.36.433=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:iprange-config-service-api:0.36.433=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.36.433=runtimeClasspath,testRuntimeClasspath
-ai.traceable.config.service:rate-limiting-config-service-api:0.36.433=runtimeClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1295=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:api-attribute-override-service-api:0.36.438=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:data-classification-config-service-api:0.36.438=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:iprange-config-service-api:0.36.438=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.36.438=runtimeClasspath,testRuntimeClasspath
+ai.traceable.config.service:rate-limiting-config-service-api:0.36.438=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=runtimeClasspath,testRuntimeClasspath
@@ -24,14 +24,14 @@ ai.traceable.platform-gateway:training-evaluation-framework:0.8.57=runtimeClassp
 ai.traceable.platform-gateway:xml-utils:0.8.57=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.147=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:3.0.130=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-inspection-api:1.0.387=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:api-inspection-api:1.0.388=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-naming-constants:5.0.73=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:conditions-matcher:1.0.387=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:config-providers:1.0.387=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:conditions-matcher:1.0.388=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:config-providers:1.0.388=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.137=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.119=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:session-constants:1.0.38=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:trace-data-parser:1.0.387=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:trace-data-parser:1.0.388=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:4.0.137=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:4.0.137=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.97=runtimeClasspath,testRuntimeClasspath

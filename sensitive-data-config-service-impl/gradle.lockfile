@@ -2,10 +2,10 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:8.0.15=testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.1270=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1295=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
-ai.traceable.iam.v2:iam-service-api-v2:0.14.12=testRuntimeClasspath
+ai.traceable.iam.v2:iam-service-api-v2:0.14.14=testRuntimeClasspath
 ai.traceable.libinjection:sql:0.4.0=testRuntimeClasspath
 ai.traceable.libinjection:xss:0.4.0=testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=testRuntimeClasspath
@@ -20,17 +20,17 @@ ai.traceable.platform-gateway:training-evaluation-framework:0.8.57=testRuntimeCl
 ai.traceable.platform-gateway:xml-utils:0.8.57=testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.147=testRuntimeClasspath
 ai.traceable.platform:anomaly-decision-engine-api:3.0.130=testRuntimeClasspath
-ai.traceable.platform:api-inspection-api:1.0.387=testRuntimeClasspath
+ai.traceable.platform:api-inspection-api:1.0.388=testRuntimeClasspath
 ai.traceable.platform:api-naming-constants:5.0.73=testRuntimeClasspath
 ai.traceable.platform:api-naming-model:5.0.73=testRuntimeClasspath
-ai.traceable.platform:conditions-matcher:1.0.387=testRuntimeClasspath
-ai.traceable.platform:config-providers:1.0.387=testRuntimeClasspath
+ai.traceable.platform:conditions-matcher:1.0.388=testRuntimeClasspath
+ai.traceable.platform:config-providers:1.0.388=testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.137=testRuntimeClasspath
 ai.traceable.platform:insights-service-api:2.0.108=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.119=testRuntimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.49=testRuntimeClasspath
 ai.traceable.platform:session-constants:1.0.38=testRuntimeClasspath
-ai.traceable.platform:trace-data-parser:1.0.387=testRuntimeClasspath
+ai.traceable.platform:trace-data-parser:1.0.388=testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:4.0.137=testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:4.0.137=testRuntimeClasspath
 ai.traceable.platform:view-generation-api:1.0.97=testRuntimeClasspath
