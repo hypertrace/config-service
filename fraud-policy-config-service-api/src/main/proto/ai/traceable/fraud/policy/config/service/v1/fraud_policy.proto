@@ -97,6 +97,15 @@ message EnvironmentScope {
 message TenantScope {
 }
 
+message Schedule {
+  oneof type {
+    string cron_expression = 1; // e.g. "0 0/10 * * * ?" (every 10 minutes)
+    TimeObj interval = 2;     // Interval between executions, if applicable
+  }
+  optional int64 start_time = 3; // if we need to eval past windows
+  optional int64 end_time = 4; // if we need to stop eval beyond certain time
+}
+
 // policy is a set of rules
 message FraudPolicy {
   string id = 1;
@@ -138,6 +147,8 @@ message FraudPolicy {
   string fraud_risk_category = 14;
 
   FraudPolicyScope scope = 15;
+
+  Schedule schedule = 16;
 }
 
 message FraudWatcherPolicy {
@@ -208,6 +219,8 @@ message FraudRule {
     MetricBasedFraudRule metric_fraud_rule = 4;
     // currently, fraud detection event derivation config.
     string inline_detection_config = 5;
+    // apply transformation on the input or output. for ex: leventhstein distance on an array_agg of usernames
+    string transformation_config = 6;
   }
 }
 
