@@ -250,7 +250,9 @@ public class WafIntegrationBuilderUtils {
         .clearIntegrationTargets()
         .addAllIntegrationTargets(
             request.getUpdatedWafIntegrationDetails().getIntegrationTargetsList());
-    if (builder.getIntegrationParamsCase() == IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS) {
+    if (builder.getIntegrationParamsCase() == IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS
+        || builder.getIntegrationParamsCase()
+            == IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS) {
       return populateAllTargetsIfEmptyList(builder.build()).toBuilder();
     }
     if (builder.getIntegrationParamsCase() != IntegrationParamsCase.AWS_INTEGRATION_PARAMS) {
@@ -493,6 +495,7 @@ public class WafIntegrationBuilderUtils {
                     .build())
             .build();
       case AKAMAI_INTEGRATION_PARAMS:
+      case FORTINET_INTEGRATION_PARAMS:
         return wafIntegration.toBuilder()
             .setWafIntegrationDetails(
                 populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
@@ -686,6 +689,7 @@ public class WafIntegrationBuilderUtils {
                         .build()))
             .build();
       case AKAMAI_INTEGRATION_PARAMS:
+      case FORTINET_INTEGRATION_PARAMS:
         return wafIntegration.toBuilder()
             .setWafIntegrationDetails(
                 populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))
