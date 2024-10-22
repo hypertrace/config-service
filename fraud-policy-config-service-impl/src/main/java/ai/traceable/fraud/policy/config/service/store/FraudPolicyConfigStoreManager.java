@@ -73,7 +73,10 @@ public class FraudPolicyConfigStoreManager {
   public GetFraudPolicyResponse fetchFraudPolicy(
       RequestContext requestContext, GetFraudPolicyRequest request) throws StatusException {
     GetFraudPolicyListRequest getFraudPolicyListRequest =
-        GetFraudPolicyListRequest.newBuilder().addFraudPolicyId(request.getFraudPolicyId()).build();
+        GetFraudPolicyListRequest.newBuilder()
+            .addFraudPolicyId(request.getFraudPolicyId())
+            .setIncludeDisabled(request.getIncludeDisabled())
+            .build();
     GetFraudPolicyListResponse fraudPolicyListResponse =
         fetchFraudPolicyList(requestContext, getFraudPolicyListRequest);
     if (fraudPolicyListResponse.getFraudPolicyListCount() == 0) {

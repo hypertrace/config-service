@@ -56,8 +56,7 @@ public class FraudDataModelDerivationConfigStore
   protected Optional<DerivationConfig> filterConfigData(
       DerivationConfig data, GetDerivationConfigsRequest request) {
     return Optional.of(data)
-        .filter(
-            derivationConfig -> !request.getIncludeDisabled() && !derivationConfig.getDisabled())
+        .filter(derivationConfig -> request.getIncludeDisabled() || !derivationConfig.getDisabled())
         .filter(
             derivationConfig ->
                 request.getDerivationConfigType().equals(data.getDerivationConfigType()))

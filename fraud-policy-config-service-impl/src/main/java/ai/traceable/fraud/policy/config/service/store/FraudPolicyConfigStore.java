@@ -53,9 +53,8 @@ public class FraudPolicyConfigStore
   @Override
   protected Optional<FraudPolicy> filterConfigData(
       FraudPolicy data, GetFraudPolicyListRequest request) {
-    // check if request has any ids specified
     return Optional.of(data)
-        .filter(policy -> !request.getIncludeDisabled() && !policy.getDisabled())
+        .filter(policy -> !policy.getDisabled() || request.getIncludeDisabled())
         .filter(
             policy ->
                 request.getFraudPolicyIdCount() == 0

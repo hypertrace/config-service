@@ -32,6 +32,8 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.UserAgentMergeM
 import ai.traceable.fraud.datamodel.derivation.config.service.validation.FraudDataModelDerivationConfigRequestValidator;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +156,72 @@ class FraudDataModelDerivationConfigServiceImplTest {
                         .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_ENTITY)
                         .build()));
     assertEquals(0, getDerivationConfigsResponse.getDerivationConfigsCount());
+
+    DerivationConfig disabledDerivationConfig =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub
+                    .updateDerivationConfig(
+                        UpdateDerivationConfigRequest.newBuilder()
+                            .setDerivationConfig(
+                                DerivationConfig.newBuilder()
+                                    .setId(uuid)
+                                    .setDisabled(true)
+                                    .setDerivationConfigType(
+                                        DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+                                    .setName("derivation_config_updated")
+                                    .setDerivationConfig("yaml_config_updated"))
+                            .build())
+                    .getDerivationConfig());
+
+    assertEquals("derivation_config_updated", disabledDerivationConfig.getName());
+    assertEquals("yaml_config_updated", disabledDerivationConfig.getDerivationConfig());
+
+    try {
+      getDerivationConfigResponse =
+          requestContext.call(
+              () ->
+                  this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfig(
+                      GetDerivationConfigRequest.newBuilder()
+                          .setDerivationConfigId(uuid)
+                          .setDerivationConfigType(
+                              DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+                          .build()));
+      Assertions.fail("Expected Status.NOT_FOUND");
+    } catch (StatusRuntimeException e) {
+      Assertions.assertEquals(Status.NOT_FOUND.getCode(), e.getStatus().getCode());
+    }
+
+    getDerivationConfigsResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfigs(
+                    GetDerivationConfigsRequest.newBuilder()
+                        .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+                        .build()));
+    assertEquals(0, getDerivationConfigsResponse.getDerivationConfigsCount());
+
+    getDerivationConfigResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfig(
+                    GetDerivationConfigRequest.newBuilder()
+                        .setIncludeDisabled(true)
+                        .setDerivationConfigId(uuid)
+                        .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+                        .build()));
+    Assertions.assertNotNull(getDerivationConfigResponse.getDerivationConfig());
+    Assertions.assertEquals(uuid, getDerivationConfigResponse.getDerivationConfig().getId());
+
+    getDerivationConfigsResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfigs(
+                    GetDerivationConfigsRequest.newBuilder()
+                        .setIncludeDisabled(true)
+                        .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+                        .build()));
+    assertEquals(1, getDerivationConfigsResponse.getDerivationConfigsCount());
 
     storeManager.deleteDerivedConfig(requestContext, uuid);
 

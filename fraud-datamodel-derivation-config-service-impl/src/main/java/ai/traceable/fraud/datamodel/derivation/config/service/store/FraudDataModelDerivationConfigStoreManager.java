@@ -86,6 +86,7 @@ public class FraudDataModelDerivationConfigStoreManager {
         GetDerivationConfigsRequest.newBuilder()
             .setDerivationConfigType(request.getDerivationConfigType())
             .addDerivationConfigIds(request.getDerivationConfigId())
+            .setIncludeDisabled(request.getIncludeDisabled())
             .build();
     List<DerivationConfig> derivationConfigs =
         fraudDataModelDerivationConfigStore.getAllConfigData(

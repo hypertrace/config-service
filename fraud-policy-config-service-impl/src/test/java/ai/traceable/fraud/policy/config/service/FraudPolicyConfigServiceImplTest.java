@@ -67,7 +67,7 @@ class FraudPolicyConfigServiceImplTest {
   }
 
   @Test
-  void testDerivationConfigCRUD() {
+  void testFraudPolicyCRUD() {
     RequestContext requestContext = buildRequestContext();
     FraudPolicy createdFraudPolicy =
         requestContext.call(
@@ -103,11 +103,44 @@ class FraudPolicyConfigServiceImplTest {
     assertEquals(1, fraudPolicyListResponse.getFraudPolicyListCount());
     assertEquals(UUID_1, fraudPolicyListResponse.getFraudPolicyList(0).getId());
 
+    FraudPolicy disabledFraudPolicy =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub
+                    .updateFraudPolicy(
+                        UpdateFraudPolicyRequest.newBuilder()
+                            .setFraudPolicyId(UUID_1)
+                            .setFraudPolicy(
+                                FraudPolicy.newBuilder()
+                                    .setId(UUID_1)
+                                    .setDisabled(true)
+                                    .setName("disabled"))
+                            .build())
+                    .getFraudPolicy());
+
+    assertEquals("disabled", disabledFraudPolicy.getName());
+    fraudPolicyListResponse =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub.getFraudPolicyList(
+                    GetFraudPolicyListRequest.getDefaultInstance()));
+    assertEquals(0, fraudPolicyListResponse.getFraudPolicyListCount());
+    fraudPolicyListResponse =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub.getFraudPolicyList(
+                    GetFraudPolicyListRequest.newBuilder().setIncludeDisabled(true).build()));
+    assertEquals(1, fraudPolicyListResponse.getFraudPolicyListCount());
+    assertEquals(UUID_1, fraudPolicyListResponse.getFraudPolicyList(0).getId());
+
     GetFraudPolicyResponse fraudPolicyResponse =
         requestContext.call(
             () ->
                 this.fraudPolicyConfigServiceBlockingStub.getFraudPolicy(
-                    GetFraudPolicyRequest.newBuilder().setFraudPolicyId(UUID_1).build()));
+                    GetFraudPolicyRequest.newBuilder()
+                        .setFraudPolicyId(UUID_1)
+                        .setIncludeDisabled(true)
+                        .build()));
     assertEquals(UUID_1, fraudPolicyResponse.getFraudPolicy().getId());
 
     storeManager.deleteDerivedConfig(requestContext, UUID_1);
