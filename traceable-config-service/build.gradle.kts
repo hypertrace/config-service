@@ -91,9 +91,37 @@ tasks.register<DockerCreateContainer>("createActorServiceContainer") {
   hostConfig.autoRemove.set(true)
 }
 
+tasks.register<com.bmuschko.gradle.docker.tasks.image.DockerPullImage>("pullCorazaImage") {
+  image.set(docker.registryCredentials.url.get() + "/traceable/coraza-waf-service:${commonLibs.versions.traceable.corazaWafService.get()}")
+}
+
+val corazaContainer = "coraza-local"
+tasks.register<DockerCreateContainer>("createCorazaContainer") {
+  dependsOn("createIntegrationTestNetwork", "pullCorazaImage")
+  containerName.set(corazaContainer)
+
+  targetImageId(tasks.named<com.bmuschko.gradle.docker.tasks.image.DockerPullImage>("pullCorazaImage").get().image)
+  hostConfig.apply {
+    network.set(tasks.getByName<DockerCreateNetwork>("createIntegrationTestNetwork").networkId)
+    portBindings.set(listOf("9000:9000"))
+    autoRemove.set(true)
+    binds.put("$projectDir/conf-files", "/app/conf")
+  }
+}
+
+tasks.register<DockerStartContainer>("startCorazaContainer") {
+  dependsOn("createCorazaContainer")
+  targetContainerId(tasks.named<DockerCreateContainer>("createCorazaContainer").get().containerId)
+}
+
+tasks.register<DockerStopContainer>("stopCorazaContainer") {
+  targetContainerId(tasks.named<DockerCreateContainer>("createCorazaContainer").get().containerId)
+  finalizedBy("removeIntegrationTestNetwork")
+}
+
 tasks.register<DockerStopContainer>("stopMongoContainer") {
   targetContainerId(tasks.getByName<DockerCreateContainer>("createMongoContainer").containerId)
-  finalizedBy("removeIntegrationTestNetwork")
+  finalizedBy("stopCorazaContainer")
 }
 
 tasks.register<DockerStopContainer>("stopEntityServiceContainer") {
@@ -101,7 +129,7 @@ tasks.register<DockerStopContainer>("stopEntityServiceContainer") {
   finalizedBy("stopMongoContainer")
 }
 
-tasks.register<DockerStopContainer>("stopActorServiceContainer") {
+tasks.register<DockerStopContainer>("stopAllContainers") {
   targetContainerId(tasks.getByName<DockerCreateContainer>("createActorServiceContainer").containerId)
   finalizedBy("stopEntityServiceContainer")
 }
@@ -109,7 +137,8 @@ tasks.register<DockerStopContainer>("stopActorServiceContainer") {
 tasks.integrationTest {
   useJUnitPlatform()
   dependsOn("startActorServiceContainer")
-  finalizedBy("stopActorServiceContainer")
+  dependsOn("startCorazaContainer")
+  finalizedBy("stopAllContainers")
   maxHeapSize = "1024m"
 }
 
@@ -171,6 +200,9 @@ dependencies {
   integrationTestImplementation(projects.fraudPolicyConfigServiceImpl)
   integrationTestImplementation(commonLibs.traceable.opadistributor.api)
   integrationTestImplementation(localLibs.hypertrace.configservice.partitioner.config.impl)
+  integrationTestImplementation(commonLibs.commons.lang)
+  integrationTestImplementation(commonLibs.traceable.modsecurity.jni)
+  integrationTestImplementation(commonLibs.traceable.coraza.wafServiceClient)
 }
 
 application {

@@ -20,7 +20,6 @@ dependencies {
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.commons.lang)
-  testImplementation(commonLibs.traceable.modsecurity.jni)
 }
 
 tasks.test {

@@ -3,9 +3,7 @@ package ai.traceable.anomaly.config.service.registry.modsec;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
@@ -14,7 +12,6 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import ai.traceable.modsecurity.RuleEngine;
 import com.google.common.io.Resources;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
@@ -32,7 +29,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 
 public class ModsecRulesRegistryTest {
@@ -40,38 +36,6 @@ public class ModsecRulesRegistryTest {
       new ModsecCrsRulesHandler(new ModsecRuleUtils());
   private final ModsecRulesRegistryImpl modsecRulesRegistry =
       new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
-
-  @Test
-  public void testModsecCrsRuleEngine() throws IOException {
-    if (SystemUtils.IS_OS_LINUX) {
-      RuleEngine.loadNativeLibrary();
-      for (ModsecRuleVersion version : ModsecRuleVersion.values()) {
-        // TODO: Add support for verifying coraza blob too..
-        if (version.name().contains("CORAZA")) {
-          continue;
-        }
-        for (AnomalySubRuleType subRuleType : AnomalySubRuleType.values()) {
-          try {
-            if (subRuleType.equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED)
-                || subRuleType.equals(AnomalySubRuleType.UNRECOGNIZED)) {
-              assertTrue(
-                  modsecRulesRegistry
-                      .getModsecCrsRulesBlob(List.of(subRuleType), version, Set.of())
-                      .isEmpty());
-            } else {
-              assertNotNull(
-                  RuleEngine.create(
-                      modsecRulesRegistry.getModsecCrsRulesBlob(
-                          List.of(subRuleType), version, Set.of())),
-                  "Failed for version:" + version + " subRuleType:" + subRuleType);
-            }
-          } catch (Exception e) {
-            fail("Failed for version:" + version + " subRuleType:" + subRuleType, e);
-          }
-        }
-      }
-    }
-  }
 
   @Test
   public void testModsecCrsRules() throws IOException {
