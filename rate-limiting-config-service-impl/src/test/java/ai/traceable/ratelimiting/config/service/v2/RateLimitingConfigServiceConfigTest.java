@@ -30,7 +30,7 @@ class RateLimitingConfigServiceConfigTest {
   private void assertDefaultRateLimitingRules(List<RateLimitingRule> rateLimitingRules) {
 
     int rateLimitingRulesCount = rateLimitingRules.size();
-    assertEquals(6, rateLimitingRulesCount);
+    assertEquals(10, rateLimitingRulesCount);
 
     assertEquals(
         rateLimitingRulesCount,
@@ -83,15 +83,16 @@ class RateLimitingConfigServiceConfigTest {
     assertDoesNotThrow(() -> rateLimitingRules.forEach(rule -> UUID.fromString(rule.getId())));
     rateLimitingRules.forEach(
         rule -> {
+          RateLimitingRuleData data = rule.getData();
           RuleStatus ruleStatus =
-              rule.getData().getRuleStatus().toBuilder().clearRuleCreationSource().build();
-          RateLimitingRuleData ruleData =
-              rule.getData().toBuilder().setRuleStatus(ruleStatus).build();
+              data.getRuleStatus().toBuilder().clearRuleCreationSource().build();
+          RateLimitingRuleData ruleData = data.toBuilder().setRuleStatus(ruleStatus).build();
           UpdateRateLimitingRuleRequest request =
               UpdateRateLimitingRuleRequest.newBuilder()
                   .setRuleId(rule.getId())
                   .setData(ruleData)
                   .build();
+          assertFalse(data.getEnabled());
           assertDoesNotThrow(
               () ->
                   rulesValidator.validateOrThrow(

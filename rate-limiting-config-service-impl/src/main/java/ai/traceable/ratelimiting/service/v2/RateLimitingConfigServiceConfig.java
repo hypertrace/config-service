@@ -20,10 +20,13 @@ public class RateLimitingConfigServiceConfig {
       "default-enumeration-rules.conf";
   private static final String DEFAULT_DATA_ACCESS_RULES_FILE_PATH =
       "default-data-access-rules.conf";
+  private static final String DEFAULT_RATE_LIMITING_RULES_FILE_PATH =
+      "default-rate-limiting-rules.conf";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
   private static final String ENUMERATION_RULES_PATH = "enumerationRules";
   private static final String DATA_ACCESS_RULES_PATH = "dataAccessRules";
+  private static final String RATE_LIMITING_RULES_PATH = "rateLimitingRules";
   private final List<RateLimitingRule> defaultRateLimitingRules;
 
   public RateLimitingConfigServiceConfig(Config config) {
@@ -35,7 +38,10 @@ public class RateLimitingConfigServiceConfig {
                         .getConfigList(ENUMERATION_RULES_PATH)),
                 this.convert(
                     ConfigFactory.parseResources(DEFAULT_DATA_ACCESS_RULES_FILE_PATH)
-                        .getConfigList(DATA_ACCESS_RULES_PATH)))
+                        .getConfigList(DATA_ACCESS_RULES_PATH)),
+                this.convert(
+                    ConfigFactory.parseResources(DEFAULT_RATE_LIMITING_RULES_FILE_PATH)
+                        .getConfigList(RATE_LIMITING_RULES_PATH)))
             .flatMap(Collection::stream)
             .collect(Collectors.toUnmodifiableList());
   }
