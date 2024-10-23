@@ -220,8 +220,18 @@ message FraudRule {
     // currently, fraud detection event derivation config.
     string inline_detection_config = 5;
     // apply transformation on the input or output. for ex: leventhstein distance on an array_agg of usernames
-    string transformation_config = 6;
+    string transformation_config = 6 [deprecated = true];
+    TransformationConfigBasedFraudRule transformation_config_fraud_rule = 7;
   }
+}
+
+message TransformationConfigBasedFraudRule {
+  string transformation_config = 1;
+  ThresholdDefinition threshold_definition = 2;
+  // what should we summarize the results of this query as?
+  string message_format = 3;
+  // data query should return these parameters.
+  map<string, ai.traceable.fraud.datamodel.config.service.v1.FieldType> message_params = 4;
 }
 
 message ThresholdDefinition {
