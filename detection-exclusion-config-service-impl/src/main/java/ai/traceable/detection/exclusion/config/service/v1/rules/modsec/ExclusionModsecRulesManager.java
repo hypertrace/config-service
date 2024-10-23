@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -86,9 +87,18 @@ public class ExclusionModsecRulesManager {
           }
         });
 
-    // Merge blobs across services with the same rules and convert to a list of ModsecBlobData
+    // Merge blobs across services with the same rules
     List<ModsecBlobData> modsecBlobDataList =
-        getModsecBlobData(requestContext, serviceToModsecBlobDataMap);
+        serviceToModsecBlobDataMap.entrySet().stream()
+            .collect(
+                Collectors.groupingBy(
+                    entry -> createCombinedBlob(requestContext, entry.getKey(), entry.getValue()),
+                    LinkedHashMap::new,
+                    Collectors.mapping(Entry::getKey, Collectors.toList())))
+            .entrySet()
+            .stream()
+            .map(entry -> entry.getKey().toBuilder().addAllServiceNames(entry.getValue()).build())
+            .collect(Collectors.toUnmodifiableList());
 
     return GetExclusionModsecRulesResponse.newBuilder()
         .setModsecDirectivesBlob(
@@ -97,47 +107,6 @@ public class ExclusionModsecRulesManager {
         .addAllModsecBlobsData(modsecBlobDataList)
         .addAllModsecRules(exclusionModsecRules)
         .build();
-  }
-
-  private List<ModsecBlobData> getModsecBlobData(
-      RequestContext requestContext,
-      Map<String, List<ModsecBlobResult>> serviceToModsecBlobDataMap) {
-    // Using a linkedHashMap we don't want random re-ordering, as that would lead to change in hash
-    // of the config, which will enforce an update of config in the agents.
-    Map<String, ModsecBlobData.Builder> combinedBlobDataMap = new LinkedHashMap<>();
-
-    serviceToModsecBlobDataMap.forEach(
-        (service, modsecBlobResults) -> {
-          final String combinedBlob =
-              modsecBlobResults.stream()
-                  .map(ModsecBlobResult::getModsecBlob)
-                  .filter(Predicate.not(String::isBlank))
-                  .collect(Collectors.joining(NEW_LINES_DELIMITER));
-
-          // Validate the combined blob; if invalid, set it to an empty string
-          if (modsecBlobValidator.validate(requestContext, combinedBlob, service)) {
-            List<String> ruleIds =
-                modsecBlobResults.stream()
-                    .map(ModsecBlobResult::getRuleId)
-                    .filter(Predicate.not(String::isBlank))
-                    .collect(Collectors.toUnmodifiableList());
-
-            // Merge or create a new entry for the combined blob
-            combinedBlobDataMap
-                .computeIfAbsent(
-                    combinedBlob,
-                    k ->
-                        ModsecBlobData.newBuilder()
-                            .setModsecBlob(combinedBlob)
-                            .addAllRuleIds(ruleIds))
-                .addServiceNames(service);
-          }
-        });
-
-    // Convert the combinedBlobDataMap into a list of ModsecBlobData
-    return combinedBlobDataMap.values().stream()
-        .map(ModsecBlobData.Builder::build)
-        .collect(Collectors.toUnmodifiableList());
   }
 
   private List<String> servicesOnWhichRuleIsApplicable(
@@ -173,5 +142,25 @@ public class ExclusionModsecRulesManager {
     return serviceNames.stream()
         .filter(Predicate.not(excludeServices::contains))
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private ModsecBlobData createCombinedBlob(
+      RequestContext requestContext, String service, List<ModsecBlobResult> modsecBlobResults) {
+    String combinedBlob =
+        modsecBlobResults.stream()
+            .map(ModsecBlobResult::getModsecBlob)
+            .filter(Predicate.not(String::isBlank))
+            .collect(Collectors.joining(NEW_LINES_DELIMITER));
+
+    // Validate the combined blob; if invalid, return an empty string
+    return ModsecBlobData.newBuilder()
+        .setModsecBlob(
+            modsecBlobValidator.validate(requestContext, combinedBlob, service) ? combinedBlob : "")
+        .addAllRuleIds(
+            modsecBlobResults.stream()
+                .map(ModsecBlobResult::getRuleId)
+                .filter(Predicate.not(String::isBlank))
+                .collect(Collectors.toUnmodifiableList()))
+        .build();
   }
 }

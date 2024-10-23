@@ -100,6 +100,46 @@ class ExclusionModsecRulesManagerTest {
   }
 
   @Test
+  void testServiceScope() {
+    DetectionExclusionRule exclusionRule1 = mock(DetectionExclusionRule.class);
+    when(exclusionRule1.getId()).thenReturn("rule1");
+
+    Clause mockClause = mock(Clause.class);
+    ModsecClauseResult clauseResult =
+        new ModsecClauseResult(List.of(mockClause), List.of(new ServiceDetail("service2", false)));
+
+    when(modsecClauseConverter.convert(REQUEST_CONTEXT, exclusionRule1)).thenReturn(clauseResult);
+
+    ModsecBlobResult blobResult1 = new ModsecBlobResult("", "rule1");
+    when(modsecBlobConverter.convertToModsecRule(
+            eq("rule1"), eq(List.of(mockClause)), any(AtomicLong.class)))
+        .thenReturn(blobResult1);
+
+    List<String> serviceNames = Arrays.asList("service1", "service2");
+    GetExclusionModsecRulesResponse response =
+        exclusionModsecRulesManager.getModsecRules(
+            REQUEST_CONTEXT, List.of(exclusionRule1), serviceNames);
+
+    assertEquals("SecRuleEngine DetectionOnly", response.getModsecDirectivesBlob());
+
+    List<ModsecBlobData> modsecBlobsData = response.getModsecBlobsDataList();
+    assertEquals(2, modsecBlobsData.size());
+    assertEquals("", modsecBlobsData.get(0).getModsecBlob());
+    assertTrue(modsecBlobsData.get(0).getRuleIdsList().isEmpty());
+    assertEquals(
+        Collections.singletonList("service1"), modsecBlobsData.get(0).getServiceNamesList());
+    assertEquals("", modsecBlobsData.get(1).getModsecBlob());
+    assertEquals(Collections.singletonList("rule1"), modsecBlobsData.get(1).getRuleIdsList());
+    assertEquals(
+        Collections.singletonList("service2"), modsecBlobsData.get(1).getServiceNamesList());
+
+    List<DetectionExclusionModsecRule> modsecRules = response.getModsecRulesList();
+    assertEquals(1, modsecRules.size());
+    assertEquals(exclusionRule1, modsecRules.get(0).getRule());
+    assertTrue(modsecRules.get(0).getAssociatedModsecRuleIdsList().isEmpty());
+  }
+
+  @Test
   void testGetModsecRules_withServiceScope() {
     DetectionExclusionRule exclusionRule1 = mock(DetectionExclusionRule.class);
     when(exclusionRule1.getId()).thenReturn("rule1");

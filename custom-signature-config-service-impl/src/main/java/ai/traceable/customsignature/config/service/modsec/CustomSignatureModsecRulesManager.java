@@ -69,7 +69,10 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
                 rule.getDefinition().getClauseGroup().getClausesList());
       } catch (Exception ex) {
         log.warn(
-            "Modsec rule could not be created for rule: {}, exception: {}", rule.getName(), ex);
+            "For tenant id - {} Modsec rule could not be created for rule: {}, exception: {}",
+            requestContext.getTenantId().orElse("Unknown"),
+            rule.getName(),
+            ex);
         continue;
       }
       if (modsecRule == null || modsecRule.isBlank()) {

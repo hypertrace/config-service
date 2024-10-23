@@ -300,6 +300,88 @@ class BlockingPolicyConfigurationManagerTest {
   }
 
   @Test
+  void testExclusionRulesServiceScoping() {
+    BlockingDetails blockingDetails1 = mock(BlockingDetails.class);
+    BlockingDetails blockingDetails2 = mock(BlockingDetails.class);
+    List<BlockingDetails> blockingDetailsList = List.of(blockingDetails1, blockingDetails2);
+
+    when(mockBlockingDetailsAggregator.getBlockingDetails(any(), any(), any()))
+        .thenReturn(new BlockingPolicyAggregate<>(blockingDetailsList));
+
+    DetectionExclusionModsecRule detectionExclusionModsecRule1 =
+        mock(DetectionExclusionModsecRule.class);
+    DetectionExclusionModsecRule detectionExclusionModsecRule2 =
+        mock(DetectionExclusionModsecRule.class);
+    ExclusionRule exclusionRule1 = mock(ExclusionRule.class);
+    ExclusionRule exclusionRule2 = mock(ExclusionRule.class);
+    when(mockExclusionRuleConverter.convert(detectionExclusionModsecRule1))
+        .thenReturn(exclusionRule1);
+    when(mockExclusionRuleConverter.convert(detectionExclusionModsecRule2))
+        .thenReturn(exclusionRule2);
+
+    Map<String, List<DetectionExclusionModsecRule>> exclusionRules =
+        Map.of(
+            "s1",
+            List.of(detectionExclusionModsecRule1, detectionExclusionModsecRule2),
+            "s2",
+            List.of(detectionExclusionModsecRule2));
+    when(mockBlockingRulesSupplier.getExclusionRules(any())).thenReturn(exclusionRules);
+
+    doReturn("hash-s1")
+        .when(mockUuidGenerator)
+        .generateId(
+            BlockingPolicyConfiguration.newBuilder()
+                .addAllBlockingDetailsList(blockingDetailsList)
+                .addExclusionRules(exclusionRule1)
+                .addExclusionRules(exclusionRule2)
+                .build());
+
+    doReturn("hash-s2")
+        .when(mockUuidGenerator)
+        .generateId(
+            BlockingPolicyConfiguration.newBuilder()
+                .addAllBlockingDetailsList(blockingDetailsList)
+                .addExclusionRules(exclusionRule2)
+                .build());
+
+    BlockingPolicyConfigurationManager blockingPolicyConfigurationManager =
+        new BlockingPolicyConfigurationManager(
+            mockBlockingDetailsAggregator,
+            mockExclusionRuleConverter,
+            new SemanticVersioningComparator(),
+            mockUuidGenerator);
+
+    List<BlockingConfigResponseElement> responseElements =
+        blockingPolicyConfigurationManager.generateBlockingElements(
+            Collections.singletonList(
+                buildRequestElement("previousHash", "2.0.0", "s1").toBuilder()
+                    .addSupportedAgentCapabilities(
+                        AgentCapabilities.newBuilder()
+                            .addComponents(Component.newBuilder().setServiceName("s2")))
+                    .build()),
+            mockBlockingRulesSupplier);
+
+    assertEquals(2, responseElements.size());
+    BlockingConfigResponseElement responseElement = responseElements.get(0);
+    assertEquals("hash-s1", responseElement.getHash());
+    assertEquals(
+        List.of(blockingDetails1, blockingDetails2),
+        responseElement.getBlockingPolicyConfiguration().getBlockingDetailsListList());
+    assertEquals(
+        ImmutableList.of(exclusionRule1, exclusionRule2),
+        responseElement.getBlockingPolicyConfiguration().getExclusionRulesList());
+
+    responseElement = responseElements.get(1);
+    assertEquals("hash-s2", responseElement.getHash());
+    assertEquals(
+        List.of(blockingDetails1, blockingDetails2),
+        responseElement.getBlockingPolicyConfiguration().getBlockingDetailsListList());
+    assertEquals(
+        ImmutableList.of(exclusionRule2),
+        responseElement.getBlockingPolicyConfiguration().getExclusionRulesList());
+  }
+
+  @Test
   void testGenerateBlockingElements_withExclusionRules_service() {
     BlockingDetails blockingDetails1 = mock(BlockingDetails.class);
     BlockingDetails blockingDetails2 = mock(BlockingDetails.class);
