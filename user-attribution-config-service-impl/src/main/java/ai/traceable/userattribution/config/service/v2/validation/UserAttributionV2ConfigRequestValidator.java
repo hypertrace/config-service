@@ -106,7 +106,9 @@ public class UserAttributionV2ConfigRequestValidator {
     if (hasRootTokenRule) {
       validateUserAttributionRootTokenRule(ruleData.getRootTokenRule());
     }
-    validateUserAttributionTokenRule(ruleData.getUserIdRule(), hasRootTokenRule);
+    if (ruleData.hasUserIdRule()) {
+      validateUserAttributionTokenRule(ruleData.getUserIdRule(), hasRootTokenRule);
+    }
     if (ruleData.hasUserRoleRule()) {
       validateUserAttributionTokenRule(ruleData.getUserRoleRule(), hasRootTokenRule);
     }
@@ -279,9 +281,9 @@ public class UserAttributionV2ConfigRequestValidator {
   }
 
   private void validateCustomProjection(CustomProjection customProjection) {
-    AttributeRule.Projector.Builder builder = AttributeRule.Projector.newBuilder();
+    AttributeRule.Builder attributeRuleBuilder = AttributeRule.newBuilder();
     try {
-      JsonFormat.parser().merge(customProjection.getCustomProjection(), builder);
+      JsonFormat.parser().merge(customProjection.getCustomProjection(), attributeRuleBuilder);
     } catch (InvalidProtocolBufferException e) {
       throw ContextualStatusExceptionBuilder.from(
               Status.INVALID_ARGUMENT.withDescription(
