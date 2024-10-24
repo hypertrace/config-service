@@ -75,8 +75,23 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       GrpcServiceContainerEnvironment grpcServiceContainerEnvironment,
       List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
     this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
+    return buildServices(
+        localChannel,
+        config,
+        configChangeEventGenerator,
+        grpcServiceContainerEnvironment,
+        initDataStore(config, configurationCounterConfig));
+  }
+
+  public List<GrpcPlatformService> buildServices(
+      Channel localChannel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      GrpcServiceContainerEnvironment grpcServiceContainerEnvironment,
+      Datastore datastore) {
+    this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
     return Stream.of(
-            new ConfigServiceGrpcImpl(this.buildConfigStore(config, configurationCounterConfig)),
+            new ConfigServiceGrpcImpl(this.buildConfigStore(datastore)),
             new SpacesConfigServiceImpl(localChannel),
             new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
             new LabelApplicationRuleConfigServiceImpl(
@@ -102,13 +117,8 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
         .createConfigChangeEventGenerator(config, Clock.systemUTC());
   }
 
-  protected ConfigStore buildConfigStore(
-      Config config, List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
+  protected ConfigStore buildConfigStore(Datastore datastore) {
     try {
-      Datastore datastore = initDataStore(config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG));
-      new ConfigMetricsReporter(
-              datastore, grpcServiceContainerEnvironment.getLifecycle(), configurationCounterConfig)
-          .monitor();
       ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
       this.store = configStore;
       return configStore;
@@ -117,9 +127,16 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
     }
   }
 
-  private Datastore initDataStore(Config config) {
-    Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
-    return DatastoreProvider.getDatastore(
-        TypesafeConfigDatastoreConfigExtractor.from(docStoreConfig, DATA_STORE_TYPE).extract());
+  private Datastore initDataStore(
+      Config config, List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
+    Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
+    Config docStoreConfig = genericConfig.getConfig(DOC_STORE_CONFIG_KEY);
+    Datastore datastore =
+        DatastoreProvider.getDatastore(
+            TypesafeConfigDatastoreConfigExtractor.from(docStoreConfig, DATA_STORE_TYPE).extract());
+    new ConfigMetricsReporter(
+            datastore, grpcServiceContainerEnvironment.getLifecycle(), configurationCounterConfig)
+        .monitor();
+    return datastore;
   }
 }
