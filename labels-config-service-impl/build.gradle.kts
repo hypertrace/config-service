@@ -6,7 +6,7 @@ plugins {
 
 dependencies {
   api(projects.labelsConfigServiceApi)
-  implementation(projects.objectStore)
+  implementation(projects.configObjectStore)
   implementation(projects.configProtoConverter)
   implementation(projects.configServiceChangeEventGenerator)
   implementation(commonLibs.typesafe.config)

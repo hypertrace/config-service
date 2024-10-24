@@ -30,8 +30,8 @@ include(":config-service")
 include(":config-service-factory")
 
 include(":config-proto-converter")
-include(":object-store")
-include(":validation-utils")
+include(":config-object-store")
+include(":config-validation-utils")
 
 include(":spaces-config-service-api")
 include(":spaces-config-service-impl")

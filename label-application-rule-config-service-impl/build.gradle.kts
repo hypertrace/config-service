@@ -14,8 +14,8 @@ protobuf {
 dependencies {
   api(projects.labelApplicationRuleConfigServiceApi)
   implementation(projects.configServiceApi)
-  implementation(projects.objectStore)
-  implementation(projects.validationUtils)
+  implementation(projects.configObjectStore)
+  implementation(projects.configValidationUtils)
   implementation(projects.configProtoConverter)
   implementation(projects.configServiceChangeEventGenerator)
   implementation(commonLibs.typesafe.config)
