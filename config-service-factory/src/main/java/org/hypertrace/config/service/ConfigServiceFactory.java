@@ -129,7 +129,8 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
 
   private Datastore initDataStore(
       Config config, List<DocStoreCustomMetricReportingConfig> configurationCounterConfig) {
-    Config docStoreConfig = config.getConfig(DOC_STORE_CONFIG_KEY);
+    Config genericConfig = config.getConfig(GENERIC_CONFIG_SERVICE_CONFIG);
+    Config docStoreConfig = genericConfig.getConfig(DOC_STORE_CONFIG_KEY);
     Datastore datastore =
         DatastoreProvider.getDatastore(
             TypesafeConfigDatastoreConfigExtractor.from(docStoreConfig, DATA_STORE_TYPE).extract());
