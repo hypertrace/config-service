@@ -57,6 +57,16 @@ public class DetectionExclusionRulesStore
   }
 
   @Override
+  public Optional<DetectionExclusionRule> getData(RequestContext context, String id) {
+    return super.getData(context, id)
+        .or(
+            () ->
+                defaultDetectionExclusionRules.stream()
+                    .filter(rule -> rule.getId().equals(id))
+                    .findFirst());
+  }
+
+  @Override
   public List<DetectionExclusionRule> getAllConfigData(RequestContext context) {
     List<DetectionExclusionRule> detectionExclusionRules = super.getAllConfigData(context);
     return mergeDetectionExclusionRules(

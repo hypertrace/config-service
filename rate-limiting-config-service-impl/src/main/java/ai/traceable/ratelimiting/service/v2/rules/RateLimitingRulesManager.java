@@ -157,10 +157,28 @@ public class RateLimitingRulesManager implements RulesManager {
   @Override
   public Optional<RateLimitingRule> deleteRateLimitingRule(
       RequestContext requestContext, String ruleId) {
+    Optional<RateLimitingRule> deletedRule =
+        rateLimitingRulesStore
+            .deleteObject(requestContext, ruleId)
+            .flatMap(DeletedConfigObject::getDeletedData);
+
+    if (deletedRule.isEmpty() && !isDefaultRule(requestContext, ruleId)) {
+      throw Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers());
+    }
+
+    return deletedRule;
+  }
+
+  private boolean isDefaultRule(RequestContext requestContext, String ruleId) {
     return rateLimitingRulesStore
-        .deleteObject(requestContext, ruleId)
-        .map(DeletedConfigObject::getDeletedData)
-        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+        .getData(requestContext, ruleId)
+        .map(
+            rule ->
+                rule.getData()
+                    .getRuleStatus()
+                    .getRuleCreationSource()
+                    .equals(RuleStatus.RuleSource.RULE_SOURCE_DEFAULT))
+        .orElse(false);
   }
 
   @Override

@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.config.service.v2.rules;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
@@ -52,10 +53,21 @@ public class RateLimitingRulesManagerTest {
   private RateLimitingRulesManager rulesManager;
   private RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
   @Mock private RateLimitingModsecRulesManager rateLimitingModsecRulesManager;
+  private static final RateLimitingRule DEFAULT_RULE =
+      RateLimitingRule.newBuilder()
+          .setId("defaultRuleId1")
+          .setData(
+              RateLimitingRuleData.newBuilder()
+                  .setRuleStatus(
+                      RuleStatus.newBuilder()
+                          .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_DEFAULT)))
+          .build();
 
   @BeforeEach
   void setUp() {
     rateLimitingConfigServiceConfig = mock(RateLimitingConfigServiceConfig.class);
+    when(rateLimitingConfigServiceConfig.getDefaultRateLimitingRules())
+        .thenReturn(List.of(DEFAULT_RULE));
     requestContext = RequestContext.forTenantId("default tenant");
     mockConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
@@ -211,12 +223,13 @@ public class RateLimitingRulesManagerTest {
         ruleDataList.stream()
             .map(ruleData -> rulesManager.createRateLimitingRule(requestContext, ruleData))
             .collect(Collectors.toList());
+    expectedRules.add(DEFAULT_RULE);
 
     // default filter will return all rules
     List<RateLimitingRule> rules =
         rulesManager.getRateLimitingRules(
             requestContext, GetRateLimitingRulesFilter.getDefaultInstance());
-    assertEquals(4, rules.size());
+    assertEquals(5, rules.size());
     assertEquals(new HashSet<>(expectedRules), new HashSet<>(rules));
 
     // filter on category (deprecated flow)
@@ -408,9 +421,10 @@ public class RateLimitingRulesManagerTest {
                 "rule3Updated",
                 Category.CATEGORY_RATE_LIMITING,
                 RuleConfigScope.newBuilder().build()),
-            buildRateLimitingRule("id4", "rule4Updated", Category.CATEGORY_DATA_EXFILTRATION));
+            buildRateLimitingRule("id4", "rule4Updated", Category.CATEGORY_DATA_EXFILTRATION),
+            DEFAULT_RULE);
 
-    assertEquals(4, rules.size());
+    assertEquals(5, rules.size());
     assertEquals(new HashSet<>(expectedRules), new HashSet<>(rules));
 
     Throwable throwable =
@@ -451,6 +465,9 @@ public class RateLimitingRulesManagerTest {
             StatusRuntimeException.class,
             () -> rulesManager.deleteRateLimitingRule(requestContext, "id"));
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(throwable));
+
+    // deleting default rule does not throw an exception
+    assertDoesNotThrow(() -> rulesManager.deleteRateLimitingRule(requestContext, "defaultRuleId1"));
   }
 
   private RateLimitingRule buildRateLimitingRule(

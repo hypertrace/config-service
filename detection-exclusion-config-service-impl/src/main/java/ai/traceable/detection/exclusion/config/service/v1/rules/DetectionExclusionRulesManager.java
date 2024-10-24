@@ -14,6 +14,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRule
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
@@ -138,9 +139,22 @@ public class DetectionExclusionRulesManager implements RulesManager {
 
   @Override
   public void deleteDetectionExclusionRule(RequestContext requestContext, String ruleId) {
-    rulesStore
-        .deleteObject(requestContext, ruleId)
-        .orElseThrow(() -> Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers()));
+    if (rulesStore.deleteObject(requestContext, ruleId).isEmpty()
+        && !isDefaultRule(requestContext, ruleId)) {
+      throw Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private boolean isDefaultRule(RequestContext requestContext, String ruleId) {
+    return rulesStore
+        .getData(requestContext, ruleId)
+        .map(
+            rule ->
+                rule.getRuleInfo()
+                    .getRuleStatus()
+                    .getRuleCreationSource()
+                    .equals(RuleSource.RULE_SOURCE_DEFAULT))
+        .orElse(false);
   }
 
   @Override

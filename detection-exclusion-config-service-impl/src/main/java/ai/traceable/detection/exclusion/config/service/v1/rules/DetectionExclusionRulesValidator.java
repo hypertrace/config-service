@@ -4,6 +4,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_UNSPECIFIED;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleIntent.RULE_INTENT_UNSPECIFIED;
+import static ai.traceable.detection.exclusion.config.service.v1.RuleSource.RULE_SOURCE_DEFAULT;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -23,6 +24,7 @@ import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import com.google.common.annotations.VisibleForTesting;
@@ -90,6 +92,8 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
         ruleData -> {
           validateRuleInfo(ruleData.getRuleInfo());
           validateRuleScope(ruleData.getRuleScope());
+          validateRuleCreationSource(
+              ruleData.getRuleInfo().getRuleStatus().getRuleCreationSource());
         });
   }
 
@@ -101,6 +105,8 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
         ruleData -> {
           validateRuleInfo(ruleData.getRuleInfo());
           validateRuleScope(ruleData.getRuleScope());
+          validateRuleCreationSource(
+              ruleData.getRuleInfo().getRuleStatus().getRuleCreationSource());
         });
   }
 
@@ -183,6 +189,7 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     }
     validateRuleInfo(ruleInfo);
     validateRuleScope(ruleScope);
+    validateRuleCreationSource(ruleInfo.getRuleStatus().getRuleCreationSource());
   }
 
   private void validateExclusionTargets(List<ExclusionTarget> exclusionTargets) {
@@ -224,6 +231,14 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
             .withDescription("Expiration duration should be in valid ISO 8601 format")
             .asRuntimeException();
       }
+    }
+  }
+
+  private void validateRuleCreationSource(RuleSource ruleSource) {
+    if (ruleSource.equals(RULE_SOURCE_DEFAULT)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Rule source cannot be set to default while creating a rule")
+          .asRuntimeException();
     }
   }
 

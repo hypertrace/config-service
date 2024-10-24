@@ -26,7 +26,6 @@ import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
-import com.typesafe.config.ConfigFactory;
 import java.time.Clock;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -42,6 +41,15 @@ class DetectionExclusionRulesManagerTest {
   private DetectionExclusionRulesManager rulesManager;
   private ExclusionModsecRulesManager exclusionModsecRulesManager;
   private final RequestContext requestContext = RequestContext.forTenantId("tenantId");
+  private static final DetectionExclusionRule DEFAULT_EXCLUSION_RULE =
+      DetectionExclusionRule.newBuilder()
+          .setId("defaultRuleId1")
+          .setRuleInfo(
+              DetectionExclusionRuleInfo.newBuilder()
+                  .setRuleStatus(
+                      DetectionExclusionRuleStatus.newBuilder()
+                          .setRuleCreationSource(RuleSource.RULE_SOURCE_DEFAULT)))
+          .build();
 
   @BeforeEach
   void setUp() {
@@ -58,7 +66,8 @@ class DetectionExclusionRulesManagerTest {
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
     DetectionExclusionConfigServiceConfig config =
-        new DetectionExclusionConfigServiceConfig(ConfigFactory.empty());
+        mock(DetectionExclusionConfigServiceConfig.class);
+    when(config.getDefaultDetectionExclusionRules()).thenReturn(List.of(DEFAULT_EXCLUSION_RULE));
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub, mockConfigChangeEventGenerator, config);
@@ -122,7 +131,9 @@ class DetectionExclusionRulesManagerTest {
 
     verify(exclusionModsecRulesManager)
         .getModsecRules(
-            requestContext, List.of(detectionExclusionRule), List.of("service-1", "service-2"));
+            requestContext,
+            List.of(DEFAULT_EXCLUSION_RULE, detectionExclusionRule),
+            List.of("service-1", "service-2"));
 
     detectionExclusionRule =
         DetectionExclusionRule.newBuilder()
@@ -159,6 +170,10 @@ class DetectionExclusionRulesManagerTest {
         rulesManager
             .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())
             .contains(expectedDetectionExclusionRule));
+
+    // deleting default rule does not throw an exception
+    assertDoesNotThrow(
+        () -> rulesManager.deleteDetectionExclusionRule(requestContext, "defaultRuleId1"));
   }
 
   @Test

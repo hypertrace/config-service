@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_DEFAULT;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
@@ -21,6 +22,7 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
@@ -97,6 +99,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
               requestData.getName(), requestData.getCategory()));
     }
     validateRateLimitingRuleData(requestData);
+    validateRuleCreationSource(requestData.getRuleStatus().getRuleCreationSource());
   }
 
   private Optional<RateLimitingRule> getRuleOfSameNameAndCategory(
@@ -109,6 +112,14 @@ public class RateLimitingRulesValidator implements RulesValidator {
                         && rule.getData().getName().equals(name))
             .findFirst();
     return sameNameRuleOfSameCategory;
+  }
+
+  private void validateRuleCreationSource(RuleStatus.RuleSource ruleSource) {
+    if (ruleSource.equals(RULE_SOURCE_DEFAULT)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Rule source cannot be set to default while creating a rule")
+          .asRuntimeException();
+    }
   }
 
   private void validateRateLimitingRuleData(RateLimitingRuleData data) {

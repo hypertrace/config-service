@@ -44,6 +44,16 @@ public class RateLimitingRulesStore
   }
 
   @Override
+  public Optional<RateLimitingRule> getData(RequestContext context, String id) {
+    return super.getData(context, id)
+        .or(
+            () ->
+                defaultRateLimitingRules.stream()
+                    .filter(rule -> rule.getId().equals(id))
+                    .findFirst());
+  }
+
+  @Override
   public List<RateLimitingRule> getAllConfigData(RequestContext context) {
     List<RateLimitingRule> rateLimitingRules = super.getAllConfigData(context);
     return mergeRateLimitingRules(rateLimitingRules, defaultRateLimitingRules);
