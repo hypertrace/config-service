@@ -7,8 +7,8 @@ plugins {
 dependencies {
   api(projects.spanProcessingConfigServiceApi)
   implementation(projects.configServiceApi)
-  implementation(projects.objectStore)
-  implementation(projects.validationUtils)
+  implementation(projects.configObjectStore)
+  implementation(projects.configValidationUtils)
   implementation(projects.configProtoConverter)
   implementation(projects.configServiceChangeEventGenerator)
 

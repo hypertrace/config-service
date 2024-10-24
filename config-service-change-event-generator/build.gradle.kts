@@ -2,6 +2,7 @@ plugins {
   `java-library`
   jacoco
   alias(commonLibs.plugins.hypertrace.jacoco)
+  alias(commonLibs.plugins.hypertrace.publish)
 }
 
 dependencies {

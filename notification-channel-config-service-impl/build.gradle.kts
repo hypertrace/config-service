@@ -8,8 +8,8 @@ dependencies {
   api(projects.notificationChannelConfigServiceApi)
   implementation(projects.configServiceApi)
   implementation(projects.configProtoConverter)
-  implementation(projects.objectStore)
-  implementation(projects.validationUtils)
+  implementation(projects.configObjectStore)
+  implementation(projects.configValidationUtils)
   implementation(projects.configServiceChangeEventGenerator)
 
   implementation(commonLibs.hypertrace.grpcutils.context)
