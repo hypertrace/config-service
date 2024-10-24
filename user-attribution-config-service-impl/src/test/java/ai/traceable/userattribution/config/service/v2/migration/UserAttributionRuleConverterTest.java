@@ -1,12 +1,14 @@
 package ai.traceable.userattribution.config.service.v2.migration;
 
+import static ai.traceable.userattribution.config.service.v2.KeyMatchOperator.KEY_MATCH_OPERATOR_EQUALS;
+import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_BASIC;
+import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_CUSTOM;
+import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_JWT;
+import static ai.traceable.userattribution.config.service.v2.ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.BASIC_AUTH_TYPE;
-import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.BASIC_TEMPLATE;
-import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.CUSTOM_TEMPLATE;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP;
-import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.JWT_TEMPLATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,11 +26,11 @@ import ai.traceable.userattribution.config.service.v2.KeyMatch;
 import ai.traceable.userattribution.config.service.v2.LiteralValue;
 import ai.traceable.userattribution.config.service.v2.LiteralValueProjection;
 import ai.traceable.userattribution.config.service.v2.MatchCondition;
-import ai.traceable.userattribution.config.service.v2.MatchOperator;
 import ai.traceable.userattribution.config.service.v2.PayloadMatch;
 import ai.traceable.userattribution.config.service.v2.Predicate;
 import ai.traceable.userattribution.config.service.v2.RootRelativeProjection;
 import ai.traceable.userattribution.config.service.v2.StringList;
+import ai.traceable.userattribution.config.service.v2.Template;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRootTokenRule;
 import ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule;
 import ai.traceable.userattribution.config.service.v2.ValueProjection;
@@ -63,7 +65,7 @@ class UserAttributionRuleConverterTest {
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
         buildRuleV2(
-            BASIC_TEMPLATE,
+            TEMPLATE_BASIC,
             null,
             buildAttributeProjectionTokenRuleV2(
                 DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME,
@@ -98,7 +100,7 @@ class UserAttributionRuleConverterTest {
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
         buildRuleV2(
-            JWT_TEMPLATE,
+            TEMPLATE_JWT,
             buildAttributeProjectionRootTokenRuleV2(
                 "jwt", List.of(buildRegexCaptureGroupValueProjection("Bearer (.*)"))),
             buildRootRelativeProjectionTokenRuleV2(List.of(buildJwtClaimValueProjection("email"))),
@@ -126,7 +128,7 @@ class UserAttributionRuleConverterTest {
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
         buildRuleV2(
-            CUSTOM_TEMPLATE,
+            TEMPLATE_CUSTOM,
             null,
             buildAttributeProjectionTokenRuleV2(
                 "jwt", List.of(buildRegexCaptureGroupValueProjection("Bearer (.*)"))),
@@ -154,7 +156,7 @@ class UserAttributionRuleConverterTest {
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
         buildRuleV2(
-            CUSTOM_TEMPLATE,
+            TEMPLATE_CUSTOM,
             null,
             buildAttributeProjectionTokenRuleV2(
                 List.of(
@@ -177,7 +179,7 @@ class UserAttributionRuleConverterTest {
     Optional<ai.traceable.userattribution.config.service.v2.UserAttributionRule> convertedRule =
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
-        buildRuleV2(CUSTOM_TEMPLATE, null, null, buildCustomProjectionTokenRuleV2("Custom json"));
+        buildRuleV2(TEMPLATE_CUSTOM, null, null, buildCustomProjectionTokenRuleV2("Custom json"));
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -201,15 +203,17 @@ class UserAttributionRuleConverterTest {
                 Predicate.newBuilder()
                     .setAttributePredicate(
                         Predicate.AttributePredicate.newBuilder()
-                            .setAttribute(
-                                Attribute.newBuilder()
-                                    .setRequestHeader(
-                                        KeyMatch.newBuilder()
-                                            .setArgument("jwt")
-                                            .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)))
+                            .setAttributeProjection(
+                                AttributeProjection.newBuilder()
+                                    .setAttribute(
+                                        Attribute.newBuilder()
+                                            .setRequestHeader(
+                                                KeyMatch.newBuilder()
+                                                    .setMatchKey("jwt")
+                                                    .setOperator(KEY_MATCH_OPERATOR_EQUALS))))
                             .setAttributeValueMatchCondition(
                                 MatchCondition.newBuilder()
-                                    .setOperator(MatchOperator.MATCH_OPERATOR_NOT_EQUALS)
+                                    .setOperator(VALUE_MATCH_OPERATOR_NOT_EQUALS)
                                     .setMatchValue(
                                         LiteralValue.newBuilder()
                                             .setNullValue(
@@ -219,7 +223,7 @@ class UserAttributionRuleConverterTest {
                     .setLiteralValue(LiteralValue.newBuilder().setStringValue("OAUTH 2.0")))
             .build();
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
-        buildRuleV2(CUSTOM_TEMPLATE, null, null, authRule);
+        buildRuleV2(TEMPLATE_CUSTOM, null, null, authRule);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -243,7 +247,7 @@ class UserAttributionRuleConverterTest {
   }
 
   private ai.traceable.userattribution.config.service.v2.UserAttributionRule buildRuleV2(
-      String template,
+      Template template,
       ai.traceable.userattribution.config.service.v2.UserAttributionRootTokenRule rootTokenRule,
       ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule userIdRule,
       ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule authTypeRule) {
@@ -299,15 +303,15 @@ class UserAttributionRuleConverterTest {
             Attribute.newBuilder()
                 .setRequestHeader(
                     KeyMatch.newBuilder()
-                        .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                        .setArgument(keyName)))
+                        .setOperator(KEY_MATCH_OPERATOR_EQUALS)
+                        .setMatchKey(keyName)))
         .addAllValueProjections(valueProjections)
         .build();
   }
 
   private UserAttributionTokenRule buildCustomProjectionTokenRuleV2(String jsonData) {
     return UserAttributionTokenRule.newBuilder()
-        .setCustomProjection(CustomProjection.newBuilder().setCustomProjection(jsonData))
+        .setCustomProjection(CustomProjection.newBuilder().setCustomJson(jsonData))
         .build();
   }
 
@@ -342,15 +346,14 @@ class UserAttributionRuleConverterTest {
 
   private ValueProjection buildBase64ValueProjection() {
     return ValueProjection.newBuilder()
-        .setBase64Projection(ValueProjection.Base64Projection.getDefaultInstance())
+        .setBase64(ValueProjection.Base64Projection.getDefaultInstance())
         .build();
   }
 
   private ValueProjection buildRegexCaptureGroupValueProjection(String regexCaptureGroup) {
     return ValueProjection.newBuilder()
         .setRegexCaptureGroup(
-            ValueProjection.RegexCaptureGroupProjection.newBuilder()
-                .setRegexCaptureGroup(regexCaptureGroup))
+            ValueProjection.RegexCaptureGroupProjection.newBuilder().setRegex(regexCaptureGroup))
         .build();
   }
 }

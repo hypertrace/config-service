@@ -1,5 +1,10 @@
 package ai.traceable.userattribution.config.service.v2.migration;
 
+import static ai.traceable.userattribution.config.service.v2.KeyMatchOperator.KEY_MATCH_OPERATOR_EQUALS;
+import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_BASIC;
+import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_CUSTOM;
+import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_JWT;
+
 import ai.traceable.userattribution.config.service.v2.Attribute;
 import ai.traceable.userattribution.config.service.v2.AttributeProjection;
 import ai.traceable.userattribution.config.service.v2.CustomProjection;
@@ -8,7 +13,6 @@ import ai.traceable.userattribution.config.service.v2.KeyMatch;
 import ai.traceable.userattribution.config.service.v2.LiteralValue;
 import ai.traceable.userattribution.config.service.v2.LiteralValueProjection;
 import ai.traceable.userattribution.config.service.v2.MatchCondition;
-import ai.traceable.userattribution.config.service.v2.MatchOperator;
 import ai.traceable.userattribution.config.service.v2.PayloadMatch;
 import ai.traceable.userattribution.config.service.v2.Predicate;
 import ai.traceable.userattribution.config.service.v2.RootRelativeProjection;
@@ -19,6 +23,7 @@ import ai.traceable.userattribution.config.service.v2.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope;
 import ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule;
+import ai.traceable.userattribution.config.service.v2.ValueMatchOperator;
 import ai.traceable.userattribution.config.service.v2.ValueProjection;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class UserAttributionRuleConverter {
-  static final String BASIC_TEMPLATE = "BASIC";
-  static final String JWT_TEMPLATE = "JWT";
-  static final String CUSTOM_TEMPLATE = "CUSTOM";
   static final String BASIC_AUTH_TYPE = "Basic";
   static final String DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME = "authorization";
   static final String DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP = "(?i)Basic:? (.*)";
@@ -132,7 +134,7 @@ class UserAttributionRuleConverter {
               .BasicAuthenticationUserAttributionRuleData
           basicAuthenticationRuleData)
       throws LegacyUserAttributionRuleTranslationException {
-    builder.setTemplate(BASIC_TEMPLATE);
+    builder.setTemplate(TEMPLATE_BASIC);
     UserAttributionTokenRule.Builder tokenRuleBuilder = UserAttributionTokenRule.newBuilder();
     AttributeProjection.Builder attributeProjectionBuilder =
         basicAuthenticationRuleData.hasLocation()
@@ -149,7 +151,7 @@ class UserAttributionRuleConverter {
               .JwtUserAttributionRuleData
           jwtRuleData)
       throws LegacyUserAttributionRuleTranslationException {
-    builder.setTemplate(JWT_TEMPLATE);
+    builder.setTemplate(TEMPLATE_JWT);
     if (!jwtRuleData.hasJwtLocation()) {
       throw new LegacyUserAttributionRuleTranslationException(
           "unable to find root token rule in jwt rule");
@@ -204,7 +206,7 @@ class UserAttributionRuleConverter {
               .RequestHeaderUserAttributionRuleData
           requestHeaderRuleData)
       throws LegacyUserAttributionRuleTranslationException {
-    builder.setTemplate(CUSTOM_TEMPLATE);
+    builder.setTemplate(TEMPLATE_CUSTOM);
     if (requestHeaderRuleData.hasUserIdLocation()) {
       AttributeProjection.Builder attributeProjectionBuilder =
           createAttributeProjectionBuilder(requestHeaderRuleData.getUserIdLocation());
@@ -228,7 +230,7 @@ class UserAttributionRuleConverter {
       ai.traceable.userattribution.config.service.v1.UserAttributionRuleData
               .ResponseBodyUserAttributionRuleData
           responseBodyRuleData) {
-    builder.setTemplate(CUSTOM_TEMPLATE);
+    builder.setTemplate(TEMPLATE_CUSTOM);
     Attribute.Builder responseBodyAttribute =
         Attribute.newBuilder().setResponseBody(PayloadMatch.getDefaultInstance());
     if (responseBodyRuleData.hasCondition()) {
@@ -272,23 +274,23 @@ class UserAttributionRuleConverter {
       ai.traceable.userattribution.config.service.v1.UserAttributionRuleData
               .CustomJsonUserAttributionRuleData
           customJsonData) {
-    builder.setTemplate(CUSTOM_TEMPLATE);
+    builder.setTemplate(TEMPLATE_CUSTOM);
     if (customJsonData.hasUserIdRuleData()) {
       UserAttributionTokenRule.Builder tokenRuleBuilder = UserAttributionTokenRule.newBuilder();
       tokenRuleBuilder.setCustomProjection(
-          CustomProjection.newBuilder().setCustomProjection(customJsonData.getUserIdRuleData()));
+          CustomProjection.newBuilder().setCustomJson(customJsonData.getUserIdRuleData()));
       builder.setUserIdRule(tokenRuleBuilder);
     }
     if (customJsonData.hasRoleRuleData()) {
       UserAttributionTokenRule.Builder tokenRuleBuilder = UserAttributionTokenRule.newBuilder();
       tokenRuleBuilder.setCustomProjection(
-          CustomProjection.newBuilder().setCustomProjection(customJsonData.getRoleRuleData()));
+          CustomProjection.newBuilder().setCustomJson(customJsonData.getRoleRuleData()));
       builder.setUserRoleRule(tokenRuleBuilder);
     }
     if (customJsonData.hasAuthTypeRuleData()) {
       UserAttributionTokenRule.Builder tokenRuleBuilder = UserAttributionTokenRule.newBuilder();
       tokenRuleBuilder.setCustomProjection(
-          CustomProjection.newBuilder().setCustomProjection(customJsonData.getAuthTypeRuleData()));
+          CustomProjection.newBuilder().setCustomJson(customJsonData.getAuthTypeRuleData()));
       builder.setAuthTypeRule(tokenRuleBuilder);
     }
   }
@@ -298,7 +300,7 @@ class UserAttributionRuleConverter {
       ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData
           customTokenData)
       throws LegacyUserAttributionRuleTranslationException {
-    builder.setTemplate(CUSTOM_TEMPLATE);
+    builder.setTemplate(TEMPLATE_CUSTOM);
     if (customTokenData.hasAuthentication()) {
       UserAttributionTokenRule.Builder tokenRuleBuilder =
           getLiteralValueProjectionBuilder(customTokenData.getAuthentication().getType());
@@ -312,10 +314,10 @@ class UserAttributionRuleConverter {
               createAttributeProjectionBuilder(customTokenData.getRequestHeaderLocation());
           predicateBuilder.setAttributePredicate(
               Predicate.AttributePredicate.newBuilder()
-                  .setAttribute(attributeProjectionBuilder.getAttribute())
+                  .setAttributeProjection(attributeProjectionBuilder)
                   .setAttributeValueMatchCondition(
                       MatchCondition.newBuilder()
-                          .setOperator(MatchOperator.MATCH_OPERATOR_NOT_EQUALS)
+                          .setOperator(ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS)
                           .setMatchValue(
                               LiteralValue.newBuilder()
                                   .setNullValue(LiteralValue.NullValue.getDefaultInstance()))));
@@ -342,16 +344,16 @@ class UserAttributionRuleConverter {
             Attribute.newBuilder()
                 .setRequestHeader(
                     KeyMatch.newBuilder()
-                        .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                        .setArgument(headerLocation.getHeaderName())));
+                        .setOperator(KEY_MATCH_OPERATOR_EQUALS)
+                        .setMatchKey(headerLocation.getHeaderName())));
         break;
       case COOKIE_NAME:
         attributeProjectionBuilder.setAttribute(
             Attribute.newBuilder()
                 .setRequestCookie(
                     KeyMatch.newBuilder()
-                        .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                        .setArgument(headerLocation.getHeaderName())));
+                        .setOperator(KEY_MATCH_OPERATOR_EQUALS)
+                        .setMatchKey(headerLocation.getHeaderName())));
         break;
       default:
         throw new LegacyUserAttributionRuleTranslationException("Unknown header location case");
@@ -361,8 +363,7 @@ class UserAttributionRuleConverter {
           ValueProjection.newBuilder()
               .setRegexCaptureGroup(
                   ValueProjection.RegexCaptureGroupProjection.newBuilder()
-                      .setRegexCaptureGroup(
-                          headerLocation.getParsingTarget().getRegexCaptureGroup()))
+                      .setRegex(headerLocation.getParsingTarget().getRegexCaptureGroup()))
               .build());
     }
     return attributeProjectionBuilder;
@@ -385,8 +386,7 @@ class UserAttributionRuleConverter {
           ValueProjection.newBuilder()
               .setRegexCaptureGroup(
                   ValueProjection.RegexCaptureGroupProjection.newBuilder()
-                      .setRegexCaptureGroup(
-                          encodedLocation.getParsingTarget().getRegexCaptureGroup()))
+                      .setRegex(encodedLocation.getParsingTarget().getRegexCaptureGroup()))
               .build());
     }
     return valueProjections;
@@ -406,21 +406,20 @@ class UserAttributionRuleConverter {
             Attribute.newBuilder()
                 .setRequestHeader(
                     KeyMatch.newBuilder()
-                        .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                        .setArgument(DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME)))
+                        .setOperator(KEY_MATCH_OPERATOR_EQUALS)
+                        .setMatchKey(DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME)))
         .addValueProjections(
             ValueProjection.newBuilder()
                 .setRegexCaptureGroup(
                     ValueProjection.RegexCaptureGroupProjection.newBuilder()
-                        .setRegexCaptureGroup(DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP)))
+                        .setRegex(DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP)))
         .addValueProjections(
             ValueProjection.newBuilder()
-                .setBase64Projection(ValueProjection.Base64Projection.getDefaultInstance()))
+                .setBase64(ValueProjection.Base64Projection.getDefaultInstance()))
         .addValueProjections(
             ValueProjection.newBuilder()
                 .setRegexCaptureGroup(
                     ValueProjection.RegexCaptureGroupProjection.newBuilder()
-                        .setRegexCaptureGroup(
-                            DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP)));
+                        .setRegex(DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP)));
   }
 }

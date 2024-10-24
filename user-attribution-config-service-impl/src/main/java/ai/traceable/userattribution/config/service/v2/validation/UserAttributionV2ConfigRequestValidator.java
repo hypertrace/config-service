@@ -18,7 +18,6 @@ import ai.traceable.userattribution.config.service.v2.KeyMatch;
 import ai.traceable.userattribution.config.service.v2.LiteralValue;
 import ai.traceable.userattribution.config.service.v2.LiteralValueProjection;
 import ai.traceable.userattribution.config.service.v2.MatchCondition;
-import ai.traceable.userattribution.config.service.v2.MatchOperator;
 import ai.traceable.userattribution.config.service.v2.Predicate;
 import ai.traceable.userattribution.config.service.v2.RankUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v2.RootRelativeProjection;
@@ -31,6 +30,7 @@ import ai.traceable.userattribution.config.service.v2.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope;
 import ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule;
+import ai.traceable.userattribution.config.service.v2.ValueMatchOperator;
 import ai.traceable.userattribution.config.service.v2.ValueProjection;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -62,6 +62,14 @@ public class UserAttributionV2ConfigRequestValidator {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateUserAttributionRuleRequest.ID_FIELD_NUMBER);
     this.validateRuleData(request.getData());
+  }
+
+  public void validateOrThrow(UserAttributionRule existingRule, UserAttributionRule rule) {
+    if (!existingRule.getData().getTemplate().equals(rule.getData().getTemplate())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(String.format("User Attribution rule template cannot be updated"))
+          .asRuntimeException();
+    }
   }
 
   public void validateOrThrow(List<UserAttributionRule> existingRules, UserAttributionRule rule) {
@@ -254,7 +262,7 @@ public class UserAttributionV2ConfigRequestValidator {
   }
 
   private void validateAttributePredicate(Predicate.AttributePredicate predicate) {
-    validateAttribute(predicate.getAttribute());
+    validateAttributeProjection(predicate.getAttributeProjection());
     validateAttributeMatchCondition(predicate.getAttributeValueMatchCondition());
   }
 
@@ -283,12 +291,11 @@ public class UserAttributionV2ConfigRequestValidator {
   private void validateCustomProjection(CustomProjection customProjection) {
     AttributeRule.Builder attributeRuleBuilder = AttributeRule.newBuilder();
     try {
-      JsonFormat.parser().merge(customProjection.getCustomProjection(), attributeRuleBuilder);
+      JsonFormat.parser().merge(customProjection.getCustomJson(), attributeRuleBuilder);
     } catch (InvalidProtocolBufferException e) {
       throw ContextualStatusExceptionBuilder.from(
               Status.INVALID_ARGUMENT.withDescription(
-                  String.format(
-                      "Invalid custom projection: %s", customProjection.getCustomProjection())))
+                  String.format("Invalid custom projection: %s", customProjection.getCustomJson())))
           .useStatusDescriptionAsExternalMessage()
           .buildRuntimeException();
     }
@@ -340,15 +347,15 @@ public class UserAttributionV2ConfigRequestValidator {
 
   private void validateKeyMatch(KeyMatch keyMatch) {
     validateNonDefaultPresenceOrThrow(keyMatch, KeyMatch.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(keyMatch, KeyMatch.ARGUMENT_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(keyMatch, KeyMatch.MATCH_KEY_FIELD_NUMBER);
   }
 
   private void validateAttributeMatchCondition(MatchCondition matchCondition) {
     validateNonDefaultPresenceOrThrow(matchCondition, MatchCondition.OPERATOR_FIELD_NUMBER);
-    MatchOperator operator = matchCondition.getOperator();
+    ValueMatchOperator operator = matchCondition.getOperator();
     if (matchCondition.getMatchValue().getValueCase() == LiteralValue.ValueCase.NULL_VALUE) {
-      if (!(operator == MatchOperator.MATCH_OPERATOR_NOT_EQUALS
-          || operator == MatchOperator.MATCH_OPERATOR_EQUALS)) {
+      if (!(operator == ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS
+          || operator == ValueMatchOperator.VALUE_MATCH_OPERATOR_EQUALS)) {
         throw Status.INVALID_ARGUMENT
             .withDescription(
                 String.format(
@@ -360,7 +367,7 @@ public class UserAttributionV2ConfigRequestValidator {
     }
     validateNonDefaultPresenceOrThrow(
         matchCondition.getMatchValue(), LiteralValue.STRING_VALUE_FIELD_NUMBER);
-    if (operator == MatchOperator.MATCH_OPERATOR_MATCHES_REGEX) {
+    if (operator == ValueMatchOperator.VALUE_MATCH_OPERATOR_MATCHES_REGEX) {
       Status status = RegexValidator.validateRegex(matchCondition.getMatchValue().getStringValue());
       if (!status.isOk()) {
         throw status.asRuntimeException();
@@ -380,8 +387,7 @@ public class UserAttributionV2ConfigRequestValidator {
             case REGEX_CAPTURE_GROUP:
               Status status =
                   RegexValidator.validateCaptureGroupCount(
-                      projection.getRegexCaptureGroup().getRegexCaptureGroup(),
-                      REGEX_CAPTURE_GROUP_COUNT);
+                      projection.getRegexCaptureGroup().getRegex(), REGEX_CAPTURE_GROUP_COUNT);
               if (!status.isOk()) {
                 throw status.asRuntimeException();
               }

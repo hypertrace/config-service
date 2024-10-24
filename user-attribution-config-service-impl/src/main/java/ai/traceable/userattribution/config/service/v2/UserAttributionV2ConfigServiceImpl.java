@@ -106,7 +106,7 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
           this.ruleStore.getData(requestContext, ruleId).orElseThrow(Status.NOT_FOUND::asException);
       UserAttributionRule updatedRule =
           this.ruleGenerator.generateUpdatedRule(request, existingRule);
-
+      this.validator.validateOrThrow(existingRule, updatedRule);
       this.validator.validateOrThrow(this.ruleStore.getAllConfigData(requestContext), updatedRule);
 
       responseObserver.onNext(

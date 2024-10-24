@@ -21,7 +21,14 @@ message UserAttributionRuleData {
   UserAttributionTokenRule user_scope_rule = 8;
   UserAttributionTokenRule auth_type_rule = 9;
   map<string, UserAttributionTokenRule> custom_token_rules = 10; // map of token name to its associated rule
-  string template = 11;
+  Template template = 11;
+}
+
+enum Template {
+  TEMPLATE_UNSPECIFIED = 0;
+  TEMPLATE_BASIC = 1;
+  TEMPLATE_JWT = 2;
+  TEMPLATE_CUSTOM = 3;
 }
 
 message UserAttributionRuleScope {
@@ -79,7 +86,7 @@ message Predicate {
   }
 
   message AttributePredicate {
-    Attribute attribute = 1;
+    AttributeProjection attribute_projection = 1;
     oneof condition {
       MatchCondition attribute_value_match_condition = 2;
     }
@@ -111,25 +118,30 @@ message Attribute {
 }
 
 message KeyMatch {
-  MatchOperator operator = 1;
-  string argument = 2;
+  KeyMatchOperator operator = 1;
+  string match_key = 2;
 }
 
 message PayloadMatch {
 }
 
 message MatchCondition {
-  MatchOperator operator = 1;
+  ValueMatchOperator operator = 1;
   LiteralValue match_value = 2;
 }
 
-enum MatchOperator {
-  MATCH_OPERATOR_UNSPECIFIED = 0;
-  MATCH_OPERATOR_EQUALS = 1;
-  MATCH_OPERATOR_NOT_EQUALS = 2;
-  MATCH_OPERATOR_STARTS_WITH = 3;
-  MATCH_OPERATOR_CONTAINS = 4;
-  MATCH_OPERATOR_MATCHES_REGEX = 5;
+enum KeyMatchOperator {
+  KEY_MATCH_OPERATOR_UNSPECIFIED = 0;
+  KEY_MATCH_OPERATOR_EQUALS = 1;
+}
+
+enum ValueMatchOperator {
+  VALUE_MATCH_OPERATOR_UNSPECIFIED = 0;
+  VALUE_MATCH_OPERATOR_EQUALS = 1;
+  VALUE_MATCH_OPERATOR_NOT_EQUALS = 2;
+  VALUE_MATCH_OPERATOR_STARTS_WITH = 3;
+  VALUE_MATCH_OPERATOR_CONTAINS = 4;
+  VALUE_MATCH_OPERATOR_MATCHES_REGEX = 5;
 }
 
 message LiteralValue {
@@ -148,7 +160,7 @@ enum ObfuscationStrategy {
 }
 
 message CustomProjection {
-  string custom_projection = 1; // This should directly translate into Projector in agentAttribute api
+  string custom_json = 1; // This should directly translate into Projector in agentAttribute api
 }
 
 message AttributeProjection {
@@ -169,11 +181,11 @@ message ValueProjection {
     RegexCaptureGroupProjection regex_capture_group = 1;
     JsonPathProjection json_path = 2;
     JwtPayloadClaimProjection jwt_payload_claim = 3;
-    Base64Projection base64_projection = 4;
+    Base64Projection base64 = 4;
   }
 
   message RegexCaptureGroupProjection {
-    string regex_capture_group = 1;
+    string regex = 1;
   }
 
   message JsonPathProjection {
