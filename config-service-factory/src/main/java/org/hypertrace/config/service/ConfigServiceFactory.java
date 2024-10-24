@@ -91,6 +91,29 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  public List<GrpcPlatformService> buildServices(
+      Channel localChannel,
+      Config config,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      GrpcServiceContainerEnvironment grpcServiceContainerEnvironment,
+      Datastore datastore) {
+    this.grpcServiceContainerEnvironment = grpcServiceContainerEnvironment;
+    return Stream.of(
+            new ConfigServiceGrpcImpl(this.buildConfigStore(datastore)),
+            new SpacesConfigServiceImpl(localChannel),
+            new LabelsConfigServiceImpl(localChannel, config, configChangeEventGenerator),
+            new LabelApplicationRuleConfigServiceImpl(
+                localChannel, new LabelApplicationRuleConfig(config), configChangeEventGenerator),
+            new EventConditionConfigServiceImpl(localChannel, configChangeEventGenerator),
+            new NotificationRuleConfigServiceImpl(localChannel, configChangeEventGenerator),
+            new NotificationChannelConfigServiceImpl(
+                localChannel, config, configChangeEventGenerator),
+            SpanProcessingConfigServiceFactory.build(
+                localChannel, config, configChangeEventGenerator))
+        .map(GrpcPlatformService::new)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   protected Channel getLocalChannel() {
     return grpcServiceContainerEnvironment
         .getChannelRegistry()
@@ -109,6 +132,16 @@ public class ConfigServiceFactory implements GrpcPlatformServiceFactory {
       new ConfigMetricsReporter(
               datastore, grpcServiceContainerEnvironment.getLifecycle(), configurationCounterConfig)
           .monitor();
+      ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
+      this.store = configStore;
+      return configStore;
+    } catch (Exception e) {
+      throw new RuntimeException("Error in getting or initializing config store", e);
+    }
+  }
+
+  protected ConfigStore buildConfigStore(Datastore datastore) {
+    try {
       ConfigStore configStore = new DocumentConfigStore(Clock.systemUTC(), datastore);
       this.store = configStore;
       return configStore;

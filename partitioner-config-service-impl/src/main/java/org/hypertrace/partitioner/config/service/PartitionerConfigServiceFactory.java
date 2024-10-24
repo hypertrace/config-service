@@ -4,7 +4,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
-import org.hypertrace.core.serviceframework.spi.PlatformServiceLifecycle;
+import org.hypertrace.core.documentstore.Datastore;
 
 public class PartitionerConfigServiceFactory {
 
@@ -14,8 +14,8 @@ public class PartitionerConfigServiceFactory {
     return injector.getInstance(BindableService.class);
   }
 
-  public static BindableService build(Config config, PlatformServiceLifecycle lifecycle) {
-    Injector injector = Guice.createInjector(new PartitionerConfigServiceModule(config, lifecycle));
+  public static BindableService build(Config config, Datastore datastore) {
+    Injector injector = Guice.createInjector(new PartitionerConfigServiceModule(config, datastore));
     return injector.getInstance(BindableService.class);
   }
 }
