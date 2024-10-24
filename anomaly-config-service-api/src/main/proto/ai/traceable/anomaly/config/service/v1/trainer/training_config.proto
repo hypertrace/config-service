@@ -105,7 +105,14 @@ message DemoApplicationConfig {
 }
 
 message DemoApplicationAutomaticDetectionConfig {
-  bool automatic_detection_disabled = 1;
+  bool automatic_detection_disabled = 1 [deprecated = true];
+  AutomaticDetectionStatus automatic_detection_status = 2;
+}
+
+enum AutomaticDetectionStatus {
+  AUTOMATIC_DETECTION_STATUS_UNSPECIFIED = 0;
+  AUTOMATIC_DETECTION_STATUS_ENABLED = 1;
+  AUTOMATIC_DETECTION_STATUS_DISABLED = 2;
 }
 
 message DemoApplicationDefinition {
