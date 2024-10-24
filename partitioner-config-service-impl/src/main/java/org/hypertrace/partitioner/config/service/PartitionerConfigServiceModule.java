@@ -9,9 +9,6 @@ import org.hypertrace.partitioner.config.service.store.PartitionerProfilesStore;
 
 public class PartitionerConfigServiceModule extends AbstractModule {
 
-  public static final String GENERIC_CONFIG_SERVICE = "generic.config.service";
-  public static final String DOC_STORE_CONFIG_KEY = "document.store";
-  public static final String DATA_STORE_TYPE = "dataStoreType";
   public static final String PARTITIONER_CONFIG_SERVICE = "partitioner.config.service";
 
   private final Config config;
