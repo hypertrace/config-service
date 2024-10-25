@@ -17,7 +17,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
 
-  implementation(commonLibs.guice7)
+  implementation(commonLibs.guice)
   implementation(commonLibs.guava)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.typesafe.config)
