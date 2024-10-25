@@ -55,11 +55,26 @@ message LogicalFilterCondition {
 
 message RelationalFilterCondition {
   // Filed name for the filter condition
-  string field_name = 1;
+  string field_name = 1 [deprecated = true];
+  Expression lhs_expression = 4;
   // Comparison operator for the condition
   RelationalOperator operator = 2;
   // Value to compare with
-  google.protobuf.Value field_value = 3;
+  google.protobuf.Value field_value = 3 [deprecated = true];
+  Expression rhs_expression = 5;
+}
+
+message Expression {
+  oneof type {
+    Field field = 1;
+    google.protobuf.Value value = 2;
+  }
+}
+
+message Field {
+  // In case a scope is missing, we will consider the scope of the filter itself
+  optional string scope = 1;
+  string key = 2;
 }
 
 enum LogicalOperator {
