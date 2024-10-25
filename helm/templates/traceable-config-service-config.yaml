@@ -356,6 +356,11 @@ data:
     saved.query.config.service = {
       userDataMigrationFlag = {{ .Values.savedQueriesConfig.userDataMigrationFlag }}
     }
+    jwt.extraction.config.service = {
+      {{- if .Values.defaultJwtExtractionConfigRules }}
+      default.jwt.extraction.rules = {{- .Values.defaultJwtExtractionConfigRules | indent 6 }}
+      {{- end }}
+    }
 
   anomaly.conf: |-
     modsecRuleVersion = {{ .Values.anomalyConfigServiceConfig.modsecRuleVersion }}

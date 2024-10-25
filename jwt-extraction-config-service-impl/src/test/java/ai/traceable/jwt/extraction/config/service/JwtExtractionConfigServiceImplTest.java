@@ -1,6 +1,7 @@
 package ai.traceable.jwt.extraction.config.service;
 
-import static ai.traceable.jwt.extraction.config.service.DefaultJwtExtractionRuleTest.DEFAULT_RULE;
+import static ai.traceable.jwt.extraction.config.service.DefaultJwtExtractionRuleTest.DEFAULT_RULE_1;
+import static ai.traceable.jwt.extraction.config.service.DefaultJwtExtractionRuleTest.DEFAULT_RULE_2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -170,12 +171,12 @@ class JwtExtractionConfigServiceImplTest {
     assertEquals(SCOPED_RULE, this.stub.createJwtExtractionRule(scopedCreateRequest).getRule());
 
     assertEquals(
-        List.of(DEFAULT_RULE, SCOPED_RULE, UNSCOPED_RULE),
+        List.of(DEFAULT_RULE_1, DEFAULT_RULE_2, SCOPED_RULE, UNSCOPED_RULE),
         this.stub
             .getJwtExtractionRules(GetJwtExtractionRulesRequest.getDefaultInstance())
             .getRulesList());
     assertEquals(
-        List.of(DEFAULT_RULE, SCOPED_RULE, UNSCOPED_RULE),
+        List.of(DEFAULT_RULE_1, DEFAULT_RULE_2, SCOPED_RULE, UNSCOPED_RULE),
         this.stub
             .getJwtExtractionRules(
                 GetJwtExtractionRulesRequest.newBuilder()
@@ -188,7 +189,7 @@ class JwtExtractionConfigServiceImplTest {
                     .build())
             .getRulesList());
     assertEquals(
-        List.of(DEFAULT_RULE, UNSCOPED_RULE),
+        List.of(DEFAULT_RULE_1, DEFAULT_RULE_2, UNSCOPED_RULE),
         this.stub
             .getJwtExtractionRules(
                 GetJwtExtractionRulesRequest.newBuilder()
@@ -221,7 +222,7 @@ class JwtExtractionConfigServiceImplTest {
         expectedUpdatedRule, this.stub.updateJwtExtractionRule(ruleUpdateRequest).getRule());
 
     assertEquals(
-        List.of(DEFAULT_RULE, SCOPED_RULE, expectedUpdatedRule),
+        List.of(DEFAULT_RULE_1, DEFAULT_RULE_2, SCOPED_RULE, expectedUpdatedRule),
         this.stub
             .getJwtExtractionRules(
                 GetJwtExtractionRulesRequest.newBuilder()
@@ -235,7 +236,7 @@ class JwtExtractionConfigServiceImplTest {
             .getRulesList());
 
     assertEquals(
-        List.of(DEFAULT_RULE, expectedUpdatedRule),
+        List.of(DEFAULT_RULE_1, DEFAULT_RULE_2, expectedUpdatedRule),
         this.stub
             .getJwtExtractionRules(
                 GetJwtExtractionRulesRequest.newBuilder()
@@ -254,7 +255,7 @@ class JwtExtractionConfigServiceImplTest {
         DeleteJwtExtractionRuleRequest.newBuilder().setId(SCOPED_RULE.getId()).build());
 
     assertEquals(
-        List.of(DEFAULT_RULE, expectedUpdatedRule),
+        List.of(DEFAULT_RULE_1, DEFAULT_RULE_2, expectedUpdatedRule),
         this.stub
             .getJwtExtractionRules(
                 GetJwtExtractionRulesRequest.newBuilder()
@@ -271,7 +272,7 @@ class JwtExtractionConfigServiceImplTest {
         DeleteJwtExtractionRuleRequest.newBuilder().setId(expectedUpdatedRule.getId()).build());
 
     JwtExtractionRule modifiedDefaultRule =
-        DEFAULT_RULE.toBuilder()
+        DEFAULT_RULE_1.toBuilder()
             .setScope(
                 JwtExtractionRuleScope.newBuilder()
                     .setEnvironmentScope(
@@ -285,16 +286,16 @@ class JwtExtractionConfigServiceImplTest {
         this.stub
             .updateJwtExtractionRule(
                 UpdateJwtExtractionRuleRequest.newBuilder()
-                    .setId(DEFAULT_RULE.getId())
-                    .setPredicate(DEFAULT_RULE.getPredicate())
-                    .addAllLocations(DEFAULT_RULE.getLocationsList())
-                    .addAllInstructions(DEFAULT_RULE.getInstructionsList())
+                    .setId(DEFAULT_RULE_1.getId())
+                    .setPredicate(DEFAULT_RULE_1.getPredicate())
+                    .addAllLocations(DEFAULT_RULE_1.getLocationsList())
+                    .addAllInstructions(DEFAULT_RULE_1.getInstructionsList())
                     .setScope(modifiedDefaultRule.getScope())
                     .build())
             .getRule());
 
     assertEquals(
-        List.of(modifiedDefaultRule),
+        List.of(DEFAULT_RULE_2, modifiedDefaultRule),
         this.stub
             .getJwtExtractionRules(GetJwtExtractionRulesRequest.getDefaultInstance())
             .getRulesList());
@@ -303,7 +304,7 @@ class JwtExtractionConfigServiceImplTest {
         DeleteJwtExtractionRuleRequest.newBuilder().setId(modifiedDefaultRule.getId()).build());
 
     assertEquals(
-        List.of(),
+        List.of(DEFAULT_RULE_2),
         this.stub
             .getJwtExtractionRules(GetJwtExtractionRulesRequest.getDefaultInstance())
             .getRulesList());
