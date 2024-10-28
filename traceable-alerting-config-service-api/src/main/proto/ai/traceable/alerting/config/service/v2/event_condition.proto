@@ -23,6 +23,7 @@ import "ai/traceable/alerting/config/service/v2/label_config_change_condition.pr
 import "ai/traceable/alerting/config/service/v2/risk_scoring_config_change_condition.proto";
 import "ai/traceable/alerting/config/service/v2/integration_event_condition.proto";
 import "ai/traceable/alerting/config/service/v2/threat_scoring_config_change_event_condition.proto";
+import "ai/traceable/alerting/config/service/v2/fraud_detection_event_condition.proto";
 
 message EventCondition {
   string id = 1;
@@ -50,6 +51,7 @@ message EventConditionMutableData {
     RiskScoringConfigChangeCondition risk_scoring_config_change_condition = 19;
     IntegrationEventCondition integration_event_condition = 20;
     ThreatScoringConfigChangeEventCondition threat_scoring_config_change_event_condition = 21;
+    FraudDetectionEventCondition fraud_detection_event_condition = 22;
   }
   optional string environment = 5 [deprecated = true];// use the EventConditionScope moving forward
   EventConditionScope scope = 9;

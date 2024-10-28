@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package ai.traceable.alerting.config.service.v2;
+
+message FraudDetectionEventCondition {
+  repeated FraudDetectionEventSeverity severities = 1;
+}
+
+enum FraudDetectionEventSeverity {
+  FRAUD_DETECTION_EVENT_SEVERITY_UNSPECIFIED = 0;
+  FRAUD_DETECTION_EVENT_SEVERITY_LOW = 1;
+  FRAUD_DETECTION_EVENT_SEVERITY_MEDIUM = 2;
+  FRAUD_DETECTION_EVENT_SEVERITY_HIGH = 3;
+  FRAUD_DETECTION_EVENT_SEVERITY_CRITICAL = 4;
+}
