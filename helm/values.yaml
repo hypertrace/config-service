@@ -34,6 +34,8 @@ internalGlobalServiceContainerPort: 50104
 internalContainerPortName: grpc-int-port
 externalContainerPortName: grpc-ext-port
 internalGlobalServiceContainerPortName: int-global-port
+restContainerPort: 50105
+restContainerPortName: rest-port
 
 service:
   name: traceable-config-service
@@ -41,6 +43,9 @@ service:
   internalPort: 50101
   externalPort: 50102
   internalGlobalPort: 50104
+  rest:
+    port: 50105
+    maxHeaderSize: 32KiB
 
 nodeLabels: {}
 

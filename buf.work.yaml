@@ -52,3 +52,4 @@ directories:
   - vulnerability-config-service-api/src/main/proto
   - servicenow-itsm-integration-config-service-api/src/main/proto
   - azure-devops-integration-config-service-api/src/main/proto
+  - traceable-config-service-rest/src/main/proto

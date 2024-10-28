@@ -10,6 +10,8 @@ data:
     service.port.external = {{ .Values.externalContainerPort }}
     service.global.port.internal = {{ .Values.internalGlobalServiceContainerPort }}
     service.admin.port = {{ .Values.containerAdminPort }}
+    service.rest.port = {{ .Values.restContainerPort }}
+    service.rest.maxHeaderSize = {{ .Values.service.rest.maxHeaderSize }}
     generic.config.service {
       document.store {
         mongo {

@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.1343=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1408=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.62=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.57=runtimeClasspath,testRuntimeClasspath
@@ -12,7 +12,7 @@ ai.traceable.platform-gateway:event-invalidation-cache:0.8.57=compileClasspath,r
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.57=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:training-evaluation-framework:0.8.57=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:xml-utils:0.8.57=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-model:5.0.74=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-model:5.0.76=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.137=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:4.0.137=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:4.0.137=runtimeClasspath,testRuntimeClasspath
@@ -155,7 +155,7 @@ javax.servlet.jsp:jsp-api:2.1=runtimeClasspath,testRuntimeClasspath
 javax.servlet:javax.servlet-api:4.0.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 javax.xml.bind:jaxb-api:2.3.0=runtimeClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy-agent:1.14.15=testCompileClasspath,testRuntimeClasspath
-net.bytebuddy:byte-buddy:1.14.15=testCompileClasspath,testRuntimeClasspath
+net.bytebuddy:byte-buddy:1.15.4=testCompileClasspath,testRuntimeClasspath
 net.minidev:accessors-smart:2.5.0=runtimeClasspath,testRuntimeClasspath
 net.minidev:json-smart:2.5.0=runtimeClasspath,testRuntimeClasspath
 org.apache.avro:avro:1.11.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath

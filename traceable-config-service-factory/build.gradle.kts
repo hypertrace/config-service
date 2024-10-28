@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
   api(commonLibs.hypertrace.framework.grpc)
+  api(commonLibs.hypertrace.framework.http)
 
   implementation(localLibs.hypertrace.configservice.factory)
   implementation(localLibs.hypertrace.configservice.impl)
@@ -11,6 +12,9 @@ dependencies {
   implementation(commonLibs.typesafe.config)
   implementation(localLibs.hypertrace.configservice.partitioner.config.impl)
   implementation(commonLibs.hypertrace.framework.documentstore.metrics)
+
+  implementation(projects.traceableConfigServiceRest)
+  implementation(commonLibs.traceable.accesscontrol.policy)
 
   implementation(projects.activityEventProducer)
   implementation(projects.sensitiveDataConfigServiceImpl)

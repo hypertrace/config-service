@@ -22,7 +22,7 @@ rootProject.name = "traceable-config-service-root"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 configure<DependencyPluginSettingExtension> {
-  catalogVersion.set("0.3.1329")
+  catalogVersion.set("0.3.1408")
 }
 
 includeBuild("./hypertrace-config-service")
@@ -142,3 +142,4 @@ include(":servicenow-itsm-integration-config-service-api")
 include(":servicenow-itsm-integration-config-service-impl")
 include(":azure-devops-integration-config-service-api")
 include(":azure-devops-integration-config-service-impl")
+include(":traceable-config-service-rest")

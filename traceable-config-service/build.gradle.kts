@@ -145,6 +145,7 @@ tasks.integrationTest {
 dependencies {
   implementation(projects.traceableConfigServiceFactory)
   implementation(commonLibs.hypertrace.framework.grpc)
+  implementation(commonLibs.hypertrace.framework.http)
 
   runtimeOnly(commonLibs.grpc.netty)
   runtimeOnly(commonLibs.log4j.slf4j2.impl)

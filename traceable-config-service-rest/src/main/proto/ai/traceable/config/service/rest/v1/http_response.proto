@@ -1,0 +1,45 @@
+syntax = "proto3";
+option java_multiple_files = true;
+
+package ai.traceable.config.service.rest.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message HttpResponseMetadata {
+  map<string, string> headers = 1;
+  repeated Cookie cookies = 2;
+
+  oneof status {
+    OkResponse ok_response = 15;
+    RedirectResponse redirect_response = 16;
+    UnauthenticatedResponse unauthenticated = 17;
+  }
+}
+
+message OkResponse {}
+
+message UnauthenticatedResponse {}
+
+message Cookie {
+  string key = 1;
+  string value = 2;
+  google.protobuf.Timestamp max_age = 3;
+  bool http_only = 4;
+  SameSite same_site = 5;
+
+  enum SameSite {
+    SAME_SITE_UNSPECIFIED = 0;
+    SAME_SITE_LAX = 1;
+    SAME_SITE_STRICT = 2;
+  }
+}
+
+message RedirectResponse {
+  string redirect_url = 1;
+  RedirectStatusCode code = 2;
+  enum RedirectStatusCode {
+    REDIRECT_STATUS_CODE_UNSPECIFIED = 0;
+    REDIRECT_STATUS_CODE_TEMPORARY_REDIRECT = 1;
+    REDIRECT_STATUS_CODE_OK_HTML_REDIRECT = 2;
+  }
+}
