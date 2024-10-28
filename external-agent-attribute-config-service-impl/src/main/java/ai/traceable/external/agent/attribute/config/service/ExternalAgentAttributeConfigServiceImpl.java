@@ -2,6 +2,7 @@ package ai.traceable.external.agent.attribute.config.service;
 
 import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.KEY_PREDICATE_SUPPORT_MIN_TPA_VERSION;
 import static ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceConstants.PROJECTOR_PREDICATE_SUPPORT_MIN_TPA_VERSION;
+import static ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest.UserAttributionRuleSource.USER_ATTRIBUTION_RULE_SOURCE_V2;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionConfigServiceGrpc.AuthDetectionConfigServiceBlockingStub;
@@ -59,6 +60,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConfigServiceImplBase {
 
   private final UserAttributionConfigServiceBlockingStub userAttributionRuleStub;
+  private final ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc
+          .UserAttributionConfigServiceBlockingStub
+      userAttributionRuleV2Stub;
   private final AuthDetectionConfigServiceBlockingStub authDetectionConfigServiceBlockingStub;
   private final JwtExtractionConfigServiceBlockingStub jwtExtractionBlockingStub;
   private final SpanProcessingConfigServiceBlockingStub spanProcessingConfigServiceBlockingStub;
@@ -123,6 +127,7 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
         agentAttributeIdentifierContextualKey.getData().isNewSessionIdentificationApiSupported();
     return ruleTranslator.translateRules(
         fetchActiveUserAttributionRules(requestContext, environmentName),
+        fetchActiveUserAttributionRulesV2(requestContext, environmentName),
         fetchAuthDetectionRules(requestContext, environmentName),
         jwtExtractionSupported
             ? fetchActiveJwtExtractionRules(requestContext, environmentName)
@@ -158,6 +163,46 @@ class ExternalAgentAttributeConfigServiceImpl extends ExternalAgentAttributeConf
                   .getRulesList());
     } catch (Exception e) {
       log.error("Failed to fetch user attribution rules. RequestContest {}", requestContext, e);
+    }
+    return Collections.emptyList();
+  }
+
+  private List<ai.traceable.userattribution.config.service.v2.UserAttributionRule>
+      fetchActiveUserAttributionRulesV2(
+          RequestContext requestContext, Optional<String> environmentName) {
+    ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest
+            .GetUserAttributionRulesFilter.EnvironmentFilter
+        environmentFilter =
+            environmentName
+                .map(
+                    envName ->
+                        ai.traceable.userattribution.config.service.v2
+                            .GetUserAttributionRulesRequest.GetUserAttributionRulesFilter
+                            .EnvironmentFilter.newBuilder()
+                            .addEnvironmentNames(envName)
+                            .build())
+                .orElse(
+                    ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest
+                        .GetUserAttributionRulesFilter.EnvironmentFilter.getDefaultInstance());
+    try {
+      return requestContext.call(
+          () ->
+              userAttributionRuleV2Stub
+                  .withDeadlineAfter(clientConfig.getTimeout().toMillis(), MILLISECONDS)
+                  .getUserAttributionRules(
+                      ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest
+                          .newBuilder()
+                          .setFilter(
+                              ai.traceable.userattribution.config.service.v2
+                                  .GetUserAttributionRulesRequest.GetUserAttributionRulesFilter
+                                  .newBuilder()
+                                  .setEnvironmentFilter(environmentFilter)
+                                  .setDisabled(false))
+                          .setRuleSource(USER_ATTRIBUTION_RULE_SOURCE_V2)
+                          .build())
+                  .getRulesList());
+    } catch (Exception e) {
+      log.error("Failed to fetch user attribution rules v2. RequestContest {}", requestContext, e);
     }
     return Collections.emptyList();
   }

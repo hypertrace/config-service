@@ -7,6 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.translator.authdetec
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.SessionIdentificationTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.userattributionv2.UserAttributionRuleV2TranslationModule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
@@ -37,6 +38,7 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
     bind(BindableService.class).to(ExternalAgentAttributeConfigServiceImpl.class);
     bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
     install(new UserAttributionRuleTranslationModule());
+    install(new UserAttributionRuleV2TranslationModule());
     install(new AuthDetectionRuleTranslationModule());
     install(new JwtExtractionTranslationModule());
     install(new SessionIdentificationTranslationModule());
@@ -52,6 +54,16 @@ class ExternalAgentAttributeConfigServiceModule extends AbstractModule {
   @Provides
   UserAttributionConfigServiceBlockingStub providesUserAttributionStub() {
     return UserAttributionConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc
+          .UserAttributionConfigServiceBlockingStub
+      providesUserAttributionV2Stub() {
+    return ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc
+        .newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

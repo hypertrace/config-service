@@ -8,6 +8,7 @@ import ai.traceable.external.agent.attribute.config.service.translator.authdetec
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtExtractionTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.SessionIdentificationTranslationModule;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslationModule;
+import ai.traceable.external.agent.attribute.config.service.translator.userattributionv2.UserAttributionRuleV2TranslationModule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import com.google.inject.Guice;
 import java.io.IOException;
@@ -20,6 +21,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
       Guice.createInjector(
               DEVELOPMENT,
               new UserAttributionRuleTranslationModule(),
+              new UserAttributionRuleV2TranslationModule(),
               new AuthDetectionRuleTranslationModule(),
               new JwtExtractionTranslationModule(),
               new SessionIdentificationTranslationModule())
@@ -35,6 +37,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
                 TestUtils.getUserAttributionRule("jwt/header/input_rule.json"),
                 TestUtils.getUserAttributionRule("request_header/input_rule.json"),
                 TestUtils.getUserAttributionRule("response_body/input_rule.json")),
+            emptyList(),
             List.of(
                 TestUtils.getAuthDetectionRule("authdetection/composite/input_rule.json"),
                 TestUtils.getAuthDetectionRule("authdetection/header/input_rule.json"),
@@ -55,6 +58,7 @@ class ExternalAgentAttributeRuleTranslatorTest {
   void translateNoRule() {
     assertEquals(
         List.of(),
-        translator.translateRules(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()));
+        translator.translateRules(
+            emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList()));
   }
 }

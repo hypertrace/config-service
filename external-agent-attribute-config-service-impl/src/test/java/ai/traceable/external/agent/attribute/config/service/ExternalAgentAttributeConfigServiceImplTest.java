@@ -64,6 +64,8 @@ class ExternalAgentAttributeConfigServiceImplTest {
             new ExternalAgentAttributeConfigServiceImpl(
                 UserAttributionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
+                ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc
+                    .newBlockingStub(this.mockGenericConfigService.channel()),
                 AuthDetectionConfigServiceGrpc.newBlockingStub(
                     this.mockGenericConfigService.channel()),
                 JwtExtractionConfigServiceGrpc.newBlockingStub(

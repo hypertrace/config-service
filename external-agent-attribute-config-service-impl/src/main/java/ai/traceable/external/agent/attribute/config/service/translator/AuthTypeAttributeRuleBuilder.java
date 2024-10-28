@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
 import ai.traceable.external.agent.attribute.config.service.translator.authdetection.AuthDetectionRuleTranslatorLookup;
 import ai.traceable.external.agent.attribute.config.service.translator.userattribution.UserAttributionRuleTranslatorLookup;
+import ai.traceable.external.agent.attribute.config.service.translator.userattributionv2.UserAttributionRuleV2Translator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.Collection;
@@ -24,14 +25,19 @@ class AuthTypeAttributeRuleBuilder {
   private final UrlScopeTranslator urlScopeTranslator;
   private final AttributeRuleBuilder attributeRuleBuilder;
   private final UserAttributionRuleTranslatorLookup userAttributionRuleTranslatorLookup;
-
+  private final UserAttributionRuleV2Translator userAttributionRuleV2Translator;
   private final AuthDetectionRuleTranslatorLookup authDetectionRuleTranslatorLookup;
 
   Optional<AttributeRule> buildRule(
-      List<UserAttributionRule> userAttributionRules, List<AuthDetectionRule> authDetectionRules) {
-    return Stream.concat(
+      List<UserAttributionRule> userAttributionRules,
+      List<ai.traceable.userattribution.config.service.v2.UserAttributionRule>
+          userAttributionRulesV2,
+      List<AuthDetectionRule> authDetectionRules) {
+    return Stream.of(
             translateUserAttributionRules(userAttributionRules),
+            translateUserAttributionRulesV2(userAttributionRulesV2),
             translateAuthDetectionRules(authDetectionRules))
+        .flatMap(s -> s)
         .collect(collectingAndThen(toUnmodifiableList(), Optional::of))
         .filter(not(Collection::isEmpty))
         .map(attributeRuleBuilder::buildRuleForEachMatchingProjector);
@@ -40,6 +46,13 @@ class AuthTypeAttributeRuleBuilder {
   private Stream<AttributeRule> translateUserAttributionRules(
       List<UserAttributionRule> userAttributionRules) {
     return userAttributionRules.stream().flatMap(this::translateUserAttributionRule);
+  }
+
+  private Stream<AttributeRule> translateUserAttributionRulesV2(
+      List<ai.traceable.userattribution.config.service.v2.UserAttributionRule>
+          userAttributionRulesV2) {
+    return userAttributionRulesV2.stream()
+        .flatMap(userAttributionRuleV2Translator::translateRuleForAuthType);
   }
 
   private Stream<AttributeRule> translateUserAttributionRule(
