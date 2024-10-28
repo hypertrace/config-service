@@ -4,7 +4,6 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
@@ -92,24 +91,6 @@ public class DetectionExclusionRulesManager implements RulesManager {
             .setRuleScope(ruleScope)
             .build();
     return rulesStore.upsertObject(requestContext, rule).getData();
-  }
-
-  @Override
-  public List<DetectionExclusionRule> bulkCreateDetectionExclusionRule(
-      RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList) {
-    List<DetectionExclusionRule> rules =
-        ruleDataList.stream()
-            .map(
-                request ->
-                    DetectionExclusionRule.newBuilder()
-                        .setId(uuidGenerator.generateRandomId())
-                        .setRuleInfo(processDetectionExclusionRuleInfo(request.getRuleInfo()))
-                        .setRuleScope(request.getRuleScope())
-                        .build())
-            .collect(Collectors.toUnmodifiableList());
-    return rulesStore.upsertObjects(requestContext, rules).stream()
-        .map(ConfigObject::getData)
-        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override

@@ -4,7 +4,6 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -58,34 +57,6 @@ public class DetectionExclusionConfigServiceImpl
               .setRule(
                   rulesManager.createDetectionExclusionRule(
                       context, request.getRuleScope(), request.getRuleInfo()))
-              .build();
-
-      responseObserver.onNext(response);
-      responseObserver.onCompleted();
-    } catch (Exception exception) {
-      log.error(exception.getMessage(), exception);
-      responseObserver.onError(exception);
-    }
-  }
-
-  @Override
-  public void bulkCreateDetectionExclusionRules(
-      BulkCreateDetectionExclusionRulesRequest request,
-      StreamObserver<BulkCreateDetectionExclusionRulesResponse> responseObserver) {
-    try {
-      RequestContext context = RequestContext.CURRENT.get();
-      List<DetectionExclusionRule> existingRules = getExistingRules(context);
-      List<CreateDetectionExclusionRuleData> distinctExclusionRuleCreateRequestList =
-          request.getRuleDataList().stream()
-              .filter(rule -> isSameRuleNameNotPresent(rule.getRuleInfo().getName(), existingRules))
-              .collect(Collectors.toUnmodifiableList());
-      rulesValidator.validateOrThrow(context, distinctExclusionRuleCreateRequestList);
-
-      BulkCreateDetectionExclusionRulesResponse response =
-          BulkCreateDetectionExclusionRulesResponse.newBuilder()
-              .addAllRules(
-                  rulesManager.bulkCreateDetectionExclusionRule(
-                      context, distinctExclusionRuleCreateRequestList))
               .build();
 
       responseObserver.onNext(response);
@@ -194,11 +165,5 @@ public class DetectionExclusionConfigServiceImpl
 
   private List<DetectionExclusionRule> getExistingRules(RequestContext context) {
     return rulesManager.getDetectionExclusionRules(context, GetRulesFilter.getDefaultInstance());
-  }
-
-  private boolean isSameRuleNameNotPresent(
-      String ruleName, List<DetectionExclusionRule> detectionExclusionRules) {
-    return detectionExclusionRules.stream()
-        .noneMatch(rule -> rule.getRuleInfo().getName().equals(ruleName));
   }
 }

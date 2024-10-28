@@ -1,6 +1,5 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
-import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleInfo;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
@@ -23,9 +22,6 @@ public interface RulesManager {
       RequestContext requestContext,
       DetectionExclusionRuleScope ruleScope,
       DetectionExclusionRuleInfo ruleInfo);
-
-  List<DetectionExclusionRule> bulkCreateDetectionExclusionRule(
-      RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList);
 
   List<DetectionExclusionRule> bulkUpsertDetectionExclusionRule(
       RequestContext requestContext, List<UpsertDetectionExclusionRuleData> ruleDataList);

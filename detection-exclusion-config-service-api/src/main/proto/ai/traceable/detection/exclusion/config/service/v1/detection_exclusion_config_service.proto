@@ -23,9 +23,6 @@ service DetectionExclusionConfigService {
     rpc GetExclusionModsecRules (GetExclusionModsecRulesRequest) returns (GetExclusionModsecRulesResponse) {
     }
 
-    rpc BulkCreateDetectionExclusionRules (BulkCreateDetectionExclusionRulesRequest) returns (BulkCreateDetectionExclusionRulesResponse) {
-    }
-
     rpc BulkDeleteDetectionExclusionRules (BulkDeleteDetectionExclusionRulesRequest) returns (BulkDeleteDetectionExclusionRulesResponse) {
     }
 

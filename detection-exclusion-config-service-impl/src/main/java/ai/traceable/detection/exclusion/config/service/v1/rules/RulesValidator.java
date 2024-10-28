@@ -1,7 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules;
 
 import ai.traceable.detection.exclusion.config.service.v1.BulkDeleteDetectionExclusionRulesRequest;
-import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -28,9 +27,6 @@ public interface RulesValidator {
   void validateOrThrow(RequestContext requestContext, DeleteDetectionExclusionRuleRequest request);
 
   void validateOrThrow(RequestContext requestContext, GetExclusionModsecRulesRequest request);
-
-  void validateOrThrow(
-      RequestContext requestContext, List<CreateDetectionExclusionRuleData> ruleDataList);
 
   void validateOrThrowBulkUpsertRequest(
       RequestContext requestContext, List<UpsertDetectionExclusionRuleData> ruleDataList);

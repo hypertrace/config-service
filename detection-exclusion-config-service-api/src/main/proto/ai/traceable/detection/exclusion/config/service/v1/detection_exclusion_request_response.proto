@@ -38,14 +38,6 @@ message GetDetectionExclusionRulesResponse {
   repeated DetectionExclusionRule rules = 1;
 }
 
-message BulkCreateDetectionExclusionRulesRequest {
-  repeated CreateDetectionExclusionRuleData rule_data = 1;
-}
-
-message BulkCreateDetectionExclusionRulesResponse {
-  repeated DetectionExclusionRule rules = 1;
-}
-
 message BulkUpsertDetectionExclusionRulesRequest {
   repeated UpsertDetectionExclusionRuleData rules = 1;
 }
@@ -97,12 +89,6 @@ message ModsecBlobData {
   string modsec_blob = 1;
   repeated string service_names = 2;
   repeated string rule_ids = 3;
-}
-
-
-message CreateDetectionExclusionRuleData {
-  DetectionExclusionRuleScope rule_scope = 1;
-  DetectionExclusionRuleInfo rule_info = 2;
 }
 
 message UpsertDetectionExclusionRuleData {
