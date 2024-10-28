@@ -306,22 +306,38 @@ class UserAttributionRuleConverter {
           getLiteralValueProjectionBuilder(customTokenData.getAuthentication().getType());
       switch (customTokenData.getLocationCase()) {
         case REQUEST_BODY_LOCATION:
-          throw new LegacyUserAttributionRuleTranslationException(
-              "Unable to translate request body condition to new format");
+          {
+            Predicate.Builder predicateBuilder = Predicate.newBuilder();
+            AttributeProjection.Builder attributeProjectionBuilder =
+                createAttributeProjectionBuilder(customTokenData.getRequestBodyLocation());
+            predicateBuilder.setAttributePredicate(
+                Predicate.AttributePredicate.newBuilder()
+                    .setAttributeProjection(attributeProjectionBuilder)
+                    .setAttributeValueMatchCondition(
+                        MatchCondition.newBuilder()
+                            .setOperator(ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS)
+                            .setMatchValue(
+                                LiteralValue.newBuilder()
+                                    .setNullValue(LiteralValue.NullValue.getDefaultInstance()))));
+            tokenRuleBuilder.setTokenConditionalPredicate(predicateBuilder);
+          }
+          break;
         case REQUEST_HEADER_LOCATION:
-          Predicate.Builder predicateBuilder = Predicate.newBuilder();
-          AttributeProjection.Builder attributeProjectionBuilder =
-              createAttributeProjectionBuilder(customTokenData.getRequestHeaderLocation());
-          predicateBuilder.setAttributePredicate(
-              Predicate.AttributePredicate.newBuilder()
-                  .setAttributeProjection(attributeProjectionBuilder)
-                  .setAttributeValueMatchCondition(
-                      MatchCondition.newBuilder()
-                          .setOperator(ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS)
-                          .setMatchValue(
-                              LiteralValue.newBuilder()
-                                  .setNullValue(LiteralValue.NullValue.getDefaultInstance()))));
-          tokenRuleBuilder.setTokenConditionalPredicate(predicateBuilder);
+          {
+            Predicate.Builder predicateBuilder = Predicate.newBuilder();
+            AttributeProjection.Builder attributeProjectionBuilder =
+                createAttributeProjectionBuilder(customTokenData.getRequestHeaderLocation());
+            predicateBuilder.setAttributePredicate(
+                Predicate.AttributePredicate.newBuilder()
+                    .setAttributeProjection(attributeProjectionBuilder)
+                    .setAttributeValueMatchCondition(
+                        MatchCondition.newBuilder()
+                            .setOperator(ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS)
+                            .setMatchValue(
+                                LiteralValue.newBuilder()
+                                    .setNullValue(LiteralValue.NullValue.getDefaultInstance()))));
+            tokenRuleBuilder.setTokenConditionalPredicate(predicateBuilder);
+          }
           break;
         default:
           throw new LegacyUserAttributionRuleTranslationException(
@@ -331,6 +347,16 @@ class UserAttributionRuleConverter {
     } else {
       throw new LegacyUserAttributionRuleTranslationException("Authentication doesn't exist");
     }
+  }
+
+  private AttributeProjection.Builder createAttributeProjectionBuilder(
+      ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.EncodedLocation
+          requestBodyLocation) {
+    AttributeProjection.Builder attributeProjectionBuilder = AttributeProjection.newBuilder();
+    attributeProjectionBuilder.setAttribute(
+        Attribute.newBuilder().setRequestBody(PayloadMatch.getDefaultInstance()));
+    attributeProjectionBuilder.addAllValueProjections(getValueProjections(requestBodyLocation));
+    return attributeProjectionBuilder;
   }
 
   private AttributeProjection.Builder createAttributeProjectionBuilder(
