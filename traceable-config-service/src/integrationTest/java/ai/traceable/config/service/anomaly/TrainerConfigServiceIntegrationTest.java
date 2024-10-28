@@ -79,7 +79,6 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(1, scopedTrainingConfigs.size());
     testDefaultApiNamingConfig(scopedTrainingConfigs.get(0));
     testDefaultMetadataConfig(scopedTrainingConfigs.get(0));
-    testDemoApplicationConfig(scopedTrainingConfigs.get(0));
     ScopedTrainingConfig updateConfig =
         ScopedTrainingConfig.newBuilder()
             .setConfigScope(serviceConfigScope)
@@ -102,7 +101,6 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     assertEquals(2, scopedTrainingConfigs.size());
     testDefaultApiNamingConfig(scopedTrainingConfigs.get(1));
     testDefaultMetadataConfig(scopedTrainingConfigs.get(1));
-    testDemoApplicationConfig(scopedTrainingConfigs.get(1));
   }
 
   @Test
@@ -110,17 +108,6 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     ScopedTrainingConfig scopedTrainingConfig = fetchTrainerConfig(serviceConfigScope);
     testDefaultApiNamingConfig(scopedTrainingConfig);
     testDefaultMetadataConfig(scopedTrainingConfig);
-  }
-
-  void testDemoApplicationConfig(ScopedTrainingConfig scopedTrainingConfig) {
-    assertTrue(
-        scopedTrainingConfig.getTrainingConfigsList().stream()
-            .filter(TrainingConfig::hasDemoApplicationConfig)
-            .collect(Collectors.toUnmodifiableList())
-            .get(0)
-            .getDemoApplicationConfig()
-            .getDemoApplicationAutomaticDetectionConfig()
-            .getAutomaticDetectionDisabled());
   }
 
   void testDefaultApiNamingConfig(ScopedTrainingConfig scopedTrainingConfig) {
@@ -973,7 +960,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     updateTrainerConfig(scopedTrainingConfig);
     List<TrainingConfig> trainingConfigs =
         fetchTrainerConfig(customerConfigScope).getTrainingConfigsList();
-    assertEquals(38, trainingConfigs.size());
+    assertEquals(37, trainingConfigs.size());
     for (TrainingConfig trainingConfig : trainingConfigs) {
       if (trainingConfig.getTrainingConfigCase() == TrainingConfigCase.METADATA_TRAINING_CONFIG
           && trainingConfig.getMetadataTrainingConfig().getConfigCase()
