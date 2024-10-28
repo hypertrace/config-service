@@ -16,5 +16,7 @@ spec:
     - port: {{ .Values.service.internalGlobalPort }}
       targetPort: {{ .Values.internalGlobalServiceContainerPort }}
       name: {{ .Values.internalGlobalServiceContainerPortName }}-{{ .Chart.Name }}
+    - port: {{ .Values.restContainerPort }}
+      name: {{ .Values.restContainerPortName }}-{{ .Chart.Name }}
   selector:
     {{- toYaml .Values.serviceSelectorLabels | nindent 4 }}

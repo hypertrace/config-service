@@ -105,6 +105,9 @@ spec:
             - name: {{ .Values.externalContainerPortName }}
               containerPort: {{ .Values.externalContainerPort }}
               protocol: TCP
+            - name: {{ .Values.restContainerPortName }}
+              containerPort: {{ .Values.restContainerPort }}
+              protocol: TCP
             - name: admin-port
               containerPort: {{ .Values.containerAdminPort }}
               protocol: TCP
