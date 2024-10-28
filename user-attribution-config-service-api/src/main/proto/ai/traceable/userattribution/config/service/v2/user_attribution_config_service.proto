@@ -16,6 +16,7 @@ service UserAttributionConfigService {
 
 message GetUserAttributionRulesRequest {
   GetUserAttributionRulesFilter filter = 1;
+  UserAttributionRuleSource rule_source = 2;
 
   message GetUserAttributionRulesFilter {
     optional bool disabled = 1;
@@ -24,6 +25,11 @@ message GetUserAttributionRulesRequest {
     message EnvironmentFilter {
       repeated string environment_names = 1;
     }
+  }
+
+  enum UserAttributionRuleSource {
+    USER_ATTRIBUTION_RULE_SOURCE_UNSPECIFIED = 0; // default, implies source is both v1 and v2
+    USER_ATTRIBUTION_RULE_SOURCE_V2 = 1; // implies source is just v2
   }
 }
 

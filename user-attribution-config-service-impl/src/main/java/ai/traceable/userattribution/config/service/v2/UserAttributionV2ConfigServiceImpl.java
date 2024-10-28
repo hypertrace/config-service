@@ -1,5 +1,7 @@
 package ai.traceable.userattribution.config.service.v2;
 
+import static ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest.UserAttributionRuleSource.USER_ATTRIBUTION_RULE_SOURCE_V2;
+
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.ObjectDiffer;
 import ai.traceable.config.utils.RankCalculator;
@@ -54,7 +56,8 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
       List<UserAttributionRule> allRules =
           this.ruleStore.getAllConfigData(requestContext, request.getFilter());
       // fallback to legacy rules if no rules are found in new store
-      if (allRules.isEmpty()) {
+      // and source is not set to only v2 rules
+      if (allRules.isEmpty() && !request.getRuleSource().equals(USER_ATTRIBUTION_RULE_SOURCE_V2)) {
         allRules =
             this.legacyRuleStore.getUserAttributionRulesFromLegacyStore(
                 requestContext, request.getFilter());
