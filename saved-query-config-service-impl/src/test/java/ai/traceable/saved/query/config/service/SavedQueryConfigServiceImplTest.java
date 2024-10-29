@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.saved.query.config.service.migration.SavedQueryDataMigration;
 import ai.traceable.saved.query.config.service.store.DeletedSavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryConfigStore;
 import ai.traceable.saved.query.config.service.store.SavedQueryStoreManager;
@@ -59,8 +58,6 @@ class SavedQueryConfigServiceImplTest {
   @Mock private TimestampConverter timestampConverter;
   @Mock private UuidGenerator uuidGenerator;
   @Mock private Config mockConfig;
-  @Mock private SavedQueryDataMigration savedQueryDataMigration;
-  @Mock private SavedQueryDataMigrationConfig savedQueryDataMigrationConfig;
 
   @AfterEach
   void afterEach() {
@@ -91,9 +88,7 @@ class SavedQueryConfigServiceImplTest {
                     new SavedQueryConfigStore(genericStub, eventGenerator),
                     this.timestampConverter,
                     uuidGenerator),
-                new SavedQueryRequestValidator(),
-                savedQueryDataMigration,
-                savedQueryDataMigrationConfig))
+                new SavedQueryRequestValidator()))
         .start();
 
     this.savedQueryServiceBlockingStub =
@@ -303,9 +298,7 @@ class SavedQueryConfigServiceImplTest {
                     new SavedQueryConfigStore(genericStub, eventGenerator),
                     this.timestampConverter,
                     uuidGenerator),
-                new SavedQueryRequestValidator(),
-                savedQueryDataMigration,
-                savedQueryDataMigrationConfig))
+                new SavedQueryRequestValidator()))
         .start();
 
     this.savedQueryServiceBlockingStub =

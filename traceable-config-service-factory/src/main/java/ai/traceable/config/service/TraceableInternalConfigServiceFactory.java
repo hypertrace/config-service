@@ -269,8 +269,7 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 SavedQueryConfigServiceFactory.build(
                     providers.getConfig(),
                     providers.getLocalChannel(),
-                    providers.getChangeEventGenerator(),
-                    providers.getChannelRegistry())),
+                    providers.getChangeEventGenerator())),
             wrap(
                 RunnerLogsConfigServiceFactory.build(
                     providers.getConfig(),

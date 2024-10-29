@@ -7,22 +7,17 @@ import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
-import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class SavedQueryConfigServiceFactory {
 
   private SavedQueryConfigServiceFactory() {}
 
   public static BindableService build(
-      Config config,
-      Channel channel,
-      ConfigChangeEventGenerator changeEventGenerator,
-      GrpcChannelRegistry channelRegistry) {
+      Config config, Channel channel, ConfigChangeEventGenerator changeEventGenerator) {
     Injector injector =
         Guice.createInjector(
             Stage.PRODUCTION,
-            new SavedQueryConfigServiceModule(
-                config, channel, changeEventGenerator, channelRegistry));
+            new SavedQueryConfigServiceModule(config, channel, changeEventGenerator));
     return injector.getInstance(BindableService.class);
   }
 }
