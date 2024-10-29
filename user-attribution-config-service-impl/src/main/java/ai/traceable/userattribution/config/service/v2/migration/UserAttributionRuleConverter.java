@@ -379,7 +379,7 @@ class UserAttributionRuleConverter {
                 .setRequestCookie(
                     KeyMatch.newBuilder()
                         .setOperator(KEY_MATCH_OPERATOR_EQUALS)
-                        .setMatchKey(headerLocation.getHeaderName())));
+                        .setMatchKey(headerLocation.getCookieName())));
         break;
       default:
         throw new LegacyUserAttributionRuleTranslationException("Unknown header location case");
