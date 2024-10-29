@@ -14,27 +14,31 @@ data:
     service.rest.maxHeaderSize = {{ .Values.service.rest.maxHeaderSize }}
     generic.config.service {
       document.store {
-        mongo {
-          host = {{ .Values.traceableConfigServiceConfig.mongo.host | quote }}
-          url = {{ .Values.traceableConfigServiceConfig.mongo.url | quote }}
-        }
-      }
-      publish.change.events = {{ .Values.traceableConfigServiceConfig.publishChangeEvents }}
-      document.store {
-        {{- $dst := .Values.traceableConfigServiceConfig.dataStoreType }}
+        {{- if .Values.database }}
+        {{- $dst := .Values.database.type }}
         dataStoreType = {{ $dst }}
+        appName = {{ .Values.service.name }}
+
+        {{- range $key, $value := (index .Values "database") }}
+        {{- if ne $key $dst }}
+        {{ $key }} = {{- toJson $value }}
+        {{- end }}
+        {{- end }}
+    
         {{ $dst }} {
-          {{- range $key, $value := (index .Values "traceableConfigServiceConfig" (printf "%s" $dst)) }}
+          {{- range $key, $value := (index .Values "database" (printf "%s" $dst)) }}
           {{- if $value }}
-            {{- if eq $key "password" }}
+            {{- if hasPrefix "${?" (printf "%s" $value) }}
           {{ $key }} = {{ $value }}
             {{- else }}
-          {{ $key }} = {{ $value | quote }}
+          {{ $key }} = {{- toJson $value }}
             {{- end }}
           {{- end }}
           {{- end }}
         }
+        {{- end }}
       }
+      publish.change.events = {{ .Values.traceableConfigServiceConfig.publishChangeEvents }}
     }
     partitioner.config.service {
       default.profiles = [

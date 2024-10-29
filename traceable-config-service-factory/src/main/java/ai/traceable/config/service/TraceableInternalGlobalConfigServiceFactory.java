@@ -2,9 +2,11 @@ package ai.traceable.config.service;
 
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelConfigServiceFactory;
 import ai.traceable.fraud.datamodel.derivation.config.service.FraudDataModelDerivationConfigServiceFactory;
+import com.typesafe.config.Config;
 import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
+import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
@@ -20,11 +22,14 @@ public class TraceableInternalGlobalConfigServiceFactory implements GrpcPlatform
       GrpcServiceContainerEnvironment grpcServiceContainerEnvironment) {
     SharedConfigServiceProviders providers =
         providersFactory.getProvidersForEnvironment(grpcServiceContainerEnvironment);
+    Config config = providers.getConfig();
+    Datastore datastore =
+        DataStoreUtils.initDataStore(config, grpcServiceContainerEnvironment.getLifecycle());
     return List.of(
-        new GrpcPlatformService(PartitionerConfigServiceFactory.build(providers.getConfig())),
+        new GrpcPlatformService(PartitionerConfigServiceFactory.build(config, datastore)),
         new GrpcPlatformService(
             FraudDataModelConfigServiceFactory.build(
-                providers.getConfig(), providers.getChangeEventGenerator())),
+                providers.getChangeEventGenerator(), datastore)),
         new GrpcPlatformService(
             FraudDataModelDerivationConfigServiceFactory.build(
                 providers.getLocalChannel(), providers.getChangeEventGenerator())));

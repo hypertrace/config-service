@@ -8,8 +8,8 @@ hypertrace-configservice-notification-rule-impl = { module = "org.hypertrace.con
 hypertrace-configservice-notification-channel-impl = { module = "org.hypertrace.config.service:notification-channel-config-service-impl" }
 hypertrace-configservice-span-processing-api = { module = "org.hypertrace.config.service:span-processing-config-service-api" }
 hypertrace-configservice-protoconverter = { module = "org.hypertrace.config.service:config-proto-converter" }
-hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service:object-store" }
-hypertrace-configservice-validation = { module = "org.hypertrace.config.service:validation-utils" }
+hypertrace-configservice-objectstore = { module = "org.hypertrace.config.service:config-object-store" }
+hypertrace-configservice-validation = { module = "org.hypertrace.config.service:config-validation-utils" }
 hypertrace-configservice-spanProcessingUtils = { module = "org.hypertrace.config.service:span-processing-utils" }
 hypertrace-configservice-changeeventgenerator = { module = "org.hypertrace.config.service:config-service-change-event-generator" }
 hypertrace-configservice-changeeventapi = { module = "org.hypertrace.config.service:config-service-change-event-api" }

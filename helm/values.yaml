@@ -180,10 +180,6 @@ apiNamingConfigs:
 traceableConfigServiceConfig:
   name: traceable-config-service-config
   publishChangeEvents: false
-  dataStoreType: "mongo"
-  mongo:
-    host: mongo
-    url: ""
 
   partitionerServiceConfig:
     defaultProfiles:

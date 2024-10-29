@@ -1,7 +1,5 @@
 package ai.traceable.config.service;
 
-import static ai.traceable.config.service.metric.TraceableConfigMetricsReporter.getConfigurationCounterConfig;
-
 import ai.traceable.alerting.config.service.EventConditionConfigServiceImpl;
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceFactory;
 import ai.traceable.anomalyscoring.config.service.AnomalyScoringConfigServiceFactory;
@@ -54,6 +52,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.hypertrace.config.service.ConfigServiceFactory;
+import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformService;
 import org.hypertrace.core.serviceframework.grpc.GrpcPlatformServiceFactory;
 import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment;
@@ -68,6 +67,8 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
   public List<GrpcPlatformService> buildServices(GrpcServiceContainerEnvironment environment) {
     SharedConfigServiceProviders providers =
         providersFactory.getProvidersForEnvironment(environment);
+    Datastore datastore =
+        DataStoreUtils.initDataStore(providers.getConfig(), environment.getLifecycle());
     return Stream.of(
             hypertraceConfigServiceFactory
                 .buildServices(
@@ -75,7 +76,7 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getConfig(),
                     providers.getChangeEventGenerator(),
                     environment,
-                    getConfigurationCounterConfig())
+                    datastore)
                 .stream(),
             wrap(
                 new SensitiveDataConfigServicesProvider(
