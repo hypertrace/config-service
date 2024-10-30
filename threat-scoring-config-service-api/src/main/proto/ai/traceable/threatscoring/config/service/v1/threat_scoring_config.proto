@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package ai.traceable.threatscoring.config.service.v1;
+
+option java_multiple_files = true;
+
+message ScopedThreatScoringConfigs {
+  ThreatScoringConfigScope config_scope = 1;
+  ThreatScoringConfigs configs = 2;
+}
+
+message ThreatScoringConfigs {
+  EventConfidenceScoringConfig event_confidence_scoring_config = 1;
+}
+
+message EventConfidenceScoringConfig {
+  EventConfidenceMatrixConfig event_confidence_matrix_config = 1;
+  MaliciousSpanConfidenceScoring malicious_span_confidence_scoring = 2;
+  AnomalousEventConfidenceConfig anomalous_event_confidence_config = 3;
+}
+
+//to be added later
+message EventConfidenceMatrixConfig{
+}
+
+message MaliciousSpanConfidenceScoring {
+  ScoringLevelConfig level_config = 1;
+}
+
+message AnomalousEventConfidenceConfig {
+  ScoringLevelConfig level_config = 1;
+  int32 min_number_of_unlearnt_params_in_api = 3;
+  int32 min_number_of_unique_unexpected_characters = 4;
+}
+
+message ScoringLevelConfig {
+  int32 medium_level_min_score = 1;
+  int32 high_level_min_score = 2;
+}
+
+message ThreatScoringConfigScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  string environment_id = 1;
+}

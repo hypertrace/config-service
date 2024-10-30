@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package ai.traceable.threatscoring.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/threatscoring/config/service/v1/threat_scoring_config.proto";
+
+message GetScopedThreatScoringConfigsRequest {
+  ThreatScoringConfigScope config_scope = 1;
+  GetScopedThreatScoringConfigsFilter filter = 2;
+}
+
+message GetScopedThreatScoringConfigsResponse {
+  ScopedThreatScoringConfigs scoped_threat_scoring_configs = 1;
+  ThreatScoringConfigs default_threat_scoring_configs = 2;
+}
+
+message OverrideEventConfidenceScoringConfigRequest {
+  ThreatScoringConfigScope scope = 1;
+  EventConfidenceScoringConfig event_confidence_scoring_config = 2;
+}
+
+message OverrideEventConfidenceScoringConfigResponse {
+  ThreatScoringConfigScope scope = 1;
+  EventConfidenceScoringConfig resolved_event_confidence_scoring_config = 2;
+  EventConfidenceScoringConfig default_event_confidence_scoring_config = 3;
+}
+
+message DeleteEventConfidenceScoringConfigOverridesRequest {
+  ThreatScoringConfigScope config_scope = 1;
+}
+
+message DeleteEventConfidenceScoringConfigOverridesResponse {
+  EventConfidenceScoringConfig default_event_confidence_scoring_config = 1;
+}
+
+message GetScopedThreatScoringConfigsFilter {
+  ThreatScoringConfigType config_type = 1;
+}
+
+enum ThreatScoringConfigType {
+  THREAT_SCORING_CONFIG_TYPE_UNSPECIFIED = 0;
+  THREAT_SCORING_CONFIG_TYPE_EVENT_CONFIDENCE_SCORING = 1;
+}

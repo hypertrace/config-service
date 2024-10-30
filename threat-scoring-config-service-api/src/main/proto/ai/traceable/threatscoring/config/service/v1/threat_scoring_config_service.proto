@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ai.traceable.threatscoring.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/threatscoring/config/service/v1/threat_scoring_request_response.proto";
+
+service ThreatScoringConfigService {
+
+  rpc GetScopedThreatScoringConfigs(GetScopedThreatScoringConfigsRequest) returns (GetScopedThreatScoringConfigsResponse) {}
+
+  rpc OverrideEventConfidenceScoringConfig(OverrideEventConfidenceScoringConfigRequest) returns (OverrideEventConfidenceScoringConfigResponse) {}
+
+  rpc DeleteEventConfidenceScoringConfigOverrides(DeleteEventConfidenceScoringConfigOverridesRequest) returns (DeleteEventConfidenceScoringConfigOverridesResponse) {}
+}
