@@ -15,24 +15,23 @@ import java.util.stream.Collectors;
 class AttributeKeysExtractor {
 
   List<String> getRequestHeaderAttributeKeys(KeyMatch keyMatch) {
-    if (keyMatch.getOperator().equals(KEY_MATCH_OPERATOR_EQUALS)) {
-      return REQUEST_HEADER_KEY_FORMAT_STRINGS.stream()
-          .map(formatString -> String.format(formatString, keyMatch.getMatchKey().toLowerCase()))
-          .collect(Collectors.toUnmodifiableList());
-    } else {
-      return REQUEST_HEADER_KEY_ESCAPED_FORMAT_STRINGS.stream()
-          .map(formatString -> String.format(formatString, translateSuffixKey(keyMatch)))
-          .collect(Collectors.toUnmodifiableList());
-    }
+    return getHeaderAttributeKeys(
+        keyMatch, REQUEST_HEADER_KEY_FORMAT_STRINGS, REQUEST_HEADER_KEY_ESCAPED_FORMAT_STRINGS);
   }
 
   List<String> getResponseHeaderAttributeKeys(KeyMatch keyMatch) {
+    return getHeaderAttributeKeys(
+        keyMatch, RESPONSE_HEADER_KEY_FORMAT_STRINGS, RESPONSE_HEADER_KEY_ESCAPED_FORMAT_STRINGS);
+  }
+
+  private List<String> getHeaderAttributeKeys(
+      KeyMatch keyMatch, List<String> keyFormatStrings, List<String> escapedKeyFormatStrings) {
     if (keyMatch.getOperator().equals(KEY_MATCH_OPERATOR_EQUALS)) {
-      return RESPONSE_HEADER_KEY_FORMAT_STRINGS.stream()
+      return keyFormatStrings.stream()
           .map(formatString -> String.format(formatString, keyMatch.getMatchKey().toLowerCase()))
           .collect(Collectors.toUnmodifiableList());
     } else {
-      return RESPONSE_HEADER_KEY_ESCAPED_FORMAT_STRINGS.stream()
+      return escapedKeyFormatStrings.stream()
           .map(formatString -> String.format(formatString, translateSuffixKey(keyMatch)))
           .collect(Collectors.toUnmodifiableList());
     }
