@@ -4,6 +4,8 @@ import static ai.traceable.config.utils.RegexUtils.escapeRegex;
 
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ComparisonOperator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
+import ai.traceable.userattribution.config.service.v2.KeyMatch;
+import ai.traceable.userattribution.config.service.v2.KeyMatchOperator;
 import ai.traceable.userattribution.config.service.v2.MatchCondition;
 import ai.traceable.userattribution.config.service.v2.ValueMatchOperator;
 import io.grpc.Status;
@@ -29,7 +31,11 @@ class MatchConditionTranslator {
     }
   }
 
-  private StringPredicate buildStringPredicate(ValueMatchOperator operator, String value) {
+  StringPredicate translate(KeyMatch keyMatch) {
+    return buildStringPredicate(keyMatch.getOperator(), keyMatch.getMatchKey());
+  }
+
+  StringPredicate buildStringPredicate(ValueMatchOperator operator, String value) {
     switch (operator) {
       case VALUE_MATCH_OPERATOR_EQUALS:
         return StringPredicate.newBuilder()
@@ -73,5 +79,34 @@ class MatchConditionTranslator {
     throw Status.INVALID_ARGUMENT
         .withDescription(String.format("Unable to convert match operator %s", operator))
         .asRuntimeException();
+  }
+
+  StringPredicate buildStringPredicate(KeyMatchOperator operator, String value) {
+    switch (operator) {
+      case KEY_MATCH_OPERATOR_EQUALS:
+        return StringPredicate.newBuilder()
+            .setOperator(ComparisonOperator.COMPARISON_OPERATOR_EQUALS)
+            .setValue(value)
+            .build();
+      case KEY_MATCH_OPERATOR_CONTAINS:
+        return StringPredicate.newBuilder()
+            .setOperator(ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX)
+            .setValue(escapeRegex(value))
+            .build();
+      case KEY_MATCH_OPERATOR_STARTS_WITH:
+        return StringPredicate.newBuilder()
+            .setOperator(ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX)
+            .setValue("^" + escapeRegex(value))
+            .build();
+      case KEY_MATCH_OPERATOR_MATCHES_REGEX:
+        return StringPredicate.newBuilder()
+            .setOperator(ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX)
+            .setValue(value)
+            .build();
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(String.format("Unable to convert match operator %s", operator))
+            .asRuntimeException();
+    }
   }
 }

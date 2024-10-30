@@ -14,8 +14,12 @@ public class AgentAttributeConstants {
       List.of("http.request.header.authorization", "rpc.request.metadata.authorization");
   public static final List<String> REQUEST_HEADER_KEY_FORMAT_STRINGS =
       List.of("http.request.header.%s", "rpc.request.metadata.%s");
+  public static final List<String> REQUEST_HEADER_KEY_ESCAPED_FORMAT_STRINGS =
+      List.of("http\\.request\\.header\\.%s", "rpc\\.request\\.metadata\\.%s");
   public static final List<String> RESPONSE_HEADER_KEY_FORMAT_STRINGS =
       List.of("http.response.header.%s", "rpc.response.metadata.%s");
+  public static final List<String> RESPONSE_HEADER_KEY_ESCAPED_FORMAT_STRINGS =
+      List.of("http\\.response\\.header\\.%s", "rpc\\.response\\.metadata\\.%s");
   public static final String END_USER_ID_ATTRIBUTE_KEY = "enduser.id";
   public static final String END_USER_ID_RULE_ATTRIBUTE_KEY = "enduser.id.rule";
   public static final String END_USER_ROLE_ATTRIBUTE_KEY = "enduser.role";

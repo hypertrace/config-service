@@ -38,7 +38,7 @@ public class CustomJsonRuleTranslatorTest {
                                     .setCustomJson(
                                         Resources.asCharSource(
                                                 Resources.getResource(
-                                                    "custom_json_v2/user_id_rule_input.json"),
+                                                    "user_attribution_v2/custom_json/user_id_rule_input.json"),
                                                 Charset.defaultCharset())
                                             .read()))))
             .build();
@@ -49,7 +49,7 @@ public class CustomJsonRuleTranslatorTest {
     assertEquals(1, translatedRules.size());
     assertEquals(
         Resources.asCharSource(
-                Resources.getResource("custom_json_v2/user_id_rule_output.json"),
+                Resources.getResource("user_attribution_v2/custom_json/user_id_rule_output.json"),
                 Charset.defaultCharset())
             .read(),
         JSON_PRINTER.print(translatedRules.get(0)));

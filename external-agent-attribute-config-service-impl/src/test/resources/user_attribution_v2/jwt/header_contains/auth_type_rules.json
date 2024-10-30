@@ -1,0 +1,100 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "valueProjector": {
+                      "value": "OAuth 2.0",
+                      "attributeRule": {
+                        "initialActions": [{
+                          "attributeAddition": {
+                            "attributeKey": "traceableai.auth.types",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "noOpProjector": {
+                                }
+                              }
+                            }
+                          }
+                        }, {
+                          "attributeAddition": {
+                            "attributeKey": "traceableai.auth.rules",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "jwt-header-rule-id"
+                                }
+                              }
+                            }
+                          }
+                        }]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "attributeKeyPredicate": {
+            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+            "value": "http\\.request\\.header\\..*authorization"
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "valueProjector": {
+                      "value": "OAuth 2.0",
+                      "attributeRule": {
+                        "initialActions": [{
+                          "attributeAddition": {
+                            "attributeKey": "traceableai.auth.types",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "noOpProjector": {
+                                }
+                              }
+                            }
+                          }
+                        }, {
+                          "attributeAddition": {
+                            "attributeKey": "traceableai.auth.rules",
+                            "valueProjectionRule": {
+                              "projector": {
+                                "valueProjector": {
+                                  "value": "jwt-header-rule-id"
+                                }
+                              }
+                            }
+                          }
+                        }]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "attributeKeyPredicate": {
+            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+            "value": "rpc\\.request\\.metadata\\..*authorization"
+          }
+        }
+      }
+    }
+  ]
+}

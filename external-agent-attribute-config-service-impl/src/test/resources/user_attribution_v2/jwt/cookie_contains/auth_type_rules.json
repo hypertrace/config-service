@@ -1,0 +1,61 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.header.cookie",
+          "attributeRule": {
+            "projector": {
+              "cookieProjector": {
+                "cookieNameRule": {
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                        "attributeRule": {
+                          "projector": {
+                            "valueProjector": {
+                              "value": "OAuth 2.0",
+                              "attributeRule": {
+                                "initialActions": [{
+                                  "attributeAddition": {
+                                    "attributeKey": "traceableai.auth.types",
+                                    "valueProjectionRule": {
+                                      "projector": {
+                                        "noOpProjector": {
+                                        }
+                                      }
+                                    }
+                                  }
+                                }, {
+                                  "attributeAddition": {
+                                    "attributeKey": "traceableai.auth.rules",
+                                    "valueProjectionRule": {
+                                      "projector": {
+                                        "valueProjector": {
+                                          "value": "jwt-cookie-rule-id"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "keyPredicate": {
+                    "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                    "value": "jwt"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

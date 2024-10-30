@@ -5,13 +5,17 @@ import static ai.traceable.external.agent.attribute.config.service.translator.Ag
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.RESPONSE_BODY_KEYS;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.RESPONSE_COOKIE_HEADER_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.URL_OR_QUERY_ATTRIBUTE_KEYS;
+import static ai.traceable.userattribution.config.service.v2.KeyMatchOperator.KEY_MATCH_OPERATOR_EQUALS;
 
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
+import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ParsedObjectKeyRule;
 import ai.traceable.userattribution.config.service.v2.Attribute;
+import ai.traceable.userattribution.config.service.v2.KeyMatch;
+import ai.traceable.userattribution.config.service.v2.KeyMatchOperator;
 import ai.traceable.userattribution.config.service.v2.Predicate.AttributePredicate;
 import io.grpc.Status;
 import java.util.List;
@@ -45,36 +49,32 @@ class AttributeTranslator {
     switch (attribute.getAttributeCase()) {
       case REQUEST_HEADER:
         return translateAttributeKeys(
-            attributeKeysExtractor.getRequestHeaderAttributeKeys(
-                attribute.getRequestHeader().getMatchKey()),
+            attributeKeysExtractor.getRequestHeaderAttributeKeys(attribute.getRequestHeader()),
+            attribute.getRequestHeader().getOperator(),
             childAttributeRule);
       case REQUEST_COOKIE:
         return translateCookieAttributeKey(
-            REQUEST_COOKIE_HEADER_KEY,
-            attribute.getRequestCookie().getMatchKey(),
-            childAttributeRule);
+            REQUEST_COOKIE_HEADER_KEY, attribute.getRequestCookie(), childAttributeRule);
       case REQUEST_QUERY_PARAMETER:
         return translateQueryAttributeKeys(
-            URL_OR_QUERY_ATTRIBUTE_KEYS,
-            attribute.getRequestQueryParameter().getMatchKey(),
-            childAttributeRule);
+            URL_OR_QUERY_ATTRIBUTE_KEYS, attribute.getRequestQueryParameter(), childAttributeRule);
       case REQUEST_BODY:
         return translateAttributeKeys(REQUEST_BODY_KEYS, childAttributeRule);
       case RESPONSE_HEADER:
         return translateAttributeKeys(
-            attributeKeysExtractor.getResponseHeaderAttributeKeys(
-                attribute.getRequestHeader().getMatchKey()),
+            attributeKeysExtractor.getResponseHeaderAttributeKeys(attribute.getResponseHeader()),
+            attribute.getResponseHeader().getOperator(),
             childAttributeRule);
       case RESPONSE_COOKIE:
         return translateCookieAttributeKey(
-            RESPONSE_COOKIE_HEADER_KEY,
-            attribute.getResponseCookie().getMatchKey(),
-            childAttributeRule);
+            RESPONSE_COOKIE_HEADER_KEY, attribute.getResponseCookie(), childAttributeRule);
       case RESPONSE_BODY:
         return translateAttributeKeys(RESPONSE_BODY_KEYS, childAttributeRule);
       case SPAN_ATTRIBUTE:
         return translateAttributeKeys(
-            List.of(attribute.getSpanAttribute().getMatchKey()), childAttributeRule);
+            List.of(attribute.getSpanAttribute().getMatchKey()),
+            attribute.getSpanAttribute().getOperator(),
+            childAttributeRule);
       default:
         throw Status.INTERNAL
             .withDescription(
@@ -91,15 +91,45 @@ class AttributeTranslator {
                 attributeRuleBuilder.buildRuleForAttribute(attributeKey, childAttributeRule));
   }
 
+  private Stream<AttributeRule> translateAttributeKeys(
+      List<String> attributeKeys,
+      KeyMatchOperator keyMatchOperator,
+      AttributeRule childAttributeRule) {
+    if (keyMatchOperator.equals(KEY_MATCH_OPERATOR_EQUALS)) {
+      return attributeKeys.stream()
+          .map(
+              attributeKey ->
+                  attributeRuleBuilder.buildRuleForAttribute(attributeKey, childAttributeRule));
+    } else {
+      return attributeKeys.stream()
+          .map(
+              attributeKeyRegex ->
+                  Predicate.StringPredicate.newBuilder()
+                      .setOperator(Predicate.ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX)
+                      .setValue(attributeKeyRegex)
+                      .build())
+          .map(
+              predicate ->
+                  attributeRuleBuilder.buildRuleForAttribute(predicate, childAttributeRule));
+    }
+  }
+
   private Stream<AttributeRule> translateCookieAttributeKey(
-      String attributeKey, String cookieName, AttributeRule childAttributeRule) {
+      String attributeKey, KeyMatch keyMatch, AttributeRule childAttributeRule) {
     return Stream.of(
         attributeRuleBuilder.buildRuleForAttribute(
-            attributeKey, attributeRuleBuilder.buildRuleForCookie(cookieName, childAttributeRule)));
+            attributeKey,
+            keyMatch.getOperator().equals(KEY_MATCH_OPERATOR_EQUALS)
+                ? attributeRuleBuilder.buildRuleForCookie(
+                    keyMatch.getMatchKey(), childAttributeRule)
+                : attributeRuleBuilder.buildRuleForCookie(
+                    matchConditionTranslator.buildStringPredicate(
+                        keyMatch.getOperator(), keyMatch.getMatchKey()),
+                    childAttributeRule)));
   }
 
   private Stream<AttributeRule> translateQueryAttributeKeys(
-      List<String> attributeKeys, String queryParam, AttributeRule childAttributeRule) {
+      List<String> attributeKeys, KeyMatch keyMatch, AttributeRule childAttributeRule) {
     return attributeKeys.stream()
         .map(
             attributeKey ->
@@ -129,14 +159,23 @@ class AttributeTranslator {
                                                                                     .UrlEncodedProjector
                                                                                     .newBuilder()
                                                                                     .setUrlParamRule(
-                                                                                        Projector
-                                                                                            .ParsedObjectKeyRule
-                                                                                            .newBuilder()
-                                                                                            .setKey(
-                                                                                                queryParam)
-                                                                                            .setAttributeRule(
-                                                                                                childAttributeRule))))))))))
+                                                                                        buildParsedObjectKeyRule(
+                                                                                            keyMatch,
+                                                                                            childAttributeRule))))))))))
                     .build());
+  }
+
+  private ParsedObjectKeyRule.Builder buildParsedObjectKeyRule(
+      KeyMatch keyMatch, AttributeRule childAttributeRule) {
+    if (keyMatch.getOperator().equals(KEY_MATCH_OPERATOR_EQUALS)) {
+      return ParsedObjectKeyRule.newBuilder()
+          .setKey(keyMatch.getMatchKey())
+          .setAttributeRule(childAttributeRule);
+    } else {
+      return ParsedObjectKeyRule.newBuilder()
+          .setKeyPredicate(matchConditionTranslator.translate(keyMatch))
+          .setAttributeRule(childAttributeRule);
+    }
   }
 
   private AttributeRule.Builder addMatchConditionForPredicate(

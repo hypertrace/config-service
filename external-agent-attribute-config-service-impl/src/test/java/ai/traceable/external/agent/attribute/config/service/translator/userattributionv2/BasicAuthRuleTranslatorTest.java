@@ -24,10 +24,12 @@ class BasicAuthRuleTranslatorTest {
     List<AttributeRule> translatedRules =
         userAttributionRuleV2Translator
             .translateRuleForUserId(
-                TestUtils.getUserAttributionRuleV2("basic_auth_v2/input_rule.json"))
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/basic_auth/input_rule.json"))
             .collect(Collectors.toUnmodifiableList());
     assertEquals(
-        TestUtils.getExpectedAttributeRules("basic_auth_v2/user_id_rules.json"), translatedRules);
+        TestUtils.getExpectedAttributeRules("user_attribution_v2/basic_auth/user_id_rules.json"),
+        translatedRules);
   }
 
   @Test
@@ -35,7 +37,8 @@ class BasicAuthRuleTranslatorTest {
     List<AttributeRule> translatedRules =
         userAttributionRuleV2Translator
             .translateRuleForAuthType(
-                TestUtils.getUserAttributionRuleV2("basic_auth_v2/input_rule.json"))
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/basic_auth/input_rule.json"))
             .collect(Collectors.toUnmodifiableList());
     Assertions.assertEquals(Collections.emptyList(), translatedRules);
   }

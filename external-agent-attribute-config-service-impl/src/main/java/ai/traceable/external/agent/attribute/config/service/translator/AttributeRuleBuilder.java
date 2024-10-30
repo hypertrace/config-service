@@ -141,6 +141,18 @@ public class AttributeRuleBuilder {
         .build();
   }
 
+  public AttributeRule buildRuleForAttribute(
+      StringPredicate stringPredicate, AttributeRule childRule) {
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setAttributeProjector(
+                    AttributeProjector.newBuilder()
+                        .setAttributeKeyPredicate(stringPredicate)
+                        .setAttributeRule(childRule)))
+        .build();
+  }
+
   public AttributeRule buildRuleForRegexCaptureGroup(
       String regexCaptureGroup, AttributeRule childRule) {
     return AttributeRule.newBuilder()
@@ -203,6 +215,19 @@ public class AttributeRuleBuilder {
                         .setCookieNameRule(
                             ParsedObjectKeyRule.newBuilder()
                                 .setKey(cookieName)
+                                .setAttributeRule(childRule))))
+        .build();
+  }
+
+  public AttributeRule buildRuleForCookie(StringPredicate predicate, AttributeRule childRule) {
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setCookieProjector(
+                    CookieProjector.newBuilder()
+                        .setCookieNameRule(
+                            ParsedObjectKeyRule.newBuilder()
+                                .setKeyPredicate(predicate)
                                 .setAttributeRule(childRule))))
         .build();
   }
