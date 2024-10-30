@@ -3,7 +3,7 @@
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.0=testRuntimeClasspath
 ai.traceable.activity.event.service:activity-event-api:8.0.22=testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.1443=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1455=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.14.23=testRuntimeClasspath
@@ -28,7 +28,7 @@ ai.traceable.platform:conditions-matcher:2.0.7=testRuntimeClasspath
 ai.traceable.platform:config-providers:2.0.7=testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.137=testRuntimeClasspath
 ai.traceable.platform:insights-service-api:2.0.112=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform:jni-modsecurity:0.1.126=testRuntimeClasspath
+ai.traceable.platform:jni-modsecurity:0.1.127=testRuntimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.53=testRuntimeClasspath
 ai.traceable.platform:session-constants:1.0.38=testRuntimeClasspath
 ai.traceable.platform:trace-data-parser:2.0.7=testRuntimeClasspath
