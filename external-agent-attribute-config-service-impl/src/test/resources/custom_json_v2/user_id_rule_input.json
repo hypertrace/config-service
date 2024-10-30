@@ -1,0 +1,47 @@
+{
+  "projector": {
+    "conditionalProjector": {
+      "predicate": {
+        "attributePredicate": {
+          "namePredicate": {
+            "operator": "COMPARISON_OPERATOR_EQUALS",
+            "value": "http.url"
+          },
+          "valuePredicate": {
+            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+            "value": "\\/loginservice\\/login"
+          }
+        }
+      },
+      "attributeRule": {
+        "projector": {
+          "attributeProjector": {
+            "attributeKey": "http.response.body",
+            "attributeRule": {
+              "projector": {
+                "jsonProjector": {
+                  "jsonPathRule": {
+                    "key": "$.user.email",
+                    "attributeRule": {
+                      "initialActions": [{
+                        "attributeAddition": {
+                          "attributeKey": "enduser.id",
+                          "valueProjectionRule": {
+                            "projector": {
+                              "noOpProjector": {
+                              }
+                            }
+                          }
+                        }
+                      }]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

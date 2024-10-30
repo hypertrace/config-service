@@ -40,6 +40,14 @@ public class TestUtils {
     return ruleBuilder.build();
   }
 
+  public static ai.traceable.userattribution.config.service.v2.UserAttributionRule
+      getUserAttributionRuleV2(String filename) throws IOException {
+    ai.traceable.userattribution.config.service.v2.UserAttributionRule.Builder ruleBuilder =
+        ai.traceable.userattribution.config.service.v2.UserAttributionRule.newBuilder();
+    PARSER.merge(reader(filename), ruleBuilder);
+    return ruleBuilder.build();
+  }
+
   @SneakyThrows
   public static SessionIdentificationRule getSessionIdentificationRule(String fileName) {
     SessionIdentificationRule.Builder ruleBuilder = SessionIdentificationRule.newBuilder();

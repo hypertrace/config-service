@@ -61,11 +61,25 @@ class UserAttributionTokenRuleTranslator {
       AttributeRule childAttributeRule) {
     switch (tokenRule.getProjectionCase()) {
       case LITERAL_VALUE_PROJECTION:
-        return Stream.of(
-            predicateTranslator.addConditionalPredicateIfPresent(
-                tokenRule,
-                translateLiteralValueProjection(
-                    tokenRule.getLiteralValueProjection(), childAttributeRule)));
+        AttributeRule literalValueProjection =
+            translateLiteralValueProjection(
+                tokenRule.getLiteralValueProjection(), childAttributeRule);
+        if (rootTokenRule.equals(UserAttributionRootTokenRule.getDefaultInstance())) {
+          return Stream.of(
+              predicateTranslator.addConditionalPredicateIfPresent(
+                  tokenRule, literalValueProjection));
+        } else {
+          AttributeProjection rootAttributeProjection = rootTokenRule.getAttributeProjection();
+          return translateAttributeProjection(
+                  rootAttributeProjection.getAttribute(),
+                  rootAttributeProjection.getValueProjectionsList(),
+                  Collections.emptyList(),
+                  literalValueProjection)
+              .map(
+                  attributeRule ->
+                      predicateTranslator.addConditionalPredicateIfPresent(
+                          rootTokenRule, attributeRule));
+        }
       case CUSTOM_PROJECTION:
         return Stream.of(
             predicateTranslator.addConditionalPredicateIfPresent(

@@ -51,7 +51,7 @@ class AttributeTranslator {
       case REQUEST_COOKIE:
         return translateCookieAttributeKey(
             REQUEST_COOKIE_HEADER_KEY,
-            attribute.getResponseCookie().getMatchKey(),
+            attribute.getRequestCookie().getMatchKey(),
             childAttributeRule);
       case REQUEST_QUERY_PARAMETER:
         return translateQueryAttributeKeys(

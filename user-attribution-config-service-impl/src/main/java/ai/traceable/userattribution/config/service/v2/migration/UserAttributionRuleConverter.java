@@ -142,7 +142,6 @@ class UserAttributionRuleConverter {
             : DEFAULT_BASIC_AUTHORIZATION_ATTRIBUTE_BUILDER;
     tokenRuleBuilder.setAttributeProjection(attributeProjectionBuilder);
     builder.setUserIdRule(tokenRuleBuilder);
-    builder.setAuthTypeRule(getLiteralValueProjectionBuilder(BASIC_AUTH_TYPE));
   }
 
   private void convertJwtData(

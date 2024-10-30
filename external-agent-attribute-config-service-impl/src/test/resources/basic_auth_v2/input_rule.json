@@ -1,0 +1,42 @@
+{
+  "id": "basic-auth-rule-id",
+  "data": {
+    "name": "Basic Auth",
+    "scope": {
+      "environmentScope": {
+        "environmentNames": {
+          "values": [
+            "test-env"
+          ]
+        }
+      }
+    },
+    "userIdRule": {
+      "attributeProjection": {
+        "attribute": {
+          "requestHeader": {
+            "operator": "KEY_MATCH_OPERATOR_EQUALS",
+            "matchKey": "authorization"
+          }
+        },
+        "valueProjections": [
+          {
+            "regexCaptureGroup": {
+              "regex": "(?i)Basic:? (.*)"
+            }
+          },
+          {
+            "base64": {}
+          },
+          {
+            "regexCaptureGroup": {
+              "regex": "^([^:]+):?"
+            }
+          }
+        ]
+      }
+    },
+    "template": "TEMPLATE_BASIC"
+  },
+  "rank": 1
+}

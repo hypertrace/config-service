@@ -1,0 +1,73 @@
+{
+  "id": "jwt-cookie-rule-id",
+  "data": {
+    "name": "Jwt Auth",
+    "scope": {
+      "environmentScope": {
+        "environmentNames": {
+          "values": [
+            "test-env"
+          ]
+        }
+      }
+    },
+    "rootTokenRule": {
+      "attributeProjection": {
+        "attribute": {
+          "requestCookie": {
+            "operator": "KEY_MATCH_OPERATOR_EQUALS",
+            "matchKey": "jwt"
+          }
+        },
+        "valueProjections": [
+          {
+            "regexCaptureGroup": {
+              "regex": "^(?:(?i)Bearer:? )?(.*)$"
+            }
+          }
+        ]
+      }
+    },
+    "userIdRule": {
+      "rootRelativeProjection": {
+        "valueProjections": [
+          {
+            "jwtPayloadClaim": {
+              "claimKey": "sub"
+            }
+          },
+          {
+            "jsonPath": {
+              "path": "$.user.id"
+            }
+          }
+        ]
+      }
+    },
+    "userRoleRule": {
+      "rootRelativeProjection": {
+        "valueProjections": [
+          {
+            "jwtPayloadClaim": {
+              "claimKey": "sub"
+            }
+          },
+          {
+            "jsonPath": {
+              "path": "$.user.role"
+            }
+          }
+        ]
+      }
+    },
+    "authTypeRule": {
+      "literalValueProjection": {
+        "literalValue": {
+          "stringValue": "OAuth 2.0"
+        }
+      }
+    },
+    "template": "TEMPLATE_JWT"
+  },
+  "rank": 2
+}

@@ -5,7 +5,6 @@ import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_B
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_CUSTOM;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_JWT;
 import static ai.traceable.userattribution.config.service.v2.ValueMatchOperator.VALUE_MATCH_OPERATOR_NOT_EQUALS;
-import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.BASIC_AUTH_TYPE;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP;
@@ -75,7 +74,7 @@ class UserAttributionRuleConverterTest {
                     buildBase64ValueProjection(),
                     buildRegexCaptureGroupValueProjection(
                         DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP))),
-            buildLiteralValueProjectionTokenRuleV2(BASIC_AUTH_TYPE));
+            null);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
