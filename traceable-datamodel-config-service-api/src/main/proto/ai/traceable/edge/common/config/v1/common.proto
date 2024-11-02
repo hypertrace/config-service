@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ai.traceable.edge.common.config.v1;
+
+option java_package = "ai.traceable.edge.common.config.v1";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+
+message MatchCondition {
+  oneof condition {
+    // this needs to be a boolean expression. if it's non-boolean, then it's false.
+    ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig jexl_expression = 1;
+    ai.traceable.datamodel.data.transformation.config.v1.JexlScriptConfig jexl_script = 2;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environments = 1;
+}
+
+message ConfigTtl {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp expires_at = 2;
+  bool enabled = 4;
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+enum EdgeInputKind {
+  EDGE_INPUT_KIND_UNSPECIFIED = 0;
+  EDGE_INPUT_KIND_HTTP_REQUEST = 1;
+  EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA = 2;
+}
+
+enum EdgeDecision {
+  EDGE_DECISION_UNSPECIFIED = 0;
+  EDGE_DECISION_ALLOW = 1;
+  EDGE_DECISION_BLOCK = 2;
+  EDGE_DECISION_CAPTCHA = 3;
+}

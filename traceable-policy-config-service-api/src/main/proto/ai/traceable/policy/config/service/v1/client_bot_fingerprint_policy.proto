@@ -1,0 +1,56 @@
+syntax = "proto3";
+package ai.traceable.policy.config.service.v1;
+option java_package = "ai.traceable.policy.config.service.v1";
+option java_multiple_files = true;
+import "google/protobuf/struct.proto";
+
+message ClientBotFingerprintPolicy {
+  bool use_default = 1;
+  float bot_suspicion_threshold = 2;
+  BotFingerprintScore default_scores = 4;
+  repeated BotFingerprintEvalRule rules = 3;
+}
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_WEBGL = 1;
+  RULE_TYPE_CANVAS = 2;
+  RULE_TYPE_WEBRTC_IPS = 3;
+  RULE_TYPE_AUDIO_FINGERPRINT = 4;
+  RULE_TYPE_MOUSE_MOVEMENTS = 5;
+  RULE_TYPE_TOUCH_EVENTS = 6;
+  RULE_TYPE_HIDDEN_ELEMENT_INTERACTION = 7;
+  RULE_TYPE_USER_AGENT = 8;
+  RULE_TYPE_LANGUAGE_TIMEZONE = 9;
+  RULE_TYPE_TLS_FINGERPRINT = 10;
+  RULE_TYPE_CSS_QUERIES = 11;
+  RULE_TYPE_NAVIGATOR_ANOMALIES = 12;
+  RULE_TYPE_WEBDRIVER = 13;
+  RULE_TYPE_WINDOW_SIZE = 14;
+  RULE_TYPE_FONT_DETECTION = 15;
+  RULE_TYPE_DISABLED_ELEMENT_INTERACTION = 17;
+  RULE_TYPE_HONEYPOT_INTERACTION = 18;
+  RULE_TYPE_MATH_FINGERPRINT = 20;
+  RULE_TYPE_PERFORMANCE_DATA = 21;
+  RULE_TYPE_SCREEN_DATA = 22;
+  RULE_TYPE_CLICK_EVENTS = 23;
+  RULE_TYPE_TIMEZONE = 24;
+  RULE_TYPE_DOM_MUTATION_COUNT = 26;
+  RULE_TYPE_BROWSER_INFO = 27;
+  RULE_TYPE_NETWORK_INFORMATION = 28;
+  RULE_TYPE_CUSTOM = 200;
+}
+
+message BotFingerprintEvalRule {
+  bool enabled = 1;
+  float weight = 2;
+  google.protobuf.Value config = 3;
+  RuleType rule_type = 4;
+  BotFingerprintScore scores = 5;
+}
+
+message BotFingerprintScore {
+  float high_score = 1;
+  float medium_score = 2;
+  float low_score = 3;
+}

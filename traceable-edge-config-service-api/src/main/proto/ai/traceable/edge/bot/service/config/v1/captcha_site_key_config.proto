@@ -1,0 +1,26 @@
+syntax = "proto3";
+package ai.traceable.edge.bot.service.config.v1;
+option java_package = "ai.traceable.edge.bot.service.config.v1";
+option java_multiple_files = true;
+
+enum CaptchaMode {
+  CAPTCHA_MODE_UNSPECIFIED = 0;
+  CAPTCHA_MODE_AUTO = 1;
+  CAPTCHA_MODE_FORCE_VISUAL = 2;
+}
+
+enum CaptchaDifficulty {
+  CAPTCHA_DIFFICULTY_UNSPECIFIED = 0;
+  CAPTCHA_DIFFICULTY_EASY = 1;
+  CAPTCHA_DIFFICULTY_MEDIUM = 2;
+  CAPTCHA_DIFFICULTY_HARD = 3;
+}
+
+message CaptchaSiteKeyConfig {
+  string id = 1;
+  string private_key = 2;
+  repeated string domains = 3;
+  repeated string allowed_ip_addresses = 4;
+  CaptchaMode captcha_mode = 5;
+  CaptchaDifficulty captcha_difficulty = 6;
+}

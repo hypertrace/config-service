@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package ai.traceable.datamodel.data.transformation.config.v1;
+
+option java_package = "ai.traceable.datamodel.data.transformation.config.v1";
+option java_multiple_files = true;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/type.proto";
+
+message DataTransformationConfig {
+  oneof transformation {
+    google.protobuf.Value static_value = 1;
+    JexlExpressionConfig jexl_expression = 2;
+    JexlScriptConfig jexl_script = 3;
+    RegexConfig regex = 4;
+    ConditionalConfig conditional = 5;
+  }
+  google.protobuf.Field.Kind output_type = 7;
+}
+
+message JexlScriptConfig {
+  string jexl_script = 1;
+}
+
+message JexlExpressionConfig {
+  string jexl_expression = 1;
+}
+
+message RegexConfig {
+  // expression to generate elements
+  oneof expr {
+    string regex = 1;
+    string split_regex = 2;
+  }
+  // index of elements to select
+  repeated int32 group_indices = 3;
+  // delimiter to be used to join the selected elements
+  string join_delimiter = 4;
+  // optionally, further transform the value.
+  DataTransformationConfig value_transformation = 5;
+}
+
+message ConditionalConfig {
+  string bool_expression = 1; // $val > 299
+  DataTransformationConfig true_transformation = 2; // staticValue = true
+  DataTransformationConfig false_transformation = 3; // staticValue = false
+}
+
+// represents a single rule that derives a value from the transformation context
+message DerivationRule {
+  DataTransformationConfig transformation_config = 1;
+  // apply the rule only if "condition", must eval to bool. if not, assume False.
+  JexlExpressionConfig condition_expression = 3;
+}
+
+// represents a single attribute that needs to be extracted from the transformation context
+message AttributeDerivationMapping {
+  // name of the attribute
+  string name = 1;
+  // type of the attribute
+  google.protobuf.Field.Kind type = 2; // str, boo
+  // ordered list of derivation rules, that provide the value for the attribute
+  // first non-null rule
+  repeated DerivationRule rules = 3;
+}
+
+// though similar to AttributeDerivationMapping, these are an indication for storing and ability reference them
+// in the same transformation context
+message VariableDerivationMapping {
+  // name of the attribute
+  string name = 1;
+  // ordered list of derivation rules, that provide the value for the attribute
+  // first non-null rule
+  repeated DerivationRule rules = 3;
+}
