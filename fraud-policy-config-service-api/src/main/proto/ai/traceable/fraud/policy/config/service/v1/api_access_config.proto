@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+option java_multiple_files = true;
+import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
+
+message CorrelationKey {
+  repeated string attributes = 1; // Ex: (IP, UA)
+}
+
+message APISpec {
+  ApiReference api_reference = 1;
+  int32 weight = 2;
+  RequestAttributes request_attributes = 3;
+  double median_pct = 4;
+}
+
+message ApiCollection {
+  repeated APISpec apis = 1;  // Sequence of API objects
+}
+
+message GroupedConfig {
+  ApiCollection pre = 1;  // Pre-target API sequence
+  ApiCollection post = 2; // Post-target API sequence,
+  CorrelationKey correlation_key = 3; // correlation key
+  ApiReference api_reference = 4;
+  ai.traceable.fraud.policy.config.service.v1.TimeWindow lookback_time_window = 5;
+  RequestAttributes request_attributes = 6; // for use in inline scenario
+  ApiOccurenceStats pre_occurence_stats = 7;
+  ApiOccurenceStats post_occurence_stats = 8;
+  map<string, string> grouping_kv = 9;
+}
+
+message ApiAccessAnomalyConfig {
+  string id = 1;
+  repeated GroupedConfig grouped_configs = 2;
+}
+
+message RequestAttributes {
+  repeated string request_method = 1;
+  oneof response_status_code {
+    int32 status_code = 2;
+    string status_code_regex = 3;
+  }
+  repeated string request_body_type = 4;
+  repeated string domain_names = 5;
+  string environment = 6;
+  repeated string host_header = 7;
+}
+
+message ApiReference {
+  string api_id = 1;
+  string api_type = 2;
+  string api_name = 3;
+}
+
+message ApiOccurenceStats{
+  double prob_no_api_median = 1;
+  double prob_no_api_median_absolute_deviation = 2;
+}

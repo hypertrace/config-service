@@ -5,6 +5,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 option java_multiple_files = true;
 
 import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
+import "ai/traceable/fraud/policy/config/service/v1/api_access_config.proto";
 
 service FraudPolicyConfigService {
   rpc CreateFraudPolicy(CreateFraudPolicyRequest) returns (CreateFraudPolicyResponse) {}
@@ -12,6 +13,11 @@ service FraudPolicyConfigService {
   rpc UpsertFraudPolicy(UpsertFraudPolicyRequest) returns (UpsertFraudPolicyResponse) {}
   rpc GetFraudPolicyList(GetFraudPolicyListRequest) returns (GetFraudPolicyListResponse) {}
   rpc GetFraudPolicy(GetFraudPolicyRequest) returns (GetFraudPolicyResponse) {}
+  rpc GetApiAccessAnomalyConfigs(GetApiAccessAnomalyConfigsRequest) returns (GetApiAccessAnomalyConfigsResponse) {}
+  rpc GetApiAccessAnomalyConfig(GetApiAccessAnomalyConfigRequest) returns (GetApiAccessAnomalyConfigResponse) {}
+  rpc CreateApiAccessAnomalyConfig(CreateApiAccessAnomalyConfigRequest) returns (CreateApiAccessAnomalyConfigResponse) {}
+  rpc UpdateApiAccessAnomalyConfig(UpdateApiAccessAnomalyConfigRequest) returns (UpdateApiAccessAnomalyConfigResponse) {}
+  rpc DeleteApiAccessAnomalyConfig(DeleteApiAccessAnomalyConfigRequest) returns (DeleteApiAccessAnomalyConfigResponse) {}
 }
 
 message CreateFraudPolicyRequest {
@@ -55,4 +61,43 @@ message GetFraudPolicyRequest {
 
 message GetFraudPolicyResponse {
   FraudPolicy fraud_policy = 1;
+}
+
+message GetApiAccessAnomalyConfigRequest {
+  string id = 1;
+}
+
+message GetApiAccessAnomalyConfigResponse {
+  ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig config = 1;
+}
+
+message GetApiAccessAnomalyConfigsRequest {
+}
+
+message GetApiAccessAnomalyConfigsResponse {
+  repeated ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig configs = 1;
+}
+
+
+message CreateApiAccessAnomalyConfigRequest {
+  repeated ai.traceable.fraud.policy.config.service.v1.GroupedConfig grouped_configs = 1;
+}
+
+message CreateApiAccessAnomalyConfigResponse {
+  ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig config = 1;
+}
+
+message UpdateApiAccessAnomalyConfigRequest {
+  ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig config = 1;
+}
+
+message UpdateApiAccessAnomalyConfigResponse {
+  ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig config = 1;
+}
+
+message DeleteApiAccessAnomalyConfigRequest {
+  string id = 1;
+}
+
+message DeleteApiAccessAnomalyConfigResponse {
 }

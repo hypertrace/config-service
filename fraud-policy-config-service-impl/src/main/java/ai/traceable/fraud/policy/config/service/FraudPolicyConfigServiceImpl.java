@@ -1,18 +1,31 @@
 package ai.traceable.fraud.policy.config.service;
 
+import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStoreManager;
+import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigRequest;
+import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
+import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigRequest;
+import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigResponse;
+import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigsRequest;
+import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigsResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigRequest;
+import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfigServiceRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.function.BiFunction;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -24,12 +37,21 @@ class FraudPolicyConfigServiceImpl
   private final FraudPolicyConfigStoreManager fraudPolicyConfigStoreManager;
   private final FraudPolicyConfigRequestValidator requestValidator;
 
+  private final ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
+  private final ApiAccessAnomalyConfigServiceRequestValidator
+      apiAccessAnomalyConfigServiceRequestValidator;
+
   @Inject
   FraudPolicyConfigServiceImpl(
       FraudPolicyConfigStoreManager fraudPolicyConfigStoreManager,
-      FraudPolicyConfigRequestValidator requestValidator) {
+      FraudPolicyConfigRequestValidator requestValidator,
+      ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager,
+      ApiAccessAnomalyConfigServiceRequestValidator apiAccessAnomalyConfigServiceRequestValidator) {
     this.fraudPolicyConfigStoreManager = fraudPolicyConfigStoreManager;
     this.requestValidator = requestValidator;
+    this.apiAccessAnomalyConfigStoreManager = apiAccessAnomalyConfigStoreManager;
+    this.apiAccessAnomalyConfigServiceRequestValidator =
+        apiAccessAnomalyConfigServiceRequestValidator;
   }
 
   @Override
@@ -113,9 +135,76 @@ class FraudPolicyConfigServiceImpl
     }
   }
 
+  @Override
+  public void getApiAccessAnomalyConfigs(
+      GetApiAccessAnomalyConfigsRequest request,
+      io.grpc.stub.StreamObserver<GetApiAccessAnomalyConfigsResponse> responseObserver) {
+    handleConfigOperation(
+        request, responseObserver, apiAccessAnomalyConfigStoreManager::getApiAccessAnomalyConfigs);
+  }
+
+  @Override
+  public void getApiAccessAnomalyConfig(
+      GetApiAccessAnomalyConfigRequest request,
+      io.grpc.stub.StreamObserver<GetApiAccessAnomalyConfigResponse> responseObserver) {
+    handleConfigOperation(
+        request, responseObserver, apiAccessAnomalyConfigStoreManager::getApiAccessAnomalyConfig);
+  }
+
+  @Override
+  public void createApiAccessAnomalyConfig(
+      CreateApiAccessAnomalyConfigRequest request,
+      io.grpc.stub.StreamObserver<CreateApiAccessAnomalyConfigResponse> responseObserver) {
+    handleConfigOperation(
+        request,
+        responseObserver,
+        apiAccessAnomalyConfigStoreManager::createApiAccessAnomalyConfig);
+  }
+
+  @Override
+  public void updateApiAccessAnomalyConfig(
+      UpdateApiAccessAnomalyConfigRequest request,
+      io.grpc.stub.StreamObserver<UpdateApiAccessAnomalyConfigResponse> responseObserver) {
+    handleConfigOperation(
+        request,
+        responseObserver,
+        apiAccessAnomalyConfigStoreManager::updateApiAccessAnomalyConfig);
+  }
+
+  @Override
+  public void deleteApiAccessAnomalyConfig(
+      DeleteApiAccessAnomalyConfigRequest request,
+      io.grpc.stub.StreamObserver<DeleteApiAccessAnomalyConfigResponse> responseObserver) {
+    handleConfigOperation(
+        request,
+        responseObserver,
+        apiAccessAnomalyConfigStoreManager::deleteApiAccessAnomalyConfig);
+  }
+
   private Exception decorateException(RequestContext requestContext, Exception exception) {
     return Status.fromThrowable(exception)
         .withCause(exception)
         .asException(requestContext.buildTrailers());
+  }
+
+  // Define a common method to handle requests
+  private <Req, Res> void handleConfigOperation(
+      Req request,
+      io.grpc.stub.StreamObserver<Res> responseObserver,
+      BiFunction<RequestContext, Req, Res> configOperation) {
+
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      responseObserver.onNext(configOperation.apply(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while processing request: {} with context {}. Error: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
   }
 }
