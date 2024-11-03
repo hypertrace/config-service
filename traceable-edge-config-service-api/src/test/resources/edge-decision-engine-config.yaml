@@ -45,15 +45,27 @@ edge_decision_config:
           environments:
             - "env1"
             - "env2"
-      match_condition:
-        jexl_expression:
-          jexl_expression: "$s.path.contains('registration')"
       sampling_rate: 1.0 # apply always
       aggregate_threshold_rule:
+        match_condition:
+          jexl_expression:
+            jexl_expression: "$s.path.contains('registration')"
         group_by_dimensions:
-          - "$s.ip_address"
-          - "device_id"
-          - "user_agent"
+          - name: "ip_address"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "$s.ip_address"
+          - name: "device_id"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "device_id"
+          - name: "user_agent"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "$s.user_agent"
         time_window: 600s
         value_aggregate_threshold:
           aggregation_type: "COUNT"
@@ -66,17 +78,30 @@ edge_decision_config:
           environments:
             - "env1"
             - "env2"
-      match_condition:
-        jexl_expression:
-          jexl_expression: "$s.path.contains('login')"
       sampling_rate: 1.0
       aggregate_threshold_rule:
+        match_condition:
+          jexl_expression:
+            jexl_expression: "$s.path.contains('login')"
         group_by_dimensions:
-          - "ip_address"
-          - "device_id"
+          - name: "ip_address"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "$s.ip_address"
+          - name: "device_id"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "device_id"
         time_window: 600s
         value_aggregate_threshold:
-          dimension: "email"
+          dimension:
+            name: "email"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "email"
           aggregation_type: "COUNT_DISTINCT"
           static_threshold: 5 # count(distinct email) by (ip_address, device_id) [600s] > 5.0
     - id: "transaction_limit_ip"
@@ -87,17 +112,30 @@ edge_decision_config:
           environments:
             - "env1"
             - "env2"
-      match_condition:
-        jexl_expression:
-          jexl_expression: "$s.path.contains('payment')"
       sampling_rate: 1.0
       aggregate_threshold_rule:
+        match_condition:
+          jexl_expression:
+            jexl_expression: "$s.path.contains('payment')"
         group_by_dimensions:
-          - "ip_address"
-          - "email"
+          - name: "ip_address"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "$s.ip_address"
+          - name: "email"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "email"
         time_window: 600s
         value_aggregate_threshold:
-          dimension: "transaction_amount"
+          dimension:
+            name: "email"
+            rules:
+              - transformation_config:
+                  jexl_expression:
+                    jexl_expression: "email"
           aggregation_type: "SUM"
           static_threshold: 1000.0 # sum(transaction_amount) by (ip_address, email) [600s] > 1000.0
     - id: "per_span_signature_rule_1"
@@ -108,10 +146,10 @@ edge_decision_config:
           environments:
             - "env1"
             - "env2"
-      match_condition:
-        jexl_expression:
-          jexl_expression: "$s.request_headers['visitor_uuid'] != traceable:parseJson($s.request_body)['user']['uuid']"
       signature_rule:
+        match_condition:
+          jexl_expression:
+            jexl_expression: "$s.request_headers['visitor_uuid'] != traceable:parseJson($s.request_body)['user']['uuid']"
       attribute_projections:
         - name: ip_address
           rules:
@@ -126,22 +164,36 @@ edge_decision_config:
           environments:
             - "env1"
             - "env2"
-      match_condition:
-        jexl_expression:
-          jexl_expression: "$s.request_headers['visitor_uuid'] == null"
       signature_rule:
+        match_condition:
+          jexl_expression:
+            jexl_expression: "$s.request_headers['visitor_uuid'] == null"
     - name: "server_detection_fingerprint_rule"
       fingerprint_rule:
+        match_condition:
+          jexl_expression:
+            jexl_expression: "$s.request_headers['visitor_uuid'] == null"
         fingerprint_dataset_id: "policy1"
     - name: "access_pattern_rule"
-      match_condition:
-        jexl_expression:
-          jexl_expression: $s.path.contains("/payment") && client_type == 'DESKTOP_WEB'
       access_pattern_rule:
+        target_request:
+          jexl_expression:
+            jexl_expression: $s.path.contains("/payment")
+        filter:
+          jexl_expression:
+            jexl_expression: "client_type == 'DESKTOP_WEB'"
         correlation_key:
           attributes:
-            - "ip_address"
-            - "user_agent"
+            - name: "ip_address"
+              rules:
+                - transformation_config:
+                    jexl_expression:
+                      jexl_expression: "$s.ip_address"
+            - name: "user_agent"
+              rules:
+                - transformation_config:
+                    jexl_expression:
+                      jexl_expression: "$s.user_agent"
         pre_requests:
           - match_condition:
               jexl_expression:

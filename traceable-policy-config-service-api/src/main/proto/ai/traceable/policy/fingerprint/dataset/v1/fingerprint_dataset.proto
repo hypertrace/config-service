@@ -91,8 +91,8 @@ message RangeValue {
 }
 
 message TimeRangeValue {
-  int64 start = 1;
-  int64 end = 2;
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
 }
 
 enum MatchOperator {

@@ -29,30 +29,31 @@ message EdgeDecisionRuleScope {
 message EdgeDecisionRule {
   string id = 1;
   string name = 2;
-  ai.traceable.edge.common.config.v1.ConfigTtl ttl = 3;
-  ai.traceable.edge.common.config.v1.EdgeInputKind edge_input_kind = 4;
+  bool disabled = 3;
+  ai.traceable.edge.common.config.v1.ConfigTtl ttl = 4;
+  ai.traceable.edge.common.config.v1.EdgeInputKind edge_input_kind = 5;
   // APPLY the config if a payload matches inclusion_scope. prod
-  EdgeDecisionRuleScope scope = 5;
-  // this should refer to a match criteria that's evaluated in variables so that we don't evaluate again and again
-  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 6;
+  EdgeDecisionRuleScope scope = 6;
   oneof rule {
-    AggregateThresholdRule aggregate_threshold_rule = 7;
-    SignatureRule signature_rule = 8;
-    AccessPatternRule access_pattern_rule = 9;
-    FingerprintRule fingerprint_rule = 10;
+    AggregateThresholdRule aggregate_threshold_rule = 8;
+    SignatureRule signature_rule = 9;
+    AccessPatternRule access_pattern_rule = 10;
+    FingerprintRule fingerprint_rule = 11;
   }
   // if the above matches, what do you want to capture in the result?
   // this can refer to the attributes / variables in the config
-  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attribute_projections = 11;
+  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attribute_projections = 12;
 
   // Specifies the percentage of requests to apply the rule to after the threshold is crossed
   // a number between 0.0 to 1.0
   // default: 1.0 (all)
   // todo: better name for this
-  optional double sampling_rate = 12;
+  optional double sampling_rate = 13;
   // each rule must provide a score and weight, that are used to compute the final score.
   //  double risk_score = 6;
   //  double weight = 7;
+  // placeholder to allow customization of the rule eval - not all params are known now.
+  google.protobuf.Value custom_fields = 200;
 }
 
 // Aggregate threshold rules
@@ -64,11 +65,14 @@ message EdgeDecisionRule {
 // evaluate a payload against enumeration
 // agg_fn(dimension) by (dim1, dim2..dimN) over [timewindow] , threshold
 message AggregateThresholdRule {
+  // this should refer to a match criteria that's evaluated in variables so that we don't evaluate again and again
+  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
+
   // group-by to be applied on the payload
-  repeated string group_by_dimensions = 1;
+  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping group_by_dimensions = 2;
 
   // time window over which aggregate must be computed
-  google.protobuf.Duration time_window = 2;
+  google.protobuf.Duration time_window = 3;
 
   // The type of aggregation to apply for the threshold
   // Aggregate a value from an event attribute (e.g., sum, avg)
@@ -78,12 +82,12 @@ message AggregateThresholdRule {
   // Count distinct values for a specific dimension
   // - Has the dim1, dim2…dimN, count(distinct dimX) crossed a limit -> Enumeration
   // - Has the dim1, dim2…dimN, agg_fn(dimX) crossed a limit ->
-  ValueAggregateThreshold value_aggregate_threshold = 3;
+  ValueAggregateThreshold value_aggregate_threshold = 4;
 }
 
 message ValueAggregateThreshold {
   // choose the attribute to aggregate
-  string dimension = 1;
+  ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping dimension = 1;
 
   enum AggregationType {
     COUNT = 0;           // Count the total number of events
@@ -98,16 +102,19 @@ message ValueAggregateThreshold {
   oneof threshold {
     double static_threshold = 3;  // The threshold for the aggregated value
   }
+  // this must be a conscious choice of the consumer - higher resource usage if estimates are disabled for aggregations
+  bool disable_estimates = 4;
 }
 
 // "signature rules" that can be evaluated by risk decision engine
 // evaluate a payload to check if it matches the signature
 message SignatureRule {
-  // "match_criteria" on the risk decision rule will act as the signature
+  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
 }
 
 message FingerprintRule {
-  string fingerprint_dataset_id = 1;
+  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
+  string fingerprint_dataset_id = 2;
 }
 
 // "api access rules" that can be evaluated by risk decision engine
@@ -115,25 +122,31 @@ message FingerprintRule {
 message AccessPatternRule {
   // correlation key to be computed on the request payload(s)
   CorrelationKey correlation_key = 1;
+  // common filters that must be applied on all payloads (client_type == '')
+  ai.traceable.edge.common.config.v1.MatchCondition filter = 2;
+  ai.traceable.edge.common.config.v1.MatchCondition target_request = 3;
+
   // what other requests do we expect in this window, before the target is invoked
-  repeated RequestInvocation pre_requests = 2;  // Collection of requests that are expected.
+  repeated RequestInvocation pre_requests = 4;  // Collection of requests that are expected.
   // what is the time window for grouping
-  google.protobuf.Duration time_window = 3;
+  google.protobuf.Duration time_window = 5;
   // what is the probability of no other api being there in this window?
   // set to "true" to trigger the rule if NO api is seen in this window. Irrespective of pre_requests.
-  bool check_for_any_pre_requests = 4;
+  bool check_for_any_pre_requests = 6;
 }
 
 message RequestInvocation {
-  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
-  int32 weight = 6;
-  double median_percent = 7;
+  // required for tracking this invocation.
+  string request_invocation_id = 1;
+  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 2;
+  int32 weight = 3;
+  double median_percent = 4;
 }
 
 message CorrelationKey {
   // for now, it is the same set of derivation rules applied on all requests in the access pattern config
   // provide derivation of the attributes in the risk config
-  repeated string attributes = 1;
+  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attributes = 1;
 }
 
 // /registration

@@ -23,7 +23,6 @@ message EnvironmentScope {
 message ConfigTtl {
   google.protobuf.Timestamp created_at = 1;
   google.protobuf.Timestamp expires_at = 2;
-  bool enabled = 4;
 }
 
 message StringList {
