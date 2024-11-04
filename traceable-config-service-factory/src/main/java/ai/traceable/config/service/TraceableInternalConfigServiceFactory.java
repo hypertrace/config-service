@@ -10,6 +10,7 @@ import ai.traceable.ast.config.service.AstConfigServiceFactory;
 import ai.traceable.ast.hooks.config.service.AstHooksConfigServiceFactory;
 import ai.traceable.ast.scan.profile.config.service.AstScanProfileConfigServiceFactory;
 import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFactory;
+import ai.traceable.azure.devops.integration.config.service.AzureDevopsIntegrationConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.dashboard.config.service.DashboardConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
@@ -284,6 +285,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 ServiceNowItsmIntegrationConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                AzureDevopsIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());

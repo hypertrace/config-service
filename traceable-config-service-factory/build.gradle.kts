@@ -67,6 +67,7 @@ dependencies {
   implementation(projects.fraudPolicyConfigServiceImpl)
   implementation(projects.vulnerabilityConfigServiceImpl)
   implementation(projects.servicenowItsmIntegrationConfigServiceImpl)
+  implementation(projects.azureDevopsIntegrationConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
