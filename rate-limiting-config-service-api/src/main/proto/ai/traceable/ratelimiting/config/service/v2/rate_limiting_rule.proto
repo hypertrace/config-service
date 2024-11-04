@@ -321,6 +321,7 @@ message ResourceAccessThresholdConfig {
     int64 unique_values_allowed = 1;
     string duration_iso = 2;
     ValueType value_type = 3;
+    SensitiveParamsEvaluation sensitive_params_evaluation = 4; // only applicable for sensitive params value type
   }
 
   enum ValueType {
@@ -328,6 +329,12 @@ message ResourceAccessThresholdConfig {
     VALUE_TYPE_REQUEST_BODY = 1;
     VALUE_TYPE_SENSITIVE_PARAMS = 2;
     VALUE_TYPE_PATH_PARAMS = 3;
+  }
+
+  enum SensitiveParamsEvaluation {
+    SENSITIVE_PARAMS_EVALUATION_UNSPECIFIED = 0;
+    SENSITIVE_PARAMS_EVALUATION_ALL = 1; // evaluating all sensitive params
+    SENSITIVE_PARAMS_EVALUATION_SELECTED_DATA_TYPES = 2; // evaluating only sensitive params matching datatypes selected in datatype condition
   }
 
   message DynamicThresholdConfig {
