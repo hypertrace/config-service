@@ -12,6 +12,9 @@ custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-
 malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
 iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
 region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
+fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru
+fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru
+fraud-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru
 fraud-datamodel-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru
 fraud-datamodel-derivation-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru
 fraud-policy-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru
