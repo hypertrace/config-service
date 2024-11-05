@@ -94,4 +94,9 @@ message ModsecBlobData {
 message UpsertDetectionExclusionRuleData {
   DetectionExclusionRuleScope rule_scope = 1;
   DetectionExclusionRuleInfo rule_info = 2;
+  oneof id{
+    bool uuid_from_name_and_source = 3;
+    bool random_uuid = 4;
+    string pre_defined_id = 5;
+  }
 }

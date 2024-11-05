@@ -21,14 +21,18 @@ import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import io.grpc.Status;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ConfigObject;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DetectionExclusionRulesManager implements RulesManager {
   private final DetectionExclusionRulesStore rulesStore;
+  private final ThresholdExceededDetectionExclusionRuleStore
+      thresholdExceededDetectionExclusionRuleStore;
   private final UuidGenerator uuidGenerator;
   private final RulesMigrationManager rulesMigrationManager;
   private final ExclusionModsecRulesManager exclusionModsecRulesManager;
@@ -37,11 +41,14 @@ public class DetectionExclusionRulesManager implements RulesManager {
   @Inject
   public DetectionExclusionRulesManager(
       DetectionExclusionRulesStore rulesStore,
+      ThresholdExceededDetectionExclusionRuleStore thresholdExceededDetectionExclusionRuleStore,
       UuidGenerator uuidGenerator,
       RulesMigrationManager rulesMigrationManager,
       ExclusionModsecRulesManager exclusionModsecRulesManager,
       Clock clock) {
     this.rulesStore = rulesStore;
+    this.thresholdExceededDetectionExclusionRuleStore =
+        thresholdExceededDetectionExclusionRuleStore;
     this.uuidGenerator = uuidGenerator;
     this.rulesMigrationManager = rulesMigrationManager;
     this.exclusionModsecRulesManager = exclusionModsecRulesManager;
@@ -55,28 +62,45 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesMigrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog3IfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog4IfApplicable(requestContext);
+    List<DetectionExclusionRule> rules = new ArrayList<>();
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
-      return rulesStore.getAllConfigData(requestContext);
+      rules.addAll(rulesStore.getAllConfigData(requestContext));
+      rules.addAll(thresholdExceededDetectionExclusionRuleStore.getAllConfigData(requestContext));
+      return rules;
     }
-    return rulesStore.getAllConfigData(requestContext, filter);
+    rules.addAll(rulesStore.getAllConfigData(requestContext, filter));
+    if (filter
+        .getRuleCreationSourcesList()
+        .contains(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED)) {
+      rules.addAll(
+          thresholdExceededDetectionExclusionRuleStore.getAllConfigData(requestContext, filter));
+    }
+    return rules;
   }
 
   @Override
   public DetectionExclusionRule updateDetectionExclusionRule(
       RequestContext requestContext, DetectionExclusionRule rule) {
     String ruleId = rule.getId();
-    List<DetectionExclusionRule> ruleList = rulesStore.getAllConfigData(requestContext);
-    DetectionExclusionRule originalRule =
+    List<DetectionExclusionRule> ruleList;
+    DetectionExclusionRule originalRule;
+    IdentifiedObjectStoreWithFilter<DetectionExclusionRule, GetRulesFilter> ruleStore =
+        getRuleStore(rule.getRuleInfo().getRuleStatus().getRuleCreationSource());
+    ruleList = ruleStore.getAllConfigData(requestContext);
+    originalRule =
         ruleList.stream()
             .filter(detectionExclusionRule -> detectionExclusionRule.getId().equals(ruleId))
             .findFirst()
             .orElseThrow(
-                Status.NOT_FOUND.withDescription(
-                        String.format(
-                            "Detection exclusion rule with rule id : {} does not exists", ruleId))
-                    ::asRuntimeException);
+                () ->
+                    Status.NOT_FOUND
+                        .withDescription(
+                            String.format(
+                                "Detection exclusion rule with rule id : %s does not exists",
+                                ruleId))
+                        .asRuntimeException());
     rule = processDetectionExclusionRule(rule, originalRule.getRuleInfo().getRuleStatus());
-    return rulesStore.upsertObject(requestContext, rule).getData();
+    return ruleStore.upsertObject(requestContext, rule).getData();
   }
 
   @Override
@@ -96,34 +120,88 @@ public class DetectionExclusionRulesManager implements RulesManager {
   @Override
   public List<DetectionExclusionRule> bulkUpsertDetectionExclusionRule(
       RequestContext requestContext, List<UpsertDetectionExclusionRuleData> ruleDataList) {
-    List<DetectionExclusionRule> rules =
+    List<UpsertDetectionExclusionRuleData> thresholdExceededRuleDataList =
         ruleDataList.stream()
-            .map(
-                request ->
-                    DetectionExclusionRule.newBuilder()
-                        .setId(
-                            uuidGenerator.generateId(
-                                request.getRuleInfo().getName()
-                                    + request
-                                        .getRuleInfo()
-                                        .getRuleStatus()
-                                        .getRuleCreationSource()
-                                        .name()))
-                        .setRuleInfo(processDetectionExclusionRuleInfo(request.getRuleInfo()))
-                        .setRuleScope(request.getRuleScope())
-                        .build())
+            .filter(
+                rule ->
+                    rule.getRuleInfo()
+                        .getRuleStatus()
+                        .getRuleCreationSource()
+                        .equals(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED))
             .collect(Collectors.toUnmodifiableList());
-    return rulesStore.upsertObjects(requestContext, rules).stream()
-        .map(ConfigObject::getData)
-        .collect(Collectors.toUnmodifiableList());
+    List<UpsertDetectionExclusionRuleData> otherRuleDataList =
+        ruleDataList.stream()
+            .filter(
+                rule ->
+                    !rule.getRuleInfo()
+                        .getRuleStatus()
+                        .getRuleCreationSource()
+                        .equals(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED))
+            .collect(Collectors.toUnmodifiableList());
+
+    List<DetectionExclusionRule> rules = new ArrayList<>();
+    List<DetectionExclusionRule> thresholdExceededRules =
+        getRulesWithIdsPopulated(thresholdExceededRuleDataList);
+    if (!thresholdExceededRules.isEmpty()) {
+      rules.addAll(
+          thresholdExceededDetectionExclusionRuleStore
+              .upsertObjects(requestContext, thresholdExceededRules)
+              .stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toUnmodifiableList()));
+    }
+    List<DetectionExclusionRule> otherRules = getRulesWithIdsPopulated(otherRuleDataList);
+    if (!otherRules.isEmpty()) {
+      rules.addAll(
+          rulesStore.upsertObjects(requestContext, otherRules).stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toUnmodifiableList()));
+    }
+    return rules;
   }
 
   @Override
   public void deleteDetectionExclusionRule(RequestContext requestContext, String ruleId) {
     if (rulesStore.deleteObject(requestContext, ruleId).isEmpty()
+        && thresholdExceededDetectionExclusionRuleStore
+            .deleteObject(requestContext, ruleId)
+            .isEmpty()
         && !isDefaultRule(requestContext, ruleId)) {
       throw Status.NOT_FOUND.asRuntimeException(requestContext.buildTrailers());
     }
+  }
+
+  private List<DetectionExclusionRule> getRulesWithIdsPopulated(
+      List<UpsertDetectionExclusionRuleData> rules) {
+    return rules.stream()
+        .map(
+            request -> {
+              String ruleId;
+              switch (request.getIdCase()) {
+                case PRE_DEFINED_ID:
+                  ruleId = request.getPreDefinedId();
+                  break;
+                case UUID_FROM_NAME_AND_SOURCE:
+                  ruleId =
+                      uuidGenerator.generateId(
+                          request.getRuleInfo().getName()
+                              + request
+                                  .getRuleInfo()
+                                  .getRuleStatus()
+                                  .getRuleCreationSource()
+                                  .name());
+                  break;
+                case ID_NOT_SET:
+                default:
+                  ruleId = uuidGenerator.generateRandomId();
+              }
+              return DetectionExclusionRule.newBuilder()
+                  .setId(ruleId)
+                  .setRuleInfo(processDetectionExclusionRuleInfo(request.getRuleInfo()))
+                  .setRuleScope(request.getRuleScope())
+                  .build();
+            })
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private boolean isDefaultRule(RequestContext requestContext, String ruleId) {
@@ -238,5 +316,13 @@ public class DetectionExclusionRulesManager implements RulesManager {
         rule.getRuleInfo().toBuilder().setRuleStatus(mergedRuleStatus).build();
     rule = rule.toBuilder().setRuleInfo(modifiedRuleInfo).build();
     return rule;
+  }
+
+  private IdentifiedObjectStoreWithFilter<DetectionExclusionRule, GetRulesFilter> getRuleStore(
+      RuleSource ruleSource) {
+    if (ruleSource.equals(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED)) {
+      return thresholdExceededDetectionExclusionRuleStore;
+    }
+    return rulesStore;
   }
 }

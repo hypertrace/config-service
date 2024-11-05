@@ -1,6 +1,6 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 
-import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE;
+import static ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesUtils.DETECTION_EXCLUSION_RULE_CONFIG_RESOURCE_NAMESPACE;
 
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionMigrationConfig;
 import com.google.inject.Inject;

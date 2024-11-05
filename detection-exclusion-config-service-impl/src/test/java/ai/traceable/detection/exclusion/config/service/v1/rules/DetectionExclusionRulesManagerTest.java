@@ -23,6 +23,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionType;
 import ai.traceable.detection.exclusion.config.service.v1.IpConnectionTypeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
+import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
@@ -71,6 +72,9 @@ class DetectionExclusionRulesManagerTest {
     DetectionExclusionRulesStore rulesStore =
         new DetectionExclusionRulesStore(
             configServiceBlockingStub, mockConfigChangeEventGenerator, config);
+    ThresholdExceededDetectionExclusionRuleStore thresholdExceededDetectionExclusionRuleStore =
+        new ThresholdExceededDetectionExclusionRuleStore(
+            configServiceBlockingStub, mockConfigChangeEventGenerator);
     uuidGenerator = mock(UuidGenerator.class);
     RulesMigrationManager rulesMigrationManager =
         mock(DetectionExclusionRulesMigrationManager.class);
@@ -78,10 +82,63 @@ class DetectionExclusionRulesManagerTest {
     rulesManager =
         new DetectionExclusionRulesManager(
             rulesStore,
+            thresholdExceededDetectionExclusionRuleStore,
             uuidGenerator,
             rulesMigrationManager,
             exclusionModsecRulesManager,
             mock(Clock.class));
+  }
+
+  @Test
+  void test_bulkUpsert() {
+    DetectionExclusionRuleInfo detectionExclusionRuleInfo1 =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("rule1")
+            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+            .setRuleStatus(
+                DetectionExclusionRuleStatus.newBuilder()
+                    .setRuleCreationSource(RuleSource.RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED)
+                    .build())
+            .build();
+    DetectionExclusionRuleInfo detectionExclusionRuleInfo2 =
+        DetectionExclusionRuleInfo.newBuilder()
+            .setName("rule2")
+            .addExclusionTargets(EXCLUSION_TARGET_BLOCK)
+            .setRuleStatus(DetectionExclusionRuleStatus.newBuilder().build())
+            .build();
+
+    DetectionExclusionRule detectionExclusionRule1 =
+        DetectionExclusionRule.newBuilder()
+            .setId("id1")
+            .setRuleScope(DetectionExclusionRuleScope.getDefaultInstance())
+            .setRuleInfo(detectionExclusionRuleInfo1)
+            .build();
+
+    DetectionExclusionRule detectionExclusionRule2 =
+        DetectionExclusionRule.newBuilder()
+            .setId("id2")
+            .setRuleScope(DetectionExclusionRuleScope.getDefaultInstance())
+            .setRuleInfo(detectionExclusionRuleInfo2)
+            .build();
+
+    when(uuidGenerator.generateRandomId()).thenReturn("id2");
+    when(uuidGenerator.generateId("rule1" + "RULE_SOURCE_COUNT_THRESHOLD_EXCEEDED"))
+        .thenReturn("id1");
+    assertEquals(
+        List.of(detectionExclusionRule1, detectionExclusionRule2),
+        rulesManager.bulkUpsertDetectionExclusionRule(
+            requestContext,
+            List.of(
+                UpsertDetectionExclusionRuleData.newBuilder()
+                    .setUuidFromNameAndSource(true)
+                    .setRuleScope(DetectionExclusionRuleScope.getDefaultInstance())
+                    .setRuleInfo(detectionExclusionRuleInfo1)
+                    .build(),
+                UpsertDetectionExclusionRuleData.newBuilder()
+                    .setRandomUuid(true)
+                    .setRuleScope(DetectionExclusionRuleScope.getDefaultInstance())
+                    .setRuleInfo(detectionExclusionRuleInfo2)
+                    .build())));
   }
 
   @Test
