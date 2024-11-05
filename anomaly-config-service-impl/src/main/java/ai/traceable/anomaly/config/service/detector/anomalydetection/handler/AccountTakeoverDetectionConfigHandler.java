@@ -7,7 +7,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AccountTakeoverAnomalyDet
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import java.util.ArrayList;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,18 +28,17 @@ public class AccountTakeoverDetectionConfigHandler {
 
   List<AnomalyDetectionConfig> merge(
       ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
-    EnumMap<AccountTakeoverAnomalyDetectionConfig.ConfigCase, AnomalyDetectionConfig>
-        configCaseMap = new EnumMap<>(AccountTakeoverAnomalyDetectionConfig.ConfigCase.class);
+    Map<String, AnomalyDetectionConfig> ruleIdToConfigMap = new HashMap<>();
 
     getAccountTakeoverConfigs(preferredConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
               AccountTakeoverAnomalyDetectionConfig.ConfigCase configCase =
                   detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getConfigCase();
+              String ruleId =
+                  detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getAnomalyRuleId();
               if (configCase.equals(
                   AccountTakeoverAnomalyDetectionConfig.ConfigCase.CONFIG_NOT_SET)) {
-                String ruleId =
-                    detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getAnomalyRuleId();
                 if (!accountTakeoverRuleIdToConfigMap.containsKey(ruleId)) {
                   LOGGER.error(
                       "Invalid ruleId \"{}\" and empty configCase for AccountTakeoverAnomalyDetectionConfig for configScope {}",
@@ -49,7 +48,6 @@ public class AccountTakeoverDetectionConfigHandler {
                 }
                 AccountTakeoverAnomalyDetectionConfig accountTakeoverAnomalyConfig =
                     accountTakeoverRuleIdToConfigMap.get(ruleId);
-                configCase = accountTakeoverAnomalyConfig.getConfigCase();
                 detectionConfig =
                     (AnomalyDetectionConfig)
                         mergeConfigs(
@@ -59,24 +57,24 @@ public class AccountTakeoverDetectionConfigHandler {
                                     accountTakeoverAnomalyConfig)
                                 .build());
               }
-              configCaseMap.put(configCase, detectionConfig);
+              ruleIdToConfigMap.put(ruleId, detectionConfig);
             });
 
     getAccountTakeoverConfigs(fallbackConfig.getAnomalyDetectionConfigsList())
         .forEach(
             detectionConfig -> {
-              AccountTakeoverAnomalyDetectionConfig.ConfigCase configCase =
-                  detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getConfigCase();
-              if (configCaseMap.containsKey(configCase)) {
+              String ruleId =
+                  detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getAnomalyRuleId();
+              if (ruleIdToConfigMap.containsKey(ruleId)) {
                 AnomalyDetectionConfig mergedDetectionConfig =
                     (AnomalyDetectionConfig)
-                        mergeConfigs(detectionConfig, configCaseMap.get(configCase));
-                configCaseMap.put(configCase, mergedDetectionConfig);
+                        mergeConfigs(detectionConfig, ruleIdToConfigMap.get(ruleId));
+                ruleIdToConfigMap.put(ruleId, mergedDetectionConfig);
               } else {
-                configCaseMap.put(configCase, detectionConfig);
+                ruleIdToConfigMap.put(ruleId, detectionConfig);
               }
             });
-    return new ArrayList<>(configCaseMap.values());
+    return new ArrayList<>(ruleIdToConfigMap.values());
   }
 
   List<AnomalyDetectionConfig> deleteWholeAnomalyDetectionConfig(
