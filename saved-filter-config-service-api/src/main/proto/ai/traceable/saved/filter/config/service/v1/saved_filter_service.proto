@@ -50,6 +50,7 @@ message UpdateSavedFilterResponse {
 message GetSavedFiltersRequest {
   // user_id will be extracted from the request context and applied as a default filter
   string scope = 1;
+  optional string id = 2;
 }
 
 message GetSavedFiltersResponse {
