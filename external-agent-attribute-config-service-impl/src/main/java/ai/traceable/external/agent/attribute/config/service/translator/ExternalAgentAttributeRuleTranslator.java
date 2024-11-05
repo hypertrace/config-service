@@ -12,6 +12,7 @@ import ai.traceable.sessionidentification.config.service.v1.SessionIdentificatio
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +49,7 @@ public class ExternalAgentAttributeRuleTranslator {
         .ifPresent(agentAttributeRules::add);
     getAttributeRuleForUserRole(userAttributionRules, userAttributionRulesV2)
         .ifPresent(agentAttributeRules::add);
+    getAttributeRuleForUserScope(userAttributionRulesV2).ifPresent(agentAttributeRules::add);
     // Auth type rules come from both UA and auth detection rules, so delegated to a separate class
     authTypeRuleBuilder
         .buildRule(userAttributionRules, userAttributionRulesV2, authDetectionRules)
@@ -94,6 +96,16 @@ public class ExternalAgentAttributeRuleTranslator {
         .map(attributeRuleBuilder::buildRuleForFirstMatchingProjector);
   }
 
+  private Optional<AttributeRule> getAttributeRuleForUserScope(
+      List<ai.traceable.userattribution.config.service.v2.UserAttributionRule> rulesV2) {
+    return collectAnyTranslatedRules(
+            Collections.emptyList(),
+            null,
+            rulesV2,
+            userAttributionRuleV2Translator::translateRuleForUserScope)
+        .map(attributeRuleBuilder::buildRuleForFirstMatchingProjector);
+  }
+
   private Optional<List<AttributeRule>> collectAnyTranslatedRules(
       List<UserAttributionRule> rules,
       Function<UserAttributionRule, Stream<AttributeRule>> ruleTranslator,
@@ -103,7 +115,7 @@ public class ExternalAgentAttributeRuleTranslator {
               Stream<AttributeRule>>
           ruleV2Translator) {
     Stream<AttributeRule> attributeRulesV1 =
-        rules.stream().flatMap(rulev1 -> translateRule(rulev1, ruleTranslator));
+        rules.stream().flatMap(ruleV1 -> translateRule(ruleV1, ruleTranslator));
     Stream<AttributeRule> attributeRulesV2 = rulesV2.stream().flatMap(ruleV2Translator::apply);
     List<AttributeRule> attributeRules =
         Stream.concat(attributeRulesV1, attributeRulesV2).collect(Collectors.toUnmodifiableList());

@@ -6,6 +6,8 @@ import static ai.traceable.external.agent.attribute.config.service.translator.Ag
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_ID_RULE_ATTRIBUTE_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_ROLE_ATTRIBUTE_KEY;
 import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_ROLE_RULE_ATTRIBUTE_KEY;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_SCOPE_ATTRIBUTE_KEY;
+import static ai.traceable.external.agent.attribute.config.service.translator.AgentAttributeConstants.END_USER_SCOPE_RULE_ATTRIBUTE_KEY;
 
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Action;
@@ -48,6 +50,13 @@ public class AttributeRuleBuilder {
     return AttributeRule.newBuilder()
         .addInitialActions(buildAttributeAdditionAction(END_USER_ROLE_ATTRIBUTE_KEY))
         .addInitialActions(buildAttributeAdditionAction(END_USER_ROLE_RULE_ATTRIBUTE_KEY, ruleId))
+        .build();
+  }
+
+  public AttributeRule buildActionAttributeRuleForUserScope(String ruleId) {
+    return AttributeRule.newBuilder()
+        .addInitialActions(buildAttributeAdditionAction(END_USER_SCOPE_ATTRIBUTE_KEY))
+        .addInitialActions(buildAttributeAdditionAction(END_USER_SCOPE_RULE_ATTRIBUTE_KEY, ruleId))
         .build();
   }
 

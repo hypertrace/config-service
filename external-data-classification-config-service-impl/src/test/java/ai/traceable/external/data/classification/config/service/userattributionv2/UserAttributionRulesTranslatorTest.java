@@ -2,6 +2,7 @@ package ai.traceable.external.data.classification.config.service.userattribution
 
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ID_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ROLE_ATTRIBUTE_KEY;
+import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_SCOPE_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.RULE_ATTRIBUTE_KEY_SUFFIX;
 import static ai.traceable.external.data.classification.config.service.v1.DataType.DataTransformation.DATA_TRANSFORMATION_OBFUSCATE;
 import static ai.traceable.external.data.classification.config.service.v1.DataType.Result.RESULT_MATCH;
@@ -77,6 +78,31 @@ class UserAttributionRulesTranslatorTest {
     List<DataType> dataTypes =
         translator.translateUserAttributionRules(List.of(userIdRule1, userIdRule2));
     DataType expectedDataType = buildExpectedDataType(END_USER_ROLE_ATTRIBUTE_KEY, "rule-id-1");
+    assertEquals(1, dataTypes.size());
+    assertEquals(expectedDataType, dataTypes.get(0));
+  }
+
+  @Test
+  void test_translateUserAttributionRules_userScopeRules() {
+    UserAttributionRule userIdRule1 =
+        UserAttributionRule.newBuilder()
+            .setId("rule-id-1")
+            .setData(
+                UserAttributionRuleData.newBuilder()
+                    .setUserScopeRule(
+                        UserAttributionTokenRule.newBuilder()
+                            .setTokenObfuscationStrategy(OBFUSCATION_STRATEGY_HASH)))
+            .build();
+    UserAttributionRule userIdRule2 =
+        UserAttributionRule.newBuilder()
+            .setId("rule-id-2")
+            .setData(
+                UserAttributionRuleData.newBuilder()
+                    .setUserScopeRule(UserAttributionTokenRule.getDefaultInstance()))
+            .build();
+    List<DataType> dataTypes =
+        translator.translateUserAttributionRules(List.of(userIdRule1, userIdRule2));
+    DataType expectedDataType = buildExpectedDataType(END_USER_SCOPE_ATTRIBUTE_KEY, "rule-id-1");
     assertEquals(1, dataTypes.size());
     assertEquals(expectedDataType, dataTypes.get(0));
   }

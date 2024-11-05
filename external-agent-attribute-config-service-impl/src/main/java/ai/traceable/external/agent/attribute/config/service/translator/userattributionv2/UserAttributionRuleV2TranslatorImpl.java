@@ -68,6 +68,29 @@ class UserAttributionRuleV2TranslatorImpl implements UserAttributionRuleV2Transl
   }
 
   @Override
+  public Stream<AttributeRule> translateRuleForUserScope(UserAttributionRule rule) {
+    UserAttributionRuleData data = rule.getData();
+    if (data.getDisabled() || !data.hasUserScopeRule()) {
+      return Stream.empty();
+    }
+    try {
+      AttributeRule attributeRule =
+          attributeRuleBuilder.buildActionAttributeRuleForUserScope(rule.getId());
+      return tokenRuleTranslator.translateTokenRule(
+          predicateTranslator.buildScopePredicate(data),
+          data.getUserScopeRule(),
+          data.getRootTokenRule(),
+          attributeRule);
+    } catch (Exception ex) {
+      log.warn(
+          String.format(
+              "Unable to translate user-scope rule part of user attribution rule %s", rule.getId()),
+          ex);
+      return Stream.empty();
+    }
+  }
+
+  @Override
   public Stream<AttributeRule> translateRuleForAuthType(UserAttributionRule rule) {
     UserAttributionRuleData data = rule.getData();
     if (data.getDisabled() || !data.hasAuthTypeRule()) {

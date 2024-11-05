@@ -24,6 +24,8 @@ public class AgentAttributeConstants {
   public static final String END_USER_ID_RULE_ATTRIBUTE_KEY = "enduser.id.rule";
   public static final String END_USER_ROLE_ATTRIBUTE_KEY = "enduser.role";
   public static final String END_USER_ROLE_RULE_ATTRIBUTE_KEY = "enduser.role.rule";
+  public static final String END_USER_SCOPE_ATTRIBUTE_KEY = "enduser.scope";
+  public static final String END_USER_SCOPE_RULE_ATTRIBUTE_KEY = "enduser.scope.rule";
   public static final String AUTH_TYPES_ATTRIBUTE_KEY = "traceableai.auth.types";
   public static final String AUTH_TYPES_RULE_ATTRIBUTE_KEY = "traceableai.auth.rules";
   public static final String JWT_EXTRACTION_RULE_ATTRIBUTE_KEY_PREFIX = "traceableai.jwt";

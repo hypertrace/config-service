@@ -1,0 +1,122 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "jwtProjector": {
+                      "claimRule": {
+                        "key": "sub",
+                        "attributeRule": {
+                          "projector": {
+                            "jsonProjector": {
+                              "jsonPathRule": {
+                                "key": "$.user.scope",
+                                "attributeRule": {
+                                  "initialActions": [{
+                                    "attributeAddition": {
+                                      "attributeKey": "enduser.scope",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "noOpProjector": {
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }, {
+                                    "attributeAddition": {
+                                      "attributeKey": "enduser.scope.rule",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "valueProjector": {
+                                            "value": "jwt-header-rule-id"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "attributeKeyPredicate": {
+            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+            "value": "http\\.request\\.header\\..*authorization"
+          }
+        }
+      }
+    },
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeRule": {
+            "projector": {
+              "regexCaptureGroupProjector": {
+                "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                "attributeRule": {
+                  "projector": {
+                    "jwtProjector": {
+                      "claimRule": {
+                        "key": "sub",
+                        "attributeRule": {
+                          "projector": {
+                            "jsonProjector": {
+                              "jsonPathRule": {
+                                "key": "$.user.scope",
+                                "attributeRule": {
+                                  "initialActions": [{
+                                    "attributeAddition": {
+                                      "attributeKey": "enduser.scope",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "noOpProjector": {
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }, {
+                                    "attributeAddition": {
+                                      "attributeKey": "enduser.scope.rule",
+                                      "valueProjectionRule": {
+                                        "projector": {
+                                          "valueProjector": {
+                                            "value": "jwt-header-rule-id"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }]
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "attributeKeyPredicate": {
+            "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+            "value": "rpc\\.request\\.metadata\\..*authorization"
+          }
+        }
+      }
+    }
+  ]
+}

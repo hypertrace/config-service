@@ -15,6 +15,10 @@ public interface UserAttributionRuleV2Translator {
     return Stream.empty();
   }
 
+  default Stream<AttributeRule> translateRuleForUserScope(UserAttributionRule rule) {
+    return Stream.empty();
+  }
+
   default Stream<AttributeRule> translateRuleForAuthType(UserAttributionRule rule) {
     return Stream.empty();
   }

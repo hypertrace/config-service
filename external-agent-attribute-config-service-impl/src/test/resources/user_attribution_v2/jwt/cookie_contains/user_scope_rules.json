@@ -1,0 +1,72 @@
+{
+  "attributeRules": [
+    {
+      "projector": {
+        "attributeProjector": {
+          "attributeKey": "http.request.header.cookie",
+          "attributeRule": {
+            "projector": {
+              "cookieProjector": {
+                "cookieNameRule": {
+                  "attributeRule": {
+                    "projector": {
+                      "regexCaptureGroupProjector": {
+                        "regexCaptureGroup": "^(?:(?i)Bearer:? )?(.*)$",
+                        "attributeRule": {
+                          "projector": {
+                            "jwtProjector": {
+                              "claimRule": {
+                                "key": "sub",
+                                "attributeRule": {
+                                  "projector": {
+                                    "jsonProjector": {
+                                      "jsonPathRule": {
+                                        "key": "$.user.scope",
+                                        "attributeRule": {
+                                          "initialActions": [{
+                                            "attributeAddition": {
+                                              "attributeKey": "enduser.scope",
+                                              "valueProjectionRule": {
+                                                "projector": {
+                                                  "noOpProjector": {
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }, {
+                                            "attributeAddition": {
+                                              "attributeKey": "enduser.scope.rule",
+                                              "valueProjectionRule": {
+                                                "projector": {
+                                                  "valueProjector": {
+                                                    "value": "jwt-cookie-rule-id"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }]
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "keyPredicate": {
+                    "operator": "COMPARISON_OPERATOR_MATCHES_REGEX",
+                    "value": "jwt"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

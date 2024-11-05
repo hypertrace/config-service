@@ -44,6 +44,19 @@ class JwtRuleTranslatorTest {
   }
 
   @Test
+  void translateJwtHeaderRuleForUserScope() throws IOException {
+    List<AttributeRule> translatedRules =
+        userAttributionRuleV2Translator
+            .translateRuleForUserScope(
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/jwt/header/input_rule.json"))
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(
+        TestUtils.getExpectedAttributeRules("user_attribution_v2/jwt/header/user_scope_rules.json"),
+        translatedRules);
+  }
+
+  @Test
   void translateJwtHeaderRuleForAuthType() throws IOException {
     List<AttributeRule> translatedRules =
         userAttributionRuleV2Translator
@@ -81,6 +94,20 @@ class JwtRuleTranslatorTest {
     assertEquals(
         TestUtils.getExpectedAttributeRules(
             "user_attribution_v2/jwt/header_contains/user_role_rules.json"),
+        translatedRules);
+  }
+
+  @Test
+  void translateJwtHeaderContainsRuleForUserScope() throws IOException {
+    List<AttributeRule> translatedRules =
+        userAttributionRuleV2Translator
+            .translateRuleForUserScope(
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/jwt/header_contains/input_rule.json"))
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(
+        TestUtils.getExpectedAttributeRules(
+            "user_attribution_v2/jwt/header_contains/user_scope_rules.json"),
         translatedRules);
   }
 
@@ -125,6 +152,19 @@ class JwtRuleTranslatorTest {
   }
 
   @Test
+  void translateJwtCookieRuleForUserScope() throws IOException {
+    List<AttributeRule> translatedRules =
+        userAttributionRuleV2Translator
+            .translateRuleForUserScope(
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/jwt/cookie/input_rule.json"))
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(
+        TestUtils.getExpectedAttributeRules("user_attribution_v2/jwt/cookie/user_scope_rules.json"),
+        translatedRules);
+  }
+
+  @Test
   void translateJwtCookieRuleForAuthType() throws IOException {
     List<AttributeRule> translatedRules =
         userAttributionRuleV2Translator
@@ -162,6 +202,20 @@ class JwtRuleTranslatorTest {
     assertEquals(
         TestUtils.getExpectedAttributeRules(
             "user_attribution_v2/jwt/cookie_contains/user_role_rules.json"),
+        translatedRules);
+  }
+
+  @Test
+  void translateJwtCookieRuleContainsForUserScope() throws IOException {
+    List<AttributeRule> translatedRules =
+        userAttributionRuleV2Translator
+            .translateRuleForUserScope(
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/jwt/cookie_contains/input_rule.json"))
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(
+        TestUtils.getExpectedAttributeRules(
+            "user_attribution_v2/jwt/cookie_contains/user_scope_rules.json"),
         translatedRules);
   }
 

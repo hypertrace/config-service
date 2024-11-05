@@ -2,6 +2,7 @@ package ai.traceable.external.data.classification.config.service.userattribution
 
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ID_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ROLE_ATTRIBUTE_KEY;
+import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_SCOPE_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.RULE_ATTRIBUTE_KEY_SUFFIX;
 import static ai.traceable.external.data.classification.config.service.v1.Operator.OPERATOR_EQUALS;
 import static ai.traceable.userattribution.config.service.v2.ObfuscationStrategy.OBFUSCATION_STRATEGY_HASH;
@@ -23,15 +24,16 @@ public class UserAttributionRulesTranslator {
 
   public List<DataType> translateUserAttributionRules(
       List<UserAttributionRule> userAttributionRules) {
-    Stream<DataType> userIdDataTypes = getObfuscatedUserIdRuleIds(userAttributionRules);
-    Stream<DataType> userRoleDataTypes = getObfuscatedUserRoleRuleIds(userAttributionRules);
-    Stream<DataType> customTokenDataTypes = getObfuscatedCustomTokenRuleIds(userAttributionRules);
-    return Stream.of(userIdDataTypes, userRoleDataTypes, customTokenDataTypes)
+    Stream<DataType> userIdDataTypes = getObfuscatedUserIdDataTypes(userAttributionRules);
+    Stream<DataType> userRoleDataTypes = getObfuscatedUserRoleDataTypes(userAttributionRules);
+    Stream<DataType> userScopeDataTypes = getObfuscatedUserScopeDataTypes(userAttributionRules);
+    Stream<DataType> customTokenDataTypes = getObfuscatedCustomTokenDataTypes(userAttributionRules);
+    return Stream.of(userIdDataTypes, userRoleDataTypes, userScopeDataTypes, customTokenDataTypes)
         .flatMap(item -> item)
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private Stream<DataType> getObfuscatedUserIdRuleIds(
+  private Stream<DataType> getObfuscatedUserIdDataTypes(
       List<UserAttributionRule> userAttributionRules) {
     return userAttributionRules.stream()
         .filter(
@@ -44,7 +46,7 @@ public class UserAttributionRulesTranslator {
         .map(rule -> createDataTypeRule(END_USER_ID_ATTRIBUTE_KEY, rule.getId()));
   }
 
-  private Stream<DataType> getObfuscatedUserRoleRuleIds(
+  private Stream<DataType> getObfuscatedUserRoleDataTypes(
       List<UserAttributionRule> userAttributionRules) {
     return userAttributionRules.stream()
         .filter(
@@ -57,7 +59,20 @@ public class UserAttributionRulesTranslator {
         .map(rule -> createDataTypeRule(END_USER_ROLE_ATTRIBUTE_KEY, rule.getId()));
   }
 
-  private Stream<DataType> getObfuscatedCustomTokenRuleIds(
+  private Stream<DataType> getObfuscatedUserScopeDataTypes(
+      List<UserAttributionRule> userAttributionRules) {
+    return userAttributionRules.stream()
+        .filter(
+            rule ->
+                rule.getData().hasUserScopeRule()
+                    && rule.getData()
+                        .getUserScopeRule()
+                        .getTokenObfuscationStrategy()
+                        .equals(OBFUSCATION_STRATEGY_HASH))
+        .map(rule -> createDataTypeRule(END_USER_SCOPE_ATTRIBUTE_KEY, rule.getId()));
+  }
+
+  private Stream<DataType> getObfuscatedCustomTokenDataTypes(
       List<UserAttributionRule> userAttributionRules) {
     return userAttributionRules.stream()
         .flatMap(this::getCustomTokenRulesStream)
