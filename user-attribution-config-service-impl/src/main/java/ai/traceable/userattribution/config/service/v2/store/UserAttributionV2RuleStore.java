@@ -77,19 +77,21 @@ public class UserAttributionV2RuleStore
     return Optional.of(data)
         .filter(
             rule -> !filter.hasDisabled() || rule.getData().getDisabled() == filter.getDisabled())
-        .filter(rule -> filterRuleOnScope(data, filter.getEnvironmentFilter()));
+        .filter(
+            rule ->
+                !filter.hasEnvironmentFilter()
+                    || filterRuleOnScope(data, filter.getEnvironmentFilter()));
   }
 
   private boolean filterRuleOnScope(UserAttributionRule data, EnvironmentFilter environmentFilter) {
-    if (environmentFilter.getEnvironmentNamesList().isEmpty()) {
+    UserAttributionRuleScope scope = data.getData().getScope();
+    // if rule doesn't have environment scope, then it matches irrespective of environment names in
+    // filter
+    if (!scope.hasEnvironmentScope()
+        || scope.getEnvironmentScope().getEnvironmentNames().getValuesList().isEmpty()) {
       return true;
     }
     Set<String> environmentNamesInFilter = Set.copyOf(environmentFilter.getEnvironmentNamesList());
-    UserAttributionRuleScope scope = data.getData().getScope();
-    if (!scope.hasEnvironmentScope()
-        || scope.getEnvironmentScope().getEnvironmentNames().getValuesList().isEmpty()) {
-      return false;
-    }
     Set<String> ruleEnvironmentNames =
         Set.copyOf(scope.getEnvironmentScope().getEnvironmentNames().getValuesList());
     return !Sets.intersection(environmentNamesInFilter, ruleEnvironmentNames).isEmpty();

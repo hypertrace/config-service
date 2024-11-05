@@ -50,6 +50,10 @@ import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentifica
 import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentificationRulesResponse;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationConfigServiceGrpc.SessionIdentificationConfigServiceBlockingStub;
+import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest;
+import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesResponse;
+import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc;
+import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -120,6 +124,10 @@ public class ExternalDataClassificationConfigServiceImplTest {
                             .toInstance(
                                 SensitiveDataConfigServiceGrpc.newBlockingStub(
                                     mockGenericConfigService.channel()));
+                        bind(UserAttributionConfigServiceBlockingStub.class)
+                            .toInstance(
+                                UserAttributionConfigServiceGrpc.newBlockingStub(
+                                    mockGenericConfigService.channel()));
                         bind(DataClassificationConfigServiceBlockingStub.class)
                             .toInstance(
                                 DataClassificationConfigServiceGrpc.newBlockingStub(
@@ -142,6 +150,7 @@ public class ExternalDataClassificationConfigServiceImplTest {
         .thenReturn(Duration.ofMinutes(1));
     mockGenericConfigService
         .addService(new MockSessionIdentificationConfigService())
+        .addService(new MockUserAttributionConfigService())
         .addService(injector.getInstance(BindableService.class))
         .addService(new MockSensitiveDataConfigService())
         .addService(new MockDataClassificationConfigService())
@@ -486,6 +495,20 @@ public class ExternalDataClassificationConfigServiceImplTest {
         StreamObserver<GetSessionIdentificationRulesResponse> responseObserver) {
       GetSessionIdentificationRulesResponse.Builder responseBuilder =
           GetSessionIdentificationRulesResponse.newBuilder();
+      responseObserver.onNext(responseBuilder.build());
+      responseObserver.onCompleted();
+    }
+  }
+
+  static class MockUserAttributionConfigService
+      extends UserAttributionConfigServiceGrpc.UserAttributionConfigServiceImplBase {
+
+    @Override
+    public void getUserAttributionRules(
+        GetUserAttributionRulesRequest request,
+        StreamObserver<GetUserAttributionRulesResponse> responseObserver) {
+      GetUserAttributionRulesResponse.Builder responseBuilder =
+          GetUserAttributionRulesResponse.newBuilder();
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     }

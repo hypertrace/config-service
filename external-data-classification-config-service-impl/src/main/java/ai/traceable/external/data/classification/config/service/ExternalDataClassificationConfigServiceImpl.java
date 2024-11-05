@@ -5,6 +5,8 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationOver
 import ai.traceable.external.data.classification.config.service.legacy.LegacyRuleManager;
 import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesDao;
 import ai.traceable.external.data.classification.config.service.session.SessionIdentificationRulesTranslator;
+import ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionRulesDao;
+import ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionRulesTranslator;
 import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.ExternalDataClassificationServiceGrpc.ExternalDataClassificationServiceImplBase;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
@@ -37,6 +39,8 @@ class ExternalDataClassificationConfigServiceImpl
       externalDataClassificationConfigRequestValidator;
   private final SessionIdentificationRulesDao sessionIdentificationRulesDao;
   private final SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator;
+  private final UserAttributionRulesDao userAttributionRulesDao;
+  private final UserAttributionRulesTranslator userAttributionRulesTranslator;
   private final LegacyRuleManager legacyRuleManager;
   private final PlatformDataTypeManager platformDataTypeManager;
   private final OverrideRuleManager overrideRuleManager;
@@ -56,6 +60,8 @@ class ExternalDataClassificationConfigServiceImpl
           externalDataClassificationConfigRequestValidator,
       SessionIdentificationRulesDao sessionIdentificationRulesDao,
       SessionIdentificationRulesTranslator sessionIdentificationRulesTranslator,
+      UserAttributionRulesDao userAttributionRulesDao,
+      UserAttributionRulesTranslator userAttributionRulesTranslator,
       LegacyRuleManager legacyRuleManager,
       PlatformDataTypeManager platformDataTypeManager,
       OverrideRuleManager overrideRuleManager,
@@ -68,6 +74,8 @@ class ExternalDataClassificationConfigServiceImpl
         externalDataClassificationConfigRequestValidator;
     this.sessionIdentificationRulesDao = sessionIdentificationRulesDao;
     this.sessionIdentificationRulesTranslator = sessionIdentificationRulesTranslator;
+    this.userAttributionRulesDao = userAttributionRulesDao;
+    this.userAttributionRulesTranslator = userAttributionRulesTranslator;
     this.legacyRuleManager = legacyRuleManager;
     this.platformDataTypeManager = platformDataTypeManager;
     this.overrideRuleManager = overrideRuleManager;
@@ -135,6 +143,10 @@ class ExternalDataClassificationConfigServiceImpl
               this.sessionIdentificationRulesDao.getEnabledSessionIdentificationRules(
                   requestContext, request.getEnvironmentFilter())));
     }
+    customDataTypes.addAll(
+        this.userAttributionRulesTranslator.translateUserAttributionRules(
+            this.userAttributionRulesDao.getEnabledUserAttributionRules(
+                requestContext, request.getEnvironmentFilter())));
     customDataTypes.addAll(
         this.legacyRuleManager.getDataTypesFromLegacySensitiveHeaders(
             requestContext, enabledLegacyDataTypeIds));
