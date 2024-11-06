@@ -1,13 +1,11 @@
 syntax = "proto3";
 
-package ai.traceable.edge.decision.engine.config.v1;
+package ai.traceable.edge.decision.config.service.v1;
 
-option java_package = "ai.traceable.edge.decision.engine.config.v1";
 option java_multiple_files = true;
 
-import "google/protobuf/struct.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
-import "ai/traceable/edge/common/config/v1/common.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 
 message EdgeDecisionSpecConfigScope {
   oneof scope {
@@ -16,15 +14,15 @@ message EdgeDecisionSpecConfigScope {
 }
 
 message EdgeDecisionSpec {
-  ai.traceable.edge.common.config.v1.EdgeDecision edge_decision = 1;
+  EdgeDecision edge_decision = 1;
   oneof condition {
     // any rule fires, provide this decision
     bool any_rule = 2;
     // all rules fire, provide this decision
     bool all_rules = 3;
-    ai.traceable.edge.common.config.v1.EdgeDecision any_rule_of_type = 4;
+    EdgeDecisionType any_rule_of_type = 4;
     // specific rules fire, provide this decision
-    ai.traceable.edge.common.config.v1.StringList specific_rule_ids = 5;
+    StringList specific_rule_ids = 5;
     // complex expressions with rule names, their weight and scores. and the incoming payload context.
     ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig decision_tree_jexl_expression = 6;
     ai.traceable.datamodel.data.transformation.config.v1.JexlScriptConfig decision_tree_jexl_script = 7;
@@ -32,7 +30,7 @@ message EdgeDecisionSpec {
 }
 
 message EdgeDecisionSpecConfig {
-  ai.traceable.edge.common.config.v1.EdgeInputKind edge_input_kind = 1;
+  EdgeInputKind edge_input_kind = 1;
   EdgeDecisionSpecConfigScope scope = 2;
   // ordered list of decision specs.
   // rule_id

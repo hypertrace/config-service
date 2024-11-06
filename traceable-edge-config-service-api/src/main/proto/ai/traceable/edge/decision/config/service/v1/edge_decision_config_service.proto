@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package ai.traceable.edge.decision.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_configs.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
+
+service EdgeDecisionConfigService {
+  // API to fetch all resolved scoped edge-decision configs for a given tenant
+  rpc GetResolvedEdgeDecisionEngineConfigs(GetResolvedEdgeDecisionEngineConfigsRequest) returns (GetResolvedEdgeDecisionEngineConfigsResponse) {}
+  // API to fetch the resolved scoped edge-decision config for a given scope
+  rpc GetScopedResolvedEdgeDecisionConfig(GetScopedResolvedEdgeDecisionConfigRequest) returns (GetScopedResolvedEdgeDecisionConfigResponse) {}
+}
+
+
+message GetResolvedEdgeDecisionEngineConfigsRequest{
+  GetEdgeDecisionConfigsFilter filter = 1;
+}
+
+message GetResolvedEdgeDecisionEngineConfigsResponse{
+  EdgeDecisionEngineConfigs edge_decision_engine_configs = 1;
+}
+
+message GetScopedResolvedEdgeDecisionConfigRequest{
+  EdgeDecisionSpecConfigScope scope = 1;
+  GetEdgeDecisionConfigsFilter filter = 2;
+}
+
+message GetScopedResolvedEdgeDecisionConfigResponse{
+  ScopedEdgeDecisionConfig scoped_edge_decision_config = 1;
+}
+
+message GetEdgeDecisionConfigsFilter {
+  repeated EdgeDecisionType decision_types = 1;
+  repeated EdgeDecisionRuleCategory rule_categories = 2;
+  repeated EdgeInputKind edge_input_kinds = 3;
+}

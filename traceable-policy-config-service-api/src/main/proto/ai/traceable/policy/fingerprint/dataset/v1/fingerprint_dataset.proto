@@ -6,7 +6,6 @@ option java_package = "ai.traceable.policy.fingerprint.dataset.v1";
 option java_multiple_files = true;
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
-import "ai/traceable/edge/common/config/v1/common.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 
 message DetectionTypeScope {
@@ -28,6 +27,29 @@ message DetectionSourceScope {
 //
 
 // represents the fingerprint data to be downloaded from the server, per policy.
+
+
+message MatchCondition {
+  oneof condition {
+    // this needs to be a boolean expression. if it's non-boolean, then it's false.
+    ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig jexl_expression = 1;
+    ai.traceable.datamodel.data.transformation.config.v1.JexlScriptConfig jexl_script = 2;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environments = 1;
+}
+
+message ConfigTtl {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
 message FingerprintDataset {
   string fingerprint_dataset_id = 1;
   repeated string labels = 2;
@@ -37,16 +59,16 @@ message FingerprintDataset {
   FingerprintDatasetScope exclusion_scope = 4;
 
   // when is it valid?
-  ai.traceable.edge.common.config.v1.ConfigTtl ttl = 5;
+  ConfigTtl ttl = 5;
 
   // toggle to enable / disable
   bool enabled = 6;
   // logical AND applied
-  repeated ai.traceable.edge.common.config.v1.MatchCondition match_conditions = 7;
+  repeated MatchCondition match_conditions = 7;
 }
 
 message FingerprintDatasetScope {
-  ai.traceable.edge.common.config.v1.EnvironmentScope environment_scope = 1;
+  EnvironmentScope environment_scope = 1;
   // volumetric or rate limiting, etc
   DetectionTypeScope detection_type_scope = 2;
   // policy names or labels

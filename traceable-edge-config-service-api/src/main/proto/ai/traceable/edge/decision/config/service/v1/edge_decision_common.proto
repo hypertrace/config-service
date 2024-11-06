@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package ai.traceable.edge.decision.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+
+message MatchCondition {
+  oneof condition {
+    // this needs to be a boolean expression. if it's non-boolean, then it's false.
+    ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig jexl_expression = 1;
+    ai.traceable.datamodel.data.transformation.config.v1.JexlScriptConfig jexl_script = 2;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environments = 1;
+}
+
+message ConfigTtl {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+enum EdgeInputKind {
+  EDGE_INPUT_KIND_UNSPECIFIED = 0;
+  EDGE_INPUT_KIND_HTTP_REQUEST = 1;
+  EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA = 2;
+}
+
+message EdgeDecision {
+  EdgeDecisionType edge_decision_type = 1;
+  // optional - specifies the duration for which the decision would be applied
+  // for subsequent requests once matched
+  google.protobuf.Duration decision_apply_duration = 2;
+  // modifying request/response in live traffic
+  repeated PayloadDecoration decorations = 3;
+  // Specifies the percentage of requests to apply the rule to after the threshold is crossed
+  // a number between 0.0 to 1.0
+  // default: 1.0 (all)
+  // todo: better name for this
+  optional double sampling_rate = 4;
+
+}
+
+enum EdgeDecisionType {
+  EDGE_DECISION_TYPE_UNSPECIFIED = 0;
+  EDGE_DECISION_TYPE_ALLOW = 1;
+  EDGE_DECISION_TYPE_BLOCK = 2;
+  EDGE_DECISION_TYPE_CAPTCHA = 3;
+}
+
+message PayloadDecoration {
+  oneof decoration{
+    RequestHeaderInjection request_header_injection = 1;
+    ResponseHeaderInjection response_header_injection = 2;
+  }
+}
+
+message RequestHeaderInjection {
+  string header_name = 1;
+  FieldValue value = 2;
+}
+
+message ResponseHeaderInjection {
+  string header_name = 1;
+  FieldValue value = 2;
+}
+
+message FieldValue {
+  oneof value {
+    string static_value = 1;
+    string variable = 2;
+    ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig jexl_expression = 3;
+  }
+}

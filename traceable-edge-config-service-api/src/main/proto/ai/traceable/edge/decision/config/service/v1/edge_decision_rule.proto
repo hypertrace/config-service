@@ -1,22 +1,14 @@
 syntax = "proto3";
 
-package ai.traceable.edge.decision.engine.config.v1;
+package ai.traceable.edge.decision.config.service.v1;
 
-option java_package = "ai.traceable.edge.decision.engine.config.v1";
 option java_multiple_files = true;
 
 import "google/protobuf/struct.proto";
-import "google/protobuf/type.proto";
 import "google/protobuf/duration.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
-import "ai/traceable/edge/common/config/v1/common.proto";
-import "ai/traceable/edge/decision/engine/config/v1/edge_decision_spec_config.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 
-message EdgeDecisionRuleScope {
-  oneof scope {
-    ai.traceable.edge.common.config.v1.EnvironmentScope environment_scope = 1;
-  }
-}
 
 // represents a single risk decision rule that can be evaluated by risk decision engine
 // Given a payload, configure how to determine the risk:
@@ -29,31 +21,84 @@ message EdgeDecisionRuleScope {
 message EdgeDecisionRule {
   string id = 1;
   string name = 2;
-  bool disabled = 3;
-  ai.traceable.edge.common.config.v1.ConfigTtl ttl = 4;
-  ai.traceable.edge.common.config.v1.EdgeInputKind edge_input_kind = 5;
-  // APPLY the config if a payload matches inclusion_scope. prod
-  EdgeDecisionRuleScope scope = 6;
-  oneof rule {
-    AggregateThresholdRule aggregate_threshold_rule = 8;
-    SignatureRule signature_rule = 9;
-    AccessPatternRule access_pattern_rule = 10;
-    FingerprintRule fingerprint_rule = 11;
-  }
-  // if the above matches, what do you want to capture in the result?
-  // this can refer to the attributes / variables in the config
-  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attribute_projections = 12;
+  EdgeDecisionRuleScope rule_scope = 3;
+  EdgeDecisionRuleCategory rule_category = 4;
+  EdgeDecisionRuleStatus rule_status = 5;
+  EdgeDecisionRuleDefinition rule_definition = 7;
+  EdgeDecision rule_decision = 8;
+}
 
-  // Specifies the percentage of requests to apply the rule to after the threshold is crossed
-  // a number between 0.0 to 1.0
-  // default: 1.0 (all)
-  // todo: better name for this
-  optional double sampling_rate = 13;
+message EdgeDecisionRuleScope {
+  repeated EdgeDecisionRuleScopeCondition scope_conditions = 1;
+}
+
+message EdgeDecisionRuleScopeCondition {
+  oneof scope {
+    EntityScope entity_scope = 1;
+    LabelScope label_scope = 2;
+    UrlScope url_scope = 3;
+  }
+
+  message UrlScope{
+    repeated string url_regexes = 1;
+  }
+
+  message EntityScope {
+    EntityType entity_type = 1;
+    repeated string entity_ids = 2;
+  }
+
+  message LabelScope {
+    LabelType label_type = 1;
+    repeated string label_ids = 2;
+  }
+
+  enum EntityType {
+    ENTITY_TYPE_UNSPECIFIED = 0;
+    ENTITY_TYPE_API = 1;
+    ENTITY_TYPE_SERVICE = 2;
+    ENTITY_TYPE_ENVIRONMENT = 3;
+  }
+
+  enum LabelType {
+    LABEL_TYPE_UNSPECIFIED = 0;
+    LABEL_TYPE_SERVICE = 1;
+    LABEL_TYPE_API = 2;
+  }
+}
+
+enum EdgeDecisionRuleCategory {
+  EDGE_DECISION_RULE_CATEGORY_UNSPECIFIED = 0;
+  EDGE_DECISION_RULE_CATEGORY_ORIGINAL = 1; // rules stored directly in this format
+  EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE = 2;
+  EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT = 3;
+  EDGE_DECISION_RULE_CATEGORY_MALICIOUS_SOURCES = 4;
+}
+
+message EdgeDecisionRuleStatus {
+  bool disabled = 1;
+  bool internal = 2;
+  // specifies the TTL for which the rule is active
+  ConfigTtl ttl = 3;
+}
+
+message EdgeDecisionRuleDefinition {
+  EdgeInputKind edge_input_kind = 1;
+  // variables used specifically in this rule
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping rule_variables = 2;
+  // if the rule matches, what do you want to capture in the result?
+  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attribute_projections = 3;
+  oneof rule_definition {
+    AggregateThresholdRule aggregate_threshold_rule = 6;
+    SignatureRule signature_rule = 7;
+    AccessPatternRule access_pattern_rule = 8;
+    FingerprintRule fingerprint_rule = 9;
+  }
   // each rule must provide a score and weight, that are used to compute the final score.
   //  double risk_score = 6;
   //  double weight = 7;
   // placeholder to allow customization of the rule eval - not all params are known now.
-  google.protobuf.Value custom_fields = 200;
+  google.protobuf.Value custom_fields = 100;
 }
 
 // Aggregate threshold rules
@@ -66,7 +111,7 @@ message EdgeDecisionRule {
 // agg_fn(dimension) by (dim1, dim2..dimN) over [timewindow] , threshold
 message AggregateThresholdRule {
   // this should refer to a match criteria that's evaluated in variables so that we don't evaluate again and again
-  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
+  MatchCondition match_condition = 1;
 
   // group-by to be applied on the payload
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping group_by_dimensions = 2;
@@ -90,12 +135,13 @@ message ValueAggregateThreshold {
   ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping dimension = 1;
 
   enum AggregationType {
-    COUNT = 0;           // Count the total number of events
-    COUNT_DISTINCT = 1;  // Count distinct values of specified dimensions
-    SUM = 2;             // Sum of attribute values
-    AVG = 3;             // Average of attribute values
-    MAX = 4;             // Maximum attribute value
-    MIN = 5;             // Minimum attribute value
+    AGGREGATION_TYPE_UNSPECIFIED = 0;           // Count the total number of events
+    AGGREGATION_TYPE_COUNT = 1;           // Count the total number of events
+    AGGREGATION_TYPE_DISTINCT_COUNT = 2;  // Count distinct values of specified dimensions
+    AGGREGATION_TYPE_SUM = 3;             // Sum of attribute values
+    AGGREGATION_TYPE_AVG = 4;             // Average of attribute values
+    AGGREGATION_TYPE_MAX = 5;             // Maximum attribute value
+    AGGREGATION_TYPE_MIN = 6;             // Minimum attribute value
   }
 
   AggregationType aggregation_type = 2;
@@ -109,11 +155,11 @@ message ValueAggregateThreshold {
 // "signature rules" that can be evaluated by risk decision engine
 // evaluate a payload to check if it matches the signature
 message SignatureRule {
-  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
+  MatchCondition match_condition = 1;
 }
 
 message FingerprintRule {
-  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 1;
+  MatchCondition match_condition = 1;
   string fingerprint_dataset_id = 2;
 }
 
@@ -123,8 +169,8 @@ message AccessPatternRule {
   // correlation key to be computed on the request payload(s)
   CorrelationKey correlation_key = 1;
   // common filters that must be applied on all payloads (client_type == '')
-  ai.traceable.edge.common.config.v1.MatchCondition filter = 2;
-  ai.traceable.edge.common.config.v1.MatchCondition target_request = 3;
+  MatchCondition filter = 2;
+  MatchCondition target_request = 3;
 
   // what other requests do we expect in this window, before the target is invoked
   repeated RequestInvocation pre_requests = 4;  // Collection of requests that are expected.
@@ -138,7 +184,7 @@ message AccessPatternRule {
 message RequestInvocation {
   // required for tracking this invocation.
   string request_invocation_id = 1;
-  ai.traceable.edge.common.config.v1.MatchCondition match_condition = 2;
+  MatchCondition match_condition = 2;
   int32 weight = 3;
   double median_percent = 4;
 }
@@ -147,21 +193,4 @@ message CorrelationKey {
   // for now, it is the same set of derivation rules applied on all requests in the access pattern config
   // provide derivation of the attributes in the risk config
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attributes = 1;
-}
-
-// /registration
-// - decision spec
-// -> env->all configs -> rules ->
-message EdgeDecisionConfig {
-  // all variables used in the rules
-  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping variables = 1;
-  // decision specs encapsulate the "decision tree"
-  repeated EdgeDecisionSpecConfig ordered_edge_decision_spec_configs = 2;
-  // default: allow, if any of these match
-  repeated EdgeDecisionRule allow_rules = 3;
-  // as of now, applicable only for input_kind=CLIENT_FP_DATA
-  // default: captcha, if any of these match
-  repeated EdgeDecisionRule captcha_rules = 4;
-  // default: block, if any of these match
-  repeated EdgeDecisionRule block_rules = 5;
 }

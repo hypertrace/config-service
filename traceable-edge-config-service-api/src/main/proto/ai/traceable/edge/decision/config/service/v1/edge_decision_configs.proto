@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package ai.traceable.edge.decision.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+
+
+
+// this is the overall config for the edge decision engine.
+message EdgeDecisionEngineConfigs {
+  // common variables used in the rules
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping common_variables = 1;
+  // list of all decision rules
+  repeated EdgeDecisionRule decision_rules = 2;
+  // decision specs encapsulate the "decision tree"
+  repeated EdgeDecisionSpecConfig scoped_edge_decision_spec_configs = 3;
+}
+
+message ScopedEdgeDecisionConfig {
+  // decision specs encapsulate the "decision tree"
+  EdgeDecisionSpecConfig edge_decision_spec_config = 1;
+  // list of decision rules associated with the scope of the decision spec
+  repeated EdgeDecisionRule decision_rules = 2;
+  // common variables used in the rules
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping common_variables = 3;
+}
