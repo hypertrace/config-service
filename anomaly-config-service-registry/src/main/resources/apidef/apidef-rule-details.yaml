@@ -363,3 +363,71 @@
         - JWT Confusion Attack - https://portswigger.net/web-security/jwt/algorithm-confusion
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
         - CWE-345: Insufficient Verification of Data Authenticity (https://cwe.mitre.org/data/definitions/345.html)
+
+  - ruleId: jwt_sign
+    ruleName: JWT Invalid Signature
+    subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+    eventLabels:
+      CWE: 347
+      OWASP_API_2023: API2
+      OWASP_API_2019: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134.003
+    eventDetails:
+      description: |
+        The JWT token signature is invalid or None. This could indicate an attempt to tamper with the token or use a token without a valid signature.
+      mitigation: |
+        Ensure that the JWT token signature is properly validated and that the token is rejected if the signature is invalid or missing.
+      impact: |
+        If not mitigated, this could lead to unauthorized access and potential data breaches.
+      references: |
+        - JWT documentation - https://jwt.io/introduction
+        - JWT Invalid Signature: https://portswigger.net/web-security/jwt#exploiting-flawed-jwt-signature-verification
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - CWE-347: Improper Verification of Cryptographic Signature (https://cwe.mitre.org/data/definitions/347.html)
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
+
+  - ruleId: jwt_albeast
+    ruleName: JWT AlBeast Anomaly
+    subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+    eventLabels:
+      CWE: 347
+      OWASP_API_2023: API2
+      OWASP_API_2019: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134.003
+    eventDetails:
+      description: |
+        The ALBeast vulnerability is a configuration-based issue affecting AWS Application Load Balancers (ALBs) that can lead to unauthorized access. It arises from inadequate validation of authentication tokens and misconfigured security groups, enabling attackers to bypass critical security controls. Organizations must ensure that token signers are properly validated and that traffic is restricted to trusted ALB instances to mitigate this vulnerability.
+      mitigation: |
+        Ensure that the ALB authentication process properly validates the signer of the tokens and that security groups are configured to accept traffic only from trusted ALB instances. Regularly review application configurations to align with the latest AWS best practices.
+      impact: |
+        If not mitigated, this could lead to unauthorized access to applications, data exfiltration, data breaches, and increased risk of insider threats.
+      references: |
+        - AlBeast Vulnerability: https://www.ankercloud.com/blogs/albeast-vulnerability-what-it-is-and-how-to-protect-your-applications
+        - AWS Application Load Balancer Documentation: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
+        - Miggo Research on ALBeast Vulnerability: [Link to research, if available]
+        - OWASP API Security Top 10 - 2023 - API2: Broken Authentication: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+        - CWE-347: Improper Verification of Cryptographic Signature: https://cwe.mitre.org/data/definitions/347.html
+
+  - ruleId: jwt_jku
+    ruleName: JWT JKU Integrity Violation
+    subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+    eventLabels:
+      CWE: 347
+      OWASP_API_2023: API2
+      OWASP_API_2019: API2
+      MITRE_TACTIC: TA0005
+      MITRE_TECHNIQUE: T1134.003
+    eventDetails:
+      description: |
+        JWT Token received with unknown JKU (JWK Set URL) header. The JWT includes a JKU claim that specifies the URL of the key used for signing. If not properly validated, an attacker could substitute a malicious key URL, leading to unauthorized access and compromising the security of the application
+      mitigation: |
+        Ensure that the JKU claim in JWT tokens is properly validated and that the key URL is trusted. Implement strict validation checks to prevent unauthorized access and data breaches.
+      impact: |
+        If not mitigated, this could lead to unauthorized access, data breaches, and increased risk of insider threats.
+      references: |
+        - JWT specifications (https://tools.ietf.org/html/rfc7515#section-4.1.5)
+        - OWASP API Security Top 10 - 2023 - API2: Broken Authentication: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+        - CWE-347: Improper Verification of Cryptographic Signature: https://cwe.mitre.org/data/definitions/347.html
+        - JWT JKU Integrity Violation: https://portswigger.net/web-security/jwt
