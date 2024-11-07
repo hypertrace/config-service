@@ -10,6 +10,7 @@
 - ruleId: volumetric
   ruleName: Unrestricted Resource Consumption
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_VOLUMETRIC
+  severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
   subRuleInfos:
     - ruleId: volumetric_apiCallSpike
       ruleName: Spike in API Call Count

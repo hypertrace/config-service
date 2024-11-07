@@ -1,6 +1,7 @@
 - ruleId: bola
   ruleName: Authorization Bypass - Object Level
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
   eventLabels:
     CWE: 285
     OWASP_API_2023: API1
@@ -43,6 +44,7 @@
 - ruleId: userIdBola
   ruleName: Authorization Bypass - User Level
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
   eventLabels:
     CWE: 285
     OWASP_API_2023: API1
@@ -88,6 +90,7 @@
   - ruleId: sessionv_landspeed
     ruleName: Land Speed Violation
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 501
       OWASP_API_2023: API2
@@ -106,6 +109,7 @@
   - ruleId: sessionv_expiry
     ruleName: Session Expired
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 613
       OWASP_API_2023: API2

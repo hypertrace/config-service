@@ -1,5 +1,6 @@
 - ruleId: unknownParam
   ruleName: Mass Assignment
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
   eventLabels:
     CWE: 472
@@ -29,6 +30,7 @@
 - ruleId: enum
   ruleName: Invalid Enumerations
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 183
     OWASP_API_2023: API8
@@ -46,6 +48,7 @@
 - ruleId: integer
   ruleName: Value Out of Range
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 190
     OWASP_API_2019: API8
@@ -68,6 +71,7 @@
 - ruleId: type
   ruleName: Type Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 843
     OWASP_API_2023: API8
@@ -85,6 +89,7 @@
 - ruleId: missingParam
   ruleName: Missing Field
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
   eventLabels:
     CWE: 287
     OWASP_API_2023: API8
@@ -102,6 +107,7 @@
 - ruleId: specialCharacter
   ruleName: Special Character Tampering
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 159
     OWASP_2021: A3
@@ -118,6 +124,7 @@
 - ruleId: contentExplosion
   ruleName: Content Explosion
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_PARAMETER_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 405
     OWASP_2021: A3
@@ -134,6 +141,7 @@
 - ruleId: device
   ruleName: Unexpected User Agent
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_ZERO
   eventLabels:
     CWE: 644
     OWASP_API_2019: API8
@@ -150,6 +158,7 @@
 - ruleId: httpStatus
   ruleName: Unexpected HTTP Response Code
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_ZERO
   eventLabels:
     CWE: 204
     OWASP_API_2023: API8
@@ -167,6 +176,7 @@
 - ruleId: contentType
   ruleName: Content Type Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 436
     OWASP_API_2023: API8
@@ -184,6 +194,7 @@
 - ruleId: contentSize
   ruleName: Content Size Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 1043
     OWASP_API_2023: API8
@@ -201,6 +212,7 @@
 - ruleId: ssrf
   ruleName: Server-Side Request Forgery (SSRF)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
+  severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
   eventLabels:
     CWE: 918
     OWASP_API_2023: API7
@@ -232,6 +244,7 @@
 - ruleId: bfla
   ruleName: Broken Function Level Authorization (BFLA)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 285
     OWASP_API_2023: API5
@@ -261,10 +274,12 @@
 - ruleId: jwt
   ruleName: JWT Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   subRuleInfos:
   - ruleId: jwt_exp
     ruleName: JWT Expired
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 613
       OWASP_API_2023: API2
@@ -287,6 +302,7 @@
   - ruleId: jwt_nbf
     ruleName: JWT Premature Usage
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 613
       OWASP_API_2023: API2
@@ -306,6 +322,7 @@
   - ruleId: jwt_iss
     ruleName: Unknown JWT Issuer
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 639
       OWASP_API_2023: API2
@@ -325,6 +342,7 @@
   - ruleId: jwt_aud
     ruleName: Unauthorized JWT audience
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 347
       OWASP_API_2023: API2
@@ -344,6 +362,7 @@
   - ruleId: jwt_alg
     ruleName: JWT Algorithm Confusion
     subRuleTypes: [ANOMALY_SUB_RULE_TYPE_REGULAR]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 345
       OWASP_API_2023: API2

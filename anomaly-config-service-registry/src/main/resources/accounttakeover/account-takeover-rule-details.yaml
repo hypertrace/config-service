@@ -1,6 +1,7 @@
 - ruleId: ato
   ruleName: Account Takeover
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_ACCOUNT_TAKEOVER
+  severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
   subRuleInfos:
     - ruleId: ato_credStuff
       ruleName: Credential Stuffing
