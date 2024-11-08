@@ -53,12 +53,11 @@ public class SavedFilterConfigStore
   @Override
   protected Optional<SavedFilter> filterConfigData(
       SavedFilter data, GetSavedFiltersRequest request) {
-    if (request.hasId()) {
-      return request.getId().equals(data.getId()) && request.getScope().equals(data.getScope())
-          ? Optional.of(data)
-          : Optional.empty();
-    }
-    return request.getScope().equals(data.getScope()) ? Optional.of(data) : Optional.empty();
+    boolean idMatches = !request.hasId() || request.getId().equals(data.getId());
+    boolean scopeMatches =
+        request.getScope().isEmpty() || request.getScope().equals(data.getScope());
+
+    return (idMatches && scopeMatches) ? Optional.of(data) : Optional.empty();
   }
 
   @Override

@@ -1,26 +1,44 @@
 package ai.traceable.saved.filter.config.service.validation;
 
+import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_BOOL;
+import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_STRING;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.saved.filter.config.service.store.SavedFilterStoreManager;
 import ai.traceable.saved.filter.config.service.v1.CreateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.DeleteSavedFilterRequest;
+import ai.traceable.saved.filter.config.service.v1.Expression;
+import ai.traceable.saved.filter.config.service.v1.Field;
 import ai.traceable.saved.filter.config.service.v1.FilterCriteria;
 import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersRequest;
+import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersResponse;
 import ai.traceable.saved.filter.config.service.v1.PublicVisibility;
 import ai.traceable.saved.filter.config.service.v1.RelationalFilterCondition;
 import ai.traceable.saved.filter.config.service.v1.RelationalOperator;
+import ai.traceable.saved.filter.config.service.v1.SavedFilter;
 import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.Visibility;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
+import com.google.inject.util.Modules;
+import com.google.protobuf.ListValue;
+import com.google.protobuf.NullValue;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Objects;
 import java.util.Optional;
+import org.hypertrace.core.attribute.service.client.AttributeServiceCachedClient;
+import org.hypertrace.core.attribute.service.v1.AttributeMetadata;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
@@ -35,10 +53,30 @@ class SavedFilterRequestValidatorTest {
   public static final String TENANT_ID = "Tenant ID";
   public static final String USER_ID = "User ID";
   public static final String VISIBILITY = "visibility";
-  public static final String FILTER_CONDITION = "filter condition";
 
-  private final SavedFilterRequestValidator validator = new SavedFilterRequestValidator();
+  private SavedFilterRequestValidator validator;
   @Mock private RequestContext mockRequestContext;
+  @Mock private SavedFilterStoreManager mockSavedFilterStoreManager;
+  @Mock private AttributeServiceCachedClient mockAttributeServiceCachedClient;
+
+  @BeforeEach
+  void setup() {
+
+    Injector injector =
+        Guice.createInjector(
+            Modules.override(new SavedFilterValidationModule())
+                .with(
+                    new AbstractModule() {
+                      @Override
+                      protected void configure() {
+                        bind(AttributeServiceCachedClient.class)
+                            .toInstance(mockAttributeServiceCachedClient);
+                      }
+                    }));
+    SavedFilterValidator<FilterCriteria> savedFilterValidator =
+        injector.getInstance(Key.get(new TypeLiteral<SavedFilterValidator<FilterCriteria>>() {}));
+    validator = new SavedFilterRequestValidator(savedFilterValidator, mockSavedFilterStoreManager);
+  }
 
   @Test
   void validateCreateSavedFilterRequest() {
@@ -75,20 +113,6 @@ class SavedFilterRequestValidatorTest {
                 mockRequestContext,
                 CreateSavedFilterRequest.newBuilder().setName("f1").setScope("traces").build()));
 
-    assertInvalidArgStatus(
-        FILTER_CONDITION,
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                CreateSavedFilterRequest.newBuilder()
-                    .setName("f1")
-                    .setScope("traces")
-                    .setVisibility(
-                        Visibility.newBuilder()
-                            .setPublic(PublicVisibility.newBuilder().build())
-                            .build())
-                    .build()));
-
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(
@@ -102,6 +126,288 @@ class SavedFilterRequestValidatorTest {
                             .build())
                     .setFilterCriteria(buildFilterCriteria())
                     .build()));
+  }
+
+  @Test
+  void testFilterConditionNotPresent() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .build()));
+
+    assertEquals(
+        "UNIMPLEMENTED: Filter type FILTERCONDITION_NOT_SET is not supported",
+        statusRuntimeException.getMessage());
+  }
+
+  @Test
+  void testFilterConditionWithInvalidAttribute() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "invalidKey"))
+        .thenReturn(Optional.empty());
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setRelationalFilter(
+                                    RelationalFilterCondition.newBuilder()
+                                        .setLhsExpression(
+                                            Expression.newBuilder()
+                                                .setField(Field.newBuilder().setKey("invalidKey"))
+                                                .build())
+                                        .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                        .setRhsExpression(
+                                            Expression.newBuilder()
+                                                .setValue(
+                                                    Value.newBuilder().setStringValue("v1").build())
+                                                .build())
+                                        .build()))
+                        .build()));
+
+    assertEquals(
+        "INVALID_ARGUMENT: Invalid attribute key (invalidKey) with scope (traces)",
+        statusRuntimeException.getMessage());
+  }
+
+  @Test
+  void testFilterConditionWithNullRhs() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setRelationalFilter(
+                                    RelationalFilterCondition.newBuilder()
+                                        .setLhsExpression(
+                                            Expression.newBuilder()
+                                                .setField(Field.newBuilder().setKey("validKey"))
+                                                .build())
+                                        .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                        .setRhsExpression(
+                                            Expression.newBuilder()
+                                                .setValue(
+                                                    Value.newBuilder()
+                                                        .setNullValue(NullValue.NULL_VALUE))
+                                                .build())
+                                        .build()))
+                        .build()));
+    String actualMessage = statusRuntimeException.getMessage();
+    assertTrue(
+        actualMessage.equals("INVALID_ARGUMENT: Value cannot contains: [NULL_VALUE, STRUCT_VALUE]")
+            || actualMessage.equals(
+                "INVALID_ARGUMENT: Value cannot contains: [STRUCT_VALUE, NULL_VALUE]"),
+        "Exception message should match either of the expected descriptions");
+  }
+
+  @Test
+  void testFilterConditionWithEmptyList() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setRelationalFilter(
+                                    RelationalFilterCondition.newBuilder()
+                                        .setLhsExpression(
+                                            Expression.newBuilder()
+                                                .setField(Field.newBuilder().setKey("validKey"))
+                                                .build())
+                                        .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                        .setRhsExpression(
+                                            Expression.newBuilder()
+                                                .setValue(
+                                                    Value.newBuilder()
+                                                        .setListValue(
+                                                            ListValue.getDefaultInstance()))
+                                                .build())
+                                        .build()))
+                        .build()));
+
+    assertEquals(
+        "INVALID_ARGUMENT: List values cannot be empty", statusRuntimeException.getMessage());
+  }
+
+  @Test
+  void testFilterConditionWithNonEmptyList() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("traces")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilterCondition.newBuilder()
+                                    .setLhsExpression(
+                                        Expression.newBuilder()
+                                            .setField(Field.newBuilder().setKey("validKey"))
+                                            .build())
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setRhsExpression(
+                                        Expression.newBuilder()
+                                            .setValue(
+                                                Value.newBuilder()
+                                                    .setListValue(
+                                                        ListValue.newBuilder()
+                                                            .addValues(
+                                                                Value.newBuilder()
+                                                                    .setStringValue("stringValue")
+                                                                    .build())))
+                                            .build())
+                                    .build()))
+                    .build()));
+  }
+
+  @Test
+  void testFilterConditionWithValidAttribute() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("traces")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setRelationalFilter(
+                                RelationalFilterCondition.newBuilder()
+                                    .setLhsExpression(
+                                        Expression.newBuilder()
+                                            .setField(Field.newBuilder().setKey("validKey"))
+                                            .build())
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setRhsExpression(
+                                        Expression.newBuilder()
+                                            .setValue(
+                                                Value.newBuilder().setStringValue("v1").build())
+                                            .build())
+                                    .build()))
+                    .build()));
+  }
+
+  @Test
+  void testFilterConditionWithValidAttributeAndInvalidOperator() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_BOOL).build()));
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setRelationalFilter(
+                                    RelationalFilterCondition.newBuilder()
+                                        .setLhsExpression(
+                                            Expression.newBuilder()
+                                                .setField(Field.newBuilder().setKey("validKey"))
+                                                .build())
+                                        .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
+                                        .setRhsExpression(
+                                            Expression.newBuilder()
+                                                .setValue(
+                                                    Value.newBuilder()
+                                                        .setListValue(
+                                                            ListValue.newBuilder()
+                                                                .addValues(
+                                                                    Value.newBuilder()
+                                                                        .setBoolValue(true)
+                                                                        .build())
+                                                                .build()))
+                                                .build())
+                                        .build()))
+                        .build()));
+
+    assertEquals(
+        "INVALID_ARGUMENT: Unsupported operator RELATIONAL_OPERATOR_IN for attributeKind TYPE_BOOL",
+        statusRuntimeException.getMessage());
   }
 
   @Test
@@ -138,34 +444,37 @@ class SavedFilterRequestValidatorTest {
             validator.validateOrThrow(
                 mockRequestContext,
                 UpdateSavedFilterRequest.newBuilder().setName("f1").setId("id-1").build()));
+  }
 
-    assertInvalidArgStatus(
-        FILTER_CONDITION,
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                UpdateSavedFilterRequest.newBuilder()
-                    .setName("f1")
-                    .setId("id-1")
-                    .setVisibility(
-                        Visibility.newBuilder()
-                            .setPublic(PublicVisibility.newBuilder().build())
-                            .build())
-                    .build()));
+  @Test
+  void testFilterConditionForUpdateRequest() {
 
-    assertDoesNotThrow(
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext,
-                UpdateSavedFilterRequest.newBuilder()
-                    .setId("id-1")
-                    .setName("f1")
-                    .setVisibility(
-                        Visibility.newBuilder()
-                            .setPublic(PublicVisibility.newBuilder().build())
-                            .build())
-                    .setFilterCriteria(buildFilterCriteria())
-                    .build()));
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockSavedFilterStoreManager.fetchSavedFilters(
+            mockRequestContext, GetSavedFiltersRequest.newBuilder().setId("id-1").build()))
+        .thenReturn(
+            GetSavedFiltersResponse.newBuilder()
+                .addSavedFilters(SavedFilter.newBuilder().setScope("scope").build())
+                .build());
+
+    StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    UpdateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setId("id-1")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .build()));
+    assertEquals(
+        "UNIMPLEMENTED: Filter type FILTERCONDITION_NOT_SET is not supported",
+        statusRuntimeException.getMessage());
   }
 
   @Test

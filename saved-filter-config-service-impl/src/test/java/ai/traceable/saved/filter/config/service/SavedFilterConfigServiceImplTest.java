@@ -22,11 +22,19 @@ import ai.traceable.saved.filter.config.service.v1.SavedFilterServiceGrpc;
 import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.Visibility;
 import ai.traceable.saved.filter.config.service.validation.SavedFilterRequestValidator;
+import ai.traceable.saved.filter.config.service.validation.SavedFilterValidationModule;
+import ai.traceable.saved.filter.config.service.validation.SavedFilterValidator;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
+import com.google.inject.util.Modules;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.Value;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
+import org.hypertrace.core.attribute.service.client.AttributeServiceCachedClient;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -50,9 +58,22 @@ class SavedFilterConfigServiceImplTest {
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private TimestampConverter timestampConverter;
   @Mock private UuidGenerator uuidGenerator;
+  @Mock private AttributeServiceCachedClient mockAttributeServiceCachedClient;
 
   @BeforeEach
   void beforeEach() {
+    SavedFilterValidator<FilterCriteria> savedFilterValidator =
+        Guice.createInjector(
+                Modules.override(new SavedFilterValidationModule())
+                    .with(
+                        new AbstractModule() {
+                          @Override
+                          protected void configure() {
+                            bind(AttributeServiceCachedClient.class)
+                                .toInstance(mockAttributeServiceCachedClient);
+                          }
+                        }))
+            .getInstance(Key.get(new TypeLiteral<SavedFilterValidator<FilterCriteria>>() {}));
     this.mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
@@ -64,7 +85,12 @@ class SavedFilterConfigServiceImplTest {
                     new SavedFilterConfigStore(genericStub, eventGenerator),
                     this.timestampConverter,
                     uuidGenerator),
-                new SavedFilterRequestValidator()))
+                new SavedFilterRequestValidator(
+                    savedFilterValidator,
+                    new SavedFilterStoreManager(
+                        new SavedFilterConfigStore(genericStub, eventGenerator),
+                        timestampConverter,
+                        uuidGenerator))))
         .start();
 
     this.savedFilterServiceBlockingStub =
