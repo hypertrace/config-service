@@ -172,7 +172,7 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       signature_rule:
-        match_condition:
+        generic_match_condition:
           jexl_expression:
             jexl_expression: "$s.request_headers['visitor_uuid'] != traceable:parseJson($s.request_body)['user']['uuid']"
       attribute_projections:
@@ -198,19 +198,12 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       signature_rule:
-        match_condition:
+        generic_match_condition:
           jexl_expression:
             jexl_expression: "$s.request_headers['visitor_uuid'] == null"
     rule_decision:
       edge_decision_type: "EDGE_DECISION_TYPE_BLOCK"
       sampling_rate: 1.0 # apply always
-  - name: "server_detection_fingerprint_rule"
-    rule_definition:
-      fingerprint_rule:
-        match_condition:
-          jexl_expression:
-            jexl_expression: "$s.request_headers['visitor_uuid'] == null"
-        fingerprint_dataset_id: "policy1"
   - name: "access_pattern_rule"
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"

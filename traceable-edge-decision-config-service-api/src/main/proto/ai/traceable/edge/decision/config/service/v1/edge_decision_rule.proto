@@ -6,6 +6,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/struct.proto";
 import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 
@@ -79,7 +80,6 @@ message EdgeDecisionRuleDefinition {
     AggregateThresholdRule aggregate_threshold_rule = 6;
     SignatureRule signature_rule = 7;
     AccessPatternRule access_pattern_rule = 8;
-    FingerprintRule fingerprint_rule = 9;
   }
   // each rule must provide a score and weight, that are used to compute the final score.
   //  double risk_score = 6;
@@ -142,12 +142,82 @@ message ValueAggregateThreshold {
 // "signature rules" that can be evaluated by risk decision engine
 // evaluate a payload to check if it matches the signature
 message SignatureRule {
-  MatchCondition match_condition = 1;
+  oneof condition {
+    // to express any signature
+    MatchCondition generic_match_condition = 1;
+    // when we want to express lhs match against rhs dataset
+    StructuredMatchCondition structured_match_condition = 2;
+  }
 }
 
-message FingerprintRule {
-  MatchCondition match_condition = 1;
-  string fingerprint_dataset_id = 2;
+message StructuredMatchCondition {
+  // how do we derive this fingerprint keys from the request payload? (LHS)
+  ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping lhs = 1;
+  oneof operator {
+    // doesn't need RHS.
+    UnaryOperator unary_operator = 2;
+    BinaryOperator binary_operator = 3;
+  }
+}
+
+message BinaryOperator {
+  // RHS. what should we match against?
+  oneof rhs {
+    // allowed operators: IN, NOT_IN
+    google.protobuf.ListValue list_value = 2;
+    // allowed operators: LIKE, NOT_LIKE
+    string regex = 3;
+    // allowed operators: NOT_IN (because bloom filter can answer if an element is NOT present)
+    bytes bloom_filter = 4;
+    // allowed operators: GT, LT, GTE, LTE
+    double number_value = 5;
+    // allowed operators: EQ, NOT_EQ
+    bool bool_value = 6;
+    // allowed operators: EQ, NOT_EQ
+    google.protobuf.NullValue null_value = 7;
+    // allowed operators: EQ, NOT_EQ
+    string string_value = 8;
+    // allowed operators: BETWEEN
+    RangeValue range_value = 9;
+    // allowed operators: BETWEEN
+    TimeRangeValue time_range_value = 10;
+  }
+
+  // validate against "rhs" type
+  MatchOperator match_operator = 11;
+}
+
+message RangeValue {
+  double lower = 1;
+  double upper = 2;
+}
+
+message TimeRangeValue {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
+enum UnaryOperator {
+  UNARY_OPERATOR_UNSPECIFIED = 0;
+  UNARY_OPERATOR_IS_NULL = 1;
+  UNARY_OPERATOR_IS_NOT_NULL = 2;
+  UNARY_OPERATOR_IS_EMPTY = 3;
+  UNARY_OPERATOR_IS_NOT_EMPTY = 4;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_IN = 1;
+  MATCH_OPERATOR_NOT_IN = 2;
+  MATCH_OPERATOR_LIKE = 3;
+  MATCH_OPERATOR_NOT_LIKE = 4;
+  MATCH_OPERATOR_EQ = 5;
+  MATCH_OPERATOR_NOT_EQ = 6;
+  MATCH_OPERATOR_GT = 7;
+  MATCH_OPERATOR_LT = 8;
+  MATCH_OPERATOR_GTE = 9;
+  MATCH_OPERATOR_LTE = 10;
+  MATCH_OPERATOR_BETWEEN = 11;
 }
 
 // "api access rules" that can be evaluated by risk decision engine

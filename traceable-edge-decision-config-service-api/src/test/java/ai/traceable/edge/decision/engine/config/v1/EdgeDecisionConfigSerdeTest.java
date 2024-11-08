@@ -15,7 +15,7 @@ public class EdgeDecisionConfigSerdeTest {
                 "edge-decision-engine-configs.yaml", EdgeDecisionEngineConfig.newBuilder())
             .build();
     Assertions.assertEquals(7, edgeDecisionConfig.getCommonVariablesCount());
-    Assertions.assertEquals(7, edgeDecisionConfig.getDecisionRulesCount());
+    Assertions.assertEquals(6, edgeDecisionConfig.getDecisionRulesCount());
     Assertions.assertEquals(1, edgeDecisionConfig.getEdgeDecisionSpecConfigsCount());
     Assertions.assertEquals(
         3, edgeDecisionConfig.getEdgeDecisionSpecConfigs(0).getEdgeDecisionSpecsCount());

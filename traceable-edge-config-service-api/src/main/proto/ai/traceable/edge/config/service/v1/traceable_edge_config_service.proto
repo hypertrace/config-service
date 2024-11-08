@@ -7,6 +7,9 @@ option java_multiple_files = true;
 import "google/protobuf/duration.proto";
 
 // this service is intentionally loosely typed.
+// at the edge, different components can use the AgentManager as a proxy to pull their own configs
+// and since AgentManager and the server channel are proxying other configs - they don't need to be
+// aware of the payload.
 service TraceableEdgeConfigService {
   rpc GetConfigs(GetConfigsRequest) returns (GetConfigsResponse) {}
 }
@@ -35,10 +38,18 @@ message Component {
 }
 
 message ConfigObject {
+  // for ex: ClientBotFingerprintPolicy
   string config_type = 1;
   string config_id = 2;
-  string config_json = 3;
-  string config_deserializer = 4;
+  // for ex: the blob of the config
+  oneof format {
+    bytes config_bytes = 3;
+    string config_json = 4;
+    string config_yaml = 5;
+  }
+  // for ex: ai.traceable.edge.bot.config.ClientBotFingerprintPolicy
+  string config_deserializer = 6;
+  bool enabled = 7;
 }
 
 message ConfigRequestElement {
@@ -60,12 +71,10 @@ message ConfigResponseElement {
   string hash = 1;
   repeated ConfigObject config_objects = 2;
   google.protobuf.Duration refresh_after_duration = 3;
-  bool enabled = 4;
 }
 
 message GetConfigsResponse {
   string hash = 1;
   google.protobuf.Duration refresh_after_duration = 2;
   repeated ConfigResponseElement config_responses = 3;
-  bool enabled = 4;
 }
