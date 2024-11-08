@@ -16,6 +16,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.guice)
+  implementation(commonLibs.slf4j2.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

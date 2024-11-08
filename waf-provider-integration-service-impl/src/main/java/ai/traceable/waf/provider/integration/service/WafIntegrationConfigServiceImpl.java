@@ -21,9 +21,11 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase {
   private final IdentifiedObjectStoreWithFilter<WafIntegration, GetWafIntegrationsFilter>
       wafIntegrationStore;
@@ -65,6 +67,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
               .build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
+      log.error(
+          "Failed while creating waf integration for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }
@@ -84,6 +88,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
           GetWafIntegrationResponse.newBuilder().setWafIntegration(wafIntegration).build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
+      log.error(
+          "Failed while getting waf integration for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }
@@ -105,6 +111,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
           GetWafIntegrationsResponse.newBuilder().addAllWafIntegration(wafIntegrations).build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
+      log.error(
+          "Failed while getting waf integrations for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }
@@ -124,6 +132,10 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
               .build());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
+      log.error(
+          "Failed while getting waf integration details for request: {} with exception: ",
+          request,
+          e);
       responseStreamObserver.onError(e);
     }
   }
@@ -156,6 +168,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
 
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
+      log.error(
+          "Failed while updating waf integration for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }
@@ -173,6 +187,8 @@ public class WafIntegrationConfigServiceImpl extends WafProviderServiceImplBase 
       responseStreamObserver.onNext(DeleteWafIntegrationResponse.getDefaultInstance());
       responseStreamObserver.onCompleted();
     } catch (Exception e) {
+      log.error(
+          "Failed while deleting waf integration for request: {} with exception: ", request, e);
       responseStreamObserver.onError(e);
     }
   }
