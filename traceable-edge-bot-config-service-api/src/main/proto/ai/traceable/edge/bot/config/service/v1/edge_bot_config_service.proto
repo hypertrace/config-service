@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ai.traceable.edge.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/edge/bot/config/service/v1/captcha_site_key_config.proto";
+import "ai/traceable/policy/config/service/v1/client_bot_fingerprint_policy.proto";
+
+service EdgeBotConfigService {
+  // query apis
+  // traceable-edge bot service configs
+  rpc GetBotServiceOnboardingConfig(GetBotServiceOnboardingConfigRequest) returns (GetBotServiceOnboardingConfigResponse) {}
+  rpc GetBotServicePolicyConfigs(GetBotServicePolicyConfigsRequest) returns (GetBotServicePolicyConfigsResponse) {}
+}
+
+message GetBotServiceOnboardingConfigRequest {
+}
+
+message GetBotServiceOnboardingConfigResponse {
+  repeated ai.traceable.edge.bot.service.config.v1.CaptchaSiteKeyConfig captcha_site_key_configs = 1;
+}
+
+message GetBotServicePolicyConfigsRequest {
+}
+
+message GetBotServicePolicyConfigsResponse {
+  repeated ai.traceable.policy.config.service.v1.ClientBotFingerprintPolicy policies = 1;
+}

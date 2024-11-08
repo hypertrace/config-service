@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package ai.traceable.edge.config.service.v1;
+
+option java_multiple_files = true;
+
+import "google/protobuf/duration.proto";
+
+// this service is intentionally loosely typed.
+service TraceableEdgeConfigService {
+  rpc GetConfigs(GetConfigsRequest) returns (GetConfigsResponse) {}
+}
+
+message OnlyIfChangedFilter {
+  string previous_hash = 1;
+}
+
+message Scope {
+  oneof scope {
+    string environment_name = 1;
+  }
+}
+
+message AgentCapabilities {
+  repeated Component components = 1;
+  map<string, string> additional_fields = 100;
+}
+
+message Component {
+  oneof value {
+    string traceable_platform_agent_version = 1;
+    string traceable_edge_bot_service_version = 2;
+    string traceable_edge_decision_engine_version = 3;
+  }
+}
+
+message ConfigObject {
+  string config_type = 1;
+  string config_id = 2;
+  string config_json = 3;
+  string config_deserializer = 4;
+}
+
+message ConfigRequestElement {
+  string config_type = 1;
+  // config type level filter.
+  OnlyIfChangedFilter filter = 2;
+  Scope scope = 3;
+  AgentCapabilities agent_capabilities = 4;
+}
+
+message GetConfigsRequest {
+  OnlyIfChangedFilter filter = 1;
+  Scope scope = 2;
+  AgentCapabilities agent_capabilities = 3;
+  repeated ConfigRequestElement config_requests = 4;
+}
+
+message ConfigResponseElement {
+  string hash = 1;
+  repeated ConfigObject config_objects = 2;
+  google.protobuf.Duration refresh_after_duration = 3;
+  bool enabled = 4;
+}
+
+message GetConfigsResponse {
+  string hash = 1;
+  google.protobuf.Duration refresh_after_duration = 2;
+  repeated ConfigResponseElement config_responses = 3;
+  bool enabled = 4;
+}
