@@ -165,7 +165,8 @@ public class ActorBasedRulesCache {
                                 actorDetails
                                     .getStatusChangeDetails()
                                     .getRateLimitDetails()
-                                    .getRuleCategory()),
+                                    .getRuleCategory(),
+                                actorDetails.getBlockedEventLabels()),
                             actorDetails,
                             BlockingPolicyDataBucket.RATE_LIMITING_BASED_IP_VIOLATIONS));
                     break;

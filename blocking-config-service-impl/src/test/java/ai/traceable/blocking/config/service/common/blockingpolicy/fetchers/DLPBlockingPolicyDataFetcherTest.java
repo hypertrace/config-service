@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,8 +133,8 @@ class DLPBlockingPolicyDataFetcherTest {
         serviceScopeDLPRules.get("service2").get(0).getStatus());
     assertEquals(activeTimestamp, serviceScopeDLPRules.get("service2").get(0).getTimestamp());
     assertEquals(
-        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-            "rule-id-2", "rule-name-2", EVENT_SEVERITY_HIGH.name()),
+        ViolationInfoEncoder.getEncodedDLPRuleViolationInfo(
+            "rule-id-2", "rule-name-2", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
         serviceScopeDLPRules.get("service2").get(0).getInfo());
     assertEquals("rule-id-2", serviceScopeDLPRules.get("service2").get(0).getRuleId());
   }
@@ -155,6 +156,7 @@ class DLPBlockingPolicyDataFetcherTest {
             RateLimitingRuleData.newBuilder()
                 .setName("rule-name-" + id)
                 .setCategory(CATEGORY_DATA_EXFILTRATION)
+                .putAllLabels(Map.of("key", "value"))
                 .setCondition(
                     Condition.newBuilder()
                         .setCompositeCondition(

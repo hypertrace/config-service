@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -108,7 +109,8 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                     ruleType,
                     rateLimitingModsecRule.getId(),
                     rateLimitingModsecRule.getData().getName(),
-                    rateLimitingModsecRule.getData().getTransactionActionConfig().getAction()))
+                    rateLimitingModsecRule.getData().getTransactionActionConfig().getAction(),
+                    rateLimitingModsecRule.getData().getLabelsMap()))
             .timestamp(expirationTimestamp)
             .status(blockingRulesUtils.generateBlockingStatus(expirationTimestamp, ruleType))
             .blockingDetails(buildBlockingDetails(rateLimitingModsecRule))
@@ -282,14 +284,18 @@ class DLPBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   }
 
   private static String getRuleInfo(
-      BlockingPolicyData.RuleType ruleType, String id, String name, Action action) {
+      BlockingPolicyData.RuleType ruleType,
+      String id,
+      String name,
+      Action action,
+      Map<String, String> labels) {
     switch (ruleType) {
       case ALLOW:
         return ExemptionInfoEncoder.getEncodedDLPRuleExemptionInfo(
             id, name, EventSeverity.EVENT_SEVERITY_UNSPECIFIED.name());
       case BLOCK:
         return ViolationInfoEncoder.getEncodedDLPRuleViolationInfo(
-            id, name, action.getBlock().getEventSeverity().name());
+            id, name, action.getBlock().getEventSeverity().name(), labels);
       default:
         return "";
     }

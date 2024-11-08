@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor;
 
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ACTOR_ID;
+import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_BLOCKED_EVENT_LABELS;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENTITY_ID;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENVIRONMENT;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_IP_ADDRESSES;
@@ -46,6 +47,7 @@ import com.google.protobuf.Value;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -68,7 +70,8 @@ class ActorStoreTest {
           ACTOR_FIELD_STATUS,
           ACTOR_FIELD_STATUS_CHANGE_SOURCE,
           ACTOR_FIELD_STATUS_CHANGE_DETAILS,
-          ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP);
+          ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP,
+          ACTOR_FIELD_BLOCKED_EVENT_LABELS);
   private static final List<Selection> SELECTION_LIST =
       SELECTED_ACTOR_FIELDS.stream()
           .map(field -> Selection.newBuilder().setFieldSelection(field).build())
@@ -237,6 +240,13 @@ class ActorStoreTest {
             ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP.name(), Value.newBuilder().build());
       }
     }
+    rowBuilder.putFields(
+        ACTOR_FIELD_BLOCKED_EVENT_LABELS.name(),
+        Value.newBuilder()
+            .setStructValue(
+                Struct.newBuilder()
+                    .putFields("key", Value.newBuilder().setStringValue("value").build()))
+            .build());
     return rowBuilder.build();
   }
 
@@ -274,7 +284,8 @@ class ActorStoreTest {
         status,
         statusChangeSource,
         statusChangeDetails,
-        expirationTimestampMillis);
+        expirationTimestampMillis,
+        Map.of("key", "value"));
   }
 
   private static final Filter EXPECTED_ACTORS_STATUS_FILTER =

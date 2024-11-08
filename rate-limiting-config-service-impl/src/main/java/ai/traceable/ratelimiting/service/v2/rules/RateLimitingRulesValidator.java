@@ -32,6 +32,7 @@ import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesValidator implements RulesValidator {
+  private static final Integer CUSTOM_LABELS_LIMIT = 5;
   private static final ValidatorUtils validatorUtils = new ValidatorUtils();
   private static final TransactionActionConfigValidator transactionActionConfigValidator =
       new TransactionActionConfigValidator();
@@ -123,6 +124,9 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateRateLimitingRuleData(RateLimitingRuleData data) {
+    if (data.getLabelsMap().size() > CUSTOM_LABELS_LIMIT) {
+      validatorUtils.throwInvalidArgumentException("Custom labels limit exceeded");
+    }
     validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.CATEGORY_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(data, RateLimitingRuleData.NAME_FIELD_NUMBER);
     validateRuleConfigScope(data.getRuleConfigScope());

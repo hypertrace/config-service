@@ -61,6 +61,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
           MATCH_KEY_HOST,
           MATCH_KEY_HTTP_METHOD,
           MATCH_KEY_USER_AGENT);
+  private static final Integer CUSTOM_LABELS_LIMIT = 5;
 
   private final ModsecRulesManager modsecRulesManager;
 
@@ -197,6 +198,9 @@ class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateRuleDefinition(RuleDefinition ruleDefinition) {
+    if (ruleDefinition.getLabelsMap().size() > CUSTOM_LABELS_LIMIT) {
+      return Status.INVALID_ARGUMENT.withDescription("Custom labels limit exceeded");
+    }
     if (!ruleDefinition.hasClauseGroup()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule definition should have a valid clause group.");

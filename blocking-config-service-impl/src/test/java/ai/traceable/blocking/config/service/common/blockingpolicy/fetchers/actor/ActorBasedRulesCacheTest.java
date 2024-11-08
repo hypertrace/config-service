@@ -93,7 +93,11 @@ class ActorBasedRulesCacheTest {
     assertEquals(Status.SUSPENDED, response.get(0).getStatus());
     assertEquals(
         ViolationInfoEncoder.getEncodedRateLimitViolationInfo(
-            "entity-1", "rate-limit-id-1", "rate-limit-name-1", RATE_LIMIT_CATEGORY_RATE_LIMITING),
+            "entity-1",
+            "rate-limit-id-1",
+            "rate-limit-name-1",
+            RATE_LIMIT_CATEGORY_RATE_LIMITING,
+            Map.of("key", "value")),
         response.get(0).getInfo());
     assertEquals("actor-1", response.get(0).getRuleId());
 
@@ -171,6 +175,7 @@ class ActorBasedRulesCacheTest {
   }
 
   private static List<ActorStatusDetails> generateSampleResponse() {
+    Map<String, String> blockedLabelsMap = Map.of("key", "value");
     return List.of(
         new ActorStatusDetails(
             "actor-1",
@@ -185,7 +190,8 @@ class ActorBasedRulesCacheTest {
                         .setRuleName("rate-limit-name-1")
                         .setRuleCategory(RATE_LIMIT_CATEGORY_RATE_LIMITING))
                 .build(),
-            ACTIVE_TIMESTAMP),
+            ACTIVE_TIMESTAMP,
+            blockedLabelsMap),
         new ActorStatusDetails(
             "actor-2",
             "entity-2",
@@ -193,7 +199,8 @@ class ActorBasedRulesCacheTest {
             STATUS_ALWAYS_DENIED,
             STATUS_CHANGE_SOURCE_SYSTEM,
             StatusChangeDetails.newBuilder().setStatusChangeReason("Test 2").build(),
-            0L),
+            0L,
+            blockedLabelsMap),
         new ActorStatusDetails(
             "actor-3",
             "entity-3",
@@ -201,7 +208,8 @@ class ActorBasedRulesCacheTest {
             STATUS_SNOOZED,
             STATUS_CHANGE_SOURCE_SYSTEM,
             StatusChangeDetails.newBuilder().setStatusChangeReason("Test 3").build(),
-            ACTIVE_TIMESTAMP),
+            ACTIVE_TIMESTAMP,
+            blockedLabelsMap),
         new ActorStatusDetails(
             "actor-4",
             "entity-4",
@@ -209,7 +217,8 @@ class ActorBasedRulesCacheTest {
             STATUS_ALWAYS_ALLOWED,
             STATUS_CHANGE_SOURCE_SYSTEM,
             StatusChangeDetails.newBuilder().setStatusChangeReason("Test 4").build(),
-            0L),
+            0L,
+            blockedLabelsMap),
         new ActorStatusDetails(
             "actor-5",
             "entity-5",
@@ -222,7 +231,8 @@ class ActorBasedRulesCacheTest {
                         .setRuleId("email-domain-id-1")
                         .setRuleName("email-domain-name-1"))
                 .build(),
-            0L),
+            0L,
+            blockedLabelsMap),
         new ActorStatusDetails(
             "actor-6",
             "entity-6",
@@ -235,7 +245,8 @@ class ActorBasedRulesCacheTest {
                         .setRuleId("email-domain-id-2")
                         .setRuleName("email-domain-name-2"))
                 .build(),
-            ACTIVE_TIMESTAMP),
+            ACTIVE_TIMESTAMP,
+            blockedLabelsMap),
         new ActorStatusDetails(
             "actor-7",
             "entity-7",
@@ -249,6 +260,7 @@ class ActorBasedRulesCacheTest {
                         .setRuleName("rate-limit-name-7")
                         .setRuleCategory(RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
                 .build(),
-            ACTIVE_TIMESTAMP));
+            ACTIVE_TIMESTAMP,
+            blockedLabelsMap));
   }
 }

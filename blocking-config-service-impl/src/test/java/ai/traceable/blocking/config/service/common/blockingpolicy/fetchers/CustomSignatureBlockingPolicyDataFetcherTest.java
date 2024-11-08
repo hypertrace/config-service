@@ -31,12 +31,14 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRes
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -155,7 +157,7 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
     assertEquals(activeTimestamp, customSignatureRuleList.get(1).getTimestamp());
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-            "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name()),
+            "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
         customSignatureRuleList.get(1).getInfo());
     assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
   }
@@ -249,6 +251,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setId("rule-id-1")
                   .setName("rule-name-1")
                   .setDescription("rule-description-1")
+                  .setDefinition(
+                      RuleDefinition.newBuilder().putAllLabels(Map.of("key", "value")).build())
                   .setEffect(
                       RuleEffect.newBuilder()
                           .setEventType(EVENT_TYPE_ALLOW)
@@ -262,6 +266,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setId("rule-id-2")
                   .setName("rule-name-2")
                   .setDescription("rule-description-2")
+                  .setDefinition(
+                      RuleDefinition.newBuilder().putAllLabels(Map.of("key", "value")).build())
                   .setEffect(
                       RuleEffect.newBuilder()
                           .setEventType(EVENT_TYPE_ALLOW)
@@ -275,6 +281,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setId("rule-id-3")
                   .setName("rule-name-3")
                   .setDescription("rule-description-3")
+                  .setDefinition(
+                      RuleDefinition.newBuilder().putAllLabels(Map.of("key", "value")).build())
                   .setEffect(
                       RuleEffect.newBuilder()
                           .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
@@ -288,6 +296,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setId("rule-id-4")
                   .setName("rule-name-4")
                   .setDescription("rule-description-4")
+                  .setDefinition(
+                      RuleDefinition.newBuilder().putAllLabels(Map.of("key", "value")).build())
                   .setEffect(
                       RuleEffect.newBuilder()
                           .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
@@ -303,6 +313,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setId("rule-id-5")
                   .setName("rule-name-5")
                   .setDescription("rule-description-5")
+                  .setDefinition(
+                      RuleDefinition.newBuilder().putAllLabels(Map.of("key", "value")).build())
                   .setEffect(
                       RuleEffect.newBuilder()
                           .setEventType(EVENT_TYPE_TESTING_DETECTION)
@@ -334,6 +346,8 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setId("rule-id-6")
                   .setName("rule-name-6")
                   .setDescription("rule-description-6")
+                  .setDefinition(
+                      RuleDefinition.newBuilder().putAllLabels(Map.of("key", "value")).build())
                   .setEffect(
                       RuleEffect.newBuilder()
                           .setEventType(EVENT_TYPE_TESTING_DETECTION)

@@ -1,6 +1,7 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor;
 
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ACTOR_ID;
+import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_BLOCKED_EVENT_LABELS;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENTITY_ID;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_IP_ADDRESSES;
 import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS;
@@ -18,6 +19,7 @@ import ai.traceable.platform.actor.v1.converter.StatusChangeSourceConverter;
 import ai.traceable.platform.actor.v1.converter.StatusConverter;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,6 +45,7 @@ class ActorStatusDetails {
   StatusChangeSource statusChangeSource;
   StatusChangeDetails statusChangeDetails;
   Long expirationTimestampMillis;
+  Map<String, String> blockedEventLabels;
 
   private ActorStatusDetails(Map<String, Value> actorFieldsMap) {
     this(
@@ -52,7 +55,8 @@ class ActorStatusDetails {
         parseStatus(actorFieldsMap),
         parseStatusChangeSource(actorFieldsMap),
         parseStatusChangeDetails(actorFieldsMap),
-        parseExpirationTimestampMillis(actorFieldsMap));
+        parseExpirationTimestampMillis(actorFieldsMap),
+        parseBlockedEventLabels(actorFieldsMap));
   }
 
   static Optional<ActorStatusDetails> getActorStatusDetails(Struct actor) {
@@ -143,5 +147,16 @@ class ActorStatusDetails {
           e);
       return DEFAULT_EXPIRATION_TIMESTAMP_MILLIS;
     }
+  }
+
+  private static Map<String, String> parseBlockedEventLabels(Map<String, Value> actorFieldsMap) {
+    Value value = actorFieldsMap.get(ACTOR_FIELD_BLOCKED_EVENT_LABELS.name());
+    if (value.hasStructValue()) {
+      return value.getStructValue().getFieldsMap().entrySet().stream()
+          .collect(
+              Collectors.toUnmodifiableMap(
+                  Map.Entry::getKey, entry -> entry.getValue().getStringValue()));
+    }
+    return Collections.emptyMap();
   }
 }

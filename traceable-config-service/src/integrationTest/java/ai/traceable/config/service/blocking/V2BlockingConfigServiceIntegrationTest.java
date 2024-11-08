@@ -185,6 +185,7 @@ import com.google.protobuf.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -1072,7 +1073,10 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-            customSignatureRuleId.get(0), "rule-1", "EVENT_SEVERITY_MEDIUM"),
+            customSignatureRuleId.get(0),
+            "rule-1",
+            "EVENT_SEVERITY_MEDIUM",
+            Map.of("key", "value")),
         blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
     assertEquals(
         BLOCKING_STATUS_DENIED,
@@ -1227,7 +1231,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             actorEntityId.get(0),
             "rate-limit-rule-id",
             "Rate-limit-rule",
-            RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION),
+            RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION,
+            Map.of("key", "value")),
         blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
     assertEquals(
         List.of("197.23.5.0"),
@@ -1405,6 +1410,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                             .setName("rule-1")
                             .setDefinition(
                                 RuleDefinition.newBuilder()
+                                    .putAllLabels(Map.of("key", "value"))
                                     .setClauseGroup(
                                         ClauseGroup.newBuilder()
                                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
@@ -1449,6 +1455,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                 RateLimitingRuleData.newBuilder()
                                     .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
                                     .setName("DLP")
+                                    .putAllLabels(Map.of("key", "value"))
                                     .setEnabled(true)
                                     .setCondition(
                                         Condition.newBuilder()
@@ -1624,6 +1631,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     .setIpAddress("197.23.5.0"))
             .addAllLabels(List.of("label1"))
             .setStatusExpiryTimestamp(expiry)
+            .putAllBlockedEventLabels(Map.of("key", "value"))
             .setEnvironment(environment);
 
     if (blockingCategory == BLOCKING_CATEGORY_RATE_LIMIT) {

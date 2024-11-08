@@ -111,7 +111,10 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
       case EVENT_TYPE_DETECTION_AND_BLOCKING:
         return Optional.of(
             ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-                rule.getId(), rule.getName(), rule.getEffect().getEventSeverity().name()));
+                rule.getId(),
+                rule.getName(),
+                rule.getEffect().getEventSeverity().name(),
+                rule.getDefinition().getLabelsMap()));
       case EVENT_TYPE_NORMAL_DETECTION:
       case EVENT_TYPE_TESTING_DETECTION:
         return Optional.of(NON_BLOCKING_RULE_INFO);

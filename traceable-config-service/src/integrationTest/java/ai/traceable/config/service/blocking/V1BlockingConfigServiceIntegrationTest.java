@@ -109,6 +109,7 @@ import ai.traceable.region.config.service.v1.RegionRuleActionType;
 import ai.traceable.region.config.service.v1.RegionsFilter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -528,7 +529,10 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
     assertEquals(
         ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-            customSignatureRuleId.get(1), "rule-1", "EVENT_SEVERITY_MEDIUM"),
+            customSignatureRuleId.get(1),
+            "rule-1",
+            "EVENT_SEVERITY_MEDIUM",
+            Map.of("key", "value")),
         blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
     assertEquals(
         BLOCKING_STATUS_DENIED,
@@ -641,7 +645,8 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             actorEntityId.get(0),
             "rate-limit-rule-id",
             "Rate-limit-rule",
-            RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION),
+            RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION,
+            Map.of("key", "value")),
         blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
     assertEquals(
         List.of("197.23.5.0"),
@@ -760,6 +765,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                             .setName("rule-1")
                             .setDefinition(
                                 RuleDefinition.newBuilder()
+                                    .putAllLabels(Map.of("key", "value"))
                                     .setClauseGroup(
                                         ClauseGroup.newBuilder()
                                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
@@ -874,7 +880,8 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                     .setIpAddress("197.23.5.0"))
             .addAllLabels(List.of("label1"))
             .setStatusExpiryTimestamp(expiry)
-            .setEnvironment(environment);
+            .setEnvironment(environment)
+            .putAllBlockedEventLabels(Map.of("key", "value"));
 
     if (blockingCategory == BLOCKING_CATEGORY_RATE_LIMIT) {
       actorBuilder.setStatusChangeSource(StatusChangeSource.STATUS_CHANGE_SOURCE_RATE_LIMIT);
