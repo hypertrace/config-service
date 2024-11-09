@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.edge.config.service.v1;
 
 option java_multiple_files = true;
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/edge/config/service/v1";
 
 import "google/protobuf/duration.proto";
 
@@ -12,16 +13,6 @@ import "google/protobuf/duration.proto";
 // aware of the payload.
 service TraceableEdgeConfigService {
   rpc GetConfigs(GetConfigsRequest) returns (GetConfigsResponse) {}
-}
-
-message OnlyIfChangedFilter {
-  string previous_hash = 1;
-}
-
-message Scope {
-  oneof scope {
-    string environment_name = 1;
-  }
 }
 
 message AgentCapabilities {
@@ -37,17 +28,18 @@ message Component {
   }
 }
 
+// this object is used by the module that can deserialize it.
 message ConfigObject {
   // for ex: ClientBotFingerprintPolicy
   string config_type = 1;
-  string config_id = 2;
   // for ex: the blob of the config
   oneof format {
     bytes config_bytes = 3;
     string config_json = 4;
     string config_yaml = 5;
   }
-  // for ex: ai.traceable.edge.bot.config.ClientBotFingerprintPolicy
+  // for ex: ai.traceable.edge.bot.config.ClientBotFingerprintPolicy[], if config_json is a json array
+  // or ai.traceable.edge.decision.engine.config.EdgeDecisionEngineConfig
   string config_deserializer = 6;
   bool enabled = 7;
 }
@@ -55,22 +47,21 @@ message ConfigObject {
 message ConfigRequestElement {
   string config_type = 1;
   // config type level filter.
-  OnlyIfChangedFilter filter = 2;
-  Scope scope = 3;
+  string previous_hash = 2;
   AgentCapabilities agent_capabilities = 4;
 }
 
-message GetConfigsRequest {
-  OnlyIfChangedFilter filter = 1;
-  Scope scope = 2;
-  AgentCapabilities agent_capabilities = 3;
-  repeated ConfigRequestElement config_requests = 4;
-}
-
+// ConfigResponseElement would be a one of based on config_type
 message ConfigResponseElement {
   string hash = 1;
-  repeated ConfigObject config_objects = 2;
+  ConfigObject config_object = 2;
   google.protobuf.Duration refresh_after_duration = 3;
+}
+
+message GetConfigsRequest {
+  string environment = 1;
+  string previous_hash = 2;
+  repeated ConfigRequestElement config_requests = 4;
 }
 
 message GetConfigsResponse {

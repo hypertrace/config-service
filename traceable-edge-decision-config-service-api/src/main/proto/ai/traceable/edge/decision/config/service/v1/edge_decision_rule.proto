@@ -136,7 +136,8 @@ message ValueAggregateThreshold {
     double static_threshold = 3;  // The threshold for the aggregated value
   }
   // this must be a conscious choice of the consumer - higher resource usage if estimates are disabled for aggregations
-  bool disable_estimates = 4;
+  // by default: decision engine may use probabilistic data structures for providing aggregate values
+  bool disable_estimated_aggregate = 4;
 }
 
 // "signature rules" that can be evaluated by risk decision engine
