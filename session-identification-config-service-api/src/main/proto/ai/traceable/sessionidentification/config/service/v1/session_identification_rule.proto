@@ -45,6 +45,7 @@ message RequestSessionTokenDetails {
   oneof expiration {
     JwtExpiration jwt_expiration = 2;
   }
+  repeated CustomAttributeRule custom_attribute_rules = 3;
 }
 
 message ResponseSessionTokenDetails {
@@ -52,6 +53,14 @@ message ResponseSessionTokenDetails {
   oneof expiration {
     JwtExpiration jwt_expiration = 2;
     ResponseAttributeExpiration response_attribute_expiration = 3;
+  }
+  repeated CustomAttributeRule custom_attribute_rules = 4;
+}
+
+message CustomAttributeRule {
+  oneof custom_attribute {
+    // extracted session-token should be a jwt
+    string jwt_claim_attributes_from_session_token = 1;
   }
 }
 
