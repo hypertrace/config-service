@@ -1,6 +1,7 @@
 package ai.traceable.config.service;
 
 import ai.traceable.blocking.config.service.BlockingConfigServiceFactory;
+import ai.traceable.edge.config.service.TraceableEdgeConfigServiceFactory;
 import ai.traceable.external.agent.attribute.config.service.ExternalAgentAttributeConfigServiceFactory;
 import ai.traceable.external.data.classification.config.service.ExternalDataClassificationConfigServiceFactory;
 import ai.traceable.external.userattribution.config.service.ExternalUserAttributionConfigServiceFactory;
@@ -45,11 +46,17 @@ public class TraceableExternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getConfig(),
                     environment.getChannelRegistry(),
                     providers.getFeatureCachingClient())),
-            BlockingConfigServiceFactory.build(
-                providers.getLocalChannel(),
-                providers.getConfig(),
-                environment.getChannelRegistry())
-                .stream())
+            Stream.concat(
+                BlockingConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    environment.getChannelRegistry())
+                    .stream(),
+                TraceableEdgeConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    environment.getChannelRegistry())
+                    .stream()))
         .map(GrpcPlatformService::new)
         .collect(Collectors.toUnmodifiableList());
   }

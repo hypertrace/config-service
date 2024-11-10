@@ -56,6 +56,7 @@ message ConfigResponseElement {
   string hash = 1;
   ConfigObject config_object = 2;
   google.protobuf.Duration refresh_after_duration = 3;
+  bool enabled = 4;
 }
 
 message GetConfigsRequest {
@@ -66,6 +67,5 @@ message GetConfigsRequest {
 
 message GetConfigsResponse {
   string hash = 1;
-  google.protobuf.Duration refresh_after_duration = 2;
-  repeated ConfigResponseElement config_responses = 3;
+  repeated ConfigResponseElement config_responses = 2;
 }

@@ -12,14 +12,18 @@ import "google/protobuf/struct.proto";
 
 // this is the overall config for the edge decision engine.
 message EdgeDecisionEngineConfig {
+  // this will set to tenant id itself because this config is per tenant.
+  string id = 1;
+  // caller manages the version.
+  string version = 2;
   // common variables used in the rules
-  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping common_variables = 1;
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping common_variables = 3;
   // list of all decision rules
-  repeated EdgeDecisionRule decision_rules = 2;
+  repeated EdgeDecisionRule decision_rules = 4;
   // decision specs encapsulate the "decision tree"
-  repeated EdgeDecisionSpecConfig edge_decision_spec_configs = 3;
+  repeated EdgeDecisionSpecConfig edge_decision_spec_configs = 5;
   // disable edge decision completely
-  bool disabled = 4;
+  bool disabled = 6;
   // allow for customization. mostly to handle hotfix scenarios that won't require change in contract.
   google.protobuf.Value custom_config = 100;
 }

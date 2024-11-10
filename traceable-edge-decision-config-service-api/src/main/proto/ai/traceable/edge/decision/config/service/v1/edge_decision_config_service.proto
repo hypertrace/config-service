@@ -14,8 +14,12 @@ service EdgeDecisionConfigService {
   rpc GetResolvedEdgeDecisionEngineConfigs(GetResolvedEdgeDecisionEngineConfigsRequest) returns (GetResolvedEdgeDecisionEngineConfigsResponse) {}
   // API to fetch the resolved scoped edge-decision config for a given scope
   rpc GetScopedResolvedEdgeDecisionConfig(GetScopedResolvedEdgeDecisionConfigRequest) returns (GetScopedResolvedEdgeDecisionConfigResponse) {}
+  // API to manage the edge decision config directly. To keep this atomic, this is the config that's stored for a tenant.
+  // caller can get the rules within the config and update them using the same API.
+  // we may eventually manage the rules and specs, then generate the engine config.
+  rpc UpsertEdgeDecisionEngineConfig(UpsertEdgeDecisionEngineConfigRequest) returns (UpsertEdgeDecisionEngineConfigResponse) {}
+  rpc GetEdgeDecisionEngineConfig(GetEdgeDecisionEngineConfigRequest) returns (GetEdgeDecisionEngineConfigResponse) {}
 }
-
 
 message GetResolvedEdgeDecisionEngineConfigsRequest {
   GetEdgeDecisionConfigsFilter filter = 1;
@@ -38,4 +42,20 @@ message GetEdgeDecisionConfigsFilter {
   repeated EdgeDecisionType decision_types = 1;
   repeated EdgeDecisionRuleCategory rule_categories = 2;
   repeated EdgeInputKind edge_input_kinds = 3;
+}
+
+message UpsertEdgeDecisionEngineConfigRequest {
+  EdgeDecisionEngineConfig edge_decision_engine_config = 2;
+}
+
+message UpsertEdgeDecisionEngineConfigResponse {
+  EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+}
+
+message GetEdgeDecisionEngineConfigRequest {
+  string version = 1;
+}
+
+message GetEdgeDecisionEngineConfigResponse {
+  EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }

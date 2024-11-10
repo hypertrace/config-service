@@ -8,8 +8,17 @@ import "google/protobuf/struct.proto";
 import "ai/traceable/policy/config/service/v1/client_bot_fingerprint_policy.proto";
 
 message TraceablePolicy {
-  oneof kind {
-    ClientBotFingerprintPolicy client_bot_fingerprint_policy = 1;
+  string policy_kind = 1;
+  string id = 2;
+  string name = 3;
+  bool disabled = 4;
+  map<string, string> labels = 5;
+  oneof policy {
+    ClientBotFingerprintPolicy client_bot_fingerprint_policy = 6;
     // other policy kinds will be added here when we migrate existing "fraud policy" to this module
   }
+}
+
+message TraceablePolicyList {
+  repeated TraceablePolicy policies = 1;
 }

@@ -68,6 +68,10 @@ dependencies {
   implementation(projects.vulnerabilityConfigServiceImpl)
   implementation(projects.servicenowItsmIntegrationConfigServiceImpl)
   implementation(projects.azureDevopsIntegrationConfigServiceImpl)
+  implementation(projects.traceableEdgeBotConfigServiceImpl)
+  implementation(projects.traceableEdgeConfigServiceImpl)
+  implementation(projects.traceableEdgeDecisionConfigServiceImpl)
+  implementation(projects.traceablePolicyConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

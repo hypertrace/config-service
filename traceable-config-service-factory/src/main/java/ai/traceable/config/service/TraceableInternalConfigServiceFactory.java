@@ -17,6 +17,8 @@ import ai.traceable.data.classification.config.service.DataClassificationConfigS
 import ai.traceable.data.exfiltration.config.service.detection.rule.DataExfiltrationDetectionRulesConfigServiceFactory;
 import ai.traceable.data.protection.config.service.DataProtectionConfigServiceFactory;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceFactory;
+import ai.traceable.edge.bot.config.service.CaptchaSiteKeyConfigServiceFactory;
+import ai.traceable.edge.decision.config.service.EdgeDecisionConfigServiceFactory;
 import ai.traceable.fraud.policy.config.service.FraudPolicyConfigServiceFactory;
 import ai.traceable.integration.config.service.IntegrationConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
@@ -25,6 +27,7 @@ import ai.traceable.jwt.extraction.config.service.JwtExtractionConfigServiceFact
 import ai.traceable.licensestatus.config.service.LicenseStatusConfigServiceFactory;
 import ai.traceable.localprocessing.config.service.ruleservice.LocalProcessingRulesServiceFactory;
 import ai.traceable.malicioussources.config.service.MaliciousSourcesConfigServiceFactory;
+import ai.traceable.policy.config.service.TraceablePolicyConfigServiceFactory;
 import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceFactory;
 import ai.traceable.region.config.service.RegionConfigServiceFactory;
@@ -291,6 +294,15 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 AzureDevopsIntegrationConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                CaptchaSiteKeyConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                EdgeDecisionConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                TraceablePolicyConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());

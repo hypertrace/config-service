@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ai.traceable.policy.config.service.v1;
+option java_package = "ai.traceable.policy.config.service.v1";
+option java_multiple_files = true;
+
+import "google/protobuf/struct.proto";
+import "ai/traceable/policy/config/service/v1/traceable_policy.proto";
+
+
+service TraceablePolicyConfigService {
+  rpc Upsert(UpsertRequest) returns (UpsertResponse) {}
+  rpc Get(GetRequest) returns (GetResponse) {}
+  rpc GetAll(GetAllRequest) returns (GetAllResponse) {}
+  rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+}
+
+message UpsertRequest {
+  TraceablePolicy policy = 1;
+}
+
+message UpsertResponse {
+  TraceablePolicy policy = 1;
+}
+
+message GetRequest {
+  string policy_kind = 1;
+  string id = 2;
+}
+
+message GetResponse {
+  TraceablePolicy policy = 1;
+}
+
+message GetAllRequest {
+  optional string policy_kind = 1;
+}
+
+message GetAllResponse {
+  repeated TraceablePolicy policies = 1;
+}
+
+message DeleteRequest {
+  string policy_kind = 1;
+  string id = 2;
+}
+
+message DeleteResponse {
+  TraceablePolicy deleted_policy = 1;
+}

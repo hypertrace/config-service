@@ -3,7 +3,7 @@
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.activity.event.service:activity-event-api:8.0.22=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.1527=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1535=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.14.27=runtimeClasspath,testRuntimeClasspath
@@ -19,8 +19,8 @@ ai.traceable.platform-gateway:ip-utils:0.8.57=runtimeClasspath,testRuntimeClassp
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.57=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:training-evaluation-framework:0.8.57=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:xml-utils:0.8.57=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:actor-service-api:0.2.149=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:anomaly-decision-engine-api:3.0.140=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:actor-service-api:0.2.150=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:anomaly-decision-engine-api:3.0.141=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-inspection-api:2.0.18=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-naming-constants:5.0.79=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:api-naming-model:5.0.79=runtimeClasspath,testRuntimeClasspath
