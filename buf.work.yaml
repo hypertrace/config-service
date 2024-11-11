@@ -53,7 +53,5 @@ directories:
   - servicenow-itsm-integration-config-service-api/src/main/proto
   - azure-devops-integration-config-service-api/src/main/proto
   - traceable-config-service-rest/src/main/proto
-  - traceable-datamodel-config-service-api/src/main/proto
-  - traceable-edge-decision-config-service-api/src/main/proto
-  - traceable-edge-bot-config-service-api/src/main/proto
-  - traceable-policy-config-service-api/src/main/proto
+  - traceable-edge-config-service-api/src/main/proto
+
