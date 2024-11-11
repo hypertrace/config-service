@@ -4,7 +4,6 @@ package ai.traceable.policy.config.service.v1;
 option java_package = "ai.traceable.policy.config.service.v1";
 option java_multiple_files = true;
 
-import "google/protobuf/struct.proto";
 import "ai/traceable/policy/config/service/v1/traceable_policy.proto";
 
 

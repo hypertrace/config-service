@@ -14,6 +14,8 @@ public interface TraceableEdgeConfigSupplier {
 
   String getConfigType();
 
+  String getConfigDeserializer();
+
   ConfigResponseElement getConfigs(
       RequestContext requestContext,
       ConfigRequestElement requestElement,
@@ -21,9 +23,14 @@ public interface TraceableEdgeConfigSupplier {
 
   default Duration getAgentPollingFrequency(Config config, String configType) {
     var configDuration = config.getDuration(DEFAULT_AGENT_POLLING_FREQUENCY_CONFIG_NAME);
-    var configTypeSpecificDurationPath = configType + "." + AGENT_POLLING_FREQUENCY_CONFIG_NAME;
-    if (config.hasPath(configTypeSpecificDurationPath)) {
-      configDuration = config.getDuration(configTypeSpecificDurationPath);
+    if (config.hasPath(CONFIG_TYPES_CONFIG_NAME)) {
+      var configTypesConfig = config.getConfig(CONFIG_TYPES_CONFIG_NAME);
+      if (configTypesConfig.hasPath(configType)) {
+        var configTypeSpecificConfig = configTypesConfig.getConfig(configType);
+        if (configTypeSpecificConfig.hasPath(AGENT_POLLING_FREQUENCY_CONFIG_NAME)) {
+          configDuration = config.getDuration(AGENT_POLLING_FREQUENCY_CONFIG_NAME);
+        }
+      }
     }
     return Duration.newBuilder()
         .setSeconds(configDuration.getSeconds())

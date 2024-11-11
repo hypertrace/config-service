@@ -10,7 +10,6 @@ dependencies {
   implementation(projects.traceableEdgeBotConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
 
-  implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
