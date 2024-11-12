@@ -590,6 +590,7 @@ message RejectFilterConfig {
   StatusCodeFilterConfig status_code_filter_config = 4;
   SpanAttributeFilterConfig span_attribute_filter_config = 5 [deprecated = true];
   SpanAttributeFilterConfigList span_attribute_filter_config_list = 6;
+  ModsecFilterConfig modsec_filter_config = 7;
 }
 
 message StatusCodeFilterConfig {
@@ -613,6 +614,16 @@ message UrlPathFilterConfig  {
 
 message UrlFilterConfig {
   StringList url_reject_regex_patterns = 1;
+}
+
+message ModsecFilterConfig {
+  repeated ModsecStrategy modsec_strategies = 1;
+}
+
+enum ModsecStrategy {
+  MODSEC_STRATEGY_UNSPECIFIED = 0;
+  MODSEC_STRATEGY_REGULAR_CRS = 1;
+  MODSEC_STRATEGY_SAFE_CRS = 2;
 }
 
 message TrieModelTrainingConfig {

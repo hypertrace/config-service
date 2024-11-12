@@ -95,7 +95,6 @@ jobs:
         uses: ./.github/actions/trivy-scan
         with:
           image: ${{ secrets.GCP_ARTIFACT_REGISTRY }}/docker/traceable/traceable-config-service
-          auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
 
   test:
     runs-on: self-hosted-x64-small
@@ -154,6 +153,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: ./**/build/test-results/**/*.xml
+
   integration-test:
     runs-on: self-hosted-x64-small
     steps:
@@ -240,5 +240,4 @@ jobs:
       - name: Dependency Check
         uses: ./.github/actions/dependency-check
         with:
-          auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
           database-password: ${{ secrets.NVD_DATABASE_PASSWORD }}

@@ -43,5 +43,3 @@ jobs:
 
       - name: Secret Scanning
         uses: ./.github/actions/secret-scanning
-        with:
-          auth-token: ${{ secrets.DEFECTDOJO_AUTH_TOKEN }}
