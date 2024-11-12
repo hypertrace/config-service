@@ -38,10 +38,13 @@ message RetentionAction {
   oneof action {
     RetainAction retain = 5;
     DiscardAction discard = 6;
+    DiscardValueAction discard_value = 7;
   }
 
   message RetainAction {}
   message DiscardAction {}
+  // To retain only the key and discard the value
+  message DiscardValueAction {}
 }
 
 message Predicate {
