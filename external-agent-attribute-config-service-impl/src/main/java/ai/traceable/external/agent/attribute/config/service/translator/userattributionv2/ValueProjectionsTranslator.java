@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
 class ValueProjectionsTranslator {
+  private static final String JSON_PATH_PREFIX = "$.";
   private final AttributeRuleBuilder attributeRuleBuilder;
 
   AttributeRule translateValueProjections(
@@ -24,7 +25,7 @@ class ValueProjectionsTranslator {
         case JSON_PATH:
           prevAttributeRule =
               attributeRuleBuilder.buildRuleForJsonPath(
-                  valueProjection.getJsonPath().getPath(), prevAttributeRule);
+                  getJsonPath(valueProjection.getJsonPath()), prevAttributeRule);
           break;
         case REGEX_CAPTURE_GROUP:
           prevAttributeRule =
@@ -48,5 +49,10 @@ class ValueProjectionsTranslator {
       }
     }
     return prevAttributeRule;
+  }
+
+  private String getJsonPath(ValueProjection.JsonPathProjection jsonPath) {
+    String path = jsonPath.getPath();
+    return path.startsWith(JSON_PATH_PREFIX) ? path : JSON_PATH_PREFIX + path;
   }
 }

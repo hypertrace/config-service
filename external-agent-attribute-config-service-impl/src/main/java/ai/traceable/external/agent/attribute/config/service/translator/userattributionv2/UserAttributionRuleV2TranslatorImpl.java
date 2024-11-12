@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
 class UserAttributionRuleV2TranslatorImpl implements UserAttributionRuleV2Translator {
   private static final String RULE_SUFFIX = ".rule";
+  private static final String CUSTOM_ATTRIBUTE_PREFIX = "traceableai.custom.attribute.";
   private final AttributeRuleBuilder attributeRuleBuilder;
   private final PredicateTranslator predicateTranslator;
   private final UserAttributionTokenRuleTranslator tokenRuleTranslator;
@@ -122,13 +123,15 @@ class UserAttributionRuleV2TranslatorImpl implements UserAttributionRuleV2Transl
     return data.getCustomTokenRulesMap().entrySet().stream()
         .flatMap(
             entry -> {
+              String customAttributeKey = CUSTOM_ATTRIBUTE_PREFIX + entry.getKey();
               try {
                 return tokenRuleTranslator
                     .translateTokenRule(
                         entry.getValue(),
                         data.getRootTokenRule(),
-                        buildActionAttributeRuleForCustomAttribute(entry.getKey(), rule.getId()))
-                    .map(translatedRule -> Map.entry(entry.getKey(), translatedRule));
+                        buildActionAttributeRuleForCustomAttribute(
+                            customAttributeKey, rule.getId()))
+                    .map(translatedRule -> Map.entry(customAttributeKey, translatedRule));
               } catch (Exception ex) {
                 log.warn(
                     String.format(

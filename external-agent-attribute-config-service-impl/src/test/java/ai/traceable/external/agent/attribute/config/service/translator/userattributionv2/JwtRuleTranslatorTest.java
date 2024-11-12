@@ -8,6 +8,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import com.google.inject.Guice;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
@@ -175,6 +176,24 @@ class JwtRuleTranslatorTest {
     assertEquals(
         TestUtils.getExpectedAttributeRules("user_attribution_v2/jwt/cookie/auth_type_rules.json"),
         translatedRules);
+  }
+
+  @Test
+  void translateJwtCookieRuleForCustomTokens() throws IOException {
+    List<Map.Entry<String, AttributeRule>> translatedRules =
+        userAttributionRuleV2Translator
+            .translateRuleForCustomTokens(
+                TestUtils.getUserAttributionRuleV2(
+                    "user_attribution_v2/jwt/cookie/input_rule.json"))
+            .collect(Collectors.toUnmodifiableList());
+    assertEquals(1, translatedRules.size());
+    Map.Entry<String, AttributeRule> entry = translatedRules.get(0);
+    assertEquals("traceableai.custom.attribute.audience", entry.getKey());
+    assertEquals(
+        TestUtils.getExpectedAttributeRules(
+                "user_attribution_v2/jwt/cookie/custom_token_rules.json")
+            .get(0),
+        entry.getValue());
   }
 
   @Test

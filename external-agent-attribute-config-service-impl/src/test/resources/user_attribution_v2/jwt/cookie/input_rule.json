@@ -38,7 +38,7 @@
           },
           {
             "jsonPath": {
-              "path": "$.user.id"
+              "path": "user.id"
             }
           }
         ]
@@ -54,7 +54,7 @@
           },
           {
             "jsonPath": {
-              "path": "$.user.role"
+              "path": "user.role"
             }
           }
         ]
@@ -70,7 +70,7 @@
           },
           {
             "jsonPath": {
-              "path": "$.user.scope"
+              "path": "user.scope"
             }
           }
         ]
@@ -80,6 +80,19 @@
       "literalValueProjection": {
         "literalValue": {
           "stringValue": "OAuth 2.0"
+        }
+      }
+    },
+    "custom_token_rules": {
+      "audience": {
+        "rootRelativeProjection": {
+          "valueProjections": [
+            {
+              "jwtPayloadClaim": {
+                "claimKey": "aud"
+              }
+            }
+          ]
         }
       }
     },
