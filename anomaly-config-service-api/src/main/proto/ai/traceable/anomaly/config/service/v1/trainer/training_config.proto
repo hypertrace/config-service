@@ -94,6 +94,13 @@ message TrainingConfig {
     LocalTrainingConfig local_training_config = 7;
     VolumetricTrainingConfig volumetric_training_config = 8;
     DemoApplicationConfig demo_application_config = 9;
+    DomainDiscoveryConfig domain_discovery_config = 10;
+  }
+}
+
+message DomainDiscoveryConfig {
+  oneof config {
+    DomainFilterConfig domain_filter_config = 1;
   }
 }
 
@@ -591,6 +598,44 @@ message RejectFilterConfig {
   SpanAttributeFilterConfig span_attribute_filter_config = 5 [deprecated = true];
   SpanAttributeFilterConfigList span_attribute_filter_config_list = 6;
   ModsecFilterConfig modsec_filter_config = 7;
+}
+
+message DomainFilterConfig {
+  IntRangeFilterConfig allowed_domain_length_range = 1;
+  RegexFilterConfigList regex_rejection_config_list = 2;
+  IpAddressFilterConfigList ip_address_rejection_config_list = 3;
+  SpanAttributeFilterConfigList span_attribute_rejection_config_list = 4;
+}
+
+message RegexFilterConfigList {
+  repeated RegexFilterConfig regex_filter_configs = 1;
+}
+
+message RegexFilterConfig {
+  RegexOperator operator = 1;
+  string regex = 2;
+}
+
+message IpAddressFilterConfigList {
+  repeated IpAddressFilterConfig ip_address_filter_configs = 1;
+}
+
+message IpAddressFilterConfig {
+  IpAddressOperator operator = 1;
+  string ip_lower_bound_inclusive = 2;
+  string ip_upper_bound_inclusive = 3;
+}
+
+enum RegexOperator {
+  REGEX_OPERATOR_UNSPECIFIED = 0;
+  REGEX_OPERATOR_MATCHES = 1;
+  REGEX_OPERATOR_NOT_MATCHES = 2;
+}
+
+enum IpAddressOperator {
+  IP_ADDRESS_OPERATOR_UNSPECIFIED = 0;
+  IP_ADDRESS_OPERATOR_IN = 1;
+  IP_ADDRESS_OPERATOR_NOT_IN = 2;
 }
 
 message StatusCodeFilterConfig {
