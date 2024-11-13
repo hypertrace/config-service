@@ -42,8 +42,9 @@ message RetentionAction {
   }
 
   message RetainAction {}
+  // DiscardAction will discard the entire attribute (both key and value)
   message DiscardAction {}
-  // To retain only the key and discard the value
+  // DiscardValueAction will retain only the key and discard the value
   message DiscardValueAction {}
 }
 
