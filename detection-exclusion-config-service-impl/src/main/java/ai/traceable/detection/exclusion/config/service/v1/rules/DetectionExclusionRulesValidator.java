@@ -130,13 +130,11 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .withDescription("DetectionExclusionRule has no specified conditions")
           .asRuntimeException();
     }
-    boolean isBlockOrAllowTargetPresent =
-        ruleInfo.getExclusionTargetsList().stream()
+
+    if (ruleInfo.getExclusionTargetsList().stream()
             .anyMatch(
-                exclusionTarget ->
-                    exclusionTarget.equals(EXCLUSION_TARGET_BLOCK)
-                        || exclusionTarget.equals(EXCLUSION_TARGET_ALLOW));
-    if (isBlockOrAllowTargetPresent
+                target ->
+                    target.equals(EXCLUSION_TARGET_BLOCK) || target.equals(EXCLUSION_TARGET_ALLOW))
         && ruleInfo.getConditionsList().stream()
                 .map(DetectionExclusionCondition::getConditionCase)
                 .filter(Predicate.isEqual(ConditionCase.EVENT_CONDITION))
@@ -147,11 +145,9 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
               "DetectionExclusionRule for blocking supports at max one event condition")
           .asRuntimeException();
     }
-    ruleInfo
-        .getConditionsList()
-        .forEach(
-            condition ->
-                conditionValidator.validateRuleCondition(isBlockOrAllowTargetPresent, condition));
+    for (DetectionExclusionCondition condition : ruleInfo.getConditionsList()) {
+      conditionValidator.validateRuleCondition(ruleInfo.getExclusionTargetsList(), condition);
+    }
   }
 
   @Override

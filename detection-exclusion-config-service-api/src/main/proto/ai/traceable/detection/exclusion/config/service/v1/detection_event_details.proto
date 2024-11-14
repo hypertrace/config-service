@@ -36,3 +36,15 @@ enum CustomRuleFamily {
   CUSTOM_RULE_FAMILY_DATA_LOSS_PREVENTION = 4;
   CUSTOM_RULE_FAMILY_ENUMERATION = 5;
 }
+
+message ThreatActorEvent {
+  ThreatActorIdentifier threat_actor_identifier = 1;
+  oneof identifier {
+    string actor_entity_id = 2;
+  }
+}
+
+enum ThreatActorIdentifier {
+  THREAT_ACTOR_IDENTIFIER_UNSPECIFIED = 0;
+  THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID = 1;
+}

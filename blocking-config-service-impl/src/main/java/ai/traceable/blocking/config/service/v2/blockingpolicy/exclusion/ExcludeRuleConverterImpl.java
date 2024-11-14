@@ -1,5 +1,8 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion;
 
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
+import static ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier.THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID;
+
 import ai.traceable.blocking.config.service.v2.BlockingCategory;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination.ConditionsOperator;
@@ -25,6 +28,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeConditio
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -177,6 +181,20 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
     }
 
     condition
+        .getThreatActorEventsList()
+        .forEach(
+            threatActorEvent -> {
+              EventCondition.Builder eventConditionBuilder =
+                  EventCondition.newBuilder()
+                      .setBlockingCategory(
+                          getBlockingCategory(threatActorEvent.getThreatActorIdentifier()));
+              if (!threatActorEvent.getActorEntityId().isBlank()) {
+                eventConditionBuilder.addIds(threatActorEvent.getActorEntityId());
+              }
+              eventConditions.add(eventConditionBuilder.build());
+            });
+
+    condition
         .getCustomRuleEventsList()
         .forEach(
             customRuleEvent -> {
@@ -192,6 +210,14 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
             });
 
     return eventConditions;
+  }
+
+  private BlockingCategory getBlockingCategory(ThreatActorIdentifier threatActorIdentifier) {
+    if (threatActorIdentifier.equals(THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID)) {
+      return BLOCKING_CATEGORY_THREAT_ACTOR;
+    }
+    log.warn("Unrecognized threat actor identifier: {}", threatActorIdentifier);
+    return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
   }
 
   private BlockingDetailsCondition wrapInNotConditionIfExcluded(

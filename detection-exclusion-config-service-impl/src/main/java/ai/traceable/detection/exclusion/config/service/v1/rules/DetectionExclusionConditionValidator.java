@@ -7,6 +7,9 @@ import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclus
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.IP_LOCATION_TYPE_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.REGION_CONDITION;
 import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition.ConditionCase.SCOPE_CONDITION;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HOST;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HTTP_METHOD;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_QUERY_PARAMETER;
@@ -27,6 +30,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_USER_AGENT;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
+import static ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier.THREAT_ACTOR_IDENTIFIER_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -39,6 +43,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCond
 import ai.traceable.detection.exclusion.config.service.v1.EmailDomainCondition;
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
+import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.IpAbuseVelocityCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpAsnCondition;
@@ -60,6 +65,8 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SpanAttributeMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import ai.traceable.detection.exclusion.config.service.v1.ThreatActorEvent;
+import ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier;
 import ai.traceable.detection.exclusion.config.service.v1.UrlScope;
 import ai.traceable.detection.exclusion.config.service.v1.UserAgentCondition;
 import ai.traceable.detection.exclusion.config.service.v1.UserIdCondition;
@@ -116,7 +123,14 @@ public class DetectionExclusionConditionValidator {
           KEY_METADATA_REQUEST_BODY_PARAMETER);
 
   void validateRuleCondition(
-      boolean isBlockOrAllowTargetPresent, DetectionExclusionCondition condition) {
+      List<ExclusionTarget> exclusionTargets, DetectionExclusionCondition condition) {
+    boolean isBlockOrAllowTargetPresent =
+        exclusionTargets.stream()
+            .anyMatch(
+                target ->
+                    target.equals(EXCLUSION_TARGET_BLOCK) || target.equals(EXCLUSION_TARGET_ALLOW));
+    boolean isAlertTargetPresent =
+        exclusionTargets.stream().anyMatch(target -> target.equals(EXCLUSION_TARGET_ALERT));
     if (isBlockOrAllowTargetPresent
         && !VALID_CONDITIONS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW.contains(
             condition.getConditionCase())) {
@@ -143,7 +157,7 @@ public class DetectionExclusionConditionValidator {
         validateUserIdCondition(condition.getUserIdCondition());
         break;
       case EVENT_CONDITION:
-        validateEventCondition(condition.getEventCondition());
+        validateEventCondition(isAlertTargetPresent, condition.getEventCondition());
         break;
       case ANOMALOUS_ATTRIBUTE_CONDITION:
         validateAnomalousAttributeCondition(condition.getAnomalousAttributeCondition());
@@ -410,10 +424,13 @@ public class DetectionExclusionConditionValidator {
     }
   }
 
-  private void validateEventCondition(EventCondition condition) {
+  private void validateEventCondition(boolean isAlertTargetPresent, EventCondition condition) {
     List<CustomRuleEvent> customRuleEvents = condition.getCustomRuleEventsList();
     List<SystemDefinedEvent> systemDefinedEvents = condition.getSystemDefinedEventsList();
-    if (customRuleEvents.isEmpty() && systemDefinedEvents.isEmpty()) {
+    List<ThreatActorEvent> threatActorEvents = condition.getThreatActorEventsList();
+    if (customRuleEvents.isEmpty()
+        && systemDefinedEvents.isEmpty()
+        && threatActorEvents.isEmpty()) {
       throwInvalidArgumentException(
           String.format(
               "Invalid eventCondition for detection exclusion rule :%n %s",
@@ -427,6 +444,30 @@ public class DetectionExclusionConditionValidator {
     if (!systemDefinedEvents.isEmpty()) {
       systemDefinedEvents.forEach(this::validateSystemDefinedEvent);
     }
+    if (!threatActorEvents.isEmpty()) {
+      validateThreatActorEvents(isAlertTargetPresent, threatActorEvents);
+    }
+  }
+
+  private void validateThreatActorEvents(
+      boolean isAlertTargetPresent, List<ThreatActorEvent> threatActorEvents) {
+    if (isAlertTargetPresent) {
+      throwInvalidArgumentException("Invalid alert exclusion target for threat actor events");
+    }
+    threatActorEvents.forEach(
+        threatActorEvent -> {
+          if (threatActorEvent
+                  .getThreatActorIdentifier()
+                  .equals(THREAT_ACTOR_IDENTIFIER_UNSPECIFIED)
+              || threatActorEvent
+                  .getThreatActorIdentifier()
+                  .equals(ThreatActorIdentifier.UNRECOGNIZED)) {
+            throwInvalidArgumentException(
+                String.format(
+                    "Invalid threat actor identifier : %s",
+                    threatActorEvent.getThreatActorIdentifier()));
+          }
+        });
   }
 
   private void validateCustomRuleEvent(CustomRuleEvent customRuleEvent) {

@@ -67,6 +67,7 @@ enum IpReputationSeverity {
 message EventCondition {
   repeated SystemDefinedEvent system_defined_events = 1;
   repeated CustomRuleEvent custom_rule_events = 2;
+  repeated ThreatActorEvent threat_actor_events = 3;
 }
 
 message AnomalousAttributeCondition {
