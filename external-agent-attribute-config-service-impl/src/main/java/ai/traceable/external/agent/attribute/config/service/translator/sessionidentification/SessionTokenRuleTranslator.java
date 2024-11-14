@@ -19,6 +19,7 @@ class SessionTokenRuleTranslator {
   private final PredicateTranslator predicateTranslator;
   private final AttributeRuleBuilder attributeRuleBuilder;
   private final ExpirationTranslator expirationTranslator;
+  private final CustomAttributeTranslator customAttributeTranslator;
   private final ProjectionRootTranslator projectionRootTranslator;
   private final SessionIdentificationConstants sessionIdentificationConstants;
 
@@ -45,6 +46,14 @@ class SessionTokenRuleTranslator {
                       tokenRule
                           .getTokenValueRule()
                           .getTokenValueProjection()
+                          .getAttributeProjection()),
+                  customAttributeTranslator.translateCustomAttribute(
+                      tokenRule.getResponseSessionTokenDetails(),
+                      ruleIndex,
+                      ruleId,
+                      tokenRule
+                          .getTokenValueRule()
+                          .getTokenValueProjection()
                           .getAttributeProjection())),
               tokenRule);
         }
@@ -61,6 +70,14 @@ class SessionTokenRuleTranslator {
                   sessionIdentificationConstants.buildKeyForSessionId(ruleId, ruleIndex),
                   projectors,
                   expirationTranslator.translateExpiration(
+                      tokenRule.getRequestSessionTokenDetails(),
+                      ruleIndex,
+                      ruleId,
+                      tokenRule
+                          .getTokenValueRule()
+                          .getTokenValueProjection()
+                          .getAttributeProjection()),
+                  customAttributeTranslator.translateCustomAttribute(
                       tokenRule.getRequestSessionTokenDetails(),
                       ruleIndex,
                       ruleId,
@@ -95,7 +112,10 @@ class SessionTokenRuleTranslator {
   }
 
   private AttributeRule buildAttributeRule(
-      String sessionIdKey, List<Projector> projectors, AttributeRule expirationRule) {
+      String sessionIdKey,
+      List<Projector> projectors,
+      AttributeRule expirationRule,
+      List<AttributeRule> customAttributeRule) {
     return AttributeRule.newBuilder()
         .setProjector(
             Projector.newBuilder()
@@ -111,7 +131,8 @@ class SessionTokenRuleTranslator {
                                                 .build())
                                     .collect(Collectors.toUnmodifiableList()),
                                 sessionIdKey))
-                        .addAttributeRules(expirationRule)))
+                        .addAttributeRules(expirationRule)
+                        .addAllAttributeRules(customAttributeRule)))
         .build();
   }
 

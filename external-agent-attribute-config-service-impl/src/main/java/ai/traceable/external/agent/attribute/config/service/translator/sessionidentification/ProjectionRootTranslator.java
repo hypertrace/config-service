@@ -1,10 +1,13 @@
 package ai.traceable.external.agent.attribute.config.service.translator.sessionidentification;
 
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.location.RequestLocationTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.location.RequestLocationTranslatorLookup;
+import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.location.ResponseLocationTranslator;
 import ai.traceable.external.agent.attribute.config.service.translator.sessionidentification.location.ResponseLocationTranslatorLookup;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
+import ai.traceable.sessionidentification.config.service.v1.CustomAttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.ProjectionRoot;
 import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
@@ -13,6 +16,9 @@ import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
 import ai.traceable.sessionidentification.config.service.v1.ValueProjection;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
@@ -73,7 +79,8 @@ public class ProjectionRootTranslator {
         .getTranslator(responseSessionTokenDetails.getTokenLocation())
         .translateForResponse(
             attributeProjection.getAttributeKeyMatchCondition(),
-            addTranslationForJwtExpiration(attributeProjection.getValueProjectionsInOrderList()));
+            addTranslationForJwtAttribute(
+                attributeProjection.getValueProjectionsInOrderList(), JWT_EXPIRATION_ATTR));
   }
 
   List<Projector> translateForJwtExpiration(
@@ -83,11 +90,49 @@ public class ProjectionRootTranslator {
         .getTranslator(requestSessionTokenDetails.getTokenLocation())
         .translateForRequest(
             attributeProjection.getAttributeKeyMatchCondition(),
-            addTranslationForJwtExpiration(attributeProjection.getValueProjectionsInOrderList()));
+            addTranslationForJwtAttribute(
+                attributeProjection.getValueProjectionsInOrderList(), JWT_EXPIRATION_ATTR));
   }
 
-  private AttributeRule addTranslationForJwtExpiration(List<ValueProjection> valueProjections) {
-    List<ValueProjection> valueProjectionsForJwtExpiration =
+  Map<String, List<Projector>> translateForCustomAttribute(
+      RequestSessionTokenDetails requestSessionTokenDetails,
+      AttributeProjection attributeProjection) {
+    RequestLocationTranslator locationTranslator =
+        requestLocationTranslatorLookup.getTranslator(
+            requestSessionTokenDetails.getTokenLocation());
+    return requestSessionTokenDetails.getCustomAttributeRulesList().stream()
+        .map(CustomAttributeRule::getJwtClaimAttributesFromSessionToken)
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                jwtAttr ->
+                    locationTranslator.translateForRequest(
+                        attributeProjection.getAttributeKeyMatchCondition(),
+                        addTranslationForJwtAttribute(
+                            attributeProjection.getValueProjectionsInOrderList(), jwtAttr))));
+  }
+
+  Map<String, List<Projector>> translateForCustomAttribute(
+      ResponseSessionTokenDetails responseSessionTokenDetails,
+      AttributeProjection attributeProjection) {
+    ResponseLocationTranslator locationTranslator =
+        responseLocationTranslatorLookup.getTranslator(
+            responseSessionTokenDetails.getTokenLocation());
+    return responseSessionTokenDetails.getCustomAttributeRulesList().stream()
+        .map(CustomAttributeRule::getJwtClaimAttributesFromSessionToken)
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                jwtAttr ->
+                    locationTranslator.translateForResponse(
+                        attributeProjection.getAttributeKeyMatchCondition(),
+                        addTranslationForJwtAttribute(
+                            attributeProjection.getValueProjectionsInOrderList(), jwtAttr))));
+  }
+
+  private AttributeRule addTranslationForJwtAttribute(
+      List<ValueProjection> valueProjections, String attributeKey) {
+    List<ValueProjection> valueProjectionsForJwtAttribute =
         valueProjections.stream()
             .filter(ValueProjection::hasJwtPayloadClaim)
             .findFirst()
@@ -96,14 +141,13 @@ public class ProjectionRootTranslator {
                     valueProjections.subList(0, valueProjections.indexOf(valueProjection)))
             .orElse(valueProjections);
     return valueProjectionsTranslator.translateValueProjections(
-        valueProjectionsForJwtExpiration,
+        valueProjectionsForJwtAttribute,
         AttributeRule.newBuilder()
             .setProjector(
                 Projector.newBuilder()
                     .setJwtProjector(
                         Projector.JwtProjector.newBuilder()
                             .setClaimRule(
-                                Projector.ParsedObjectKeyRule.newBuilder()
-                                    .setKey(JWT_EXPIRATION_ATTR)))));
+                                Projector.ParsedObjectKeyRule.newBuilder().setKey(attributeKey)))));
   }
 }
