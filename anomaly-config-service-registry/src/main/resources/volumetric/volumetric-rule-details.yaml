@@ -14,6 +14,7 @@
   subRuleInfos:
     - ruleId: volumetric_apiCallSpike
       ruleName: Spike in API Call Count
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
       subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
       eventDetails:
         description: |

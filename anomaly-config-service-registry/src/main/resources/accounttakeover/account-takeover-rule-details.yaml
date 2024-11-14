@@ -5,6 +5,7 @@
   subRuleInfos:
     - ruleId: ato_credStuff
       ruleName: Credential Stuffing
+      severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
       subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
       eventDetails:
         description: |
