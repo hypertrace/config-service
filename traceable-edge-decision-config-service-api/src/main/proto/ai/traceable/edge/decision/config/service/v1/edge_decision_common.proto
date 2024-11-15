@@ -8,7 +8,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 
-message MatchCondition {
+message GenericMatchCondition {
   oneof condition {
     // this needs to be a boolean expression. if it's non-boolean, then it's false.
     ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig jexl_expression = 1;

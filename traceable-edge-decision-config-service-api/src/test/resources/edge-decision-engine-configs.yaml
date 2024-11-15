@@ -50,7 +50,7 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       aggregate_threshold_rule:
-        match_signature:
+        match_condition:
           generic_match_condition:
             jexl_expression:
               jexl_expression: "$s.path.contains('registration')"
@@ -91,7 +91,7 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       aggregate_threshold_rule:
-        match_signature:
+        match_condition:
           generic_match_condition:
             jexl_expression:
               jexl_expression: "$s.path.contains('login')"
@@ -133,7 +133,7 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       aggregate_threshold_rule:
-        match_signature:
+        match_condition:
           generic_match_condition:
             jexl_expression:
               jexl_expression: "$s.path.contains('payment')"
@@ -175,9 +175,10 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       signature_rule:
-        generic_match_condition:
-          jexl_expression:
-            jexl_expression: "$s.request_headers['visitor_uuid'] != traceable:parseJson($s.request_body)['user']['uuid']"
+        match_condition:
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: "$s.request_headers['visitor_uuid'] != traceable:parseJson($s.request_body)['user']['uuid']"
       attribute_projections:
         - name: ip_address
           rules:
@@ -201,9 +202,10 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       signature_rule:
-        generic_match_condition:
-          jexl_expression:
-            jexl_expression: "$s.request_headers['visitor_uuid'] == null"
+        match_condition:
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: "$s.request_headers['visitor_uuid'] == null"
     rule_decision:
       edge_decision_type: "EDGE_DECISION_TYPE_BLOCK"
       sampling_rate: 1.0 # apply always
@@ -212,11 +214,13 @@ decision_rules:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       access_pattern_rule:
         target_request:
-          jexl_expression:
-            jexl_expression: $s.path.contains("/payment")
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: $s.path.contains("/payment")
         filter:
-          jexl_expression:
-            jexl_expression: "client_type == 'DESKTOP_WEB'"
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: "client_type == 'DESKTOP_WEB'"
         correlation_key:
           attributes:
             - name: "ip_address"
@@ -231,11 +235,13 @@ decision_rules:
                       jexl_expression: "$s.user_agent"
         pre_requests:
           - match_condition:
-              jexl_expression:
-                jexl_expression: "$s.url.equals('/profile') && $s.request_method.equals('GET')"
+              generic_match_condition:
+                jexl_expression:
+                  jexl_expression: "$s.url.equals('/profile') && $s.request_method.equals('GET')"
           - match_condition:
-              jexl_expression:
-                jexl_expression: "$s.url.equals('/me') && $s.request_method.equals('POST')"
+              generic_match_condition:
+                jexl_expression:
+                  jexl_expression: "$s.url.equals('/me') && $s.request_method.equals('POST')"
         check_for_any_pre_requests: true # has any call been made
         time_window: 600s
 

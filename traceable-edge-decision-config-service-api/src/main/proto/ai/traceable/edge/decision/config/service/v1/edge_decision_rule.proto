@@ -92,9 +92,13 @@ message EdgeDecisionRuleDefinition {
 // "signature rules" that can be evaluated by risk decision engine
 // evaluate a payload to check if it matches the signature
 message SignatureRule {
+  MatchCondition match_condition = 1;
+}
+
+message MatchCondition {
   oneof condition {
     // to express any signature
-    MatchCondition generic_match_condition = 1;
+    GenericMatchCondition generic_match_condition = 1;
     // when we want to express lhs match against rhs dataset
     StructuredMatchCondition structured_match_condition = 2;
   }
@@ -117,7 +121,7 @@ message EntityRule {
 // agg_fn(dimension) by (dim1, dim2..dimN) over [timewindow] , threshold
 message AggregateThresholdRule {
   // this should refer to a match criteria that's evaluated in variables so that we don't evaluate again and again
-  SignatureRule match_signature = 1;
+  MatchCondition match_condition = 1;
 
   // group-by to be applied on the payload
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping group_by_dimensions = 2;
@@ -156,7 +160,7 @@ message AccessPatternRule {
 
 message EntityRuleData {
   ai.traceable.datamodel.data.transformation.config.v1.DataModelEntity entity = 1;
-  SignatureRule match_signature = 2;
+  MatchCondition match_condition = 2;
 }
 
 message ValueAggregateThreshold {
