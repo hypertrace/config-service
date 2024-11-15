@@ -795,6 +795,20 @@ anomalyConfigServiceConfig:
 #    }
 #  ]
 
+#defaultTraceableEdgeUserAttributionVariables: |-
+#  [
+#    {
+#      name = "userId1"
+#      rules = [
+#      transformationConfig = {
+#        jexlExpression = {
+#          jexlExpression = "$s.getHeaders().get('authorization')"
+#        }
+#      }
+#    ]
+#    }
+#  ]
+
 prometheusRule:
   enabled: true
   additionalRuleLabels: {}

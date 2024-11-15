@@ -1,13 +1,13 @@
-package ai.traceable.edge.decision.engine.config.v1;
+package ai.traceable.edge.decision.config.service.v1;
 
 import static ai.traceable.edge.decision.engine.config.v1.ResourceUtils.readProtoFromYaml;
 
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class EdgeDecisionConfigSerdeTest {
+
   @Test
   public void testEdgeDecisionConfigSerde() throws IOException {
     EdgeDecisionEngineConfig edgeDecisionConfig =

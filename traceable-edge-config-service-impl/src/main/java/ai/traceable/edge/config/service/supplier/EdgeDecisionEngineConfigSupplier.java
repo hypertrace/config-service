@@ -2,6 +2,8 @@ package ai.traceable.edge.config.service.supplier;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
+import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
+import ai.traceable.edge.config.service.supplier.actor.EdgeDecisionActorConfigSupplier;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
 import ai.traceable.edge.config.service.v1.ConfigPayloads;
 import ai.traceable.edge.config.service.v1.ConfigRequestElement;
@@ -9,30 +11,27 @@ import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
-import com.google.protobuf.Duration;
-import com.typesafe.config.Config;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
-import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupplier {
   private static final String CONFIG_TYPE = EdgeDecisionEngineConfig.class.getSimpleName();
   private final EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub stub;
-  private final ClientConfig clientConfig;
-  private final Duration agentPollingFrequency;
+  private final TraceableEdgeConfig config;
   private final UuidGenerator uuidGenerator;
+  private final EdgeDecisionActorConfigSupplier actorConfigSupplier;
 
   @Inject
   public EdgeDecisionEngineConfigSupplier(
-      Config config,
+      TraceableEdgeConfig config,
       EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub stub,
-      ClientConfig clientConfig,
-      UuidGenerator uuidGenerator) {
+      UuidGenerator uuidGenerator,
+      EdgeDecisionActorConfigSupplier actorConfigSupplier) {
     this.stub = stub;
-    this.clientConfig = clientConfig;
+    this.config = config;
     this.uuidGenerator = uuidGenerator;
-    this.agentPollingFrequency = getAgentPollingFrequency(config, CONFIG_TYPE);
+    this.actorConfigSupplier = actorConfigSupplier;
   }
 
   @Override
@@ -41,33 +40,40 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
   }
 
   @Override
-  public String getConfigDeserializer() {
-    return EdgeDecisionEngineConfig.class.getName();
-  }
-
-  @Override
   public ConfigResponseElement getConfigs(
       RequestContext requestContext,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
-    var edgeDecisionEngineConfig =
-        requestContext.call(
-            () ->
-                stub.withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                    .getEdgeDecisionEngineConfig(
-                        GetEdgeDecisionEngineConfigRequest.getDefaultInstance()));
-    ;
+    EdgeDecisionEngineConfig edgeDecisionEngineConfig =
+        mergeConfigs(
+            getStoredConfig(requestContext),
+            actorConfigSupplier.getEdgeDecisionActorConfig(requestContext));
+
     ConfigPayloads configPayloads =
-        ConfigPayloads.newBuilder()
-            .addConfigBytes(edgeDecisionEngineConfig.getEdgeDecisionEngineConfig().toByteString())
-            .build();
+        ConfigPayloads.newBuilder().addConfigBytes(edgeDecisionEngineConfig.toByteString()).build();
     return ConfigResponseElement.newBuilder()
         .setConfigType(getConfigType())
         .setEnabled(true)
         .addSupportedAgentCapabilities(agentCapabilities)
-        .setRefreshAfterDuration(agentPollingFrequency)
+        .setRefreshAfterDuration(config.getAgentPollingFrequency(getConfigType()))
         .setConfigPayloads(configPayloads)
         .setHash(uuidGenerator.generateId(configPayloads))
         .build();
+  }
+
+  private EdgeDecisionEngineConfig getStoredConfig(RequestContext requestContext) {
+    return requestContext
+        .call(
+            () ->
+                stub.withDeadlineAfter(
+                        config.getClientConfig().getTimeout().toMillis(), TimeUnit.MILLISECONDS)
+                    .getEdgeDecisionEngineConfig(
+                        GetEdgeDecisionEngineConfigRequest.getDefaultInstance()))
+        .getEdgeDecisionEngineConfig();
+  }
+
+  private EdgeDecisionEngineConfig mergeConfigs(EdgeDecisionEngineConfig... decisionEngineConfigs) {
+    // TODO: add merging logic
+    return decisionEngineConfigs[0];
   }
 }

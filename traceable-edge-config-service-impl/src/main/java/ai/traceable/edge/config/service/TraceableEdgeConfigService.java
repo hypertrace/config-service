@@ -10,7 +10,6 @@ import ai.traceable.edge.config.service.v1.GetConfigsResponse;
 import ai.traceable.edge.config.service.v1.TraceableEdgeConfigServiceGrpc;
 import ai.traceable.edge.config.service.validation.RequestValidator;
 import com.google.inject.Inject;
-import com.typesafe.config.Config;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +27,6 @@ public class TraceableEdgeConfigService
 
   @Inject
   public TraceableEdgeConfigService(
-      Config config,
       UuidGenerator uuidGenerator,
       EdgeDecisionEngineConfigSupplier edgeDecisionEngineConfigSupplier,
       CaptchaSiteKeyConfigSupplier captchaSiteKeyConfigSupplier,

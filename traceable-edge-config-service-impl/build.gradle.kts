@@ -12,6 +12,8 @@ dependencies {
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.re2j)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
   implementation(commonLibs.guice)
@@ -22,7 +24,9 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.framework.metrics)
   implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(commonLibs.traceable.actorservice.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
@@ -30,6 +34,7 @@ dependencies {
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.grpc.core)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 

@@ -282,6 +282,9 @@ data:
     splunk.integration.config.service {
       splunk.http.support.enabled = {{ .Values.traceableConfigServiceConfig.splunkIntegrationConfigServiceConfig.splunkHttpSupportEnabled }}
     }
+    traceable.edge.config.service = {
+      include "traceable-edge.conf"
+    }
     detection.exclusion.config.service = {
       migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.migrationDisabled }}
       changeLog2.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.changeLog2.migrationDisabled }}
@@ -404,4 +407,9 @@ data:
       {{- if hasKey .Values.labelApplicationRuleConfigServiceConfig "maxDynamicLabelApplicationRulesPerTenant" }}
         max.dynamic.label.application.rules.per.tenant = {{- .Values.labelApplicationRuleConfigServiceConfig.maxDynamicLabelApplicationRulesPerTenant | indent 2 }}
       {{- end }}
-    {{- end }}    
+    {{- end }}
+
+  traceable-edge.conf: |-
+    {{- if .Values.defaultTraceableEdgeUserAttributionVariables }}
+      default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
+    {{- end }}

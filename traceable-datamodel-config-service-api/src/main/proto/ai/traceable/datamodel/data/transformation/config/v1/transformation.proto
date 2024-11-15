@@ -7,6 +7,13 @@ option java_multiple_files = true;
 import "google/protobuf/struct.proto";
 import "google/protobuf/type.proto";
 
+message DataModelEntity {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  repeated AttributeDerivationMapping metadata_attributes = 4;
+}
+
 message DataTransformationConfig {
   oneof transformation {
     google.protobuf.Value static_value = 1;

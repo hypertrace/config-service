@@ -77,15 +77,34 @@ message EdgeDecisionRuleDefinition {
   // if the rule matches, what do you want to capture in the result?
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping attribute_projections = 3;
   oneof rule_definition {
-    AggregateThresholdRule aggregate_threshold_rule = 6;
-    SignatureRule signature_rule = 7;
-    AccessPatternRule access_pattern_rule = 8;
+    SignatureRule signature_rule = 6;
+    EntityRule entity_rule = 7;
+    AggregateThresholdRule aggregate_threshold_rule = 8;
+    AccessPatternRule access_pattern_rule = 9;
   }
   // each rule must provide a score and weight, that are used to compute the final score.
   //  double risk_score = 6;
   //  double weight = 7;
   // placeholder to allow customization of the rule eval - not all params are known now.
   google.protobuf.Value custom_fields = 100;
+}
+
+// "signature rules" that can be evaluated by risk decision engine
+// evaluate a payload to check if it matches the signature
+message SignatureRule {
+  oneof condition {
+    // to express any signature
+    MatchCondition generic_match_condition = 1;
+    // when we want to express lhs match against rhs dataset
+    StructuredMatchCondition structured_match_condition = 2;
+  }
+}
+
+// entity rules that can be evaluated by risk decision engine
+// this is for any type of entity, like fingerprint, actor/user, etc
+message EntityRule {
+  StringList entity_attribution_variables = 1;
+  repeated EntityRuleData entity_data = 2;
 }
 
 // Aggregate threshold rules
@@ -98,7 +117,7 @@ message EdgeDecisionRuleDefinition {
 // agg_fn(dimension) by (dim1, dim2..dimN) over [timewindow] , threshold
 message AggregateThresholdRule {
   // this should refer to a match criteria that's evaluated in variables so that we don't evaluate again and again
-  MatchCondition match_condition = 1;
+  SignatureRule match_signature = 1;
 
   // group-by to be applied on the payload
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping group_by_dimensions = 2;
@@ -115,6 +134,29 @@ message AggregateThresholdRule {
   // - Has the dim1, dim2…dimN, count(distinct dimX) crossed a limit -> Enumeration
   // - Has the dim1, dim2…dimN, agg_fn(dimX) crossed a limit ->
   ValueAggregateThreshold value_aggregate_threshold = 4;
+}
+
+// "api access rules" that can be evaluated by risk decision engine
+// evaluate a payload against access pattern
+message AccessPatternRule {
+  // correlation key to be computed on the request payload(s)
+  CorrelationKey correlation_key = 1;
+  // common filters that must be applied on all payloads (client_type == '')
+  MatchCondition filter = 2;
+  MatchCondition target_request = 3;
+
+  // what other requests do we expect in this window, before the target is invoked
+  repeated RequestInvocation pre_requests = 4;  // Collection of requests that are expected.
+  // what is the time window for grouping
+  google.protobuf.Duration time_window = 5;
+  // what is the probability of no other api being there in this window?
+  // set to "true" to trigger the rule if NO api is seen in this window. Irrespective of pre_requests.
+  bool check_for_any_pre_requests = 6;
+}
+
+message EntityRuleData {
+  ai.traceable.datamodel.data.transformation.config.v1.DataModelEntity entity = 1;
+  SignatureRule match_signature = 2;
 }
 
 message ValueAggregateThreshold {
@@ -138,17 +180,6 @@ message ValueAggregateThreshold {
   // this must be a conscious choice of the consumer - higher resource usage if estimates are disabled for aggregations
   // by default: decision engine may use probabilistic data structures for providing aggregate values
   bool disable_estimated_aggregate = 4;
-}
-
-// "signature rules" that can be evaluated by risk decision engine
-// evaluate a payload to check if it matches the signature
-message SignatureRule {
-  oneof condition {
-    // to express any signature
-    MatchCondition generic_match_condition = 1;
-    // when we want to express lhs match against rhs dataset
-    StructuredMatchCondition structured_match_condition = 2;
-  }
 }
 
 message StructuredMatchCondition {
@@ -219,24 +250,6 @@ enum MatchOperator {
   MATCH_OPERATOR_GTE = 9;
   MATCH_OPERATOR_LTE = 10;
   MATCH_OPERATOR_BETWEEN = 11;
-}
-
-// "api access rules" that can be evaluated by risk decision engine
-// evaluate a payload against access pattern
-message AccessPatternRule {
-  // correlation key to be computed on the request payload(s)
-  CorrelationKey correlation_key = 1;
-  // common filters that must be applied on all payloads (client_type == '')
-  MatchCondition filter = 2;
-  MatchCondition target_request = 3;
-
-  // what other requests do we expect in this window, before the target is invoked
-  repeated RequestInvocation pre_requests = 4;  // Collection of requests that are expected.
-  // what is the time window for grouping
-  google.protobuf.Duration time_window = 5;
-  // what is the probability of no other api being there in this window?
-  // set to "true" to trigger the rule if NO api is seen in this window. Irrespective of pre_requests.
-  bool check_for_any_pre_requests = 6;
 }
 
 message RequestInvocation {

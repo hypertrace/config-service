@@ -146,6 +146,9 @@ spec:
               mountPath: /app/resources/configs/{{ .Chart.Name }}/risk.conf
               subPath: risk.conf
             - name: service-config
+              mountPath: /app/resources/configs/{{ .Chart.Name }}/traceable-edge.conf
+              subPath: traceable-edge.conf
+            - name: service-config
               mountPath: /app/resources/configs/{{ .Chart.Name }}/span-processing-rules.conf
               subPath: span-processing-rules.conf
             - name: log4j-config

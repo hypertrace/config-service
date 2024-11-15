@@ -50,9 +50,10 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       aggregate_threshold_rule:
-        match_condition:
-          jexl_expression:
-            jexl_expression: "$s.path.contains('registration')"
+        match_signature:
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: "$s.path.contains('registration')"
         group_by_dimensions:
           - name: "ip_address"
             rules:
@@ -90,9 +91,10 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       aggregate_threshold_rule:
-        match_condition:
-          jexl_expression:
-            jexl_expression: "$s.path.contains('login')"
+        match_signature:
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: "$s.path.contains('login')"
         group_by_dimensions:
           - name: "ip_address"
             rules:
@@ -131,9 +133,10 @@ decision_rules:
     rule_definition:
       edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
       aggregate_threshold_rule:
-        match_condition:
-          jexl_expression:
-            jexl_expression: "$s.path.contains('payment')"
+        match_signature:
+          generic_match_condition:
+            jexl_expression:
+              jexl_expression: "$s.path.contains('payment')"
         group_by_dimensions:
           - name: "ip_address"
             rules:
