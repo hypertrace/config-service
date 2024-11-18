@@ -248,6 +248,7 @@ message VulnerabilityTrainingConfig {
     JwtAlgoWeaknessTrainingConfig jwt_algo_weakness = 19;
     MissingGatewayPoliciesTrainingConfig missing_gateway_policies = 21;
     SensitiveDataInErrorMessageTrainingConfig sensitive_data_in_error_message = 22;
+    LackOfEncryptionExternalApiTrainingConfig lack_of_encryption_external_api = 23;
   }
 }
 
@@ -279,6 +280,8 @@ message PiiTrainingConfig {
 message DataClassificationTrainingConfig {}
 
 message SensitiveDataInErrorMessageTrainingConfig {}
+
+message LackOfEncryptionExternalApiTrainingConfig {}
 
 message EnumerationsTrainingConfig {
   optional int32 max_enumerations = 1;
