@@ -81,6 +81,7 @@ class SpanIngestionRequestValidator {
     switch (action.getActionCase()) {
       case RETAIN:
       case DISCARD:
+      case DISCARD_VALUE:
         return;
       case ACTION_NOT_SET:
       default:
