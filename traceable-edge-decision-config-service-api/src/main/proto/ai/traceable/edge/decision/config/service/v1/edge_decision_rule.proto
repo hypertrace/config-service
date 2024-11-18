@@ -30,6 +30,7 @@ message EdgeDecisionRule {
 }
 
 message EdgeDecisionRuleScope {
+  // AND
   repeated EdgeDecisionRuleScopeCondition scope_conditions = 1;
 }
 
@@ -43,14 +44,17 @@ message EdgeDecisionRuleScopeCondition {
   }
 
   message ServiceScope {
+    // OR
     repeated string service_names = 1;
   }
 
   message UrlRegexScope {
+    // OR
     repeated string url_regexes = 1;
   }
 
   message UrlScope {
+    // OR
     repeated string urls = 1;
   }
 }
