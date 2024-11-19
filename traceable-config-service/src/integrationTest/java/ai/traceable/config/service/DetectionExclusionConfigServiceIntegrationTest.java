@@ -95,7 +95,7 @@ public class DetectionExclusionConfigServiceIntegrationTest
   void testCRUDDetectionExclusionRules() {
     List<DetectionExclusionRule> rules = getRules(GetRulesFilter.getDefaultInstance());
     // default rules
-    assertEquals(5, rules.size());
+    assertEquals(6, rules.size());
 
     // creating rule1
     CreateDetectionExclusionRuleRequest createRequest1 =
