@@ -186,6 +186,7 @@ message DeleteScopedTrainingConfigResponse {
 
 message TrainingConfig {
   optional bool disabled = 1;
+  optional string applicable_scope_filter_id = 11;
   oneof training_config {
     MetadataTrainingConfig metadata_training_config = 2;
     VulnerabilityTrainingConfig vulnerability_training_config = 3;
