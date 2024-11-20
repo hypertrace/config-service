@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.1651=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1655=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.23=testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.23=testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-policy-config-service-api:0.37.23=testCompileClasspath,testRuntimeClasspath
