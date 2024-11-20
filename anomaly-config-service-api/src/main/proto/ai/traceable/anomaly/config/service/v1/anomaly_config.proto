@@ -26,7 +26,12 @@ message AnomalyConfigScope {
     AnomalyEnvironmentScope environment_scope = 6;
     AnomalyBackendScope backend_scope = 7;
     AnomalyBackendApiScope backend_api_scope = 8;
+    SavedFilterScope saved_filter_scope = 11;
   }
+}
+
+message SavedFilterScope {
+  string saved_filter_id = 1;
 }
 
 message AnomalyCustomerScope {

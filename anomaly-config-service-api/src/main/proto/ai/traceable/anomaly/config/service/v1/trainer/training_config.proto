@@ -19,8 +19,109 @@ enum TrainingConfigType {
 }
 
 message GetTrainingConfigsFilter {
-  repeated TrainingConfigType training_config_types = 1;
+  repeated TrainingConfigType training_config_types = 1 [deprecated = true];
+  repeated TrainingConfigTypeSpecificFilter training_config_type_specific_filter = 2;
 }
+
+message TrainingConfigTypeSpecificFilter {
+  oneof type {
+    MetadataTrainingConfigFilter metadata_training_config_filter = 1;
+    VulnerabilityTrainingConfigFilter vulnerability_training_config_filter = 2;
+    SessionTrainingConfigFilter session_training_config_filter = 3;
+    ApiNamingTrainingConfigFilter api_naming_training_config_filter = 4;
+    SensitiveDataTrainingConfigFilter sensitive_data_training_config_filter = 5;
+    LocalTrainingConfigFilter local_training_config_filter = 6;
+    VolumetricTrainingConfigFilter volumetric_training_config_filter = 7;
+    DemoApplicationTrainingConfigFilter demo_application_training_config_filter = 8;
+  }
+}
+
+message MetadataTrainingConfigFilter {}
+
+message SessionTrainingConfigFilter {}
+
+message ApiNamingTrainingConfigFilter {}
+
+message SensitiveDataTrainingConfigFilter {}
+
+message LocalTrainingConfigFilter {}
+
+message VolumetricTrainingConfigFilter {}
+
+message DemoApplicationTrainingConfigFilter {}
+
+
+message VulnerabilityTrainingConfigFilter {
+  repeated VulnerabilityTypeFilter vulnerability_type_filter = 1;
+}
+
+message VulnerabilityTypeFilter {
+
+  oneof type {
+    ParamContainsSensitiveDataFilter param_contains_sensitive_data_filter = 1;
+    LackOfEncryptionFilter lack_of_encryption_filter = 2;
+    ApiParamContainsUrlFilter api_param_contains_url_filter = 3;
+    ContentTypeOptionsSecurityHeaderFilter content_type_options_security_header_filter = 4;
+    HstsSecurityHeaderFilter hsts_security_header_filter = 5;
+    JavaSerializedObjectFilter java_serialized_object_filter = 6;
+    ServiceUsesBasicAuthFilter service_uses_basic_auth_filter = 7;
+    CspSecurityHeaderFilter csp_security_header_filter = 8;
+    DirectoryListingFilter directory_listing_filter = 9;
+    EnumerableParamFilter enumerable_param_filter = 10;
+    DeprecatedApiRouteFilter deprecated_api_route_filter = 11;
+    MultipleApiVersionsFilter multiple_api_versions_filter = 12;
+    ExcessDataExposureFilter excess_data_exposure_filter = 13;
+    OpenRedirectFilter open_redirect_filter = 14;
+    MassParameterAssignmentFilter mass_parameter_assignment_filter = 15;
+    SqlInjectionErrorBasedFilter sql_injection_error_based_filter = 16;
+    JwtAlgoWeaknessFilter jwt_algo_weakness_filter = 17;
+    JwtExpiryIssueAtFilter jwt_expiry_and_issue_at_not_set_filter = 18;
+    MissingGatewayPoliciesFilter missing_gateway_policies_filter = 19;
+    SensitiveDataInErrorMessageFilter sensitive_data_in_error_message_filter = 20;
+  }
+
+  message ParamContainsSensitiveDataFilter {}
+
+  message LackOfEncryptionFilter {}
+
+  message ApiParamContainsUrlFilter {}
+
+  message ContentTypeOptionsSecurityHeaderFilter {}
+
+  message HstsSecurityHeaderFilter {}
+
+  message JavaSerializedObjectFilter {}
+
+  message ServiceUsesBasicAuthFilter {}
+
+  message CspSecurityHeaderFilter {}
+
+  message DirectoryListingFilter {}
+
+  message EnumerableParamFilter {}
+
+  message DeprecatedApiRouteFilter {}
+
+  message MultipleApiVersionsFilter {}
+
+  message ExcessDataExposureFilter {}
+
+  message OpenRedirectFilter {}
+
+  message MassParameterAssignmentFilter {}
+
+  message SqlInjectionErrorBasedFilter {}
+
+  message JwtAlgoWeaknessFilter {}
+
+  message JwtExpiryIssueAtFilter {}
+
+  message MissingGatewayPoliciesFilter {}
+
+  message SensitiveDataInErrorMessageFilter {}
+
+}
+
 
 enum DeleteAnomalyConfigOption {
   DELETE_ANOMALY_CONFIG_OPTION_UNSPECIFIED = 0;
