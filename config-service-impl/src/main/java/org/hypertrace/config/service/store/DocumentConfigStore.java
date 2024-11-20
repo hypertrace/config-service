@@ -40,6 +40,13 @@ import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.OrderBy;
 import org.hypertrace.core.documentstore.Query;
 import org.hypertrace.core.documentstore.UpdateResult;
+import org.hypertrace.core.documentstore.expression.impl.ConstantExpression;
+import org.hypertrace.core.documentstore.expression.impl.IdentifierExpression;
+import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
+import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
+import org.hypertrace.core.documentstore.expression.operators.RelationalOperator;
+import org.hypertrace.core.documentstore.expression.operators.SortOrder;
+import org.hypertrace.core.documentstore.model.options.QueryOptions;
 
 /** Document store which stores and serves the configurations. */
 @Slf4j
@@ -202,12 +209,11 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource)
       throws IOException {
-    Query query = new Query();
-    query.setFilter(this.getConfigResourceFilter(configResource));
-    query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
+    org.hypertrace.core.documentstore.query.Query query = buildQuery(configResource);
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
     Set<String> seenContexts = new HashSet<>();
-    try (CloseableIterator<Document> documentIterator = collection.search(query)) {
+    try (CloseableIterator<Document> documentIterator =
+        collection.query(query, QueryOptions.DEFAULT_QUERY_OPTIONS)) {
       while (documentIterator.hasNext()) {
         String documentString = documentIterator.next().toJson();
         ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
@@ -353,5 +359,29 @@ public class DocumentConfigStore implements ConfigStore {
             configDocument.getResourceNamespace(),
             configDocument.getTenantId()),
         configDocument.getContext());
+  }
+
+  private org.hypertrace.core.documentstore.query.Query buildQuery(ConfigResource configResource) {
+    return org.hypertrace.core.documentstore.query.Query.builder()
+        .addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC)
+        .setFilter(
+            org.hypertrace.core.documentstore.query.Filter.builder()
+                .expression(
+                    LogicalExpression.and(
+                        List.of(
+                            RelationalExpression.of(
+                                IdentifierExpression.of(RESOURCE_FIELD_NAME),
+                                RelationalOperator.EQ,
+                                ConstantExpression.of(configResource.getResourceName())),
+                            RelationalExpression.of(
+                                IdentifierExpression.of(RESOURCE_NAMESPACE_FIELD_NAME),
+                                RelationalOperator.EQ,
+                                ConstantExpression.of(configResource.getResourceNamespace())),
+                            RelationalExpression.of(
+                                IdentifierExpression.of(TENANT_ID_FIELD_NAME),
+                                RelationalOperator.EQ,
+                                ConstantExpression.of(configResource.getTenantId())))))
+                .build())
+        .build();
   }
 }

@@ -265,7 +265,8 @@ class DocumentConfigStoreTest {
                 getConfigDocument(CONTEXT1, 1L, config2, TIMESTAMP3, TIMESTAMP3),
                 getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
                 getConfigDocument("context", CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1)));
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(org.hypertrace.core.documentstore.query.Query.class), any()))
+        .thenReturn(iterator);
 
     List<ContextSpecificConfig> contextSpecificConfigList =
         configStore.getAllConfigs(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID));
