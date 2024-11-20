@@ -11,6 +11,7 @@ import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
@@ -135,7 +136,14 @@ public class RateLimitingRulesValidator implements RulesValidator {
     } else {
       validateNonDefaultPresenceOrThrow(
           data, RateLimitingRuleData.THRESHOLD_ACTION_CONFIGS_FIELD_NUMBER);
-      data.getThresholdActionConfigsList().forEach(this::validateThresholdActionConfig);
+      boolean isSelectedDataTypesSensitiveParamsEvaluationValid =
+          isSelectedDataTypesSensitiveParamsEvaluationValid(
+              data.getCondition(), data.getCategory());
+      data.getThresholdActionConfigsList()
+          .forEach(
+              thresholdActionConfig ->
+                  this.validateThresholdActionConfig(
+                      thresholdActionConfig, isSelectedDataTypesSensitiveParamsEvaluationValid));
       validateCondition(data.getCondition());
     }
   }
@@ -183,13 +191,19 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateThresholdActionConfig(ThresholdActionConfig thresholdActionConfig) {
+  private void validateThresholdActionConfig(
+      ThresholdActionConfig thresholdActionConfig,
+      boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig,
         ThresholdActionConfig.RESOURCE_ACCESS_THRESHOLD_CONFIGS_FIELD_NUMBER);
     thresholdActionConfig
         .getResourceAccessThresholdConfigsList()
-        .forEach(this::validateResourceAccessThresholdConfig);
+        .forEach(
+            resourceAccessThresholdConfig ->
+                validateResourceAccessThresholdConfig(
+                    resourceAccessThresholdConfig,
+                    isSelectedDataTypesSensitiveParamsEvaluationValid));
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig, ThresholdActionConfig.ACTIONS_FIELD_NUMBER);
 
@@ -206,7 +220,8 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateResourceAccessThresholdConfig(
-      ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
+      ResourceAccessThresholdConfig resourceAccessThresholdConfig,
+      boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
     validateNonDefaultPresenceOrThrow(
         resourceAccessThresholdConfig,
         ResourceAccessThresholdConfig.USER_AGGREGATE_TYPE_FIELD_NUMBER);
@@ -220,7 +235,8 @@ public class RateLimitingRulesValidator implements RulesValidator {
         break;
       case VALUE_BASED_THRESHOLD_CONFIG:
         validateValueBasedThresholdConfig(
-            resourceAccessThresholdConfig.getValueBasedThresholdConfig());
+            resourceAccessThresholdConfig.getValueBasedThresholdConfig(),
+            isSelectedDataTypesSensitiveParamsEvaluationValid);
         break;
       case DYNAMIC_THRESHOLD_CONFIG:
         validateDynamicThresholdConfig(resourceAccessThresholdConfig.getDynamicThresholdConfig());
@@ -255,7 +271,8 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateValueBasedThresholdConfig(
-      ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig) {
+      ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig,
+      boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
     validateNonDefaultPresenceOrThrow(
         valueBasedThresholdConfig,
         ResourceAccessThresholdConfig.ValueBasedThresholdConfig.UNIQUE_VALUES_ALLOWED_FIELD_NUMBER);
@@ -265,6 +282,64 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(
         valueBasedThresholdConfig,
         ResourceAccessThresholdConfig.ValueBasedThresholdConfig.VALUE_TYPE_FIELD_NUMBER);
+    if (!valueBasedThresholdConfig
+            .getValueType()
+            .equals(ResourceAccessThresholdConfig.ValueType.VALUE_TYPE_SENSITIVE_PARAMS)
+        && !valueBasedThresholdConfig
+            .getSensitiveParamsEvaluation()
+            .equals(
+                ResourceAccessThresholdConfig.SensitiveParamsEvaluation
+                    .SENSITIVE_PARAMS_EVALUATION_UNSPECIFIED)) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "Sensitive params evaluation not applicable for value type : %s",
+              valueBasedThresholdConfig.getValueType()));
+    }
+    if (!isSelectedDataTypesSensitiveParamsEvaluationValid
+        && valueBasedThresholdConfig
+            .getSensitiveParamsEvaluation()
+            .equals(
+                ResourceAccessThresholdConfig.SensitiveParamsEvaluation
+                    .SENSITIVE_PARAMS_EVALUATION_SELECTED_DATA_TYPES)) {
+      validatorUtils.throwInvalidArgumentException(
+          "Selected data types sensitive params evaluation not valid for the rule");
+    }
+  }
+
+  private boolean isSelectedDataTypesSensitiveParamsEvaluationValid(
+      Condition condition, Category category) {
+    switch (category) {
+      case CATEGORY_ENUMERATION:
+        return isSelectedDataTypesSensitiveParamsEvaluationValid(
+            condition, DataLocation.DATA_LOCATION_REQUEST);
+      case CATEGORY_DATA_EXFILTRATION:
+        return isSelectedDataTypesSensitiveParamsEvaluationValid(
+            condition, DataLocation.DATA_LOCATION_RESPONSE);
+      default:
+        return false;
+    }
+  }
+
+  private boolean isSelectedDataTypesSensitiveParamsEvaluationValid(
+      Condition condition, DataLocation dataLocation) {
+    switch (condition.getConditionCase()) {
+      case COMPOSITE_CONDITION:
+        return condition.getCompositeCondition().getChildrenList().stream()
+            .anyMatch(
+                childCondition ->
+                    isSelectedDataTypesSensitiveParamsEvaluationValid(
+                        childCondition, dataLocation));
+      case LEAF_CONDITION:
+        if (condition.getLeafCondition().hasDatatypeCondition()) {
+          DataLocation location =
+              condition.getLeafCondition().getDatatypeCondition().getDataLocation();
+          return location.equals(dataLocation)
+              || location.equals(DataLocation.DATA_LOCATION_UNSPECIFIED);
+        }
+        return false;
+      default:
+        return false;
+    }
   }
 
   private void validateDynamicThresholdConfig(

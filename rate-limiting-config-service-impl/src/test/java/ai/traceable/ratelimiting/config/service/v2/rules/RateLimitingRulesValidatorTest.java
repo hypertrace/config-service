@@ -2760,6 +2760,176 @@ public class RateLimitingRulesValidatorTest {
         () -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
   }
 
+  @Test
+  void testValidSensitiveParamsEvaluation() {
+    RateLimitingRuleData invalidRuleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_ENUMERATION)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        CompositeCondition.newBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                buildDatatypeCondition(List.of("id1", "id2"))
+                                                    .toBuilder()
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST))))
+                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                    .build())
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setValueBasedThresholdConfig(
+                                ResourceAccessThresholdConfig.ValueBasedThresholdConfig.newBuilder()
+                                    .setUniqueValuesAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .setSensitiveParamsEvaluation(
+                                        ResourceAccessThresholdConfig.SensitiveParamsEvaluation
+                                            .SENSITIVE_PARAMS_EVALUATION_SELECTED_DATA_TYPES)
+                                    .setValueType(
+                                        ResourceAccessThresholdConfig.ValueType
+                                            .VALUE_TYPE_PATH_PARAMS)
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .build();
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(invalidRuleData).build();
+    Throwable throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+    Status status = Status.fromThrowable(throwable);
+    assertEquals(
+        "Sensitive params evaluation not applicable for value type : VALUE_TYPE_PATH_PARAMS",
+        status.getDescription());
+
+    invalidRuleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_ENUMERATION)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        CompositeCondition.newBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                buildDatatypeCondition(List.of("id1", "id2"))
+                                                    .toBuilder()
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_RESPONSE))))
+                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                    .build())
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setValueBasedThresholdConfig(
+                                ResourceAccessThresholdConfig.ValueBasedThresholdConfig.newBuilder()
+                                    .setUniqueValuesAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .setSensitiveParamsEvaluation(
+                                        ResourceAccessThresholdConfig.SensitiveParamsEvaluation
+                                            .SENSITIVE_PARAMS_EVALUATION_SELECTED_DATA_TYPES)
+                                    .setValueType(
+                                        ResourceAccessThresholdConfig.ValueType
+                                            .VALUE_TYPE_SENSITIVE_PARAMS)
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .build();
+    CreateRateLimitingRuleRequest request2 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(invalidRuleData).build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request2, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(
+        "Selected data types sensitive params evaluation not valid for the rule",
+        status.getDescription());
+
+    RateLimitingRuleData validRuleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_ENUMERATION)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        CompositeCondition.newBuilder()
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setDatatypeCondition(
+                                                buildDatatypeCondition(List.of("id1", "id2"))
+                                                    .toBuilder()
+                                                    .setDataLocation(
+                                                        DataLocation.DATA_LOCATION_REQUEST))))
+                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                    .build())
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                            .setValueBasedThresholdConfig(
+                                ResourceAccessThresholdConfig.ValueBasedThresholdConfig.newBuilder()
+                                    .setUniqueValuesAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .setSensitiveParamsEvaluation(
+                                        ResourceAccessThresholdConfig.SensitiveParamsEvaluation
+                                            .SENSITIVE_PARAMS_EVALUATION_SELECTED_DATA_TYPES)
+                                    .setValueType(
+                                        ResourceAccessThresholdConfig.ValueType
+                                            .VALUE_TYPE_SENSITIVE_PARAMS)
+                                    .build())
+                            .build()))
+            .setRuleConfigScope(RuleConfigScope.newBuilder())
+            .build();
+    CreateRateLimitingRuleRequest request3 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(validRuleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request3, List.of()));
+  }
+
   private RateLimitingRuleData getRateLimitingRule(Condition condition) {
     return RateLimitingRuleData.newBuilder()
         .setName("rule")
