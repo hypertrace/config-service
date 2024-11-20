@@ -5,6 +5,7 @@ option java_multiple_files = true;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
 import "ai/traceable/fraud/query/model/v1/fraud_data_query.proto";
+import "google/protobuf/struct.proto";
 
 enum FraudPolicyCategory {
   FRAUD_POLICY_CATEGORY_UNSPECIFIED = 0;
@@ -149,6 +150,16 @@ message FraudPolicy {
   FraudPolicyScope scope = 15;
 
   Schedule schedule = 16;
+
+  // store information for creating incidents from the policy.
+  // at this point, we don't know yet what is the actual structure.
+  google.protobuf.Value incident_config = 100;
+  // store information for triaging the policy (fingerprinting)
+  // at this point, we don't know yet what this may look like.
+  google.protobuf.Value triage_config = 101;
+  // store information about the last execution status of the policy.
+  google.protobuf.Value execution_status = 102;
+  google.protobuf.Value additional_fields = 103;
 }
 
 message FraudWatcherPolicy {
