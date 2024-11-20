@@ -8,7 +8,7 @@ dependencies {
   api(commonLibs.javax.annotation)
   api(commonLibs.typesafe.config)
 
-  implementation(projects.anomalyConfigServiceUtils)
+  implementation(projects.modsecurityUtils)
   implementation(commonLibs.guice)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.re2j)

@@ -36,12 +36,14 @@ import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import com.google.protobuf.util.Values;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ExcludeRuleConverterImplTest {
+  private final ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
 
   @Test
   void testAnomalyAttributeConvert() {
@@ -91,7 +93,7 @@ class ExcludeRuleConverterImplTest {
                             .addExclusionTargets(EXCLUSION_TARGET_BLOCK)))
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
+    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals("id-1", exclusionRule.getRuleId());
@@ -175,14 +177,14 @@ class ExcludeRuleConverterImplTest {
                                     .setEventCondition(eventCondition2))))
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
+    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(4, exclusionRule.getEventConditionsCount());
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY, exclusionRule.getEventConditions(0).getBlockingCategory());
-    assertEquals(List.of("crs_921"), exclusionRule.getEventConditions(0).getIdPrefixesList());
-    assertEquals(List.of("crs_92160"), exclusionRule.getEventConditions(0).getIdsList());
+    assertEquals(List.of("921"), exclusionRule.getEventConditions(0).getIdPrefixesList());
+    assertEquals(List.of("92160"), exclusionRule.getEventConditions(0).getIdsList());
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
         exclusionRule.getEventConditions(1).getBlockingCategory());
@@ -239,7 +241,7 @@ class ExcludeRuleConverterImplTest {
             .addAssociatedModsecRuleIds("cs-2")
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
+    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(
@@ -295,7 +297,7 @@ class ExcludeRuleConverterImplTest {
             .addAssociatedModsecRuleIds("cs-2")
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
+    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(
@@ -347,7 +349,7 @@ class ExcludeRuleConverterImplTest {
             .addAssociatedModsecRuleIds("cs-1")
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl();
+    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(

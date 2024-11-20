@@ -21,6 +21,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(projects.configUtils)
+  implementation(projects.modsecurityUtils)
 
   implementation(commonLibs.guice)
   implementation(commonLibs.guava)

@@ -259,7 +259,7 @@ class LocalProcessingConfigServiceImplTest {
                     GetLocalProcessingConfigRequest.AgentCapabilities.newBuilder()
                         .addComponents(
                             GetLocalProcessingConfigRequest.Component.newBuilder()
-                                .setTraceablePlatformAgentVersion("1.49.0")
+                                .setTraceablePlatformAgentVersion("1.50.0")
                                 .build())
                         .build())
                 .setEnvironment("environmentId")

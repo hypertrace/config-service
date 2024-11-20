@@ -1091,10 +1091,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         "913100",
         blockingPolicyConfiguration.getBlockingDetailsList(index).getModsecDetails().getRuleId());
+    assertEquals("913100", blockingPolicyConfiguration.getBlockingDetailsList(index).getRuleId());
     index++;
     assertEquals(
         "941280",
         blockingPolicyConfiguration.getBlockingDetailsList(index).getModsecDetails().getRuleId());
+    assertEquals("941280", blockingPolicyConfiguration.getBlockingDetailsList(index).getRuleId());
     index++;
 
     // Verifying DLP Policy
@@ -1748,7 +1750,13 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                             .setRuleFamily(CUSTOM_RULE_FAMILY_SIGNATURE))
                                     .addSystemDefinedEvents(
                                         SystemDefinedEvent.newBuilder()
-                                            .setEventTypeId("crs931")
+                                            .setEventSubTypeId("crs_941280")
+                                            .setEventFamily(
+                                                SystemDefinedEventFamily
+                                                    .SYSTEM_DEFINED_EVENT_FAMILY_MODSEC))
+                                    .addSystemDefinedEvents(
+                                        SystemDefinedEvent.newBuilder()
+                                            .setEventTypeId("crs_931")
                                             .setEventFamily(
                                                 SystemDefinedEventFamily
                                                     .SYSTEM_DEFINED_EVENT_FAMILY_MODSEC))))
@@ -1793,7 +1801,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(3, exclusionRule.getEventConditionsCount());
     assertEquals(
         EventCondition.newBuilder()
-            .addIdPrefixes("crs931")
+            .addIdPrefixes("931") // Ensure crs_ is dropped
+            .addIds("941280") // Ensure crs_ is dropped
             .setBlockingCategory(BLOCKING_CATEGORY_MODSECURITY)
             .build(),
         exclusionRule.getEventConditions(0));

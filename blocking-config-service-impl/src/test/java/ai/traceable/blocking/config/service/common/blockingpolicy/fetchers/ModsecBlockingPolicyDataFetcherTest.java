@@ -30,6 +30,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.List;
 import java.util.Optional;
@@ -58,7 +59,8 @@ class ModsecBlockingPolicyDataFetcherTest {
         new ModsecBlockingPolicyDataFetcher(
             anomalyGlobalConfigServiceStub,
             detectorConfigServiceBlockingStub,
-            ClientConfig.DEFAULT);
+            ClientConfig.DEFAULT,
+            new ModsecRuleUtils());
   }
 
   @Test
@@ -105,7 +107,7 @@ class ModsecBlockingPolicyDataFetcherTest {
     assertEquals(
         ViolationInfoEncoder.getEncodedSafeCrsViolationInfo("crs_123456"),
         violations.get(0).getInfo());
-    assertEquals("crs_123456", violations.get(0).getRuleId());
+    assertEquals("123456", violations.get(0).getRuleId());
 
     // If modsec rules are disabled
     doReturn(
@@ -170,7 +172,7 @@ class ModsecBlockingPolicyDataFetcherTest {
     assertEquals(
         ModsecBlockingDetails.builder().ruleId("123456").build(),
         violations.get(0).getBlockingDetails());
-    assertEquals("crs_123456", violations.get(0).getRuleId());
+    assertEquals("123456", violations.get(0).getRuleId());
   }
 
   private static final GetScopedAnomalyDetectionConfigResponse

@@ -3,7 +3,6 @@ package ai.traceable.anomaly.config.service.exclusion.handlers;
 import static ai.traceable.anomaly.config.service.exclusion.utils.ParamScopeUtils.populateParamScope;
 
 import ai.traceable.anomaly.config.service.exclusion.utils.UuidGenerator;
-import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
@@ -12,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.exclusion.CreateAnomalyExclusionRu
 import ai.traceable.anomaly.config.service.v1.exclusion.CreateAnomalyExclusionRuleResponse;
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionInfo;
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionType;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import io.grpc.Status;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;

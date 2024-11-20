@@ -1,4 +1,4 @@
-package ai.traceable.anomaly.config.service.utils.modsec;
+package ai.traceable.modsecurity.utils;
 
 public class ModsecRuleUtils {
 

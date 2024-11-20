@@ -9,7 +9,6 @@ import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
-import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.StringList;
@@ -46,6 +45,7 @@ import ai.traceable.anomaly.config.service.v1.detector.UnderThresholdLearningApi
 import ai.traceable.anomaly.config.service.v1.detector.UnknownParamAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;

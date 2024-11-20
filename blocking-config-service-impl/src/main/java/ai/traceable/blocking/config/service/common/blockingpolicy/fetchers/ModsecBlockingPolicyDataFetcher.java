@@ -19,6 +19,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Status;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.ModsecBlockingDetails;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -30,7 +31,6 @@ import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
-  private static final String CRS_RULE_ID_REGEX = "^crs_";
   private static final AnomalyConfigScope DEFAULT_ANOMALY_CONFIG_SCOPE =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
@@ -39,15 +39,18 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
   private final AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub;
   private final DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub;
   private final ClientConfig clientConfig;
+  private final ModsecRuleUtils modsecRuleUtils;
 
   @Inject
   ModsecBlockingPolicyDataFetcher(
       AnomalyGlobalConfigServiceBlockingStub anomalyGlobalConfigServiceStub,
       DetectorConfigServiceBlockingStub detectorConfigServiceBlockingStub,
-      ClientConfig clientConfig) {
+      ClientConfig clientConfig,
+      ModsecRuleUtils modsecRuleUtils) {
     this.anomalyGlobalConfigServiceStub = anomalyGlobalConfigServiceStub;
     this.detectorConfigServiceBlockingStub = detectorConfigServiceBlockingStub;
     this.clientConfig = clientConfig;
+    this.modsecRuleUtils = modsecRuleUtils;
   }
 
   @Override
@@ -108,7 +111,7 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                 .getScopedAnomalyDetectionConfig(getScopedAnomalyDetectionConfigRequest));
   }
 
-  private static List<BlockingPolicyData> parseModsecViolations(
+  private List<BlockingPolicyData> parseModsecViolations(
       GetScopedAnomalyDetectionConfigResponse scopedAnomalyDetectionConfigResponse) {
     return scopedAnomalyDetectionConfigResponse
         .getScopedAnomalyDetectionConfig()
@@ -127,22 +130,21 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                     .stream())
         .filter(AnomalySubRuleConfig::getBlockingEnabled)
         .map(AnomalySubRuleConfig::getSubRuleId)
-        .map(ModsecBlockingPolicyDataFetcher::generateBlockingDetails)
+        .map(this::generateBlockingDetails)
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private static BlockingPolicyData generateBlockingDetails(String ruleId) {
+  private BlockingPolicyData generateBlockingDetails(String ruleId) {
+    // For modsec rules we would be working numeric id in the agent
+    final String parsedRuleId = String.valueOf(modsecRuleUtils.getModsecCrsRuleIdNumber(ruleId));
     return BlockingPolicyData.builder()
         .category(Category.MODSECURITY)
         .bucket(BlockingPolicyDataBucket.MODSEC_VIOLATIONS)
         .ruleType(RuleType.BLOCK)
         .info(ViolationInfoEncoder.getEncodedSafeCrsViolationInfo(ruleId))
         .status(Status.DENIED)
-        .blockingDetails(
-            ModsecBlockingDetails.builder()
-                .ruleId(ruleId.replaceFirst(CRS_RULE_ID_REGEX, ""))
-                .build())
-        .ruleId(ruleId)
+        .blockingDetails(ModsecBlockingDetails.builder().ruleId(parsedRuleId).build())
+        .ruleId(parsedRuleId)
         .build();
   }
 }

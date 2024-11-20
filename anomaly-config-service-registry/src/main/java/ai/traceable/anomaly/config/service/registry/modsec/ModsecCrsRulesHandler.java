@@ -1,10 +1,10 @@
 package ai.traceable.anomaly.config.service.registry.modsec;
 
-import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import com.google.common.io.Resources;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;

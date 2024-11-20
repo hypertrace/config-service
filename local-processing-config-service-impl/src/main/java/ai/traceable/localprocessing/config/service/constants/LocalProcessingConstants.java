@@ -11,6 +11,5 @@ public final class LocalProcessingConstants {
   public static final String DEFAULT_PROTECTION_MODE = "default.protection.mode";
   public static final String SAMPLING_POLICIES = "sampling.policies";
   public static final String MODSEC_REDACT_MESSAGES = "modsec.redact";
-  public static final String SAMPLING_POLICY_RESOURCE_NAME = "sampling-policy";
-  public static final String TPA_CORAZA_MIN_SUPPORTED_VERSION = "1.49.0-rc.0";
+  public static final String TPA_CORAZA_MIN_SUPPORTED_VERSION = "1.50.0-rc.0";
 }

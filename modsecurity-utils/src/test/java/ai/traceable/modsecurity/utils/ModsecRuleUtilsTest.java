@@ -1,4 +1,4 @@
-package ai.traceable.anomaly.config.service.utils.modsec;
+package ai.traceable.modsecurity.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

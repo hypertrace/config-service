@@ -29,6 +29,8 @@ import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +40,20 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
+
   private static final Map<ExclusionTarget, ExclusionRule.ExclusionTarget> EXCLUSION_TARGET_MAP =
       Map.of(
           ExclusionTarget.EXCLUSION_TARGET_ALLOW,
               ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_ALLOW,
           ExclusionTarget.EXCLUSION_TARGET_BLOCK,
               ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_BLOCK);
+
+  private final ModsecRuleUtils modsecRuleUtils;
+
+  @Inject
+  public ExcludeRuleConverterImpl(ModsecRuleUtils modsecRuleUtils) {
+    this.modsecRuleUtils = modsecRuleUtils;
+  }
 
   @Override
   public ExclusionRule convert(DetectionExclusionModsecRule detectionExclusionModsecRule) {
@@ -169,10 +179,15 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
                     == SystemDefinedEventFamily.SYSTEM_DEFINED_EVENT_FAMILY_MODSEC)
         .forEach(
             systemEvent -> {
+              // For modsec rules we would be working numeric id in the agent
               if (systemEvent.hasEventTypeId()) {
-                systemEventCondition.addIdPrefixes(systemEvent.getEventTypeId());
+                systemEventCondition.addIdPrefixes(
+                    String.valueOf(
+                        modsecRuleUtils.getModsecCrsRuleIdNumber(systemEvent.getEventTypeId())));
               } else if (systemEvent.hasEventSubTypeId()) {
-                systemEventCondition.addIds(systemEvent.getEventSubTypeId());
+                systemEventCondition.addIds(
+                    String.valueOf(
+                        modsecRuleUtils.getModsecCrsRuleIdNumber(systemEvent.getEventSubTypeId())));
               }
             });
     if (!systemEventCondition.getIdsList().isEmpty()

@@ -2,7 +2,7 @@ package ai.traceable.anomaly.config.service.registry.modsec;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import ai.traceable.anomaly.config.service.utils.modsec.ModsecRuleUtils;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import org.junit.jupiter.api.Test;
 
 public class ModsecRuleUtilsTest {

@@ -8,7 +8,7 @@ dependencies {
   api(projects.anomalyConfigServiceApi)
   api(projects.anomalyConfigServiceRegistry)
   implementation(projects.configUtils)
-  implementation(projects.anomalyConfigServiceUtils)
+  implementation(projects.modsecurityUtils)
   implementation(localLibs.hypertrace.configservice.api)
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.objectstore)
