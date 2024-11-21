@@ -21,19 +21,22 @@ public class MetadataConfigStore
   private static final String CONFIG_METADATA_RESOURCE_NAMESPACE = "api-gateway";
   private final Map<MetadataFilter.TypeCase, MetadataConfigFilterToPredicateConverter>
       filterConverterMap;
+  private final GatewayConfigMetadataIdGenerator idGenerator;
 
   @Inject
   public MetadataConfigStore(
       final ConfigServiceBlockingStub configServiceBlockingStub,
       final ConfigChangeEventGenerator configChangeEventGenerator,
       final Map<MetadataFilter.TypeCase, MetadataConfigFilterToPredicateConverter>
-          filterConverterMap) {
+          filterConverterMap,
+      final GatewayConfigMetadataIdGenerator idGenerator) {
     super(
         configServiceBlockingStub,
         CONFIG_METADATA_RESOURCE_NAMESPACE,
         CONFIG_METADATA_RESOURCE_NAME,
         configChangeEventGenerator);
     this.filterConverterMap = filterConverterMap;
+    this.idGenerator = idGenerator;
   }
 
   @SneakyThrows
@@ -52,7 +55,7 @@ public class MetadataConfigStore
 
   @Override
   protected String getContextFromData(final ConfigMetadata configMetadata) {
-    return configMetadata.getOrgId();
+    return idGenerator.generateId(configMetadata);
   }
 
   @Override
@@ -62,7 +65,7 @@ public class MetadataConfigStore
     final MetadataConfigFilterToPredicateConverter converter = filterConverterMap.get(filterCase);
 
     if (converter == null) {
-      log.error("Unhandled filter case: " + filterCase);
+      log.error("Unhandled filter case: {}", filterCase);
       return Optional.empty();
     }
 

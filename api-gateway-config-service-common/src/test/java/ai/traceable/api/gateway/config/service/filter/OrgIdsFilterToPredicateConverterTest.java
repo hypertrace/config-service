@@ -14,20 +14,20 @@ import java.util.function.Predicate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class OrgIdFilterToPredicateConverterTest {
+class OrgIdsFilterToPredicateConverterTest {
 
-  private OrgIdFilterToPredicateConverter orgIdFilterToPredicateConverter;
+  private OrgIdsFilterToPredicateConverter orgIdsFilterToPredicateConverter;
 
   @BeforeEach
   void setUp() {
-    orgIdFilterToPredicateConverter = new OrgIdFilterToPredicateConverter();
+    orgIdsFilterToPredicateConverter = new OrgIdsFilterToPredicateConverter();
   }
 
   @Test
   void testConvertWithoutOrgIds() {
     final ApiRouteFilter filter =
         ApiRouteFilter.newBuilder().setOrgIds(OrgIds.newBuilder()).build();
-    final Predicate<ApiRoute> result = orgIdFilterToPredicateConverter.convert(filter);
+    final Predicate<ApiRoute> result = orgIdsFilterToPredicateConverter.convert(filter);
     assertFalse(result.test(ROUTE_WITH_ALL_FIELDS));
     assertFalse(result.test(ROUTE_WITHOUT_METHOD));
     assertFalse(result.test(ROUTE_WITHOUT_SERVICE));
@@ -37,7 +37,7 @@ class OrgIdFilterToPredicateConverterTest {
   void testConvertWithOrgIds() {
     final ApiRouteFilter filter =
         ApiRouteFilter.newBuilder().setOrgIds(OrgIds.newBuilder().addOrgId(ORG_ID1)).build();
-    final Predicate<ApiRoute> result = orgIdFilterToPredicateConverter.convert(filter);
+    final Predicate<ApiRoute> result = orgIdsFilterToPredicateConverter.convert(filter);
     assertTrue(result.test(ROUTE_WITH_ALL_FIELDS));
     assertTrue(result.test(ROUTE_WITHOUT_METHOD));
     assertFalse(result.test(ROUTE_WITHOUT_SERVICE));

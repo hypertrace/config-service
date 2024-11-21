@@ -1,11 +1,14 @@
 package ai.traceable.api.gateway.config.service.delegate;
 
+import static ai.traceable.api.gateway.config.service.v1.GatewayType.GATEWAY_TYPE_APIGEE;
 import static java.util.Collections.emptyList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.api.gateway.config.service.store.GatewayConfigMetadataIdGenerator;
 import ai.traceable.api.gateway.config.service.store.MetadataConfigStore;
 import ai.traceable.api.gateway.config.service.v1.ConfigMetadata;
 import ai.traceable.api.gateway.config.service.v1.DeleteMetadataRequest;
@@ -29,15 +32,22 @@ class ConfigMetadataDeleterImplTest {
 
   @Mock private MetadataConfigStore mockMetadataConfigStore;
 
+  @Mock private GatewayConfigMetadataIdGenerator mockIdGenerator;
+
   @InjectMocks private ConfigMetadataDeleterImpl configMetadataDeleterImpl;
 
   @Test
   void testDelete() {
+    final String metadataId = "305feab8-9291-4abc-970d-f7967e661cc9";
+    when(mockIdGenerator.generateId(any(ConfigMetadata.class))).thenReturn(metadataId);
+
     final RequestContext requestContext = new RequestContext();
     final String uuid = UUID.randomUUID().toString();
-    final String orgId = UUID.randomUUID().toString();
+    final String orgId = "org-id";
     final MetadataFilter filter =
-        MetadataFilter.newBuilder().setOrgIds(OrgIds.newBuilder().addOrgId(orgId)).build();
+        MetadataFilter.newBuilder()
+            .setOrgIds(OrgIds.newBuilder().addOrgId(orgId).setGatewayType(GATEWAY_TYPE_APIGEE))
+            .build();
     final DeleteMetadataRequest request =
         DeleteMetadataRequest.newBuilder().setMetadataFilter(filter).build();
 
@@ -53,14 +63,14 @@ class ConfigMetadataDeleterImplTest {
     final List<ConfigMetadata> metadataList = List.of(metadata);
     when(mockMetadataConfigStore.getAllConfigData(requestContext, filter)).thenReturn(metadataList);
 
-    when(mockMetadataConfigStore.deleteObjects(requestContext, List.of(orgId)))
+    when(mockMetadataConfigStore.deleteObjects(requestContext, List.of(metadataId)))
         .thenReturn(List.of());
 
     final DeleteMetadataResponse result = configMetadataDeleterImpl.delete(request, requestContext);
 
     assertEquals(DeleteMetadataResponse.newBuilder().build(), result);
     verify(mockMetadataConfigStore).getAllConfigData(requestContext, filter);
-    verify(mockMetadataConfigStore).deleteObjects(requestContext, List.of(orgId));
+    verify(mockMetadataConfigStore).deleteObjects(requestContext, List.of(metadataId));
   }
 
   @Test

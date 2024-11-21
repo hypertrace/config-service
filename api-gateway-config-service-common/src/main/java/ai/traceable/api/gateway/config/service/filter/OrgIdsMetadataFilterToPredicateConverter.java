@@ -4,11 +4,13 @@ import ai.traceable.api.gateway.config.service.v1.ConfigMetadata;
 import ai.traceable.api.gateway.config.service.v1.MetadataFilter;
 import java.util.function.Predicate;
 
-public class OrgIdMetadataFilterToPredicateConverter
+public class OrgIdsMetadataFilterToPredicateConverter
     implements MetadataConfigFilterToPredicateConverter {
 
   @Override
   public Predicate<ConfigMetadata> convert(final MetadataFilter filter) {
-    return metadata -> filter.getOrgIds().getOrgIdList().contains(metadata.getOrgId());
+    return metadata ->
+        filter.getOrgIds().getOrgIdList().contains(metadata.getOrgId())
+            && filter.getOrgIds().getGatewayType().equals(metadata.getGatewayType());
   }
 }

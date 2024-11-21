@@ -22,7 +22,7 @@ public class ApiGatewayFilterModule extends AbstractModule {
         MapBinder.newMapBinder(
             binder(), ApiRouteFilter.TypeCase.class, ApiRouteFilterToPredicateConverter.class);
     binderMap.addBinding(TYPE_NOT_SET).to(EmptyFilterToPredicateConverter.class);
-    binderMap.addBinding(ORG_IDS).to(OrgIdFilterToPredicateConverter.class);
+    binderMap.addBinding(ORG_IDS).to(OrgIdsFilterToPredicateConverter.class);
     binderMap.addBinding(API_INFO).to(ApiInfoFilterToPredicateConverter.class);
   }
 
@@ -37,6 +37,6 @@ public class ApiGatewayFilterModule extends AbstractModule {
         .to(EmptyMetadataFilterToPredicateConverter.class);
     binderMap
         .addBinding(MetadataFilter.TypeCase.ORG_IDS)
-        .to(OrgIdMetadataFilterToPredicateConverter.class);
+        .to(OrgIdsMetadataFilterToPredicateConverter.class);
   }
 }

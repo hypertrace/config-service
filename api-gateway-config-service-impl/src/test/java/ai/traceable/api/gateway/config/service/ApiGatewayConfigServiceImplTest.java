@@ -15,6 +15,7 @@ import ai.traceable.api.gateway.config.service.filter.ApiGatewayFilterModule;
 import ai.traceable.api.gateway.config.service.filter.ApiRouteFilterToPredicateConverter;
 import ai.traceable.api.gateway.config.service.filter.MetadataConfigFilterToPredicateConverter;
 import ai.traceable.api.gateway.config.service.store.ApiRoutesConfigStore;
+import ai.traceable.api.gateway.config.service.store.GatewayConfigMetadataIdGenerator;
 import ai.traceable.api.gateway.config.service.store.MetadataConfigStore;
 import ai.traceable.api.gateway.config.service.v1.ApiGatewayConfigServiceGrpc;
 import ai.traceable.api.gateway.config.service.v1.ApiInfo;
@@ -104,7 +105,8 @@ class ApiGatewayConfigServiceImplTest {
                         new TypeLiteral<
                             Map<
                                 MetadataFilter.TypeCase,
-                                MetadataConfigFilterToPredicateConverter>>() {})));
+                                MetadataConfigFilterToPredicateConverter>>() {})),
+            new GatewayConfigMetadataIdGenerator(new UuidGenerator()));
 
     mockGenericConfigService
         .addService(
@@ -115,7 +117,9 @@ class ApiGatewayConfigServiceImplTest {
                 new ApiRoutesDeleterImpl(apiRoutesConfigStore),
                 new ConfigMetadataCreatorImpl(metadataConfigStore),
                 new ConfigMetadataGetterImpl(metadataConfigStore),
-                new ConfigMetadataDeleterImpl(metadataConfigStore)))
+                new ConfigMetadataDeleterImpl(
+                    metadataConfigStore,
+                    new GatewayConfigMetadataIdGenerator(new UuidGenerator()))))
         .start();
 
     apiGatewayConfigService =
