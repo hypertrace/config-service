@@ -37,8 +37,6 @@ import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Filter;
 import org.hypertrace.core.documentstore.Key;
-import org.hypertrace.core.documentstore.OrderBy;
-import org.hypertrace.core.documentstore.Query;
 import org.hypertrace.core.documentstore.UpdateResult;
 import org.hypertrace.core.documentstore.expression.impl.ConstantExpression;
 import org.hypertrace.core.documentstore.expression.impl.IdentifierExpression;
@@ -46,7 +44,10 @@ import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
 import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
 import org.hypertrace.core.documentstore.expression.operators.RelationalOperator;
 import org.hypertrace.core.documentstore.expression.operators.SortOrder;
+import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 import org.hypertrace.core.documentstore.model.options.QueryOptions;
+import org.hypertrace.core.documentstore.query.Pagination;
+import org.hypertrace.core.documentstore.query.Query;
 
 /** Document store which stores and serves the configurations. */
 @Slf4j
@@ -101,7 +102,7 @@ public class DocumentConfigStore implements ConfigStore {
             .asRuntimeException();
       }
     } else {
-      collection.upsert(latestDocKey, latestConfigDocument);
+      collection.createOrReplace(latestDocKey, latestConfigDocument);
     }
 
     return optionalPreviousConfig
@@ -209,7 +210,11 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource)
       throws IOException {
-    org.hypertrace.core.documentstore.query.Query query = buildQuery(configResource);
+    Query query =
+        Query.builder()
+            .addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC)
+            .setFilter(getConfigResourceFilterTypeExpression(configResource))
+            .build();
     List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
     Set<String> seenContexts = new HashSet<>();
     try (CloseableIterator<Document> documentIterator =
@@ -236,12 +241,15 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Optional<ConfigDocument> getLatestVersionConfigDoc(
       ConfigResourceContext configResourceContext) throws IOException {
-    Query query = new Query();
-    query.setFilter(getConfigResourceContextFilter(configResourceContext));
-    query.addOrderBy(new OrderBy(VERSION_FIELD_NAME, false));
-    query.setLimit(1);
+    Query query =
+        Query.builder()
+            .setFilter(getConfigResourceContextFilterTypeExpression(configResourceContext))
+            .addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC)
+            .setPagination(Pagination.builder().offset(0).limit(1).build())
+            .build();
 
-    try (CloseableIterator<Document> documentIterator = collection.search(query)) {
+    try (CloseableIterator<Document> documentIterator =
+        collection.query(query, QueryOptions.DEFAULT_QUERY_OPTIONS)) {
       if (documentIterator.hasNext()) {
         String documentString = documentIterator.next().toJson();
         return Optional.of(ConfigDocument.fromJson(documentString));
@@ -256,11 +264,15 @@ public class DocumentConfigStore implements ConfigStore {
       return Collections.emptyMap();
     }
 
-    Filter filter = buildConfigResourceContextsFilter(configResourceContexts);
+    FilterTypeExpression filter =
+        buildConfigResourceContextsFilterTypeExpression(configResourceContexts);
     // build query
-    Query query = new Query();
-    query.setFilter(filter);
-    query.setLimit(configResourceContexts.size());
+    Query query =
+        Query.builder()
+            .setFilter(filter)
+            .setPagination(
+                Pagination.builder().offset(0).limit(configResourceContexts.size()).build())
+            .build();
 
     Map<ConfigResourceContext, Optional<ConfigDocument>> latestVersionConfigDocs =
         new LinkedHashMap<>();
@@ -270,7 +282,8 @@ public class DocumentConfigStore implements ConfigStore {
     }
 
     // populate
-    try (CloseableIterator<Document> documentIterator = collection.search(query)) {
+    try (CloseableIterator<Document> documentIterator =
+        collection.query(query, QueryOptions.DEFAULT_QUERY_OPTIONS)) {
       while (documentIterator.hasNext()) {
         String documentString = documentIterator.next().toJson();
         ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
@@ -304,9 +317,55 @@ public class DocumentConfigStore implements ConfigStore {
     return tenantIdFilter.and(configResourceFieldContextFilter);
   }
 
-  private Filter getConfigResourceContextFilter(ConfigResourceContext configResourceContext) {
-    return this.getConfigResourceFilter(configResourceContext.getConfigResource())
-        .and(Filter.eq(CONTEXT_FIELD_NAME, configResourceContext.getContext()));
+  private FilterTypeExpression buildConfigResourceContextsFilterTypeExpression(
+      java.util.Collection<ConfigResourceContext> configResourceContexts) {
+    if (configResourceContexts.isEmpty()) {
+      throw new RuntimeException("Config resource contexts cannot be empty");
+    }
+    List<FilterTypeExpression> childFilters =
+        configResourceContexts.stream()
+            .map(this::getConfigResourceFieldContextFilterTypeExpression)
+            .collect(Collectors.toUnmodifiableList());
+    FilterTypeExpression configResourceFieldContextFilter;
+    if (childFilters.size() == 1) {
+      configResourceFieldContextFilter = childFilters.get(0);
+    } else {
+      configResourceFieldContextFilter = LogicalExpression.or(childFilters);
+    }
+    FilterTypeExpression tenantIdFilter =
+        RelationalExpression.of(
+            IdentifierExpression.of(TENANT_ID_FIELD_NAME),
+            RelationalOperator.EQ,
+            ConstantExpression.of(
+                configResourceContexts.stream()
+                    .findFirst()
+                    .orElseThrow()
+                    .getConfigResource()
+                    .getTenantId()));
+    return LogicalExpression.and(tenantIdFilter, configResourceFieldContextFilter);
+  }
+
+  private FilterTypeExpression getConfigResourceContextFilterTypeExpression(
+      ConfigResourceContext configResourceContext) {
+    ConfigResource configResource = configResourceContext.getConfigResource();
+    return LogicalExpression.and(
+        List.of(
+            RelationalExpression.of(
+                IdentifierExpression.of(RESOURCE_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getResourceName())),
+            RelationalExpression.of(
+                IdentifierExpression.of(RESOURCE_NAMESPACE_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getResourceNamespace())),
+            RelationalExpression.of(
+                IdentifierExpression.of(TENANT_ID_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getTenantId())),
+            RelationalExpression.of(
+                IdentifierExpression.of(CONTEXT_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResourceContext.getContext()))));
   }
 
   private Filter getConfigResourceFieldContextFilter(ConfigResourceContext configResourceContext) {
@@ -316,10 +375,23 @@ public class DocumentConfigStore implements ConfigStore {
         .and(Filter.eq(CONTEXT_FIELD_NAME, configResourceContext.getContext()));
   }
 
-  private Filter getConfigResourceFilter(ConfigResource configResource) {
-    return Filter.eq(RESOURCE_FIELD_NAME, configResource.getResourceName())
-        .and(Filter.eq(RESOURCE_NAMESPACE_FIELD_NAME, configResource.getResourceNamespace()))
-        .and(Filter.eq(TENANT_ID_FIELD_NAME, configResource.getTenantId()));
+  private FilterTypeExpression getConfigResourceFieldContextFilterTypeExpression(
+      ConfigResourceContext configResourceContext) {
+    ConfigResource configResource = configResourceContext.getConfigResource();
+    return LogicalExpression.and(
+        List.of(
+            RelationalExpression.of(
+                IdentifierExpression.of(RESOURCE_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getResourceName())),
+            RelationalExpression.of(
+                IdentifierExpression.of(RESOURCE_NAMESPACE_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getResourceNamespace())),
+            RelationalExpression.of(
+                IdentifierExpression.of(CONTEXT_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResourceContext.getContext()))));
   }
 
   private Optional<ContextSpecificConfig> convertToContextSpecificConfig(
@@ -361,27 +433,21 @@ public class DocumentConfigStore implements ConfigStore {
         configDocument.getContext());
   }
 
-  private org.hypertrace.core.documentstore.query.Query buildQuery(ConfigResource configResource) {
-    return org.hypertrace.core.documentstore.query.Query.builder()
-        .addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC)
-        .setFilter(
-            org.hypertrace.core.documentstore.query.Filter.builder()
-                .expression(
-                    LogicalExpression.and(
-                        List.of(
-                            RelationalExpression.of(
-                                IdentifierExpression.of(RESOURCE_FIELD_NAME),
-                                RelationalOperator.EQ,
-                                ConstantExpression.of(configResource.getResourceName())),
-                            RelationalExpression.of(
-                                IdentifierExpression.of(RESOURCE_NAMESPACE_FIELD_NAME),
-                                RelationalOperator.EQ,
-                                ConstantExpression.of(configResource.getResourceNamespace())),
-                            RelationalExpression.of(
-                                IdentifierExpression.of(TENANT_ID_FIELD_NAME),
-                                RelationalOperator.EQ,
-                                ConstantExpression.of(configResource.getTenantId())))))
-                .build())
-        .build();
+  private FilterTypeExpression getConfigResourceFilterTypeExpression(
+      ConfigResource configResource) {
+    return LogicalExpression.and(
+        List.of(
+            RelationalExpression.of(
+                IdentifierExpression.of(RESOURCE_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getResourceName())),
+            RelationalExpression.of(
+                IdentifierExpression.of(RESOURCE_NAMESPACE_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getResourceNamespace())),
+            RelationalExpression.of(
+                IdentifierExpression.of(TENANT_ID_FIELD_NAME),
+                RelationalOperator.EQ,
+                ConstantExpression.of(configResource.getTenantId()))));
   }
 }
