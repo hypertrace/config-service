@@ -43,9 +43,9 @@ import org.hypertrace.core.documentstore.Collection;
 import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
-import org.hypertrace.core.documentstore.Query;
 import org.hypertrace.core.documentstore.UpdateResult;
 import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
+import org.hypertrace.core.documentstore.query.Query;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -77,7 +77,7 @@ class DocumentConfigStoreTest {
   @Test
   void WriteConfigForCreate() throws IOException {
     CloseableIteratorImpl iterator = new CloseableIteratorImpl(List.of());
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
     UpsertConfigRequest request = mock(UpsertConfigRequest.class);
     when(request.getConfig()).thenReturn(config1);
     when(request.hasUpsertCondition()).thenReturn(false);
@@ -89,7 +89,7 @@ class DocumentConfigStoreTest {
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
-    verify(collection, times(1)).upsert(keyCaptor.capture(), documentCaptor.capture());
+    verify(collection, times(1)).createOrReplace(keyCaptor.capture(), documentCaptor.capture());
 
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();
@@ -116,7 +116,7 @@ class DocumentConfigStoreTest {
                     config1,
                     TIMESTAMP1,
                     TIMESTAMP2)));
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
     UpsertConfigRequest request = mock(UpsertConfigRequest.class);
     when(request.getConfig()).thenReturn(config1);
     when(request.hasUpsertCondition()).thenReturn(false);
@@ -129,7 +129,7 @@ class DocumentConfigStoreTest {
 
     ArgumentCaptor<Key> keyCaptor = ArgumentCaptor.forClass(Key.class);
     ArgumentCaptor<Document> documentCaptor = ArgumentCaptor.forClass(Document.class);
-    verify(collection, times(1)).upsert(keyCaptor.capture(), documentCaptor.capture());
+    verify(collection, times(1)).createOrReplace(keyCaptor.capture(), documentCaptor.capture());
 
     Key key = keyCaptor.getValue();
     Document document = documentCaptor.getValue();
@@ -152,7 +152,7 @@ class DocumentConfigStoreTest {
                     config1,
                     TIMESTAMP1,
                     TIMESTAMP2)));
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
     UpsertConfigRequest request = mock(UpsertConfigRequest.class);
     UpdateResult updateResult = mock(UpdateResult.class);
     when(request.hasUpsertCondition()).thenReturn(true);
@@ -223,7 +223,7 @@ class DocumentConfigStoreTest {
         new CloseableIteratorImpl(
             Collections.singletonList(
                 getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2)));
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
 
     ContextSpecificConfig expectedConfig =
         ContextSpecificConfig.newBuilder()
@@ -244,7 +244,7 @@ class DocumentConfigStoreTest {
         new CloseableIteratorImpl(
             Collections.singletonList(
                 getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2)));
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
 
     ContextSpecificConfig expectedConfig =
         ContextSpecificConfig.newBuilder()
@@ -265,7 +265,7 @@ class DocumentConfigStoreTest {
                 getConfigDocument(CONTEXT1, 1L, config2, TIMESTAMP3, TIMESTAMP3),
                 getConfigDocument("context", CONFIG_VERSION, config1, TIMESTAMP1, TIMESTAMP2),
                 getConfigDocument("context", CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1)));
-    when(collection.search(any(Query.class))).thenReturn(iterator);
+    when(collection.query(any(Query.class), any())).thenReturn(iterator);
 
     List<ContextSpecificConfig> contextSpecificConfigList =
         configStore.getAllConfigs(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID));
@@ -305,7 +305,7 @@ class DocumentConfigStoreTest {
                     TIMESTAMP2,
                     TIMESTAMP2)));
 
-    when(collection.search(any(Query.class))).thenReturn(getResult);
+    when(collection.query(any(Query.class), any())).thenReturn(getResult);
     when(collection.bulkUpsert(any())).thenReturn(true);
     when(this.mockClock.millis()).thenReturn(updateTime);
     List<UpsertedConfig> upsertedConfigs =
