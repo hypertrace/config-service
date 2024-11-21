@@ -10,6 +10,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.DetectionExclus
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
+import static ai.traceable.detection.exclusion.config.service.v1.IpLocationType.IP_LOCATION_TYPE_SCANNER;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HOST;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_HTTP_METHOD;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_QUERY_PARAMETER;
@@ -148,7 +149,8 @@ public class DetectionExclusionConditionValidator {
             isBlockOrAllowTargetPresent, condition.getAttributeMatchCondition());
         break;
       case IP_LOCATION_TYPE_CONDITION:
-        validateIpLocationTypeCondition(condition.getIpLocationTypeCondition());
+        validateIpLocationTypeCondition(
+            isBlockOrAllowTargetPresent, condition.getIpLocationTypeCondition());
         break;
       case IP_REPUTATION_CONDITION:
         validateIpReputationCondition(condition.getIpReputationCondition());
@@ -371,16 +373,26 @@ public class DetectionExclusionConditionValidator {
     }
   }
 
-  private void validateIpLocationTypeCondition(IpLocationTypeCondition condition) {
+  private void validateIpLocationTypeCondition(
+      boolean isBlockOrAllowTargetPresent, IpLocationTypeCondition condition) {
     validateNonDefaultPresenceOrThrow(
         condition, IpLocationTypeCondition.IP_LOCATION_TYPES_FIELD_NUMBER);
-    condition.getIpLocationTypesList().forEach(this::validateIpLocationType);
+    condition
+        .getIpLocationTypesList()
+        .forEach(
+            ipLocationType -> validateIpLocationType(isBlockOrAllowTargetPresent, ipLocationType));
   }
 
-  private void validateIpLocationType(IpLocationType ipLocationType) {
+  private void validateIpLocationType(
+      boolean isBlockOrAllowTargetPresent, IpLocationType ipLocationType) {
     if (ipLocationType.equals(IpLocationType.IP_LOCATION_TYPE_UNSPECIFIED)
         || ipLocationType.equals(IpLocationType.UNRECOGNIZED)) {
       throwInvalidArgumentException(String.format("Invalid IP location type : %s", ipLocationType));
+    }
+    if (isBlockOrAllowTargetPresent && ipLocationType.equals(IP_LOCATION_TYPE_SCANNER)) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid IP location type : %s for exclusion target block or alert", ipLocationType));
     }
   }
 

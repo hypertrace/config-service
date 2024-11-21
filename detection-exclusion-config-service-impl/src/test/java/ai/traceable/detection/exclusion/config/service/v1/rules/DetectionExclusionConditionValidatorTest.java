@@ -6,6 +6,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.AttributeValueT
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALERT;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
+import static ai.traceable.detection.exclusion.config.service.v1.IpLocationType.IP_LOCATION_TYPE_SCANNER;
 import static ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier.THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -399,6 +400,21 @@ class DetectionExclusionConditionValidatorTest {
       assertTrue(throwable.getMessage().contains("Invalid IP location type"));
     }
 
+    {
+      DetectionExclusionCondition condition =
+          DetectionExclusionCondition.newBuilder()
+              .setIpLocationTypeCondition(
+                  IpLocationTypeCondition.newBuilder().addIpLocationTypes(IP_LOCATION_TYPE_SCANNER))
+              .build();
+      Throwable throwable =
+          assertThrows(
+              StatusRuntimeException.class,
+              () ->
+                  conditionValidator.validateRuleCondition(
+                      List.of(EXCLUSION_TARGET_BLOCK, EXCLUSION_TARGET_ALERT), condition));
+      assertTrue(throwable.getMessage().contains("Invalid IP location type"));
+    }
+
     // valid condition
     {
       DetectionExclusionCondition condition =
@@ -413,8 +429,7 @@ class DetectionExclusionConditionValidatorTest {
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
               .setIpLocationTypeCondition(
-                  IpLocationTypeCondition.newBuilder()
-                      .addIpLocationTypes(IpLocationType.IP_LOCATION_TYPE_SCANNER))
+                  IpLocationTypeCondition.newBuilder().addIpLocationTypes(IP_LOCATION_TYPE_SCANNER))
               .build();
       assertDoesNotThrow(
           () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition1));
