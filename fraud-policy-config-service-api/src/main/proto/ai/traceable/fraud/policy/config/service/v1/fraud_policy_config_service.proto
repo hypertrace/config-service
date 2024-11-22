@@ -39,6 +39,7 @@ message CreateFraudPolicyResponse {
 message UpdateFraudPolicyRequest {
   string fraud_policy_id = 1;
   FraudPolicy fraud_policy = 2;
+  int64 current_version = 3;
 }
 
 message UpdateFraudPolicyResponse {

@@ -8,10 +8,14 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStoreManager;
+import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStore;
+import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreManager;
+import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStore;
+import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
-import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -42,8 +46,15 @@ public class EdgeDecisionConfigServiceTest {
     EdgeDecisionConfigStoreManager storeManager =
         new EdgeDecisionConfigStoreManager(
             new EdgeDecisionConfigStore(genericStub, eventGenerator));
+    EdgeDecisionRuleStoreManager ruleStoreManager =
+        new EdgeDecisionRuleStoreManager(new EdgeDecisionRuleStore(genericStub, eventGenerator));
+    EdgeDecisionSpecStoreManager specStoreManager =
+        new EdgeDecisionSpecStoreManager(new EdgeDecisionSpecStore(genericStub, eventGenerator));
+
     this.mockGenericConfigService
-        .addService(new EdgeDecisionConfigService(storeManager, new RequestValidator()))
+        .addService(
+            new EdgeDecisionConfigService(
+                ruleStoreManager, specStoreManager, storeManager, new RequestValidator()))
         .start();
 
     this.stub =
@@ -68,14 +79,14 @@ public class EdgeDecisionConfigServiceTest {
         requestContext
             .call(
                 () ->
-                    stub.upsertEdgeDecisionEngineConfig(
-                        UpsertEdgeDecisionEngineConfigRequest.newBuilder()
+                    stub.createEdgeDecisionEngineConfig(
+                        CreateEdgeDecisionEngineConfigRequest.newBuilder()
                             .setEdgeDecisionEngineConfig(new_config())
                             .build()))
             .getEdgeDecisionEngineConfig();
 
     assertNotNull(created.getId());
-    assertEquals(requestContext.getTenantId().get(), created.getId());
+    assertEquals(UUID_1, created.getId());
     String id = created.getId();
 
     EdgeDecisionEngineConfig toUpdate = update_config(id);
@@ -83,8 +94,8 @@ public class EdgeDecisionConfigServiceTest {
     EdgeDecisionEngineConfig updated =
         requestContext.call(
             () ->
-                stub.upsertEdgeDecisionEngineConfig(
-                        UpsertEdgeDecisionEngineConfigRequest.newBuilder()
+                stub.createEdgeDecisionEngineConfig(
+                        CreateEdgeDecisionEngineConfigRequest.newBuilder()
                             .setEdgeDecisionEngineConfig(toUpdate)
                             .build())
                     .getEdgeDecisionEngineConfig());
@@ -96,20 +107,18 @@ public class EdgeDecisionConfigServiceTest {
         requestContext.call(
             () ->
                 stub.getEdgeDecisionEngineConfig(
-                        GetEdgeDecisionEngineConfigRequest.newBuilder()
-                            .setVersion("version_updated")
-                            .build())
+                        GetEdgeDecisionEngineConfigRequest.newBuilder().setId(UUID_1).build())
                     .getEdgeDecisionEngineConfig());
 
-    assertEquals(id, config.getId());
+    assertEquals(UUID_1, config.getId());
   }
 
   private EdgeDecisionEngineConfig new_config() {
-    return EdgeDecisionEngineConfig.newBuilder().setId(UUID_1).setVersion("key").build();
+    return EdgeDecisionEngineConfig.newBuilder().setId(UUID_1).setVersion(1).build();
   }
 
   private EdgeDecisionEngineConfig update_config(String id) {
-    return EdgeDecisionEngineConfig.newBuilder().setId(id).setVersion("version_updated").build();
+    return EdgeDecisionEngineConfig.newBuilder().setId(id).setVersion(2).build();
   }
 
   private static RequestContext buildRequestContext() {

@@ -7,13 +7,13 @@ option java_multiple_files = true;
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 
-message EdgeDecisionSpecConfigScope {
+message EdgeDecisionSpecScope {
   oneof scope {
     string environment = 1;
   }
 }
 
-message EdgeDecisionSpec {
+message EdgeDecisionSpecDirective {
   EdgeDecision edge_decision = 1;
   oneof condition {
     // any rule fires, provide this decision
@@ -29,10 +29,13 @@ message EdgeDecisionSpec {
   }
 }
 
-message EdgeDecisionSpecConfig {
-  EdgeInputKind edge_input_kind = 1;
-  EdgeDecisionSpecConfigScope scope = 2;
+message EdgeDecisionSpec {
+  string id = 1;
+  string name = 2;
+  int64 version = 3;
+  EdgeInputKind edge_input_kind = 4;
+  EdgeDecisionSpecScope scope = 5;
   // ordered list of decision specs.
   // rule_id
-  repeated EdgeDecisionSpec edge_decision_specs = 3;
+  repeated EdgeDecisionSpecDirective decision_spec_directives = 6;
 }

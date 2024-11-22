@@ -46,8 +46,19 @@ public class FraudPolicyConfigStoreManager {
   public UpdateFraudPolicyResponse updateFraudPolicy(
       RequestContext requestContext, UpdateFraudPolicyRequest request) throws StatusException {
     // check existence of the policy before updating.
-    fetchExistingFraudPolicyOrThrow(request.getFraudPolicyId(), requestContext);
+    FraudPolicy existing =
+        fetchExistingFraudPolicyOrThrow(request.getFraudPolicyId(), requestContext);
     FraudPolicy updatedFraudPolicy = request.getFraudPolicy();
+    // do not allow update if the version provided is not the same as the one in the store.
+    // caller must get latest and update if this exception is thrown
+    if (existing.getVersion() != request.getCurrentVersion()) {
+      throw Status.FAILED_PRECONDITION
+          .withDescription(
+              String.format(
+                  "Received current version=%d, Existing policy version=%d. Read latest and update again",
+                  request.getCurrentVersion(), existing.getVersion()))
+          .asException();
+    }
     ContextualConfigObject<FraudPolicy> configObject =
         fraudPolicyConfigStore.upsertObject(requestContext, updatedFraudPolicy);
     FraudPolicy updated = buildFraudPolicy(configObject);

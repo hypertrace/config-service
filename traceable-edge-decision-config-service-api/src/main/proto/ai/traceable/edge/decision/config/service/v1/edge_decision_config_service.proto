@@ -17,8 +17,23 @@ service EdgeDecisionConfigService {
   // API to manage the edge decision config directly. To keep this atomic, this is the config that's stored for a tenant.
   // caller can get the rules within the config and update them using the same API.
   // we may eventually manage the rules and specs, then generate the engine config.
-  rpc UpsertEdgeDecisionEngineConfig(UpsertEdgeDecisionEngineConfigRequest) returns (UpsertEdgeDecisionEngineConfigResponse) {}
+  // CRUD for overall config - this is optional, we can choose to avoid persisting it and build it runtime
+  rpc CreateEdgeDecisionEngineConfig(CreateEdgeDecisionEngineConfigRequest) returns (CreateEdgeDecisionEngineConfigResponse) {}
+  rpc UpdateEdgeDecisionEngineConfig(UpdateEdgeDecisionEngineConfigRequest) returns (UpdateEdgeDecisionEngineConfigResponse) {}
   rpc GetEdgeDecisionEngineConfig(GetEdgeDecisionEngineConfigRequest) returns (GetEdgeDecisionEngineConfigResponse) {}
+
+  // CRUD for rules
+  rpc CreateEdgeDecisionRule(CreateEdgeDecisionRuleRequest) returns (CreateEdgeDecisionRuleResponse) {}
+  rpc UpdateEdgeDecisionRule(UpdateEdgeDecisionRuleRequest) returns (UpdateEdgeDecisionRuleResponse) {}
+  rpc GetAllEdgeDecisionRules(GetAllEdgeDecisionRulesRequest) returns (GetAllEdgeDecisionRulesResponse) {}
+  rpc DeleteEdgeDecisionRule(DeleteEdgeDecisionRuleRequest) returns (DeleteEdgeDecisionRuleResponse) {}
+
+  // CRUD for specs
+  rpc CreateEdgeDecisionSpec(CreateEdgeDecisionSpecRequest) returns (CreateEdgeDecisionSpecResponse) {}
+  rpc UpdateEdgeDecisionSpec(UpdateEdgeDecisionSpecRequest) returns (UpdateEdgeDecisionSpecResponse) {}
+  rpc GetAllEdgeDecisionSpecs(GetAllEdgeDecisionSpecsRequest) returns (GetAllEdgeDecisionSpecsResponse) {}
+  rpc DeleteEdgeDecisionSpec(DeleteEdgeDecisionSpecRequest) returns (DeleteEdgeDecisionSpecResponse) {}
+
 }
 
 message GetResolvedEdgeDecisionEngineConfigsRequest {
@@ -30,7 +45,7 @@ message GetResolvedEdgeDecisionEngineConfigsResponse {
 }
 
 message GetScopedResolvedEdgeDecisionConfigRequest{
-  EdgeDecisionSpecConfigScope scope = 1;
+  EdgeDecisionSpecScope scope = 1;
   GetEdgeDecisionConfigsFilter filter = 2;
 }
 
@@ -44,18 +59,91 @@ message GetEdgeDecisionConfigsFilter {
   repeated EdgeInputKind edge_input_kinds = 3;
 }
 
-message UpsertEdgeDecisionEngineConfigRequest {
+message CreateEdgeDecisionEngineConfigRequest {
   EdgeDecisionEngineConfig edge_decision_engine_config = 2;
 }
 
-message UpsertEdgeDecisionEngineConfigResponse {
+message CreateEdgeDecisionEngineConfigResponse {
+  EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+}
+
+message UpdateEdgeDecisionEngineConfigRequest {
+  int64 current_version = 1;
+  EdgeDecisionEngineConfig edge_decision_engine_config = 2;
+}
+
+message UpdateEdgeDecisionEngineConfigResponse {
   EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
 
 message GetEdgeDecisionEngineConfigRequest {
-  string version = 1;
+  string id = 1;
 }
 
 message GetEdgeDecisionEngineConfigResponse {
   EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+}
+
+message CreateEdgeDecisionRuleRequest {
+  EdgeDecisionRule edge_decision_rule = 1;
+}
+
+message CreateEdgeDecisionRuleResponse {
+  EdgeDecisionRule edge_decision_rule = 1;
+}
+
+message UpdateEdgeDecisionRuleRequest {
+  int64 current_version = 1;
+  EdgeDecisionRule edge_decision_rule = 2;
+}
+
+message UpdateEdgeDecisionRuleResponse {
+  EdgeDecisionRule edge_decision_rule = 1;
+}
+
+message GetAllEdgeDecisionRulesRequest {
+}
+
+message GetAllEdgeDecisionRulesResponse {
+  repeated EdgeDecisionRule edge_decision_rules = 1;
+}
+
+message DeleteEdgeDecisionRuleRequest {
+  string id = 1;
+}
+
+message DeleteEdgeDecisionRuleResponse {
+  EdgeDecisionRule deleted_edge_decision_rule = 1;
+}
+
+message CreateEdgeDecisionSpecRequest {
+  EdgeDecisionSpec edge_decision_spec = 1;
+}
+
+message CreateEdgeDecisionSpecResponse {
+  EdgeDecisionSpec edge_decision_spec = 1;
+}
+
+message UpdateEdgeDecisionSpecRequest {
+  int64 current_version = 1;
+  EdgeDecisionSpec edge_decision_spec = 2;
+}
+
+message UpdateEdgeDecisionSpecResponse {
+  EdgeDecisionSpec edge_decision_spec = 1;
+}
+
+message GetAllEdgeDecisionSpecsRequest {
+}
+
+message GetAllEdgeDecisionSpecsResponse {
+  repeated EdgeDecisionSpec edge_decision_specs = 1;
+}
+
+message DeleteEdgeDecisionSpecRequest {
+  string id = 1;
+}
+
+message DeleteEdgeDecisionSpecResponse {
+  EdgeDecisionSpec deleted_edge_decision_spec = 1;
 }

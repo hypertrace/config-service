@@ -16,8 +16,8 @@ public class EdgeDecisionConfigSerdeTest {
             .build();
     Assertions.assertEquals(7, edgeDecisionConfig.getCommonVariablesCount());
     Assertions.assertEquals(6, edgeDecisionConfig.getDecisionRulesCount());
-    Assertions.assertEquals(1, edgeDecisionConfig.getEdgeDecisionSpecConfigsCount());
+    Assertions.assertEquals(1, edgeDecisionConfig.getDecisionSpecsCount());
     Assertions.assertEquals(
-        3, edgeDecisionConfig.getEdgeDecisionSpecConfigs(0).getEdgeDecisionSpecsCount());
+        3, edgeDecisionConfig.getDecisionSpecs(0).getDecisionSpecDirectivesCount());
   }
 }

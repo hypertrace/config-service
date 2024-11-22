@@ -22,9 +22,10 @@ import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto"
 message EdgeDecisionRule {
   string id = 1;
   string name = 2;
-  EdgeDecisionRuleScope rule_scope = 3;
-  EdgeDecisionRuleCategory rule_category = 4;
-  EdgeDecisionRuleStatus rule_status = 5;
+  int64 version = 3;
+  EdgeDecisionRuleScope rule_scope = 4;
+  EdgeDecisionRuleCategory rule_category = 5;
+  EdgeDecisionRuleStatus rule_status = 6;
   EdgeDecisionRuleDefinition rule_definition = 7;
   EdgeDecision rule_decision = 8;
 }
@@ -40,7 +41,8 @@ message EdgeDecisionRuleScopeCondition {
     ServiceScope service_scope = 2;
     UrlScope url_scope = 3;
     UrlRegexScope url_regex_scope = 4;
-    MatchCondition match_condition_scope = 5;
+    HttpMethodScope http_method_scope = 5;
+    MatchCondition match_condition_scope = 6;
   }
 
   message ServiceScope {
@@ -56,6 +58,12 @@ message EdgeDecisionRuleScopeCondition {
   message UrlScope {
     // OR
     repeated string urls = 1;
+  }
+
+  message HttpMethodScope {
+    // OR
+    // POST / PUT / GET / DELETE, etc
+    repeated string http_methods = 1;
   }
 }
 
@@ -111,8 +119,7 @@ message MatchCondition {
 // entity rules that can be evaluated by risk decision engine
 // this is for any type of entity, like fingerprint, actor/user, etc
 message EntityRule {
-  StringList entity_attribution_variables = 1;
-  repeated EntityRuleData entity_data = 2;
+  repeated EntityRuleData entity_data = 1;
 }
 
 // Aggregate threshold rules

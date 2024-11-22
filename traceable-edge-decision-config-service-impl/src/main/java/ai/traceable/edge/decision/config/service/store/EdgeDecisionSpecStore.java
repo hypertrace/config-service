@@ -1,6 +1,6 @@
 package ai.traceable.edge.decision.config.service.store;
 
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.StatusException;
@@ -13,41 +13,41 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class EdgeDecisionConfigStore extends IdentifiedObjectStore<EdgeDecisionEngineConfig> {
-  public static final String EDGE_DECISION_CONFIG_NAMESPACE = "edge-decision-config-namespace";
-  public static final String EDGE_DECISION_CONFIG_RESOURCE = "edge-decision-config";
+public class EdgeDecisionSpecStore extends IdentifiedObjectStore<EdgeDecisionSpec> {
+  public static final String EDGE_DECISION_SPEC_NAMESPACE = "edge-decision-spec-namespace";
+  public static final String EDGE_DECISION_SPEC_RESOURCE = "edge-decision-spec";
 
   @Inject
-  public EdgeDecisionConfigStore(
+  public EdgeDecisionSpecStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
-        EDGE_DECISION_CONFIG_NAMESPACE,
-        EDGE_DECISION_CONFIG_RESOURCE,
+        EDGE_DECISION_SPEC_NAMESPACE,
+        EDGE_DECISION_SPEC_RESOURCE,
         configChangeEventGenerator);
   }
 
   @SneakyThrows
   @Override
-  protected Optional<EdgeDecisionEngineConfig> buildDataFromValue(Value value) {
-    EdgeDecisionEngineConfig.Builder builder = EdgeDecisionEngineConfig.newBuilder();
+  protected Optional<EdgeDecisionSpec> buildDataFromValue(Value value) {
+    EdgeDecisionSpec.Builder builder = EdgeDecisionSpec.newBuilder();
     ConfigProtoConverter.mergeFromValue(value, builder);
     return Optional.of(builder.build());
   }
 
   @SneakyThrows
   @Override
-  protected Value buildValueFromData(EdgeDecisionEngineConfig edgeDecisionEngineConfig) {
-    return ConfigProtoConverter.convertToValue(edgeDecisionEngineConfig);
+  protected Value buildValueFromData(EdgeDecisionSpec edgeDecisionSpec) {
+    return ConfigProtoConverter.convertToValue(edgeDecisionSpec);
   }
 
   @Override
-  protected String getContextFromData(EdgeDecisionEngineConfig edgeDecisionEngineConfig) {
-    return edgeDecisionEngineConfig.getId();
+  protected String getContextFromData(EdgeDecisionSpec edgeDecisionSpec) {
+    return edgeDecisionSpec.getId();
   }
 
-  public EdgeDecisionEngineConfig fetchExisting(String id, RequestContext requestContext)
+  public EdgeDecisionSpec fetchExisting(String id, RequestContext requestContext)
       throws StatusException {
     return this.getData(requestContext, id).orElseThrow(Status.NOT_FOUND::asException);
   }

@@ -7,6 +7,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationM
 import ai.traceable.datamodel.data.transformation.config.v1.DataModelEntity;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
+import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.edge.config.service.config.ActorServiceConfig;
 import ai.traceable.edge.config.service.config.CacheConfig;
 import ai.traceable.edge.decision.config.service.v1.EntityRuleData;
@@ -16,7 +17,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.Field;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.time.Clock;
@@ -109,7 +109,7 @@ public class ActorDataCache {
                 .addMetadataAttributes(
                     AttributeDerivationMapping.newBuilder()
                         .setName(USER_IP_ADDRESSES_METADATA_KEY)
-                        .setType(Field.Kind.TYPE_STRING)
+                        .setType(FieldType.FIELD_TYPE_STR)
                         .addRules(
                             DerivationRule.newBuilder()
                                 .setTransformationConfig(

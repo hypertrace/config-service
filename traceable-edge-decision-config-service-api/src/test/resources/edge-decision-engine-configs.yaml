@@ -245,11 +245,11 @@ decision_rules:
         check_for_any_pre_requests: true # has any call been made
         time_window: 600s
 
-edge_decision_spec_configs:
+decision_specs:
   - edge_input_kind: "EDGE_INPUT_KIND_HTTP_REQUEST"
     scope:
       environment: "prod"
-    edge_decision_specs:
+    decision_spec_directives:
     - edge_decision:
         edge_decision_type: "EDGE_DECISION_TYPE_ALLOW"
       specific_rule_ids:
