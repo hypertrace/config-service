@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class EdgeDecisionConfigSerdeTest {
-
   @Test
   public void testEdgeDecisionConfigSerde() throws IOException {
     EdgeDecisionEngineConfig edgeDecisionConfig =
