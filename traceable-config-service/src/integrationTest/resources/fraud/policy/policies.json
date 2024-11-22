@@ -32,7 +32,7 @@
                 "raw_sql_query": "select something from sometable"
               }
             },
-            "messageFormat": "${$amount} transferred out of {$numAccounts}",
+            "messageFormat": "{$amount} transferred out of {$numAccounts}",
             "messageParams": {
               "amount": "FIELD_TYPE_DOUBLE",
               "numAccounts": "FIELD_TYPE_LONG"
@@ -74,7 +74,7 @@
                 "raw_sql_query": "select something from sometable"
               }
             },
-            "messageFormat": "${$amount} transferred out of {$numAccounts}",
+            "messageFormat": "{$amount} transferred out of {$numAccounts}",
             "messageParams": {
               "amount": "FIELD_TYPE_DOUBLE",
               "numAccounts": "FIELD_TYPE_LONG"
@@ -131,7 +131,7 @@
                 "raw_sql_query": "select something from sometable"
               }
             },
-            "messageFormat": "${$amount} transferred out of {$numAccounts}",
+            "messageFormat": "{$amount} transferred out of {$numAccounts}",
             "messageParams": {
               "amount": "FIELD_TYPE_DOUBLE",
               "numAccounts": "FIELD_TYPE_LONG"
