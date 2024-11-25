@@ -16,4 +16,5 @@ hypertrace-configservice-changeeventapi = { module = "org.hypertrace.config.serv
 hypertrace-configservice-factory = { module = "org.hypertrace.config.service:config-service-factory" }
 hypertrace-configservice-partitioner-config-impl = { module = "org.hypertrace.config.service:partitioner-config-service-impl" }
 
+
 automaton = { module = "dk.brics.automaton:automaton", version = "1.11-8"}

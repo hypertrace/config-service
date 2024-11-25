@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.3.1658=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1692=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath,testRuntimeClasspath
@@ -29,12 +29,13 @@ commons-io:commons-io:2.15.1=runtimeClasspath,testRuntimeClasspath
 commons-logging:commons-logging:1.2=runtimeClasspath,testRuntimeClasspath
 io.grpc:grpc-api:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-bom:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-io.grpc:grpc-context:1.68.1=runtimeClasspath,testRuntimeClasspath
+io.grpc:grpc-context:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-core:1.68.1=runtimeClasspath,testRuntimeClasspath
-io.grpc:grpc-inprocess:1.68.1=testRuntimeClasspath
+io.grpc:grpc-inprocess:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-protobuf-lite:1.68.1=runtimeClasspath,testRuntimeClasspath
 io.grpc:grpc-protobuf:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-stub:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.netty:netty-bom:4.1.115.Final=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.perfmark:perfmark-api:0.27.0=runtimeClasspath,testRuntimeClasspath
 jakarta.inject:jakarta.inject-api:2.0.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 javax.annotation:javax.annotation-api:1.3.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -52,9 +53,11 @@ org.checkerframework:checker-qual:3.42.0=compileClasspath,runtimeClasspath,testC
 org.codehaus.mojo:animal-sniffer-annotations:1.24=runtimeClasspath,testRuntimeClasspath
 org.eclipse.jetty:jetty-bom:9.4.56.v20240826=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:2.41=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.38=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.39=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.core.attribute.service:attribute-service-api:0.14.44=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.documentstore:document-store:0.8.5=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.eventstore:event-store:0.1.4=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.core.grpcutils:grpc-client-utils:0.13.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.5.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath

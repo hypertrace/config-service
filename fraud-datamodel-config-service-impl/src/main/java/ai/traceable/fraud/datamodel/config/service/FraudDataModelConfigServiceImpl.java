@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service;
 
+import ai.traceable.fraud.datamodel.config.service.clients.attributeservice.MetricTypeToAttributeMetadataAdapter;
 import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesStore;
 import ai.traceable.fraud.datamodel.config.service.v1.BaselineType;
@@ -54,6 +55,7 @@ public class FraudDataModelConfigServiceImpl
   private final ColumnMapper<EventType> eventTypeColumnMapper;
   private final ColumnMapper<MetricType> metricTypeColumnMapper;
   private final ColumnMapper<BaselineType> baselineTypeColumnMapper;
+  private final MetricTypeToAttributeMetadataAdapter metricTypeToAttributeMetadataAdapter;
 
   @Inject
   public FraudDataModelConfigServiceImpl(
@@ -63,7 +65,8 @@ public class FraudDataModelConfigServiceImpl
       ColumnMapper<RelationshipType> relationshipTypeColumnMapper,
       ColumnMapper<EventType> eventTypeColumnMapper,
       ColumnMapper<MetricType> metricTypeColumnMapper,
-      ColumnMapper<BaselineType> baselineTypeColumnMapper) {
+      ColumnMapper<BaselineType> baselineTypeColumnMapper,
+      MetricTypeToAttributeMetadataAdapter metricTypeToAttributeMetadataAdapter) {
     this.fraudObjectTypesStore = fraudObjectTypesStore;
     this.validator = validator;
     this.entityTypeColumnMapper = entityTypeColumnMapper;
@@ -71,6 +74,7 @@ public class FraudDataModelConfigServiceImpl
     this.eventTypeColumnMapper = eventTypeColumnMapper;
     this.metricTypeColumnMapper = metricTypeColumnMapper;
     this.baselineTypeColumnMapper = baselineTypeColumnMapper;
+    this.metricTypeToAttributeMetadataAdapter = metricTypeToAttributeMetadataAdapter;
   }
 
   @Override
@@ -188,6 +192,7 @@ public class FraudDataModelConfigServiceImpl
               .setMetricType(finalTypeForUpsert.getMetricType())
               .build());
       responseObserver.onCompleted();
+      metricTypeToAttributeMetadataAdapter.onUpsertMetricType(finalTypeForUpsert.getMetricType());
     } catch (Exception e) {
       log.error("Put Metric type failed for request:{}", request, e);
       responseObserver.onError(e);
@@ -261,6 +266,12 @@ public class FraudDataModelConfigServiceImpl
               .map(FraudDataModelUtils::getObjectTypeReference)
               .collect(Collectors.toList());
       fraudObjectTypesStore.deleteObjectTypes(requestContext, allTypeRefs);
+      allTypes.stream()
+          .filter(ObjectType::hasMetricType)
+          .forEach(
+              objectType ->
+                  metricTypeToAttributeMetadataAdapter.onDeleteMetricType(
+                      objectType.getMetricType()));
     } catch (Exception e) {
       log.error("Delete data model failed:{}", request, e);
       responseObserver.onError(e);

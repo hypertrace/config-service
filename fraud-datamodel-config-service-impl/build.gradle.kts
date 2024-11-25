@@ -31,9 +31,11 @@ dependencies {
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.hypertrace.documentstore)
   implementation(commonLibs.hypertrace.grpcutils.context)
+  implementation(commonLibs.hypertrace.attributeservice.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
+  implementation(commonLibs.hypertrace.grpcutils.client)
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)

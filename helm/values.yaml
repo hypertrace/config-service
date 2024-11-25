@@ -181,6 +181,12 @@ traceableConfigServiceConfig:
   name: traceable-config-service-config
   publishChangeEvents: false
 
+  attributeServiceConfig:
+    host: attribute-service
+    port: 9012
+    request:
+      timeout: "10 s"
+
   partitionerServiceConfig:
     defaultProfiles:
         - name: "spans"

@@ -370,6 +370,12 @@ data:
       default.jwt.extraction.rules = {{- .Values.defaultJwtExtractionConfigRules | indent 6 }}
       {{- end }}
     }
+    attribute.service.config = {
+      host = {{ .Values.traceableConfigServiceConfig.attributeServiceConfig.host }}
+      port = {{ .Values.traceableConfigServiceConfig.attributeServiceConfig.port }}
+      request.timeout = {{ .Values.traceableConfigServiceConfig.attributeServiceConfig.request.timeout }}
+    }
+
 
   anomaly.conf: |-
     modsecRuleVersion = {{ .Values.anomalyConfigServiceConfig.modsecRuleVersion }}
