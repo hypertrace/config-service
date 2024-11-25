@@ -45,6 +45,8 @@ message TrainingAction {
     ResumeAction resume_action = 2;
     ForceLearnAction force_learn_action = 3;
     ResetAction reset_action = 4;
+    UserRoleAction user_role_action = 5;
+    UserScopeAction user_scope_action = 6;
   }
 }
 
@@ -59,6 +61,30 @@ message ForceLearnAction {
 }
 
 message ResetAction {
+}
+
+message UserRoleAction {
+  oneof action {
+    PauseEntityLearnAction pause_entity_learn_action = 1;
+    ResumeEntityLearnAction resume_entity_learn_action = 2;
+  }
+}
+
+message UserScopeAction {
+  oneof action {
+    PauseEntityLearnAction pause_entity_learn_action = 1;
+    ResumeEntityLearnAction resume_entity_learn_action = 2;
+  }
+}
+
+message PauseEntityLearnAction {
+  oneof pause_action {
+    bool disabled_all = 1;
+    StringList disabled_entities_for_learning = 2;
+  }
+}
+
+message ResumeEntityLearnAction {
 }
 
 enum ThresholdFamily {
