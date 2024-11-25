@@ -9,7 +9,6 @@ import ai.traceable.saved.filter.caching.client.SavedFilterCachingClientImpl;
 import ai.traceable.saved.filter.caching.client.SavedFilterServiceClient;
 import ai.traceable.saved.filter.caching.client.cache.SavedFilterLoadingCache;
 import ai.traceable.saved.filter.caching.client.config.SavedFilterCacheConfig;
-import ai.traceable.saved.filter.config.service.v1.GetSavedFiltersRequest;
 import ai.traceable.saved.filter.config.service.v1.SavedFilter;
 import java.time.Duration;
 import java.util.List;
@@ -27,7 +26,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SavedFilterCachingClientImplTest {
   private final String SAVED_FILTER_ID = "id";
-  private final String SAVED_FILTER_SCOPE = "scope";
   private final String TENANT_ID = "tenantId";
 
   @Mock KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> mockKafkaEventListener;
@@ -56,16 +54,9 @@ class SavedFilterCachingClientImplTest {
   @Test
   void testFetchingSavedFilter() {
 
-    SavedFilter savedFilter =
-        SavedFilter.newBuilder().setScope(SAVED_FILTER_ID).setScope(SAVED_FILTER_SCOPE).build();
-    GetSavedFiltersRequest getSavedFiltersRequest =
-        GetSavedFiltersRequest.newBuilder()
-            .setId(SAVED_FILTER_ID)
-            .setScope(SAVED_FILTER_SCOPE)
-            .build();
+    SavedFilter savedFilter = SavedFilter.newBuilder().setId(SAVED_FILTER_ID).build();
 
-    final SavedFilterKey savedFilterKey =
-        SavedFilterKey.builder().id(SAVED_FILTER_ID).scope(SAVED_FILTER_SCOPE).build();
+    final SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(SAVED_FILTER_ID).build();
 
     SavedFilterCachingClient.SavedFilterContext savedFilterContext =
         SavedFilterCachingClient.SavedFilterContext.builder()

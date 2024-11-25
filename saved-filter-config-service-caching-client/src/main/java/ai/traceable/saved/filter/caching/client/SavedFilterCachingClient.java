@@ -28,6 +28,5 @@ public interface SavedFilterCachingClient {
   @Accessors(fluent = true, chain = true)
   class SavedFilterKey {
     String id;
-    String scope;
   }
 }

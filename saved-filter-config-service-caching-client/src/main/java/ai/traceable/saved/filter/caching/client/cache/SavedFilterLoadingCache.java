@@ -137,8 +137,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
   private void updateCacheValues(String tenantId, ConfigCreateEvent createdConfig) {
 
     SavedFilter savedFilter = getSavedFilterFromJsonString(createdConfig.getCreatedConfigJson());
-    SavedFilterKey savedFilterKey =
-        SavedFilterKey.builder().scope(savedFilter.getScope()).id(savedFilter.getId()).build();
+    SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(savedFilter.getId()).build();
 
     ContextualKey<SavedFilterKey> contextualKey =
         RequestContext.forTenantId(tenantId).buildUserContextualKey(savedFilterKey);
@@ -149,11 +148,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
 
     SavedFilter latestSavedFilter =
         getSavedFilterFromJsonString(updatedConfig.getLatestConfigJson());
-    SavedFilterKey savedFilterKey =
-        SavedFilterKey.builder()
-            .scope(latestSavedFilter.getScope())
-            .id(latestSavedFilter.getId())
-            .build();
+    SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(latestSavedFilter.getId()).build();
 
     ContextualKey<SavedFilterKey> contextualKey =
         RequestContext.forTenantId(tenantId).buildUserContextualKey(savedFilterKey);
@@ -166,11 +161,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
 
     SavedFilter deletedSavedFilter =
         getSavedFilterFromJsonString(configDeleteEvent.getDeletedConfigJson());
-    SavedFilterKey savedFilterKey =
-        SavedFilterKey.builder()
-            .scope(deletedSavedFilter.getScope())
-            .id(deletedSavedFilter.getId())
-            .build();
+    SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(deletedSavedFilter.getId()).build();
 
     ContextualKey<SavedFilterKey> contextualKey =
         RequestContext.forTenantId(tenantId).buildUserContextualKey(savedFilterKey);
