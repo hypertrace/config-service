@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
+import ai.traceable.anomaly.config.service.trainer.trainingconfig.filter.TrainingConfigSpecificFilterModule;
+import ai.traceable.anomaly.config.service.trainer.trainingconfig.filter.TrainingConfigSpecificFilterRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -26,6 +28,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.SensitiveDataTrainingConfi
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigType;
 import ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig;
+import com.google.inject.Guice;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -94,6 +97,10 @@ public class TrainingConfigManagerTest {
 
   @BeforeEach
   public void setup() throws IOException {
+
+    TrainingConfigSpecificFilterRegistry trainingConfigSpecificFilterRegistry =
+        Guice.createInjector(new TrainingConfigSpecificFilterModule())
+            .getInstance(TrainingConfigSpecificFilterRegistry.class);
     String serverName = InProcessServerBuilder.generateName();
     channelForMockServer = InProcessChannelBuilder.forName(serverName).build();
     mockServer = InProcessServerBuilder.forName(serverName).build().start();
@@ -112,7 +119,8 @@ public class TrainingConfigManagerTest {
                 configServiceBlockingStub,
                 anomalyConfigScopeUtils,
                 trainerConfigServiceConfig,
-                mock(ConfigChangeEventGenerator.class)));
+                mock(ConfigChangeEventGenerator.class),
+                trainingConfigSpecificFilterRegistry));
   }
 
   @AfterEach

@@ -2,9 +2,11 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_NAMESPACE;
 import static ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigConstants.TRAINING_CONFIG_RESOURCE_NAME;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
+import ai.traceable.anomaly.config.service.trainer.trainingconfig.filter.TrainingConfigSpecificFilterRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
@@ -41,6 +43,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   private final List<TrainingConfig> defaultVulnerabilityTrainingConfigs;
   private final List<TrainingConfig> defaultVolumetricTrainingConfigs;
   private final List<TrainingConfig> defaultDomainDiscoveryConfigs;
+  private final TrainingConfigSpecificFilterRegistry trainingConfigSpecificFilterRegistry;
 
   @Inject
   public TrainingConfigManagerImpl(
@@ -48,7 +51,8 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       AnomalyConfigScopeUtils anomalyConfigScopeUtils,
       TrainerConfigServiceConfig config,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      TrainingConfigSpecificFilterRegistry trainingConfigSpecificFilterRegistry) {
     super(
         configServiceBlockingStub,
         TRAINING_CONFIG_NAMESPACE,
@@ -61,6 +65,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     this.defaultVulnerabilityTrainingConfigs = config.getVulnerabilityTrainingConfigs();
     this.defaultVolumetricTrainingConfigs = config.getVolumetricTrainingConfigs();
     this.defaultDomainDiscoveryConfigs = config.getDomainDiscoveryConfigs();
+    this.trainingConfigSpecificFilterRegistry = trainingConfigSpecificFilterRegistry;
   }
 
   @Override
@@ -102,6 +107,10 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
       trainingConfig = ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build();
     }
 
+    if (!filter.getTrainingConfigTypeSpecificFilterList().isEmpty()) {
+      return filterConfigs(trainingConfig, filter);
+    }
+
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
 
     return filterConfigs(trainingConfig, configCases);
@@ -115,6 +124,11 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     List<ScopedTrainingConfig> trainingConfigs =
         getResolvedConfigs(trainingConfigMap, getTenantId(requestContext));
 
+    if (!filter.getTrainingConfigTypeSpecificFilterList().isEmpty()) {
+      return trainingConfigs.stream()
+          .map(trainingConfig -> filterConfigs(trainingConfig, filter))
+          .collect(Collectors.toList());
+    }
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
 
     return trainingConfigs.stream()
@@ -132,6 +146,9 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
         getData(requestContext, context)
             .orElse(ScopedTrainingConfig.newBuilder().setConfigScope(configScope).build());
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
+    if (!filter.getTrainingConfigTypeSpecificFilterList().isEmpty()) {
+      return filterConfigs(scopedTrainingConfig, filter);
+    }
     return filterConfigs(scopedTrainingConfig, configCases);
   }
 
@@ -145,6 +162,11 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
             .setConfigScope(AnomalyConfigScope.getDefaultInstance())
             .addAllTrainingConfigs(getDefaultTrainingConfigs())
             .build());
+    if (!filter.getTrainingConfigTypeSpecificFilterList().isEmpty()) {
+      return scopedTrainingConfigs.stream()
+          .map(trainingConfig -> filterConfigs(trainingConfig, filter))
+          .collect(Collectors.toList());
+    }
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
     return scopedTrainingConfigs.stream()
         .map(trainingConfig -> filterConfigs(trainingConfig, configCases))
@@ -192,6 +214,27 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
   private Map<String, ScopedTrainingConfig> fetchConfigMap(RequestContext requestContext) {
     return getAllObjects(requestContext).stream()
         .collect(Collectors.toMap(ContextualConfigObject::getContext, ConfigObject::getData));
+  }
+
+  private ScopedTrainingConfig filterConfigs(
+      ScopedTrainingConfig scopedTrainingConfig, GetTrainingConfigsFilter trainingConfigsFilter) {
+
+    List<TrainingConfig> filteredTrainingConfigs =
+        scopedTrainingConfig.getTrainingConfigsList().stream()
+            .filter(
+                trainingConfig ->
+                    trainingConfigsFilter.getTrainingConfigTypeSpecificFilterList().stream()
+                        .anyMatch(
+                            filter ->
+                                trainingConfigSpecificFilterRegistry
+                                    .type(filter.getTypeCase())
+                                    .match(trainingConfig, filter)))
+            .collect(toUnmodifiableList());
+
+    return scopedTrainingConfig.toBuilder()
+        .clearTrainingConfigs()
+        .addAllTrainingConfigs(filteredTrainingConfigs)
+        .build();
   }
 
   private ScopedTrainingConfig filterConfigs(
@@ -266,7 +309,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
             this.defaultVolumetricTrainingConfigs.stream(),
             this.defaultDomainDiscoveryConfigs.stream())
         .flatMap(Function.identity())
-        .collect(Collectors.toUnmodifiableList());
+        .collect(toUnmodifiableList());
   }
 
   private final String getTenantId(RequestContext requestContext) {
