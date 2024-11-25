@@ -585,6 +585,15 @@ message ParamLevelConfig {
 message ParamContainsSensitiveDataTrainingConfig {
   MinOccurrenceConfig query_param_pii_type_config = 1;
   MinOccurrenceConfig persistent_cookie_pii_type_config = 2;
+  ParamSensitivity sensitivity = 3;
+}
+
+enum ParamSensitivity {
+  PARAM_SENSITIVITY_UNSPECIFIED = 0;
+  PARAM_SENSITIVITY_LOW = 1;
+  PARAM_SENSITIVITY_MEDIUM = 2;
+  PARAM_SENSITIVITY_HIGH = 3;
+  PARAM_SENSITIVITY_CRITICAL = 4;
 }
 
 message LackOfEncryptionTrainingConfig {
@@ -599,7 +608,21 @@ message ApiEncryptionTrainingConfig {
   MinOccurrenceConfig https_calls_config = 1;
 }
 
-message ApiParamContainsUrlTrainingConfig {}
+message ApiParamContainsUrlTrainingConfig {
+  repeated ParamLocation param_locations = 1;
+}
+
+enum ParamLocation {
+  PARAM_LOCATION_UNSPECIFIED = 0;
+  PARAM_LOCATION_REQUEST_HEADER = 1;
+  PARAM_LOCATION_REQUEST_BODY = 2;
+  PARAM_LOCATION_RESPONSE_HEADER = 3;
+  PARAM_LOCATION_RESPONSE_BODY = 4;
+  PARAM_LOCATION_REQUEST_COOKIE = 5;
+  PARAM_LOCATION_RESPONSE_COOKIE = 6;
+  PARAM_LOCATION_QUERY = 7;
+  PARAM_LOCATION_PATH = 8;
+}
 
 message ContentTypeOptionsSecurityHeaderTrainingConfig {}
 
