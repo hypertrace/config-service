@@ -21,6 +21,7 @@ service EdgeDecisionConfigService {
   rpc CreateEdgeDecisionEngineConfig(CreateEdgeDecisionEngineConfigRequest) returns (CreateEdgeDecisionEngineConfigResponse) {}
   rpc UpdateEdgeDecisionEngineConfig(UpdateEdgeDecisionEngineConfigRequest) returns (UpdateEdgeDecisionEngineConfigResponse) {}
   rpc GetEdgeDecisionEngineConfig(GetEdgeDecisionEngineConfigRequest) returns (GetEdgeDecisionEngineConfigResponse) {}
+  rpc GetAllEdgeDecisionEngineConfig(GetAllEdgeDecisionEngineConfigRequest) returns (GetAllEdgeDecisionEngineConfigResponse) {}
 
   // CRUD for rules
   rpc CreateEdgeDecisionRule(CreateEdgeDecisionRuleRequest) returns (CreateEdgeDecisionRuleResponse) {}
@@ -82,6 +83,13 @@ message GetEdgeDecisionEngineConfigRequest {
 
 message GetEdgeDecisionEngineConfigResponse {
   EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+}
+
+message GetAllEdgeDecisionEngineConfigRequest {
+}
+
+message GetAllEdgeDecisionEngineConfigResponse {
+  repeated EdgeDecisionEngineConfig edge_decision_engine_configs = 1;
 }
 
 message CreateEdgeDecisionRuleRequest {

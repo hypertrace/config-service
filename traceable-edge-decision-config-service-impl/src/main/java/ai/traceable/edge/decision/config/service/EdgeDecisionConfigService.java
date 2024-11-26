@@ -14,6 +14,8 @@ import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleRespon
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
@@ -91,6 +93,13 @@ class EdgeDecisionConfigService
       GetEdgeDecisionEngineConfigRequest request,
       StreamObserver<GetEdgeDecisionEngineConfigResponse> responseObserver) {
     handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::get);
+  }
+
+  @Override
+  public void getAllEdgeDecisionEngineConfig(
+      GetAllEdgeDecisionEngineConfigRequest request,
+      StreamObserver<GetAllEdgeDecisionEngineConfigResponse> responseObserver) {
+    handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::getAll);
   }
 
   @Override

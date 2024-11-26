@@ -3,11 +3,14 @@ package ai.traceable.edge.decision.config.service.store;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConfigResponse;
 import io.grpc.Status;
+import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
@@ -33,6 +36,15 @@ public class EdgeDecisionConfigStoreManager {
                     .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
                     .build())
         .orElseGet(GetEdgeDecisionEngineConfigResponse::getDefaultInstance);
+  }
+
+  public GetAllEdgeDecisionEngineConfigResponse getAll(
+      RequestContext requestContext, GetAllEdgeDecisionEngineConfigRequest request) {
+    List<EdgeDecisionEngineConfig> configs =
+        edgeDecisionConfigStore.getAllConfigData(requestContext);
+    return GetAllEdgeDecisionEngineConfigResponse.newBuilder()
+        .addAllEdgeDecisionEngineConfigs(configs)
+        .build();
   }
 
   public CreateEdgeDecisionEngineConfigResponse create(
@@ -71,16 +83,6 @@ public class EdgeDecisionConfigStoreManager {
         edgeDecisionConfigStore.upsertObject(requestContext, config);
     return UpdateEdgeDecisionEngineConfigResponse.newBuilder()
         .setEdgeDecisionEngineConfig(configObject.getData())
-        .build();
-  }
-
-  public GetEdgeDecisionEngineConfigResponse get(RequestContext requestContext, String id) {
-    EdgeDecisionEngineConfig config =
-        edgeDecisionConfigStore
-            .getData(requestContext, id)
-            .orElse(EdgeDecisionEngineConfig.getDefaultInstance());
-    return GetEdgeDecisionEngineConfigResponse.newBuilder()
-        .setEdgeDecisionEngineConfig(config)
         .build();
   }
 

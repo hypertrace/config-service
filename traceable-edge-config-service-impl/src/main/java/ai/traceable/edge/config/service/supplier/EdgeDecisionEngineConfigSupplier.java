@@ -11,6 +11,7 @@ import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -62,14 +63,23 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
   }
 
   private EdgeDecisionEngineConfig getStoredConfig(RequestContext requestContext) {
-    return requestContext
-        .call(
-            () ->
-                stub.withDeadlineAfter(
-                        config.getClientConfig().getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                    .getEdgeDecisionEngineConfig(
-                        GetEdgeDecisionEngineConfigRequest.getDefaultInstance()))
-        .getEdgeDecisionEngineConfig();
+    // get stored config. by default, get the config that's stored with the tenant id as it's id.
+    Optional<String> tenantIdHolder = requestContext.getTenantId();
+    return tenantIdHolder
+        .map(
+            s ->
+                requestContext
+                    .call(
+                        () ->
+                            stub.withDeadlineAfter(
+                                    config.getClientConfig().getTimeout().toMillis(),
+                                    TimeUnit.MILLISECONDS)
+                                .getEdgeDecisionEngineConfig(
+                                    GetEdgeDecisionEngineConfigRequest.newBuilder()
+                                        .setId(s)
+                                        .build()))
+                    .getEdgeDecisionEngineConfig())
+        .orElseGet(EdgeDecisionEngineConfig::getDefaultInstance);
   }
 
   private EdgeDecisionEngineConfig mergeConfigs(EdgeDecisionEngineConfig... decisionEngineConfigs) {
