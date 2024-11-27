@@ -86,7 +86,7 @@ public class ActorStore {
     this.actorLimit = actorServiceConfig.getMaxNumberOfActors();
   }
 
-  List<ActorStatusDetails> getActiveThreatActors(
+  public List<ActorStatusDetails> getActiveThreatActors(
       RequestContext requestContext, Optional<String> environmentId) {
     // Get actors with status filter, timestamp filer and environment filter
     List<Filter> filters =

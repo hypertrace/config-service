@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 
 @AllArgsConstructor
 @lombok.Value
-class ActorStatusDetails {
+public class ActorStatusDetails {
   private static final Logger LOGGER = LoggerFactory.getLogger(ActorStatusDetails.class);
   private static final StatusChangeSource DEFAULT_STATUS_CHANGE_SOURCE =
       StatusChangeSource.STATUS_CHANGE_SOURCE_UNSPECIFIED;

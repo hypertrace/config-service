@@ -9,7 +9,15 @@ import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import ai.traceable.blocking.config.service.common.BlockingDataCacheConfig;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorStore;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination.ConditionsOperator;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCondition;
@@ -37,13 +45,42 @@ import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
+import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import com.google.protobuf.util.Values;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ExcludeRuleConverterImplTest {
+
+  private static final Long TEST_TIMESTAMP = 10000L;
+
   private final ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
+  private ActorServiceGrpc.ActorServiceBlockingStub actorServiceBlockingStub;
+  private ActorStore actorStore;
+  private ActorServiceConfig actorServiceConfig;
+
+  @BeforeEach
+  void setup() {
+    actorServiceConfig = mock(ActorServiceConfig.class);
+    Clock clock = mock(Clock.class, RETURNS_DEEP_STUBS);
+    actorServiceBlockingStub =
+        mock(ActorServiceGrpc.ActorServiceBlockingStub.class, RETURNS_DEEP_STUBS);
+    doReturn(Duration.ofSeconds(30)).when(actorServiceConfig).getCallTimeoutDuration();
+    doReturn(5).when(actorServiceConfig).getMaxNumberOfActors();
+    BlockingDataCacheConfig blockingDataCacheConfig = mock(BlockingDataCacheConfig.class);
+    when(blockingDataCacheConfig.getMaxCacheSize()).thenReturn(100L);
+    when(blockingDataCacheConfig.getWriteExpirationDuration()).thenReturn(Duration.ofSeconds(1));
+    when(blockingDataCacheConfig.getRefreshExpirationDuration()).thenReturn(Duration.ofSeconds(1));
+    when(actorServiceConfig.getCacheConfig()).thenReturn(blockingDataCacheConfig);
+    when(clock.instant().toEpochMilli()).thenReturn(TEST_TIMESTAMP);
+    actorStore = mock(ActorStore.class);
+    when(actorStore.getActiveThreatActors(any(), any())).thenReturn(Collections.emptyList());
+  }
 
   @Test
   void testAnomalyAttributeConvert() {
@@ -93,7 +130,8 @@ class ExcludeRuleConverterImplTest {
                             .addExclusionTargets(EXCLUSION_TARGET_BLOCK)))
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
+    ExclusionRuleConverter exclusionRuleConverter =
+        new ExcludeRuleConverterImpl(actorServiceConfig, modsecRuleUtils, actorStore);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals("id-1", exclusionRule.getRuleId());
@@ -177,7 +215,8 @@ class ExcludeRuleConverterImplTest {
                                     .setEventCondition(eventCondition2))))
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
+    ExclusionRuleConverter exclusionRuleConverter =
+        new ExcludeRuleConverterImpl(actorServiceConfig, modsecRuleUtils, actorStore);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(4, exclusionRule.getEventConditionsCount());
@@ -241,7 +280,8 @@ class ExcludeRuleConverterImplTest {
             .addAssociatedModsecRuleIds("cs-2")
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
+    ExclusionRuleConverter exclusionRuleConverter =
+        new ExcludeRuleConverterImpl(actorServiceConfig, modsecRuleUtils, actorStore);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(
@@ -297,7 +337,8 @@ class ExcludeRuleConverterImplTest {
             .addAssociatedModsecRuleIds("cs-2")
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
+    ExclusionRuleConverter exclusionRuleConverter =
+        new ExcludeRuleConverterImpl(actorServiceConfig, modsecRuleUtils, actorStore);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(
@@ -349,7 +390,8 @@ class ExcludeRuleConverterImplTest {
             .addAssociatedModsecRuleIds("cs-1")
             .build();
 
-    ExclusionRuleConverter exclusionRuleConverter = new ExcludeRuleConverterImpl(modsecRuleUtils);
+    ExclusionRuleConverter exclusionRuleConverter =
+        new ExcludeRuleConverterImpl(actorServiceConfig, modsecRuleUtils, actorStore);
     ExclusionRule exclusionRule = exclusionRuleConverter.convert(detectionExclusionModsecRule);
 
     assertEquals(

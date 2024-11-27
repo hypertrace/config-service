@@ -1,8 +1,13 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion;
 
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
 import static ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier.THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID;
 
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorStatusDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorStore;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.config.ActorServiceConfig;
 import ai.traceable.blocking.config.service.v2.BlockingCategory;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination;
 import ai.traceable.blocking.config.service.v2.BlockingDetailsCombination.ConditionsOperator;
@@ -28,18 +33,31 @@ import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeConditio
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
-import ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier;
+import ai.traceable.detection.exclusion.config.service.v1.ThreatActorEvent;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
+import ai.traceable.platform.actor.v1.StatusChangeSource;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.ContextualKey;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
+
+  private static final String ENTITY_ID_TO_STATUS_CHANGE_SOURCE_CACHE =
+      "EntityIdToStatusChangeSourceCache";
 
   private static final Map<ExclusionTarget, ExclusionRule.ExclusionTarget> EXCLUSION_TARGET_MAP =
       Map.of(
@@ -49,10 +67,44 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
               ExclusionRule.ExclusionTarget.EXCLUSION_TARGET_BLOCK);
 
   private final ModsecRuleUtils modsecRuleUtils;
+  private final ActorStore actorStore;
+  private final ActorServiceConfig actorServiceConfig;
+  private LoadingCache<ContextualKey<Void>, Map<String, StatusChangeSource>>
+      entityIdToStatusChangeSource;
 
   @Inject
-  public ExcludeRuleConverterImpl(ModsecRuleUtils modsecRuleUtils) {
+  public ExcludeRuleConverterImpl(
+      ActorServiceConfig actorServiceConfig,
+      ModsecRuleUtils modsecRuleUtils,
+      ActorStore actorStore) {
     this.modsecRuleUtils = modsecRuleUtils;
+    this.actorStore = actorStore;
+    this.actorServiceConfig = actorServiceConfig;
+    initCache();
+  }
+
+  private void initCache() {
+    this.entityIdToStatusChangeSource =
+        CacheBuilder.newBuilder()
+            .maximumSize(actorServiceConfig.getCacheConfig().getMaxCacheSize())
+            .expireAfterWrite(actorServiceConfig.getCacheConfig().getWriteExpirationDuration())
+            .refreshAfterWrite(actorServiceConfig.getCacheConfig().getRefreshExpirationDuration())
+            .recordStats()
+            .build(
+                CacheLoader.asyncReloading(
+                    CacheLoader.from(this::loadValue), Executors.newSingleThreadExecutor()));
+    PlatformMetricsRegistry.registerCacheTrackingOccupancy(
+        ENTITY_ID_TO_STATUS_CHANGE_SOURCE_CACHE,
+        this.entityIdToStatusChangeSource,
+        Collections.emptyMap(),
+        actorServiceConfig.getCacheConfig().getMaxCacheSize());
+  }
+
+  private Map<String, StatusChangeSource> loadValue(ContextualKey<Void> contextualKey) {
+    return actorStore.getActiveThreatActors(contextualKey.getContext(), Optional.empty()).stream()
+        .collect(
+            Collectors.toMap(
+                ActorStatusDetails::getEntityId, ActorStatusDetails::getStatusChangeSource));
   }
 
   @Override
@@ -201,8 +253,7 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
             threatActorEvent -> {
               EventCondition.Builder eventConditionBuilder =
                   EventCondition.newBuilder()
-                      .setBlockingCategory(
-                          getBlockingCategory(threatActorEvent.getThreatActorIdentifier()));
+                      .setBlockingCategory(getBlockingCategory(threatActorEvent));
               if (!threatActorEvent.getActorEntityId().isBlank()) {
                 eventConditionBuilder.addIds(threatActorEvent.getActorEntityId());
               }
@@ -227,11 +278,26 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
     return eventConditions;
   }
 
-  private BlockingCategory getBlockingCategory(ThreatActorIdentifier threatActorIdentifier) {
-    if (threatActorIdentifier.equals(THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID)) {
-      return BLOCKING_CATEGORY_THREAT_ACTOR;
+  private BlockingCategory getBlockingCategory(ThreatActorEvent threatActorEvent) {
+
+    if (threatActorEvent
+        .getThreatActorIdentifier()
+        .equals(THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID)) {
+      StatusChangeSource statusChangeSource =
+          this.entityIdToStatusChangeSource
+              .getUnchecked(RequestContext.CURRENT.get().buildInternalContextualKey())
+              .get(threatActorEvent.getActorEntityId());
+      switch (statusChangeSource) {
+        case STATUS_CHANGE_SOURCE_RATE_LIMIT:
+          return BLOCKING_CATEGORY_RATE_LIMIT;
+        case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
+          return BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
+        default:
+          return BLOCKING_CATEGORY_THREAT_ACTOR;
+      }
     }
-    log.warn("Unrecognized threat actor identifier: {}", threatActorIdentifier);
+    log.warn(
+        "Unrecognized threat actor identifier: {}", threatActorEvent.getThreatActorIdentifier());
     return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
   }
 
@@ -279,9 +345,9 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
       case CUSTOM_RULE_FAMILY_SIGNATURE:
         return BlockingCategory.BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE;
       case CUSTOM_RULE_FAMILY_RATE_LIMIT:
-        return BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
+        return BLOCKING_CATEGORY_RATE_LIMIT;
       case CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES:
-        return BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
+        return BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
       case CUSTOM_RULE_FAMILY_DATA_LOSS_PREVENTION:
         return BlockingCategory.BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
       case CUSTOM_RULE_FAMILY_ENUMERATION:
