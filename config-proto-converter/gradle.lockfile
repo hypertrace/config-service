@@ -21,6 +21,6 @@ io.grpc:grpc-protobuf-lite:1.68.1=runtimeClasspath,testRuntimeClasspath
 io.grpc:grpc-protobuf:1.68.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.checkerframework:checker-qual:3.33.0=compileClasspath,testCompileClasspath
 org.checkerframework:checker-qual:3.42.0=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.39=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.40=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.5.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor
