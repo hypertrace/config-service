@@ -141,7 +141,7 @@
 - ruleId: device
   ruleName: Unexpected User Agent
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
-  severityLevel: ANOMALY_SEVERITY_LEVEL_ZERO
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 644
     OWASP_API_2019: API8
@@ -158,7 +158,7 @@
 - ruleId: httpStatus
   ruleName: Unexpected HTTP Response Code
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_REQUEST_RESPONSE_METADATA_ANOMALIES
-  severityLevel: ANOMALY_SEVERITY_LEVEL_ZERO
+  severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
   eventLabels:
     CWE: 204
     OWASP_API_2023: API8
@@ -386,6 +386,7 @@
   - ruleId: jwt_sign
     ruleName: JWT Invalid Signature
     subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 347
       OWASP_API_2023: API2
@@ -409,6 +410,7 @@
   - ruleId: jwt_albeast
     ruleName: JWT AlBeast Anomaly
     subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 347
       OWASP_API_2023: API2
@@ -432,6 +434,7 @@
   - ruleId: jwt_jku
     ruleName: JWT JKU Integrity Violation
     subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+    severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
     eventLabels:
       CWE: 347
       OWASP_API_2023: API2

@@ -7,6 +7,9 @@
       ruleName: Credential Stuffing
       severityLevel: ANOMALY_SEVERITY_LEVEL_HIGH
       subRuleTypes: [ ANOMALY_SUB_RULE_TYPE_REGULAR ]
+      eventLabels:
+        CWE: 400
+        OWASP_API_2023: API04
       eventDetails:
         description: |
           Credential stuffing is the automated injection of stolen username and password pairs into application entry points such as login endpoints, in order to fraudulently gain access to user accounts. Since many users tend to re-use the same password and username/email, when those credentials are exposed emanating from database breach or phishing attack their accounts can be compromised. Most applications have dedicated API’s for web, mobile, partner services etc which then have associated API tokens associated with each user and session. Credential stuffing is carried out using the login API’s and hence the defense layer also needs to be built via API Security.

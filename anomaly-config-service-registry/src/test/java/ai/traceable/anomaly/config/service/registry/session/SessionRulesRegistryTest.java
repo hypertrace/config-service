@@ -2,9 +2,12 @@ package ai.traceable.anomaly.config.service.registry.session;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.detector.ObjectBolaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionViolationConfig;
@@ -37,6 +40,17 @@ public class SessionRulesRegistryTest {
     assertFalse(bolaRuleInfo.getEventDetails().getMitigation().isBlank());
     assertFalse(bolaRuleInfo.getEventDetails().getImpact().isBlank());
     assertFalse(bolaRuleInfo.getEventDetails().getReferences().isBlank());
+    anomalyRuleInfos.entrySet().stream()
+        .forEach(
+            entry -> {
+              for (AnomalySubRuleInfo subRuleInfo :
+                  anomalyRuleInfos.get(entry.getKey()).getSubRuleInfosList()) {
+                assertFalse(subRuleInfo.getEventLabelsMap().isEmpty());
+                assertNotEquals(
+                    AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED,
+                    subRuleInfo.getSeverityLevel());
+              }
+            });
   }
 
   @Test

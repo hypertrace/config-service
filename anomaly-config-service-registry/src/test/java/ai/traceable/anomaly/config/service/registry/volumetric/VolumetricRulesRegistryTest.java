@@ -1,10 +1,14 @@
 package ai.traceable.anomaly.config.service.registry.volumetric;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.detector.*;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +34,17 @@ class VolumetricRulesRegistryTest {
     assertEquals(
         "volumetric_apiCallSpike",
         anomalyRuleInfos.get("volumetric").getSubRuleInfos(0).getRuleId());
+    anomalyRuleInfos.entrySet().stream()
+        .forEach(
+            entry -> {
+              for (AnomalySubRuleInfo subRuleInfo :
+                  anomalyRuleInfos.get(entry.getKey()).getSubRuleInfosList()) {
+                assertFalse(subRuleInfo.getEventLabelsMap().isEmpty());
+                assertNotEquals(
+                    AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED,
+                    subRuleInfo.getSeverityLevel());
+              }
+            });
   }
 
   @Test

@@ -6,9 +6,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -16,8 +19,10 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -126,6 +131,54 @@ class AnomalyRuleInfoManagerImplTest {
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE,
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
                 ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED));
+  }
+
+  @Test
+  void test_ruleInfo() {
+    ConfigConverter configConverter = new ConfigConverter();
+    ruleInfoManager =
+        new AnomalyRuleInfoManagerImpl(
+            new ApiDefinitionRegistryImpl(configConverter),
+            new ModsecRulesRegistryImpl(
+                configConverter, new ModsecCrsRulesHandler(new ModsecRuleUtils())),
+            new SessionRulesRegistryImpl(configConverter),
+            new VolumetricRulesRegistryImpl(configConverter),
+            new CredentialStuffingRulesRegistryImpl(configConverter),
+            new AccountTakeoverRulesRegistryImpl(configConverter));
+    ruleInfoManager.getAnomalyRuleInfos(
+        requestContext,
+        List.of(
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
+            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
+        ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+    for (AnomalyRuleInfo ruleInfo :
+        ruleInfoManager.getAnomalyRuleInfos(
+            requestContext,
+            List.of(
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
+                AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)) {
+      if (ruleInfo.getSubRuleInfosList().isEmpty()
+          && !ruleInfo.getRuleId().equals("volumetricApiCallSpike")
+          && !ruleInfo.getRuleId().equals("credentialStuffing")) {
+        assertNotEquals(
+            AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED, ruleInfo.getSeverityLevel());
+        assertFalse(ruleInfo.getEventLabelsMap().isEmpty());
+      }
+
+      for (AnomalySubRuleInfo subRuleInfo : ruleInfo.getSubRuleInfosList()) {
+        assertNotEquals(
+            AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED,
+            subRuleInfo.getSeverityLevel());
+        assertFalse(subRuleInfo.getEventLabelsMap().isEmpty());
+      }
+    }
   }
 
   private AnomalyRuleInfo buildAnomalyRuleInfo(String id) {

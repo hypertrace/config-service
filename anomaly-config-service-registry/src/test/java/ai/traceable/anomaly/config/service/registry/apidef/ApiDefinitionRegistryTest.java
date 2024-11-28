@@ -3,10 +3,12 @@ package ai.traceable.anomaly.config.service.registry.apidef;
 import static ai.traceable.anomaly.config.service.v1.AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventDetails;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BflaAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ContentExplosionAnomalyConfig;
@@ -53,6 +55,10 @@ public class ApiDefinitionRegistryTest {
                               assertEquals(1, subRuleInfo.getSubRuleTypesCount());
                               assertEquals(
                                   ANOMALY_SUB_RULE_TYPE_REGULAR, subRuleInfo.getSubRuleTypes(0));
+                              assertFalse(subRuleInfo.getEventLabelsMap().isEmpty());
+                              assertNotEquals(
+                                  AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED,
+                                  subRuleInfo.getSeverityLevel());
                               assertTrue(subRuleInfo.getRuleId().startsWith(jwtRuleId));
                               assertTrue(subRuleInfo.getEventLabelsCount() > 0);
                               if (subRuleInfo.getRuleId().equals("jwt_exp")) {
