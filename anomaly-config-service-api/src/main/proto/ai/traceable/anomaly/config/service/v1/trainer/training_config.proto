@@ -585,7 +585,8 @@ message ParamLevelConfig {
 message ParamContainsSensitiveDataTrainingConfig {
   MinOccurrenceConfig query_param_pii_type_config = 1;
   MinOccurrenceConfig persistent_cookie_pii_type_config = 2;
-  ParamSensitivity sensitivity = 3;
+  ParamSensitivity sensitivity = 3 [deprecated = true];
+  repeated ParamSensitivity param_sensitivities = 4;
 }
 
 enum ParamSensitivity {
