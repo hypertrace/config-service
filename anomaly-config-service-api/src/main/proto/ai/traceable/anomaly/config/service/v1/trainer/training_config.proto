@@ -323,6 +323,7 @@ message MetadataTrainingConfig {
     IsEncryptedApiTrainingConfig is_encrypted_api = 28;
     CorrelationAttributeTrainingConfig correlation_attribute = 29;
     NonAsciiUnicodeCharactersTrainingConfig non_ascii_unicode_characters = 31;
+    ResponseContentTrainingConfig response_content = 32;
   }
 }
 
@@ -473,6 +474,8 @@ message RailsOpenTrainingConfig {}
 message StartTimeTrainingConfig {}
 
 message UserAgentTrainingConfig {}
+
+message ResponseContentTrainingConfig {}
 
 message NonAsciiUnicodeCharactersTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
