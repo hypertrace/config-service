@@ -127,7 +127,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     if (!filter.getTrainingConfigTypeSpecificFilterList().isEmpty()) {
       return trainingConfigs.stream()
           .map(trainingConfig -> filterConfigs(trainingConfig, filter))
-          .collect(Collectors.toList());
+          .collect(Collectors.toUnmodifiableList());
     }
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
 
@@ -165,7 +165,7 @@ public class TrainingConfigManagerImpl extends IdentifiedObjectStore<ScopedTrain
     if (!filter.getTrainingConfigTypeSpecificFilterList().isEmpty()) {
       return scopedTrainingConfigs.stream()
           .map(trainingConfig -> filterConfigs(trainingConfig, filter))
-          .collect(Collectors.toList());
+          .collect(Collectors.toUnmodifiableList());
     }
     Set<TrainingConfig.TrainingConfigCase> configCases = configHandler.convert(filter);
     return scopedTrainingConfigs.stream()
