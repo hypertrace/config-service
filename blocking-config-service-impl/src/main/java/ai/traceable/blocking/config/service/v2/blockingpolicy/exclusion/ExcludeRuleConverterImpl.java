@@ -1,8 +1,12 @@
 package ai.traceable.blocking.config.service.v2.blockingpolicy.exclusion;
 
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_DATA_EXFILTRATION;
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_RATE_LIMIT;
 import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_THREAT_ACTOR;
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
+import static ai.traceable.blocking.config.service.v2.BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
 import static ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier.THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.actor.ActorStatusDetails;
@@ -58,7 +62,6 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
 
   private static final String ENTITY_ID_TO_STATUS_CHANGE_SOURCE_CACHE =
       "EntityIdToStatusChangeSourceCache";
-
   private static final Map<ExclusionTarget, ExclusionRule.ExclusionTarget> EXCLUSION_TARGET_MAP =
       Map.of(
           ExclusionTarget.EXCLUSION_TARGET_ALLOW,
@@ -251,13 +254,14 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
         .getThreatActorEventsList()
         .forEach(
             threatActorEvent -> {
-              EventCondition.Builder eventConditionBuilder =
-                  EventCondition.newBuilder()
-                      .setBlockingCategory(getBlockingCategory(threatActorEvent));
-              if (!threatActorEvent.getActorEntityId().isBlank()) {
-                eventConditionBuilder.addIds(threatActorEvent.getActorEntityId());
+              for (BlockingCategory blockingCategory : getBlockingCategory(threatActorEvent)) {
+                EventCondition.Builder eventConditionBuilder = EventCondition.newBuilder();
+                eventConditionBuilder.setBlockingCategory(blockingCategory);
+                if (!threatActorEvent.getActorEntityId().isBlank()) {
+                  eventConditionBuilder.addIds(threatActorEvent.getActorEntityId());
+                }
+                eventConditions.add(eventConditionBuilder.build());
               }
-              eventConditions.add(eventConditionBuilder.build());
             });
 
     condition
@@ -278,27 +282,41 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
     return eventConditions;
   }
 
-  private BlockingCategory getBlockingCategory(ThreatActorEvent threatActorEvent) {
-
+  private List<BlockingCategory> getBlockingCategory(ThreatActorEvent threatActorEvent) {
     if (threatActorEvent
         .getThreatActorIdentifier()
         .equals(THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID)) {
-      StatusChangeSource statusChangeSource =
-          this.entityIdToStatusChangeSource
-              .getUnchecked(RequestContext.CURRENT.get().buildInternalContextualKey())
-              .get(threatActorEvent.getActorEntityId());
-      switch (statusChangeSource) {
-        case STATUS_CHANGE_SOURCE_RATE_LIMIT:
-          return BLOCKING_CATEGORY_RATE_LIMIT;
-        case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
-          return BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
-        default:
-          return BLOCKING_CATEGORY_THREAT_ACTOR;
-      }
+      log.warn(
+          "Unrecognized threat actor identifier: {}", threatActorEvent.getThreatActorIdentifier());
+      return List.of(BLOCKING_CATEGORY_UNSPECIFIED);
     }
-    log.warn(
-        "Unrecognized threat actor identifier: {}", threatActorEvent.getThreatActorIdentifier());
-    return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
+
+    if (threatActorEvent.getActorEntityId().isBlank()) {
+      return List.of(
+          BLOCKING_CATEGORY_THREAT_ACTOR,
+          BLOCKING_CATEGORY_RATE_LIMIT,
+          BLOCKING_CATEGORY_DATA_EXFILTRATION,
+          BLOCKING_CATEGORY_ENUMERATION,
+          BLOCKING_CATEGORY_TRANSACTION_BASED_DLP,
+          BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE);
+    }
+
+    StatusChangeSource statusChangeSource =
+        this.entityIdToStatusChangeSource
+            .getUnchecked(RequestContext.CURRENT.get().buildInternalContextualKey())
+            .get(threatActorEvent.getActorEntityId());
+    switch (statusChangeSource) {
+      case STATUS_CHANGE_SOURCE_RATE_LIMIT:
+        return List.of(
+            BLOCKING_CATEGORY_RATE_LIMIT,
+            BLOCKING_CATEGORY_DATA_EXFILTRATION,
+            BLOCKING_CATEGORY_ENUMERATION,
+            BLOCKING_CATEGORY_TRANSACTION_BASED_DLP);
+      case STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES:
+        return List.of(BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE);
+      default:
+        return List.of(BLOCKING_CATEGORY_THREAT_ACTOR);
+    }
   }
 
   private BlockingDetailsCondition wrapInNotConditionIfExcluded(
@@ -349,13 +367,13 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
       case CUSTOM_RULE_FAMILY_MALICIOUS_SOURCES:
         return BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE;
       case CUSTOM_RULE_FAMILY_DATA_LOSS_PREVENTION:
-        return BlockingCategory.BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
+        return BLOCKING_CATEGORY_TRANSACTION_BASED_DLP;
       case CUSTOM_RULE_FAMILY_ENUMERATION:
-        return BlockingCategory.BLOCKING_CATEGORY_ENUMERATION;
+        return BLOCKING_CATEGORY_ENUMERATION;
       case CUSTOM_RULE_FAMILY_UNSPECIFIED:
       default:
         log.warn("Unrecognized custom rule family: {}", event.getRuleFamily());
-        return BlockingCategory.BLOCKING_CATEGORY_UNSPECIFIED;
+        return BLOCKING_CATEGORY_UNSPECIFIED;
     }
   }
 
