@@ -6,7 +6,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.grpc.Status;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -50,8 +49,7 @@ public class ModsecBlobValidator {
   @VisibleForTesting
   boolean validateModsecBlob(String modsecRuleBlob, String tenantName, String serviceName) {
     try {
-      Status status = ModsecRuleEngineUtils.validate(modsecRuleBlob);
-      return status.isOk() || status.equals(Status.UNKNOWN);
+      return ModsecRuleEngineUtils.validateRuleBlob(modsecRuleBlob);
     } catch (Exception e) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(

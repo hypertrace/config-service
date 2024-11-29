@@ -19,7 +19,7 @@ public class ModsecRuleEngineTest {
   @EnabledOnOs(LINUX)
   public void test_emptyConfig() {
     // test no crash
-    assertEquals(Status.OK, ModsecRuleEngineUtils.validate(null));
+    assertEquals(Status.OK, ModsecRuleEngineUtils.modsecValidate(null));
   }
 
   @Test
@@ -28,14 +28,14 @@ public class ModsecRuleEngineTest {
     // test no crash
     assertNotEquals(
         Status.OK,
-        ModsecRuleEngineUtils.validate(
+        ModsecRuleEngineUtils.modsecValidate(
             "SecRule ARGS:a|b \"@streq c\" \"id:10000001,phase:2,t:none,msg:'invalid',logdata:'something',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1'\""));
   }
 
   @Test
   @EnabledOnOs(LINUX)
   public void test_noAttributes() {
-    assertEquals(Status.OK, ModsecRuleEngineUtils.validate(modsecRule));
+    assertEquals(Status.OK, ModsecRuleEngineUtils.modsecValidate(modsecRule));
     assertTrue(ModsecRuleEngineUtils.getModsecRuleMatches(modsecRule, null).isEmpty());
     assertTrue(
         ModsecRuleEngineUtils.getModsecRuleMatches(modsecRule, Collections.emptyMap()).isEmpty());

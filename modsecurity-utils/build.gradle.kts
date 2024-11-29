@@ -48,6 +48,8 @@ dependencies {
   implementation(commonLibs.json.path)
   testImplementation(commonLibs.commons.lang)
   implementation(commonLibs.traceable.modsecurity.jni)
+  implementation(commonLibs.grpc.netty)
+  implementation(commonLibs.traceable.coraza.wafServiceClient)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

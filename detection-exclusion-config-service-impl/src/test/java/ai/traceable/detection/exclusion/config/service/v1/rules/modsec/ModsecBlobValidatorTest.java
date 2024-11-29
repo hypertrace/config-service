@@ -31,7 +31,12 @@ class ModsecBlobValidatorTest {
   void testValidate_ValidBlob() {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
-      mockModsecUtils.when(() -> ModsecRuleEngineUtils.validate(anyString())).thenReturn(Status.OK);
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+          .thenReturn(Status.OK);
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+          .thenReturn(Status.OK);
 
       when(uuidGenerator.generateId(anyString())).thenReturn("valid-blob-id");
 
@@ -46,7 +51,10 @@ class ModsecBlobValidatorTest {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
       mockModsecUtils
-          .when(() -> ModsecRuleEngineUtils.validate(anyString()))
+          .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+          .thenReturn(Status.INVALID_ARGUMENT);
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
           .thenReturn(Status.INVALID_ARGUMENT);
 
       RequestContext requestContext = RequestContext.forTenantId("test-tenant");
@@ -63,9 +71,8 @@ class ModsecBlobValidatorTest {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
       mockModsecUtils
-          .when(() -> ModsecRuleEngineUtils.validate(anyString()))
-          .thenReturn(Status.UNKNOWN);
-
+          .when(() -> ModsecRuleEngineUtils.validateRuleBlob(anyString()))
+          .thenReturn(true);
       when(uuidGenerator.generateId(anyString())).thenReturn("valid-blob-id");
       boolean result = validator.validate(requestContext, "valid-modsec-blob", "test-service");
       assertTrue(result);
@@ -84,7 +91,9 @@ class ModsecBlobValidatorTest {
   void testValidate_CachingBehavior() {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
-      mockModsecUtils.when(() -> ModsecRuleEngineUtils.validate(anyString())).thenReturn(Status.OK);
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.validateRuleBlob(anyString()))
+          .thenReturn(true);
 
       String modsecRuleBlob = "cached-modsec-blob";
       String modsecBlobId = "cached-blob-id";
@@ -102,7 +111,8 @@ class ModsecBlobValidatorTest {
       boolean secondCallResult = validator.validate(requestContext, modsecRuleBlob, "test-service");
 
       assertTrue(secondCallResult);
-      mockModsecUtils.verify(() -> ModsecRuleEngineUtils.validate(anyString()), Mockito.times(0));
+      mockModsecUtils.verify(
+          () -> ModsecRuleEngineUtils.modsecValidate(anyString()), Mockito.times(0));
     }
   }
 }

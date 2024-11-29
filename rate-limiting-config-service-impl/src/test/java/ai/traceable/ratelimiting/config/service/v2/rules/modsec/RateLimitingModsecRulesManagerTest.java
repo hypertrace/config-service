@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
@@ -26,6 +28,7 @@ import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatch
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
 import ai.traceable.modsecurity.rule.conversion.clause.ModsecOperatorConverter;
 import ai.traceable.modsecurity.rule.conversion.clause.ModsecVariableConverter;
+import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.Allow;
 import ai.traceable.ratelimiting.config.service.v2.Action.Block;
@@ -71,6 +74,7 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ScopedPatter
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobValidator;
+import io.grpc.Status;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.Collections;
@@ -84,6 +88,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -165,86 +170,98 @@ class RateLimitingModsecRulesManagerTest {
 
   @Test
   void testFinalModsecRule() {
-    doReturn(rateLimitingRules)
-        .when(rateLimitingRulesSupplier)
-        .apply(
-            GetRateLimitingRulesFilter.newBuilder()
-                .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
-                .setScope(
-                    RuleConfigScope.newBuilder()
-                        .setEnvironmentScope(
-                            EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT)))
-                .setDisabled(false)
-                .build());
+    try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
+        mockStatic(ModsecRuleEngineUtils.class)) {
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+          .thenReturn(Status.OK);
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+          .thenReturn(Status.OK);
+      doReturn(rateLimitingRules)
+          .when(rateLimitingRulesSupplier)
+          .apply(
+              GetRateLimitingRulesFilter.newBuilder()
+                  .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
+                  .setScope(
+                      RuleConfigScope.newBuilder()
+                          .setEnvironmentScope(
+                              EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT)))
+                  .setDisabled(false)
+                  .build());
 
-    GetRateLimitingRuleModsecRulesResponse response =
-        rateLimitingModsecRulesManager.getRateLimitingModsecRules(
-            REQUEST_CONTEXT,
-            GetRateLimitingModsecRulesFilter.newBuilder()
-                .setRulesFilter(
-                    GetRateLimitingRulesFilter.newBuilder()
-                        .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
-                        .setScope(
-                            RuleConfigScope.newBuilder()
-                                .setEnvironmentScope(
-                                    EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT)))
-                        .setDisabled(false)
-                        .build())
-                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_BLOCKED)
-                .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
-                .addServiceNames("serviceName1")
-                .addServiceNames("serviceName2")
-                .addServiceNames("serviceName3")
-                .build(),
-            rateLimitingRulesSupplier);
+      GetRateLimitingRuleModsecRulesResponse response =
+          rateLimitingModsecRulesManager.getRateLimitingModsecRules(
+              REQUEST_CONTEXT,
+              GetRateLimitingModsecRulesFilter.newBuilder()
+                  .setRulesFilter(
+                      GetRateLimitingRulesFilter.newBuilder()
+                          .addCategories(Category.CATEGORY_DATA_EXFILTRATION)
+                          .setScope(
+                              RuleConfigScope.newBuilder()
+                                  .setEnvironmentScope(
+                                      EnvironmentScope.newBuilder().addEnvironmentIds(ENVIRONMENT)))
+                          .setDisabled(false)
+                          .build())
+                  .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_BLOCKED)
+                  .addRuleActions(RuleAction.RULE_ACTION_TRANSACTION_ALLOWED)
+                  .addServiceNames("serviceName1")
+                  .addServiceNames("serviceName2")
+                  .addServiceNames("serviceName3")
+                  .build(),
+              rateLimitingRulesSupplier);
 
-    assertEquals(DIRECTIVES, response.getModsecDirectivesBlob());
+      assertEquals(DIRECTIVES, response.getModsecDirectivesBlob());
 
-    assertEquals(2, response.getModsecBlobsDataCount());
-    assertContainsModsec(expectedModsecBlobRuleId1, response.getModsecBlobsData(0).getModsecBlob());
-    assertContainsModsec(expectedModsecBlobRuleId4, response.getModsecBlobsData(0).getModsecBlob());
-    assertContainsModsec(
-        expectedCreditCardWithoutCustomLocation, response.getModsecBlobsData(0).getModsecBlob());
-    assertContainsModsec(
-        expectedCreditCardWithCustomLocation("/order/.*|/myOrders|/pastOrders"),
-        response.getModsecBlobsData(0).getModsecBlob());
-    assertContainsModsec(
-        expectedIgnoreConditionBlob, response.getModsecBlobsData(0).getModsecBlob());
+      assertEquals(2, response.getModsecBlobsDataCount());
+      assertContainsModsec(
+          expectedModsecBlobRuleId1, response.getModsecBlobsData(0).getModsecBlob());
+      assertContainsModsec(
+          expectedModsecBlobRuleId4, response.getModsecBlobsData(0).getModsecBlob());
+      assertContainsModsec(
+          expectedCreditCardWithoutCustomLocation, response.getModsecBlobsData(0).getModsecBlob());
+      assertContainsModsec(
+          expectedCreditCardWithCustomLocation("/order/.*|/myOrders|/pastOrders"),
+          response.getModsecBlobsData(0).getModsecBlob());
+      assertContainsModsec(
+          expectedIgnoreConditionBlob, response.getModsecBlobsData(0).getModsecBlob());
 
-    assertContainsModsec(expectedModsecBlobRuleId4, response.getModsecBlobsData(1).getModsecBlob());
-    assertContainsModsec(
-        expectedCreditCardWithCustomLocation("/order/.*|/pastOrders"),
-        response.getModsecBlobsData(1).getModsecBlob());
+      assertContainsModsec(
+          expectedModsecBlobRuleId4, response.getModsecBlobsData(1).getModsecBlob());
+      assertContainsModsec(
+          expectedCreditCardWithCustomLocation("/order/.*|/pastOrders"),
+          response.getModsecBlobsData(1).getModsecBlob());
 
-    assertEquals(List.of("serviceName1"), response.getModsecBlobsData(0).getServiceNamesList());
-    assertEqualsIgnoringOrder(
-        List.of("rule-id-1", "rule-id-4"), response.getModsecBlobsData(0).getRuleIdsList());
-    assertEquals(
-        List.of("serviceName2", "serviceName3"),
-        response.getModsecBlobsData(1).getServiceNamesList());
-    assertEqualsIgnoringOrder(
-        List.of("rule-id-4"), response.getModsecBlobsData(1).getRuleIdsList());
+      assertEquals(List.of("serviceName1"), response.getModsecBlobsData(0).getServiceNamesList());
+      assertEqualsIgnoringOrder(
+          List.of("rule-id-1", "rule-id-4"), response.getModsecBlobsData(0).getRuleIdsList());
+      assertEquals(
+          List.of("serviceName2", "serviceName3"),
+          response.getModsecBlobsData(1).getServiceNamesList());
+      assertEqualsIgnoringOrder(
+          List.of("rule-id-4"), response.getModsecBlobsData(1).getRuleIdsList());
 
-    // Match rules
-    assertEquals(2, response.getRulesCount());
+      // Match rules
+      assertEquals(2, response.getRulesCount());
 
-    assertEqualsIgnoringOrder(
-        List.of(
-            buildRateLimitingModsecRule(
-                rateLimitingRules.get(0),
-                List.of(
-                    Pair.of("credit-card:" + EMPTY_LOCATION_HASH + 0, Collections.emptyList()),
-                    Pair.of(
-                        "PAN:" + EMPTY_LOCATION_HASH + 1,
-                        List.of("PAN:" + EMPTY_LOCATION_HASH + 0)))),
-            buildRateLimitingModsecRule(
-                rateLimitingRules.get(3),
-                List.of(
-                    Pair.of("credit-card:" + PROMPT_LOCATION_HASH + 0, Collections.emptyList()),
-                    Pair.of(
-                        "PAN:" + PROMPT_LOCATION_HASH + 1,
-                        List.of("PAN:" + PROMPT_LOCATION_HASH + 0))))),
-        response.getRulesList());
+      assertEqualsIgnoringOrder(
+          List.of(
+              buildRateLimitingModsecRule(
+                  rateLimitingRules.get(0),
+                  List.of(
+                      Pair.of("credit-card:" + EMPTY_LOCATION_HASH + 0, Collections.emptyList()),
+                      Pair.of(
+                          "PAN:" + EMPTY_LOCATION_HASH + 1,
+                          List.of("PAN:" + EMPTY_LOCATION_HASH + 0)))),
+              buildRateLimitingModsecRule(
+                  rateLimitingRules.get(3),
+                  List.of(
+                      Pair.of("credit-card:" + PROMPT_LOCATION_HASH + 0, Collections.emptyList()),
+                      Pair.of(
+                          "PAN:" + PROMPT_LOCATION_HASH + 1,
+                          List.of("PAN:" + PROMPT_LOCATION_HASH + 0))))),
+          response.getRulesList());
+    }
   }
 
   private static void assertContainsModsec(List<String> expectedRuleParts, String modsecBlob) {

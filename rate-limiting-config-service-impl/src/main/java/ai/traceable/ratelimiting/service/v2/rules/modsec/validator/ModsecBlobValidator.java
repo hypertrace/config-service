@@ -6,7 +6,6 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.EnrichedRateLimitingMod
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.grpc.Status;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,8 +55,7 @@ public class ModsecBlobValidator {
       List<String> serviceNames,
       List<String> environmentIds) {
     try {
-      Status status = ModsecRuleEngineUtils.validate(modsecRuleBlob);
-      return status.isOk() || status.equals(Status.UNKNOWN);
+      return ModsecRuleEngineUtils.validateRuleBlob(modsecRuleBlob);
     } catch (Exception e) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(

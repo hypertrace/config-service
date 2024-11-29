@@ -57,9 +57,16 @@ public class ModsecSecRuleGroup {
   }
 
   private static void validate(String modsecRuleString) {
-    Status status = ModsecRuleEngineUtils.validate(modsecRuleString);
-    if (Status.INVALID_ARGUMENT.getCode().equals(status.getCode())) {
-      throw status.asRuntimeException();
+    // Validate using ModSec
+    Status modsecStatus = ModsecRuleEngineUtils.modsecValidate(modsecRuleString);
+    if (Status.INVALID_ARGUMENT.getCode().equals(modsecStatus.getCode())) {
+      throw modsecStatus.asRuntimeException();
+    }
+
+    // Validate using Coraza
+    Status corazaStatus = ModsecRuleEngineUtils.corazaValidate(modsecRuleString);
+    if (Status.INVALID_ARGUMENT.getCode().equals(corazaStatus.getCode())) {
+      throw corazaStatus.asRuntimeException();
     }
   }
 

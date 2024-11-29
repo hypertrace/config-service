@@ -47,6 +47,23 @@ service:
     port: 50105
     maxHeaderSize: 32KiB
 
+# coraza-waf-service container
+corazaWafService:
+  name: coraza-waf-service
+  image:
+    tag: 0.3.12 # also sync traceable-corazaWafService in libs.versions.toml
+    repository: traceable/coraza-waf-service
+    pullPolicy: IfNotPresent
+    tagOverride: ""
+  resources:
+    limits:
+      # tune cpu to higher limits for lower grpc latency overhead, refer runbook & dashboard
+      cpu: 1.0
+      memory: 256Mi
+    requests:
+      cpu: 0.5
+      memory: 256Mi
+
 nodeLabels: {}
 
 tolerations: []

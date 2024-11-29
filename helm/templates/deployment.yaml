@@ -92,6 +92,29 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
+        - name: {{ .Values.corazaWafService.name }}
+          image: "{{ .Values.image.registry }}/{{ .Values.corazaWafService.image.repository }}:{{ default .Values.corazaWafService.image.tag .Values.corazaWafService.image.tagOverride }}"
+          imagePullPolicy: {{ .Values.corazaWafService.image.pullPolicy }}
+          ports:
+            - name: grpc-coraza
+              containerPort: 9000
+              protocol: TCP
+            - name: http-cz-metrics
+              containerPort: 8090
+              protocol: TCP
+            - name: http-cz-profile
+              containerPort: 8050
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.corazaWafService.resources | nindent 12 }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if and .Values.podSecurityContext .Values.injectUserGroup.enabled }}
+          volumeMounts:
+            {{- include "traceable-config-service.inject-user-group.volume-mounts" . | nindent 12 }}
+          {{- end }}
         - name: {{ .Chart.Name }}
           image: "{{ $.Values.image.registry }}/{{ .Values.image.repository }}:{{ default $.Chart.AppVersion $.Values.image.tagOverride }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}

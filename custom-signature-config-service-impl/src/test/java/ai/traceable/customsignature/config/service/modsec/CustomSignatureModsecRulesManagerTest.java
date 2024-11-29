@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.SystemUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
 public class CustomSignatureModsecRulesManagerTest {
 
@@ -160,159 +162,168 @@ public class CustomSignatureModsecRulesManagerTest {
 
   @Test
   public void testConvertRules() throws IOException {
-    CustomSignatureModsecRulesManager modsecRulesManager = getCustomSignatureModsecRulesManager();
+    try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
+        mockStatic(ModsecRuleEngineUtils.class)) {
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+          .thenReturn(Status.OK);
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+          .thenReturn(Status.OK);
+      CustomSignatureModsecRulesManager modsecRulesManager = getCustomSignatureModsecRulesManager();
 
-    List<CustomSignatureRule> rules = new ArrayList<>();
+      List<CustomSignatureRule> rules = new ArrayList<>();
 
-    createRules(
-        rules,
-        List.of(
-            new MatchCombination(MatchKey.MATCH_KEY_URL, "/foo"),
-            new MatchCombination(MatchKey.MATCH_KEY_HOST, "127.0.0.1"),
-            new MatchCombination(MatchKey.MATCH_KEY_HTTP_METHOD, "post"),
-            new MatchCombination(MatchKey.MATCH_KEY_USER_AGENT, "Chrome"),
-            new MatchCombination(MatchKey.MATCH_KEY_HEADER_NAME, "x-real"),
-            new MatchCombination(MatchKey.MATCH_KEY_HEADER_VALUE, "128.0.0.1"),
-            new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_NAME, "paramLevel"),
-            new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_VALUE, "5")),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_EQUALS,
-            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
-            MatchOperator.MATCH_OPERATOR_CONTAINS,
-            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN),
-        EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+      createRules(
+          rules,
+          List.of(
+              new MatchCombination(MatchKey.MATCH_KEY_URL, "/foo"),
+              new MatchCombination(MatchKey.MATCH_KEY_HOST, "127.0.0.1"),
+              new MatchCombination(MatchKey.MATCH_KEY_HTTP_METHOD, "post"),
+              new MatchCombination(MatchKey.MATCH_KEY_USER_AGENT, "Chrome"),
+              new MatchCombination(MatchKey.MATCH_KEY_HEADER_NAME, "x-real"),
+              new MatchCombination(MatchKey.MATCH_KEY_HEADER_VALUE, "128.0.0.1"),
+              new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_NAME, "paramLevel"),
+              new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_VALUE, "5")),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_EQUALS,
+              MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+              MatchOperator.MATCH_OPERATOR_CONTAINS,
+              MatchOperator.MATCH_OPERATOR_NOT_CONTAIN),
+          EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
 
-    createRules(
-        rules,
-        List.of(
-            new MatchCombination(MatchKey.MATCH_KEY_URL, "\\/foo$"),
-            new MatchCombination(MatchKey.MATCH_KEY_HOST, "^127\\.0\\.0\\.1"),
-            new MatchCombination(MatchKey.MATCH_KEY_HTTP_METHOD, "post|POST"),
-            new MatchCombination(MatchKey.MATCH_KEY_USER_AGENT, "^Chrome"),
-            new MatchCombination(MatchKey.MATCH_KEY_HEADER_NAME, "^x\\-real"),
-            new MatchCombination(MatchKey.MATCH_KEY_HEADER_VALUE, ".*\\<script\\>.*"),
-            new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_NAME, "^(param)[a-s1-9_-]{3,16}$"),
-            new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_VALUE, "^\\d+$")),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
-        EventType.EVENT_TYPE_ALLOW);
+      createRules(
+          rules,
+          List.of(
+              new MatchCombination(MatchKey.MATCH_KEY_URL, "\\/foo$"),
+              new MatchCombination(MatchKey.MATCH_KEY_HOST, "^127\\.0\\.0\\.1"),
+              new MatchCombination(MatchKey.MATCH_KEY_HTTP_METHOD, "post|POST"),
+              new MatchCombination(MatchKey.MATCH_KEY_USER_AGENT, "^Chrome"),
+              new MatchCombination(MatchKey.MATCH_KEY_HEADER_NAME, "^x\\-real"),
+              new MatchCombination(MatchKey.MATCH_KEY_HEADER_VALUE, ".*\\<script\\>.*"),
+              new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_NAME, "^(param)[a-s1-9_-]{3,16}$"),
+              new MatchCombination(MatchKey.MATCH_KEY_PARAMETER_VALUE, "^\\d+$")),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+          EventType.EVENT_TYPE_ALLOW);
 
-    createRules(
-        rules,
-        List.of(
-            new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_HEADER, "x-real", "128.0.0.1"),
-            new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_PARAMETER, "paramLevel", "5")),
-        List.of(MatchOperator.MATCH_OPERATOR_EQUALS, MatchOperator.MATCH_OPERATOR_NOT_EQUAL),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_EQUALS,
-            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
-            MatchOperator.MATCH_OPERATOR_CONTAINS,
-            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN));
+      createRules(
+          rules,
+          List.of(
+              new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_HEADER, "x-real", "128.0.0.1"),
+              new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_PARAMETER, "paramLevel", "5")),
+          List.of(MatchOperator.MATCH_OPERATOR_EQUALS, MatchOperator.MATCH_OPERATOR_NOT_EQUAL),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_EQUALS,
+              MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+              MatchOperator.MATCH_OPERATOR_CONTAINS,
+              MatchOperator.MATCH_OPERATOR_NOT_CONTAIN));
 
-    createRules(
-        rules,
-        List.of(
-            new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_HEADER, "^x\\-real", "128.0.0.1"),
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param)[a-s1-9_-]{3,16}$", "5")),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_EQUALS,
-            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
-            MatchOperator.MATCH_OPERATOR_CONTAINS,
-            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN));
+      createRules(
+          rules,
+          List.of(
+              new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_HEADER, "^x\\-real", "128.0.0.1"),
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param)[a-s1-9_-]{3,16}$", "5")),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_EQUALS,
+              MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+              MatchOperator.MATCH_OPERATOR_CONTAINS,
+              MatchOperator.MATCH_OPERATOR_NOT_CONTAIN));
 
-    createRules(
-        rules,
-        List.of(
-            new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_HEADER, "x-real", ".*\\<script\\>.*"),
-            new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_PARAMETER, "paramLevel", "^\\d+$")),
-        List.of(MatchOperator.MATCH_OPERATOR_EQUALS, MatchOperator.MATCH_OPERATOR_NOT_EQUAL),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX));
+      createRules(
+          rules,
+          List.of(
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_HEADER, "x-real", ".*\\<script\\>.*"),
+              new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_PARAMETER, "paramLevel", "^\\d+$")),
+          List.of(MatchOperator.MATCH_OPERATOR_EQUALS, MatchOperator.MATCH_OPERATOR_NOT_EQUAL),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX));
 
-    createRules(
-        rules,
-        List.of(
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_HEADER, "^x\\-real", ".*\\<script\\>.*"),
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param)[a-s1-9_-]{3,16}$", "^\\d+$")),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX));
+      createRules(
+          rules,
+          List.of(
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_HEADER, "^x\\-real", ".*\\<script\\>.*"),
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param)[a-s1-9_-]{3,16}$", "^\\d+$")),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX));
 
-    createRules(
-        rules,
-        List.of(new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_PARAMETER, "paramLevel", "5")),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_EQUALS,
-            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
-        List.of(MatchOperator.MATCH_OPERATOR_GREATER_THAN, MatchOperator.MATCH_OPERATOR_LESS_THAN));
+      createRules(
+          rules,
+          List.of(new KeyValueCombination(KeyValueTag.KEY_VALUE_TAG_PARAMETER, "paramLevel", "5")),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_EQUALS,
+              MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_GREATER_THAN, MatchOperator.MATCH_OPERATOR_LESS_THAN));
 
-    createRules(
-        rules,
-        List.of(
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_HEADER, "x\\-(real|forward)", "128.0.0.1"),
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param|parameter)[a-s1-9_-]{3,16}$", "5")),
-        List.of(
-            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
-            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
-        List.of(MatchOperator.MATCH_OPERATOR_EQUALS));
+      createRules(
+          rules,
+          List.of(
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_HEADER, "x\\-(real|forward)", "128.0.0.1"),
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_PARAMETER, "^(param|parameter)[a-s1-9_-]{3,16}$", "5")),
+          List.of(
+              MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+              MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX),
+          List.of(MatchOperator.MATCH_OPERATOR_EQUALS));
 
-    createRules(
-        rules,
-        List.of(
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_QUERY_PARAMETER, "^q-apple|q-banana", "mango"),
-            new KeyValueCombination(
-                KeyValueTag.KEY_VALUE_TAG_BODY_PARAMETER, "^b-apple|b-banana", "mango")),
-        List.of(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX),
-        List.of(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX));
+      createRules(
+          rules,
+          List.of(
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_QUERY_PARAMETER, "^q-apple|q-banana", "mango"),
+              new KeyValueCombination(
+                  KeyValueTag.KEY_VALUE_TAG_BODY_PARAMETER, "^b-apple|b-banana", "mango")),
+          List.of(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX),
+          List.of(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX));
 
-    createChainedRule(rules, 0, 10, 80, 100);
-    createChainedRule(rules, 15, 95);
+      createChainedRule(rules, 0, 10, 80, 100);
+      createChainedRule(rules, 15, 95);
 
-    GetCustomSignatureModsecRulesResponse response =
-        modsecRulesManager.getModsecRules(
-            RequestContext.forTenantId(TENANT_ID),
-            rules,
-            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
-    assertEquals(
-        rules.size()
-            + 4
-            + 6
-            + 4
-            + 23, /* 4 extra chained rules for NOT_CONTAIN rules, 6 extra chained rules for REGEX with PIPE KeyValue rules, 3+1 extra chained rules and 23 lines of modsec directives */
-        response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
-    assertEquals(rules.size(), response.getRulesCount());
-    assertEquals(
-        EXPIRY_TIMESTAMP_MILLIS,
-        response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
-    assertEquals(
-        "dev", response.getRules(0).getRuleScope().getEnvironmentScope().getEnvironmentIds(0));
-
-    String fileRules =
-        Resources.toString(
-            CustomSignatureModsecRulesManagerTest.class
-                .getClassLoader()
-                .getResource("sample-custom-modsec-rules.conf"),
-            StandardCharsets.UTF_8);
-    assertEquals(fileRules, response.getModsecRulesBlob());
-
-    if (SystemUtils.IS_OS_LINUX) {
-      assertEquals(Status.OK, ModsecRuleEngineUtils.validate(fileRules));
+      GetCustomSignatureModsecRulesResponse response =
+          modsecRulesManager.getModsecRules(
+              RequestContext.forTenantId(TENANT_ID),
+              rules,
+              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+      assertEquals(
+          rules.size()
+              + 4
+              + 6
+              + 4
+              + 23, /* 4 extra chained rules for NOT_CONTAIN rules, 6 extra chained rules for REGEX with PIPE KeyValue rules, 3+1 extra chained rules and 23 lines of modsec directives */
+          response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
+      assertEquals(rules.size(), response.getRulesCount());
+      assertEquals(
+          EXPIRY_TIMESTAMP_MILLIS,
+          response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+      assertEquals(
+          "dev", response.getRules(0).getRuleScope().getEnvironmentScope().getEnvironmentIds(0));
+      String fileRules =
+          Resources.toString(
+              CustomSignatureModsecRulesManagerTest.class
+                  .getClassLoader()
+                  .getResource("sample-custom-modsec-rules.conf"),
+              StandardCharsets.UTF_8);
+      assertEquals(fileRules, response.getModsecRulesBlob());
+      if (SystemUtils.IS_OS_LINUX) {
+        assertEquals(Status.OK, ModsecRuleEngineUtils.modsecValidate(fileRules));
+      }
     }
   }
 

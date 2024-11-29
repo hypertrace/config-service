@@ -19,6 +19,8 @@ import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RE
 import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.modsecurity.RuleEngine;
@@ -34,6 +36,7 @@ import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchCla
 import ai.traceable.modsecurity.rule.conversion.clause.ModsecOperatorConverter;
 import ai.traceable.modsecurity.rule.conversion.clause.ModsecVariableConverter;
 import ai.traceable.modsecurity.utils.ModsecRuleEngineUtils;
+import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -47,6 +50,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class ModsecValueMatchConverterTest {
 
@@ -67,10 +72,17 @@ public class ModsecValueMatchConverterTest {
   @BeforeEach
   @EnabledOnOs(OS.LINUX)
   public void setup() throws Exception {
-    ruleEngine =
-        ModsecRuleEngineUtils.createRuleEngine(
-            "SecResponseBodyAccess On\n\n"
-                + modsecRuleConverter.getModsecRulesBlob(getSampleCustomModsecRules()));
+
+    try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
+        mockStatic(ModsecRuleEngineUtils.class, Mockito.CALLS_REAL_METHODS)) {
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+          .thenReturn(Status.OK);
+      ruleEngine =
+          ModsecRuleEngineUtils.createRuleEngine(
+              "SecResponseBodyAccess On\n\n"
+                  + modsecRuleConverter.getModsecRulesBlob(getSampleCustomModsecRules()));
+    }
   }
 
   @AfterEach
@@ -84,107 +96,113 @@ public class ModsecValueMatchConverterTest {
   @Test
   @EnabledOnOs(OS.LINUX)
   public void testMatches() {
-    Map<String, String> attributesMap =
-        Map.of(
-            "http.url",
-            "/haha/xyz.txt?param1=test",
-            "http.method",
-            "get",
-            "http.request.version",
-            "1.0",
-            "http.request.header.user-agent",
-            "Chrome x/10",
-            "http.request.header.host",
-            "my-home-hostnames",
-            "http.request.header.x-forwarded-host",
-            "198.23.1.2",
-            "http.request.body.login",
-            "' or '1'='1",
-            "http.request.body.password",
-            "validpassword",
-            "http.response.body",
-            "21");
+    try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
+        mockStatic(ModsecRuleEngineUtils.class, Mockito.CALLS_REAL_METHODS)) {
+      mockModsecUtils
+          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
+          .thenReturn(Status.OK);
+      Map<String, String> attributesMap =
+          Map.of(
+              "http.url",
+              "/haha/xyz.txt?param1=test",
+              "http.method",
+              "get",
+              "http.request.version",
+              "1.0",
+              "http.request.header.user-agent",
+              "Chrome x/10",
+              "http.request.header.host",
+              "my-home-hostnames",
+              "http.request.header.x-forwarded-host",
+              "198.23.1.2",
+              "http.request.body.login",
+              "' or '1'='1",
+              "http.request.body.password",
+              "validpassword",
+              "http.response.body",
+              "21");
 
-    Set<RuleMatchInfo> ruleMatchInfos =
-        ModsecRuleEngineUtils.getModsecRuleMatches(ruleEngine, attributesMap).stream()
-            .map(RuleMatchInfo::new)
-            .collect(Collectors.toUnmodifiableSet());
-    assertEquals(31, ruleMatchInfos.size());
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_MATCHES_REGEX),
-        "http.url",
-        "/haha/xyz.txt?param1=test");
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_MATCHES_REGEX,
-            REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_CONTAINS,
-            REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
-        "http.request.header.user-agent",
-        "Chrome x/10");
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_EQUALS,
-            REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_MATCHES_REGEX,
-            REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_CONTAINS,
-            REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
-        "", // TODO: Needs to be fixed in modsecurity
-        "get");
+      Set<RuleMatchInfo> ruleMatchInfos =
+          ModsecRuleEngineUtils.getModsecRuleMatches(ruleEngine, attributesMap).stream()
+              .map(RuleMatchInfo::new)
+              .collect(Collectors.toUnmodifiableSet());
+      assertEquals(31, ruleMatchInfos.size());
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_EQUAL,
+              REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+              REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_NOT_CONTAIN,
+              REQUEST_VALUE_MATCH_METADATA_URL + ":" + MATCH_OPERATOR_MATCHES_REGEX),
+          "http.url",
+          "/haha/xyz.txt?param1=test");
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_NOT_EQUAL,
+              REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_MATCHES_REGEX,
+              REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_CONTAINS,
+              REQUEST_VALUE_MATCH_METADATA_USER_AGENT + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
+          "http.request.header.user-agent",
+          "Chrome x/10");
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_EQUALS,
+              REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_MATCHES_REGEX,
+              REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_CONTAINS,
+              REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
+          "", // TODO: Needs to be fixed in modsecurity
+          "get");
 
-    /*
-    TODO: Debug and fix the test - Intermittently failing
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
-        "default.",
-        "");
-     */
+      /*
+      TODO: Debug and fix the test - Intermittently failing
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_EQUAL,
+              REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_CONTAIN,
+              REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+              REQUEST_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
+          "default.",
+          "");
+      */
 
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_GREATER_THAN,
-            RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
-        "http.response.body",
-        "21");
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_CONTAIN,
-            RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_LESS_THAN,
-            RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
-        "http.response.status_code",
-        "200");
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(
-            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_EQUAL,
-            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
-            REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_CONTAIN),
-        "http.request.header.x-forwarded-host",
-        "198.23.1.2");
-    verifyRuleMatches(
-        ruleMatchInfos,
-        List.of(REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_MATCHES_REGEX),
-        "http.request.header.host",
-        "my-home-hostnames");
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_EQUAL,
+              RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+              RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_CONTAIN,
+              RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_GREATER_THAN,
+              RESPONSE_VALUE_MATCH_METADATA_BODY + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
+          "http.response.body",
+          "21");
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_EQUAL,
+              RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+              RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_CONTAIN,
+              RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_LESS_THAN,
+              RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX),
+          "http.response.status_code",
+          "200");
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(
+              REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_EQUAL,
+              REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+              REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_MATCH_REGEX,
+              REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_NOT_CONTAIN),
+          "http.request.header.x-forwarded-host",
+          "198.23.1.2");
+      verifyRuleMatches(
+          ruleMatchInfos,
+          List.of(REQUEST_VALUE_MATCH_METADATA_HOST + ":" + MATCH_OPERATOR_MATCHES_REGEX),
+          "http.request.header.host",
+          "my-home-hostnames");
+    }
   }
 
   private void verifyRuleMatches(
