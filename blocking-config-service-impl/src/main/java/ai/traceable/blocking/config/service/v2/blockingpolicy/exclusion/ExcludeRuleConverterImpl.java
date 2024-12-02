@@ -283,7 +283,7 @@ public class ExcludeRuleConverterImpl implements ExclusionRuleConverter {
   }
 
   private List<BlockingCategory> getBlockingCategory(ThreatActorEvent threatActorEvent) {
-    if (threatActorEvent
+    if (!threatActorEvent
         .getThreatActorIdentifier()
         .equals(THREAT_ACTOR_IDENTIFIER_ACTOR_ENTITY_ID)) {
       log.warn(
