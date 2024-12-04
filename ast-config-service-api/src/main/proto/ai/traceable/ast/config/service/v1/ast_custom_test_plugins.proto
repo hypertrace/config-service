@@ -38,6 +38,14 @@ message CreateCustomTestPlugin {
   map<string, TagValue> tags = 7;
   repeated string potential_generated_vulnerability_types = 8;
   SampleData sample_data = 9;
+  repeated ApiType supported_api_types = 10;
+}
+
+enum ApiType {
+  API_TYPE_UNSPECIFIED = 0;
+  API_TYPE_HTTP = 1;
+  API_TYPE_GRPC = 2;
+  API_TYPE_GRAPHQL = 3;
 }
 
 enum TestPluginType {
@@ -76,6 +84,7 @@ message UpdateCustomTestPlugin {
   map<string, TagValue> tags = 8;
   repeated string potential_generated_vulnerability_types = 9;
   SampleData sample_data = 10;
+  repeated ApiType supported_api_types = 11;
 }
 
 message UpdateCustomTestPluginResponse {
@@ -99,6 +108,7 @@ message CustomTestPlugin {
   map<string, TagValue> tags = 8;
   repeated string potential_generated_vulnerability_types = 9;
   SampleData sample_data = 10;
+  repeated ApiType supported_api_types = 11;
 }
 
 enum CodeSnippetType {

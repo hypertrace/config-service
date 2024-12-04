@@ -71,6 +71,7 @@ public class CustomTestPluginManager {
             .addAllPotentialGeneratedVulnerabilityTypes(
                 createCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList())
             .setSampleData(createCustomTestPlugin.getSampleData())
+            .addAllSupportedApiTypesValue(createCustomTestPlugin.getSupportedApiTypesValueList())
             .build();
 
     return customTestPluginStore.upsertObject(requestContext, createdCustomTestPlugin).getData();
@@ -104,6 +105,7 @@ public class CustomTestPluginManager {
         .clearTags()
         .putAllTags(updatedCustomTestPlugin.getTagsMap())
         .setSampleData(updatedCustomTestPlugin.getSampleData())
+        .addAllSupportedApiTypesValue(updatedCustomTestPlugin.getSupportedApiTypesValueList())
         .build();
   }
 
