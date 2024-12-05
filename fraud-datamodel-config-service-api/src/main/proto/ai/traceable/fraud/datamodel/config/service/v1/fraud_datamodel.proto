@@ -108,6 +108,7 @@ message FieldMetadata {
     string entity_type = 5;
     string relationship_type = 6;
   }
+  bool indexed = 7;
 }
 
 enum MetricDataType {
