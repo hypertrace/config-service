@@ -113,6 +113,8 @@ message MatchCondition {
     GenericMatchCondition generic_match_condition = 1;
     // when we want to express lhs match against rhs dataset
     StructuredMatchCondition structured_match_condition = 2;
+    // when we want complex expression using AND/OR
+    LogicalMatchCondition logical_match_condition = 3;
   }
 }
 
@@ -195,6 +197,17 @@ message ValueAggregateThreshold {
   // this must be a conscious choice of the consumer - higher resource usage if estimates are disabled for aggregations
   // by default: decision engine may use probabilistic data structures for providing aggregate values
   bool disable_estimated_aggregate = 4;
+}
+
+message LogicalMatchCondition {
+  LogicalMatchOperator operator = 1;
+  repeated MatchCondition conditions = 2;
+}
+
+enum LogicalMatchOperator {
+  LOGICAL_MATCH_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_MATCH_OPERATOR_AND = 1;
+  LOGICAL_MATCH_OPERATOR_OR = 2;
 }
 
 message StructuredMatchCondition {
