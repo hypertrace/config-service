@@ -18,8 +18,10 @@ public class AzureDevopsIntegrationCoordinator {
     AzureDevopsIntegrationDetails.Builder integrationDetails =
         AzureDevopsIntegrationDetails.newBuilder()
             .setName(request.getName())
-            .setOrganizationUrl(request.getOrganizationUrl())
-            .setAzureDevopsIntegrationScope(request.getAzureDevopsIntegrationScope());
+            .setOrganizationUrl(request.getOrganizationUrl());
+    if (request.hasAzureDevopsIntegrationScope()) {
+      integrationDetails.setAzureDevopsIntegrationScope(request.getAzureDevopsIntegrationScope());
+    }
     if (request.hasDescription()) {
       integrationDetails.setDescription(request.getDescription());
     }
