@@ -14,7 +14,9 @@ import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.attribute.service.v1.AttributeCreateRequest;
+import org.hypertrace.core.attribute.service.v1.AttributeDefinition;
 import org.hypertrace.core.attribute.service.v1.AttributeKind;
 import org.hypertrace.core.attribute.service.v1.AttributeMetadata;
 import org.hypertrace.core.attribute.service.v1.AttributeMetadataFilter;
@@ -22,8 +24,12 @@ import org.hypertrace.core.attribute.service.v1.AttributeServiceGrpc;
 import org.hypertrace.core.attribute.service.v1.AttributeSource;
 import org.hypertrace.core.attribute.service.v1.AttributeType;
 import org.hypertrace.core.attribute.service.v1.Empty;
+import org.hypertrace.core.attribute.service.v1.Projection;
 
+@Slf4j
 public class MetricTypeToAttributeMetadataAdapter {
+  public static final String GENERIC_METRIC = "GENERIC_METRIC";
+  public static final String DOT = ".";
   private final AttributeServiceGrpc.AttributeServiceBlockingStub attributeServiceBlockingStub;
   private ClientHostPortConfig config;
 
@@ -67,9 +73,16 @@ public class MetricTypeToAttributeMetadataAdapter {
               .addSources(AttributeSource.QS)
               .setType(AttributeType.ATTRIBUTE)
               .setGroupable(true)
-              .setFqn(entry.getKey())
+              .setFqn(getScopeForMetricType(metricType) + DOT + entry.getKey())
               .setKey(entry.getKey())
               .setDisplayName(entry.getKey())
+              .setDefinition(
+                  AttributeDefinition.newBuilder()
+                      .setProjection(
+                          Projection.newBuilder()
+                              .setAttributeId(GENERIC_METRIC + DOT + entry.getValue().getColumnId())
+                              .build())
+                      .build())
               .setInternal(true)
               .build());
     }
@@ -82,10 +95,16 @@ public class MetricTypeToAttributeMetadataAdapter {
               .addSources(AttributeSource.QS)
               .setType(AttributeType.ATTRIBUTE)
               .setGroupable(true)
-              .setFqn("counter_metric_value")
+              .setFqn(getScopeForMetricType(metricType) + DOT + "counter_metric_value")
               .setKey("counter_metric_value")
               .setDisplayName("counter_metric_value")
               .setInternal(true)
+              .setDefinition(
+                  AttributeDefinition.newBuilder()
+                      .setProjection(
+                          Projection.newBuilder()
+                              .setAttributeId(GENERIC_METRIC + DOT + "counter_metric_value")
+                              .build()))
               .build());
     } else if (metricType.getMetricDataType() == MetricDataType.METRIC_DATA_TYPE_GAUGE) {
       builder.addAttributes(
@@ -95,9 +114,15 @@ public class MetricTypeToAttributeMetadataAdapter {
               .addSources(AttributeSource.QS)
               .setType(AttributeType.ATTRIBUTE)
               .setGroupable(true)
-              .setFqn("gauge_metric_value")
+              .setFqn(getScopeForMetricType(metricType) + DOT + "gauge_metric_value")
               .setKey("gauge_metric_value")
               .setDisplayName("gauge_metric_value")
+              .setDefinition(
+                  AttributeDefinition.newBuilder()
+                      .setProjection(
+                          Projection.newBuilder()
+                              .setAttributeId(GENERIC_METRIC + DOT + "gauge_metric_value")
+                              .build()))
               .setInternal(true)
               .build());
     }
@@ -110,11 +135,18 @@ public class MetricTypeToAttributeMetadataAdapter {
             .addSources(AttributeSource.QS)
             .setType(AttributeType.ATTRIBUTE)
             .setGroupable(true)
-            .setFqn("startTime")
+            .setFqn(getScopeForMetricType(metricType) + DOT + "startTime")
             .setKey("startTime")
             .setDisplayName("startTime")
+            .setDefinition(
+                AttributeDefinition.newBuilder()
+                    .setProjection(
+                        Projection.newBuilder()
+                            .setAttributeId(GENERIC_METRIC + DOT + "startTime")
+                            .build()))
             .setInternal(true)
             .build());
+
     builder.addAttributes(
         AttributeMetadata.newBuilder()
             .setValueKind(AttributeKind.TYPE_STRING)
@@ -122,9 +154,15 @@ public class MetricTypeToAttributeMetadataAdapter {
             .addSources(AttributeSource.QS)
             .setType(AttributeType.ATTRIBUTE)
             .setGroupable(true)
-            .setFqn("endTime")
-            .setKey("endTime")
-            .setDisplayName("endTime")
+            .setFqn(getScopeForMetricType(metricType) + DOT + "type_id")
+            .setKey("type_id")
+            .setDisplayName("type_id")
+            .setDefinition(
+                AttributeDefinition.newBuilder()
+                    .setProjection(
+                        Projection.newBuilder()
+                            .setAttributeId(GENERIC_METRIC + DOT + "type_id")
+                            .build()))
             .setInternal(true)
             .build());
 
