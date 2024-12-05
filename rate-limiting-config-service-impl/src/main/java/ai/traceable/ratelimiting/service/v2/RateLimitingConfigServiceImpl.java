@@ -9,6 +9,8 @@ import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleResponse;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
@@ -20,6 +22,7 @@ import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
+import ai.traceable.ratelimiting.service.v2.rules.converter.RateLimitingEdgeDecisionConverter;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -41,17 +44,20 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
   private final RulesManager rulesManager;
   private final ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
+  private final RateLimitingEdgeDecisionConverter translator;
 
   @Inject
   public RateLimitingConfigServiceImpl(
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       ActivityEventProducer activityEventProducer,
-      RateLimitingConfigServiceConfig config) {
+      RateLimitingConfigServiceConfig config,
+      RateLimitingEdgeDecisionConverter translator) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.activityEventProducer = activityEventProducer;
     this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
+    this.translator = translator;
   }
 
   @Override
@@ -176,6 +182,29 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
 
       responseObserver.onNext(
           rulesManager.getRateLimitingModsecRules(context, request.getRulesFilter()));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getRateLimitingEdgeDecisionRules(
+      GetRateLimitingEdgeDecisionRulesRequest request,
+      StreamObserver<GetRateLimitingEdgeDecisionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrow(context, request);
+
+      GetRateLimitingEdgeDecisionRulesResponse response =
+          GetRateLimitingEdgeDecisionRulesResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(
+                  translator.convert(
+                      rulesManager.getRateLimitingRules(context, request.getRulesFilter())))
+              .build();
+
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);

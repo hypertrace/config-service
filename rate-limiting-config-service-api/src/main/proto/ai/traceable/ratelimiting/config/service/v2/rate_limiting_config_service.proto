@@ -5,6 +5,7 @@ option java_multiple_files = true;
 package ai.traceable.ratelimiting.config.service.v2;
 
 import "ai/traceable/ratelimiting/config/service/v2/rate_limiting_rule.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 
 service RateLimitingConfigService {
   rpc GetRateLimitingRules (GetRateLimitingRulesRequest) returns (GetRateLimitingRulesResponse) {
@@ -16,6 +17,8 @@ service RateLimitingConfigService {
   rpc CreateRateLimitingRule (CreateRateLimitingRuleRequest) returns (CreateRateLimitingRuleResponse) {
   }
   rpc GetRateLimitingRuleModsecRules (GetRateLimitingRuleModsecRulesRequest) returns (GetRateLimitingRuleModsecRulesResponse) {
+  }
+  rpc GetRateLimitingEdgeDecisionRules (GetRateLimitingEdgeDecisionRulesRequest) returns (GetRateLimitingEdgeDecisionRulesResponse) {
   }
 }
 
@@ -82,6 +85,14 @@ message GetRateLimitingRuleModsecRulesResponse {
   string modsec_directives_blob = 1;
   repeated ModsecBlobData modsec_blobs_data = 2;
   repeated RateLimitingModsecRule rules = 3;
+}
+
+message GetRateLimitingEdgeDecisionRulesRequest {
+  GetRateLimitingRulesFilter rules_filter = 1;
+}
+
+message GetRateLimitingEdgeDecisionRulesResponse {
+    ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
 
 message ModsecBlobData {

@@ -57,4 +57,3 @@ directories:
   - traceable-edge-config-service-api/src/main/proto
   - traceable-edge-decision-config-service-api/src/main/proto
   - github-integration-config-service-api/src/main/proto
-

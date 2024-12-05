@@ -20,5 +20,8 @@ public interface RulesValidator {
   void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request);
 
   void validateOrThrow(
+      RequestContext requestContext, GetRateLimitingEdgeDecisionRulesRequest request);
+
+  void validateOrThrow(
       RequestContext requestContext, GetRateLimitingRuleModsecRulesRequest request);
 }

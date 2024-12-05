@@ -14,6 +14,7 @@ import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.DataLocation;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFilter.RuleAction;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
@@ -40,6 +41,13 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   @Override
   public void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateFilter(request.getRulesFilter());
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, GetRateLimitingEdgeDecisionRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateFilter(request.getRulesFilter());
   }
