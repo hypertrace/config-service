@@ -72,6 +72,7 @@ dependencies {
   implementation(projects.traceableEdgeConfigServiceImpl)
   implementation(projects.traceableEdgeDecisionConfigServiceImpl)
   implementation(projects.traceablePolicyConfigServiceImpl)
+  implementation(projects.githubIntegrationConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

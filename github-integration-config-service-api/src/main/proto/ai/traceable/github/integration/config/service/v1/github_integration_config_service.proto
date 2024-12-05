@@ -1,0 +1,27 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package ai.traceable.github.integration.config.service.v1;
+
+
+service GithubIntegrationConfigService {
+  rpc GetGithubIntegrations (GetGithubIntegrationsRequest) returns (GetGithubIntegrationsResponse) {}
+}
+
+
+message GetGithubIntegrationsRequest {
+  GithubIntegrationFilter filter = 1;
+}
+
+message GithubIntegrationFilter {
+  optional string installation_owner_name = 1;
+}
+
+message GetGithubIntegrationsResponse {
+  repeated GithubIntegration integrations = 1;
+}
+
+message GithubIntegration {
+  string id = 1;
+  int64 installation_id = 2;
+  string installation_owner_name = 3;
+}
