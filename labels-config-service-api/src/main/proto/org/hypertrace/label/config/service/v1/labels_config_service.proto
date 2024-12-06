@@ -2,12 +2,11 @@ syntax = "proto3";
 
 package org.hypertrace.label.config.service.v1;
 
-option java_multiple_files = true;
-
 import "org/hypertrace/label/config/service/v1/label.proto";
 
-service LabelsConfigService {
+option java_multiple_files = true;
 
+service LabelsConfigService {
   // create label
   rpc CreateLabel(CreateLabelRequest) returns (CreateLabelResponse) {}
 
@@ -25,7 +24,6 @@ service LabelsConfigService {
 
   // delete label by id
   rpc DeleteLabel(DeleteLabelRequest) returns (DeleteLabelResponse) {}
-
 }
 
 message CreateLabelRequest {
@@ -58,8 +56,7 @@ message GetLabelResponse {
   Label label = 1;
 }
 
-message GetLabelsRequest {
-}
+message GetLabelsRequest {}
 
 message GetLabelsResponse {
   repeated Label labels = 1;
@@ -78,5 +75,4 @@ message DeleteLabelRequest {
   string id = 1;
 }
 
-message DeleteLabelResponse {
-}
+message DeleteLabelResponse {}

@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package org.hypertrace.notification.config.service.v1;
+
+option java_multiple_files = true;
 
 message NotificationChannel {
   string id = 1;
@@ -29,7 +29,6 @@ message AwsS3BucketChannelConfig {
     string role_arn = 1;
   }
 }
-
 
 enum WebhookFormat {
   WEBHOOK_FORMAT_UNSPECIFIED = 0;

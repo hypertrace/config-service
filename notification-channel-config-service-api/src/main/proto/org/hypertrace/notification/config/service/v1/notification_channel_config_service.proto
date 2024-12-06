@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package org.hypertrace.notification.config.service.v1;
 
 import "org/hypertrace/notification/config/service/v1/notification_channel.proto";
+
+option java_multiple_files = true;
 
 service NotificationChannelConfigService {
   rpc CreateNotificationChannel(CreateNotificationChannelRequest) returns (CreateNotificationChannelResponse) {}

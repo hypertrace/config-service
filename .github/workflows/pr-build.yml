@@ -47,15 +47,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
           fetch-depth: 0
 
-      - name: Setup buf
-        uses: bufbuild/buf-setup-action@v1
+      - name: Run buf
+        uses: bufbuild/buf-action@v1
         with:
           github_token: ${{ github.token }}
-
-      - name: Lint protos
-        uses: bufbuild/buf-lint-action@v1
-
-      - name: Check for breaking changes
-        uses: bufbuild/buf-breaking-action@v1
-        with:
-          against: '.git#branch=origin/main'

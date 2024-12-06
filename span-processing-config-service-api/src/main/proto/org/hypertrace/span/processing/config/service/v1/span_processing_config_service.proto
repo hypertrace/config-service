@@ -2,23 +2,19 @@ syntax = "proto3";
 
 package org.hypertrace.span.processing.config.service.v1;
 
+import "google/protobuf/timestamp.proto";
+import "org/hypertrace/span/processing/config/service/v1/span_filter.proto";
+
 option java_multiple_files = true;
 
-import "org/hypertrace/span/processing/config/service/v1/span_filter.proto";
-import "google/protobuf/timestamp.proto";
-
 service SpanProcessingConfigService {
-  rpc CreateExcludeSpanRule (CreateExcludeSpanRuleRequest) returns (CreateExcludeSpanRuleResponse) {
-  }
+  rpc CreateExcludeSpanRule(CreateExcludeSpanRuleRequest) returns (CreateExcludeSpanRuleResponse) {}
 
-  rpc UpdateExcludeSpanRule (UpdateExcludeSpanRuleRequest) returns (UpdateExcludeSpanRuleResponse) {
-  }
+  rpc UpdateExcludeSpanRule(UpdateExcludeSpanRuleRequest) returns (UpdateExcludeSpanRuleResponse) {}
 
-  rpc GetAllExcludeSpanRules (GetAllExcludeSpanRulesRequest) returns (GetAllExcludeSpanRulesResponse) {
-  }
+  rpc GetAllExcludeSpanRules(GetAllExcludeSpanRulesRequest) returns (GetAllExcludeSpanRulesResponse) {}
 
-  rpc DeleteExcludeSpanRule (DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {
-  }
+  rpc DeleteExcludeSpanRule(DeleteExcludeSpanRuleRequest) returns (DeleteExcludeSpanRuleResponse) {}
 }
 
 message CreateExcludeSpanRuleRequest {
@@ -29,8 +25,7 @@ message CreateExcludeSpanRuleResponse {
   ExcludeSpanRuleDetails rule_details = 1;
 }
 
-message GetAllExcludeSpanRulesRequest {
-}
+message GetAllExcludeSpanRulesRequest {}
 
 message GetAllExcludeSpanRulesResponse {
   repeated ExcludeSpanRuleDetails rule_details = 1;
@@ -48,8 +43,7 @@ message DeleteExcludeSpanRuleRequest {
   string id = 1;
 }
 
-message DeleteExcludeSpanRuleResponse {
-}
+message DeleteExcludeSpanRuleResponse {}
 
 message ExcludeSpanRule {
   string id = 1;

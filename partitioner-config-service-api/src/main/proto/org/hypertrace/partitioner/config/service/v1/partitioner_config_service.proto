@@ -4,9 +4,7 @@ package org.hypertrace.partitioner.config.service.v1;
 
 option java_multiple_files = true;
 
-
 service PartitionerConfigService {
-
   rpc GetPartitionerProfile(GetPartitionerProfileRequest) returns (GetPartitionerProfileResponse) {}
 
   rpc GetPartitionerProfiles(GetPartitionerProfilesRequest) returns (GetPartitionerProfilesResponse) {}
@@ -14,7 +12,6 @@ service PartitionerConfigService {
   rpc PutPartitionerProfiles(PutPartitionerProfilesRequest) returns (PutPartitionerProfilesResponse) {}
 
   rpc DeletePartitionerProfiles(DeletePartitionerProfilesRequest) returns (DeletePartitionerProfilesResponse) {}
-
 }
 
 message GetPartitionerProfileRequest {
@@ -29,11 +26,9 @@ message PutPartitionerProfilesRequest {
   repeated PartitionerProfile profiles = 1;
 }
 
-message PutPartitionerProfilesResponse {
-}
+message PutPartitionerProfilesResponse {}
 
-message GetPartitionerProfilesRequest {
-}
+message GetPartitionerProfilesRequest {}
 
 message GetPartitionerProfilesResponse {
   repeated PartitionerProfile profiles = 1;
@@ -43,8 +38,7 @@ message DeletePartitionerProfilesRequest {
   repeated string profile_names = 1;
 }
 
-message DeletePartitionerProfilesResponse {
-}
+message DeletePartitionerProfilesResponse {}
 
 message PartitionerProfile {
   string name = 1;

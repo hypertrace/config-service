@@ -2,12 +2,11 @@ syntax = "proto3";
 
 package org.hypertrace.label.application.rule.config.service.v1;
 
-option java_multiple_files = true;
-
 import "org/hypertrace/label/application/rule/config/service/v1/label_application_rule.proto";
 
-service LabelApplicationRuleConfigService {
+option java_multiple_files = true;
 
+service LabelApplicationRuleConfigService {
   // create label application rule
   rpc CreateLabelApplicationRule(CreateLabelApplicationRuleRequest) returns (CreateLabelApplicationRuleResponse) {}
 
@@ -19,7 +18,6 @@ service LabelApplicationRuleConfigService {
 
   // delete label application rule by id
   rpc DeleteLabelApplicationRule(DeleteLabelApplicationRuleRequest) returns (DeleteLabelApplicationRuleResponse) {}
-
 }
 
 message CreateLabelApplicationRuleRequest {
@@ -38,8 +36,7 @@ message GetLabelApplicationRuleResponse {
   LabelApplicationRule label_application_rule = 1;
 }
 
-message GetLabelApplicationRulesRequest {
-}
+message GetLabelApplicationRulesRequest {}
 
 message GetLabelApplicationRulesResponse {
   repeated LabelApplicationRule label_application_rules = 1;
@@ -58,5 +55,4 @@ message DeleteLabelApplicationRuleRequest {
   string id = 1;
 }
 
-message DeleteLabelApplicationRuleResponse {
-}
+message DeleteLabelApplicationRuleResponse {}

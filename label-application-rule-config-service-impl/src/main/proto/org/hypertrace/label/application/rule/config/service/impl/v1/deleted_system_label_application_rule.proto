@@ -1,4 +1,4 @@
-syntax="proto3";
+syntax = "proto3";
 
 package org.hypertrace.label.application.rule.config.service.impl.v1;
 
