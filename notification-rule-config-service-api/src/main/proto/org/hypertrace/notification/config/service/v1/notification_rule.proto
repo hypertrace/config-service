@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package org.hypertrace.notification.config.service.v1;
+
+option java_multiple_files = true;
 
 message NotificationRule {
   string id = 1;

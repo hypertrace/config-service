@@ -62,3 +62,18 @@ jobs:
     steps:
       - name: Dependency Check
         uses: hypertrace/github-actions/dependency-check@main
+  validate-protos-temp:
+    runs-on: ubuntu-22.04
+    # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+          fetch-depth: 0
+
+      - name: Run buf
+        uses: bufbuild/buf-action@v1
+        with:
+          github_token: ${{ github.token }}

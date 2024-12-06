@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package org.hypertrace.alerting.config.service.v1;
+
+option java_multiple_files = true;
 
 message MetricAnomalyEventCondition {
   MetricSelection metric_selection = 1;
@@ -61,7 +61,6 @@ message CompositeFilter {
   repeated Filter child_filters = 2;
 }
 
-
 message LhsExpression {
   oneof value {
     Attribute attribute = 1;
@@ -94,11 +93,11 @@ message StaticThresholdCondition {
 }
 
 message BaselineThresholdCondition {
-  string baseline_duration = 1;  // iso duration string
+  string baseline_duration = 1; // iso duration string
 }
 
 enum StaticThresholdOperator {
-  STATIC_THRESHOLD_OPERATOR_UNSPECIFIED  = 0;
+  STATIC_THRESHOLD_OPERATOR_UNSPECIFIED = 0;
   STATIC_THRESHOLD_OPERATOR_GT = 1;
   STATIC_THRESHOLD_OPERATOR_LT = 2;
   STATIC_THRESHOLD_OPERATOR_GTE = 3;

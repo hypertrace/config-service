@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package org.hypertrace.config.service.v1;
 
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
 
 service ConfigService {
   // Overrides the specified config with the config provided and upserts the

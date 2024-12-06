@@ -1,0 +1,20 @@
+version: v2
+modules:
+  - path: alerting-config-service-api/src/main/proto
+  - path: config-service-api/src/main/proto
+  - path: label-application-rule-config-service-api/src/main/proto
+  - path: label-application-rule-config-service-impl/src/main/proto
+  - path: labels-config-service-api/src/main/proto
+  - path: notification-channel-config-service-api/src/main/proto
+  - path: notification-rule-config-service-api/src/main/proto
+  - path: partitioner-config-service-api/src/main/proto
+  - path: spaces-config-service-api/src/main/proto
+  - path: span-processing-config-service-api/src/main/proto
+lint:
+  use:
+    - STANDARD
+  disallow_comment_ignores: true
+breaking:
+  use:
+    - PACKAGE
+    - WIRE_JSON
