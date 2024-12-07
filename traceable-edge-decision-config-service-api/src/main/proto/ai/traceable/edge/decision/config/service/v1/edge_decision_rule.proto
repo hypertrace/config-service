@@ -28,6 +28,7 @@ message EdgeDecisionRule {
   EdgeDecisionRuleStatus rule_status = 6;
   EdgeDecisionRuleDefinition rule_definition = 7;
   EdgeDecision rule_decision = 8;
+  PolicyKind policy_kind = 9;
 }
 
 message EdgeDecisionRuleScope {
@@ -67,6 +68,7 @@ message EdgeDecisionRuleScopeCondition {
   }
 }
 
+// this is our implementation detail.
 enum EdgeDecisionRuleCategory {
   EDGE_DECISION_RULE_CATEGORY_UNSPECIFIED = 0;
   EDGE_DECISION_RULE_CATEGORY_ORIGINAL = 1; // rules stored directly in this format

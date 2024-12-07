@@ -48,7 +48,10 @@ message EdgeDecision {
   // default: 1.0 (all)
   // todo: better name for this
   optional double sampling_rate = 4;
-
+  // if this rule triggers, what is the threat type that must be added to the payload
+  string threat_type = 5;
+  // what are the decorations to be added to the span that's exported to traceable platform.
+  repeated SpanAttributeDecoration span_attributes = 6;
 }
 
 enum EdgeDecisionType {
@@ -56,6 +59,11 @@ enum EdgeDecisionType {
   EDGE_DECISION_TYPE_ALLOW = 1;
   EDGE_DECISION_TYPE_BLOCK = 2;
   EDGE_DECISION_TYPE_CAPTCHA = 3;
+}
+
+message SpanAttributeDecoration {
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig span_attribute_key = 1;
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig span_attribute_value = 2;
 }
 
 message PayloadDecoration {
@@ -73,4 +81,19 @@ message RequestHeaderInjection {
 message ResponseHeaderInjection {
   ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig header_key = 1;
   ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig header_value = 2;
+}
+
+// identifies the broad categorization - applicable on both edge rules and server side policies.
+// this is required for tracking the "order of operations" on a request object.
+// it is intentionally an ENUM because rules must belong to a product category that we support / identify
+enum PolicyKind {
+  POLICY_KIND_UNSPECIFIED = 0;
+  // rules or policies that provide WAF capabilities
+  POLICY_KIND_WAF = 1;
+  // rules or policies that provide BOT mitigation capabilities
+  POLICY_KIND_BOT_MITIGATION = 2;
+  // rules or policies that provide FRAUD protection capabilities
+  POLICY_KIND_FRAUD_PROTECTION = 3;
+  // rules or policies that are CUSTOM for a tenant.
+  POLICY_KIND_CUSTOM = 4;
 }
