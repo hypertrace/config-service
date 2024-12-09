@@ -529,7 +529,10 @@ public class DetectionExclusionConditionValidator {
   }
 
   private void validateAnomalousAttributeCondition(AnomalousAttributeCondition condition) {
-    if (!condition.hasKeyMatchCondition() && !condition.hasValueMatchCondition()) {
+    if (!condition.hasKeyMatchCondition()
+        && !condition.hasValueMatchCondition()
+        && condition.getObservedTypesList().isEmpty()
+        && condition.getLearntTypesList().isEmpty()) {
       throwInvalidArgumentException(
           String.format(
               "Invalid anomalousAttributeCondition for detection exclusion rule :%n %s",
