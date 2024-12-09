@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.reporting.config.service.v1;
+
+option java_multiple_files = true;
 
 message ReportConfigurationDetails {
   bool is_enabled = 1;
@@ -28,8 +28,7 @@ message ReportConfigurationDetails {
       string scheduled_time = 1;
     }
 
-    message InstantFrequency {
-    }
+    message InstantFrequency {}
 
     enum DayOfWeek {
       DAY_OF_WEEK_UNSPECIFIED = 0;

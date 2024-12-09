@@ -2,31 +2,23 @@ syntax = "proto3";
 
 package ai.traceable.detection.exclusion.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_request_response.proto";
 
+option java_multiple_files = true;
+
 service DetectionExclusionConfigService {
+  rpc GetDetectionExclusionRules(GetDetectionExclusionRulesRequest) returns (GetDetectionExclusionRulesResponse) {}
 
-    rpc GetDetectionExclusionRules (GetDetectionExclusionRulesRequest) returns (GetDetectionExclusionRulesResponse) {
-    }
+  rpc CreateDetectionExclusionRule(CreateDetectionExclusionRuleRequest) returns (CreateDetectionExclusionRuleResponse) {}
 
-    rpc CreateDetectionExclusionRule (CreateDetectionExclusionRuleRequest) returns (CreateDetectionExclusionRuleResponse) {
-    }
+  rpc UpdateDetectionExclusionRule(UpdateDetectionExclusionRuleRequest) returns (UpdateDetectionExclusionRuleResponse) {}
 
-    rpc UpdateDetectionExclusionRule (UpdateDetectionExclusionRuleRequest) returns (UpdateDetectionExclusionRuleResponse) {
-    }
+  rpc DeleteDetectionExclusionRule(DeleteDetectionExclusionRuleRequest) returns (DeleteDetectionExclusionRuleResponse) {}
 
-    rpc DeleteDetectionExclusionRule (DeleteDetectionExclusionRuleRequest) returns (DeleteDetectionExclusionRuleResponse) {
-    }
+  rpc GetExclusionModsecRules(GetExclusionModsecRulesRequest) returns (GetExclusionModsecRulesResponse) {}
 
-    rpc GetExclusionModsecRules (GetExclusionModsecRulesRequest) returns (GetExclusionModsecRulesResponse) {
-    }
+  rpc BulkDeleteDetectionExclusionRules(BulkDeleteDetectionExclusionRulesRequest) returns (BulkDeleteDetectionExclusionRulesResponse) {}
 
-    rpc BulkDeleteDetectionExclusionRules (BulkDeleteDetectionExclusionRulesRequest) returns (BulkDeleteDetectionExclusionRulesResponse) {
-    }
-
-    //API to blindly upsert documents which can replace existing ones, ID is generated using name and rule-source, should preferably be used only internally
-    rpc BulkUpsertDetectionExclusionRules (BulkUpsertDetectionExclusionRulesRequest) returns (BulkUpsertDetectionExclusionRulesResponse) {
-    }
+  //API to blindly upsert documents which can replace existing ones, ID is generated using name and rule-source, should preferably be used only internally
+  rpc BulkUpsertDetectionExclusionRules(BulkUpsertDetectionExclusionRulesRequest) returns (BulkUpsertDetectionExclusionRulesResponse) {}
 }

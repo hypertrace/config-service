@@ -1,8 +1,9 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.azure.devops.integration.config.service.api.v1;
 
 import "ai/traceable/azure/devops/integration/config/service/api/v1/azure_devops_work_item_integration.proto";
+
+option java_multiple_files = true;
 
 service AzureDevopsIntegrationConfigService {
   rpc CreateAzureDevopsIntegration(CreateAzureDevopsIntegrationRequest) returns (CreateAzureDevopsIntegrationResponse) {}
@@ -16,7 +17,6 @@ service AzureDevopsIntegrationConfigService {
   rpc GetAzureDevopsIntegrationsWithAuthCredentials(GetAzureDevopsIntegrationsWithAuthCredentialsRequest) returns (GetAzureDevopsIntegrationsWithAuthCredentialsResponse) {}
   rpc GetAzureDevopsIntegrationWithAuthCredentials(GetAzureDevopsIntegrationWithAuthCredentialsRequest) returns (GetAzureDevopsIntegrationWithAuthCredentialsResponse) {}
 }
-
 
 message CreateAzureDevopsIntegrationRequest {
   string name = 1;

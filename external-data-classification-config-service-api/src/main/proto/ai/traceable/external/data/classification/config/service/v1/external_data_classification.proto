@@ -24,8 +24,7 @@ message DataParsingRule {
     DATA_PARSING_MODE_CONTENT_TYPE_HEADER = 7;
   }
 
-  message DropOnFailure {
-  }
+  message DropOnFailure {}
 }
 
 message DataType {

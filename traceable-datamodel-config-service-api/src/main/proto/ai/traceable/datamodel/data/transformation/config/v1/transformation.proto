@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.datamodel.data.transformation.config.v1;
 
-option java_multiple_files = true;
-
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
 
 message DataModelEntity {
   string id = 1;

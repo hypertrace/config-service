@@ -11,13 +11,13 @@ jobs:
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Checkout Traceable actions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}

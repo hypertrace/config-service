@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.span.processing.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/span/processing/config/service/v1/span_filter.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 message SamplingConfig {
   string id = 1;

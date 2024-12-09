@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.dashboard.config.service.v1;
 
-option java_multiple_files = true;
-
 import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 service DashboardConfigService {
   rpc GetDashboards(GetDashboardsRequest) returns (GetDashboardsResponse) {}
@@ -56,8 +56,7 @@ message DeleteDashboardRequest {
   string id = 1;
 }
 
-message DeleteDashboardResponse {
-}
+message DeleteDashboardResponse {}
 
 message Dashboard {
   string id = 1;

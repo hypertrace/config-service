@@ -2,17 +2,16 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
-option java_multiple_files = true;
-
-import "ai/traceable/threatmanagement/config/service/v1/security_event_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/anomaly_score_contribution.proto";
-import "ai/traceable/threatmanagement/config/service/v1/security_event_type_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/ip_reputation_score_contribution.proto";
+import "ai/traceable/threatmanagement/config/service/v1/security_event_score_contribution.proto";
+import "ai/traceable/threatmanagement/config/service/v1/security_event_type_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/status_code_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/threat_score_bound.proto";
 
-message GetThreatScoreConfigRequest {
-}
+option java_multiple_files = true;
+
+message GetThreatScoreConfigRequest {}
 
 message GetThreatScoreConfigResponse {
   ThreatScoreConfig threat_score_config = 1;

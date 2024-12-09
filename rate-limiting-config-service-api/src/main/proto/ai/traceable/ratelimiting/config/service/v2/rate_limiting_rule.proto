@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.ratelimiting.config.service.v2;
 
-option java_multiple_files = true;
-
 import "google/protobuf/duration.proto";
+
+option java_multiple_files = true;
 
 message RateLimitingRule {
   string id = 1;
@@ -29,7 +29,7 @@ message ModsecRuleIdInfo {
     ID_TYPE_KEY_VALUE_CONDITION_URL_REGEXES = 2;
   }
 
-  message MatchCondition{
+  message MatchCondition {
     repeated string ignore_ids = 1;
     string match_id = 2;
   }
@@ -122,7 +122,7 @@ message ScopeCondition {
     UrlScope url_scope = 3;
   }
 
-  message UrlScope{
+  message UrlScope {
     repeated string url_regexes = 1;
   }
 
@@ -198,14 +198,14 @@ message KeyValueCondition {
   }
 }
 
-enum DataSensitivityLevel{
+enum DataSensitivityLevel {
   DATA_SENSITIVITY_LEVEL_UNSPECIFIED = 0;
   DATA_SENSITIVITY_LEVEL_LOW = 1;
   DATA_SENSITIVITY_LEVEL_MEDIUM = 2;
   DATA_SENSITIVITY_LEVEL_HIGH = 3;
   DATA_SENSITIVITY_LEVEL_CRITICAL = 4;
 }
-enum DataLocation{
+enum DataLocation {
   DATA_LOCATION_UNSPECIFIED = 0;
   DATA_LOCATION_REQUEST = 1;
   DATA_LOCATION_RESPONSE = 2;
@@ -224,9 +224,9 @@ message DatatypeCondition {
     }
   }
 
-  message LearnedTypesMatching{}
+  message LearnedTypesMatching {}
 
-  message RegexBasedMatching{
+  message RegexBasedMatching {
     KeyValueCondition custom_matching_location = 6;
   }
 }
@@ -421,7 +421,7 @@ enum IpConnectionType {
   IP_CONNECTION_TYPE_UNSPECIFIED = 0;
   IP_CONNECTION_TYPE_RESIDENTIAL = 1;
   IP_CONNECTION_TYPE_MOBILE = 2;
-  IP_CONNECTION_TYPE_CORPORATE= 3;
+  IP_CONNECTION_TYPE_CORPORATE = 3;
   IP_CONNECTION_TYPE_DATA_CENTER = 4;
   IP_CONNECTION_TYPE_EDUCATION = 5;
 }

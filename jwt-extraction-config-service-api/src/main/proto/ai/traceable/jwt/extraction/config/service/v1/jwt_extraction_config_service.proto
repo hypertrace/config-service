@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.jwt.extraction.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/jwt/extraction/config/service/v1/jwt_extraction_rule.proto";
 
+option java_multiple_files = true;
+
 service JwtExtractionConfigService {
-  rpc GetJwtExtractionRules (GetJwtExtractionRulesRequest) returns (GetJwtExtractionRulesResponse) {}
-  rpc CreateJwtExtractionRule (CreateJwtExtractionRuleRequest) returns (CreateJwtExtractionRuleResponse){}
-  rpc UpdateJwtExtractionRule (UpdateJwtExtractionRuleRequest) returns (UpdateJwtExtractionRuleResponse){}
-  rpc DeleteJwtExtractionRule (DeleteJwtExtractionRuleRequest) returns (DeleteJwtExtractionRuleResponse){}
+  rpc GetJwtExtractionRules(GetJwtExtractionRulesRequest) returns (GetJwtExtractionRulesResponse) {}
+  rpc CreateJwtExtractionRule(CreateJwtExtractionRuleRequest) returns (CreateJwtExtractionRuleResponse) {}
+  rpc UpdateJwtExtractionRule(UpdateJwtExtractionRuleRequest) returns (UpdateJwtExtractionRuleResponse) {}
+  rpc DeleteJwtExtractionRule(DeleteJwtExtractionRuleRequest) returns (DeleteJwtExtractionRuleResponse) {}
 }

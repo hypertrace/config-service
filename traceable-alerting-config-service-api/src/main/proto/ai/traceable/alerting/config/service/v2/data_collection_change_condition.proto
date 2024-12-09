@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.alerting.config.service.v2;
+
+option java_multiple_files = true;
 
 message DataCollectionChangeCondition {
   oneof type {
@@ -18,11 +18,9 @@ message AgentAlertCondition {
   }
 }
 
-message NewDeployment {
-}
+message NewDeployment {}
 
-message NoDataInEnvironment {
-}
+message NoDataInEnvironment {}
 
 message AgentActivityStatusChange {
   repeated AgentActivityStatus activity_status_changes = 1;

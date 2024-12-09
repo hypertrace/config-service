@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 package ai.traceable.external.userattribution.config.service.v1;
-option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/userattribution/config/service/v1";
 
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/userattribution/config/service/v1";
 option java_multiple_files = true;
 
 message ExternalUserAttributionRules {

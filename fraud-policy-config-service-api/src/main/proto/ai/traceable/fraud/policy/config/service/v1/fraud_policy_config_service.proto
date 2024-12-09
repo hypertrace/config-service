@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.fraud.policy.config.service.v1;
 
-option java_multiple_files = true;
-
-import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
 import "ai/traceable/fraud/policy/config/service/v1/api_access_config.proto";
+import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
+
+option java_multiple_files = true;
 
 service FraudPolicyConfigService {
   rpc CreateFraudPolicy(CreateFraudPolicyRequest) returns (CreateFraudPolicyResponse) {}
@@ -72,13 +72,11 @@ message GetApiAccessAnomalyConfigResponse {
   ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig config = 1;
 }
 
-message GetApiAccessAnomalyConfigsRequest {
-}
+message GetApiAccessAnomalyConfigsRequest {}
 
 message GetApiAccessAnomalyConfigsResponse {
   repeated ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig configs = 1;
 }
-
 
 message CreateApiAccessAnomalyConfigRequest {
   repeated ai.traceable.fraud.policy.config.service.v1.GroupedConfig grouped_configs = 1;
@@ -100,5 +98,4 @@ message DeleteApiAccessAnomalyConfigRequest {
   string id = 1;
 }
 
-message DeleteApiAccessAnomalyConfigResponse {
-}
+message DeleteApiAccessAnomalyConfigResponse {}

@@ -125,8 +125,7 @@ message DeleteRegionRuleRequest {
   string id = 1;
 }
 
-message DeleteRegionRuleResponse {
-}
+message DeleteRegionRuleResponse {}
 
 message ExpirationDetails {
   oneof expiration {
@@ -157,7 +156,6 @@ message RegionRule {
     int64 timestamp_millis = 2;
   }
 }
-
 
 message RuleEffectWithModifications {
   oneof effect {

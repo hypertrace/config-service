@@ -35,7 +35,6 @@ message RegionSecurityPolicyScope {
   string region = 1;
 }
 
-
 message GcpAuthCredentials {
   EncryptedText encrypted_service_account_key = 1; // service account key of Json format.
   message EncryptedText {

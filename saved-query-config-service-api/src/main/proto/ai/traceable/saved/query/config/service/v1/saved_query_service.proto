@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.saved.query.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/saved/query/config/service/v1/saved_query.proto";
+
+option java_multiple_files = true;
 
 service SavedQueryService {
   // Create a new saved query
@@ -67,11 +67,9 @@ message DeleteSavedQueryRequest {
   string id = 1;
 }
 
-message DeleteSavedQueryResponse {
-}
+message DeleteSavedQueryResponse {}
 
-message GetAllSavedQueryUsersRequest {
-}
+message GetAllSavedQueryUsersRequest {}
 
 message GetAllSavedQueryUsersResponse {
   repeated User users = 1;

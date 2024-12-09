@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package ai.traceable.span.processing.config.service.v1;
 
-option java_multiple_files = true;
-
+import "ai/traceable/span/processing/config/service/v1/ingestion.proto";
 import "ai/traceable/span/processing/config/service/v1/sampling_configs.proto";
 import "ai/traceable/span/processing/config/service/v1/span_filter.proto";
-import "ai/traceable/span/processing/config/service/v1/ingestion.proto";
 import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 service SpanProcessingConfigService {
   rpc CreateProtectionSpanRule(CreateProtectionSpanRuleRequest) returns (CreateProtectionSpanRuleResponse) {}
@@ -34,29 +34,29 @@ service SpanProcessingConfigService {
 
   rpc UpdateDefaultProtectionSpanRuleEvaluationStatus(UpdateDefaultProtectionSpanRuleEvaluationStatusRequest) returns (UpdateDefaultProtectionSpanRuleEvaluationStatusResponse) {}
 
-  rpc CreateApiNamingRule (CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {}
+  rpc CreateApiNamingRule(CreateApiNamingRuleRequest) returns (CreateApiNamingRuleResponse) {}
 
-  rpc CreateApiNamingRules (CreateApiNamingRulesRequest) returns (CreateApiNamingRulesResponse) {}
+  rpc CreateApiNamingRules(CreateApiNamingRulesRequest) returns (CreateApiNamingRulesResponse) {}
 
-  rpc UpdateApiNamingRule (UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {}
+  rpc UpdateApiNamingRule(UpdateApiNamingRuleRequest) returns (UpdateApiNamingRuleResponse) {}
 
-  rpc UpdateApiNamingRules (UpdateApiNamingRulesRequest) returns (UpdateApiNamingRulesResponse) {}
+  rpc UpdateApiNamingRules(UpdateApiNamingRulesRequest) returns (UpdateApiNamingRulesResponse) {}
 
-  rpc GetAllApiNamingRules (GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {
+  rpc GetAllApiNamingRules(GetAllApiNamingRulesRequest) returns (GetAllApiNamingRulesResponse) {
     // Prefer using GetApiNamingRules
     option deprecated = true;
   }
 
-  rpc GetApiNamingRules (GetApiNamingRulesRequest) returns (GetApiNamingRulesResponse) {}
+  rpc GetApiNamingRules(GetApiNamingRulesRequest) returns (GetApiNamingRulesResponse) {}
 
-  rpc DeleteApiNamingRule (DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
+  rpc DeleteApiNamingRule(DeleteApiNamingRuleRequest) returns (DeleteApiNamingRuleResponse) {}
 
-  rpc DeleteApiNamingRules (DeleteApiNamingRulesRequest) returns (DeleteApiNamingRulesResponse) {}
+  rpc DeleteApiNamingRules(DeleteApiNamingRulesRequest) returns (DeleteApiNamingRulesResponse) {}
 
-  rpc GetServiceNamingRules (GetServiceNamingRulesRequest) returns (GetServiceNamingRulesResponse) {}
-  rpc CreateServiceNamingRule (CreateServiceNamingRuleRequest) returns (CreateServiceNamingRuleResponse) {}
-  rpc UpdateServiceNamingRule (UpdateServiceNamingRuleRequest) returns (UpdateServiceNamingRuleResponse) {}
-  rpc DeleteServiceNamingRule (DeleteServiceNamingRuleRequest) returns (DeleteServiceNamingRuleResponse) {}
+  rpc GetServiceNamingRules(GetServiceNamingRulesRequest) returns (GetServiceNamingRulesResponse) {}
+  rpc CreateServiceNamingRule(CreateServiceNamingRuleRequest) returns (CreateServiceNamingRuleResponse) {}
+  rpc UpdateServiceNamingRule(UpdateServiceNamingRuleRequest) returns (UpdateServiceNamingRuleResponse) {}
+  rpc DeleteServiceNamingRule(DeleteServiceNamingRuleRequest) returns (DeleteServiceNamingRuleResponse) {}
 
   rpc GetSpanIngestionConfig(GetSpanIngestionConfigRequest) returns (GetSpanIngestionConfigResponse) {}
   rpc CreateSpanIngestionRule(CreateSpanIngestionRuleRequest) returns (CreateSpanIngestionRuleResponse) {}
@@ -307,7 +307,7 @@ message JobBasedConfig {
 }
 
 message ApiSpecBasedConfig {
-  string api_spec_id = 1[deprecated = true];
+  string api_spec_id = 1 [deprecated = true];
   repeated string api_spec_ids = 4;
   repeated string regexes = 2;
   repeated string values = 3;
@@ -369,8 +369,7 @@ message DeleteServiceNamingRuleRequest {
   string id = 1;
 }
 
-message DeleteServiceNamingRuleResponse {
-}
+message DeleteServiceNamingRuleResponse {}
 
 message ServiceNamingRule {
   string id = 1;
@@ -427,12 +426,10 @@ message ServiceNamingRuleAction {
     string attribute_key = 1;
     string regex_capture_group = 2;
   }
-
 }
 message ServiceNamingRuleFilter {
   ServiceNamingRuleScope scope = 1;
 }
-
 
 message GetSpanIngestionConfigRequest {
   IngestionStage stage = 1;
@@ -479,8 +476,7 @@ message DeleteSpanIngestionRuleRequest {
   string id = 1;
 }
 
-message DeleteSpanIngestionRuleResponse {
-}
+message DeleteSpanIngestionRuleResponse {}
 
 message RankSpanIngestionRuleRequest {
   string id_to_update = 1;
@@ -488,5 +484,4 @@ message RankSpanIngestionRuleRequest {
   optional string preceding_rule_id = 2;
 }
 
-message RankSpanIngestionRuleResponse {
-}
+message RankSpanIngestionRuleResponse {}

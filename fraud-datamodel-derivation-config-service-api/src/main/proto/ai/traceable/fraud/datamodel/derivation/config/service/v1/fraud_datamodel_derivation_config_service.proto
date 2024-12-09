@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.fraud.datamodel.derivation.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/fraud/datamodel/derivation/config/service/v1/fraud_datamodel_derivation_config.proto";
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
 
 service FraudDataModelDerivationConfigService {
   rpc CreateDerivationConfig(CreateDerivationConfigRequest) returns (CreateDerivationConfigResponse) {}
@@ -20,8 +20,6 @@ service FraudDataModelDerivationConfigService {
   rpc UpdateUserAgentMergeMappingConfig(UpdateUserAgentMergeMappingConfigRequest) returns (UpdateUserAgentMergeMappingConfigResponse) {}
   rpc DeleteUserAgentMergeMappingConfig(DeleteUserAgentMergeMappingConfigRequest) returns (DeleteUserAgentMergeMappingConfigResponse) {}
 }
-
-
 
 message CreateDerivationConfigRequest {
   DerivationConfigType derivation_config_type = 1;
@@ -74,8 +72,7 @@ message DeleteDerivationConfigsRequest {
   string derivation_config_id = 2;
 }
 
-message DeleteDerivationConfigsResponse {
-}
+message DeleteDerivationConfigsResponse {}
 
 message CreateUserAgentMergeMappingConfigRequest {
   map<string, google.protobuf.ListValue> pairs = 2;
@@ -89,8 +86,7 @@ message CreateUserAgentMergeMappingConfigResponse {
   UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
 }
 
-message GetUserAgentMergeMappingConfigsRequest {
-}
+message GetUserAgentMergeMappingConfigsRequest {}
 
 message GetUserAgentMergeMappingConfigsResponse {
   repeated UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
@@ -105,7 +101,7 @@ message GetUserAgentMergeMappingConfigResponse {
 }
 
 message UpdateUserAgentMergeMappingConfigRequest {
-    UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
+  UserAgentMergeMappingConfig user_agent_merge_mapping_config = 1;
 }
 
 message UpdateUserAgentMergeMappingConfigResponse {
@@ -116,5 +112,4 @@ message DeleteUserAgentMergeMappingConfigRequest {
   string id = 1;
 }
 
-message DeleteUserAgentMergeMappingConfigResponse {
-}
+message DeleteUserAgentMergeMappingConfigResponse {}

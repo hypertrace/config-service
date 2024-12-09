@@ -4,8 +4,7 @@ package ai.traceable.threatmanagement.config.service.v1;
 
 option java_multiple_files = true;
 
-message GetThreatScoreBoundRequest {
-}
+message GetThreatScoreBoundRequest {}
 
 message GetThreatScoreBoundResponse {
   ThreatScoreBound threat_score_bound = 1;

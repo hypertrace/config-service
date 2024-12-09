@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.sensitivedata.config.service.v1;
 
-option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/sensitivedata/v1";
+option java_multiple_files = true;
 
 message PiiFilterConfig {
   RedactionStrategy redaction_strategy = 1;
@@ -27,8 +27,7 @@ message InvalidJsonPolicy {
   }
 }
 
-message DropUnparsedJsonPolicy {
-}
+message DropUnparsedJsonPolicy {}
 
 message PiiElement {
   string regex = 1;

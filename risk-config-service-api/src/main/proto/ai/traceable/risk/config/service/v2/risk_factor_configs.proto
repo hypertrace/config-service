@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.risk.config.service.v2;
 
-option java_multiple_files = true;
-
 import "ai/traceable/risk/config/service/v2/risk_element_configs.proto";
 import "ai/traceable/risk/config/service/v2/risk_scope.proto";
+
+option java_multiple_files = true;
 
 message RiskContributorConfigs {
   repeated RiskFactor risk_factors = 1;

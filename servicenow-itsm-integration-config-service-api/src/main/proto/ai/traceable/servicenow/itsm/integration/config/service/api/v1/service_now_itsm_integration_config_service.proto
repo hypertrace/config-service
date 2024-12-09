@@ -1,8 +1,9 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.servicenow.itsm.integration.config.service.api.v1;
 
 import "ai/traceable/servicenow/itsm/integration/config/service/api/v1/service_now_itsm_integration.proto";
+
+option java_multiple_files = true;
 
 service ServiceNowItsmIntegrationConfigService {
   rpc CreateServiceNowItsmIntegration(CreateServiceNowItsmIntegrationRequest) returns (CreateServiceNowItsmIntegrationResponse) {}

@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.detection.exclusion.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_rule.proto";
+
+option java_multiple_files = true;
 
 message CreateDetectionExclusionRuleRequest {
   DetectionExclusionRuleScope rule_scope = 1;
@@ -27,8 +27,7 @@ message DeleteDetectionExclusionRuleRequest {
   string id = 1;
 }
 
-message DeleteDetectionExclusionRuleResponse {
-}
+message DeleteDetectionExclusionRuleResponse {}
 
 message GetDetectionExclusionRulesRequest {
   GetRulesFilter filter = 1;
@@ -50,8 +49,7 @@ message BulkDeleteDetectionExclusionRulesRequest {
   repeated string ids = 1;
 }
 
-message BulkDeleteDetectionExclusionRulesResponse {
-}
+message BulkDeleteDetectionExclusionRulesResponse {}
 
 message GetRulesFilter {
   repeated string rule_ids = 1;
@@ -74,7 +72,7 @@ message DetectionExclusionMigrationConfig {
   bool change_log_4_migration_completed = 4;
 }
 
-message GetExclusionModsecRulesRequest{
+message GetExclusionModsecRulesRequest {
   GetRulesFilter rules_filter = 1;
   repeated string service_names = 2;
 }
@@ -94,7 +92,7 @@ message ModsecBlobData {
 message UpsertDetectionExclusionRuleData {
   DetectionExclusionRuleScope rule_scope = 1;
   DetectionExclusionRuleInfo rule_info = 2;
-  oneof id{
+  oneof id {
     bool uuid_from_name_and_source = 3;
     bool random_uuid = 4;
     string pre_defined_id = 5;

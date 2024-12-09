@@ -2,15 +2,15 @@ syntax = "proto3";
 
 package ai.traceable.sessionidentification.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/sessionidentification/config/service/v1/session_identification_rule.proto";
 
+option java_multiple_files = true;
+
 service SessionIdentificationConfigService {
-  rpc GetSessionIdentificationRules (GetSessionIdentificationRulesRequest) returns (GetSessionIdentificationRulesResponse) {}
-  rpc CreateSessionIdentificationRule (CreateSessionIdentificationRuleRequest) returns (CreateSessionIdentificationRuleResponse) {}
-  rpc UpdateSessionIdentificationRule (UpdateSessionIdentificationRuleRequest) returns (UpdateSessionIdentificationRuleResponse) {}
-  rpc DeleteSessionIdentificationRule (DeleteSessionIdentificationRuleRequest) returns (DeleteSessionIdentificationRuleResponse) {}
+  rpc GetSessionIdentificationRules(GetSessionIdentificationRulesRequest) returns (GetSessionIdentificationRulesResponse) {}
+  rpc CreateSessionIdentificationRule(CreateSessionIdentificationRuleRequest) returns (CreateSessionIdentificationRuleResponse) {}
+  rpc UpdateSessionIdentificationRule(UpdateSessionIdentificationRuleRequest) returns (UpdateSessionIdentificationRuleResponse) {}
+  rpc DeleteSessionIdentificationRule(DeleteSessionIdentificationRuleRequest) returns (DeleteSessionIdentificationRuleResponse) {}
 }
 
 message GetSessionIdentificationRulesRequest {
@@ -58,5 +58,4 @@ message DeleteSessionIdentificationRuleRequest {
   string id = 1;
 }
 
-message DeleteSessionIdentificationRuleResponse {
-}
+message DeleteSessionIdentificationRuleResponse {}

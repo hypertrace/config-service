@@ -2,18 +2,18 @@ syntax = "proto3";
 
 package ai.traceable.ast.scan.profile.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/ast/scan/profile/config/service/v1/scan_profile.proto";
 
+option java_multiple_files = true;
+
 service ScanProfileConfigService {
-  rpc CreateScanProfile (CreateScanProfileRequest) returns (CreateScanProfileResponse) {}
+  rpc CreateScanProfile(CreateScanProfileRequest) returns (CreateScanProfileResponse) {}
 
-  rpc UpdateScanProfile (UpdateScanProfileRequest) returns (UpdateScanProfileResponse) {}
+  rpc UpdateScanProfile(UpdateScanProfileRequest) returns (UpdateScanProfileResponse) {}
 
-  rpc GetScanProfiles (GetScanProfilesRequest) returns (GetScanProfilesResponse) {}
+  rpc GetScanProfiles(GetScanProfilesRequest) returns (GetScanProfilesResponse) {}
 
-  rpc DeleteScanProfiles (DeleteScanProfilesRequest) returns (DeleteScanProfilesResponse) {}
+  rpc DeleteScanProfiles(DeleteScanProfilesRequest) returns (DeleteScanProfilesResponse) {}
 }
 
 // Requests.
@@ -48,9 +48,7 @@ message GetScanProfilesResponse {
   repeated ScanProfile scan_profiles = 1;
 }
 
-message DeleteScanProfilesResponse {
-}
-
+message DeleteScanProfilesResponse {}
 
 message UpsertScanProfile {
   string description = 1;

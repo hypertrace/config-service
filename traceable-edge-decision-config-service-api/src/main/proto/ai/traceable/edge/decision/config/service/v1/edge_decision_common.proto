@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.edge.decision.config.service.v1;
 
-option java_multiple_files = true;
-
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/duration.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 message GenericMatchCondition {
   oneof condition {

@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.ast.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/ast/config/service/v1/ast.proto";
+
+option java_multiple_files = true;
 
 message GetAllCustomTestPluginsRequest {
   CustomTestPluginFilter filter = 1;

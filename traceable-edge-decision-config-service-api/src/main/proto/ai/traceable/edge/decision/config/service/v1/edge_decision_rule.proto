@@ -2,14 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.edge.decision.config.service.v1;
 
-option java_multiple_files = true;
-
-import "google/protobuf/struct.proto";
-import "google/protobuf/duration.proto";
-import "google/protobuf/timestamp.proto";
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
+option java_multiple_files = true;
 
 // represents a single risk decision rule that can be evaluated by risk decision engine
 // Given a payload, configure how to determine the risk:
@@ -165,7 +164,7 @@ message AccessPatternRule {
   MatchCondition target_request = 3;
 
   // what other requests do we expect in this window, before the target is invoked
-  repeated RequestInvocation pre_requests = 4;  // Collection of requests that are expected.
+  repeated RequestInvocation pre_requests = 4; // Collection of requests that are expected.
   // what is the time window for grouping
   google.protobuf.Duration time_window = 5;
   // what is the probability of no other api being there in this window?
@@ -183,18 +182,18 @@ message ValueAggregateThreshold {
   ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping dimension = 1;
 
   enum AggregationType {
-    AGGREGATION_TYPE_UNSPECIFIED = 0;           // Count the total number of events
-    AGGREGATION_TYPE_COUNT = 1;           // Count the total number of events
-    AGGREGATION_TYPE_DISTINCT_COUNT = 2;  // Count distinct values of specified dimensions
-    AGGREGATION_TYPE_SUM = 3;             // Sum of attribute values
-    AGGREGATION_TYPE_AVG = 4;             // Average of attribute values
-    AGGREGATION_TYPE_MAX = 5;             // Maximum attribute value
-    AGGREGATION_TYPE_MIN = 6;             // Minimum attribute value
+    AGGREGATION_TYPE_UNSPECIFIED = 0; // Count the total number of events
+    AGGREGATION_TYPE_COUNT = 1; // Count the total number of events
+    AGGREGATION_TYPE_DISTINCT_COUNT = 2; // Count distinct values of specified dimensions
+    AGGREGATION_TYPE_SUM = 3; // Sum of attribute values
+    AGGREGATION_TYPE_AVG = 4; // Average of attribute values
+    AGGREGATION_TYPE_MAX = 5; // Maximum attribute value
+    AGGREGATION_TYPE_MIN = 6; // Minimum attribute value
   }
 
   AggregationType aggregation_type = 2;
   oneof threshold {
-    double static_threshold = 3;  // The threshold for the aggregated value
+    double static_threshold = 3; // The threshold for the aggregated value
   }
   // this must be a conscious choice of the consumer - higher resource usage if estimates are disabled for aggregations
   // by default: decision engine may use probabilistic data structures for providing aggregate values

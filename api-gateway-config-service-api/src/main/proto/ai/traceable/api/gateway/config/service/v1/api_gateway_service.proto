@@ -2,29 +2,23 @@ syntax = "proto3";
 
 package ai.traceable.api.gateway.config.service.v1;
 
+import "ai/traceable/api/gateway/config/service/v1/api_gateway.proto";
+import "ai/traceable/api/gateway/config/service/v1/api_route.proto";
+
 option java_multiple_files = true;
 
-import "ai/traceable/api/gateway/config/service/v1/api_route.proto";
-import "ai/traceable/api/gateway/config/service/v1/api_gateway.proto";
-
 service ApiGatewayConfigService {
-  rpc CreateRoutes (CreateRoutesRequest) returns (CreateRoutesResponse) {
-  }
+  rpc CreateRoutes(CreateRoutesRequest) returns (CreateRoutesResponse) {}
 
-  rpc GetRoutes (GetRoutesRequest) returns (GetRoutesResponse) {
-  }
+  rpc GetRoutes(GetRoutesRequest) returns (GetRoutesResponse) {}
 
-  rpc DeleteRoutes (DeleteRoutesRequest) returns (DeleteRoutesResponse) {
-  }
+  rpc DeleteRoutes(DeleteRoutesRequest) returns (DeleteRoutesResponse) {}
 
-  rpc CreateMetadata (CreateMetadataRequest) returns (CreateMetadataResponse) {
-  }
+  rpc CreateMetadata(CreateMetadataRequest) returns (CreateMetadataResponse) {}
 
-  rpc GetMetadata (GetMetadataRequest) returns (GetMetadataResponse) {
-  }
+  rpc GetMetadata(GetMetadataRequest) returns (GetMetadataResponse) {}
 
-  rpc DeleteMetadata (DeleteMetadataRequest) returns (DeleteMetadataResponse) {
-  }
+  rpc DeleteMetadata(DeleteMetadataRequest) returns (DeleteMetadataResponse) {}
 }
 
 message GetRoutesRequest {
@@ -47,9 +41,7 @@ message DeleteRoutesRequest {
   ApiRouteFilter filter = 1;
 }
 
-message DeleteRoutesResponse {
-
-}
+message DeleteRoutesResponse {}
 
 message ApiRouteFilter {
   oneof type {
@@ -73,9 +65,7 @@ message CreateMetadataRequest {
   ConfigMetadata config_metadata = 1;
 }
 
-message CreateMetadataResponse {
-
-}
+message CreateMetadataResponse {}
 
 message GetMetadataRequest {
   MetadataFilter metadata_filter = 1;
@@ -89,9 +79,7 @@ message DeleteMetadataRequest {
   MetadataFilter metadata_filter = 1;
 }
 
-message DeleteMetadataResponse {
-
-}
+message DeleteMetadataResponse {}
 
 message MetadataFilter {
   oneof type {

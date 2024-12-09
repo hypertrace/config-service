@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 package ai.traceable.external.agent.attribute.config.service.v1;
-option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/agent/attribute/config/service/v1";
 
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/agent/attribute/config/service/v1";
 option java_multiple_files = true;
 
 message AttributeRule {
@@ -30,7 +30,7 @@ message AttributeRule {
     }
 
     // adds or appends value as an array to an attribute
-    message AttributeArrayAppend{
+    message AttributeArrayAppend {
       // attribute key to append to (will add if not present)
       string attribute_key = 1;
       // rule to get the value to append

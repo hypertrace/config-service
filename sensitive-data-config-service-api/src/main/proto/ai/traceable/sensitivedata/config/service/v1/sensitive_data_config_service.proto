@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.sensitivedata.config.service.v1;
 
-option go_package = "github.com/Traceableai/config-service/sensitivedata/v1";
-option java_multiple_files = true;
-
 import "ai/traceable/sensitivedata/config/service/v1/pii_filter_config.proto";
 import "ai/traceable/sensitivedata/config/service/v1/redaction_rule.proto";
+
+option go_package = "github.com/Traceableai/config-service/sensitivedata/v1";
+option java_multiple_files = true;
 
 service SensitiveDataConfigService {
   // update the redaction strategy for the specified parameter type

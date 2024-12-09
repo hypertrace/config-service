@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.alerting.config.service.v2;
 
+option java_multiple_files = true;
+
 message DetectedSecurityEventCondition {
-  repeated SecurityEventType event_types = 1 [deprecated=true];
+  repeated SecurityEventType event_types = 1 [deprecated = true];
   repeated SecurityEventSeverity severities = 2;
   repeated DetectedThreatActivityCondition threat_activity_conditions = 3;
   repeated SecurityEventImpactLevel impact_levels = 4;
@@ -57,7 +57,7 @@ enum SecurityEventType {
   SECURITY_EVENT_TYPE_KNOWN_VULNERABILITIES = 5;
   SECURITY_EVENT_TYPE_REQUEST_RESPONSE_METADATA_ANOMALIES = 6;
   SECURITY_EVENT_TYPE_INJECTIONS = 7;
-  SECURITY_EVENT_TYPE_PARAMETER_ANOMALIES =8;
+  SECURITY_EVENT_TYPE_PARAMETER_ANOMALIES = 8;
   SECURITY_EVENT_TYPE_AUTHORIZATION_VIOLATIONS = 9;
   SECURITY_EVENT_TYPE_RATE_LIMITING = 10;
   SECURITY_EVENT_TYPE_SSRF = 11;

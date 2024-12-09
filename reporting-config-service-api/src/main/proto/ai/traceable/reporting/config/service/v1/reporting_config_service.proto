@@ -1,11 +1,10 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.reporting.config.service.v1;
 
 import "ai/traceable/reporting/config/service/v1/reporting_config.proto";
 
+option java_multiple_files = true;
 
 service ReportingConfigService {
   rpc CreateReportConfiguration(CreateReportConfigurationRequest) returns (CreateReportConfigurationResponse) {}
@@ -32,8 +31,7 @@ message UpdateReportConfigurationResponse {
   ReportConfiguration report_configuration = 1;
 }
 
-message GetAllReportConfigurationsRequest {
-}
+message GetAllReportConfigurationsRequest {}
 
 message GetAllReportConfigurationsResponse {
   repeated ReportConfiguration report_configurations = 1;

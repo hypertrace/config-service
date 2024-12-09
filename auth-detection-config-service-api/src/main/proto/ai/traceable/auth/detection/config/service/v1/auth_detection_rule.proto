@@ -100,5 +100,4 @@ message UpdateAuthDetectionRuleResponse {
 message DeleteAuthDetectionRuleRequest {
   string id = 1;
 }
-message DeleteAuthDetectionRuleResponse {
-}
+message DeleteAuthDetectionRuleResponse {}

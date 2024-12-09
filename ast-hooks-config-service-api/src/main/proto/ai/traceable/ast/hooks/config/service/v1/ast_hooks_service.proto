@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.ast.hooks.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/ast/hooks/config/service/v1/ast_hook.proto";
 import "ai/traceable/ast/hooks/config/service/v1/ast_hook_test.proto";
+
+option java_multiple_files = true;
 
 service AstHooksConfigService {
   rpc CreateAstHook(CreateAstHookRequest) returns (CreateAstHookResponse);
@@ -44,17 +44,13 @@ message CreateAstHookResponse {
 }
 
 message DeleteAstHookRequest {
-  string id = 1 [deprecated=true];
+  string id = 1 [deprecated = true];
   repeated string ids = 2;
 }
 
-message DeleteAstHookResponse {
+message DeleteAstHookResponse {}
 
-}
-
-message GetAllAstHooksRequest {
-
-}
+message GetAllAstHooksRequest {}
 
 message GetAllAstHooksResponse {
   repeated AstHook ast_hooks = 1;

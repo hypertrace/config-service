@@ -2,28 +2,20 @@ syntax = "proto3";
 
 package ai.traceable.risk.config.service.v2;
 
-option java_multiple_files = true;
-
 import "ai/traceable/risk/config/service/v2/risk_config_request_response.proto";
 
+option java_multiple_files = true;
 
 service RiskConfigService {
+  rpc GetRiskScoringGridConfig(GetRiskScoringGridConfigRequest) returns (GetRiskScoringGridConfigResponse) {}
 
-  rpc GetRiskScoringGridConfig (GetRiskScoringGridConfigRequest) returns (GetRiskScoringGridConfigResponse) {
-  }
+  rpc UpdateRiskScoringGridConfig(UpdateRiskScoringGridConfigRequest) returns (UpdateRiskScoringGridConfigResponse) {}
 
-  rpc UpdateRiskScoringGridConfig (UpdateRiskScoringGridConfigRequest) returns (UpdateRiskScoringGridConfigResponse) {
-  }
+  rpc ResetRiskScoringGridConfig(ResetRiskScoringGridConfigRequest) returns (ResetRiskScoringGridConfigResponse) {}
 
-  rpc ResetRiskScoringGridConfig (ResetRiskScoringGridConfigRequest) returns (ResetRiskScoringGridConfigResponse) {
-  }
+  rpc GetRiskContributorConfigs(GetRiskContributorConfigsRequest) returns (GetRiskContributorConfigsResponse) {}
 
-  rpc GetRiskContributorConfigs (GetRiskContributorConfigsRequest) returns (GetRiskContributorConfigsResponse) {
-  }
+  rpc UpdateRiskContributorConfigs(UpdateRiskContributorConfigsRequest) returns (UpdateRiskContributorConfigsResponse) {}
 
-  rpc UpdateRiskContributorConfigs (UpdateRiskContributorConfigsRequest) returns (UpdateRiskContributorConfigsResponse) {
-  }
-
-  rpc ResetRiskContributorConfigs (ResetRiskContributorConfigsRequest) returns (ResetRiskContributorConfigsResponse) {
-  }
+  rpc ResetRiskContributorConfigs(ResetRiskContributorConfigsRequest) returns (ResetRiskContributorConfigsResponse) {}
 }

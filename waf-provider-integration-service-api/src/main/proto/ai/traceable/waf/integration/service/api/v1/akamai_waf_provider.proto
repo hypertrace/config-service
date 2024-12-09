@@ -12,7 +12,6 @@ message AkamaiIntegrationUpdateParams {
   AkamaiIntegrationDetails akamai_integration_details = 1;
 }
 
-
 message AkamaiIntegrationDetails {
   string host = 1; // Host is specific to the customer and is part of the Edge Grid authentication credentials used in the URL.
   AkamaiPolicyDetails akamai_policy_details = 2;

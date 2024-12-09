@@ -3,13 +3,11 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.detector;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomaly/config/service/v1/detector/anomaly_detection_config.proto";
 
+option java_multiple_files = true;
 
 service DetectorConfigService {
-
   rpc GetScopedAnomalyDetectionConfig(GetScopedAnomalyDetectionConfigRequest) returns (GetScopedAnomalyDetectionConfigResponse) {}
 
   rpc GetAllScopedAnomalyDetectionConfigs(GetAllScopedAnomalyDetectionConfigsRequest) returns (GetAllScopedAnomalyDetectionConfigsResponse) {}
@@ -25,5 +23,4 @@ service DetectorConfigService {
   rpc DeleteScopedAnomalyDetectionConfig(DeleteScopedAnomalyDetectionConfigRequest) returns (DeleteScopedAnomalyDetectionConfigResponse) {}
 
   rpc UpdateScopedAnomalyDetectionConfig(UpdateScopedAnomalyDetectionConfigRequest) returns (UpdateScopedAnomalyDetectionConfigResponse) {}
-
 }

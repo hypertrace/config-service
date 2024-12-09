@@ -1,10 +1,11 @@
 syntax = "proto3";
 
 package ai.traceable.fraud.query.model.v1;
-option java_multiple_files = true;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
 import "ai/traceable/fraud/query/model/v1/fraud_entity_graph_query.proto";
+
+option java_multiple_files = true;
 
 // this is the building block for fetching data from the underlying stores.
 message DataQuery {
@@ -210,8 +211,16 @@ message EntityQueryProjection {
 }
 
 message SortAndLimit {
-  enum SortOrder { SORT_ORDER_UNSPECIFIED = 0; SORT_ORDER_ASC = 1; SORT_ORDER_DESC = 2; }
-  enum SortOptions { SORT_OPTIONS_UNSPECIFIED = 0; SORT_OPTIONS_NUMERIC = 1; SORT_OPTIONS_IGNORE_CASE = 2; }
+  enum SortOrder {
+    SORT_ORDER_UNSPECIFIED = 0;
+    SORT_ORDER_ASC = 1;
+    SORT_ORDER_DESC = 2;
+  }
+  enum SortOptions {
+    SORT_OPTIONS_UNSPECIFIED = 0;
+    SORT_OPTIONS_NUMERIC = 1;
+    SORT_OPTIONS_IGNORE_CASE = 2;
+  }
   string field_name = 1;
   SortOrder sort_order = 2;
   SortOptions sort_options = 3;

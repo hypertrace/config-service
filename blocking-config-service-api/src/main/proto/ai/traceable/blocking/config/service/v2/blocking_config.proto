@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.blocking.config.service.v2;
 
-option java_multiple_files = true;
-option go_package = "github.com/Traceableai/config-service/blocking/v2";
-
 import "ai/traceable/blocking/config/service/v2/blocking_policy_configuration.proto";
 import "google/protobuf/duration.proto";
+
+option go_package = "github.com/Traceableai/config-service/blocking/v2";
+option java_multiple_files = true;
 
 message GetBlockingRulesRequest {
   string environment = 1;
@@ -54,7 +54,7 @@ message Component {
     string libtraceable_version = 1;
     string traceable_platform_agent_version = 2;
     string service_name = 3;
-   }
+  }
 }
 
 message RegionBlockingRulesRequest {}

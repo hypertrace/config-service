@@ -2,24 +2,19 @@ syntax = "proto3";
 
 package ai.traceable.anomalyscoring.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomalyscoring/config/service/v1/anomaly_scoring_config.proto";
 
+option java_multiple_files = true;
+
 service AnomalyScoringConfigService {
+  rpc GetAnomalyScoringConfig(GetAnomalyScoringConfigRequest) returns (GetAnomalyScoringConfigResponse) {}
 
-  rpc GetAnomalyScoringConfig (GetAnomalyScoringConfigRequest) returns (GetAnomalyScoringConfigResponse) {
-  }
+  rpc UpdateImpactScoringConfig(UpdateImpactScoringConfigRequest) returns (UpdateImpactScoringConfigResponse) {}
 
-  rpc UpdateImpactScoringConfig (UpdateImpactScoringConfigRequest) returns (UpdateImpactScoringConfigResponse) {
-  }
-
-  rpc UpdateConfidenceScoringConfig (UpdateConfidenceScoringConfigRequest) returns (UpdateConfidenceScoringConfigResponse) {
-  }
+  rpc UpdateConfidenceScoringConfig(UpdateConfidenceScoringConfigRequest) returns (UpdateConfidenceScoringConfigResponse) {}
 }
 
-message GetAnomalyScoringConfigRequest {
-}
+message GetAnomalyScoringConfigRequest {}
 
 message GetAnomalyScoringConfigResponse {
   AnomalyScoringConfig anomaly_scoring_config = 1;

@@ -12,7 +12,6 @@ message FortinetIntegrationUpdateParams {
   FortinetIntegrationDetails fortinet_integration_details = 1;
 }
 
-
 message FortinetIntegrationDetails {
   FortinetRuleDetails fortinet_rule_details = 1;
   FortinetAuthCredentials fortinet_auth_credentials = 2;

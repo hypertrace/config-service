@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.saved.filter.config.service.v1;
 
-option java_multiple_files = true;
-
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 message SavedFilter {
   // Unique ID generated for a saved filter
@@ -35,11 +35,9 @@ message Visibility {
   }
 }
 
-message PrivateVisibility {
-}
+message PrivateVisibility {}
 
-message PublicVisibility {
-}
+message PublicVisibility {}
 
 message FilterCriteria {
   oneof filter_condition {

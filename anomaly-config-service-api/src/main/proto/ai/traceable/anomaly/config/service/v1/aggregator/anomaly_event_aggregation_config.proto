@@ -3,10 +3,10 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.aggregator;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 import "google/protobuf/duration.proto";
+
+option java_multiple_files = true;
 
 message UpdateScopedAnomalyEventAggregationConfigRequest {
   ScopedAnomalyEventAggregationConfig scoped_anomaly_event_aggregation_config = 1;

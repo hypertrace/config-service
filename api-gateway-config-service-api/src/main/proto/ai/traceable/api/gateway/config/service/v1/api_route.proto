@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.api.gateway.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/api/gateway/config/service/v1/api_gateway.proto";
+
+option java_multiple_files = true;
 
 message ApiRoute {
   string id = 1;

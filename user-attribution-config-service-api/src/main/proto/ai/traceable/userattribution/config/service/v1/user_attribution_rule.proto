@@ -19,8 +19,7 @@ message UserAttributionRuleScope {
     CustomScope custom_scope = 2;
   }
 
-  message SystemWideScope {
-  }
+  message SystemWideScope {}
 
   message CustomScope {
     repeated EnvironmentScope environment_scopes = 1;
@@ -42,7 +41,7 @@ message UserAttributionRuleData {
     JwtUserAttributionRuleData jwt_data = 2;
     ResponseBodyUserAttributionRuleData response_body_data = 3;
     RequestHeaderUserAttributionRuleData request_header_data = 4;
-    CustomUserAttributionRuleData custom_data = 5;  // custom yaml rule
+    CustomUserAttributionRuleData custom_data = 5; // custom yaml rule
     CustomTokenRuleData custom_token_data = 6;
     CustomJsonUserAttributionRuleData custom_json_data = 7; // custom json rule
   }

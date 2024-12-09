@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.risk.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/risk/config/service/v1/risk_element_configs.proto";
+
+option java_multiple_files = true;
 
 message RiskContributorConfigs {
   repeated RiskFactor risk_factors = 1;
@@ -42,12 +42,12 @@ enum RiskFactorType {
 }
 
 message RiskFactorScoring {
-   bool disabled = 1;
-   RiskFactorScoreContribution score_contribution = 2;
+  bool disabled = 1;
+  RiskFactorScoreContribution score_contribution = 2;
 }
 
 enum RiskFactorScoreContribution {
-  RISK_FACTOR_SCORE_CONTRIBUTION_UNSPECIFIED = 0;  // default
+  RISK_FACTOR_SCORE_CONTRIBUTION_UNSPECIFIED = 0; // default
   RISK_FACTOR_SCORE_CONTRIBUTION_ABSOLUTE = 1; // If present, likelihood/impact must resolve to exactly this value
 }
 

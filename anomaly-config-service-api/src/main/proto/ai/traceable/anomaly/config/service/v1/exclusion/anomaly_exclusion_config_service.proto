@@ -3,21 +3,17 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.exclusion;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomaly/config/service/v1/exclusion/anomaly_exclusion_config.proto";
 
-service AnomalyExclusionConfigService {
-  rpc CreateAnomalyExclusionRule (CreateAnomalyExclusionRuleRequest) returns (CreateAnomalyExclusionRuleResponse) {
-  }
+option java_multiple_files = true;
 
-  rpc GetAnomalyExclusionRules (GetAnomalyExclusionRulesRequest) returns (GetAnomalyExclusionRulesResponse) {
-  }
+service AnomalyExclusionConfigService {
+  rpc CreateAnomalyExclusionRule(CreateAnomalyExclusionRuleRequest) returns (CreateAnomalyExclusionRuleResponse) {}
+
+  rpc GetAnomalyExclusionRules(GetAnomalyExclusionRulesRequest) returns (GetAnomalyExclusionRulesResponse) {}
 
   // Update should only support editing of name and description and rule status
-  rpc UpdateAnomalyExclusionRule (UpdateAnomalyExclusionRuleRequest) returns (UpdateAnomalyExclusionRuleResponse) {
-  }
+  rpc UpdateAnomalyExclusionRule(UpdateAnomalyExclusionRuleRequest) returns (UpdateAnomalyExclusionRuleResponse) {}
 
-  rpc DeleteAnomalyExclusionRule (DeleteAnomalyExclusionRuleRequest) returns (DeleteAnomalyExclusionRuleResponse) {
-  }
+  rpc DeleteAnomalyExclusionRule(DeleteAnomalyExclusionRuleRequest) returns (DeleteAnomalyExclusionRuleResponse) {}
 }

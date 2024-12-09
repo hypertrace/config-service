@@ -1,15 +1,14 @@
 syntax = "proto3";
 
 package ai.traceable.external.wasm.config.service.v1;
-option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/wasm/config/service/v1";
-
-option java_multiple_files = true;
 
 import "google/protobuf/duration.proto";
 
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/wasm/config/service/v1";
+option java_multiple_files = true;
+
 service ExternalWasmConfigService {
-  rpc GetWasmModules (GetWasmModulesRequest) returns (GetWasmModulesResponse) {
-  }
+  rpc GetWasmModules(GetWasmModulesRequest) returns (GetWasmModulesResponse) {}
 }
 
 message GetWasmModulesRequest {

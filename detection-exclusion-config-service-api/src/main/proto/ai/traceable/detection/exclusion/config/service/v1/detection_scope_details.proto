@@ -4,7 +4,6 @@ package ai.traceable.detection.exclusion.config.service.v1;
 
 option java_multiple_files = true;
 
-
 message EntityScope {
   EntityType entity_type = 1;
   repeated string entity_ids = 2;
@@ -15,7 +14,7 @@ message LabelScope {
   repeated string label_ids = 2;
 }
 
-message UrlScope{
+message UrlScope {
   repeated string url_regexes = 1;
 }
 

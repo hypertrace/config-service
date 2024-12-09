@@ -3,32 +3,23 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.global;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomaly/config/service/v1/global/anomaly_global_config.proto";
 
+option java_multiple_files = true;
 
 service AnomalyGlobalConfigService {
+  rpc GetScopedAnomalyGlobalConfigStatus(GetScopedAnomalyGlobalConfigStatusRequest) returns (GetScopedAnomalyGlobalConfigStatusResponse) {}
 
-  rpc GetScopedAnomalyGlobalConfigStatus (GetScopedAnomalyGlobalConfigStatusRequest) returns (GetScopedAnomalyGlobalConfigStatusResponse) {
-  }
+  rpc GetAllScopedAnomalyGlobalConfigStatus(GetAllScopedAnomalyGlobalConfigStatusRequest) returns (GetAllScopedAnomalyGlobalConfigStatusResponse) {}
 
-  rpc GetAllScopedAnomalyGlobalConfigStatus (GetAllScopedAnomalyGlobalConfigStatusRequest) returns (GetAllScopedAnomalyGlobalConfigStatusResponse) {
-  }
+  rpc GetUnresolvedScopedAnomalyGlobalConfigStatus(GetUnresolvedScopedAnomalyGlobalConfigStatusRequest) returns (GetUnresolvedScopedAnomalyGlobalConfigStatusResponse) {}
 
-  rpc GetUnresolvedScopedAnomalyGlobalConfigStatus (GetUnresolvedScopedAnomalyGlobalConfigStatusRequest) returns (GetUnresolvedScopedAnomalyGlobalConfigStatusResponse) {
-  }
+  rpc GetAllUnresolvedScopedAnomalyGlobalConfigStatus(GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest) returns (GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse) {}
 
-  rpc GetAllUnresolvedScopedAnomalyGlobalConfigStatus (GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest) returns (GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse) {
-  }
-
-  rpc UpdateScopedAnomalyGlobalConfigStatus (UpdateScopedAnomalyGlobalConfigStatusRequest) returns (UpdateScopedAnomalyGlobalConfigStatusResponse) {
-  }
+  rpc UpdateScopedAnomalyGlobalConfigStatus(UpdateScopedAnomalyGlobalConfigStatusRequest) returns (UpdateScopedAnomalyGlobalConfigStatusResponse) {}
 
   // tenant-agnostic
-  rpc GetAnomalyRuleInfos (GetAnomalyRuleInfosRequest) returns (GetAnomalyRuleInfosResponse) {
-  }
+  rpc GetAnomalyRuleInfos(GetAnomalyRuleInfosRequest) returns (GetAnomalyRuleInfosResponse) {}
 
-  rpc DeleteScopedAnomalyGlobalConfigStatus (DeleteScopedAnomalyGlobalConfigStatusRequest) returns (DeleteScopedAnomalyGlobalConfigStatusResponse) {
-  }
+  rpc DeleteScopedAnomalyGlobalConfigStatus(DeleteScopedAnomalyGlobalConfigStatusRequest) returns (DeleteScopedAnomalyGlobalConfigStatusResponse) {}
 }

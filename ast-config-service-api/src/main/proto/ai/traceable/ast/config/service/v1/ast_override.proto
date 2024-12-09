@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package ai.traceable.ast.config.service.v1;
 
-option java_multiple_files = true;
-
-import "google/protobuf/timestamp.proto";
-import "ai/traceable/ast/config/service/v1/mutation_override.proto";
 import "ai/traceable/ast/config/service/v1/assertion_override.proto";
 import "ai/traceable/ast/config/service/v1/ast_override_scope.proto";
+import "ai/traceable/ast/config/service/v1/mutation_override.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 message AstOverride {
   string id = 1;

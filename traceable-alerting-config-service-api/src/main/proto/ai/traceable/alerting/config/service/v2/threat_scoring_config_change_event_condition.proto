@@ -1,9 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.alerting.config.service.v2;
 
+option java_multiple_files = true;
 
 enum ThreatScoringConfigType {
   THREAT_SCORING_CONFIG_TYPE_UNSPECIFIED = 0;

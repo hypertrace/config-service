@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.ast.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/ast/config/service/v1/ast_override.proto";
 import "ai/traceable/ast/config/service/v1/ast_override_scope.proto";
+
+option java_multiple_files = true;
 
 message GetAstOverridesRequest {
   AstOverrideFilter filter = 1;

@@ -1,12 +1,11 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.github.integration.config.service.v1;
 
+option java_multiple_files = true;
 
 service GithubIntegrationConfigService {
-  rpc GetGithubIntegrations (GetGithubIntegrationsRequest) returns (GetGithubIntegrationsResponse) {}
+  rpc GetGithubIntegrations(GetGithubIntegrationsRequest) returns (GetGithubIntegrationsResponse) {}
 }
-
 
 message GetGithubIntegrationsRequest {
   GithubIntegrationFilter filter = 1;

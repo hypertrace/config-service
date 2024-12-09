@@ -42,5 +42,4 @@ message ApiScope {
   repeated string api_ids = 2;
 }
 
-message TenantScope {
-}
+message TenantScope {}

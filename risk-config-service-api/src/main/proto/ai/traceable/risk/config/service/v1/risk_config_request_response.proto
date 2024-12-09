@@ -2,29 +2,25 @@ syntax = "proto3";
 
 package ai.traceable.risk.config.service.v1;
 
+import "ai/traceable/risk/config/service/v1/risk_factor_configs.proto";
+import "ai/traceable/risk/config/service/v1/risk_scoring_configs.proto";
+
 option java_multiple_files = true;
 
-import "ai/traceable/risk/config/service/v1/risk_scoring_configs.proto";
-import "ai/traceable/risk/config/service/v1/risk_factor_configs.proto";
-
-
-message GetRiskScoringConfigsRequest {
-}
+message GetRiskScoringConfigsRequest {}
 
 message GetRiskScoringConfigsResponse {
   RiskLevelConfig risk_level_config = 1;
   RiskFactorGridConfig risk_factor_grid_config = 2;
 }
 
-message GetRiskLikelihoodConfigsRequest {
-}
+message GetRiskLikelihoodConfigsRequest {}
 
 message GetRiskLikelihoodConfigsResponse {
   RiskContributorConfigs risk_likelihood_configs = 1;
 }
 
-message GetRiskImpactConfigsRequest {
-}
+message GetRiskImpactConfigsRequest {}
 
 message GetRiskImpactConfigsResponse {
   RiskContributorConfigs risk_impact_configs = 1;
@@ -62,15 +58,13 @@ message UpdateRiskImpactConfigsResponse {
   RiskContributorConfigs risk_impact_configs = 1;
 }
 
-message ResetRiskLevelConfigRequest {
-}
+message ResetRiskLevelConfigRequest {}
 
 message ResetRiskLevelConfigResponse {
   RiskLevelConfig risk_level_config = 1;
 }
 
-message ResetRiskFactorGridConfigRequest {
-}
+message ResetRiskFactorGridConfigRequest {}
 
 message ResetRiskFactorGridConfigResponse {
   RiskFactorGridConfig risk_factor_grid_config = 1;

@@ -46,8 +46,7 @@ message DeleteSplunkIntegrationRequest {
   string id = 1;
 }
 
-message DeleteSplunkIntegrationResponse {
-}
+message DeleteSplunkIntegrationResponse {}
 
 message SplunkIntegrationDetails {
   string name = 1;

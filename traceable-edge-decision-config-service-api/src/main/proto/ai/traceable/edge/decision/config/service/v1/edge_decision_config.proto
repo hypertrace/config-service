@@ -2,13 +2,12 @@ syntax = "proto3";
 
 package ai.traceable.edge.decision.config.service.v1;
 
-option java_multiple_files = true;
-
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
-import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 import "google/protobuf/struct.proto";
 
+option java_multiple_files = true;
 
 // this is the overall config for the edge decision engine.
 message EdgeDecisionEngineConfig {

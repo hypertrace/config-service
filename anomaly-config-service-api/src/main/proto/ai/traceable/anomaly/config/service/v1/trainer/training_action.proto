@@ -2,6 +2,7 @@ syntax = "proto3";
 
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.trainer;
+
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 
 option java_multiple_files = true;
@@ -15,8 +16,7 @@ message UpsertTrainingActionResponse {
   ScopedTrainingActionConfig scoped_training_action_config = 1;
 }
 
-message GetAllTrainingActionsRequest {
-}
+message GetAllTrainingActionsRequest {}
 
 message GetAllTrainingActionsResponse {
   repeated ScopedTrainingActionConfig scoped_training_action_configs = 1;
@@ -26,8 +26,7 @@ message DeleteTrainingActionRequest {
   AnomalyConfigScope config_scope = 1;
 }
 
-message DeleteTrainingActionResponse {
-}
+message DeleteTrainingActionResponse {}
 
 message ScopedTrainingActionConfig {
   AnomalyConfigScope config_scope = 1;
@@ -50,18 +49,15 @@ message TrainingAction {
   }
 }
 
-message PauseAction {
-}
+message PauseAction {}
 
-message ResumeAction {
-}
+message ResumeAction {}
 
 message ForceLearnAction {
   ThresholdFamily threshold_family = 1;
 }
 
-message ResetAction {
-}
+message ResetAction {}
 
 message UserRoleAction {
   oneof action {
@@ -84,8 +80,7 @@ message PauseEntityLearnAction {
   }
 }
 
-message ResumeEntityLearnAction {
-}
+message ResumeEntityLearnAction {}
 
 enum ThresholdFamily {
   THRESHOLD_FAMILY_UNSPECIFIED = 0;

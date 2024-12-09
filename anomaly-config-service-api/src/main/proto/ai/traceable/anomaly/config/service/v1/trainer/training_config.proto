@@ -2,6 +2,7 @@ syntax = "proto3";
 
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.trainer;
+
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 
 option java_multiple_files = true;
@@ -50,13 +51,11 @@ message VolumetricTrainingConfigFilter {}
 
 message DemoApplicationTrainingConfigFilter {}
 
-
 message VulnerabilityTrainingConfigFilter {
   repeated VulnerabilityTypeFilter vulnerability_type_filter = 1;
 }
 
 message VulnerabilityTypeFilter {
-
   oneof type {
     ParamContainsSensitiveDataFilter param_contains_sensitive_data_filter = 1;
     LackOfEncryptionFilter lack_of_encryption_filter = 2;
@@ -119,9 +118,7 @@ message VulnerabilityTypeFilter {
   message MissingGatewayPoliciesFilter {}
 
   message SensitiveDataInErrorMessageFilter {}
-
 }
-
 
 enum DeleteAnomalyConfigOption {
   DELETE_ANOMALY_CONFIG_OPTION_UNSPECIFIED = 0;
@@ -412,8 +409,7 @@ message NumericSignTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
 }
 
-message StructuredContentDepthTrainingConfig {
-}
+message StructuredContentDepthTrainingConfig {}
 
 message SpecialCharactersTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
@@ -489,9 +485,9 @@ message UserScopeTrainingConfig {
   MinOccurrenceConfig min_occurrence_config = 2;
 }
 
-message JwtExpiryIssueAtTrainingConfig {};
+message JwtExpiryIssueAtTrainingConfig {}
 
-message JwtAlgoWeaknessTrainingConfig {};
+message JwtAlgoWeaknessTrainingConfig {}
 
 message MassParameterAssignmentConfig {
   MinOccurrenceConfig threshold_parameter_config = 1;
@@ -785,7 +781,7 @@ message SegmentFilterConfig {
   optional int32 segment_length_threshold = 2;
 }
 
-message UrlPathFilterConfig  {
+message UrlPathFilterConfig {
   StringList url_path_regex_patterns = 1;
 }
 

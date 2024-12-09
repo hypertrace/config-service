@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.ast.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/ast/config/service/v1/assertion.proto";
+
+option java_multiple_files = true;
 
 message AssertionOverride {
   oneof type {

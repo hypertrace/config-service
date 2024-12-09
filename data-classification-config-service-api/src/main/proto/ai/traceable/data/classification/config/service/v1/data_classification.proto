@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.data.classification.config.service.v1;
 
-option java_multiple_files = true;
-
 import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 message DataType {
   string id = 1;
@@ -41,8 +41,7 @@ message DataTypeRule {
     UrlMatchScope url_match_scope = 11;
   }
 
-  message GlobalScope {
-  }
+  message GlobalScope {}
 
   message EnvironmentScope {
     repeated string environment_ids = 1;

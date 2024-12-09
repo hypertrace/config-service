@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.integration.config.service.wiz.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/integration/config/service/wiz/v1/wiz_integration.proto";
+
+option java_multiple_files = true;
 
 service WizIntegrationConfigService {
   rpc GetWizIntegrationSummaries(GetWizIntegrationSummariesRequest) returns (GetWizIntegrationSummariesResponse) {}
@@ -67,5 +67,4 @@ message DeleteWizIntegrationRequest {
   string id = 1;
 }
 
-message DeleteWizIntegrationResponse {
-}
+message DeleteWizIntegrationResponse {}

@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package ai.traceable.risk.config.service.v2;
 
-option java_multiple_files = true;
-
-import "ai/traceable/risk/config/service/v2/risk_scoring_configs.proto";
-import "ai/traceable/risk/config/service/v2/risk_factor_configs.proto";
 import "ai/traceable/risk/config/service/v2/risk_element_configs.proto";
+import "ai/traceable/risk/config/service/v2/risk_factor_configs.proto";
 import "ai/traceable/risk/config/service/v2/risk_scope.proto";
+import "ai/traceable/risk/config/service/v2/risk_scoring_configs.proto";
+
+option java_multiple_files = true;
 
 message GetRiskScoringGridConfigRequest {
   RiskConfigScope risk_config_scope = 1;

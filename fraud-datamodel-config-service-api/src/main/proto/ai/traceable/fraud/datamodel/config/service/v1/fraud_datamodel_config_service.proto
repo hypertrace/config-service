@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.fraud.datamodel.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+
+option java_multiple_files = true;
 
 service FraudDataModelConfigService {
   rpc UpsertEntityType(UpsertEntityTypeRequest) returns (UpsertEntityTypeResponse) {}

@@ -1,6 +1,7 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.azure.devops.integration.config.service.api.v1;
+
+option java_multiple_files = true;
 
 message AzureDevopsIntegrationDetails {
   string name = 1;
@@ -15,7 +16,7 @@ message AzureDevopsIntegrationAuthCredentials {
 }
 
 message AzureDevopsIntegration {
-  string id =  1;
+  string id = 1;
   AzureDevopsIntegrationDetails azure_devops_integration_details = 2;
 }
 

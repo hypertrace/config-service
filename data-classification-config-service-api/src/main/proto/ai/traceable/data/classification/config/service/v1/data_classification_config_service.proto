@@ -2,12 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.data.classification.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/data/classification/config/service/v1/data_classification.proto";
 
-service DataClassificationConfigService {
+option java_multiple_files = true;
 
+service DataClassificationConfigService {
   // create data type
   rpc CreateDataType(CreateDataTypeRequest) returns (CreateDataTypeResponse) {}
 
@@ -94,8 +93,7 @@ message DeleteDataTypeRequest {
   string id = 1;
 }
 
-message DeleteDataTypeResponse {
-}
+message DeleteDataTypeResponse {}
 
 message CreateDataSetRequest {
   DataSetInfo info = 1;
@@ -136,8 +134,7 @@ message DeleteDataSetRequest {
   string id = 1;
 }
 
-message DeleteDataSetResponse {
-}
+message DeleteDataSetResponse {}
 
 message CreateDataClassificationOverrideRequest {
   DataClassificationOverrideRule data_classification_override_rule = 1;

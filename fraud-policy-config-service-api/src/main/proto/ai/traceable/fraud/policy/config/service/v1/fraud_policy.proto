@@ -1,11 +1,12 @@
 syntax = "proto3";
 
 package ai.traceable.fraud.policy.config.service.v1;
-option java_multiple_files = true;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
 import "ai/traceable/fraud/query/model/v1/fraud_data_query.proto";
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
 
 enum FraudPolicyCategory {
   FRAUD_POLICY_CATEGORY_UNSPECIFIED = 0;
@@ -96,13 +97,12 @@ message EnvironmentScope {
   repeated string environment_ids = 1;
 }
 
-message TenantScope {
-}
+message TenantScope {}
 
 message Schedule {
   oneof type {
     string cron_expression = 1; // e.g. "0 0/10 * * * ?" (every 10 minutes)
-    TimeObj interval = 2;     // Interval between executions, if applicable
+    TimeObj interval = 2; // Interval between executions, if applicable
   }
   optional int64 start_time = 3; // if we need to eval past windows
   optional int64 end_time = 4; // if we need to stop eval beyond certain time

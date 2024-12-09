@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.localprocessing.config.service.v1;
 
-option java_multiple_files = true;
-option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
-
 import "google/protobuf/duration.proto";
+
+option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
+option java_multiple_files = true;
 
 message GetApiNamingModelRequest {
   repeated ServiceRequest service_requests = 1;

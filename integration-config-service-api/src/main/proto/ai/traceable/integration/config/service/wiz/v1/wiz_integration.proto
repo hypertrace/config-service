@@ -40,5 +40,5 @@ message WizIssuePullConfiguration {
 
 message WizEventPushConfiguration {
   bool enabled = 1;
-  string wiz_integration_id = 2 [deprecated=true];
+  string wiz_integration_id = 2 [deprecated = true];
 }

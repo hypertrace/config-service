@@ -1,8 +1,9 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.servicenow.itsm.integration.config.service.api.v1;
 
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
 
 // this message is intended for apis where we don't want to expose the credentials
 message ServiceNowItsmIntegration {
@@ -35,7 +36,7 @@ message ServiceNowItsmIntegrationFieldsConfiguration {
   string column_name = 1;
   string display_name = 2;
   ServiceNowItsmIntegrationFieldType field_type = 3;
-  optional string reference_table_name = 4 [deprecated=true];
+  optional string reference_table_name = 4 [deprecated = true];
   repeated google.protobuf.Value values = 5;
   optional google.protobuf.Value default_value = 6;
   ReferenceTableDetails reference_table_details = 7; // only present when field type is SERVICE_NOW_REFERENCE and the values are expected to be fetched by a secondary query

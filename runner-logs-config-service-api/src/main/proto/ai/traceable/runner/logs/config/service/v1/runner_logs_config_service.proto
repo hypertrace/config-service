@@ -2,16 +2,16 @@ syntax = "proto3";
 
 package ai.traceable.runner.logs.config.service.v1;
 
-option java_multiple_files = true;
-
 import "google/protobuf/duration.proto";
 
-service RunnerLogsConfigService {
-  rpc GetRunnerLogsPurgeConfig (GetRunnerLogsPurgeConfigRequest) returns (GetRunnerLogsPurgeConfigResponse) {}
-  rpc UpdateRunnerLogsPurgeConfig (UpdateRunnerLogsPurgeConfigRequest) returns (UpdateRunnerLogsPurgeConfigResponse) {}
+option java_multiple_files = true;
 
-  rpc GetRunnerLogsPersistenceConfig (GetRunnerLogsPersistenceConfigRequest) returns (GetRunnerLogsPersistenceConfigResponse) {}
-  rpc UpdateRunnerLogsPersistenceConfig (UpdateRunnerLogsPersistenceConfigRequest) returns (UpdateRunnerLogsPersistenceConfigResponse) {}
+service RunnerLogsConfigService {
+  rpc GetRunnerLogsPurgeConfig(GetRunnerLogsPurgeConfigRequest) returns (GetRunnerLogsPurgeConfigResponse) {}
+  rpc UpdateRunnerLogsPurgeConfig(UpdateRunnerLogsPurgeConfigRequest) returns (UpdateRunnerLogsPurgeConfigResponse) {}
+
+  rpc GetRunnerLogsPersistenceConfig(GetRunnerLogsPersistenceConfigRequest) returns (GetRunnerLogsPersistenceConfigResponse) {}
+  rpc UpdateRunnerLogsPersistenceConfig(UpdateRunnerLogsPersistenceConfigRequest) returns (UpdateRunnerLogsPersistenceConfigResponse) {}
 }
 
 message GetRunnerLogsPurgeConfigRequest {}
@@ -48,7 +48,7 @@ message AstScanLogsPurgeConfig {
 
 message GetRunnerLogsPersistenceConfigRequest {}
 
-message GetRunnerLogsPersistenceConfigResponse{
+message GetRunnerLogsPersistenceConfigResponse {
   RunnerLogsPersistenceConfig runner_logs_persistence_config = 1;
 }
 
@@ -64,7 +64,7 @@ message UpdateRunnerLogsPersistenceConfigRequest {
   RunnerLogsPersistenceConfigUpdate runner_logs_persistence_config_update = 1;
 }
 
-message RunnerLogsPersistenceConfigUpdate{
+message RunnerLogsPersistenceConfigUpdate {
   AstScanLogsPersistenceConfigUpdate ast_scan_logs_persistence_config = 1;
 }
 

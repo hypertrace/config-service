@@ -177,7 +177,7 @@ message Oauth2 {
   // TODO: OauthTokenGenInfo : if we need to show the token gen info back in UI.
   EncryptedText token = 1;
   RequestTokenInfo token_info = 2;
-  EncryptedText client_id = 3 [deprecated=true];
+  EncryptedText client_id = 3 [deprecated = true];
   string access_token_url = 4;
   string client_id_plain_text = 10;
   oneof flow_type {

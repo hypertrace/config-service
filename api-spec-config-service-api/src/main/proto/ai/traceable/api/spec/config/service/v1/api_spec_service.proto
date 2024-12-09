@@ -2,36 +2,30 @@ syntax = "proto3";
 
 package ai.traceable.api.spec.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/api/spec/config/service/v1/api_spec.proto";
 
+option java_multiple_files = true;
+
 service ApiSpecConfigService {
-  rpc GetApiSpecs (GetApiSpecsRequest) returns (GetApiSpecsResponse) {
-  }
+  rpc GetApiSpecs(GetApiSpecsRequest) returns (GetApiSpecsResponse) {}
 
-  rpc GetApiSpec (GetApiSpecRequest) returns (GetApiSpecResponse) {
-  }
+  rpc GetApiSpec(GetApiSpecRequest) returns (GetApiSpecResponse) {}
 
-  rpc CreateApiSpec (CreateApiSpecRequest) returns (CreateApiSpecResponse) {
-  }
+  rpc CreateApiSpec(CreateApiSpecRequest) returns (CreateApiSpecResponse) {}
 
-  rpc UpdateApiSpec (UpdateApiSpecRequest) returns (UpdateApiSpecResponse) {
+  rpc UpdateApiSpec(UpdateApiSpecRequest) returns (UpdateApiSpecResponse) {
     option deprecated = true; // Use "BulkUpdateApiSpecs" instead
   }
 
-  rpc UpdateApiSpecs (UpdateApiSpecsRequest) returns (UpdateApiSpecsResponse) {
+  rpc UpdateApiSpecs(UpdateApiSpecsRequest) returns (UpdateApiSpecsResponse) {
     option deprecated = true; // Use "BulkUpdateApiSpecs" instead
   }
 
-  rpc BulkUpdateApiSpecs (BulkUpdateApiSpecsRequest) returns (BulkUpdateApiSpecsResponse) {
-  }
+  rpc BulkUpdateApiSpecs(BulkUpdateApiSpecsRequest) returns (BulkUpdateApiSpecsResponse) {}
 
-  rpc DeleteApiSpec (DeleteApiSpecRequest) returns (DeleteApiSpecResponse) {
-  }
+  rpc DeleteApiSpec(DeleteApiSpecRequest) returns (DeleteApiSpecResponse) {}
 
-  rpc DeleteApiSpecs (DeleteApiSpecsRequest) returns (DeleteApiSpecsResponse) {
-  }
+  rpc DeleteApiSpecs(DeleteApiSpecsRequest) returns (DeleteApiSpecsResponse) {}
 }
 
 // bulk update

@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package ai.traceable.edge.decision.config.service.v1;
 
-option java_multiple_files = true;
-
-import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
-import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
+
+option java_multiple_files = true;
 
 service EdgeDecisionConfigService {
   // API to fetch all resolved scoped edge-decision configs for a given tenant
@@ -34,7 +34,6 @@ service EdgeDecisionConfigService {
   rpc UpdateEdgeDecisionSpec(UpdateEdgeDecisionSpecRequest) returns (UpdateEdgeDecisionSpecResponse) {}
   rpc GetAllEdgeDecisionSpecs(GetAllEdgeDecisionSpecsRequest) returns (GetAllEdgeDecisionSpecsResponse) {}
   rpc DeleteEdgeDecisionSpec(DeleteEdgeDecisionSpecRequest) returns (DeleteEdgeDecisionSpecResponse) {}
-
 }
 
 message GetResolvedEdgeDecisionEngineConfigsRequest {
@@ -45,12 +44,12 @@ message GetResolvedEdgeDecisionEngineConfigsResponse {
   EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
 
-message GetScopedResolvedEdgeDecisionConfigRequest{
+message GetScopedResolvedEdgeDecisionConfigRequest {
   EdgeDecisionSpecScope scope = 1;
   GetEdgeDecisionConfigsFilter filter = 2;
 }
 
-message GetScopedResolvedEdgeDecisionConfigResponse{
+message GetScopedResolvedEdgeDecisionConfigResponse {
   ScopedEdgeDecisionConfig scoped_edge_decision_config = 1;
 }
 
@@ -85,8 +84,7 @@ message GetEdgeDecisionEngineConfigResponse {
   EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
 
-message GetAllEdgeDecisionEngineConfigRequest {
-}
+message GetAllEdgeDecisionEngineConfigRequest {}
 
 message GetAllEdgeDecisionEngineConfigResponse {
   repeated EdgeDecisionEngineConfig edge_decision_engine_configs = 1;
@@ -109,8 +107,7 @@ message UpdateEdgeDecisionRuleResponse {
   EdgeDecisionRule edge_decision_rule = 1;
 }
 
-message GetAllEdgeDecisionRulesRequest {
-}
+message GetAllEdgeDecisionRulesRequest {}
 
 message GetAllEdgeDecisionRulesResponse {
   repeated EdgeDecisionRule edge_decision_rules = 1;
@@ -141,8 +138,7 @@ message UpdateEdgeDecisionSpecResponse {
   EdgeDecisionSpec edge_decision_spec = 1;
 }
 
-message GetAllEdgeDecisionSpecsRequest {
-}
+message GetAllEdgeDecisionSpecsRequest {}
 
 message GetAllEdgeDecisionSpecsResponse {
   repeated EdgeDecisionSpec edge_decision_specs = 1;

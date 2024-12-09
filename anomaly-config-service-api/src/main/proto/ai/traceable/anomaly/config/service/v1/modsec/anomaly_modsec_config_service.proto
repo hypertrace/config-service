@@ -3,18 +3,14 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.modsec;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
 
+option java_multiple_files = true;
 
 service AnomalyModsecConfigService {
-
   // tenant-specific
-  rpc GetModsecCrsRules (GetModsecCrsRulesRequest) returns (GetModsecCrsRulesResponse) {
-  }
+  rpc GetModsecCrsRules(GetModsecCrsRulesRequest) returns (GetModsecCrsRulesResponse) {}
 
   // tenant-agnostic
-  rpc GetDefaultModsecCrsRules (GetDefaultModsecCrsRulesRequest) returns (GetDefaultModsecCrsRulesResponse) {
-  }
+  rpc GetDefaultModsecCrsRules(GetDefaultModsecCrsRulesRequest) returns (GetDefaultModsecCrsRulesResponse) {}
 }

@@ -2,22 +2,22 @@ syntax = "proto3";
 
 package ai.traceable.ast.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/ast/config/service/v1/ast.proto";
+import "ai/traceable/ast/config/service/v1/ast_custom_test_plugins.proto";
 import "ai/traceable/ast/config/service/v1/ast_overrides_request.proto";
 import "ai/traceable/ast/config/service/v1/ast_overrides_response.proto";
-import "ai/traceable/ast/config/service/v1/ast_custom_test_plugins.proto";
+
+option java_multiple_files = true;
 
 service AstConfigService {
   // read api
-  rpc GetScanPurgeConfig (GetScanPurgeConfigRequest) returns (GetScanPurgeConfigResponse) {}
+  rpc GetScanPurgeConfig(GetScanPurgeConfigRequest) returns (GetScanPurgeConfigResponse) {}
 
   // write api
-  rpc UpdateScanPurgeConfig (UpdateScanPurgeConfigRequest) returns (UpdateScanPurgeConfigResponse) {}
+  rpc UpdateScanPurgeConfig(UpdateScanPurgeConfigRequest) returns (UpdateScanPurgeConfigResponse) {}
 
   // edit plugin fields api.
-  rpc EditVulnerabilityMetadataOverrides (EditVulnerabilityMetadataOverridesRequest) returns (EditVulnerabilityMetadataOverridesResponse) {}
+  rpc EditVulnerabilityMetadataOverrides(EditVulnerabilityMetadataOverridesRequest) returns (EditVulnerabilityMetadataOverridesResponse) {}
 
   rpc DeleteVulnerabilityMetadataOverridesConfig(DeleteVulnerabilityMetadataOverridesConfigRequest) returns (DeleteVulnerabilityMetadataOverridesConfigResponse) {}
 
@@ -37,13 +37,13 @@ service AstConfigService {
 
   rpc DeleteCustomTestPlugin(DeleteCustomTestPluginRequest) returns (DeleteCustomTestPluginResponse);
 
-  rpc GetAstOverrides (GetAstOverridesRequest) returns (GetAstOverridesResponse);
+  rpc GetAstOverrides(GetAstOverridesRequest) returns (GetAstOverridesResponse);
 
-  rpc CreateAstOverride (CreateAstOverrideRequest) returns (CreateAstOverrideResponse);
+  rpc CreateAstOverride(CreateAstOverrideRequest) returns (CreateAstOverrideResponse);
 
-  rpc UpdateAstOverride (UpdateAstOverrideRequest) returns (UpdateAstOverrideResponse);
+  rpc UpdateAstOverride(UpdateAstOverrideRequest) returns (UpdateAstOverrideResponse);
 
-  rpc DeleteAstOverrides (DeleteAstOverridesRequest) returns (DeleteAstOverridesResponse);
+  rpc DeleteAstOverrides(DeleteAstOverridesRequest) returns (DeleteAstOverridesResponse);
 }
 
 message UpdateScanPurgeConfigRequest {

@@ -31,8 +31,7 @@ message DeleteCustomSignatureRuleRequest {
   string id = 1;
 }
 
-message DeleteCustomSignatureRuleResponse {
-}
+message DeleteCustomSignatureRuleResponse {}
 
 message GetCustomSignatureRulesRequest {
   GetRulesFilter filter = 1;
@@ -139,7 +138,7 @@ message FieldValue {
 }
 
 message CustomSignatureScopeConfig {
-   repeated CustomSignatureScope scopes = 1;
+  repeated CustomSignatureScope scopes = 1;
 }
 
 message CustomSignatureScope {
@@ -183,9 +182,8 @@ message MatchExpression {
   MatchKey match_key = 1;
   MatchOperator match_operator = 2;
   string match_value = 3;
-  MatchCategory match_category  = 4;
+  MatchCategory match_category = 4;
 }
-
 
 message KeyValueExpression {
   KeyValueTag tag = 1;
@@ -193,7 +191,7 @@ message KeyValueExpression {
   string match_key = 3;
   MatchOperator value_match_operator = 4;
   string match_value = 5;
-  MatchCategory match_category  = 6;
+  MatchCategory match_category = 6;
 }
 
 message AttributeKeyValueExpression {
@@ -301,7 +299,7 @@ enum CustomModsecRuleVersion {
   CUSTOM_MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE = 5;
 }
 
-enum RuleSource{
+enum RuleSource {
   RULE_SOURCE_UNSPECIFIED = 0;
   RULE_SOURCE_CUSTOMER = 1;
   RULE_SOURCE_TRACEABLE = 2;

@@ -1,0 +1,67 @@
+version: v2
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - PACKAGE
+    - WIRE_JSON
+modules:
+  - path: anomaly-config-service-api/src/main/proto
+  - path: anomaly-scoring-config-service-api/src/main/proto
+  - path: api-attribute-override-service-api/src/main/proto
+  - path: api-gateway-config-service-api/src/main/proto
+  - path: api-spec-config-service-api/src/main/proto
+  - path: ast-config-service-api/src/main/proto
+  - path: ast-hooks-config-service-api/src/main/proto
+  - path: ast-scan-profile-config-service-api/src/main/proto
+  - path: auth-detection-config-service-api/src/main/proto
+  - path: azure-devops-integration-config-service-api/src/main/proto
+  - path: blocking-config-service-api/src/main/proto
+  - path: custom-signature-config-service-api/src/main/proto
+  - path: dashboard-config-service-api/src/main/proto
+  - path: data-classification-config-service-api/src/main/proto
+  - path: data-exfiltration-config-service-api/src/main/proto
+  - path: data-protection-config-service-api/src/main/proto
+  - path: detection-exclusion-config-service-api/src/main/proto
+  - path: external-agent-attribute-config-service-api/src/main/proto
+  - path: external-data-classification-config-service-api/src/main/proto
+  - path: external-user-attribution-config-service-api/src/main/proto
+  - path: external-wasm-config-service-api/src/main/proto
+  - path: fraud-datamodel-config-service-api/src/main/proto
+  - path: fraud-datamodel-derivation-config-service-api/src/main/proto
+  - path: fraud-policy-config-service-api/src/main/proto
+  - path: github-integration-config-service-api/src/main/proto
+  - path: hypertrace-config-service/alerting-config-service-api/src/main/proto
+  - path: integration-config-service-api/src/main/proto
+  - path: ip-resolution-config-service-api/src/main/proto
+  - path: iprange-config-service-api/src/main/proto
+  - path: jwt-extraction-config-service-api/src/main/proto
+  - path: license-status-config-service-api/src/main/proto
+  - path: local-processing-config-service-api/src/main/proto
+  - path: malicious-sources-config-service-api/src/main/proto
+  - path: modsecurity-utils/src/main/proto
+  - path: rate-limiting-config-service-api/src/main/proto
+  - path: region-config-service-api/src/main/proto
+  - path: reporting-config-service-api/src/main/proto
+  - path: risk-config-service-api/src/main/proto
+  - path: runner-logs-config-service-api/src/main/proto
+  - path: saved-filter-config-service-api/src/main/proto
+  - path: saved-query-config-service-api/src/main/proto
+  - path: sensitive-data-config-service-api/src/main/proto
+  - path: servicenow-itsm-integration-config-service-api/src/main/proto
+  - path: session-identification-config-service-api/src/main/proto
+  - path: splunk-integration-config-service-api/src/main/proto
+  - path: syslog-integration-config-service-api/src/main/proto
+  - path: threat-management-config-service-api/src/main/proto
+  - path: traceable-alerting-config-service-api/src/main/proto
+  - path: traceable-config-service-rest/src/main/proto
+  - path: traceable-datamodel-config-service-api/src/main/proto
+  - path: traceable-edge-config-service-api/src/main/proto
+  - path: traceable-edge-decision-config-service-api/src/main/proto
+  - path: traceable-span-processing-config-service-api/src/main/proto
+  - path: traceable-span-processing-config-service-impl/src/main/proto
+  - path: user-attribution-config-service-api/src/main/proto
+  - path: vulnerability-config-service-api/src/main/proto
+  - path: waf-provider-integration-service-api/src/main/proto
+

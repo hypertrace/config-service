@@ -2,8 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.fraud.policy.config.service.v1;
 
-option java_multiple_files = true;
 import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
+
+option java_multiple_files = true;
 
 message CorrelationKey {
   repeated string attributes = 1; // Ex: (IP, UA)
@@ -17,11 +18,11 @@ message APISpec {
 }
 
 message ApiCollection {
-  repeated APISpec apis = 1;  // Sequence of API objects
+  repeated APISpec apis = 1; // Sequence of API objects
 }
 
 message GroupedConfig {
-  ApiCollection pre = 1;  // Pre-target API sequence
+  ApiCollection pre = 1; // Pre-target API sequence
   ApiCollection post = 2; // Post-target API sequence,
   CorrelationKey correlation_key = 3; // correlation key
   ApiReference api_reference = 4;
@@ -55,7 +56,7 @@ message ApiReference {
   string api_name = 3;
 }
 
-message ApiOccurenceStats{
+message ApiOccurenceStats {
   double prob_no_api_median = 1;
   double prob_no_api_median_absolute_deviation = 2;
 }

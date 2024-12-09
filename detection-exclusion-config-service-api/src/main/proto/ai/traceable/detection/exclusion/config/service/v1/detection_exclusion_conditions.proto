@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.detection.exclusion.config.service.v1;
 
-option java_multiple_files = true;
-
+import "ai/traceable/detection/exclusion/config/service/v1/detection_event_details.proto";
 import "ai/traceable/detection/exclusion/config/service/v1/detection_match_condition_details.proto";
 import "ai/traceable/detection/exclusion/config/service/v1/detection_scope_details.proto";
-import "ai/traceable/detection/exclusion/config/service/v1/detection_event_details.proto";
+
+option java_multiple_files = true;
 
 message RequestScannerTypeCondition {
   repeated string scanner_types = 1;
@@ -85,7 +85,6 @@ message IpAddressCondition {
   bool exclude = 5;
 }
 
-
 message IpConnectionTypeCondition {
   repeated IpConnectionType ip_connection_types = 1;
   bool exclude = 2;
@@ -139,11 +138,10 @@ enum IpConnectionType {
   IP_CONNECTION_TYPE_UNSPECIFIED = 0;
   IP_CONNECTION_TYPE_RESIDENTIAL = 1;
   IP_CONNECTION_TYPE_MOBILE = 2;
-  IP_CONNECTION_TYPE_CORPORATE= 3;
+  IP_CONNECTION_TYPE_CORPORATE = 3;
   IP_CONNECTION_TYPE_DATA_CENTER = 4;
   IP_CONNECTION_TYPE_EDUCATION = 5;
 }
-
 
 enum AttributeValueType {
   ATTRIBUTE_VALUE_TYPE_UNSPECIFIED = 0;

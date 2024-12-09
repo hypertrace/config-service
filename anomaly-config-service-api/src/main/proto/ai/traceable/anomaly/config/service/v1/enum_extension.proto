@@ -1,11 +1,11 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.anomaly.config.service.v1;
 
 import "google/protobuf/descriptor.proto";
 
-extend google.protobuf.EnumValueOptions {
+option java_multiple_files = true;
 
+extend google.protobuf.EnumValueOptions {
   // will contain constant name for the enum value
   string string_value = 50001;
 }

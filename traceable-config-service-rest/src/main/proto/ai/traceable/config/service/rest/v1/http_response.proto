@@ -1,9 +1,10 @@
 syntax = "proto3";
-option java_multiple_files = true;
 
 package ai.traceable.config.service.rest.v1;
 
 import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 message HttpResponseMetadata {
   map<string, string> headers = 1;

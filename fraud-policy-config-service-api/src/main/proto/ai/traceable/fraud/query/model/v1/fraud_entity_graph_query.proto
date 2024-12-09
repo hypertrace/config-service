@@ -1,9 +1,10 @@
 syntax = "proto3";
 
 package ai.traceable.fraud.query.model.v1;
-option java_multiple_files = true;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+
+option java_multiple_files = true;
 
 message EntityReference {
   string type_id = 1;

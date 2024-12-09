@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.ratelimiting.config.service.v1;
 
+option java_multiple_files = true;
+
 enum RateLimitedEntityType {
-    RATE_LIMITED_ENTITY_TYPE_UNSPECIFIED = 0;
-    RATE_LIMITED_ENTITY_TYPE_API = 1;
+  RATE_LIMITED_ENTITY_TYPE_UNSPECIFIED = 0;
+  RATE_LIMITED_ENTITY_TYPE_API = 1;
 }

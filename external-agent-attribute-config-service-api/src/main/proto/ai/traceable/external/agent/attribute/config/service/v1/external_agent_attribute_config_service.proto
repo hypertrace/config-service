@@ -1,16 +1,15 @@
 syntax = "proto3";
 
 package ai.traceable.external.agent.attribute.config.service.v1;
-option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/agent/attribute/config/service/v1";
-
-option java_multiple_files = true;
 
 import "ai/traceable/external/agent/attribute/config/service/v1/agent_attribute_rule.proto";
 import "google/protobuf/duration.proto";
 
+option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/agent/attribute/config/service/v1";
+option java_multiple_files = true;
+
 service ExternalAgentAttributeConfigService {
-  rpc GetAgentAttributeRules (GetAgentAttributeRulesRequest) returns (GetAgentAttributeRulesResponse) {
-  }
+  rpc GetAgentAttributeRules(GetAgentAttributeRulesRequest) returns (GetAgentAttributeRulesResponse) {}
 }
 
 message GetAgentAttributeRulesRequest {

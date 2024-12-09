@@ -1,25 +1,19 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.ratelimiting.config.service.v2;
 
-import "ai/traceable/ratelimiting/config/service/v2/rate_limiting_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
+import "ai/traceable/ratelimiting/config/service/v2/rate_limiting_rule.proto";
+
+option java_multiple_files = true;
 
 service RateLimitingConfigService {
-  rpc GetRateLimitingRules (GetRateLimitingRulesRequest) returns (GetRateLimitingRulesResponse) {
-  }
-  rpc UpdateRateLimitingRule (UpdateRateLimitingRuleRequest) returns (UpdateRateLimitingRuleResponse) {
-  }
-  rpc DeleteRateLimitingRule (DeleteRateLimitingRuleRequest) returns (DeleteRateLimitingRuleResponse) {
-  }
-  rpc CreateRateLimitingRule (CreateRateLimitingRuleRequest) returns (CreateRateLimitingRuleResponse) {
-  }
-  rpc GetRateLimitingRuleModsecRules (GetRateLimitingRuleModsecRulesRequest) returns (GetRateLimitingRuleModsecRulesResponse) {
-  }
-  rpc GetRateLimitingEdgeDecisionRules (GetRateLimitingEdgeDecisionRulesRequest) returns (GetRateLimitingEdgeDecisionRulesResponse) {
-  }
+  rpc GetRateLimitingRules(GetRateLimitingRulesRequest) returns (GetRateLimitingRulesResponse) {}
+  rpc UpdateRateLimitingRule(UpdateRateLimitingRuleRequest) returns (UpdateRateLimitingRuleResponse) {}
+  rpc DeleteRateLimitingRule(DeleteRateLimitingRuleRequest) returns (DeleteRateLimitingRuleResponse) {}
+  rpc CreateRateLimitingRule(CreateRateLimitingRuleRequest) returns (CreateRateLimitingRuleResponse) {}
+  rpc GetRateLimitingRuleModsecRules(GetRateLimitingRuleModsecRulesRequest) returns (GetRateLimitingRuleModsecRulesResponse) {}
+  rpc GetRateLimitingEdgeDecisionRules(GetRateLimitingEdgeDecisionRulesRequest) returns (GetRateLimitingEdgeDecisionRulesResponse) {}
 }
 
 message GetRateLimitingRulesRequest {
@@ -66,8 +60,7 @@ message DeleteRateLimitingRuleRequest {
   string rule_id = 1;
 }
 
-message DeleteRateLimitingRuleResponse {
-}
+message DeleteRateLimitingRuleResponse {}
 
 message CreateRateLimitingRuleRequest {
   RateLimitingRuleData data = 1;
@@ -77,7 +70,7 @@ message CreateRateLimitingRuleResponse {
   RateLimitingRule rule = 1;
 }
 
-message GetRateLimitingRuleModsecRulesRequest{
+message GetRateLimitingRuleModsecRulesRequest {
   GetRateLimitingModsecRulesFilter rules_filter = 1;
 }
 
@@ -92,7 +85,7 @@ message GetRateLimitingEdgeDecisionRulesRequest {
 }
 
 message GetRateLimitingEdgeDecisionRulesResponse {
-    ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+  ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
 
 message ModsecBlobData {

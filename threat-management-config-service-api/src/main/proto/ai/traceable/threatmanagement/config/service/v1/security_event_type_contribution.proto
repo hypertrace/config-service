@@ -4,8 +4,7 @@ package ai.traceable.threatmanagement.config.service.v1;
 
 option java_multiple_files = true;
 
-message GetSecurityEventTypeContributionRequest {
-}
+message GetSecurityEventTypeContributionRequest {}
 
 message GetSecurityEventTypeContributionResponse {
   SecurityEventTypeContribution security_event_type_contribution = 1;

@@ -29,8 +29,7 @@ message DeleteIpRangeRuleRequest {
   string id = 1;
 }
 
-message DeleteIpRangeRuleResponse {
-}
+message DeleteIpRangeRuleResponse {}
 
 message GetIpRangeRulesRequest {
   GetRulesFilter filter = 1;

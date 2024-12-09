@@ -56,7 +56,7 @@ message Predicate {
 
 message StringPredicate {
   Operator operator = 1;
-  oneof rhs  {
+  oneof rhs {
     string value = 2;
     StringList any_of_values = 3;
   }

@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.detection.exclusion.config.service.v1;
 
-option java_multiple_files = true;
-
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
 
 message KeyMetadataMatchCondition {
   KeyMetadata metadata = 1;

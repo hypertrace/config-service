@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.saved.filter.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/saved/filter/config/service/v1/saved_filter.proto";
+
+option java_multiple_files = true;
 
 service SavedFilterService {
   // Create a new saved filter
@@ -61,5 +61,4 @@ message DeleteSavedFilterRequest {
   string id = 1;
 }
 
-message DeleteSavedFilterResponse {
-}
+message DeleteSavedFilterResponse {}

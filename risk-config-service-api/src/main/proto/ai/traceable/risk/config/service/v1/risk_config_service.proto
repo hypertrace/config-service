@@ -2,43 +2,30 @@ syntax = "proto3";
 
 package ai.traceable.risk.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/risk/config/service/v1/risk_config_request_response.proto";
 
+option java_multiple_files = true;
 
 service RiskConfigService {
+  rpc GetRiskScoringConfigs(GetRiskScoringConfigsRequest) returns (GetRiskScoringConfigsResponse) {}
 
-  rpc GetRiskScoringConfigs (GetRiskScoringConfigsRequest) returns (GetRiskScoringConfigsResponse) {
-  }
+  rpc GetRiskLikelihoodConfigs(GetRiskLikelihoodConfigsRequest) returns (GetRiskLikelihoodConfigsResponse) {}
 
-  rpc GetRiskLikelihoodConfigs (GetRiskLikelihoodConfigsRequest) returns (GetRiskLikelihoodConfigsResponse) {
-  }
+  rpc GetRiskImpactConfigs(GetRiskImpactConfigsRequest) returns (GetRiskImpactConfigsResponse) {}
 
-  rpc GetRiskImpactConfigs (GetRiskImpactConfigsRequest) returns (GetRiskImpactConfigsResponse) {
-  }
+  rpc UpdateRiskLevelConfig(UpdateRiskLevelConfigRequest) returns (UpdateRiskLevelConfigResponse) {}
 
-  rpc UpdateRiskLevelConfig (UpdateRiskLevelConfigRequest) returns (UpdateRiskLevelConfigResponse) {
-  }
+  rpc UpdateRiskFactorGridConfig(UpdateRiskFactorGridConfigRequest) returns (UpdateRiskFactorGridConfigResponse) {}
 
-  rpc UpdateRiskFactorGridConfig (UpdateRiskFactorGridConfigRequest) returns (UpdateRiskFactorGridConfigResponse) {
-  }
+  rpc UpdateRiskLikelihoodConfigs(UpdateRiskLikelihoodConfigsRequest) returns (UpdateRiskLikelihoodConfigsResponse) {}
 
-  rpc UpdateRiskLikelihoodConfigs (UpdateRiskLikelihoodConfigsRequest) returns (UpdateRiskLikelihoodConfigsResponse) {
-  }
+  rpc UpdateRiskImpactConfigs(UpdateRiskImpactConfigsRequest) returns (UpdateRiskImpactConfigsResponse) {}
 
-  rpc UpdateRiskImpactConfigs (UpdateRiskImpactConfigsRequest) returns (UpdateRiskImpactConfigsResponse) {
-  }
+  rpc ResetRiskLevelConfig(ResetRiskLevelConfigRequest) returns (ResetRiskLevelConfigResponse) {}
 
-  rpc ResetRiskLevelConfig (ResetRiskLevelConfigRequest) returns (ResetRiskLevelConfigResponse) {
-  }
+  rpc ResetRiskFactorGridConfig(ResetRiskFactorGridConfigRequest) returns (ResetRiskFactorGridConfigResponse) {}
 
-  rpc ResetRiskFactorGridConfig (ResetRiskFactorGridConfigRequest) returns (ResetRiskFactorGridConfigResponse) {
-  }
+  rpc ResetRiskLikelihoodConfigs(ResetRiskLikelihoodConfigsRequest) returns (ResetRiskLikelihoodConfigsResponse) {}
 
-  rpc ResetRiskLikelihoodConfigs (ResetRiskLikelihoodConfigsRequest) returns (ResetRiskLikelihoodConfigsResponse) {
-  }
-
-  rpc ResetRiskImpactConfigs (ResetRiskImpactConfigsRequest) returns (ResetRiskImpactConfigsResponse) {
-  }
+  rpc ResetRiskImpactConfigs(ResetRiskImpactConfigsRequest) returns (ResetRiskImpactConfigsResponse) {}
 }

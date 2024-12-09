@@ -36,8 +36,7 @@ message DeleteSyslogServerIntegrationRequest {
   string id = 1;
 }
 
-message DeleteSyslogServerIntegrationResponse {
-}
+message DeleteSyslogServerIntegrationResponse {}
 
 message SyslogServerIntegrationDetails {
   string name = 1;
@@ -60,8 +59,8 @@ message SyslogServerConnectionDetails {
 message SyslogServerCredentials {
   string encryption_key_id = 1; // Key used to encrypt the different secrets
   optional string encrypted_ssl_ca_cert = 2 [deprecated = true];
-  SyslogServerAccountTokenDetails account_token_details = 3;  // needs RFC_5424 Syslog Format
-  optional string ssl_ca_cert = 4;  // Certificate Authority for SSL
+  SyslogServerAccountTokenDetails account_token_details = 3; // needs RFC_5424 Syslog Format
+  optional string ssl_ca_cert = 4; // Certificate Authority for SSL
 
   message SyslogServerAccountTokenDetails {
     string encrypted_token_id = 1;

@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.malicioussources.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/malicioussources/config/service/v1/malicious_sources_config.proto";
+
+option java_multiple_files = true;
 
 message CreateMaliciousSourcesRuleRequest {
   MaliciousSourcesRuleInfo rule_info = 1;
@@ -27,8 +27,7 @@ message DeleteMaliciousSourcesRuleRequest {
   string id = 1;
 }
 
-message DeleteMaliciousSourcesRuleResponse {
-}
+message DeleteMaliciousSourcesRuleResponse {}
 
 message GetMaliciousSourcesRulesRequest {
   GetRulesFilter filter = 1;

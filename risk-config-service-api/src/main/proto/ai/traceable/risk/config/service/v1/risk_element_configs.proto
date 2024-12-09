@@ -35,12 +35,12 @@ message RiskElementInfo {
 }
 
 message RiskElementScoring {
-   int32 score = 1;
-   RiskElementScoreContribution score_contribution = 2;
+  int32 score = 1;
+  RiskElementScoreContribution score_contribution = 2;
 }
 
 enum RiskElementScoreContribution {
-  RISK_ELEMENT_SCORE_CONTRIBUTION_UNSPECIFIED = 0;  //default
+  RISK_ELEMENT_SCORE_CONTRIBUTION_UNSPECIFIED = 0; //default
 }
 
 message BooleanPredicate {

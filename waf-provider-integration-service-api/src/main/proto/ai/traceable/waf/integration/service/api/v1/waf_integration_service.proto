@@ -1,18 +1,18 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.waf.integration.service.api.v1;
 
 import "ai/traceable/waf/integration/service/api/v1/waf_provider.proto";
 
+option java_multiple_files = true;
+
 service WafProviderService {
-  rpc CreateWafIntegration (CreateWafIntegrationRequest) returns (CreateWafIntegrationResponse) {}
-  rpc GetWafIntegration (GetWafIntegrationRequest) returns (GetWafIntegrationResponse) {}
-  rpc GetWafIntegrations (GetWafIntegrationsRequest) returns (GetWafIntegrationsResponse) {}
-  rpc GetWafIntegrationsDetails (GetWafIntegrationsDetailsRequest) returns (GetWafIntegrationsDetailsResponse) {}
-  rpc UpdateWafIntegration (UpdateWafIntegrationRequest) returns (UpdateWafIntegrationResponse) {}
-  rpc DeleteWafIntegration (DeleteWafIntegrationRequest) returns (DeleteWafIntegrationResponse) {}
+  rpc CreateWafIntegration(CreateWafIntegrationRequest) returns (CreateWafIntegrationResponse) {}
+  rpc GetWafIntegration(GetWafIntegrationRequest) returns (GetWafIntegrationResponse) {}
+  rpc GetWafIntegrations(GetWafIntegrationsRequest) returns (GetWafIntegrationsResponse) {}
+  rpc GetWafIntegrationsDetails(GetWafIntegrationsDetailsRequest) returns (GetWafIntegrationsDetailsResponse) {}
+  rpc UpdateWafIntegration(UpdateWafIntegrationRequest) returns (UpdateWafIntegrationResponse) {}
+  rpc DeleteWafIntegration(DeleteWafIntegrationRequest) returns (DeleteWafIntegrationResponse) {}
 }
 
 message CreateWafIntegrationRequest {
@@ -47,7 +47,6 @@ message GetWafIntegrationsDetailsResponse {
   repeated WafIntegration waf_integration = 1;
 }
 
-
 message UpdateWafIntegrationRequest {
   string id = 1;
   UpdatedWafIntegrationDetails updated_waf_integration_details = 2;
@@ -61,8 +60,7 @@ message DeleteWafIntegrationRequest {
   string id = 1;
 }
 
-message DeleteWafIntegrationResponse {
-}
+message DeleteWafIntegrationResponse {}
 
 message GetWafIntegrationsFilter {
   repeated string ids = 1;

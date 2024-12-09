@@ -2,16 +2,16 @@ syntax = "proto3";
 
 package ai.traceable.integration.config.service.snyk.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/integration/config/service/snyk/v1/snyk_integration.proto";
 
+option java_multiple_files = true;
+
 service SnykIntegrationService {
-  rpc GetSnykIntegrationSummary (GetSnykIntegrationSummaryRequest) returns (GetSnykIntegrationSummaryResponse) {}
-  rpc GetSnykIntegrationDetails (GetSnykIntegrationDetailsRequest) returns (GetSnykIntegrationDetailsResponse) {}
-  rpc CreateSnykIntegration (CreateSnykIntegrationRequest) returns (CreateSnykIntegrationResponse) {}
-  rpc UpdateSnykIntegration (UpdateSnykIntegrationRequest) returns (UpdateSnykIntegrationResponse) {}
-  rpc DeleteSnykIntegration (DeleteSnykIntegrationRequest) returns (DeleteSnykIntegrationResponse) {}
+  rpc GetSnykIntegrationSummary(GetSnykIntegrationSummaryRequest) returns (GetSnykIntegrationSummaryResponse) {}
+  rpc GetSnykIntegrationDetails(GetSnykIntegrationDetailsRequest) returns (GetSnykIntegrationDetailsResponse) {}
+  rpc CreateSnykIntegration(CreateSnykIntegrationRequest) returns (CreateSnykIntegrationResponse) {}
+  rpc UpdateSnykIntegration(UpdateSnykIntegrationRequest) returns (UpdateSnykIntegrationResponse) {}
+  rpc DeleteSnykIntegration(DeleteSnykIntegrationRequest) returns (DeleteSnykIntegrationResponse) {}
 }
 
 message GetSnykIntegrationSummaryRequest {}

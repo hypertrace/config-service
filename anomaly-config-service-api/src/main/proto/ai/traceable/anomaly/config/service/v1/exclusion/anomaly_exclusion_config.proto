@@ -3,9 +3,9 @@ syntax = "proto3";
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.exclusion;
 
-option java_multiple_files = true;
-
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+
+option java_multiple_files = true;
 
 message CreateAnomalyExclusionRuleRequest {
   AnomalyExclusionRuleData rule_data = 1;
@@ -46,8 +46,7 @@ message DeleteAnomalyExclusionRuleRequest {
   string rule_id = 1;
 }
 
-message DeleteAnomalyExclusionRuleResponse {
-}
+message DeleteAnomalyExclusionRuleResponse {}
 
 message AnomalyExclusionRuleConfig {
   string id = 1;

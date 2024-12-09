@@ -1,79 +1,68 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.ratelimiting.config.service.v1;
 
-import "ai/traceable/ratelimiting/config/service/v1/rate_limiting_rule.proto";
 import "ai/traceable/ratelimiting/config/service/v1/rate_limited_entity.proto";
+import "ai/traceable/ratelimiting/config/service/v1/rate_limiting_rule.proto";
+
+option java_multiple_files = true;
 
 service RateLimitingConfigService {
-    rpc GetAllRateLimitingRules (GetAllRateLimitingRulesRequest) returns (GetAllRateLimitingRulesResponse) {
-    }
-    rpc GetRateLimitingConfigsForEntity (GetRateLimitingConfigsForEntityRequest) returns (GetRateLimitingConfigsForEntityResponse) {
-    }
-    rpc CreateRuleRateLimitedEntityAssociation (CreateRuleRateLimitedEntityAssociationRequest) returns (CreateRuleRateLimitedEntityAssociationResponse) {
-    }
-    rpc DeleteRuleRateLimitedEntityAssociation (DeleteRuleRateLimitedEntityAssociationRequest) returns (DeleteRuleRateLimitedEntityAssociationResponse) {
-    }
-    rpc UpdateRuleConfig (UpdateRuleConfigRequest) returns (UpdateRuleConfigResponse) {
-    }
-    rpc DeleteRuleConfig (DeleteRuleConfigRequest) returns (DeleteRuleConfigResponse) {
-    }
-    rpc CreateRuleConfig (CreateRuleConfigRequest) returns (CreateRuleConfigResponse) {
-    }
+  rpc GetAllRateLimitingRules(GetAllRateLimitingRulesRequest) returns (GetAllRateLimitingRulesResponse) {}
+  rpc GetRateLimitingConfigsForEntity(GetRateLimitingConfigsForEntityRequest) returns (GetRateLimitingConfigsForEntityResponse) {}
+  rpc CreateRuleRateLimitedEntityAssociation(CreateRuleRateLimitedEntityAssociationRequest) returns (CreateRuleRateLimitedEntityAssociationResponse) {}
+  rpc DeleteRuleRateLimitedEntityAssociation(DeleteRuleRateLimitedEntityAssociationRequest) returns (DeleteRuleRateLimitedEntityAssociationResponse) {}
+  rpc UpdateRuleConfig(UpdateRuleConfigRequest) returns (UpdateRuleConfigResponse) {}
+  rpc DeleteRuleConfig(DeleteRuleConfigRequest) returns (DeleteRuleConfigResponse) {}
+  rpc CreateRuleConfig(CreateRuleConfigRequest) returns (CreateRuleConfigResponse) {}
 }
 
-message GetAllRateLimitingRulesRequest {
-}
+message GetAllRateLimitingRulesRequest {}
 
 message GetAllRateLimitingRulesResponse {
-    repeated RateLimitingRuleWithRateLimitedEntities rules = 1;
+  repeated RateLimitingRuleWithRateLimitedEntities rules = 1;
 }
 
 message GetRateLimitingConfigsForEntityRequest {
-    RateLimitedEntity entity = 1;
+  RateLimitedEntity entity = 1;
 }
 
 message GetRateLimitingConfigsForEntityResponse {
-    repeated RateLimitingRuleConfig rule = 1;
+  repeated RateLimitingRuleConfig rule = 1;
 }
 
 message CreateRuleRateLimitedEntityAssociationRequest {
-    string rule_id = 1;
-    RateLimitedEntity entity = 2;
+  string rule_id = 1;
+  RateLimitedEntity entity = 2;
 }
 
-message CreateRuleRateLimitedEntityAssociationResponse {
-}
+message CreateRuleRateLimitedEntityAssociationResponse {}
 
 message DeleteRuleRateLimitedEntityAssociationRequest {
-    string rule_id = 1;
-    RateLimitedEntity entity = 2;
+  string rule_id = 1;
+  RateLimitedEntity entity = 2;
 }
 
-message DeleteRuleRateLimitedEntityAssociationResponse {
-}
+message DeleteRuleRateLimitedEntityAssociationResponse {}
 
 message UpdateRuleConfigRequest {
-    RateLimitingRuleConfig rule = 1;
+  RateLimitingRuleConfig rule = 1;
 }
 
 message UpdateRuleConfigResponse {
-    RateLimitingRuleConfig rule = 1;
+  RateLimitingRuleConfig rule = 1;
 }
 
 message DeleteRuleConfigRequest {
-    string rule_id = 1;
+  string rule_id = 1;
 }
 
-message DeleteRuleConfigResponse {
-}
+message DeleteRuleConfigResponse {}
 
 message CreateRuleConfigRequest {
-    CreateRateLimitingRuleConfig rule = 1;
+  CreateRateLimitingRuleConfig rule = 1;
 }
 
 message CreateRuleConfigResponse {
-    RateLimitingRuleConfig rule = 1;
+  RateLimitingRuleConfig rule = 1;
 }

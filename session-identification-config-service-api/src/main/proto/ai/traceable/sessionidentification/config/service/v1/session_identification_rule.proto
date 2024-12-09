@@ -120,7 +120,7 @@ message CustomProjection {
 
 message AttributeProjection {
   MatchCondition attribute_key_match_condition = 1;
-  repeated ValueProjection value_projections_in_order = 2;  // empty list means no projection, return the value as-is
+  repeated ValueProjection value_projections_in_order = 2; // empty list means no projection, return the value as-is
 }
 
 message MatchCondition {
@@ -194,6 +194,5 @@ message ValueProjection {
     string claim_key = 1;
   }
 
-  message Base64Projection {
-  }
+  message Base64Projection {}
 }

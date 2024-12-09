@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.alerting.config.service.v2;
+
+option java_multiple_files = true;
 
 message PostureEventCondition {
   repeated PostureEventType posture_event_types = 1;
@@ -24,24 +24,17 @@ message PostureEventType {
   }
 }
 
-message SensitiveDataDiscovery {
-}
+message SensitiveDataDiscovery {}
 
-message VulnerabilityStatusChange {
-}
+message VulnerabilityStatusChange {}
 
-message SensitiveDataSharedWithThirdParty {
-}
+message SensitiveDataSharedWithThirdParty {}
 
-message ServiceDiscovery {
-}
+message ServiceDiscovery {}
 
-message VulnerabilityDiscovery {
-}
+message VulnerabilityDiscovery {}
 
-
-message ApiDiscoveryEvent {
-}
+message ApiDiscoveryEvent {}
 
 message RiskScoreChangeEvent {
   repeated RiskDelta risk_delta = 1;
@@ -53,14 +46,10 @@ enum RiskDelta {
   RISK_DELTA_DECREASE = 2;
 }
 
-message BackendDiscovery {
-}
+message BackendDiscovery {}
 
-message ThirdPartyDiscovery {
-}
+message ThirdPartyDiscovery {}
 
-message ThirdPartyApiDiscovery {
-}
+message ThirdPartyApiDiscovery {}
 
-message DomainDiscovery {
-}
+message DomainDiscovery {}

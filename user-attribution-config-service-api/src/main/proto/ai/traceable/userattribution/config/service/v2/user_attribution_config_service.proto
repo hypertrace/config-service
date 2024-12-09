@@ -2,16 +2,16 @@ syntax = "proto3";
 
 package ai.traceable.userattribution.config.service.v2;
 
-option java_multiple_files = true;
-
 import "ai/traceable/userattribution/config/service/v2/user_attribution_rule.proto";
 
+option java_multiple_files = true;
+
 service UserAttributionConfigService {
-  rpc GetUserAttributionRules (GetUserAttributionRulesRequest) returns (GetUserAttributionRulesResponse) {}
-  rpc CreateUserAttributionRule (CreateUserAttributionRuleRequest) returns (CreateUserAttributionRuleResponse) {}
-  rpc UpdateUserAttributionRule (UpdateUserAttributionRuleRequest) returns (UpdateUserAttributionRuleResponse) {}
-  rpc DeleteUserAttributionRule (DeleteUserAttributionRuleRequest) returns (DeleteUserAttributionRuleResponse) {}
-  rpc RankUserAttributionRule (RankUserAttributionRuleRequest) returns (RankUserAttributionRuleResponse) {}
+  rpc GetUserAttributionRules(GetUserAttributionRulesRequest) returns (GetUserAttributionRulesResponse) {}
+  rpc CreateUserAttributionRule(CreateUserAttributionRuleRequest) returns (CreateUserAttributionRuleResponse) {}
+  rpc UpdateUserAttributionRule(UpdateUserAttributionRuleRequest) returns (UpdateUserAttributionRuleResponse) {}
+  rpc DeleteUserAttributionRule(DeleteUserAttributionRuleRequest) returns (DeleteUserAttributionRuleResponse) {}
+  rpc RankUserAttributionRule(RankUserAttributionRuleRequest) returns (RankUserAttributionRuleResponse) {}
 }
 
 message GetUserAttributionRulesRequest {
@@ -59,8 +59,7 @@ message DeleteUserAttributionRuleRequest {
   string id = 1;
 }
 
-message DeleteUserAttributionRuleResponse {
-}
+message DeleteUserAttributionRuleResponse {}
 
 message RankUserAttributionRuleRequest {
   string id_to_update = 1;

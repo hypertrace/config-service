@@ -2,15 +2,15 @@ syntax = "proto3";
 
 package ai.traceable.waf.integration.service.api.v1;
 
-option java_multiple_files = true;
-
-import "ai/traceable/waf/integration/service/api/v1/azure_waf_provider.proto";
-import "ai/traceable/waf/integration/service/api/v1/aws_waf_provider.proto";
-import "ai/traceable/waf/integration/service/api/v1/imperva_waf_provider.proto";
-import "ai/traceable/waf/integration/service/api/v1/gcp_waf_provider.proto";
-import "ai/traceable/waf/integration/service/api/v1/f5_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/akamai_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/aws_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/azure_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/f5_waf_provider.proto";
 import "ai/traceable/waf/integration/service/api/v1/fortinet_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/gcp_waf_provider.proto";
+import "ai/traceable/waf/integration/service/api/v1/imperva_waf_provider.proto";
+
+option java_multiple_files = true;
 
 message WafIntegration {
   string id = 1;
@@ -43,7 +43,7 @@ message WafIntegrationTarget {
 message CloudflareIntegrationParams {
   string zone = 1;
   string email = 2;
-  string api_token = 3 [deprecated=true];
+  string api_token = 3 [deprecated = true];
   EncryptedData encrypted_api_token = 4;
 }
 
@@ -76,7 +76,6 @@ message WafIntegrationScope {
     EnvironmentScope environment_scope = 1;
   }
 }
-
 
 enum RuleType {
   RULE_TYPE_UNSPECIFIED = 0;

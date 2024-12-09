@@ -4,8 +4,7 @@ package ai.traceable.threatmanagement.config.service.v1;
 
 option java_multiple_files = true;
 
-message GetThreatAutoBlockingConfigRequest {
-}
+message GetThreatAutoBlockingConfigRequest {}
 
 message GetThreatAutoBlockingConfigResponse {
   ThreatAutoBlockingActionConfig auto_blocking_action_config = 1;

@@ -2,12 +2,11 @@ syntax = "proto3";
 
 package ai.traceable.data.protection.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/data/protection/config/service/v1/data_protection_config.proto";
 
-service DataProtectionConfigService {
+option java_multiple_files = true;
 
+service DataProtectionConfigService {
   rpc GetResolvedScopedDataProtectionConfig(GetResolvedScopedDataProtectionConfigRequest) returns (GetResolvedScopedDataProtectionConfigResponse) {}
 
   rpc UpsertScopedDataProtectionConfig(UpsertScopedDataProtectionConfigRequest) returns (UpsertScopedDataProtectionConfigResponse) {}
@@ -27,8 +26,7 @@ message DeleteScopedDataProtectionConfigRequest {
   DataProtectionScope scope = 1;
 }
 
-message DeleteScopedDataProtectionConfigResponse {
-}
+message DeleteScopedDataProtectionConfigResponse {}
 
 message UpsertScopedDataProtectionConfigRequest {
   DataProtectionScope scope = 1;

@@ -1,32 +1,32 @@
 syntax = "proto3";
 
-option java_multiple_files = true;
-
 package ai.traceable.alerting.config.service.v2;
 
+option java_multiple_files = true;
+
 message ApiFraudIncidentChangeEventCondition {
-    repeated ApiFraudIncidentConfidenceLevel confidence_levels = 1;
-    repeated ApiFraudIncidentSeverity severities = 2;
-    repeated ApiFraudIncidentChangeType change_types = 3;
+  repeated ApiFraudIncidentConfidenceLevel confidence_levels = 1;
+  repeated ApiFraudIncidentSeverity severities = 2;
+  repeated ApiFraudIncidentChangeType change_types = 3;
 }
 
 enum ApiFraudIncidentConfidenceLevel {
-    API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
-    API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_LOW = 1;
-    API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_MEDIUM = 2;
-    API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_HIGH = 3;
+  API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_LOW = 1;
+  API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_MEDIUM = 2;
+  API_FRAUD_INCIDENT_CONFIDENCE_LEVEL_HIGH = 3;
 }
 
 enum ApiFraudIncidentSeverity {
-    API_FRAUD_INCIDENT_SEVERITY_UNSPECIFIED = 0;
-    API_FRAUD_INCIDENT_SEVERITY_LOW = 1;
-    API_FRAUD_INCIDENT_SEVERITY_MEDIUM = 2;
-    API_FRAUD_INCIDENT_SEVERITY_HIGH = 3;
-    API_FRAUD_INCIDENT_SEVERITY_CRITICAL = 4;
+  API_FRAUD_INCIDENT_SEVERITY_UNSPECIFIED = 0;
+  API_FRAUD_INCIDENT_SEVERITY_LOW = 1;
+  API_FRAUD_INCIDENT_SEVERITY_MEDIUM = 2;
+  API_FRAUD_INCIDENT_SEVERITY_HIGH = 3;
+  API_FRAUD_INCIDENT_SEVERITY_CRITICAL = 4;
 }
 
 enum ApiFraudIncidentChangeType {
-    API_FRAUD_INCIDENT_CHANGE_TYPE_UNSPECIFIED = 0;
-    API_FRAUD_INCIDENT_CHANGE_TYPE_CREATE = 1;
-    API_FRAUD_INCIDENT_CHANGE_TYPE_UPDATE = 2;
+  API_FRAUD_INCIDENT_CHANGE_TYPE_UNSPECIFIED = 0;
+  API_FRAUD_INCIDENT_CHANGE_TYPE_CREATE = 1;
+  API_FRAUD_INCIDENT_CHANGE_TYPE_UPDATE = 2;
 }

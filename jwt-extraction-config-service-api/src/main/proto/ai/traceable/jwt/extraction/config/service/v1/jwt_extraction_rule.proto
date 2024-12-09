@@ -51,7 +51,7 @@ message JwtLocation {
   // regex with single capture group to extract jwt from value
   optional string regex_capture_group = 1;
   oneof location {
-    StringPredicate request_header= 2;
+    StringPredicate request_header = 2;
     StringPredicate request_cookie = 3;
     StringPredicate query_parameter = 4;
     StringPredicate form_request_body = 5;
@@ -73,9 +73,7 @@ message JwtProcessingInstruction {
       string regex_capture_group = 4;
     }
 
-    message RawValue {
-
-    }
+    message RawValue {}
   }
 
   message Action {
@@ -84,7 +82,6 @@ message JwtProcessingInstruction {
     }
   }
 }
-
 
 message StringPredicate {
   RelationalOperator operator = 1;
@@ -144,6 +141,4 @@ message DeleteJwtExtractionRuleRequest {
   string id = 1;
 }
 
-message DeleteJwtExtractionRuleResponse {
-
-}
+message DeleteJwtExtractionRuleResponse {}

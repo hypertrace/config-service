@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package ai.traceable.external.data.classification.config.service.v1;
+
 import "ai/traceable/external/data/classification/config/service/v1/external_data_classification.proto";
 
 option go_package = "github.com/Traceableai/config-service/gen/go/ai/traceable/external/data/classification/config/service/v1";

@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.localprocessing.config.service.v1;
 
-option java_multiple_files = true;
 option go_package = "github.com/Traceableai/config-service/localprocessing/v1";
+option java_multiple_files = true;
 
 message SamplingPolicies {
   string sampling_policies_hash = 1;

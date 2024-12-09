@@ -2,6 +2,7 @@ syntax = "proto3";
 
 // buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.anomaly.config.service.v1.detector;
+
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
 import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
 import "google/protobuf/duration.proto";

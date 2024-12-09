@@ -2,25 +2,18 @@ syntax = "proto3";
 
 package ai.traceable.customsignature.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/customsignature/config/service/v1/custom_signature_config.proto";
 
+option java_multiple_files = true;
 
 service CustomSignatureConfigService {
+  rpc GetCustomSignatureRules(GetCustomSignatureRulesRequest) returns (GetCustomSignatureRulesResponse) {}
 
-  rpc GetCustomSignatureRules (GetCustomSignatureRulesRequest) returns (GetCustomSignatureRulesResponse) {
-  }
+  rpc CreateCustomSignatureRule(CreateCustomSignatureRuleRequest) returns (CreateCustomSignatureRuleResponse) {}
 
-  rpc CreateCustomSignatureRule (CreateCustomSignatureRuleRequest) returns (CreateCustomSignatureRuleResponse) {
-  }
+  rpc UpdateCustomSignatureRule(UpdateCustomSignatureRuleRequest) returns (UpdateCustomSignatureRuleResponse) {}
 
-  rpc UpdateCustomSignatureRule (UpdateCustomSignatureRuleRequest) returns (UpdateCustomSignatureRuleResponse) {
-  }
+  rpc DeleteCustomSignatureRule(DeleteCustomSignatureRuleRequest) returns (DeleteCustomSignatureRuleResponse) {}
 
-  rpc DeleteCustomSignatureRule (DeleteCustomSignatureRuleRequest) returns (DeleteCustomSignatureRuleResponse) {
-  }
-
-  rpc GetCustomSignatureModsecRules (GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {
-  }
+  rpc GetCustomSignatureModsecRules(GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {}
 }

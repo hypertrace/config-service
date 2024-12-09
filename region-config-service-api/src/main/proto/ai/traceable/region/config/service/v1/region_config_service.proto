@@ -2,29 +2,22 @@ syntax = "proto3";
 
 package ai.traceable.region.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/region/config/service/v1/region_config.proto";
 
+option java_multiple_files = true;
+
 service RegionConfigService {
-    rpc GetRegions (GetRegionsRequest) returns (GetRegionsResponse) {
-    }
+  rpc GetRegions(GetRegionsRequest) returns (GetRegionsResponse) {}
 
-    rpc GetDetailedRegions (GetDetailedRegionsRequest) returns (GetDetailedRegionsResponse) {
-    }
+  rpc GetDetailedRegions(GetDetailedRegionsRequest) returns (GetDetailedRegionsResponse) {}
 
-    rpc GetRegion (GetRegionRequest) returns (GetRegionResponse) {
-    }
+  rpc GetRegion(GetRegionRequest) returns (GetRegionResponse) {}
 
-    rpc GetAllRegionRules (GetAllRegionRulesRequest) returns (GetAllRegionRulesResponse) {
-    }
+  rpc GetAllRegionRules(GetAllRegionRulesRequest) returns (GetAllRegionRulesResponse) {}
 
-    rpc CreateRegionRule (CreateRegionRuleRequest) returns (CreateRegionRuleResponse) {
-    }
+  rpc CreateRegionRule(CreateRegionRuleRequest) returns (CreateRegionRuleResponse) {}
 
-    rpc UpdateRegionRule (UpdateRegionRuleRequest) returns (UpdateRegionRuleResponse) {
-    }
+  rpc UpdateRegionRule(UpdateRegionRuleRequest) returns (UpdateRegionRuleResponse) {}
 
-    rpc DeleteRegionRule (DeleteRegionRuleRequest) returns (DeleteRegionRuleResponse) {
-    }
+  rpc DeleteRegionRule(DeleteRegionRuleRequest) returns (DeleteRegionRuleResponse) {}
 }

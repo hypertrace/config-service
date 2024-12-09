@@ -11,13 +11,13 @@ jobs:
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Checkout Traceable actions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
@@ -46,13 +46,13 @@ jobs:
     needs: [ create-release ]
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Checkout Traceable actions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
@@ -101,13 +101,13 @@ jobs:
     runs-on: self-hosted-x64-small
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Checkout Traceable actions
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
@@ -123,7 +123,7 @@ jobs:
     runs-on: self-hosted-x64-small
     needs: [ create-release ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive

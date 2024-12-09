@@ -2,10 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.detection.exclusion.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/detection/exclusion/config/service/v1/detection_exclusion_conditions.proto";
 
+option java_multiple_files = true;
 
 message DetectionExclusionRule {
   string id = 1;
@@ -30,7 +29,6 @@ message DetectionExclusionRuleInfo {
   DetectionExclusionRuleStatus rule_status = 4;
   repeated ExclusionTarget exclusion_targets = 5;
 }
-
 
 message DetectionExclusionCondition {
   oneof condition {
@@ -81,7 +79,7 @@ enum ExclusionTarget {
   EXCLUSION_TARGET_ALERT = 3;
 }
 
-enum RuleSource{
+enum RuleSource {
   RULE_SOURCE_UNSPECIFIED = 0;
   RULE_SOURCE_DEFAULT = 1;
   RULE_SOURCE_CUSTOMER = 2;

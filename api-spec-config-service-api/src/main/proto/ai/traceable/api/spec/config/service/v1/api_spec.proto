@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.api.spec.config.service.v1;
 
-option java_multiple_files = true;
-
 import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
 
 // get
 message GetApiSpecsRequest {
@@ -125,15 +125,13 @@ message DeleteApiSpecRequest {
   string spec_id = 1;
 }
 
-message DeleteApiSpecResponse {
-}
+message DeleteApiSpecResponse {}
 
 message DeleteApiSpecsRequest {
   repeated string spec_ids = 1;
 }
 
-message DeleteApiSpecsResponse {
-}
+message DeleteApiSpecsResponse {}
 
 message ApiSpec {
   string spec_id = 1;
@@ -178,14 +176,11 @@ enum OpenApiSpecResolutionState {
   OPEN_API_SPEC_RESOLUTION_STATE_COMPLETE = 2;
 }
 
-message PostmanCollectionMetadata {
-}
+message PostmanCollectionMetadata {}
 
-message PostmanEnvironmentMetadata {
-}
+message PostmanEnvironmentMetadata {}
 
-message GraphqlSchemaMetadata {
-}
+message GraphqlSchemaMetadata {}
 
 message OpenApiSpecReference {
   string resolved_spec_path = 1;
@@ -196,8 +191,7 @@ message OpenApiSpecReference {
   }
 }
 
-message MissingOpenApiSpecReference {
-}
+message MissingOpenApiSpecReference {}
 
 message IncompleteOpenApiSpecReference {
   string spec_id = 1;

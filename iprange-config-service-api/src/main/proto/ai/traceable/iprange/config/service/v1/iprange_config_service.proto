@@ -2,21 +2,16 @@ syntax = "proto3";
 
 package ai.traceable.iprange.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/iprange/config/service/v1/iprange_config.proto";
 
+option java_multiple_files = true;
+
 service IpRangeConfigService {
+  rpc GetIpRangeRules(GetIpRangeRulesRequest) returns (GetIpRangeRulesResponse) {}
 
-    rpc GetIpRangeRules (GetIpRangeRulesRequest) returns (GetIpRangeRulesResponse) {
-    }
+  rpc CreateIpRangeRule(CreateIpRangeRuleRequest) returns (CreateIpRangeRuleResponse) {}
 
-    rpc CreateIpRangeRule (CreateIpRangeRuleRequest) returns (CreateIpRangeRuleResponse) {
-    }
+  rpc UpdateIpRangeRule(UpdateIpRangeRuleRequest) returns (UpdateIpRangeRuleResponse) {}
 
-    rpc UpdateIpRangeRule (UpdateIpRangeRuleRequest) returns (UpdateIpRangeRuleResponse) {
-    }
-
-    rpc DeleteIpRangeRule (DeleteIpRangeRuleRequest) returns (DeleteIpRangeRuleResponse) {
-    }
+  rpc DeleteIpRangeRule(DeleteIpRangeRuleRequest) returns (DeleteIpRangeRuleResponse) {}
 }
