@@ -4,6 +4,7 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.supplier.CaptchaSiteKeyConfigSupplier;
 import ai.traceable.edge.config.service.supplier.ClientBotFingerprintPolicySupplier;
 import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplier;
+import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.config.service.v1.GetConfigsRequest;
 import ai.traceable.edge.config.service.v1.GetConfigsResponse;
@@ -30,7 +31,8 @@ public class TraceableEdgeConfigService
       UuidGenerator uuidGenerator,
       EdgeDecisionEngineConfigSupplier edgeDecisionEngineConfigSupplier,
       CaptchaSiteKeyConfigSupplier captchaSiteKeyConfigSupplier,
-      ClientBotFingerprintPolicySupplier clientBotFingerprintPolicySupplier) {
+      ClientBotFingerprintPolicySupplier clientBotFingerprintPolicySupplier,
+      FlowConfigSupplier flowConfigSupplier) {
     this.uuidGenerator = uuidGenerator;
     this.configSuppliersByType = new HashMap<>();
     this.configSuppliersByType.put(
@@ -39,6 +41,7 @@ public class TraceableEdgeConfigService
         captchaSiteKeyConfigSupplier.getConfigType(), captchaSiteKeyConfigSupplier);
     this.configSuppliersByType.put(
         clientBotFingerprintPolicySupplier.getConfigType(), clientBotFingerprintPolicySupplier);
+    this.configSuppliersByType.put(flowConfigSupplier.getConfigType(), flowConfigSupplier);
     // todo: use configSupplier to automatically instantiate the appropriate class.
     //    var configTypeSupplierConfigs = config.getConfigList(CONFIG_TYPES_CONFIG_NAME);
     //    for (var configTypeSupplierConfig : configTypeSupplierConfigs) {

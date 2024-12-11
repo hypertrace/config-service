@@ -11,9 +11,11 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 
 public class CaptchaSiteKeyConfigStore extends IdentifiedObjectStore<CaptchaSiteKeyConfig> {
-  public static final String EDGE_BOT_CONFIG_NAMESPACE = "edge-bot-config-resource-namespace";
+  public static final String BOT_CAPTCHA_SITE_KEY_CONFIG_RESOURCE_NAMESPACE =
+      "bot-captcha-site-key-config-resource-namespace";
 
-  public static final String EDGE_BOT_CONFIG_RESOURCE = "edge-bot-config-resource";
+  public static final String BOT_CAPTCHA_SITE_KEY_CONFIG_RESOURCE =
+      "bot-captcha-site-key-config-resource";
 
   @Inject
   public CaptchaSiteKeyConfigStore(
@@ -21,8 +23,8 @@ public class CaptchaSiteKeyConfigStore extends IdentifiedObjectStore<CaptchaSite
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
-        EDGE_BOT_CONFIG_NAMESPACE,
-        EDGE_BOT_CONFIG_RESOURCE,
+        BOT_CAPTCHA_SITE_KEY_CONFIG_RESOURCE_NAMESPACE,
+        BOT_CAPTCHA_SITE_KEY_CONFIG_RESOURCE,
         configChangeEventGenerator);
   }
 

@@ -1,7 +1,6 @@
 package ai.traceable.edge.config.service;
 
-import ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfigServiceGrpc;
-import ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfigServiceGrpc.CaptchaSiteKeyConfigServiceBlockingStub;
+import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
 import ai.traceable.edge.config.service.config.ActorServiceConfig;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
@@ -50,8 +49,9 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   }
 
   @Provides
-  CaptchaSiteKeyConfigServiceBlockingStub providesCaptchaSiteKeyConfigServiceStub(Channel channel) {
-    return CaptchaSiteKeyConfigServiceGrpc.newBlockingStub(channel)
+  BotConfigServiceGrpc.BotConfigServiceBlockingStub providesCaptchaSiteKeyConfigServiceStub(
+      Channel channel) {
+    return BotConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

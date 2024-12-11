@@ -15,6 +15,14 @@ enum FraudPolicyCategory {
   FRAUD_POLICY_CATEGORY_BOT = 3;
 }
 
+enum PolicyGroup {
+  POLICY_GROUP_UNSPECIFIED = 0;
+  POLICY_GROUP_BOT = 1;
+  POLICY_GROUP_WAF = 2;
+  POLICY_GROUP_MODSEC = 3;
+  POLICY_GROUP_CUSTOM = 4;
+}
+
 enum FraudRuleLogicalOperator {
   FRAUD_RULE_LOGICAL_OPERATOR_UNSPECIFIED = 0;
   FRAUD_RULE_LOGICAL_OPERATOR_AND = 1;
@@ -116,7 +124,7 @@ message FraudPolicy {
   FraudPolicyRule fraud_policy_rule = 3;
 
   // categorize the output of the policy to risk or fraud
-  FraudPolicyCategory category = 4;
+  FraudPolicyCategory category = 4 [deprecated = true];
 
   // which entity type's risk or fraud is being assessed by this policy
   string primary_entity_type = 5;
@@ -146,6 +154,7 @@ message FraudPolicy {
   FraudRiskSpec risk_spec = 13;
 
   // specify the category to which this risk must be associated (usually determined by the endpoints used for detection)
+  // threat type
   string fraud_risk_category = 14;
 
   FraudPolicyScope scope = 15;
@@ -154,6 +163,8 @@ message FraudPolicy {
 
   // track updates, use for optimistic locking.
   int64 version = 17;
+
+  PolicyGroup policy_group = 18;
 
   // store information for creating incidents from the policy.
   // at this point, we don't know yet what is the actual structure.

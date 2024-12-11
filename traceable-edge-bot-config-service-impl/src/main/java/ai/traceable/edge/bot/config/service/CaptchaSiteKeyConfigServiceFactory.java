@@ -15,7 +15,7 @@ public class CaptchaSiteKeyConfigServiceFactory {
       Channel channel, ConfigChangeEventGenerator changeEventGenerator) {
     Injector injector =
         Guice.createInjector(
-            Stage.PRODUCTION, new EdgeBotConfigServiceModule(channel, changeEventGenerator));
+            Stage.PRODUCTION, new BotConfigServiceModule(channel, changeEventGenerator));
     return injector.getInstance(BindableService.class);
   }
 }

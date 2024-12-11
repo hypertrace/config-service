@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package ai.traceable.edge.bot.config.service.v1;
+
+option java_multiple_files = true;
+
+import "ai/traceable/edge/bot/config/service/v1/captcha_site_key_config.proto";
+import "ai/traceable/edge/bot/config/service/v1/flow_config.proto";
+
+service BotConfigService {
+  rpc UpsertCaptchaSiteKeyConfig(UpsertCaptchaSiteKeyConfigRequest) returns (UpsertCaptchaSiteKeyConfigResponse) {}
+  rpc GetCaptchaSiteKeyConfig(GetCaptchaSiteKeyConfigRequest) returns (GetCaptchaSiteKeyConfigResponse) {}
+  rpc GetAllCaptchaSiteKeyConfigs(GetAllCaptchaSiteKeyConfigsRequest) returns (GetAllCaptchaSiteKeyConfigsResponse) {}
+  rpc DeleteCaptchaSiteKeyConfig(DeleteCaptchaSiteKeyConfigRequest) returns (DeleteCaptchaSiteKeyConfigResponse) {}
+
+  rpc UpsertFlowConfig(UpsertFlowConfigRequest) returns (UpsertFlowConfigResponse) {}
+  rpc GetFlowConfig(GetFlowConfigRequest) returns (GetFlowConfigResponse) {}
+  rpc GetAllFlowConfigs(GetAllFlowConfigsRequest) returns (GetAllFlowConfigsResponse) {}
+  rpc DeleteFlowConfig(DeleteFlowConfigRequest) returns (DeleteFlowConfigResponse) {}
+}
+
+message UpsertCaptchaSiteKeyConfigRequest {
+  ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig config = 1;
+}
+
+message UpsertCaptchaSiteKeyConfigResponse {
+  ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig config = 1;
+}
+
+message GetCaptchaSiteKeyConfigRequest {
+  string id = 1;
+}
+
+message GetCaptchaSiteKeyConfigResponse {
+  ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig config = 1;
+}
+
+message GetAllCaptchaSiteKeyConfigsRequest {}
+
+message GetAllCaptchaSiteKeyConfigsResponse {
+  repeated ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig configs = 1;
+}
+
+message DeleteCaptchaSiteKeyConfigRequest {
+  string id = 1;
+}
+
+message DeleteCaptchaSiteKeyConfigResponse {
+  ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig deleted_config = 1;
+}
+
+message UpsertFlowConfigRequest {
+  ai.traceable.edge.bot.config.service.v1.FlowConfig config = 1;
+}
+
+message UpsertFlowConfigResponse {
+  ai.traceable.edge.bot.config.service.v1.FlowConfig config = 1;
+}
+
+message GetFlowConfigRequest {
+  string id = 1;
+}
+
+message GetFlowConfigResponse {
+  ai.traceable.edge.bot.config.service.v1.FlowConfig config = 1;
+}
+
+message GetAllFlowConfigsRequest {}
+
+message GetAllFlowConfigsResponse {
+  repeated ai.traceable.edge.bot.config.service.v1.FlowConfig configs = 1;
+}
+
+message DeleteFlowConfigRequest {
+  string id = 1;
+}
+
+message DeleteFlowConfigResponse {
+  ai.traceable.edge.bot.config.service.v1.FlowConfig deleted_config = 1;
+}

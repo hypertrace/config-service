@@ -2,8 +2,8 @@ package ai.traceable.edge.config.service.supplier;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
-import ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig;
-import ai.traceable.edge.bot.config.service.v1.GetAllCaptchaSiteKeyConfigsRequest;
+import ai.traceable.edge.bot.config.service.v1.FlowConfig;
+import ai.traceable.edge.bot.config.service.v1.GetAllFlowConfigsRequest;
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
@@ -15,14 +15,14 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class CaptchaSiteKeyConfigSupplier implements TraceableEdgeConfigSupplier {
-  private static final String CONFIG_TYPE = CaptchaSiteKeyConfig.class.getSimpleName();
+public class FlowConfigSupplier implements TraceableEdgeConfigSupplier {
+  private static final String CONFIG_TYPE = FlowConfig.class.getSimpleName();
   private final BotConfigServiceGrpc.BotConfigServiceBlockingStub stub;
   private final TraceableEdgeConfig config;
   private final UuidGenerator uuidGenerator;
 
   @Inject
-  public CaptchaSiteKeyConfigSupplier(
+  public FlowConfigSupplier(
       TraceableEdgeConfig config,
       BotConfigServiceGrpc.BotConfigServiceBlockingStub stub,
       UuidGenerator uuidGenerator) {
@@ -46,8 +46,7 @@ public class CaptchaSiteKeyConfigSupplier implements TraceableEdgeConfigSupplier
             () ->
                 stub.withDeadlineAfter(
                         config.getClientConfig().getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                    .getAllCaptchaSiteKeyConfigs(
-                        GetAllCaptchaSiteKeyConfigsRequest.getDefaultInstance()));
+                    .getAllFlowConfigs(GetAllFlowConfigsRequest.getDefaultInstance()));
     ConfigPayloads.Builder configPayloadsBuilder = ConfigPayloads.newBuilder();
     allCaptchaSiteKeyConfigs.getConfigsList().stream()
         .map(AbstractMessageLite::toByteString)

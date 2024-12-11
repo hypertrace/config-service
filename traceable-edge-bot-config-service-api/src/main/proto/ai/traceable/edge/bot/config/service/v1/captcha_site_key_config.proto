@@ -25,7 +25,6 @@ message CaptchaSiteKeyConfig {
   CaptchaDifficulty captcha_difficulty = 7;
   bool disabled = 8;
   map<string, string> labels = 9;
-  string page = 10;
   string flow = 11;
 }
 

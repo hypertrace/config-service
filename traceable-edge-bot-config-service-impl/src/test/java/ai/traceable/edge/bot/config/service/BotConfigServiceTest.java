@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.bot.config.service.store.CaptchaSiteKeyConfigStore;
 import ai.traceable.edge.bot.config.service.store.CaptchaSiteKeyConfigStoreManager;
+import ai.traceable.edge.bot.config.service.store.FlowConfigStore;
+import ai.traceable.edge.bot.config.service.store.FlowConfigStoreManager;
+import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
 import ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig;
-import ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfigServiceGrpc;
-import ai.traceable.edge.bot.config.service.v1.DeleteRequest;
-import ai.traceable.edge.bot.config.service.v1.GetAllRequest;
-import ai.traceable.edge.bot.config.service.v1.GetRequest;
-import ai.traceable.edge.bot.config.service.v1.UpsertRequest;
+import ai.traceable.edge.bot.config.service.v1.DeleteCaptchaSiteKeyConfigRequest;
+import ai.traceable.edge.bot.config.service.v1.GetAllCaptchaSiteKeyConfigsRequest;
+import ai.traceable.edge.bot.config.service.v1.GetCaptchaSiteKeyConfigRequest;
+import ai.traceable.edge.bot.config.service.v1.UpsertCaptchaSiteKeyConfigRequest;
 import ai.traceable.edge.bot.config.service.validation.RequestValidator;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -27,11 +29,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class CaptchaSiteKeyConfigServiceTest {
+class BotConfigServiceTest {
 
   private static final String UUID_1 = "uuid-1";
 
-  private CaptchaSiteKeyConfigServiceGrpc.CaptchaSiteKeyConfigServiceBlockingStub stub;
+  private BotConfigServiceGrpc.BotConfigServiceBlockingStub stub;
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private UuidGenerator uuidGenerator;
@@ -42,15 +44,19 @@ class CaptchaSiteKeyConfigServiceTest {
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    CaptchaSiteKeyConfigStoreManager storeManager =
+    CaptchaSiteKeyConfigStoreManager captchaSiteKeyConfigStoreManager =
         new CaptchaSiteKeyConfigStoreManager(
             uuidGenerator, new CaptchaSiteKeyConfigStore(genericStub, eventGenerator));
+    FlowConfigStoreManager flowConfigStoreManager =
+        new FlowConfigStoreManager(uuidGenerator, new FlowConfigStore(genericStub, eventGenerator));
     this.mockGenericConfigService
-        .addService(new CaptchaSiteKeyConfigService(storeManager, new RequestValidator()))
+        .addService(
+            new BotConfigService(
+                captchaSiteKeyConfigStoreManager, flowConfigStoreManager, new RequestValidator()))
         .start();
 
     this.stub =
-        CaptchaSiteKeyConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
+        BotConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
             .withCallCredentials(
                 RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
@@ -67,7 +73,12 @@ class CaptchaSiteKeyConfigServiceTest {
 
     CaptchaSiteKeyConfig created =
         requestContext
-            .call(() -> stub.upsert(UpsertRequest.newBuilder().setConfig(new_config()).build()))
+            .call(
+                () ->
+                    stub.upsertCaptchaSiteKeyConfig(
+                        UpsertCaptchaSiteKeyConfigRequest.newBuilder()
+                            .setConfig(new_config())
+                            .build()))
             .getConfig();
 
     assertNotNull(created.getId());
@@ -78,20 +89,34 @@ class CaptchaSiteKeyConfigServiceTest {
 
     CaptchaSiteKeyConfig updated =
         requestContext.call(
-            () -> stub.upsert(UpsertRequest.newBuilder().setConfig(toUpdate).build()).getConfig());
+            () ->
+                stub.upsertCaptchaSiteKeyConfig(
+                        UpsertCaptchaSiteKeyConfigRequest.newBuilder().setConfig(toUpdate).build())
+                    .getConfig());
 
     assertEquals(id, updated.getId());
     assertEquals(toUpdate.getSiteKey(), updated.getSiteKey());
 
-    var config =
-        requestContext.call(() -> stub.get(GetRequest.newBuilder().setId(id).build()).getConfig());
+    CaptchaSiteKeyConfig config =
+        requestContext.call(
+            () ->
+                stub.getCaptchaSiteKeyConfig(
+                        GetCaptchaSiteKeyConfigRequest.newBuilder().setId(id).build())
+                    .getConfig());
 
     assertEquals(id, config.getId());
 
-    requestContext.call(() -> stub.delete(DeleteRequest.newBuilder().setId(id).build()));
+    requestContext.call(
+        () ->
+            stub.deleteCaptchaSiteKeyConfig(
+                DeleteCaptchaSiteKeyConfigRequest.newBuilder().setId(id).build()));
 
     List<CaptchaSiteKeyConfig> configs =
-        requestContext.call(() -> stub.getAll(GetAllRequest.newBuilder().build()).getConfigsList());
+        requestContext.call(
+            () ->
+                stub.getAllCaptchaSiteKeyConfigs(
+                        GetAllCaptchaSiteKeyConfigsRequest.newBuilder().build())
+                    .getConfigsList());
 
     assertEquals(0, configs.size());
   }

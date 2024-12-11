@@ -2,14 +2,14 @@ package ai.traceable.edge.bot.config.service.store;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.bot.config.service.v1.CaptchaSiteKeyConfig;
-import ai.traceable.edge.bot.config.service.v1.DeleteRequest;
-import ai.traceable.edge.bot.config.service.v1.DeleteResponse;
-import ai.traceable.edge.bot.config.service.v1.GetAllRequest;
-import ai.traceable.edge.bot.config.service.v1.GetAllResponse;
-import ai.traceable.edge.bot.config.service.v1.GetRequest;
-import ai.traceable.edge.bot.config.service.v1.GetResponse;
-import ai.traceable.edge.bot.config.service.v1.UpsertRequest;
-import ai.traceable.edge.bot.config.service.v1.UpsertResponse;
+import ai.traceable.edge.bot.config.service.v1.DeleteCaptchaSiteKeyConfigRequest;
+import ai.traceable.edge.bot.config.service.v1.DeleteCaptchaSiteKeyConfigResponse;
+import ai.traceable.edge.bot.config.service.v1.GetAllCaptchaSiteKeyConfigsRequest;
+import ai.traceable.edge.bot.config.service.v1.GetAllCaptchaSiteKeyConfigsResponse;
+import ai.traceable.edge.bot.config.service.v1.GetCaptchaSiteKeyConfigRequest;
+import ai.traceable.edge.bot.config.service.v1.GetCaptchaSiteKeyConfigResponse;
+import ai.traceable.edge.bot.config.service.v1.UpsertCaptchaSiteKeyConfigRequest;
+import ai.traceable.edge.bot.config.service.v1.UpsertCaptchaSiteKeyConfigResponse;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -27,39 +27,47 @@ public class CaptchaSiteKeyConfigStoreManager {
     this.captchaSiteKeyConfigStore = captchaSiteKeyConfigStore;
   }
 
-  public GetAllResponse getAll(RequestContext requestContext, GetAllRequest request) {
+  public GetAllCaptchaSiteKeyConfigsResponse getAll(
+      RequestContext requestContext, GetAllCaptchaSiteKeyConfigsRequest request) {
     List<CaptchaSiteKeyConfig> configs = captchaSiteKeyConfigStore.getAllConfigData(requestContext);
-    return GetAllResponse.newBuilder().addAllConfigs(configs).build();
+    return GetAllCaptchaSiteKeyConfigsResponse.newBuilder().addAllConfigs(configs).build();
   }
 
-  public GetResponse get(RequestContext requestContext, GetRequest request) {
+  public GetCaptchaSiteKeyConfigResponse get(
+      RequestContext requestContext, GetCaptchaSiteKeyConfigRequest request) {
     Optional<CaptchaSiteKeyConfig> config =
         captchaSiteKeyConfigStore.getData(requestContext, request.getId());
     return config
         .map(
             captchaSiteKeyConfig ->
-                GetResponse.newBuilder().setConfig(captchaSiteKeyConfig).build())
-        .orElseGet(() -> GetResponse.newBuilder().build());
+                GetCaptchaSiteKeyConfigResponse.newBuilder()
+                    .setConfig(captchaSiteKeyConfig)
+                    .build())
+        .orElseGet(GetCaptchaSiteKeyConfigResponse::getDefaultInstance);
   }
 
-  public UpsertResponse upsert(RequestContext requestContext, UpsertRequest request) {
+  public UpsertCaptchaSiteKeyConfigResponse upsert(
+      RequestContext requestContext, UpsertCaptchaSiteKeyConfigRequest request) {
     var config = request.getConfig();
     if (config.getId().isEmpty()) {
       config = config.toBuilder().setId(uuidGenerator.generateRandomId()).build();
     }
     ContextualConfigObject<CaptchaSiteKeyConfig> configObject =
         captchaSiteKeyConfigStore.upsertObject(requestContext, config);
-    return UpsertResponse.newBuilder().setConfig(configObject.getData()).build();
+    return UpsertCaptchaSiteKeyConfigResponse.newBuilder()
+        .setConfig(configObject.getData())
+        .build();
   }
 
-  public DeleteResponse delete(RequestContext requestContext, DeleteRequest request) {
+  public DeleteCaptchaSiteKeyConfigResponse delete(
+      RequestContext requestContext, DeleteCaptchaSiteKeyConfigRequest request) {
     var deleted = captchaSiteKeyConfigStore.deleteObject(requestContext, request.getId());
     if (deleted.isPresent() && deleted.get().getDeletedData().isPresent()) {
-      return DeleteResponse.newBuilder()
+      return DeleteCaptchaSiteKeyConfigResponse.newBuilder()
           .setDeletedConfig(deleted.get().getDeletedData().get())
           .build();
     } else {
-      return DeleteResponse.newBuilder().build();
+      return DeleteCaptchaSiteKeyConfigResponse.newBuilder().build();
     }
   }
 }

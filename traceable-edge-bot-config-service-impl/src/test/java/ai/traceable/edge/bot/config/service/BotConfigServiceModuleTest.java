@@ -9,7 +9,7 @@ import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
 
-class EdgeBotConfigServiceModuleTest {
+class BotConfigServiceModuleTest {
   @Test
   void testResolveBindings() {
     Channel mockChannel = mock(Channel.class);
@@ -17,8 +17,7 @@ class EdgeBotConfigServiceModuleTest {
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
-                    Stage.PRODUCTION,
-                    new EdgeBotConfigServiceModule(mockChannel, mockEventGenerator))
+                    Stage.PRODUCTION, new BotConfigServiceModule(mockChannel, mockEventGenerator))
                 .getAllBindings());
   }
 }

@@ -8,11 +8,11 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
-public class EdgeBotConfigServiceModule extends AbstractModule {
+public class BotConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final ConfigChangeEventGenerator changeEventGenerator;
 
-  EdgeBotConfigServiceModule(Channel channel, ConfigChangeEventGenerator changeEventGenerator) {
+  BotConfigServiceModule(Channel channel, ConfigChangeEventGenerator changeEventGenerator) {
     this.channel = channel;
     this.changeEventGenerator = changeEventGenerator;
   }
@@ -20,7 +20,7 @@ public class EdgeBotConfigServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
-    bind(BindableService.class).to(CaptchaSiteKeyConfigService.class);
+    bind(BindableService.class).to(BotConfigService.class);
   }
 
   @Provides
