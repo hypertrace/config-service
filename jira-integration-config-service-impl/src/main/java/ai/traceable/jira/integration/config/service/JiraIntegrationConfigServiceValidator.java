@@ -86,17 +86,18 @@ public class JiraIntegrationConfigServiceValidator {
   public void validateCreateProjectIssueConfiguration(
       CreateProjectIssueConfigurationRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.INTEGRATION_ID_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.ISSUE_TYPE_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(request, AddJiraTemplateRequest.PROJECT_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
-        request, AddJiraTemplateRequest.SUPPORTED_ENTITY_TYPE_FIELD_NUMBER);
-
+        request, CreateProjectIssueConfigurationRequest.INTEGRATION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        request, CreateProjectIssueConfigurationRequest.ISSUE_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        request, CreateProjectIssueConfigurationRequest.PROJECT_ID_FIELD_NUMBER);
     request
         .getJiraStatusMappingConfiguration()
         .getStatusMappingsList()
         .forEach(this::validateJiraStatusMapping);
-    request.getFieldConfigurationsList().forEach(this::validateJiraFieldConfiguration);
+    if (!request.getFieldConfigurationsList().isEmpty())
+      request.getFieldConfigurationsList().forEach(this::validateJiraFieldConfiguration);
   }
 
   public void validateUpdateProjectIssueConfiguration(
@@ -121,8 +122,6 @@ public class JiraIntegrationConfigServiceValidator {
   public void validateGetProjectIssueConfiguration(
       GetProjectIssueConfigurationsRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(
-        request, DeleteProjectIssueConfigurationRequest.CONFIGURATION_ID_FIELD_NUMBER);
     this.validateGetProjectIssueConfigurationsFilter(request.getFilter());
   }
 

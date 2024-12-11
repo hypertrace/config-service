@@ -12,11 +12,11 @@ import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfig
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfigurationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraTemplate;
-import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateResponse;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationResponse;
+import ai.traceable.jira.integration.config.service.util.JiraAdditionalConfigStatusMappingUtil;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
@@ -40,17 +40,13 @@ class JiraAdditionalConfigurationCoordinator {
                 .setIntegrationId(request.getIntegrationId())
                 .setIssueType(request.getIssueType())
                 .setProjectId(request.getProjectId())
-                .addSupportedEntityTypes(request.getSupportedEntityType())
                 .build())
             .stream()
             .findFirst()
             .orElseGet(
                 () ->
                     this.getDefaultJiraProjectIssueConfiguration(
-                        request.getIntegrationId(),
-                        request.getIssueType(),
-                        request.getProjectId(),
-                        request.getSupportedEntityType()))
+                        request.getIntegrationId(), request.getIssueType(), request.getProjectId()))
             .toBuilder();
 
     JiraTemplate jiraTemplate =
@@ -187,7 +183,6 @@ class JiraAdditionalConfigurationCoordinator {
                 .setIntegrationId(request.getIntegrationId())
                 .setIssueType(request.getIssueType())
                 .setProjectId(request.getProjectId())
-                .addSupportedEntityTypes(request.getTraceableEntityType())
                 .build())
         .stream()
         .findFirst()
@@ -205,9 +200,9 @@ class JiraAdditionalConfigurationCoordinator {
                     .setIntegrationId(request.getIntegrationId())
                     .setIssueType(request.getIssueType())
                     .setProjectId(request.getProjectId())
-                    .setValidTraceableEntityType(request.getTraceableEntityType())
                     .setJiraStatusMappingConfiguration(request.getJiraStatusMappingConfiguration())
-                    .addAllFieldConfigurations(request.getFieldConfigurationsList()))
+                    .addAllFieldConfigurations(request.getFieldConfigurationsList())
+                    .setJiraBidirectionalSyncIsEnabled(request.getJiraBidirectionalSyncIsEnabled()))
             .build();
 
     this.jiraAdditionalConfigurationStore.upsertObject(requestContext, configuration);
@@ -235,7 +230,8 @@ class JiraAdditionalConfigurationCoordinator {
                 jiraProjectIssueConfiguration.getJiraProjectIssueConfigurationDetails().toBuilder()
                     .setJiraStatusMappingConfiguration(request.getJiraStatusMappingConfiguration())
                     .clearFieldConfigurations()
-                    .addAllFieldConfigurations(request.getFieldConfigurationsList()))
+                    .addAllFieldConfigurations(request.getFieldConfigurationsList())
+                    .setJiraBidirectionalSyncIsEnabled(request.getJiraBidirectionalSyncIsEnabled()))
             .build();
 
     this.jiraAdditionalConfigurationStore.upsertObject(requestContext, updatedConfiguration);
@@ -256,21 +252,29 @@ class JiraAdditionalConfigurationCoordinator {
     return DeleteProjectIssueConfigurationResponse.getDefaultInstance();
   }
 
-  List<JiraProjectIssueConfiguration> getJiraAdditionalConfiguration(
+  public List<JiraProjectIssueConfiguration> getJiraAdditionalConfiguration(
       RequestContext requestContext, GetProjectIssueConfigurationsFilter filter) {
-    return this.jiraAdditionalConfigurationStore.getAllConfigData(requestContext, filter);
+    // Get all configurations
+    List<JiraProjectIssueConfiguration> allConfigurations =
+        this.jiraAdditionalConfigurationStore.getAllConfigData(
+            requestContext, filter.toBuilder().clearSupportedEntityTypes().build());
+    // if no entity type provided, return all mappings
+    if (filter.getSupportedEntityTypesList().isEmpty()) {
+      return allConfigurations;
+    }
+    return JiraAdditionalConfigStatusMappingUtil.getFilteredConfiguration(
+        filter, allConfigurations);
   }
 
   private JiraProjectIssueConfiguration getDefaultJiraProjectIssueConfiguration(
-      String integrationId, String issueType, String projectId, TraceableEntityType entityType) {
+      String integrationId, String issueType, String projectId) {
     return JiraProjectIssueConfiguration.newBuilder()
         .setConfigurationId(UUID.randomUUID().toString())
         .setJiraProjectIssueConfigurationDetails(
             JiraProjectIssueConfigurationDetails.newBuilder()
                 .setIntegrationId(integrationId)
                 .setIssueType(issueType)
-                .setProjectId(projectId)
-                .setValidTraceableEntityType(entityType))
+                .setProjectId(projectId))
         .build();
   }
 }

@@ -6,16 +6,28 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationConfigServiceGrpc;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationConfigServiceGrpc.JiraIntegrationConfigServiceBlockingStub;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
+import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfigurationDetails;
+import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
+import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMappingConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.StringList;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityStatus;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +47,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class JiraIntegrationConfigServiceImplTest {
   public static final String TENANT_ID = "default tenant";
+  private final String PROJECT_ID = "project_id";
+  private final String ISSUE_TYPE = "issue_type";
+  private final String CONFIG_ID = "config_id";
   JiraIntegrationStore jiraIntegrationStore;
   JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
   MockGenericConfigService mockGenericConfigService;
@@ -310,6 +325,247 @@ class JiraIntegrationConfigServiceImplTest {
     assertFalse(jiraIntegrationStore.getData(requestContext, jiraIntegration1.getId()).isPresent());
   }
 
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void createProjectIssueConfigurationTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(1, "env1");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    JiraStatusMapping jiraStatusMapping1 =
+        CreateJiraStatusMapping(
+            "Task", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_FIXED);
+    JiraStatusMapping jiraStatusMapping2 =
+        CreateJiraStatusMapping(
+            "Bug", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_UNDER_REVIEW);
+    CreateProjectIssueConfigurationRequest request =
+        CreateProjectIssueConfigurationRequest.newBuilder()
+            .setIntegrationId(jiraIntegration1.getId())
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setJiraStatusMappingConfiguration(
+                JiraStatusMappingConfiguration.newBuilder()
+                    .addAllStatusMappings(List.of(jiraStatusMapping1, jiraStatusMapping2))
+                    .build())
+            .setJiraBidirectionalSyncIsEnabled(true)
+            .build();
+    assertDoesNotThrow(() -> stub.createProjectIssueConfiguration(request));
+    JiraProjectIssueConfiguration expectedJiraProjectIssueConfiguration =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMapping1, jiraStatusMapping2), request.getIntegrationId());
+    assertEquals(
+        expectedJiraProjectIssueConfiguration.toBuilder().clearConfigurationId().build(),
+        jiraAdditionalConfigurationStore
+            .getAllConfigData(
+                requestContext,
+                GetProjectIssueConfigurationsFilter.newBuilder()
+                    .setIntegrationId(jiraIntegration1.getId())
+                    .setProjectId(PROJECT_ID)
+                    .setIssueType(ISSUE_TYPE)
+                    .build())
+            .get(0)
+            .toBuilder()
+            .clearConfigurationId()
+            .build());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGetAll")
+  void getProjectIssueConfigurationTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(2, "env2");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    JiraStatusMapping jiraStatusMappingCommon1 =
+        CreateJiraStatusMapping(
+            "Under Review", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_FIXED);
+    JiraStatusMapping jiraStatusMappingCommon2 =
+        CreateJiraStatusMapping(
+            "Open", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_UNDER_REVIEW);
+    JiraStatusMapping jiraStatusMappingSpecificEntityType1 =
+        CreateJiraStatusMapping(
+            "To do", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_ACCEPTED_RISK);
+    JiraStatusMapping jiraStatusMappingSpecificEntityType2 =
+        CreateJiraStatusMapping(
+            "Done", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_FIXED);
+
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(
+                jiraStatusMappingCommon1,
+                jiraStatusMappingCommon2,
+                jiraStatusMappingSpecificEntityType1,
+                jiraStatusMappingSpecificEntityType2),
+            jiraIntegration1.getId());
+    jiraAdditionalConfigurationStore.upsertObject(requestContext, jiraProjectIssueConfiguration);
+
+    // get mappings for specific entity type
+    GetProjectIssueConfigurationsResponse response =
+        stub.getProjectIssueConfigurations(
+            GetProjectIssueConfigurationsRequest.newBuilder()
+                .setFilter(
+                    GetProjectIssueConfigurationsFilter.newBuilder()
+                        .setIntegrationId(jiraIntegration1.getId())
+                        .setProjectId(PROJECT_ID)
+                        .setIssueType(ISSUE_TYPE)
+                        .addAllSupportedEntityTypes(
+                            List.of(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY))
+                        .build())
+                .build());
+    assertEquals(1, response.getJiraProjectConfigurationsCount());
+    assertEquals(
+        jiraProjectIssueConfiguration.toBuilder()
+            .clearConfigurationId()
+            .setJiraProjectIssueConfigurationDetails(
+                jiraProjectIssueConfiguration.getJiraProjectIssueConfigurationDetails().toBuilder()
+                    .setJiraStatusMappingConfiguration(
+                        JiraStatusMappingConfiguration.newBuilder()
+                            .addAllStatusMappings(
+                                List.of(
+                                    jiraStatusMappingSpecificEntityType1,
+                                    jiraStatusMappingSpecificEntityType2))
+                            .build()))
+            .build(),
+        response.getJiraProjectConfigurations(0).toBuilder().clearConfigurationId().build());
+
+    // get all mappings when entity type not provided
+    GetProjectIssueConfigurationsResponse response1 =
+        stub.getProjectIssueConfigurations(
+            GetProjectIssueConfigurationsRequest.newBuilder()
+                .setFilter(
+                    GetProjectIssueConfigurationsFilter.newBuilder()
+                        .setIntegrationId(jiraIntegration1.getId())
+                        .setProjectId(PROJECT_ID)
+                        .setIssueType(ISSUE_TYPE)
+                        .build())
+                .build());
+    assertEquals(1, response1.getJiraProjectConfigurationsCount());
+    assertEquals(
+        jiraProjectIssueConfiguration.getJiraProjectIssueConfigurationDetails(),
+        response1.getJiraProjectConfigurations(0).toBuilder()
+            .clearConfigurationId()
+            .getJiraProjectIssueConfigurationDetails());
+
+    // get common mappings if entity type provided but entity type specific mappings not found
+    GetProjectIssueConfigurationsResponse response2 =
+        stub.getProjectIssueConfigurations(
+            GetProjectIssueConfigurationsRequest.newBuilder()
+                .setFilter(
+                    GetProjectIssueConfigurationsFilter.newBuilder()
+                        .setIntegrationId(jiraIntegration1.getId())
+                        .setProjectId(PROJECT_ID)
+                        .setIssueType(ISSUE_TYPE)
+                        .addAllSupportedEntityTypes(
+                            List.of(TraceableEntityType.TRACEABLE_ENTITY_TYPE_THREAT_ACTIVITY))
+                        .build())
+                .build());
+    assertEquals(1, response2.getJiraProjectConfigurationsCount());
+    assertEquals(
+        jiraProjectIssueConfiguration.toBuilder()
+            .clearConfigurationId()
+            .setJiraProjectIssueConfigurationDetails(
+                jiraProjectIssueConfiguration.getJiraProjectIssueConfigurationDetails().toBuilder()
+                    .setJiraStatusMappingConfiguration(
+                        JiraStatusMappingConfiguration.newBuilder()
+                            .addAllStatusMappings(
+                                List.of(jiraStatusMappingCommon1, jiraStatusMappingCommon2))
+                            .build()))
+            .build()
+            .getJiraProjectIssueConfigurationDetails(),
+        response2.getJiraProjectConfigurations(0).toBuilder()
+            .clearConfigurationId()
+            .getJiraProjectIssueConfigurationDetails());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockGet")
+  void updateProjectIssueConfigurationTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(2, "env2");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    JiraStatusMapping jiraStatusMapping1 =
+        CreateJiraStatusMapping(
+            "Under Review", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_FIXED);
+    JiraStatusMapping jiraStatusMapping2 =
+        CreateJiraStatusMapping(
+            "Open", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_UNDER_REVIEW);
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMapping1, jiraStatusMapping2), jiraIntegration1.getId());
+    jiraAdditionalConfigurationStore.upsertObject(requestContext, jiraProjectIssueConfiguration);
+
+    // Update should fail because config id not found
+    UpdateProjectIssueConfigurationRequest request =
+        UpdateProjectIssueConfigurationRequest.newBuilder()
+            .setConfigurationId("config_id_not_found")
+            .setJiraStatusMappingConfiguration(
+                JiraStatusMappingConfiguration.newBuilder()
+                    .addAllStatusMappings(List.of(jiraStatusMapping1, jiraStatusMapping2))
+                    .build())
+            .setJiraBidirectionalSyncIsEnabled(true)
+            .build();
+    assertThrows(StatusRuntimeException.class, () -> stub.updateProjectIssueConfiguration(request));
+
+    // Update should pass with details verification
+    UpdateProjectIssueConfigurationRequest request1 =
+        UpdateProjectIssueConfigurationRequest.newBuilder()
+            .setConfigurationId(jiraProjectIssueConfiguration.getConfigurationId())
+            .setJiraStatusMappingConfiguration(
+                JiraStatusMappingConfiguration.newBuilder()
+                    .addAllStatusMappings(List.of(jiraStatusMapping1, jiraStatusMapping2))
+                    .build())
+            .setJiraBidirectionalSyncIsEnabled(false)
+            .build();
+    assertEquals(
+        jiraProjectIssueConfiguration.toBuilder()
+            .setJiraProjectIssueConfigurationDetails(
+                jiraProjectIssueConfiguration.getJiraProjectIssueConfigurationDetails().toBuilder()
+                    .setJiraBidirectionalSyncIsEnabled(false)
+                    .build())
+            .build(),
+        stub.updateProjectIssueConfiguration(request1).getJiraProjectConfiguration());
+  }
+
+  @Test
+  @Tag("useMockUpsert")
+  @Tag("useMockDelete")
+  @Tag("useMockGet")
+  public void deleteProjectIssueConfigurationTest() {
+    RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
+    JiraIntegration jiraIntegration1 = dummyJiraIntegration(2, "env2");
+    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+
+    JiraStatusMapping jiraStatusMapping1 =
+        CreateJiraStatusMapping(
+            "Under Review", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_FIXED);
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMapping1), jiraIntegration1.getId());
+    jiraAdditionalConfigurationStore.upsertObject(requestContext, jiraProjectIssueConfiguration);
+
+    // Delete should fail if config id not found
+    DeleteProjectIssueConfigurationRequest request =
+        DeleteProjectIssueConfigurationRequest.newBuilder()
+            .setConfigurationId("config_id_not_found")
+            .build();
+    assertThrows(StatusRuntimeException.class, () -> stub.deleteProjectIssueConfiguration(request));
+
+    // Delete should pass if config id found
+    DeleteProjectIssueConfigurationRequest request1 =
+        DeleteProjectIssueConfigurationRequest.newBuilder()
+            .setConfigurationId(jiraProjectIssueConfiguration.getConfigurationId())
+            .build();
+    assertDoesNotThrow(() -> stub.deleteProjectIssueConfiguration(request1));
+    assertFalse(
+        jiraAdditionalConfigurationStore
+            .getData(requestContext, jiraProjectIssueConfiguration.getConfigurationId())
+            .isPresent());
+  }
+
   private JiraIntegration dummyJiraIntegration(int sr, String... environmentId) {
     JiraIntegration.Builder jiraIntegration =
         JiraIntegration.newBuilder()
@@ -329,6 +585,31 @@ class JiraIntegrationConfigServiceImplTest {
                   StringList.newBuilder().addAllValues(Arrays.asList(environmentId))));
     }
     return jiraIntegration.build();
+  }
+
+  private JiraProjectIssueConfiguration createDummyJiraProjectIssueConfiguration(
+      List<JiraStatusMapping> jiraStatusMappingList, String integrationId) {
+    return JiraProjectIssueConfiguration.newBuilder()
+        .setConfigurationId(CONFIG_ID)
+        .setJiraProjectIssueConfigurationDetails(
+            JiraProjectIssueConfigurationDetails.newBuilder()
+                .setJiraBidirectionalSyncIsEnabled(true)
+                .setIntegrationId(integrationId)
+                .setProjectId(PROJECT_ID)
+                .setIssueType(ISSUE_TYPE)
+                .setJiraStatusMappingConfiguration(
+                    JiraStatusMappingConfiguration.newBuilder()
+                        .addAllStatusMappings(jiraStatusMappingList)
+                        .build()))
+        .build();
+  }
+
+  private JiraStatusMapping CreateJiraStatusMapping(
+      String jiraStatus, TraceableEntityStatus traceableEntityStatus) {
+    return JiraStatusMapping.newBuilder()
+        .setJiraStatus(jiraStatus)
+        .setTraceableEntityStatus(traceableEntityStatus)
+        .build();
   }
 
   private CreateJiraIntegrationRequest dummyCreateJiraIntegrationRequest(

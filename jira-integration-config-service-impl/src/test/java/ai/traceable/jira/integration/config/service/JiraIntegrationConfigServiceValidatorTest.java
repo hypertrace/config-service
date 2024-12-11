@@ -3,17 +3,28 @@ package ai.traceable.jira.integration.config.service;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.DynamicField;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.JiraCloudAuthCredentials;
 import ai.traceable.jira.integration.config.service.api.v1.JiraCloudIntegrationDetails;
+import ai.traceable.jira.integration.config.service.api.v1.JiraFieldConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationDetails;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
+import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMapping;
+import ai.traceable.jira.integration.config.service.api.v1.JiraStatusMappingConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.Scope;
 import ai.traceable.jira.integration.config.service.api.v1.StringList;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityStatus;
+import ai.traceable.jira.integration.config.service.api.v1.TraceableEntityType;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
+import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -30,6 +41,10 @@ class JiraIntegrationConfigServiceValidatorTest {
   @InjectMocks JiraIntegrationConfigServiceValidator validator;
   private final String TENANT_ID = "tenant-id";
   private final String TEXT = "text";
+  private final String PROJECT_ID = "project_id";
+  private final String ISSUE_TYPE = "issue_type";
+  private final String CONFIG_ID = "config_id";
+  private final String INTEGRATION_ID = "integration_id";
 
   @Test
   void validateCreateJiraIntegration() {
@@ -269,5 +284,152 @@ class JiraIntegrationConfigServiceValidatorTest {
         StatusRuntimeException.class,
         () ->
             validator.validateDeleteJiraIntegration(deleteJiraIntegrationRequest, requestContext1));
+  }
+
+  @Test
+  void validateCreateProjectIssueConfiguration() {
+    CreateProjectIssueConfigurationRequest request =
+        CreateProjectIssueConfigurationRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateCreateProjectIssueConfiguration(request, requestContext));
+
+    // Should throw runtime exception, fields not declared
+    RequestContext requestContext1 = RequestContext.forTenantId("tenant_id");
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateCreateProjectIssueConfiguration(request, requestContext1));
+
+    // Should pass without field configuration
+    JiraStatusMapping jiraStatusMapping1 =
+        CreateJiraStatusMapping(
+            "jira_status_1",
+            TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_ACCEPTED_RISK);
+    JiraStatusMapping jiraStatusMapping2 =
+        CreateJiraStatusMapping(
+            "jira_status_2",
+            TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_NOT_AN_ISSUE);
+    CreateProjectIssueConfigurationRequest request1 =
+        request.toBuilder()
+            .setIntegrationId(INTEGRATION_ID)
+            .setProjectId(PROJECT_ID)
+            .setIssueType(ISSUE_TYPE)
+            .setJiraStatusMappingConfiguration(
+                JiraStatusMappingConfiguration.newBuilder()
+                    .addAllStatusMappings(List.of(jiraStatusMapping1, jiraStatusMapping2))
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateCreateProjectIssueConfiguration(request1, requestContext1));
+
+    // Should pass with valid field configuration
+    JiraFieldConfiguration jiraFieldConfiguration =
+        JiraFieldConfiguration.newBuilder()
+            .setFieldKey("field1")
+            .setOverriddenDefaultValueJsonString("override_value")
+            .setOverriddenDynamicValueValue(DynamicField.DYNAMIC_FIELD_LOGGED_IN_USER_VALUE)
+            .build();
+    CreateProjectIssueConfigurationRequest request2 =
+        request1.toBuilder().addAllFieldConfigurations(List.of(jiraFieldConfiguration)).build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateCreateProjectIssueConfiguration(request2, requestContext1));
+  }
+
+  @Test
+  void validateUpdateProjectIssueConfiguration() {
+    UpdateProjectIssueConfigurationRequest request =
+        UpdateProjectIssueConfigurationRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateUpdateProjectIssueConfiguration(request, requestContext));
+
+    // Should pass if all required fields set
+    RequestContext requestContext1 = RequestContext.forTenantId("tenant_id");
+    JiraStatusMapping jiraStatusMapping1 =
+        CreateJiraStatusMapping(
+            "jira_status_1",
+            TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_AST_VULNERABILITY_ACCEPTED_RISK);
+    UpdateProjectIssueConfigurationRequest request1 =
+        request.toBuilder()
+            .setConfigurationId(CONFIG_ID)
+            .setJiraBidirectionalSyncIsEnabled(true)
+            .setJiraStatusMappingConfiguration(
+                JiraStatusMappingConfiguration.newBuilder()
+                    .addAllStatusMappings(List.of(jiraStatusMapping1))
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateUpdateProjectIssueConfiguration(request1, requestContext1));
+  }
+
+  @Test
+  void validateGetProjectIssueConfiguration() {
+    GetProjectIssueConfigurationsRequest request =
+        GetProjectIssueConfigurationsRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateGetProjectIssueConfiguration(request, requestContext));
+
+    // Should Pass with required fields set except TraceableEntityType
+    RequestContext requestContext1 = RequestContext.forTenantId("tenant_id");
+    GetProjectIssueConfigurationsRequest request1 =
+        request.toBuilder()
+            .setFilter(
+                GetProjectIssueConfigurationsFilter.newBuilder()
+                    .setIntegrationId(INTEGRATION_ID)
+                    .setProjectId(PROJECT_ID)
+                    .setIssueType(ISSUE_TYPE)
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateGetProjectIssueConfiguration(request1, requestContext1));
+
+    // Should Pass with all required fields set
+    GetProjectIssueConfigurationsRequest request2 =
+        request1.toBuilder()
+            .setFilter(
+                request1.getFilter().toBuilder()
+                    .addAllSupportedEntityTypes(
+                        List.of(TraceableEntityType.TRACEABLE_ENTITY_TYPE_AST_VULNERABILITY))
+                    .build())
+            .build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateGetProjectIssueConfiguration(request2, requestContext1));
+  }
+
+  @Test
+  void validateDeleteProjectIssueConfiguration() {
+    DeleteProjectIssueConfigurationRequest request =
+        DeleteProjectIssueConfigurationRequest.newBuilder().build();
+
+    // Should throw runtime exception, no tenant id
+    RequestContext requestContext = new RequestContext();
+    Assertions.assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateDeleteProjectIssueConfiguration(request, requestContext));
+
+    // Should pass with config id set
+    RequestContext requestContext1 = RequestContext.forTenantId("tenant_id");
+    DeleteProjectIssueConfigurationRequest request1 =
+        request.toBuilder().setConfigurationId(CONFIG_ID).build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateDeleteProjectIssueConfiguration(request1, requestContext1));
+  }
+
+  private JiraStatusMapping CreateJiraStatusMapping(
+      String jiraStatus, TraceableEntityStatus traceableEntityStatus) {
+    return JiraStatusMapping.newBuilder()
+        .setJiraStatus(jiraStatus)
+        .setTraceableEntityStatus(traceableEntityStatus)
+        .build();
   }
 }
