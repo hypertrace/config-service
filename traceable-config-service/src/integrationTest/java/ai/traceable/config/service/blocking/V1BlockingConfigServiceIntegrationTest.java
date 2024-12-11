@@ -97,6 +97,8 @@ import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.actor.v1.UpsertActorRequest;
 import ai.traceable.platform.actor.v1.UpsertActorResponse;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
+import ai.traceable.platform.opa.v1.violation.CustomSignatureRuleViolationInfo;
+import ai.traceable.platform.opa.v1.violation.ViolationInfoDecoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DetailedRegion;
@@ -527,13 +529,12 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         BLOCKING_CATEGORY_CUSTOM_SIGNATURE_RULE,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());
-    assertEquals(
-        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-            customSignatureRuleId.get(1),
-            "rule-1",
-            "EVENT_SEVERITY_MEDIUM",
-            Map.of("key", "value")),
-        blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
+    CustomSignatureRuleViolationInfo customSignatureRuleViolationInfo =
+        ViolationInfoDecoder.getDecodedCustomSignatureRuleViolationInfo(
+            blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo(), null);
+    assertEquals("rule-1", customSignatureRuleViolationInfo.getRuleName());
+    assertEquals("EVENT_SEVERITY_MEDIUM", customSignatureRuleViolationInfo.getSeverity());
+    assertEquals(Map.of("key", "value"), customSignatureRuleViolationInfo.getLabelsMap());
     assertEquals(
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -49,6 +50,13 @@ class CustomSignatureRulesManagerTest {
   private CustomSignatureRuleConverter ruleConverter;
   private CustomSignatureRulesManager rulesManager;
   private RequestContext requestContext;
+  private static final CustomSignatureRule DEFAULT_CUSTOM_SIGNATURE_RULE =
+      CustomSignatureRule.newBuilder()
+          .setId("defaultRuleId")
+          .setRuleScope(
+              RuleScope.newBuilder()
+                  .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("prod")))
+          .build();
 
   @BeforeEach
   void setup() {
@@ -62,9 +70,15 @@ class CustomSignatureRulesManagerTest {
     mockConfigService.start();
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     ruleConverter = spy(CustomSignatureRuleConverter.class);
+    CustomSignatureConfigServiceConfig config = mock(CustomSignatureConfigServiceConfig.class);
+    when(config.getDefaultCustomSignatureRules())
+        .thenReturn(List.of(DEFAULT_CUSTOM_SIGNATURE_RULE));
     CustomSignatureRulesStore rulesStore =
         new CustomSignatureRulesStore(
-            configServiceBlockingStub, ruleConverter, mock(ConfigChangeEventGenerator.class));
+            configServiceBlockingStub,
+            ruleConverter,
+            mock(ConfigChangeEventGenerator.class),
+            config);
     this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore));
     requestContext = RequestContext.forTenantId("default tenant");
   }
@@ -193,11 +207,12 @@ class CustomSignatureRulesManagerTest {
                     .putLabels("label-key-4", "label-value-4"))
             .setEffect(RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
             .build();
-    assertEquals(4, results.size());
+    assertEquals(5, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
     assertTrue(results.contains(expectedRule));
+    assertTrue(results.contains(DEFAULT_CUSTOM_SIGNATURE_RULE));
 
     // Filter on disabled
     results =
@@ -256,14 +271,15 @@ class CustomSignatureRulesManagerTest {
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
 
-    // Filter on prod env (only 2 rules should come)
+    // Filter on prod env (only 2 rules and default rule should come)
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(getRuleScope(List.of("prod"))).build());
-    assertEquals(3, results.size());
+    assertEquals(4, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(2)));
+    assertTrue(results.contains(DEFAULT_CUSTOM_SIGNATURE_RULE));
 
     // Filter on staging env (first 2 rules should get filtered out)
     results =
@@ -286,10 +302,11 @@ class CustomSignatureRulesManagerTest {
         rulesManager.getCustomSignatureRules(
             requestContext,
             GetRulesFilter.newBuilder().setRuleScope(RuleScope.getDefaultInstance()).build());
-    assertEquals(4, results.size());
+    assertEquals(5, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
     assertTrue(results.contains(expectedRules.get(1)));
     assertTrue(results.contains(expectedRules.get(2)));
+    assertTrue(results.contains(DEFAULT_CUSTOM_SIGNATURE_RULE));
 
     // Filter on rule source
     results =

@@ -131,6 +131,10 @@ data:
         directives.data.path = modsecurity.conf
         rule.version = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.modsecurity.ruleVersion }}
       }
+      {{- if .Values.traceableConfigServiceConfig.customSignatureConfigService.defaultCustomSignatureRules }}
+      defaultCustomSignatureRules =
+        {{- .Values.traceableConfigServiceConfig.customSignatureConfigService.defaultCustomSignatureRules | nindent 8 }}
+      {{- end }}
       shouldPublishActivityEvents = true
     }
     actor.service.config {
@@ -289,6 +293,10 @@ data:
       migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.migrationDisabled }}
       changeLog2.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.changeLog2.migrationDisabled }}
       changeLog3.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.changeLog3.migrationDisabled }}
+      {{- if .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules }}
+      defaultDetectionExclusionRules =
+        {{- .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules | nindent 8 }}
+      {{- end }}
     }
     ast.config.service = {
       defaultPurgeDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultPurgeDuration }}

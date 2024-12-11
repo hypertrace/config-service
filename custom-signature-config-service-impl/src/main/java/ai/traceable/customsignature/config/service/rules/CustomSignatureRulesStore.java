@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
@@ -13,11 +14,14 @@ import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
@@ -34,6 +38,7 @@ public class CustomSignatureRulesStore
     extends IdentifiedObjectStoreWithFilter<CustomSignatureRule, GetRulesFilter> {
 
   private final CustomSignatureRuleConverter customSignatureRuleConverter;
+  private final List<CustomSignatureRule> defaultCustomSignatureRules;
   public static final String CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE = "customSignatureRule";
   public static final String CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME =
       "customSignatureRuleConfig";
@@ -44,24 +49,35 @@ public class CustomSignatureRulesStore
   public CustomSignatureRulesStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
       CustomSignatureRuleConverter customSignatureRuleConverter,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig) {
     super(
         configServiceBlockingStub,
         CUSTOM_SIGNATURE_RULE_CONFIG_NAMESPACE,
         CUSTOM_SIGNATURE_RULE_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
     this.customSignatureRuleConverter = customSignatureRuleConverter;
+    this.defaultCustomSignatureRules =
+        customSignatureConfigServiceConfig.getDefaultCustomSignatureRules();
   }
 
   @Override
   public List<CustomSignatureRule> getAllConfigData(RequestContext requestContext) {
-    return getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext));
+    return mergeCustomSignatureRules(
+        getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext)),
+        defaultCustomSignatureRules);
   }
 
   @Override
   public List<CustomSignatureRule> getAllConfigData(
       RequestContext requestContext, GetRulesFilter filter) {
-    return getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext, filter));
+    List<CustomSignatureRule> filteredDefaultCustomSignatureRules =
+        defaultCustomSignatureRules.stream()
+            .filter(rule -> filterConfigData(rule, filter).isPresent())
+            .collect(Collectors.toUnmodifiableList());
+    return mergeCustomSignatureRules(
+        getCustomSignatureRules(requestContext, super.getAllConfigData(requestContext, filter)),
+        filteredDefaultCustomSignatureRules);
   }
 
   @Override
@@ -83,6 +99,23 @@ public class CustomSignatureRulesStore
   @Override
   protected String getContextFromData(CustomSignatureRule data) {
     return data.getId();
+  }
+
+  private List<CustomSignatureRule> mergeCustomSignatureRules(
+      List<CustomSignatureRule> customSignatureRules,
+      List<CustomSignatureRule> defaultCustomSignatureRules) {
+
+    Map<String, CustomSignatureRule> customSignatureRuleMap = new HashMap<>();
+    customSignatureRuleMap.putAll(this.getRuleIdToRuleMap(defaultCustomSignatureRules));
+    customSignatureRuleMap.putAll(this.getRuleIdToRuleMap(customSignatureRules));
+
+    return customSignatureRuleMap.values().stream().collect(Collectors.toUnmodifiableList());
+  }
+
+  private Map<String, CustomSignatureRule> getRuleIdToRuleMap(
+      List<CustomSignatureRule> customSignatureRules) {
+    return customSignatureRules.stream()
+        .collect(Collectors.toUnmodifiableMap(CustomSignatureRule::getId, Function.identity()));
   }
 
   @Override

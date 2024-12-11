@@ -79,7 +79,7 @@ public class CustomSignatureConfigServiceIntegrationTest
 
     fetchedRules = fetchAllRules();
     assertEquals(2, fetchedRules.size());
-    if (fetchedRules.get(0).getId().equals(createdRules.get(0))) {
+    if (fetchedRules.get(0).getId().equals(createdRules.get(0).getId())) {
       assertTrue(fetchedRules.get(0).getDisabled());
       assertFalse(fetchedRules.get(1).getDisabled());
     } else {

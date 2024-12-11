@@ -254,6 +254,14 @@ traceableConfigServiceConfig:
   customSignatureConfigService:
     modsecurity:
       ruleVersion: MODSEC_RULE_VERSION_V3
+#    defaultCustomSignatureRules: |-
+#    [
+#     {
+#        id = "ruleId"
+#        name = "ruleName"
+#        definition = {}
+#      }
+#    ]
   blockingConfigService:
     enableNewModsecCrsBlockingFlow: false
     agentPollingFrequency: 30s
