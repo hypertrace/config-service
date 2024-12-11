@@ -230,10 +230,10 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
 
   private EdgeDecisionEngineConfig merge(
       EdgeDecisionEngineConfig config1, EdgeDecisionEngineConfig config2) {
-    if (config1.getDisabled()) {
+    if (config1 == null || config1.getDisabled()) {
       return config2;
     }
-    if (config2.getDisabled()) {
+    if (config2 == null || config2.getDisabled()) {
       return config1;
     }
     EdgeDecisionEngineConfig.Builder merged = config1.toBuilder();
