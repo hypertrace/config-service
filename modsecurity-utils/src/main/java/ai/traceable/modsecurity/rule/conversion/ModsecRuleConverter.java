@@ -7,7 +7,9 @@ public interface ModsecRuleConverter {
 
   String NEW_LINES_DELIMITER = "\n\n";
 
-  String getModsecRule(CustomModsecRule customModsecRule) throws Exception;
+  String getJNIValidatedModsecRule(CustomModsecRule customModsecRule) throws Exception;
+
+  String getValidatedModsecRule(CustomModsecRule customModsecRule) throws Exception;
 
   String getModsecRulesBlob(List<CustomModsecRule> customModsecRules) throws Exception;
 }

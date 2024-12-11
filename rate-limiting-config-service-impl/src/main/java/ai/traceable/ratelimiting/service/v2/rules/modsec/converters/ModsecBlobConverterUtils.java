@@ -36,7 +36,7 @@ public class ModsecBlobConverterUtils {
     this.customModsecRuleConverter = customModsecRuleConverter;
   }
 
-  String convertToModsecRule(
+  String convertDataTypeToModsecRule(
       String ruleIdentifier,
       Clause urlRegexesClauseWrapper,
       Collection<Clause> ANDClausesList,
@@ -49,7 +49,7 @@ public class ModsecBlobConverterUtils {
       clauses.add(urlRegexesClauseWrapper);
       clauses.addAll(ANDClausesList);
 
-      return customModsecRuleConverter.getValidatedModsecRuleWithCustomLogMsg(
+      return customModsecRuleConverter.getJNIValidatedModsecRuleWithCustomLogMsg(
           modsecIdAssignment.getAndIncrement(), ruleIdentifier, message, clauses, logMessage);
     } catch (Exception e) {
       log.warn("Cannot convert rateLimitingRule with id {} into modsec rule", ruleIdentifier, e);

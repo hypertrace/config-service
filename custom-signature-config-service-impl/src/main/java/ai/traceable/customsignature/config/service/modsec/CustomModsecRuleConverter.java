@@ -34,14 +34,21 @@ public class CustomModsecRuleConverter {
 
   public String getValidatedModsecRule(
       long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses) throws Exception {
-    return modsecRuleConverter.getModsecRule(
+    return modsecRuleConverter.getValidatedModsecRule(
         createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.empty()));
   }
 
   public String getValidatedModsecRuleWithCustomLogMsg(
       long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses, String logMsg)
       throws Exception {
-    return modsecRuleConverter.getModsecRule(
+    return modsecRuleConverter.getValidatedModsecRule(
+        createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.ofNullable(logMsg)));
+  }
+
+  public String getJNIValidatedModsecRuleWithCustomLogMsg(
+      long ruleId, String ruleUuid, String ruleMsg, List<Clause> clauses, String logMsg)
+      throws Exception {
+    return modsecRuleConverter.getJNIValidatedModsecRule(
         createCustomModsecRule(ruleId, ruleUuid, ruleMsg, clauses, Optional.ofNullable(logMsg)));
   }
 

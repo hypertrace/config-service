@@ -26,7 +26,18 @@ public class ModsecRuleConverterImpl implements ModsecRuleConverter {
   }
 
   @Override
-  public String getModsecRule(CustomModsecRule customModsecRule) throws Exception {
+  public String getJNIValidatedModsecRule(CustomModsecRule customModsecRule) throws Exception {
+    ModsecSecRuleGroup modsecRule = getModsecRule(customModsecRule);
+    return modsecRule.getJNIValidatedModsecRuleString();
+  }
+
+  @Override
+  public String getValidatedModsecRule(CustomModsecRule customModsecRule) throws Exception {
+    ModsecSecRuleGroup modsecRule = getModsecRule(customModsecRule);
+    return modsecRule.getValidatedModsecRuleString();
+  }
+
+  private ModsecSecRuleGroup getModsecRule(CustomModsecRule customModsecRule) throws Exception {
     if (customModsecRule.getRuleId() <= 0 || customModsecRule.getRuleUuid().isBlank()) {
       throw new IllegalArgumentException(
           "Custom Modsec Rule should have a valid rule ID and a valid rule UUID");
@@ -54,14 +65,14 @@ public class ModsecRuleConverterImpl implements ModsecRuleConverter {
           throw new IllegalArgumentException("Invalid Clause case: " + clause.getClauseCase());
       }
     }
-    return secRuleGroupBuilder.build().getValidatedModsecRuleString();
+    return secRuleGroupBuilder.build();
   }
 
   @Override
   public String getModsecRulesBlob(List<CustomModsecRule> customModsecRules) throws Exception {
     List<String> modsecRules = new ArrayList<>();
     for (CustomModsecRule rule : customModsecRules) {
-      modsecRules.add(getModsecRule(rule));
+      modsecRules.add(getValidatedModsecRule(rule));
     }
     return modsecRules.stream()
         .filter(Predicate.not(String::isBlank))

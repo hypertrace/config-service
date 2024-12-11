@@ -30,11 +30,10 @@ public class ModsecSecRuleGroup {
     return new ModsecRuleGroupBuilder();
   }
 
-  public String getValidatedModsecRuleString() {
+  private List<String> buildModsecRuleString() {
     if (rules.isEmpty()) {
       throw new IllegalArgumentException("At least 1 SecRule needs to be provided");
     }
-
     List<String> modsecRules = new ArrayList<>();
     if (rules.size() == 1) {
       modsecRules.add(rules.get(0).getSecRuleString(modsecActions, ModsecActionsType.SINGULAR));
@@ -50,6 +49,19 @@ public class ModsecSecRuleGroup {
               .get(rules.size() - 1)
               .getSecRuleString(modsecActions, ModsecActionsType.CHAINED_FINAL));
     }
+    return modsecRules;
+  }
+
+  public String getJNIValidatedModsecRuleString() {
+    List<String> modsecRules = buildModsecRuleString();
+    validate(modsecRules);
+    String modsecRuleString = String.join(NEW_LINE_DELIMITER, modsecRules);
+    validateModsec(modsecRuleString);
+    return modsecRuleString;
+  }
+
+  public String getValidatedModsecRuleString() {
+    List<String> modsecRules = buildModsecRuleString();
     validate(modsecRules);
     String modsecRuleString = String.join(NEW_LINE_DELIMITER, modsecRules);
     validate(modsecRuleString);
@@ -57,12 +69,19 @@ public class ModsecSecRuleGroup {
   }
 
   private static void validate(String modsecRuleString) {
+    validateModsec(modsecRuleString);
+    validateCoraza(modsecRuleString);
+  }
+
+  private static void validateModsec(String modsecRuleString) {
     // Validate using ModSec
     Status modsecStatus = ModsecRuleEngineUtils.modsecValidate(modsecRuleString);
     if (Status.INVALID_ARGUMENT.getCode().equals(modsecStatus.getCode())) {
       throw modsecStatus.asRuntimeException();
     }
+  }
 
+  private static void validateCoraza(String modsecRuleString) {
     // Validate using Coraza
     Status corazaStatus = ModsecRuleEngineUtils.corazaValidate(modsecRuleString);
     if (Status.INVALID_ARGUMENT.getCode().equals(corazaStatus.getCode())) {

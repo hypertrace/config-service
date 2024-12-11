@@ -99,7 +99,7 @@ public class ModsecBlobDataConverter {
       Collection<KeyValueCondition> keyValueConditionsList,
       AtomicLong modsecIdAssignment) {
     try {
-      return modsecBlobConverterUtils.convertToModsecRule(
+      return modsecBlobConverterUtils.convertDataTypeToModsecRule(
           ruleIdentifier,
           modsecBlobConverterUtils.buildUrlRegexClause(urlRegexes),
           keyValueConditionsList.stream()

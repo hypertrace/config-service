@@ -76,7 +76,7 @@ public class DataTypeRuleModsecConverter {
       Clause wrappedUrlRegexesClause,
       String index,
       Clause clause) {
-    return modsecBlobConverterUtils.convertToModsecRule(
+    return modsecBlobConverterUtils.convertDataTypeToModsecRule(
         dataTypeRuleWrapper.getBaseModsecRuleId() + index,
         wrappedUrlRegexesClause,
         Collections.singletonList(clause),

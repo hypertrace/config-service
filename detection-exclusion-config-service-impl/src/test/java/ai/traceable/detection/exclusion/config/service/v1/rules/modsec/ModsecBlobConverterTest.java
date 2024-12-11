@@ -41,7 +41,7 @@ class ModsecBlobConverterTest {
     AtomicLong modsecIdAssignment = new AtomicLong(0);
     String expectedModsecRule = "modsec-rule";
 
-    when(customModsecRuleConverter.getValidatedModsecRuleWithCustomLogMsg(
+    when(customModsecRuleConverter.getJNIValidatedModsecRuleWithCustomLogMsg(
             anyLong(),
             eq("test-rule"),
             argThat(a -> a.contains(ruleIdentifier)),
@@ -89,7 +89,7 @@ class ModsecBlobConverterTest {
 
     doThrow(new RuntimeException("Test Exception"))
         .when(customModsecRuleConverter)
-        .getValidatedModsecRuleWithCustomLogMsg(
+        .getJNIValidatedModsecRuleWithCustomLogMsg(
             anyLong(), anyString(), anyString(), anyList(), anyString());
 
     assertEquals(
