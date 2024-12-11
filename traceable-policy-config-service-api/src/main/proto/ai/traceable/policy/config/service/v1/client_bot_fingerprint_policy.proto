@@ -9,6 +9,7 @@ message ClientBotFingerprintPolicy {
   float bot_suspicion_threshold = 2;
   BotFingerprintScore default_scores = 4;
   repeated BotFingerprintEvalRule rules = 3;
+  string site_key = 5;
 }
 
 message BotFingerprintEvalRule {
