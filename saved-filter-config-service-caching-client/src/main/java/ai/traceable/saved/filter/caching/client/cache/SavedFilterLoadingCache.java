@@ -44,9 +44,15 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
       KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener,
       SavedFilterCacheConfig savedFilterCacheConfig,
       SavedFilterServiceClient savedFilterServiceClient) {
+    this(savedFilterCacheConfig, savedFilterServiceClient);
+    kafkaLiveEventListener.registerCallback(this::updateBasedOnChangeEvent);
+  }
+
+  public SavedFilterLoadingCache(
+      SavedFilterCacheConfig savedFilterCacheConfig,
+      SavedFilterServiceClient savedFilterServiceClient) {
     this.savedFilterServiceClient = savedFilterServiceClient;
     this.savedFilterCache = buildSavedFilterCache(savedFilterCacheConfig);
-    kafkaLiveEventListener.registerCallback(this::updateBasedOnChangeEvent);
     PlatformMetricsRegistry.registerCacheTrackingOccupancy(
         SAVED_FILTER_CACHE_NAME,
         this.savedFilterCache,

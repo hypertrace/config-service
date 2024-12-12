@@ -14,9 +14,13 @@ public interface SavedFilterClientBuilder {
   SavedFilterCachingClient build(
       KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener,
       SavedFilterCachingClientConfig cacheConfig,
-      SavedFilterServiceBlockingStub vulnerabilityServiceBlockingStub);
+      SavedFilterServiceBlockingStub savedFilterServiceBlockingStub);
 
   SavedFilterCachingClient build(
       KafkaLiveEventListener<ConfigChangeEventKey, ConfigChangeEventValue> kafkaLiveEventListener,
       SavedFilterCachingClientConfig cacheConfig);
+
+  SavedFilterCachingClient build(
+      SavedFilterCachingClientConfig cacheConfig,
+      SavedFilterServiceBlockingStub savedFilterServiceBlockingStub);
 }

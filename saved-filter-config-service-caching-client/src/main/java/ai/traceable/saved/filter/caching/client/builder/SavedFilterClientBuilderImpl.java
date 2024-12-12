@@ -53,6 +53,21 @@ public class SavedFilterClientBuilderImpl implements SavedFilterClientBuilder {
     return build(kafkaLiveEventListener, cacheConfig, vulnerabilityServiceBlockingStub);
   }
 
+  @Override
+  public SavedFilterCachingClient build(
+      SavedFilterCachingClientConfig cacheConfig,
+      SavedFilterServiceBlockingStub savedFilterServiceBlockingStub) {
+    SavedFilterServiceClient savedFilterServiceClient =
+        new SavedFilterServiceClient(
+            savedFilterServiceBlockingStub, cacheConfig.getSavedFilterClientConfig());
+
+    SavedFilterLoadingCache savedFilterCache =
+        new SavedFilterLoadingCache(
+            cacheConfig.getSavedFilterCacheConfig(), savedFilterServiceClient);
+
+    return new SavedFilterCachingClientImpl(savedFilterCache);
+  }
+
   private ManagedChannel createManagedChannel(String host, int port) {
     return ManagedChannelBuilder.forAddress(host, port).build();
   }
