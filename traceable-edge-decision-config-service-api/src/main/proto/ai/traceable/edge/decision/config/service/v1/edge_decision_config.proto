@@ -24,6 +24,8 @@ message EdgeDecisionEngineConfig {
   repeated EdgeDecisionSpec decision_specs = 6;
   // disable edge decision completely
   bool disabled = 7;
+  // disable only specific rule categories
+  repeated EdgeDecisionRuleCategory disabled_rule_categories = 8;
   // allow for customization. mostly to handle hotfix scenarios that won't require change in contract.
   google.protobuf.Value custom_config = 100;
 }
