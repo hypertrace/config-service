@@ -1,0 +1,56 @@
+{
+  "decision_rules": [{
+    "id": "rate-limiting-rule-id",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
+        }
+      }]
+    },
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "generic_match_condition": {
+                "jexl_script": {
+                  "jexl_script": "var regex \u003d test-url; regex.test($s.getRequestUrl())"
+                }
+              }
+            }]
+          }
+        },
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "condition_expression": {
+              "jexl_expression": "endUserId"
+            }
+          }]
+        }, {
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "condition_expression": {
+              "jexl_expression": "$s.getRequestUrl()"
+            }
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "aggregation_type": "AGGREGATION_TYPE_COUNT",
+          "static_threshold": 100.0
+        }
+      }
+    },
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK"
+    }
+  }]
+}
