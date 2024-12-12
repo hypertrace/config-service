@@ -12,9 +12,12 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.ForceLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.PauseEntityLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdFamily;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
 import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.UserRoleAction;
+import ai.traceable.anomaly.config.service.v1.trainer.UserScopeAction;
 import io.grpc.Status;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,5 +119,98 @@ public class TrainingActionValidatorTest {
                         .build())
                 .build());
     assertEquals(Status.OK.getCode(), status.getCode());
+
+    // test user_role_action with pause_entity_learn_action
+    status =
+        actionValidator.validate(
+            UpsertTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().setId("service1").build())
+                        .build())
+                .setTrainingAction(
+                    TrainingAction.newBuilder()
+                        .setUserRoleAction(
+                            UserRoleAction.newBuilder()
+                                .setPauseEntityLearnAction(
+                                    PauseEntityLearnAction.newBuilder()
+                                        .setDisabledAll(true)
+                                        .build())
+                                .build())
+                        .build())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    // test user_scope_action with pause_entity_learn_action
+    status =
+        actionValidator.validate(
+            UpsertTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().setId("service1").build())
+                        .build())
+                .setTrainingAction(
+                    TrainingAction.newBuilder()
+                        .setUserScopeAction(
+                            UserScopeAction.newBuilder()
+                                .setPauseEntityLearnAction(
+                                    PauseEntityLearnAction.newBuilder()
+                                        .setDisabledAll(true)
+                                        .build())
+                                .build())
+                        .build())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    // test user_role_action with invalid action
+    status =
+        actionValidator.validate(
+            UpsertTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().setId("service1").build())
+                        .build())
+                .setTrainingAction(
+                    TrainingAction.newBuilder()
+                        .setUserRoleAction(UserRoleAction.newBuilder().build())
+                        .build())
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("TrainingAction should have a valid action"));
+
+    // test user_scope_action with invalid action
+    status =
+        actionValidator.validate(
+            UpsertTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().setId("service1").build())
+                        .build())
+                .setTrainingAction(
+                    TrainingAction.newBuilder()
+                        .setUserScopeAction(UserScopeAction.newBuilder().build())
+                        .build())
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("TrainingAction should have a valid action"));
+
+    // test pause_entity_learn_action with invalid action
+    status =
+        actionValidator.validate(
+            UpsertTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().setId("service1").build())
+                        .build())
+                .setTrainingAction(
+                    TrainingAction.newBuilder()
+                        .setUserScopeAction(
+                            UserScopeAction.newBuilder()
+                                .setPauseEntityLearnAction(
+                                    PauseEntityLearnAction.newBuilder().build())
+                                .build())
+                        .build())
+                .build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 }

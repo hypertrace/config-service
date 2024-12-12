@@ -2,9 +2,12 @@ package ai.traceable.anomaly.config.service.trainer.trainingaction;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.PauseEntityLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdFamily;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
 import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.UserRoleAction;
+import ai.traceable.anomaly.config.service.v1.trainer.UserScopeAction;
 import io.grpc.Status;
 import javax.inject.Inject;
 
@@ -28,7 +31,6 @@ public class TrainingActionValidatorImpl implements TrainingActionValidator {
     if (status != Status.OK) {
       return status;
     }
-
     // validate training action
     if (!request.hasTrainingAction()) {
       return Status.INVALID_ARGUMENT.withDescription(
@@ -44,16 +46,65 @@ public class TrainingActionValidatorImpl implements TrainingActionValidator {
 
   private Status validateTrainingAction(TrainingAction trainingAction) {
     switch (trainingAction.getActionCase()) {
-      case ACTION_NOT_SET:
-        return Status.INVALID_ARGUMENT.withDescription("TrainingAction should have a valid action");
+      case RESUME_ACTION:
+      case PAUSE_ACTION:
+      case RESET_ACTION:
+        return Status.OK;
       case FORCE_LEARN_ACTION:
         if (trainingAction.getForceLearnAction().getThresholdFamily()
             == ThresholdFamily.THRESHOLD_FAMILY_UNSPECIFIED) {
           return Status.INVALID_ARGUMENT.withDescription(
               "Force learn action should have a valid threshold family");
         }
-      default:
         return Status.OK;
+      case USER_ROLE_ACTION:
+        return validate(trainingAction.getUserRoleAction());
+      case USER_SCOPE_ACTION:
+        return validate(trainingAction.getUserScopeAction());
+      case ACTION_NOT_SET:
+      default:
+        return Status.INVALID_ARGUMENT.withDescription("TrainingAction should have a valid action");
+    }
+  }
+
+  private Status validate(UserRoleAction userRoleAction) {
+    switch (userRoleAction.getActionCase()) {
+      case PAUSE_ENTITY_LEARN_ACTION:
+        return validate(userRoleAction.getPauseEntityLearnAction());
+      case RESUME_ENTITY_LEARN_ACTION:
+        return Status.OK;
+      case ACTION_NOT_SET:
+      default:
+        return Status.INVALID_ARGUMENT.withDescription("TrainingAction should have a valid action");
+    }
+  }
+
+  private Status validate(UserScopeAction userScopeAction) {
+    switch (userScopeAction.getActionCase()) {
+      case PAUSE_ENTITY_LEARN_ACTION:
+        return validate(userScopeAction.getPauseEntityLearnAction());
+      case RESUME_ENTITY_LEARN_ACTION:
+        return Status.OK;
+      case ACTION_NOT_SET:
+      default:
+        return Status.INVALID_ARGUMENT.withDescription("TrainingAction should have a valid action");
+    }
+  }
+
+  private Status validate(PauseEntityLearnAction pauseEntityLearnAction) {
+    switch (pauseEntityLearnAction.getPauseActionCase()) {
+      case DISABLED_ALL:
+        return Status.OK;
+      case DISABLED_ENTITIES_FOR_LEARNING:
+        if (pauseEntityLearnAction.getDisabledEntitiesForLearning().getValuesList().isEmpty()) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Disabled entities for learning should not be empty");
+        }
+        return Status.OK;
+      case PAUSEACTION_NOT_SET:
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            "PauseEntityLearnAction should have a valid pause action");
     }
   }
 }
