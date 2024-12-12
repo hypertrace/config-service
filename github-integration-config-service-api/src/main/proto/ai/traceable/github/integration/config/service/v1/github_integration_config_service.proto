@@ -5,6 +5,9 @@ option java_multiple_files = true;
 
 service GithubIntegrationConfigService {
   rpc GetGithubIntegrations(GetGithubIntegrationsRequest) returns (GetGithubIntegrationsResponse) {}
+  rpc CreateGithubIntegration(CreateGithubIntegrationRequest) returns (CreateGithubIntegrationResponse) {}
+  rpc UpdateGithubIntegration(UpdateGithubIntegrationRequest) returns (UpdateGithubIntegrationResponse) {}
+  rpc DeleteGithubIntegration(DeleteGithubIntegrationRequest) returns (DeleteGithubIntegrationResponse) {}
 }
 
 message GetGithubIntegrationsRequest {
@@ -12,15 +15,53 @@ message GetGithubIntegrationsRequest {
 }
 
 message GithubIntegrationFilter {
-  optional string installation_owner_name = 1;
+  optional string github_installation_target_name = 1;
 }
 
 message GetGithubIntegrationsResponse {
   repeated GithubIntegration integrations = 1;
 }
 
+message CreateGithubIntegrationRequest {}
+
+message CreateGithubIntegrationResponse {
+  GithubIntegration created_integration = 1;
+}
+
+message UpdateGithubIntegrationRequest {
+  string id = 1;
+  IntegrationStatus status = 2;
+}
+
+message UpdateGithubIntegrationResponse {
+  GithubIntegration updated_integration = 1;
+}
+
+message DeleteGithubIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteGithubIntegrationResponse {}
+
+message IntegrationStatus {
+  oneof status {
+    AwaitingRequest awaiting_request = 1;
+    AwaitingApproval awaiting_approval = 2;
+    Completed completed = 3;
+  }
+  message AwaitingRequest {
+    string request_user_email = 1;
+  }
+  message AwaitingApproval {
+    string github_installation_target_name = 1;
+  }
+  message Completed {
+    int64 installation_id = 1;
+    string github_installation_target_name = 2;
+  }
+}
+
 message GithubIntegration {
   string id = 1;
-  int64 installation_id = 2;
-  string installation_owner_name = 3;
+  IntegrationStatus status = 2;
 }

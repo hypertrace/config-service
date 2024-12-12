@@ -51,9 +51,14 @@ class GithubIntegrationStore
 
   private boolean satisfiesAnyOwnerFilter(
       GithubIntegrationFilter filter, GithubIntegration integration) {
-    return !filter.hasInstallationOwnerName()
+    return !filter.hasGithubInstallationTargetName()
         || filter
-            .getInstallationOwnerName()
-            .equalsIgnoreCase(integration.getInstallationOwnerName());
+            .getGithubInstallationTargetName()
+            .equalsIgnoreCase(
+                integration.getStatus().getAwaitingApproval().getGithubInstallationTargetName())
+        || filter
+            .getGithubInstallationTargetName()
+            .equalsIgnoreCase(
+                integration.getStatus().getCompleted().getGithubInstallationTargetName());
   }
 }
