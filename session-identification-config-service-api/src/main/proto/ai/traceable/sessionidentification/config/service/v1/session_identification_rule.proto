@@ -60,7 +60,25 @@ message ResponseSessionTokenDetails {
 message CustomAttributeRule {
   oneof custom_attribute {
     // extracted session-token should be a jwt
-    string jwt_claim_attributes_from_session_token = 1;
+    string jwt_claim_attributes_from_session_token = 1 [deprecated = true];
+    JwtAttributionRule jwt_attribution_rule = 2;
+  }
+
+  message JwtAttributionRule {
+    repeated JwtAttributeExtraction jwt_attributes = 2;
+  }
+
+  message JwtAttributeExtraction {
+    oneof source {
+      string header_key = 1;
+      string payload_claim_name = 2;
+    }
+    oneof capture {
+      RawValue raw_value = 3;
+      string regex_capture_group = 4;
+    }
+
+    message RawValue {}
   }
 }
 
