@@ -1,5 +1,9 @@
 package ai.traceable.ast.config.service;
 
+import static ai.traceable.ast.config.service.v1.ApiType.API_TYPE_HTTP;
+import static ai.traceable.ast.config.service.v1.ApiType.API_TYPE_UNSPECIFIED;
+import static ai.traceable.ast.config.service.v1.ApiType.UNRECOGNIZED;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,6 +21,7 @@ import ai.traceable.ast.config.service.rules.CustomTestPluginManager;
 import ai.traceable.ast.config.service.rules.RulesManager;
 import ai.traceable.ast.config.service.store.AstOverridesStore;
 import ai.traceable.ast.config.service.store.CustomTestPluginStore;
+import ai.traceable.ast.config.service.v1.ApiType;
 import ai.traceable.ast.config.service.v1.AstConfigServiceGrpc;
 import ai.traceable.ast.config.service.v1.AstOverride;
 import ai.traceable.ast.config.service.v1.AstOverrideFilter;
@@ -66,6 +71,7 @@ import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -90,6 +96,10 @@ class AstConfigServiceImplTest {
   private TimestampConverter timestampConverter;
   private MockGenericConfigService mockGenericConfigService;
   private AstConfigServiceGrpc.AstConfigServiceBlockingStub astConfigServiceBlockingStub;
+  List<ApiType> DEFAULT_SUPPORTED_API_TYPES =
+      Arrays.stream(ApiType.values())
+          .filter(apiType -> apiType != API_TYPE_UNSPECIFIED && apiType != UNRECOGNIZED)
+          .collect(toUnmodifiableList());
 
   @BeforeEach
   void setup() {
@@ -538,6 +548,7 @@ class AstConfigServiceImplTest {
                                       .setCodeSnippetType(
                                           CodeSnippetType
                                               .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .addAllSupportedApiTypes(DEFAULT_SUPPORTED_API_TYPES)
                               .build()))
                   .build());
       verify(responseStreamObserver, times(1)).onCompleted();
@@ -598,6 +609,7 @@ class AstConfigServiceImplTest {
                                       .setCodeSnippetType(
                                           CodeSnippetType
                                               .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                              .addAllSupportedApiTypes(DEFAULT_SUPPORTED_API_TYPES)
                               .build()))
                   .build());
       verify(responseStreamObserver, times(1)).onCompleted();
@@ -639,7 +651,8 @@ class AstConfigServiceImplTest {
                               .setCodeSnippet("code-snippet")
                               .setCodeSnippetType(
                                   CodeSnippetType
-                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .addAllSupportedApiTypes(List.of(API_TYPE_HTTP)))
               .build();
 
       CustomTestPlugin customTestPlugin =
@@ -652,6 +665,7 @@ class AstConfigServiceImplTest {
                       .setCodeSnippetType(
                           CodeSnippetType
                               .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+              .addAllSupportedApiTypes(List.of(API_TYPE_HTTP))
               .build();
 
       ContextualConfigObject<CustomTestPlugin> contextualConfigObject =
@@ -680,7 +694,8 @@ class AstConfigServiceImplTest {
                                   .setCodeSnippet("code-snippet")
                                   .setCodeSnippetType(
                                       CodeSnippetType
-                                          .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                                          .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                          .addSupportedApiTypes(API_TYPE_HTTP))
                   .build());
       verify(responseStreamObserver, times(1)).onCompleted();
     }
@@ -731,7 +746,8 @@ class AstConfigServiceImplTest {
                               .setCodeSnippet("code-snippet")
                               .setCodeSnippetType(
                                   CodeSnippetType
-                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                                      .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                      .addSupportedApiTypes(API_TYPE_HTTP))
               .build();
 
       CustomTestPlugin customTestPlugin =
@@ -744,6 +760,7 @@ class AstConfigServiceImplTest {
                       .setCodeSnippetType(
                           CodeSnippetType
                               .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+              .addSupportedApiTypes(API_TYPE_HTTP)
               .build();
 
       ContextualConfigObject<CustomTestPlugin> contextualConfigObject =
@@ -773,7 +790,8 @@ class AstConfigServiceImplTest {
                                   .setCodeSnippet("code-snippet")
                                   .setCodeSnippetType(
                                       CodeSnippetType
-                                          .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT)))
+                                          .CODE_SNIPPET_TYPE_VULNERABILITY_METADATA_INCLUDED_PYTHON_SCRIPT))
+                          .addSupportedApiTypes(API_TYPE_HTTP))
                   .build());
       verify(responseStreamObserver, times(1)).onCompleted();
     }

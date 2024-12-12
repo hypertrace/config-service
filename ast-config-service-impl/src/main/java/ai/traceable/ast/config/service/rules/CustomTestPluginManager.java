@@ -1,6 +1,11 @@
 package ai.traceable.ast.config.service.rules;
 
+import static ai.traceable.ast.config.service.v1.ApiType.API_TYPE_UNSPECIFIED;
+import static ai.traceable.ast.config.service.v1.ApiType.UNRECOGNIZED;
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 import ai.traceable.ast.config.service.store.CustomTestPluginStore;
+import ai.traceable.ast.config.service.v1.ApiType;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.CreateCustomTestPluginRequest;
 import ai.traceable.ast.config.service.v1.CustomTestPlugin;
@@ -12,25 +17,33 @@ import ai.traceable.ast.config.service.v1.UpdateCustomTestPlugin;
 import ai.traceable.ast.config.service.v1.UpdateCustomTestPluginRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-@AllArgsConstructor(onConstructor_ = {@Inject})
 public class CustomTestPluginManager {
 
   private final CustomTestPluginStore customTestPluginStore;
+
+  @Inject
+  public CustomTestPluginManager(CustomTestPluginStore customTestPluginStore) {
+    this.customTestPluginStore = customTestPluginStore;
+  }
+
+  List<ApiType> DEFAULT_SUPPORTED_API_TYPES =
+      Arrays.stream(ApiType.values())
+          .filter(apiType -> apiType != API_TYPE_UNSPECIFIED && apiType != UNRECOGNIZED)
+          .collect(toUnmodifiableList());
 
   public List<CustomTestPlugin> getAllCustomTestPlugins(
       RequestContext requestContext, GetAllCustomTestPluginsRequest request) {
     List<CustomTestPlugin> customTestPluginsList =
         customTestPluginStore.getAllConfigData(requestContext);
-
+    customTestPluginsList = setDefaultSupportedApiTypes(customTestPluginsList);
     CustomTestPluginFilter filter = request.getFilter();
     switch (filter.getTypeCase()) {
       case ID_FILTER:
@@ -42,6 +55,21 @@ public class CustomTestPluginManager {
     }
 
     return Collections.emptyList();
+  }
+
+  List<CustomTestPlugin> setDefaultSupportedApiTypes(List<CustomTestPlugin> customTestPluginsList) {
+    return customTestPluginsList.stream()
+        .map(
+            customTestPlugin -> {
+              if (customTestPlugin.getSupportedApiTypesList().isEmpty()) {
+
+                return customTestPlugin.toBuilder()
+                    .addAllSupportedApiTypes(DEFAULT_SUPPORTED_API_TYPES)
+                    .build();
+              }
+              return customTestPlugin;
+            })
+        .collect(toUnmodifiableList());
   }
 
   public void deleteCustomTestPlugin(
@@ -71,7 +99,10 @@ public class CustomTestPluginManager {
             .addAllPotentialGeneratedVulnerabilityTypes(
                 createCustomTestPlugin.getPotentialGeneratedVulnerabilityTypesList())
             .setSampleData(createCustomTestPlugin.getSampleData())
-            .addAllSupportedApiTypesValue(createCustomTestPlugin.getSupportedApiTypesValueList())
+            .addAllSupportedApiTypes(
+                createCustomTestPlugin.getSupportedApiTypesList().isEmpty()
+                    ? DEFAULT_SUPPORTED_API_TYPES
+                    : createCustomTestPlugin.getSupportedApiTypesList())
             .build();
 
     return customTestPluginStore.upsertObject(requestContext, createdCustomTestPlugin).getData();
@@ -105,7 +136,10 @@ public class CustomTestPluginManager {
         .clearTags()
         .putAllTags(updatedCustomTestPlugin.getTagsMap())
         .setSampleData(updatedCustomTestPlugin.getSampleData())
-        .addAllSupportedApiTypesValue(updatedCustomTestPlugin.getSupportedApiTypesValueList())
+        .addAllSupportedApiTypes(
+            updatedCustomTestPlugin.getSupportedApiTypesValueList().isEmpty()
+                ? DEFAULT_SUPPORTED_API_TYPES
+                : updatedCustomTestPlugin.getSupportedApiTypesList())
         .build();
   }
 
@@ -114,6 +148,6 @@ public class CustomTestPluginManager {
     List<String> customTestPluginIds = idFilter.getValuesList();
     return customTestPluginsList.stream()
         .filter(customTestPlugin -> customTestPluginIds.contains(customTestPlugin.getId()))
-        .collect(Collectors.toUnmodifiableList());
+        .collect(toUnmodifiableList());
   }
 }
