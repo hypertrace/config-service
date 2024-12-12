@@ -54,7 +54,7 @@ class ConfigServiceRestResourceConfig extends ResourceConfig {
     JaxRsResourceGenerator resourceGenerator =
         JaxRsResourceGenerator.newBuilder(this.getClassLoader(), binder.guiceInjector)
             // save the generated resources
-            .saveClasses("build")
+            .saveClasses()
             .build();
     var stubs = generateStubs(grpcApiSpecsConfig, grpcChannelRegistry, selfChannel);
     var resources = resourceGenerator.generateResources(stubs);

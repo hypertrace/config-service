@@ -17,28 +17,20 @@ public class JaxRsResourceGenerator {
   private final JaxRsResourceCreator jaxRsResourceCreator;
   private final ClassLoader classLoader;
   private final GrpcChannelRegistry grpcChannelRegistry;
-  private final boolean saveGeneratedClasses;
-  private final String saveToLocation;
 
   /**
    * @param jaxRsResourceCreator resource creator
    * @param classLoader Provide an appropriate classLoader (usually, the one being used to inject
    *     resources)
    * @param grpcChannelRegistry Provide the grpc channel registry to instantiate client stubs.
-   * @param saveGeneratedClasses set to true, if you want to save the classes generated
-   * @param saveToLocation provide a location where classes are to be saved
    */
   private JaxRsResourceGenerator(
       JaxRsResourceCreator jaxRsResourceCreator,
       ClassLoader classLoader,
-      GrpcChannelRegistry grpcChannelRegistry,
-      boolean saveGeneratedClasses,
-      String saveToLocation) {
+      GrpcChannelRegistry grpcChannelRegistry) {
     this.jaxRsResourceCreator = jaxRsResourceCreator;
     this.classLoader = classLoader;
     this.grpcChannelRegistry = grpcChannelRegistry;
-    this.saveGeneratedClasses = saveGeneratedClasses;
-    this.saveToLocation = saveToLocation;
   }
 
   public static Builder newBuilder(ClassLoader classLoader, Injector injector) {
@@ -49,8 +41,6 @@ public class JaxRsResourceGenerator {
     private final JaxRsResourceCreator jaxRsResourceCreator;
     private final ClassLoader classLoader;
     private final GrpcChannelRegistry grpcChannelRegistry;
-    private boolean saveGeneratedClasses;
-    private String saveToLocation;
 
     Builder(ClassLoader classLoader, Injector injector) {
       this.classLoader = classLoader;
@@ -58,19 +48,12 @@ public class JaxRsResourceGenerator {
       this.grpcChannelRegistry = injector.getInstance(GrpcChannelRegistry.class);
     }
 
-    public Builder saveClasses(String location) {
-      this.saveGeneratedClasses = true;
-      this.saveToLocation = location;
+    public Builder saveClasses() {
       return this;
     }
 
     public JaxRsResourceGenerator build() {
-      return new JaxRsResourceGenerator(
-          jaxRsResourceCreator,
-          classLoader,
-          grpcChannelRegistry,
-          saveGeneratedClasses,
-          saveToLocation);
+      return new JaxRsResourceGenerator(jaxRsResourceCreator, classLoader, grpcChannelRegistry);
     }
   }
 

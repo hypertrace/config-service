@@ -46,7 +46,7 @@ public class JaxRsResourceGeneratorTest {
 
     JaxRsResourceGenerator generator =
         JaxRsResourceGenerator.newBuilder(getClass().getClassLoader(), injector)
-            .saveClasses("build")
+            .saveClasses()
             .build();
 
     GrpcApiSpec apiSpec =
@@ -61,7 +61,7 @@ public class JaxRsResourceGeneratorTest {
   public void testMultiple() throws JaxRsResourceGenerationException {
     JaxRsResourceGenerator generator =
         JaxRsResourceGenerator.newBuilder(getClass().getClassLoader(), injector)
-            .saveClasses("build")
+            .saveClasses()
             .build();
 
     List<GrpcApiSpec> apiSpecList = new ArrayList<>();
