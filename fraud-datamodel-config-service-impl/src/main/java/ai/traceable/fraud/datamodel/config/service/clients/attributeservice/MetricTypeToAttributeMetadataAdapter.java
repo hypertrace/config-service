@@ -83,7 +83,7 @@ public class MetricTypeToAttributeMetadataAdapter {
                               .setAttributeId(GENERIC_METRIC + DOT + entry.getValue().getColumnId())
                               .build())
                       .build())
-              .setInternal(true)
+              .setInternal(false)
               .build());
     }
 
@@ -98,7 +98,7 @@ public class MetricTypeToAttributeMetadataAdapter {
               .setFqn(getScopeForMetricType(metricType) + DOT + "counter_metric_value")
               .setKey("counter_metric_value")
               .setDisplayName("counter_metric_value")
-              .setInternal(true)
+              .setInternal(false)
               .setDefinition(
                   AttributeDefinition.newBuilder()
                       .setProjection(
@@ -123,7 +123,7 @@ public class MetricTypeToAttributeMetadataAdapter {
                           Projection.newBuilder()
                               .setAttributeId(GENERIC_METRIC + DOT + "gauge_metric_value")
                               .build()))
-              .setInternal(true)
+              .setInternal(false)
               .build());
     }
 
@@ -144,7 +144,7 @@ public class MetricTypeToAttributeMetadataAdapter {
                         Projection.newBuilder()
                             .setAttributeId(GENERIC_METRIC + DOT + "startTime")
                             .build()))
-            .setInternal(true)
+            .setInternal(false)
             .build());
 
     builder.addAttributes(
@@ -163,7 +163,7 @@ public class MetricTypeToAttributeMetadataAdapter {
                         Projection.newBuilder()
                             .setAttributeId(GENERIC_METRIC + DOT + "type_id")
                             .build()))
-            .setInternal(true)
+            .setInternal(false)
             .build());
 
     return attributeServiceBlockingStub.create(builder.build());
