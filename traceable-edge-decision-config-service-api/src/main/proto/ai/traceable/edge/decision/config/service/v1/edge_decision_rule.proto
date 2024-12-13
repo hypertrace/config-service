@@ -99,6 +99,7 @@ message EdgeDecisionRuleDefinition {
   //  double risk_score = 6;
   //  double weight = 7;
   // placeholder to allow customization of the rule eval - not all params are known now.
+  // this will be a struct containing the following keys: "fingerprintId", "policyId", "target", "targetType"
   google.protobuf.Value custom_fields = 100;
 }
 

@@ -12,22 +12,36 @@ import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
+import ai.traceable.edge.decision.config.service.store.FilterEvaluator;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
+import ai.traceable.edge.decision.config.service.v1.Filter;
+import ai.traceable.edge.decision.config.service.v1.GenericValueFilter;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.LogicalFilter;
+import ai.traceable.edge.decision.config.service.v1.LogicalOperator;
+import ai.traceable.edge.decision.config.service.v1.RelationalOperator;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
+import com.google.protobuf.util.Structs;
+import com.google.protobuf.util.Values;
+import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-public class EdgeDecisionConfigServiceTest {
+class EdgeDecisionConfigServiceTest {
 
   private static final String UUID_1 = "uuid-1";
 
@@ -47,7 +61,8 @@ public class EdgeDecisionConfigServiceTest {
         new EdgeDecisionConfigStoreManager(
             new EdgeDecisionConfigStore(genericStub, eventGenerator));
     EdgeDecisionRuleStoreManager ruleStoreManager =
-        new EdgeDecisionRuleStoreManager(new EdgeDecisionRuleStore(genericStub, eventGenerator));
+        new EdgeDecisionRuleStoreManager(
+            new EdgeDecisionRuleStore(genericStub, eventGenerator, new FilterEvaluator()));
     EdgeDecisionSpecStoreManager specStoreManager =
         new EdgeDecisionSpecStoreManager(new EdgeDecisionSpecStore(genericStub, eventGenerator));
 
@@ -71,9 +86,8 @@ public class EdgeDecisionConfigServiceTest {
   }
 
   @Test
-  public void testCrud() {
+  void testCrudForEdgeDecisionEngineConfigs() {
     RequestContext requestContext = buildRequestContext();
-    var expected = new_config();
 
     EdgeDecisionEngineConfig created =
         requestContext
@@ -123,5 +137,69 @@ public class EdgeDecisionConfigServiceTest {
 
   private static RequestContext buildRequestContext() {
     return RequestContext.forTenantId("t1");
+  }
+
+  @Test
+  void testFilterForEdgeDecisionRules() {
+    RequestContext requestContext = buildRequestContext();
+
+    EdgeDecisionRule rule1 = createEdgeDecisionRule(requestContext, "id-1", "policy-1", "api-1");
+    EdgeDecisionRule rule2 = createEdgeDecisionRule(requestContext, "id-2", "policy-1", "api-2");
+    EdgeDecisionRule rule3 = createEdgeDecisionRule(requestContext, "id-3", "policy-2", "api-1");
+    EdgeDecisionRule rule4 = createEdgeDecisionRule(requestContext, "id-4", "policy-1", "api-2");
+
+    Filter filter =
+        Filter.newBuilder()
+            .setLogicalFilter(
+                LogicalFilter.newBuilder()
+                    .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                    .addFilter(
+                        Filter.newBuilder()
+                            .setCustomFieldsFilter(
+                                GenericValueFilter.newBuilder()
+                                    .setKey("policyId")
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQUALS)
+                                    .setValue(Values.of("policy-1"))))
+                    .addFilter(
+                        Filter.newBuilder()
+                            .setCustomFieldsFilter(
+                                GenericValueFilter.newBuilder()
+                                    .setKey("target")
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQUALS)
+                                    .setValue(Values.of("api-2")))))
+            .build();
+    Assertions.assertEquals(List.of(rule4, rule2), getEdgeDecisionRules(requestContext, filter));
+  }
+
+  private EdgeDecisionRule createEdgeDecisionRule(
+      RequestContext requestContext, String ruleId, String policyId, String apiId) {
+    return requestContext
+        .call(
+            () ->
+                stub.createEdgeDecisionRule(
+                    CreateEdgeDecisionRuleRequest.newBuilder()
+                        .setEdgeDecisionRule(buildEdgeDecisionRule(ruleId, policyId, apiId))
+                        .build()))
+        .getEdgeDecisionRule();
+  }
+
+  private EdgeDecisionRule buildEdgeDecisionRule(String ruleId, String policyId, String apiId) {
+    return EdgeDecisionRule.newBuilder()
+        .setId(ruleId)
+        .setRuleDefinition(
+            EdgeDecisionRuleDefinition.newBuilder()
+                .setCustomFields(
+                    Values.of(
+                        Structs.of("policyId", Values.of(policyId), "target", Values.of(apiId)))))
+        .build();
+  }
+
+  private List<EdgeDecisionRule> getEdgeDecisionRules(
+      RequestContext requestContext, Filter filter) {
+    return requestContext.call(
+        () ->
+            stub.getAllEdgeDecisionRules(
+                    GetAllEdgeDecisionRulesRequest.newBuilder().setFilter(filter).build())
+                .getEdgeDecisionRulesList());
   }
 }

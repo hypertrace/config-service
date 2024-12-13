@@ -6,6 +6,8 @@ import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto"
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
@@ -107,7 +109,55 @@ message UpdateEdgeDecisionRuleResponse {
   EdgeDecisionRule edge_decision_rule = 1;
 }
 
-message GetAllEdgeDecisionRulesRequest {}
+message GetAllEdgeDecisionRulesRequest {
+  Filter filter = 1;
+}
+
+message Filter {
+  oneof filter {
+    LogicalFilter logical_filter = 1;
+    // custom_fields_filter is applied on EdgeDecisionRuleDefinition.custom_fields
+    GenericValueFilter custom_fields_filter = 2;
+    TimeRangeFilter creation_time_filter = 3;
+    TimeRangeFilter last_updated_time_filter = 4;
+    EdgeDecisionRuleCategoryFilter edge_decision_rule_category_filter = 5;
+    bool include_disabled = 6;
+  }
+}
+
+message EdgeDecisionRuleCategoryFilter {
+  repeated EdgeDecisionRuleCategory edge_decision_rule_categories = 1;
+}
+
+message LogicalFilter {
+  LogicalOperator operator = 1;
+  repeated Filter filter = 2;
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+}
+
+// This filter can be applied on a field having type google.protobuf.Value and has a struct value
+message GenericValueFilter {
+  string key = 1;
+  RelationalOperator operator = 2;
+  google.protobuf.Value value = 3;
+}
+
+enum RelationalOperator {
+  RELATIONAL_OPERATOR_UNSPECIFIED = 0;
+  RELATIONAL_OPERATOR_EQUALS = 1;
+  // add more operators later
+}
+
+message TimeRangeFilter {
+  // both start time and end time are inclusive filters
+  google.protobuf.Timestamp start_time = 1;
+  google.protobuf.Timestamp end_time = 2;
+}
 
 message GetAllEdgeDecisionRulesResponse {
   repeated EdgeDecisionRule edge_decision_rules = 1;

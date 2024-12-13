@@ -57,7 +57,8 @@ public class EdgeDecisionRuleStoreManager {
 
   public GetAllEdgeDecisionRulesResponse getAll(
       RequestContext requestContext, GetAllEdgeDecisionRulesRequest request) {
-    List<EdgeDecisionRule> rules = edgeDecisionRuleStore.getAllConfigData(requestContext);
+    List<EdgeDecisionRule> rules =
+        edgeDecisionRuleStore.getRules(requestContext, request.getFilter());
     return GetAllEdgeDecisionRulesResponse.newBuilder().addAllEdgeDecisionRules(rules).build();
   }
 
