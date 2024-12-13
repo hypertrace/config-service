@@ -38,6 +38,11 @@ public class TraceableEdgeConfigTest {
                             + "    expireAfterWriteDuration = 10m\n"
                             + "  }\n"
                             + "  maxNumberOfActors = 10000")
+                    .entrySet()),
+            "rate.limiting.service.config",
+            ImmutableMap.copyOf(
+                ConfigFactory.parseString(
+                        "host = localhost\n" + "  port = 50888\n" + "  request.timeout = 10s\n")
                     .entrySet())));
   }
 }

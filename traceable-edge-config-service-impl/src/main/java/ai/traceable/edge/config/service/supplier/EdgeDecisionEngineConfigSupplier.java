@@ -5,6 +5,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMa
 import ai.traceable.edge.config.service.TraceableEdgeConfigSupplier;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.config.service.supplier.actor.EdgeDecisionActorConfigSupplier;
+import ai.traceable.edge.config.service.supplier.ratelimiting.EdgeDecisionRateLimitingConfigSupplier;
 import ai.traceable.edge.config.service.v1.AgentCapabilities;
 import ai.traceable.edge.config.service.v1.ConfigPayloads;
 import ai.traceable.edge.config.service.v1.ConfigRequestElement;
@@ -39,17 +40,20 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
   private final TraceableEdgeConfig config;
   private final UuidGenerator uuidGenerator;
   private final EdgeDecisionActorConfigSupplier actorConfigSupplier;
+  private final EdgeDecisionRateLimitingConfigSupplier rateLimitingConfigSupplier;
 
   @Inject
   public EdgeDecisionEngineConfigSupplier(
       TraceableEdgeConfig config,
       EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub stub,
       UuidGenerator uuidGenerator,
-      EdgeDecisionActorConfigSupplier actorConfigSupplier) {
+      EdgeDecisionActorConfigSupplier actorConfigSupplier,
+      EdgeDecisionRateLimitingConfigSupplier rateLimitingConfigSupplier) {
     this.stub = stub;
     this.config = config;
     this.uuidGenerator = uuidGenerator;
     this.actorConfigSupplier = actorConfigSupplier;
+    this.rateLimitingConfigSupplier = rateLimitingConfigSupplier;
   }
 
   @Override
@@ -65,7 +69,8 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
     EdgeDecisionEngineConfig edgeDecisionEngineConfig =
         mergeConfigs(
             getStoredConfig(requestContext),
-            actorConfigSupplier.getEdgeDecisionActorConfig(requestContext));
+            actorConfigSupplier.getEdgeDecisionActorConfig(requestContext),
+            rateLimitingConfigSupplier.getEdgeDecisionRateLimitingActorConfig(requestContext));
 
     ConfigPayloads configPayloads =
         ConfigPayloads.newBuilder().addConfigBytes(edgeDecisionEngineConfig.toByteString()).build();

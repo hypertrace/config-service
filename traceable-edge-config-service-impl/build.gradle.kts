@@ -9,6 +9,7 @@ dependencies {
   implementation(projects.traceableEdgeConfigServiceApi)
   implementation(projects.traceableEdgeBotConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
+  implementation(projects.rateLimitingConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)

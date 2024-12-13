@@ -8,6 +8,8 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrp
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc.TraceablePolicyConfigServiceBlockingStub;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
+import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -76,6 +78,14 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     return ActorServiceGrpc.newBlockingStub(
             channelRegistry.forPlaintextAddress(
                 actorServiceConfig.getHost(), actorServiceConfig.getPort()))
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
+      Channel channel) {
+    return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
