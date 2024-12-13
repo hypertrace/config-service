@@ -21,7 +21,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class ProjectionRootTranslator {
   private static final String JWT_EXPIRATION_ATTR = "exp";
@@ -30,6 +32,7 @@ public class ProjectionRootTranslator {
   private final ResponseLocationTranslatorLookup responseLocationTranslatorLookup;
   private final RequestLocationTranslatorLookup requestLocationTranslatorLookup;
   private final ValueProjectionsTranslator valueProjectionsTranslator;
+  private final JwtAttributeExtractionTranslator jwtAttributeExtractionTranslator;
 
   List<Projector> translateForTokenValue(
       SessionTokenRule tokenRule, RuleCreationSource ruleCreationSource) {
@@ -94,40 +97,62 @@ public class ProjectionRootTranslator {
                 attributeProjection.getValueProjectionsInOrderList(), JWT_EXPIRATION_ATTR));
   }
 
-  Map<String, List<Projector>> translateForCustomAttribute(
+  Map<CustomAttributeRule.JwtAttributeExtraction, List<Projector>> translateForCustomAttribute(
       RequestSessionTokenDetails requestSessionTokenDetails,
       AttributeProjection attributeProjection) {
     RequestLocationTranslator locationTranslator =
         requestLocationTranslatorLookup.getTranslator(
             requestSessionTokenDetails.getTokenLocation());
     return requestSessionTokenDetails.getCustomAttributeRulesList().stream()
-        .map(CustomAttributeRule::getJwtClaimAttributesFromSessionToken)
+        .map(rule -> rule.getJwtAttributionRule().getJwtAttributesList())
+        .flatMap(List::stream)
         .collect(
             Collectors.toMap(
                 Function.identity(),
-                jwtAttr ->
-                    locationTranslator.translateForRequest(
+                jwtAttr -> {
+                  try {
+                    return locationTranslator.translateForRequest(
                         attributeProjection.getAttributeKeyMatchCondition(),
                         addTranslationForJwtAttribute(
-                            attributeProjection.getValueProjectionsInOrderList(), jwtAttr))));
+                            attributeProjection.getValueProjectionsInOrderList(), jwtAttr));
+                  } catch (Exception e) {
+                    log.error("Unable to translate jt attribute  for {}", jwtAttr);
+                    return null;
+                  }
+                }))
+        .entrySet()
+        .stream()
+        .filter(entry -> entry.getValue() != null)
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  Map<String, List<Projector>> translateForCustomAttribute(
+  Map<CustomAttributeRule.JwtAttributeExtraction, List<Projector>> translateForCustomAttribute(
       ResponseSessionTokenDetails responseSessionTokenDetails,
       AttributeProjection attributeProjection) {
     ResponseLocationTranslator locationTranslator =
         responseLocationTranslatorLookup.getTranslator(
             responseSessionTokenDetails.getTokenLocation());
     return responseSessionTokenDetails.getCustomAttributeRulesList().stream()
-        .map(CustomAttributeRule::getJwtClaimAttributesFromSessionToken)
+        .map(rule -> rule.getJwtAttributionRule().getJwtAttributesList())
+        .flatMap(List::stream)
         .collect(
             Collectors.toMap(
                 Function.identity(),
-                jwtAttr ->
-                    locationTranslator.translateForResponse(
+                jwtAttr -> {
+                  try {
+                    return locationTranslator.translateForResponse(
                         attributeProjection.getAttributeKeyMatchCondition(),
                         addTranslationForJwtAttribute(
-                            attributeProjection.getValueProjectionsInOrderList(), jwtAttr))));
+                            attributeProjection.getValueProjectionsInOrderList(), jwtAttr));
+                  } catch (Exception e) {
+                    log.error("Unable to translate jt attribute  for {}", jwtAttr);
+                    return null;
+                  }
+                }))
+        .entrySet()
+        .stream()
+        .filter(entry -> entry.getValue() != null)
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private AttributeRule addTranslationForJwtAttribute(
@@ -149,5 +174,22 @@ public class ProjectionRootTranslator {
                         Projector.JwtProjector.newBuilder()
                             .setClaimRule(
                                 Projector.ParsedObjectKeyRule.newBuilder().setKey(attributeKey)))));
+  }
+
+  private AttributeRule addTranslationForJwtAttribute(
+      List<ValueProjection> valueProjections,
+      CustomAttributeRule.JwtAttributeExtraction jwtAttributeExtraction)
+      throws Exception {
+    List<ValueProjection> valueProjectionsForJwtAttribute =
+        valueProjections.stream()
+            .filter(ValueProjection::hasJwtPayloadClaim)
+            .findFirst()
+            .map(
+                valueProjection ->
+                    valueProjections.subList(0, valueProjections.indexOf(valueProjection)))
+            .orElse(valueProjections);
+    return valueProjectionsTranslator.translateValueProjections(
+        valueProjectionsForJwtAttribute,
+        jwtAttributeExtractionTranslator.getExtractionRule(jwtAttributeExtraction));
   }
 }

@@ -1,7 +1,7 @@
 {
   "initialActions": [{
     "attributeAddition": {
-      "attributeKey": "traceableai.session.new.rule-id.0.jwt_key1.jwt.attribute.value",
+      "attributeKey": "traceableai.jwt.header.rule-id.0.jku",
       "valueProjectionRule": {
         "projector": {
           "firstMatchingProjector": {
@@ -27,8 +27,14 @@
                               "attributeRule": {
                                 "projector": {
                                   "jwtProjector": {
-                                    "claimRule": {
-                                      "key": "jwt_key1"
+                                    "headerRule": {
+                                      "key": "jku",
+                                      "attributeRule": {
+                                        "projector": {
+                                          "noOpProjector": {
+                                          }
+                                        }
+                                      }
                                     }
                                   }
                                 }
@@ -63,8 +69,14 @@
                               "attributeRule": {
                                 "projector": {
                                   "jwtProjector": {
-                                    "claimRule": {
-                                      "key": "jwt_key1"
+                                    "headerRule": {
+                                      "key": "jku",
+                                      "attributeRule": {
+                                        "projector": {
+                                          "noOpProjector": {
+                                          }
+                                        }
+                                      }
                                     }
                                   }
                                 }

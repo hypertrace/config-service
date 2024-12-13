@@ -16,7 +16,14 @@
       "tokenLocation": "RESPONSE_ATTRIBUTE_KEY_LOCATION_BODY",
       "customAttributeRules": [
         {
-          "jwtClaimAttributesFromSessionToken": "jwt_key1"
+          "jwtAttributionRule": {
+            "jwtAttributes": [
+              {
+                "headerKey": "jku",
+                "rawValue": {}
+              }
+            ]
+          }
         }
       ]
     }

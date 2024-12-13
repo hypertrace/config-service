@@ -7,6 +7,7 @@ import ai.traceable.config.utils.JsonPathValidator;
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
+import ai.traceable.sessionidentification.config.service.v1.CustomAttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.CustomProjection;
 import ai.traceable.sessionidentification.config.service.v1.LiteralValue;
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
@@ -194,6 +195,48 @@ public class SessionTokenRuleValidator {
         tokenDetails, ResponseSessionTokenDetails.TOKEN_LOCATION_FIELD_NUMBER);
     if (tokenDetails.hasResponseAttributeExpiration()) {
       validateAttributeExpiration(tokenDetails.getResponseAttributeExpiration());
+    }
+    tokenDetails.getCustomAttributeRulesList().forEach(this::validateCustomAttributeRule);
+  }
+
+  private void validateCustomAttributeRule(CustomAttributeRule customAttributeRule) {
+    if (customAttributeRule.hasJwtClaimAttributesFromSessionToken()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Use of deprecated field jwtClaimAttributesFromSessionToken: %s",
+                  customAttributeRule.getJwtClaimAttributesFromSessionToken()))
+          .asRuntimeException();
+    }
+    if (customAttributeRule.hasJwtAttributionRule()) {
+      customAttributeRule
+          .getJwtAttributionRule()
+          .getJwtAttributesList()
+          .forEach(this::validateJwtAttributionExtraction);
+    }
+  }
+
+  private void validateJwtAttributionExtraction(
+      CustomAttributeRule.JwtAttributeExtraction jwtAttributeExtraction) {
+    if (jwtAttributeExtraction
+        .getSourceCase()
+        .equals(CustomAttributeRule.JwtAttributeExtraction.SourceCase.SOURCE_NOT_SET)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Unexpected jwt attribute extraction source case: %s",
+                  jwtAttributeExtraction.getSourceCase()))
+          .asRuntimeException();
+    }
+    if (jwtAttributeExtraction
+        .getCaptureCase()
+        .equals(CustomAttributeRule.JwtAttributeExtraction.CaptureCase.CAPTURE_NOT_SET)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format(
+                  "Unexpected jwt attribute extraction capture case: %s",
+                  jwtAttributeExtraction.getSourceCase()))
+          .asRuntimeException();
     }
   }
 

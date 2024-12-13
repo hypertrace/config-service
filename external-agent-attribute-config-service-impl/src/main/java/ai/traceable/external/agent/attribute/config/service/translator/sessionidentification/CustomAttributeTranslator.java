@@ -3,6 +3,7 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
+import ai.traceable.sessionidentification.config.service.v1.CustomAttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
 import java.util.List;
@@ -24,19 +25,17 @@ public class CustomAttributeTranslator {
       AttributeProjection attributeProjection) {
     String sessionIdAttr =
         sessionIdentificationConstants.buildKeyForNewSessionId(ruleId, ruleIndex);
-    Map<String, List<AttributeRule.Projector>> customAttrProjectionMap =
-        projectionRootTranslator.translateForCustomAttribute(
-            responseSessionTokenDetails, attributeProjection);
+    Map<CustomAttributeRule.JwtAttributeExtraction, List<AttributeRule.Projector>>
+        customAttrProjectionMap =
+            projectionRootTranslator.translateForCustomAttribute(
+                responseSessionTokenDetails, attributeProjection);
     return customAttrProjectionMap.entrySet().stream()
         .map(
             entry ->
                 addCustomAttributeAndProject(
                     entry.getValue(),
                     sessionIdentificationConstants.buildKeyForJwtAttrValue(
-                        ruleId,
-                        ruleIndex,
-                        SessionIdentificationConstants.SESSION_NEW_PREFIX_KEY,
-                        entry.getKey()),
+                        ruleId, ruleIndex, entry.getKey()),
                     sessionIdAttr))
         .collect(Collectors.toUnmodifiableList());
   }
@@ -47,19 +46,17 @@ public class CustomAttributeTranslator {
       String ruleId,
       AttributeProjection attributeProjection) {
     String sessionIdAttr = sessionIdentificationConstants.buildKeyForSessionId(ruleId, ruleIndex);
-    Map<String, List<AttributeRule.Projector>> customAttrProjectionMap =
-        projectionRootTranslator.translateForCustomAttribute(
-            requestSessionTokenDetails, attributeProjection);
+    Map<CustomAttributeRule.JwtAttributeExtraction, List<AttributeRule.Projector>>
+        customAttrProjectionMap =
+            projectionRootTranslator.translateForCustomAttribute(
+                requestSessionTokenDetails, attributeProjection);
     return customAttrProjectionMap.entrySet().stream()
         .map(
             entry ->
                 addCustomAttributeAndProject(
                     entry.getValue(),
                     sessionIdentificationConstants.buildKeyForJwtAttrValue(
-                        ruleId,
-                        ruleIndex,
-                        SessionIdentificationConstants.SESSION_PREFIX_KEY,
-                        entry.getKey()),
+                        ruleId, ruleIndex, entry.getKey()),
                     sessionIdAttr))
         .collect(Collectors.toUnmodifiableList());
   }
