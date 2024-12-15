@@ -237,16 +237,18 @@ message BinaryOperator {
     bool bool_value = 6;
     // allowed operators: EQ, NOT_EQ
     google.protobuf.NullValue null_value = 7;
-    // allowed operators: EQ, NOT_EQ
+    // allowed operators: EQ, NOT_EQ, STARTS_WITH, ENDS_WITH, CONTAINS, EQ_IGNORE_CASE
     string string_value = 8;
-    // allowed operators: BETWEEN
+    // allowed operators: IN, NOT_IN, BETWEEN
     RangeValue range_value = 9;
-    // allowed operators: BETWEEN
+    // allowed operators: IN, NOT_IN, BETWEEN
+    // NOTE: unit is "seconds". both for lhs and rhs.
     TimeRangeValue time_range_value = 10;
   }
 
   // validate against "rhs" type
   MatchOperator match_operator = 11;
+  bool negate = 12;
 }
 
 message RangeValue {
@@ -280,6 +282,10 @@ enum MatchOperator {
   MATCH_OPERATOR_GTE = 9;
   MATCH_OPERATOR_LTE = 10;
   MATCH_OPERATOR_BETWEEN = 11;
+  MATCH_OPERATOR_CONTAINS = 12;
+  MATCH_OPERATOR_STARTS_WITH = 13;
+  MATCH_OPERATOR_ENDS_WITH = 14;
+  MATCH_OPERATOR_EQ_IGNORE_CASE = 15;
 }
 
 message RequestInvocation {
