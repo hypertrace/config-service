@@ -118,6 +118,7 @@ message MatchCondition {
     // when we want complex expression using AND/OR
     LogicalMatchCondition logical_match_condition = 3;
   }
+  bool negate = 4;
 }
 
 // entity rules that can be evaluated by risk decision engine
@@ -248,7 +249,6 @@ message BinaryOperator {
 
   // validate against "rhs" type
   MatchOperator match_operator = 11;
-  bool negate = 12;
 }
 
 message RangeValue {
