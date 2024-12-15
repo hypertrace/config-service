@@ -193,13 +193,36 @@ message ValueAggregateThreshold {
     AGGREGATION_TYPE_MIN = 6; // Minimum attribute value
   }
 
+  enum ThresholdOperator {
+    THRESHOLD_OPERATOR_UNSPECIFIED = 0;
+    THRESHOLD_OPERATOR_ABOVE = 1;
+    THRESHOLD_OPERATOR_BELOW = 2;
+    THRESHOLD_OPERATOR_ABOVE_OR_BELOW = 3;
+  }
+
   AggregationType aggregation_type = 2;
   oneof threshold {
-    double static_threshold = 3; // The threshold for the aggregated value
+    double static_threshold = 3; // The threshold for the aggregated value, an absolute value.
+    RangeThreshold range_threshold = 5; // threshold specified as a range.
+    ToleranceThreshold tolerance_threshold = 6; // threshold specified with a tolerance (percent, delta)
   }
+  ThresholdOperator threshold_operator = 7; // default: ABOVE.
   // this must be a conscious choice of the consumer - higher resource usage if estimates are disabled for aggregations
   // by default: decision engine may use probabilistic data structures for providing aggregate values
   bool disable_estimated_aggregate = 4;
+}
+
+message RangeThreshold {
+  double lower_bound = 1; // Explicit lower bound
+  double upper_bound = 2; // Explicit upper bound
+}
+
+message ToleranceThreshold {
+  double reference_value = 1; // base threshold value.
+  oneof tolerance_type {
+    double percentage_tolerance = 2; // tolerance expressed as a percentage of reference value
+    double absolute_tolerance = 3; // tolerance expressed as a fixed offset from reference value
+  }
 }
 
 message LogicalMatchCondition {
