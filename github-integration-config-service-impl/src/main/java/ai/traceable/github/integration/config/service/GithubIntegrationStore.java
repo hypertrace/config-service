@@ -46,7 +46,10 @@ class GithubIntegrationStore
   protected Optional<GithubIntegration> filterConfigData(
       GithubIntegration data, GithubIntegrationFilter filter) {
     return Optional.of(data)
-        .filter(githubIntegration -> this.satisfiesAnyOwnerFilter(filter, githubIntegration));
+        .filter(githubIntegration -> this.satisfiesAnyOwnerFilter(filter, githubIntegration))
+        .filter(githubIntegration -> this.satisfiesIdFilter(filter, githubIntegration))
+        .filter(
+            githubIntegration -> this.satisfiesRequestUserEmailFilter(filter, githubIntegration));
   }
 
   private boolean satisfiesAnyOwnerFilter(
@@ -60,5 +63,17 @@ class GithubIntegrationStore
             .getGithubInstallationTargetName()
             .equalsIgnoreCase(
                 integration.getStatus().getCompleted().getGithubInstallationTargetName());
+  }
+
+  private boolean satisfiesIdFilter(GithubIntegrationFilter filter, GithubIntegration integration) {
+    return !filter.hasConfigId() || filter.getConfigId().equalsIgnoreCase(integration.getId());
+  }
+
+  private boolean satisfiesRequestUserEmailFilter(
+      GithubIntegrationFilter filter, GithubIntegration integration) {
+    return !filter.hasRequestUserEmail()
+        || filter
+            .getRequestUserEmail()
+            .equalsIgnoreCase(integration.getStatus().getAwaitingRequest().getRequestUserEmail());
   }
 }
