@@ -6,17 +6,19 @@ plugins {
 }
 
 dependencies {
-  compileOnly(commonLibs.lombok)
   compileOnly(commonLibs.slf4j2.api)
 
+  compileOnly(commonLibs.lombok)
   annotationProcessor(commonLibs.lombok)
 
-  implementation(projects.savedFilterConfigServiceApi)
+  api(projects.savedFilterConfigServiceApi)
+
+  api(commonLibs.hypertrace.config.changeevent.api)
+  api(commonLibs.hypertrace.kafkaStreams.eventListener)
+
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.grpcutils.context)
-  implementation(commonLibs.hypertrace.config.changeevent.api)
   implementation(localLibs.hypertrace.configservice.protoconverter)
-  implementation(commonLibs.hypertrace.kafkaStreams.eventListener)
   implementation(commonLibs.kafka.streams.protobuf.serde)
   implementation(commonLibs.commons.lang)
   implementation(commonLibs.guice)
