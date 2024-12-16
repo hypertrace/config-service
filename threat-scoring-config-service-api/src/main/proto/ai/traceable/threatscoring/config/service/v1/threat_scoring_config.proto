@@ -20,8 +20,7 @@ message EventConfidenceScoringConfig {
 }
 
 //to be added later
-message EventConfidenceMatrixConfig{
-}
+message EventConfidenceMatrixConfig {}
 
 message MaliciousSpanConfidenceScoring {
   ScoringLevelConfig level_config = 1;

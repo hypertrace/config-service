@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package ai.traceable.threatscoring.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/threatscoring/config/service/v1/threat_scoring_config.proto";
+
+option java_multiple_files = true;
 
 message GetScopedThreatScoringConfigsRequest {
   ThreatScoringConfigScope config_scope = 1;

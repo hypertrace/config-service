@@ -64,4 +64,5 @@ modules:
   - path: user-attribution-config-service-api/src/main/proto
   - path: vulnerability-config-service-api/src/main/proto
   - path: waf-provider-integration-service-api/src/main/proto
+  - path: threat-scoring-config-service-api/src/main/proto
 
