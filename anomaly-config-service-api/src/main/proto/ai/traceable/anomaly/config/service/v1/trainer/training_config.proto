@@ -824,6 +824,7 @@ message SegmentMergeConfig {
   optional string segment_depth = 2;
   repeated LevelThresholdConfig level_threshold_config = 3;
   optional int32 non_mergeable_depth = 4;
+  Filter segment_filter = 5;
 }
 
 message LevelThresholdConfig {
