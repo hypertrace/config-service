@@ -6,7 +6,6 @@ message FlowConfig {
   string id = 1;
   string name = 2;
   bool disabled = 3;
-  repeated string pages = 4;
-  repeated string apis = 5;
-  map<string, string> labels = 9;
+  repeated string page_ids = 4;
+  repeated string api_ids = 5;
 }
