@@ -60,6 +60,7 @@ message IntegrationStatus {
   message Completed {
     int64 installation_id = 1;
     string github_installation_target_name = 2;
+    string github_installation_url = 3;
   }
 }
 

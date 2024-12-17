@@ -142,6 +142,8 @@ class GithubIntegrationConfigServiceImplTest {
                                     .setCompleted(
                                         Completed.newBuilder()
                                             .setInstallationId(installId)
+                                            .setGithubInstallationUrl(
+                                                "https://github.com/apps/traceable/installations/123")
                                             .setGithubInstallationTargetName(installOwner)))
                             .build()))
             .getUpdatedIntegration();

@@ -55,6 +55,8 @@ class GithubIntegrationConfigServiceValidator {
         validateNonDefaultPresenceOrThrow(
             request.getStatus().getCompleted(),
             Completed.GITHUB_INSTALLATION_TARGET_NAME_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            request.getStatus().getCompleted(), Completed.GITHUB_INSTALLATION_URL_FIELD_NUMBER);
         return;
       case AWAITING_REQUEST: // Not updatable, this is the initial state
       default:
