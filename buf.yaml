@@ -59,6 +59,7 @@ modules:
   - path: traceable-datamodel-config-service-api/src/main/proto
   - path: traceable-edge-config-service-api/src/main/proto
   - path: traceable-edge-decision-config-service-api/src/main/proto
+  - path: traceable-edge-bot-config-service-api/src/main/proto
   - path: traceable-span-processing-config-service-api/src/main/proto
   - path: traceable-span-processing-config-service-impl/src/main/proto
   - path: user-attribution-config-service-api/src/main/proto

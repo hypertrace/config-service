@@ -1,7 +1,7 @@
 # Each line is a file pattern followed by one or more owners.
 
 # global
-* @GurtejSohi @aaron-steinfeld @pavan-traceable @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @anujgoyal1 @SrikarMannepalli
+* @GurtejSohi @aaron-steinfeld @pavan-traceable @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @anujgoyal1 @SrikarMannepalli @sunilgattupalle @surajpuvvada
 
 # module specific owners
 anomaly-config-service-registry/src/main/resources/modsec/crs @piyushroshan @soujanyanmbri
