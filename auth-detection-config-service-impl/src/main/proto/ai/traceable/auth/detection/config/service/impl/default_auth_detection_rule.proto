@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.auth.detection.config.service.impl;
 
 message DeletedDefaultAuthDetectionRule {

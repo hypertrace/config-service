@@ -2,11 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.fraud.datamodel.config.service.v1;
 
-option java_package = "ai.traceable.fraud.datamodel.config.service.v1.internal";
-option java_multiple_files = true;
-
-
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+
+option java_multiple_files = true;
+option java_package = "ai.traceable.fraud.datamodel.config.service.v1.internal";
 
 enum ObjectKind {
   OBJECT_KIND_UNSPECIFIED = 0;
@@ -18,6 +17,7 @@ enum ObjectKind {
 }
 
 message ObjectTypeReference {
+  // buf:lint:ignore FIELD_LOWER_SNAKE_CASE
   ObjectKind objectKind = 1;
   string id = 2;
 }

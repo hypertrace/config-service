@@ -1,11 +1,11 @@
 syntax = "proto3";
 
 package ai.traceable.policy.config.service.v1;
-option java_package = "ai.traceable.policy.config.service.v1";
-option java_multiple_files = true;
 
 import "ai/traceable/policy/config/service/v1/traceable_policy.proto";
 
+option java_multiple_files = true;
+option java_package = "ai.traceable.policy.config.service.v1";
 
 service TraceablePolicyConfigService {
   rpc Upsert(UpsertRequest) returns (UpsertResponse) {}

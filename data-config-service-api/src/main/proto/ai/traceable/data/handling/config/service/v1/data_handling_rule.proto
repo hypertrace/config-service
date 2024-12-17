@@ -16,10 +16,6 @@ message DataHandlingRuleData {
   repeated DataHandlingRuleAction actions = 3;
 }
 
-message DataHandlingRuleCondition {
+message DataHandlingRuleCondition {}
 
-}
-
-message DataHandlingRuleAction {
-
-}
+message DataHandlingRuleAction {}

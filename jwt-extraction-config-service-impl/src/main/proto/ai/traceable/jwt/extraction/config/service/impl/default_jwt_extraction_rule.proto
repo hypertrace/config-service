@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package ai.traceable.jwt.extraction.config.service.impl;
 
 message DeletedDefaultJwtExtractionRule {

@@ -1,14 +1,15 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.jira.integration.config.service.api.v1;
 
-import "ai/traceable/jira/integration/config/service/v1/jira_additional_configuration.proto";
+import "ai/traceable/jira/integration/config/service/api/v1/jira_additional_configuration.proto";
+
+option java_multiple_files = true;
 
 service JiraIntegrationConfigService {
-  rpc CreateJiraIntegration (CreateJiraIntegrationRequest) returns (CreateJiraIntegrationResponse) {}
-  rpc GetJiraIntegrations (GetJiraIntegrationsRequest) returns (GetJiraIntegrationsResponse) {}
-  rpc UpdateJiraIntegration (UpdateJiraIntegrationRequest) returns (UpdateJiraIntegrationResponse) {}
-  rpc DeleteJiraIntegration (DeleteJiraIntegrationRequest) returns (DeleteJiraIntegrationResponse) {}
+  rpc CreateJiraIntegration(CreateJiraIntegrationRequest) returns (CreateJiraIntegrationResponse) {}
+  rpc GetJiraIntegrations(GetJiraIntegrationsRequest) returns (GetJiraIntegrationsResponse) {}
+  rpc UpdateJiraIntegration(UpdateJiraIntegrationRequest) returns (UpdateJiraIntegrationResponse) {}
+  rpc DeleteJiraIntegration(DeleteJiraIntegrationRequest) returns (DeleteJiraIntegrationResponse) {}
 
   rpc AddJiraTemplate(AddJiraTemplateRequest) returns (AddJiraTemplateResponse) {}
   rpc UpdateJiraTemplate(UpdateJiraTemplateRequest) returns (UpdateJiraTemplateResponse) {}
@@ -23,9 +24,9 @@ service JiraIntegrationConfigService {
 message CreateJiraIntegrationRequest {
   string name = 1;
   optional string description = 2;
-  string consumer_key = 3 [deprecated=true];
+  string consumer_key = 3 [deprecated = true];
   string base_url = 4;
-  EncryptedData encrypted_access_token = 5 [deprecated=true];
+  EncryptedData encrypted_access_token = 5 [deprecated = true];
   Scope scope = 6;
   JiraIntegrationDetails jira_integration_details = 7;
 }
@@ -57,8 +58,7 @@ message DeleteJiraIntegrationRequest {
   string jira_integration_id = 1;
 }
 
-message DeleteJiraIntegrationResponse {
-}
+message DeleteJiraIntegrationResponse {}
 
 message AddJiraTemplateRequest {
   JiraTemplateDetails jira_template_details = 1;
@@ -85,8 +85,7 @@ message DeleteJiraTemplateRequest {
   string template_id = 1;
 }
 
-message DeleteJiraTemplateResponse {
-}
+message DeleteJiraTemplateResponse {}
 
 message GetJiraTemplatesResponse {
   repeated JiraTemplate jira_templates = 1;
@@ -121,8 +120,7 @@ message DeleteProjectIssueConfigurationRequest {
   string configuration_id = 1;
 }
 
-message DeleteProjectIssueConfigurationResponse {
-}
+message DeleteProjectIssueConfigurationResponse {}
 
 message GetProjectIssueConfigurationsRequest {
   GetProjectIssueConfigurationsFilter filter = 1;
@@ -144,10 +142,10 @@ message JiraIntegration {
   string id = 1;
   string name = 2;
   string description = 3;
-  string consumer_key = 4 [deprecated=true];
+  string consumer_key = 4 [deprecated = true];
   string base_url = 5;
   Scope scope = 6;
-  EncryptedData encrypted_access_token = 7 [deprecated=true];
+  EncryptedData encrypted_access_token = 7 [deprecated = true];
   JiraIntegrationDetails jira_integration_details = 8;
 }
 

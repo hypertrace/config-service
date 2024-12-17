@@ -1,8 +1,10 @@
 syntax = "proto3";
 package ai.traceable.policy.config.service.v1;
-option java_package = "ai.traceable.policy.config.service.v1";
-option java_multiple_files = true;
+
 import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_package = "ai.traceable.policy.config.service.v1";
 
 message ClientBotFingerprintPolicy {
   bool use_default = 1;

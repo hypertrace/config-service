@@ -1,7 +1,7 @@
 syntax = "proto3";
-option java_multiple_files = true;
 package ai.traceable.jira.integration.config.service.api.v1;
 
+option java_multiple_files = true;
 
 message JiraTemplate {
   string template_id = 1;

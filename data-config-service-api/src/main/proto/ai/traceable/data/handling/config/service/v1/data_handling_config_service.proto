@@ -7,29 +7,22 @@ import "ai/traceable/data/handling/config/service/v1/data_handling_rule.proto";
 option java_multiple_files = true;
 
 service DataHandlingConfigService {
-  rpc GetDataHandlingRules(GetDataHandlingRulesRequest) returns (GetDataHandlingRulesResponse) {
-  }
+  rpc GetDataHandlingRules(GetDataHandlingRulesRequest) returns (GetDataHandlingRulesResponse) {}
 
-  rpc CreateDataHandlingRule(CreateDataHandlingRuleRequest) returns (CreateDataHandlingRuleResponse) {
-  }
+  rpc CreateDataHandlingRule(CreateDataHandlingRuleRequest) returns (CreateDataHandlingRuleResponse) {}
 
-  rpc UpdateDataHandlingRule(UpdateDataHandlingRuleRequest) returns (UpdateDataHandlingRuleResponse) {
-  }
+  rpc UpdateDataHandlingRule(UpdateDataHandlingRuleRequest) returns (UpdateDataHandlingRuleResponse) {}
 
-  rpc RankDataHandlingRule(RankDataHandlingRuleRequest) returns (RankDataHandlingRuleResponse) {
-  }
+  rpc RankDataHandlingRule(RankDataHandlingRuleRequest) returns (RankDataHandlingRuleResponse) {}
 
-  rpc DeleteDataHandlingRule(DeleteDataHandlingRuleRequest) returns (DeleteDataHandlingRuleResponse) {
-  }
+  rpc DeleteDataHandlingRule(DeleteDataHandlingRuleRequest) returns (DeleteDataHandlingRuleResponse) {}
 }
 
-message GetDataHandlingRulesRequest {
-}
+message GetDataHandlingRulesRequest {}
 
 message GetDataHandlingRulesResponse {
   repeated DataHandlingRule rules = 1;
 }
-
 
 message CreateDataHandlingRuleRequest {
   DataHandlingRuleData data = 1;
