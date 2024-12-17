@@ -425,5 +425,5 @@ data:
 
   traceable-edge.conf: |-
     {{- if .Values.defaultTraceableEdgeUserAttributionVariables }}
-      default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
+    default.variables.user-attribution = {{- .Values.defaultTraceableEdgeUserAttributionVariables | indent 4 }}
     {{- end }}
