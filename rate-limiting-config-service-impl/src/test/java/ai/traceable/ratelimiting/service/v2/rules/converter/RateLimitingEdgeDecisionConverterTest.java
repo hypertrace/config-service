@@ -46,9 +46,9 @@ class RateLimitingEdgeDecisionConverterTest {
     RateLimitingRule.Builder rateLimitingRuleBuilder = RateLimitingRule.newBuilder();
     parser.merge(inputFileStr, rateLimitingRuleBuilder);
     EdgeDecisionEngineConfig output = converter.convert(List.of(rateLimitingRuleBuilder.build()));
-    EdgeDecisionEngineConfig.Builder expecteedOutputBuilder = EdgeDecisionEngineConfig.newBuilder();
-    parser.merge(expectedOutputFileStr, expecteedOutputBuilder);
-    assertEquals(expecteedOutputBuilder.build(), output);
+    EdgeDecisionEngineConfig.Builder expectedOutputBuilder = EdgeDecisionEngineConfig.newBuilder();
+    parser.merge(expectedOutputFileStr, expectedOutputBuilder);
+    assertEquals(expectedOutputBuilder.build(), output);
   }
 
   static List<String> getInputFileNames() {

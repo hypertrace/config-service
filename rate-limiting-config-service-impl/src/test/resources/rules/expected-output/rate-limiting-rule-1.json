@@ -19,9 +19,21 @@
           "logical_match_condition": {
             "operator": "LOGICAL_MATCH_OPERATOR_AND",
             "conditions": [{
-              "generic_match_condition": {
-                "jexl_script": {
-                  "jexl_script": "var regex \u003d test-url; regex.test($s.getRequestUrl())"
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "$s.getPath()"
+                      }
+                    }
+                  }]
+                },
+                "binary_operator": {
+                  "regex": "test-url",
+                  "match_operator": "MATCH_OPERATOR_LIKE"
                 }
               }
             }]
