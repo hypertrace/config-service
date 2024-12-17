@@ -20,7 +20,18 @@ message EventConfidenceScoringConfig {
 }
 
 //to be added later
-message EventConfidenceMatrixConfig {}
+message EventConfidenceMatrixConfig {
+  repeated EventConfidenceMapping event_confidence_mapping = 1;
+}
+
+message EventConfidenceMapping {
+  ScoringLevel actor_confidence = 1;
+  ScoringLevel malicious_span_confidence = 2;
+  ScoringLevel anomalous_confidence = 3;
+  ScoringLevel trend_confidence = 4;
+  ScoringLevel response_confidence = 5;
+  ScoringLevel event_confidence = 6;
+}
 
 message MaliciousSpanConfidenceScoring {
   ScoringLevelConfig level_config = 1;
@@ -45,4 +56,11 @@ message ThreatScoringConfigScope {
 
 message EnvironmentScope {
   string environment_id = 1;
+}
+
+enum ScoringLevel {
+  SCORING_LEVEL_UNSPECIFIED = 0;
+  SCORING_LEVEL_LOW = 1;
+  SCORING_LEVEL_MEDIUM = 2;
+  SCORING_LEVEL_HIGH = 3;
 }
