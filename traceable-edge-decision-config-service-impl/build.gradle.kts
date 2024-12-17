@@ -7,9 +7,11 @@ plugins {
 dependencies {
   implementation(projects.configUtils)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
+  implementation(projects.externalAgentAttributeConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
+  implementation(commonLibs.protobuf.javautil)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
   implementation(commonLibs.guice)

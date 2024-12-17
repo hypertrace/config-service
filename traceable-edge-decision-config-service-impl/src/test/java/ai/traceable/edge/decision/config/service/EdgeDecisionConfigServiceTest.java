@@ -2,10 +2,14 @@ package ai.traceable.edge.decision.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStore;
@@ -49,6 +53,7 @@ class EdgeDecisionConfigServiceTest {
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private UuidGenerator uuidGenerator;
+  @Mock private RuleVariableEnricher ruleVariableEnricher;
 
   @BeforeEach
   void beforeEach() {
@@ -59,7 +64,7 @@ class EdgeDecisionConfigServiceTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     EdgeDecisionConfigStoreManager storeManager =
         new EdgeDecisionConfigStoreManager(
-            new EdgeDecisionConfigStore(genericStub, eventGenerator));
+            new EdgeDecisionConfigStore(genericStub, eventGenerator), ruleVariableEnricher);
     EdgeDecisionRuleStoreManager ruleStoreManager =
         new EdgeDecisionRuleStoreManager(
             new EdgeDecisionRuleStore(genericStub, eventGenerator, new FilterEvaluator()));
@@ -88,6 +93,9 @@ class EdgeDecisionConfigServiceTest {
   @Test
   void testCrudForEdgeDecisionEngineConfigs() {
     RequestContext requestContext = buildRequestContext();
+    // Send the original edge decision rule as is
+    when(ruleVariableEnricher.enrichRule(anyString(), any()))
+        .thenAnswer(invocation -> invocation.getArgument(1));
 
     EdgeDecisionEngineConfig created =
         requestContext
@@ -169,6 +177,39 @@ class EdgeDecisionConfigServiceTest {
                                     .setValue(Values.of("api-2")))))
             .build();
     Assertions.assertEquals(List.of(rule4, rule2), getEdgeDecisionRules(requestContext, filter));
+  }
+
+  @Test
+  void testHandleChanges() {
+    RequestContext requestContext = buildRequestContext();
+    EdgeDecisionEngineConfig modified_config =
+        EdgeDecisionEngineConfig.newBuilder()
+            .setId(UUID_1)
+            .setName("name")
+            .addCommonVariables(VariableDerivationMapping.newBuilder().setName("user"))
+            .build();
+
+    // Send the original edge decision rule as is
+    when(ruleVariableEnricher.enrichRule("t1", new_config())).thenReturn(modified_config);
+
+    EdgeDecisionEngineConfig created =
+        requestContext
+            .call(
+                () ->
+                    stub.createEdgeDecisionEngineConfig(
+                        CreateEdgeDecisionEngineConfigRequest.newBuilder()
+                            .setEdgeDecisionEngineConfig(new_config())
+                            .build()))
+            .getEdgeDecisionEngineConfig();
+
+    var config =
+        requestContext.call(
+            () ->
+                stub.getEdgeDecisionEngineConfig(
+                        GetEdgeDecisionEngineConfigRequest.newBuilder().setId(UUID_1).build())
+                    .getEdgeDecisionEngineConfig());
+
+    assertEquals(modified_config, config);
   }
 
   private EdgeDecisionRule createEdgeDecisionRule(

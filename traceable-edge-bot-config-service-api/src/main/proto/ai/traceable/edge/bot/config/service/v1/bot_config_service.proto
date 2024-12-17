@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package ai.traceable.edge.bot.config.service.v1;
 
-option java_multiple_files = true;
-
 import "ai/traceable/edge/bot/config/service/v1/captcha_site_key_config.proto";
 import "ai/traceable/edge/bot/config/service/v1/flow_config.proto";
+
+option java_multiple_files = true;
 
 service BotConfigService {
   rpc UpsertCaptchaSiteKeyConfig(UpsertCaptchaSiteKeyConfigRequest) returns (UpsertCaptchaSiteKeyConfigResponse) {}

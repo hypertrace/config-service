@@ -829,16 +829,61 @@ anomalyConfigServiceConfig:
 #defaultTraceableEdgeUserAttributionVariables: |-
 #  [
 #    {
-#      name = "userId1"
-#      rules = [
-#      transformationConfig = {
-#        jexlExpression = {
-#          jexlExpression = "$s.getHeaders().get('authorization')"
+#      tenant = "tenant1"
+#      variables = [
+#        {
+#          name = "userId1"
+#          transformation_config = {
+#            jexl_expression = {
+#              jexl_expression = "$s.getHeaders().get('authorization')"
+#            }
+#            output_type = "STRING"
+#          }
+#        },
+#        {
+#          name = "userId2"
+#          transformation_config = {
+#            regex = {
+#              regex = "\\w+@(\\w+\\.\\w+)"
+#              group_indices = [1]
+#              join_delimiter = ""
+#              value_transformation = {
+#                static_value = {
+#                  string_value = "example.com"
+#                }
+#              }
+#            }
+#            output_type = "STRING"
+#          }
 #        }
-#      }
-#    ]
+#      ]
+#    },
+#    {
+#      tenant = "tenant2"
+#      variables = [
+#        {
+#          name = "userId3"
+#          transformation_config = {
+#            conditional = {
+#              bool_expression = "$s.getPath().contains('/admin')"
+#              true_transformation = {
+#                static_value = {
+#                  string_value = "AdminUser"
+#                }
+#              }
+#              false_transformation = {
+#                static_value = {
+#                  string_value = "RegularUser"
+#                }
+#              }
+#            }
+#            output_type = "STRING"
+#          }
+#        }
+#      ]
 #    }
 #  ]
+
 
 prometheusRule:
   enabled: true
