@@ -18,8 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
   private final Map<String, List<DerivationRule>> tenantUserAttributionConfigs;
+  static final String TRACEABLE_EDGE_CONFIG_SERVICE_NAME = "traceable.edge.config.service";
   private static final String DEFAULT_USER_ATTRIBUTION_CONFIG_PATH =
-      "defaultTraceableEdgeUserAttributionVariables";
+      "default.variables.user-attribution";
   private static final String DEFAULT_TRANSFORMATION_CONFIG_PATH = "transformation_config";
 
   // Want to throw error on unknown fields to avoid broad user attribution rules
@@ -37,6 +38,12 @@ public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
 
   /** Loads and parses the tenant-specific user attribution rules. */
   private Map<String, List<DerivationRule>> loadTenantConfigs(Config config) {
+    if (!config.hasPath(TRACEABLE_EDGE_CONFIG_SERVICE_NAME)) {
+      log.warn("Did not find config path {}", TRACEABLE_EDGE_CONFIG_SERVICE_NAME);
+      return Collections.emptyMap();
+    }
+    config = config.getConfig(TRACEABLE_EDGE_CONFIG_SERVICE_NAME);
+
     if (!config.hasPath(DEFAULT_USER_ATTRIBUTION_CONFIG_PATH)) {
       log.warn(
           "No user attribution configurations found at path: {}",

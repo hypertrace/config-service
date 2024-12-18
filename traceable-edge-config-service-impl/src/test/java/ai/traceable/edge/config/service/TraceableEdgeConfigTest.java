@@ -15,10 +15,6 @@ public class TraceableEdgeConfigTest {
     TraceableEdgeConfig config = new TraceableEdgeConfig(getTestConfig());
     assertEquals(30, config.getAgentPollingFrequency("CaptchaSiteKeyConfig").getSeconds());
     assertEquals(15, config.getAgentPollingFrequency("Random").getSeconds());
-    assertEquals(1, config.getDefaultUserAttributionVariableRules("tenantId").size());
-    assertEquals(
-        "userId1", config.getDefaultUserAttributionVariableRules("tenantId").get(0).getName());
-    assertEquals(0, config.getDefaultUserAttributionVariableRules("random").size());
   }
 
   static Config getTestConfig() {

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.io.File;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,32 +17,8 @@ class DefaultUserAttributionFetcherTest {
 
   @BeforeEach
   void setup() {
-    config =
-        ConfigFactory.parseString(
-            "defaultTraceableEdgeUserAttributionVariables {\n"
-                + "  tenant1 = [\n"
-                + "    { \"transformation_config\": {\n"
-                + "        jexl_expression {\n"
-                + "          jexl_expression: \"$s.getHeaders().get('authorization')\"\n"
-                + "        }\n"
-                + "      }\n"
-                + "    },\n"
-                + "    { \"transformation_config\": {\n"
-                + "        static_value {\n"
-                + "          string_value: \"value1\"\n"
-                + "        }\n"
-                + "      }\n"
-                + "    }\n"
-                + "  ],\n"
-                + "  tenant2 = [\n"
-                + "    { \"transformation_config\": {\n"
-                + "        jexl_expression {\n"
-                + "          jexl_expression: \"$s.getPath().contains('/admin') ? 'Admin' : 'User'\"\n"
-                + "        }\n"
-                + "      }\n"
-                + "    }\n"
-                + "  ]\n"
-                + "}");
+    File configFile = new File(ClassLoader.getSystemResource("test_application.conf").getPath());
+    config = ConfigFactory.parseFile(configFile);
   }
 
   @Test
@@ -71,14 +48,15 @@ class DefaultUserAttributionFetcherTest {
   void testGetConfigsForTenant_invalidConfig() {
     Config invalidConfig =
         ConfigFactory.parseString(
-            "defaultTraceableEdgeUserAttributionVariables {\n"
+            "traceable.edge.config.service {\n"
+                + "default.variables.user-attribution {\n"
                 + "          tenant1 = [\n"
                 + "            { \"transformation_config\": { \"unknown_field\": \"invalid\" } },\n"
                 + "            { \"transformation_config\": { static_value {\n"
                 + "  string_value: \"value1\"\n"
                 + "} } }\n"
                 + "          ]\n"
-                + "        }");
+                + "        }}");
 
     DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(invalidConfig);
     List<DerivationRule> tenant1Configs = fetchers.getUserAttributionRules("tenant1");

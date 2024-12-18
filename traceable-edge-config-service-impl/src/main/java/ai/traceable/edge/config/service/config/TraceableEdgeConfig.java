@@ -1,20 +1,15 @@
 package ai.traceable.edge.config.service.config;
 
-import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import com.google.protobuf.Duration;
-import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
-import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ClientConfig;
 
 public class TraceableEdgeConfig {
@@ -31,9 +26,6 @@ public class TraceableEdgeConfig {
 
   private final Duration defaultAgentPollingFrequency;
   private final Map<String, EdgeConfigSupplierConfig> edgeConfigSupplierConfigs;
-  private final Map<String, VariableDerivationMapping> defaultUserAttributionVariableRules;
-  // TODO: Remove after adding proper conversion of user-attribution rules
-  Map<String, List<String>> tenantUserIdBlockingConfigs;
 
   @Inject
   public TraceableEdgeConfig(Config config) {
@@ -42,9 +34,6 @@ public class TraceableEdgeConfig {
     this.defaultAgentPollingFrequency =
         getDuration(edgeConfig, DEFAULT_AGENT_POLLING_FREQUENCY_CONFIG_NAME);
     this.edgeConfigSupplierConfigs = extractEdgeConfigSupplierConfigs(edgeConfig);
-    this.defaultUserAttributionVariableRules =
-        extractDefaultUserAttributionVariableRules(edgeConfig);
-    this.tenantUserIdBlockingConfigs = extractTenantUserIdBlockingConfigs(edgeConfig);
   }
 
   public Duration getAgentPollingFrequency(String configType) {
@@ -55,13 +44,6 @@ public class TraceableEdgeConfig {
 
   public ClientConfig getClientConfig() {
     return ClientConfig.DEFAULT;
-  }
-
-  public List<VariableDerivationMapping> getDefaultUserAttributionVariableRules(String tenantId) {
-    return tenantUserIdBlockingConfigs.getOrDefault(tenantId, List.of()).stream()
-        .map(defaultUserAttributionVariableRules::get)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toUnmodifiableList());
   }
 
   private Map<String, EdgeConfigSupplierConfig> extractEdgeConfigSupplierConfigs(Config config) {
@@ -84,36 +66,5 @@ public class TraceableEdgeConfig {
         .setSeconds(configDuration.getSeconds())
         .setNanos(configDuration.getNano())
         .build();
-  }
-
-  private Map<String, VariableDerivationMapping> extractDefaultUserAttributionVariableRules(
-      Config config) {
-    if (config.hasPath(DEFAULT_USER_ATTRIBUTION_VARIABLES_CONFIG_NAME)) {
-      return config.getConfigList(DEFAULT_USER_ATTRIBUTION_VARIABLES_CONFIG_NAME).stream()
-          .map(
-              variableConfig -> {
-                VariableDerivationMapping.Builder builder = VariableDerivationMapping.newBuilder();
-                mergeFromConfig(variableConfig, builder);
-                return builder.build();
-              })
-          .collect(Collectors.toMap(VariableDerivationMapping::getName, Function.identity()));
-    }
-    return Collections.emptyMap();
-  }
-
-  private Map<String, List<String>> extractTenantUserIdBlockingConfigs(Config config) {
-    if (config.hasPath(USERID_BLOCKING_CONFIGS_CONFIG_NAME)) {
-      return config.getConfigList(USERID_BLOCKING_CONFIGS_CONFIG_NAME).stream()
-          .collect(
-              Collectors.toMap(
-                  blockingConfig -> blockingConfig.getString("tenantId"),
-                  blockingConfig -> blockingConfig.getStringList("variables.user-attribution")));
-    }
-    return Collections.emptyMap();
-  }
-
-  @SneakyThrows
-  private static void mergeFromConfig(Config config, Message.Builder builder) {
-    JSON_PARSER.merge(config.root().render(CONFIG_RENDER_CONCISE), builder);
   }
 }
