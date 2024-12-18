@@ -2,6 +2,7 @@ package ai.traceable.edge.decision.config.service.aggregator.attributes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -51,14 +52,21 @@ class CheckAndAddVariableToRuleTest {
             .addCommonVariables(VariableDerivationMapping.newBuilder().setName("existingVariable"))
             .build();
     VariableDerivationMapping variableMapping =
-        VariableDerivationMapping.newBuilder().setName(variableName).build();
+        VariableDerivationMapping.newBuilder()
+            .setName(variableName)
+            .addRules(
+                DerivationRule.newBuilder()
+                    .setConditionExpression(
+                        JexlExpressionConfig.newBuilder()
+                            .setJexlExpression("$s.getHeaders().get('authorization')")))
+            .build();
 
     edgeDecisionEngineConfig =
         checkAndAddVariableToRule.checkAndAddVariableToRule(
             edgeDecisionEngineConfig, variableName, variableMapping);
 
     assertEquals(2, edgeDecisionEngineConfig.getCommonVariablesCount());
-    assertEquals(variableName, edgeDecisionEngineConfig.getCommonVariablesList().get(1).getName());
+    assertEquals(variableMapping, edgeDecisionEngineConfig.getCommonVariablesList().get(1));
 
     VariableDerivationMapping variableMapping2 =
         VariableDerivationMapping.newBuilder().setName("existingVariable").build();

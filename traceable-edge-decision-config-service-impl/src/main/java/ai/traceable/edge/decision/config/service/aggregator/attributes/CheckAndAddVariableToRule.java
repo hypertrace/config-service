@@ -1,5 +1,6 @@
 package ai.traceable.edge.decision.config.service.aggregator.attributes;
 
+import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import com.google.common.cache.Cache;
@@ -16,8 +17,10 @@ public class CheckAndAddVariableToRule {
   private static final String VARIABLE_REGEX_TEMPLATE =
       "\\b%s\\b"; // Matches the variable as a whole word
   private final Cache<String, Boolean> cache;
+  private final UuidGenerator uuidGenerator;
 
   public CheckAndAddVariableToRule() {
+    this.uuidGenerator = new UuidGenerator();
     this.cache =
         CacheBuilder.newBuilder()
             .expireAfterWrite(DEFAULT_CACHE_EXPIRATION_MINUTES, TimeUnit.MINUTES)
@@ -28,8 +31,7 @@ public class CheckAndAddVariableToRule {
       EdgeDecisionEngineConfig edgeDecisionEngineConfig,
       String variableName,
       VariableDerivationMapping variableDerivationMapping) {
-    String ruleId = edgeDecisionEngineConfig.getId();
-    String cacheKey = generateCacheKey(ruleId, variableName);
+    String cacheKey = generateCacheKey(edgeDecisionEngineConfig, variableName);
 
     // Check cache for existing result
     Boolean isVariablePresent = cache.getIfPresent(cacheKey);
@@ -53,8 +55,9 @@ public class CheckAndAddVariableToRule {
     return edgeDecisionEngineConfig;
   }
 
-  private String generateCacheKey(String ruleId, String variableName) {
-    return ruleId + "#" + variableName;
+  private String generateCacheKey(
+      EdgeDecisionEngineConfig edgeDecisionEngineConfig, String variableName) {
+    return uuidGenerator.generateId(edgeDecisionEngineConfig) + "#" + variableName;
   }
 
   private EdgeDecisionEngineConfig addVariable(

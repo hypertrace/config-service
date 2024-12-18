@@ -30,6 +30,7 @@ import ai.traceable.edge.decision.config.service.v1.Filter;
 import ai.traceable.edge.decision.config.service.v1.GenericValueFilter;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import ai.traceable.edge.decision.config.service.v1.LogicalFilter;
 import ai.traceable.edge.decision.config.service.v1.LogicalOperator;
 import ai.traceable.edge.decision.config.service.v1.RelationalOperator;
@@ -68,7 +69,7 @@ class EdgeDecisionConfigServiceTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     EdgeDecisionConfigStoreManager storeManager =
         new EdgeDecisionConfigStoreManager(
-            new EdgeDecisionConfigStore(genericStub, eventGenerator), ruleVariableEnricher);
+            new EdgeDecisionConfigStore(genericStub, eventGenerator));
     EdgeDecisionRuleStoreManager ruleStoreManager =
         new EdgeDecisionRuleStoreManager(
             new EdgeDecisionRuleStore(genericStub, eventGenerator, new FilterEvaluator()));
@@ -81,7 +82,8 @@ class EdgeDecisionConfigServiceTest {
         new StoredEdgeDecisionEngineConfigSupplier(
             storeManager, ruleStoreManager, specStoreManager);
     EdgeDecisionEngineConfigResolver resolver =
-        new EdgeDecisionEngineConfigResolver(Collections.singleton(configSupplier));
+        new EdgeDecisionEngineConfigResolver(
+            Collections.singleton(configSupplier), ruleVariableEnricher);
     this.mockGenericConfigService
         .addService(
             new EdgeDecisionConfigService(
@@ -221,8 +223,8 @@ class EdgeDecisionConfigServiceTest {
     var config =
         requestContext.call(
             () ->
-                stub.getEdgeDecisionEngineConfig(
-                        GetEdgeDecisionEngineConfigRequest.newBuilder().setId("t1").build())
+                stub.getResolvedEdgeDecisionEngineConfigs(
+                        GetResolvedEdgeDecisionEngineConfigsRequest.getDefaultInstance())
                     .getEdgeDecisionEngineConfig());
 
     assertEquals(modified_config, config);

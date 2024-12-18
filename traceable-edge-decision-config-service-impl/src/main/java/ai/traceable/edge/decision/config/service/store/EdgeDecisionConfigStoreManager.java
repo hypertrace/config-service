@@ -1,6 +1,5 @@
 package ai.traceable.edge.decision.config.service.store;
 
-import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -13,7 +12,6 @@ import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConf
 import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
@@ -21,13 +19,10 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class EdgeDecisionConfigStoreManager {
   private final EdgeDecisionConfigStore edgeDecisionConfigStore;
-  private final RuleVariableEnricher ruleVariableEnricher;
 
   @Inject
-  public EdgeDecisionConfigStoreManager(
-      EdgeDecisionConfigStore edgeDecisionConfigStore, RuleVariableEnricher ruleEnrichmentManager) {
+  public EdgeDecisionConfigStoreManager(EdgeDecisionConfigStore edgeDecisionConfigStore) {
     this.edgeDecisionConfigStore = edgeDecisionConfigStore;
-    this.ruleVariableEnricher = ruleEnrichmentManager;
   }
 
   public GetEdgeDecisionEngineConfigResponse get(
@@ -38,9 +33,7 @@ public class EdgeDecisionConfigStoreManager {
         .map(
             edgeDecisionEngineConfig ->
                 GetEdgeDecisionEngineConfigResponse.newBuilder()
-                    .setEdgeDecisionEngineConfig(
-                        ruleVariableEnricher.enrichRule(
-                            requestContext.getTenantId().orElse(""), edgeDecisionEngineConfig))
+                    .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
                     .build())
         .orElseGet(GetEdgeDecisionEngineConfigResponse::getDefaultInstance);
   }
@@ -48,12 +41,7 @@ public class EdgeDecisionConfigStoreManager {
   public GetAllEdgeDecisionEngineConfigResponse getAll(
       RequestContext requestContext, GetAllEdgeDecisionEngineConfigRequest request) {
     List<EdgeDecisionEngineConfig> configs =
-        edgeDecisionConfigStore.getAllConfigData(requestContext).stream()
-            .map(
-                edgeDecisionEngineConfig ->
-                    ruleVariableEnricher.enrichRule(
-                        requestContext.getTenantId().orElse(""), edgeDecisionEngineConfig))
-            .collect(Collectors.toUnmodifiableList());
+        edgeDecisionConfigStore.getAllConfigData(requestContext);
     return GetAllEdgeDecisionEngineConfigResponse.newBuilder()
         .addAllEdgeDecisionEngineConfigs(configs)
         .build();

@@ -2,6 +2,7 @@ package ai.traceable.edge.decision.config.service.supplier;
 
 import static ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigMergeUtil.merge;
 
+import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import java.util.Set;
@@ -16,10 +17,14 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class EdgeDecisionEngineConfigResolver {
   private final Set<EdgeDecisionEngineConfigSupplier> configSuppliers;
+  private final RuleVariableEnricher ruleVariableEnricher;
 
   @Inject
-  public EdgeDecisionEngineConfigResolver(Set<EdgeDecisionEngineConfigSupplier> configSuppliers) {
+  public EdgeDecisionEngineConfigResolver(
+      Set<EdgeDecisionEngineConfigSupplier> configSuppliers,
+      RuleVariableEnricher ruleVariableEnricher) {
     this.configSuppliers = configSuppliers;
+    this.ruleVariableEnricher = ruleVariableEnricher;
   }
 
   // todo: further enhance to process the filters provided in the request.
@@ -44,6 +49,9 @@ public class EdgeDecisionEngineConfigResolver {
     if (finalConfig == null) {
       finalConfig = EdgeDecisionEngineConfig.getDefaultInstance();
     }
+    // Check if we need to add variable definition of any missing variables
+    finalConfig =
+        ruleVariableEnricher.enrichRule(requestContext.getTenantId().orElse(""), finalConfig);
     return finalConfig;
   }
 }
