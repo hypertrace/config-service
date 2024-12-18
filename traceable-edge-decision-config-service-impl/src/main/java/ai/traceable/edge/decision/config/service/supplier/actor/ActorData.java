@@ -1,12 +1,6 @@
-package ai.traceable.edge.config.service.supplier.actor;
+package ai.traceable.edge.decision.config.service.supplier.actor;
 
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ACTOR_ID;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENTITY_ID;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENVIRONMENT;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_IP_ADDRESSES;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP;
-
+import ai.traceable.platform.actor.v1.ActorField;
 import ai.traceable.platform.actor.v1.Status;
 import ai.traceable.platform.actor.v1.StatusChangeSource;
 import ai.traceable.platform.actor.v1.converter.StatusConverter;
@@ -26,7 +20,7 @@ import org.slf4j.LoggerFactory;
 @AllArgsConstructor
 @Builder
 @lombok.Value
-class ActorData {
+public class ActorData {
   private static final Logger LOGGER = LoggerFactory.getLogger(ActorData.class);
   private static final StatusChangeSource DEFAULT_STATUS_CHANGE_SOURCE =
       StatusChangeSource.STATUS_CHANGE_SOURCE_UNSPECIFIED;
@@ -34,10 +28,10 @@ class ActorData {
 
   @NonNull String actorId;
   @NonNull String entityId;
-  String envId;
   @NonNull List<String> ipAddresses;
   @NonNull Status status;
-  Long expirationTimestampMillis;
+  String envId;
+  long expirationTimestampMillis;
 
   boolean isActive(Clock clock) {
     return expirationTimestampMillis == 0
@@ -48,9 +42,9 @@ class ActorData {
     this(
         parseActorId(actorFieldsMap),
         parseEntityId(actorFieldsMap),
-        parseEnvId(actorFieldsMap),
         parseIpAddresses(actorFieldsMap),
         parseStatus(actorFieldsMap),
+        parseEnvId(actorFieldsMap),
         parseExpirationTimestampMillis(actorFieldsMap));
   }
 
@@ -65,20 +59,20 @@ class ActorData {
   }
 
   private static String parseActorId(Map<String, Value> actorFieldsMap) {
-    return actorFieldsMap.get(ACTOR_FIELD_ACTOR_ID.name()).getStringValue();
+    return actorFieldsMap.get(ActorField.ACTOR_FIELD_ACTOR_ID.name()).getStringValue();
   }
 
   private static String parseEntityId(Map<String, Value> actorFieldsMap) {
-    return actorFieldsMap.get(ACTOR_FIELD_ENTITY_ID.name()).getStringValue();
+    return actorFieldsMap.get(ActorField.ACTOR_FIELD_ENTITY_ID.name()).getStringValue();
   }
 
   private static String parseEnvId(Map<String, Value> actorFieldsMap) {
-    return actorFieldsMap.get(ACTOR_FIELD_ENVIRONMENT.name()).getStringValue();
+    return actorFieldsMap.get(ActorField.ACTOR_FIELD_ENVIRONMENT.name()).getStringValue();
   }
 
   private static List<String> parseIpAddresses(Map<String, Value> actorFieldsMap) {
     return actorFieldsMap
-        .get(ACTOR_FIELD_IP_ADDRESSES.name())
+        .get(ActorField.ACTOR_FIELD_IP_ADDRESSES.name())
         .getListValue()
         .getValuesList()
         .stream()
@@ -87,12 +81,16 @@ class ActorData {
   }
 
   private static Status parseStatus(Map<String, Value> actorFieldsMap) {
-    return StatusConverter.convert(actorFieldsMap.get(ACTOR_FIELD_STATUS.name()).getStringValue());
+    return StatusConverter.convert(
+        actorFieldsMap.get(ActorField.ACTOR_FIELD_STATUS.name()).getStringValue());
   }
 
   private static Long parseExpirationTimestampMillis(Map<String, Value> actorFieldsMap) {
     try {
-      return (long) actorFieldsMap.get(ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP.name()).getNumberValue();
+      return (long)
+          actorFieldsMap
+              .get(ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP.name())
+              .getNumberValue();
     } catch (Exception e) {
       LOGGER.warn(
           "Cannot parse expiration timestamp from actor-query map - {}, error - ",

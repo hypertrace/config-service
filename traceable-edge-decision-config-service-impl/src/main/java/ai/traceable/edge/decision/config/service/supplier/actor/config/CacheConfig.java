@@ -1,4 +1,4 @@
-package ai.traceable.edge.config.service.config;
+package ai.traceable.edge.decision.config.service.supplier.actor.config;
 
 import com.typesafe.config.Config;
 import java.time.Duration;

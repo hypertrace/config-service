@@ -1,15 +1,11 @@
 package ai.traceable.edge.config.service;
 
 import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
-import ai.traceable.edge.config.service.config.ActorServiceConfig;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub;
-import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc.TraceablePolicyConfigServiceBlockingStub;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
-import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -38,7 +34,6 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     bind(GrpcChannelRegistry.class).toInstance(grpcChannelRegistry);
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(TraceableEdgeConfig.class).toInstance(config);
-    bind(ActorServiceConfig.class).toInstance(config.getActorServiceConfig());
     bind(BindableService.class).to(TraceableEdgeConfigService.class);
   }
 
@@ -68,24 +63,6 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   @Provides
   ConfigServiceGrpc.ConfigServiceBlockingStub provideConfigStub() {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  ActorServiceGrpc.ActorServiceBlockingStub providesActorServiceBlockingStub(
-      ActorServiceConfig actorServiceConfig, GrpcChannelRegistry channelRegistry) {
-    return ActorServiceGrpc.newBlockingStub(
-            channelRegistry.forPlaintextAddress(
-                actorServiceConfig.getHost(), actorServiceConfig.getPort()))
-        .withCallCredentials(
-            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
-  }
-
-  @Provides
-  RateLimitingConfigServiceBlockingStub providesRateLimitingConfigServiceBlockingStub(
-      Channel channel) {
-    return RateLimitingConfigServiceGrpc.newBlockingStub(channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

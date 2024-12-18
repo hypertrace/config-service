@@ -17,6 +17,9 @@ import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreMana
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
 import ai.traceable.edge.decision.config.service.store.FilterEvaluator;
+import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigResolver;
+import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
+import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
@@ -33,6 +36,7 @@ import ai.traceable.edge.decision.config.service.v1.RelationalOperator;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
+import java.util.Collections;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -47,7 +51,7 @@ import org.mockito.Mock;
 
 class EdgeDecisionConfigServiceTest {
 
-  private static final String UUID_1 = "uuid-1";
+  private static final String UUID_1 = "t1";
 
   private EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub stub;
   private MockGenericConfigService mockGenericConfigService;
@@ -70,11 +74,23 @@ class EdgeDecisionConfigServiceTest {
             new EdgeDecisionRuleStore(genericStub, eventGenerator, new FilterEvaluator()));
     EdgeDecisionSpecStoreManager specStoreManager =
         new EdgeDecisionSpecStoreManager(new EdgeDecisionSpecStore(genericStub, eventGenerator));
-
+    EdgeDecisionEngineConfigSupplier configSupplier =
+        new StoredEdgeDecisionEngineConfigSupplier(
+            storeManager, ruleStoreManager, specStoreManager);
+    StoredEdgeDecisionEngineConfigSupplier storedEdgeDecisionEngineConfigSupplier =
+        new StoredEdgeDecisionEngineConfigSupplier(
+            storeManager, ruleStoreManager, specStoreManager);
+    EdgeDecisionEngineConfigResolver resolver =
+        new EdgeDecisionEngineConfigResolver(Collections.singleton(configSupplier));
     this.mockGenericConfigService
         .addService(
             new EdgeDecisionConfigService(
-                ruleStoreManager, specStoreManager, storeManager, new RequestValidator()))
+                ruleStoreManager,
+                specStoreManager,
+                storeManager,
+                storedEdgeDecisionEngineConfigSupplier,
+                resolver,
+                new RequestValidator()))
         .start();
 
     this.stub =
@@ -132,11 +148,11 @@ class EdgeDecisionConfigServiceTest {
                         GetEdgeDecisionEngineConfigRequest.newBuilder().setId(UUID_1).build())
                     .getEdgeDecisionEngineConfig());
 
-    assertEquals(UUID_1, config.getId());
+    assertEquals(requestContext.getTenantId().get(), config.getId());
   }
 
   private EdgeDecisionEngineConfig new_config() {
-    return EdgeDecisionEngineConfig.newBuilder().setId(UUID_1).setVersion(1).build();
+    return EdgeDecisionEngineConfig.newBuilder().setId("t1").setVersion(1).build();
   }
 
   private EdgeDecisionEngineConfig update_config(String id) {
@@ -184,7 +200,7 @@ class EdgeDecisionConfigServiceTest {
     RequestContext requestContext = buildRequestContext();
     EdgeDecisionEngineConfig modified_config =
         EdgeDecisionEngineConfig.newBuilder()
-            .setId(UUID_1)
+            .setId("t1")
             .setName("name")
             .addCommonVariables(VariableDerivationMapping.newBuilder().setName("user"))
             .build();
@@ -206,7 +222,7 @@ class EdgeDecisionConfigServiceTest {
         requestContext.call(
             () ->
                 stub.getEdgeDecisionEngineConfig(
-                        GetEdgeDecisionEngineConfigRequest.newBuilder().setId(UUID_1).build())
+                        GetEdgeDecisionEngineConfigRequest.newBuilder().setId("t1").build())
                     .getEdgeDecisionEngineConfig());
 
     assertEquals(modified_config, config);

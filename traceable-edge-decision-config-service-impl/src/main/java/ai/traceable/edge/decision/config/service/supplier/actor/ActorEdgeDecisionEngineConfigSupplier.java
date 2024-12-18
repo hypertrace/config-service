@@ -1,8 +1,9 @@
-package ai.traceable.edge.config.service.supplier.actor;
+package ai.traceable.edge.decision.config.service.supplier.actor;
 
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
+import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.ConfigTtl;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -28,7 +29,7 @@ import javax.inject.Inject;
 import lombok.NonNull;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class EdgeDecisionActorConfigSupplier {
+public class ActorEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngineConfigSupplier {
   private static final Function<String, String> USER_ATTRIBUTION_JEXL_GENERATOR =
       userId -> String.format("%s == '%s'", USER_ATTRIBUTION_VARIABLE_NAME.getValue(), userId);
   private static final Set<Status> ALLOWED_ACTOR_STATUSES =
@@ -36,11 +37,17 @@ public class EdgeDecisionActorConfigSupplier {
   private final ActorDataCache actorDataCache;
 
   @Inject
-  public EdgeDecisionActorConfigSupplier(ActorDataCache actorDataCache) {
+  public ActorEdgeDecisionEngineConfigSupplier(ActorDataCache actorDataCache) {
     this.actorDataCache = actorDataCache;
   }
 
-  public EdgeDecisionEngineConfig getEdgeDecisionActorConfig(RequestContext requestContext) {
+  @Override
+  public String getName() {
+    return ActorEdgeDecisionEngineConfigSupplier.class.getSimpleName();
+  }
+
+  @Override
+  public EdgeDecisionEngineConfig get(RequestContext requestContext) {
     Optional<String> environment = Optional.empty();
     List<ActorData> actorDataList =
         actorDataCache.getActorData(requestContext.buildInternalContextualKey(environment));

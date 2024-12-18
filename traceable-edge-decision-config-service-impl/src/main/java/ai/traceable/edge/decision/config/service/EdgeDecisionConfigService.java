@@ -3,6 +3,8 @@ package ai.traceable.edge.decision.config.service;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
+import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigResolver;
+import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
@@ -14,6 +16,7 @@ import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleRespon
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
@@ -46,6 +49,8 @@ class EdgeDecisionConfigService
   private final EdgeDecisionRuleStoreManager edgeDecisionRuleStoreManager;
   private final EdgeDecisionSpecStoreManager edgeDecisionSpecStoreManager;
   private final EdgeDecisionConfigStoreManager edgeDecisionConfigStoreManager;
+  private final StoredEdgeDecisionEngineConfigSupplier storedEdgeDecisionEngineConfigSupplier;
+  private final EdgeDecisionEngineConfigResolver configResolver;
   private final RequestValidator requestValidator;
 
   @Inject
@@ -53,10 +58,14 @@ class EdgeDecisionConfigService
       EdgeDecisionRuleStoreManager edgeDecisionRuleStoreManager,
       EdgeDecisionSpecStoreManager edgeDecisionSpecStoreManager,
       EdgeDecisionConfigStoreManager edgeDecisionConfigStoreManager,
+      StoredEdgeDecisionEngineConfigSupplier storedEdgeDecisionEngineConfigSupplier,
+      EdgeDecisionEngineConfigResolver configResolver,
       RequestValidator requestValidator) {
     this.edgeDecisionRuleStoreManager = edgeDecisionRuleStoreManager;
     this.edgeDecisionSpecStoreManager = edgeDecisionSpecStoreManager;
     this.edgeDecisionConfigStoreManager = edgeDecisionConfigStoreManager;
+    this.storedEdgeDecisionEngineConfigSupplier = storedEdgeDecisionEngineConfigSupplier;
+    this.configResolver = configResolver;
     this.requestValidator = requestValidator;
   }
 
@@ -64,7 +73,17 @@ class EdgeDecisionConfigService
   public void getResolvedEdgeDecisionEngineConfigs(
       GetResolvedEdgeDecisionEngineConfigsRequest request,
       StreamObserver<GetResolvedEdgeDecisionEngineConfigsResponse> responseObserver) {
-    super.getResolvedEdgeDecisionEngineConfigs(request, responseObserver);
+    handleConfigOperation(
+        request,
+        responseObserver,
+        (requestContext, getResolvedEdgeDecisionEngineConfigsRequest) -> {
+          EdgeDecisionEngineConfig finalConfig =
+              configResolver.getResolvedEdgeDecisionEngineConfig(
+                  requestContext, getResolvedEdgeDecisionEngineConfigsRequest);
+          return GetResolvedEdgeDecisionEngineConfigsResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(finalConfig)
+              .build();
+        });
   }
 
   @Override
@@ -92,7 +111,16 @@ class EdgeDecisionConfigService
   public void getEdgeDecisionEngineConfig(
       GetEdgeDecisionEngineConfigRequest request,
       StreamObserver<GetEdgeDecisionEngineConfigResponse> responseObserver) {
-    handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::get);
+    handleConfigOperation(
+        request,
+        responseObserver,
+        (requestContext, request1) -> {
+          EdgeDecisionEngineConfig config =
+              storedEdgeDecisionEngineConfigSupplier.get(requestContext);
+          return GetEdgeDecisionEngineConfigResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(config)
+              .build();
+        });
   }
 
   @Override

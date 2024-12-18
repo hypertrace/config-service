@@ -31,7 +31,7 @@ public class MetricTypeToAttributeMetadataAdapter {
   public static final String GENERIC_METRIC = "GENERIC_METRIC";
   public static final String DOT = ".";
   private final AttributeServiceGrpc.AttributeServiceBlockingStub attributeServiceBlockingStub;
-  private ClientHostPortConfig config;
+  private final ClientHostPortConfig config;
 
   @Inject
   public MetricTypeToAttributeMetadataAdapter(

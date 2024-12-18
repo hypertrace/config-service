@@ -1,7 +1,7 @@
-package ai.traceable.edge.config.service.supplier.actor;
+package ai.traceable.edge.decision.config.service.supplier.actor;
 
-import ai.traceable.edge.config.service.config.ActorServiceConfig;
-import ai.traceable.edge.config.service.config.CacheConfig;
+import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServiceConfig;
+import ai.traceable.edge.decision.config.service.supplier.actor.config.CacheConfig;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -17,13 +17,9 @@ import lombok.SneakyThrows;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Singleton
 public class ActorDataCache {
-  private static final Logger LOGGER = LoggerFactory.getLogger(ActorDataCache.class);
-
   private static final String ACTOR_DATA_CACHE = "ActorDataCache";
 
   private final LoadingCache<ContextualKey<Optional<String>>, List<ActorData>> userCache;
@@ -50,7 +46,7 @@ public class ActorDataCache {
 
   @SneakyThrows
   public List<ActorData> getActorData(ContextualKey<Optional<String>> contextualKey) {
-    return Optional.ofNullable(userCache.get(contextualKey))
+    return Optional.of(userCache.get(contextualKey))
         .map(
             actorData ->
                 actorData.stream()

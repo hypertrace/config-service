@@ -8,6 +8,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
   implementation(projects.externalAgentAttributeConfigServiceApi)
+  implementation(projects.rateLimitingConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
@@ -17,6 +18,7 @@ dependencies {
   implementation(commonLibs.guice)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.re2j)
 
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.api)
@@ -24,6 +26,8 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(localLibs.hypertrace.configservice.protoconverter)
+  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.traceable.actorservice.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
@@ -31,6 +35,8 @@ dependencies {
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.grpc.core)
+  testRuntimeOnly(commonLibs.grpc.netty)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 

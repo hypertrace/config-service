@@ -61,7 +61,7 @@ public class EdgeDecisionConfigStoreManager {
 
   public CreateEdgeDecisionEngineConfigResponse create(
       RequestContext requestContext, CreateEdgeDecisionEngineConfigRequest request) {
-    var config = request.getEdgeDecisionEngineConfig();
+    EdgeDecisionEngineConfig config = request.getEdgeDecisionEngineConfig();
     if (config.getId().isBlank()) {
       config = config.toBuilder().setId(getTenantId(requestContext)).build();
     }

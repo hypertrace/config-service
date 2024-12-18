@@ -9,12 +9,10 @@ dependencies {
   implementation(projects.traceableEdgeConfigServiceApi)
   implementation(projects.traceableEdgeBotConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
-  implementation(projects.rateLimitingConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.protobuf.javautil)
-  implementation(commonLibs.re2j)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
   implementation(commonLibs.guice)
@@ -27,7 +25,6 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.framework.metrics)
   implementation(localLibs.hypertrace.configservice.protoconverter)
-  implementation(commonLibs.traceable.actorservice.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

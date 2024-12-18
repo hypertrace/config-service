@@ -29,7 +29,6 @@ public class TraceableEdgeConfig {
       "default.variables.user-attribution";
   private static final String USERID_BLOCKING_CONFIGS_CONFIG_NAME = "userid.blocking.configs";
 
-  private final ActorServiceConfig actorServiceConfig;
   private final Duration defaultAgentPollingFrequency;
   private final Map<String, EdgeConfigSupplierConfig> edgeConfigSupplierConfigs;
   private final Map<String, VariableDerivationMapping> defaultUserAttributionVariableRules;
@@ -39,7 +38,6 @@ public class TraceableEdgeConfig {
   @Inject
   public TraceableEdgeConfig(Config config) {
     Config edgeConfig = config.getConfig(TRACEABLE_EDGE_CONFIG_SERVICE_NAME);
-    this.actorServiceConfig = new ActorServiceConfig(config);
 
     this.defaultAgentPollingFrequency =
         getDuration(edgeConfig, DEFAULT_AGENT_POLLING_FREQUENCY_CONFIG_NAME);
@@ -57,10 +55,6 @@ public class TraceableEdgeConfig {
 
   public ClientConfig getClientConfig() {
     return ClientConfig.DEFAULT;
-  }
-
-  public ActorServiceConfig getActorServiceConfig() {
-    return actorServiceConfig;
   }
 
   public List<VariableDerivationMapping> getDefaultUserAttributionVariableRules(String tenantId) {

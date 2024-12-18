@@ -1,10 +1,9 @@
-package ai.traceable.edge.config.service.supplier.actor;
+package ai.traceable.edge.decision.config.service.supplier.actor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
-import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.platform.actor.v1.Status;
 import com.google.protobuf.Timestamp;
@@ -16,16 +15,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-class EdgeDecisionActorConfigSupplierTest {
+class ActorEdgeDecisionEngineConfigSupplierTest {
 
   @Mock private ActorDataCache actorDataCache;
-  @Mock private TraceableEdgeConfig traceableEdgeConfig;
-  private EdgeDecisionActorConfigSupplier configSupplier;
+  private ActorEdgeDecisionEngineConfigSupplier configSupplier;
 
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
-    configSupplier = new EdgeDecisionActorConfigSupplier(actorDataCache);
+    configSupplier = new ActorEdgeDecisionEngineConfigSupplier(actorDataCache);
   }
 
   @Test
@@ -55,7 +53,7 @@ class EdgeDecisionActorConfigSupplierTest {
     when(actorDataCache.getActorData(requestContext.buildInternalContextualKey(Optional.empty())))
         .thenReturn(actorDataList);
 
-    EdgeDecisionEngineConfig config = configSupplier.getEdgeDecisionActorConfig(requestContext);
+    EdgeDecisionEngineConfig config = configSupplier.get(requestContext);
 
     assertEquals("actor-rule-id-test-tenant", config.getId());
     assertEquals("user-based-actor-blocking", config.getName());
@@ -102,7 +100,7 @@ class EdgeDecisionActorConfigSupplierTest {
     when(actorDataCache.getActorData(requestContext.buildInternalContextualKey(Optional.empty())))
         .thenReturn(List.of());
 
-    EdgeDecisionEngineConfig config = configSupplier.getEdgeDecisionActorConfig(requestContext);
+    EdgeDecisionEngineConfig config = configSupplier.get(requestContext);
 
     assertEquals("actor-rule-id-tenant", config.getId());
     assertEquals("user-based-actor-blocking", config.getName());

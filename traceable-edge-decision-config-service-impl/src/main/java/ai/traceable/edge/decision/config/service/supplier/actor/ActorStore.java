@@ -1,17 +1,6 @@
-package ai.traceable.edge.config.service.supplier.actor;
+package ai.traceable.edge.decision.config.service.supplier.actor;
 
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ACTOR_ID;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENTITY_ID;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_ENVIRONMENT;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_IP_ADDRESSES;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS;
-import static ai.traceable.platform.actor.v1.ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP;
-import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_ALLOWED;
-import static ai.traceable.platform.actor.v1.Status.STATUS_ALWAYS_DENIED;
-import static ai.traceable.platform.actor.v1.Status.STATUS_SNOOZED;
-import static ai.traceable.platform.actor.v1.Status.STATUS_SUSPENDED;
-
-import ai.traceable.edge.config.service.config.ActorServiceConfig;
+import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServiceConfig;
 import ai.traceable.platform.actor.v1.ActorField;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc.ActorServiceBlockingStub;
 import ai.traceable.platform.actor.v1.Filter;
@@ -49,12 +38,12 @@ public class ActorStore {
 
   private static final List<ActorField> SELECTED_ACTOR_FIELDS =
       ImmutableList.of(
-          ACTOR_FIELD_ACTOR_ID,
-          ACTOR_FIELD_ENTITY_ID,
-          ACTOR_FIELD_ENVIRONMENT,
-          ACTOR_FIELD_IP_ADDRESSES,
-          ACTOR_FIELD_STATUS,
-          ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP);
+          ActorField.ACTOR_FIELD_ACTOR_ID,
+          ActorField.ACTOR_FIELD_ENTITY_ID,
+          ActorField.ACTOR_FIELD_ENVIRONMENT,
+          ActorField.ACTOR_FIELD_IP_ADDRESSES,
+          ActorField.ACTOR_FIELD_STATUS,
+          ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP);
 
   private static final List<Selection> SELECTION_LIST =
       SELECTED_ACTOR_FIELDS.stream()
@@ -63,7 +52,10 @@ public class ActorStore {
 
   private static final List<Status> STATUS_LIST =
       ImmutableList.of(
-          STATUS_SNOOZED, STATUS_SUSPENDED, STATUS_ALWAYS_ALLOWED, STATUS_ALWAYS_DENIED);
+          Status.STATUS_SNOOZED,
+          Status.STATUS_SUSPENDED,
+          Status.STATUS_ALWAYS_ALLOWED,
+          Status.STATUS_ALWAYS_DENIED);
   private static final Filter STATUS_FILTER = getActorsByStatusFilter(STATUS_LIST);
 
   private static final Pattern IP_ADDRESS_PATTERN =
@@ -133,7 +125,7 @@ public class ActorStore {
         .setRelationalFilter(
             RelationalFilterExpression.newBuilder()
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
-                .setLeftOperand(ACTOR_FIELD_STATUS)
+                .setLeftOperand(ActorField.ACTOR_FIELD_STATUS)
                 .setLiteralRightOperand(
                     LiteralConstant.newBuilder()
                         .setValue(
@@ -165,7 +157,7 @@ public class ActorStore {
                         .setRelationalFilter(
                             RelationalFilterExpression.newBuilder()
                                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
-                                .setLeftOperand(ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP)
+                                .setLeftOperand(ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP)
                                 .setLiteralRightOperand(
                                     LiteralConstant.newBuilder()
                                         .setValue(Value.newBuilder().setNumberValue(0)))))
@@ -174,7 +166,7 @@ public class ActorStore {
                         .setRelationalFilter(
                             RelationalFilterExpression.newBuilder()
                                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_GT)
-                                .setLeftOperand(ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP)
+                                .setLeftOperand(ActorField.ACTOR_FIELD_STATUS_EXPIRY_TIMESTAMP)
                                 .setLiteralRightOperand(
                                     LiteralConstant.newBuilder()
                                         .setValue(Value.newBuilder().setNumberValue(timestamp))))))
@@ -192,7 +184,7 @@ public class ActorStore {
                         .setRelationalFilter(
                             RelationalFilterExpression.newBuilder()
                                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
-                                .setLeftOperand(ACTOR_FIELD_ENVIRONMENT)
+                                .setLeftOperand(ActorField.ACTOR_FIELD_ENVIRONMENT)
                                 .setLiteralRightOperand(
                                     LiteralConstant.newBuilder()
                                         .setValue(
@@ -206,7 +198,7 @@ public class ActorStore {
           .setRelationalFilter(
               RelationalFilterExpression.newBuilder()
                   .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
-                  .setLeftOperand(ACTOR_FIELD_ENVIRONMENT)
+                  .setLeftOperand(ActorField.ACTOR_FIELD_ENVIRONMENT)
                   .setLiteralRightOperand(
                       LiteralConstant.newBuilder().setValue(Value.newBuilder().setStringValue(""))))
           .build();
