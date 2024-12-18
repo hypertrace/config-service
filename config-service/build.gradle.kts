@@ -55,7 +55,7 @@ tasks.integrationTest {
 }
 
 dependencies {
-  implementation(commonLibs.hypertrace.framework.grpc)
+  implementation(localLibs.hypertrace.framework.grpc)
   implementation(projects.configServiceFactory)
 
   runtimeOnly(commonLibs.log4j.slf4j2.impl)
@@ -66,7 +66,7 @@ dependencies {
   integrationTestImplementation(projects.configProtoConverter)
   integrationTestImplementation(commonLibs.junit.jupiter)
   integrationTestImplementation(commonLibs.guava)
-  integrationTestImplementation(commonLibs.hypertrace.integrationtest.framework)
+  integrationTestImplementation(localLibs.hypertrace.integrationtest.framework)
   integrationTestImplementation(commonLibs.hypertrace.grpcutils.client)
   integrationTestImplementation(commonLibs.hypertrace.grpcutils.context)
   integrationTestImplementation(commonLibs.hypertrace.documentstore)
