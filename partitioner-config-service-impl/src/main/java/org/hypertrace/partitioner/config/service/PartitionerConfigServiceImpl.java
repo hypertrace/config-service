@@ -1,8 +1,8 @@
 package org.hypertrace.partitioner.config.service;
 
-import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;

@@ -1,2 +1,11 @@
+[versions]
+hypertrace-framework = "0.1.83-SNAPSHOT"
+
 [libraries]
 seancfoley-ipaddress = { module = "com.github.seancfoley:ipaddress", version = "5.3.4" }
+
+hypertrace-framework-grpc = { module = "org.hypertrace.core.serviceframework:platform-grpc-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-framework-http = { module = "org.hypertrace.core.serviceframework:platform-http-service-framework", version.ref = "hypertrace-framework" }
+hypertrace-framework-metrics = { module = "org.hypertrace.core.serviceframework:platform-metrics", version.ref = "hypertrace-framework" }
+hypertrace-framework-documentstore-metrics = { module = "org.hypertrace.core.serviceframework:docstore-metrics", version.ref = "hypertrace-framework" }
+hypertrace-integrationtest-framework = { module = "org.hypertrace.core.serviceframework:integrationtest-service-framework", version.ref = "hypertrace-framework" }
