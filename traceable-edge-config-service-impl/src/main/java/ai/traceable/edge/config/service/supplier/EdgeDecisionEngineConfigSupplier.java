@@ -9,7 +9,7 @@ import ai.traceable.edge.config.service.v1.ConfigRequestElement;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
-import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
@@ -72,9 +72,8 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
                             stub.withDeadlineAfter(
                                     config.getClientConfig().getTimeout().toMillis(),
                                     TimeUnit.MILLISECONDS)
-                                .getEdgeDecisionEngineConfig(
-                                    GetEdgeDecisionEngineConfigRequest.newBuilder()
-                                        .setId(s)
+                                .getResolvedEdgeDecisionEngineConfigs(
+                                    GetResolvedEdgeDecisionEngineConfigsRequest.newBuilder()
                                         .build()))
                     .getEdgeDecisionEngineConfig())
         .orElseGet(EdgeDecisionEngineConfig::getDefaultInstance);
