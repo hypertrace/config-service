@@ -27,10 +27,10 @@ public class EventConfidenceScoringConfigManager {
   public EventConfidenceScoringConfigManager(
       ThreatScoringConfigScopeUtils threatScoringConfigScopeUtils,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      DefaultThreatScoringConfig defaultThreatScoringConfig) {
     this.threatScoringConfigScopeUtils = threatScoringConfigScopeUtils;
-    // TODO:Fetch and ddd default configs
-    this.defaultScopedThreatScoringConfigs = ScopedThreatScoringConfigs.getDefaultInstance();
+    this.defaultScopedThreatScoringConfigs = defaultThreatScoringConfig.getDefaultConfig();
     this.scopedThreatScoringConfigsStore =
         new ScopedThreatScoringConfigsStore(
             configServiceBlockingStub,
