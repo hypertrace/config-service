@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter;
 
+import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
 import static ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType.AGGREGATION_TYPE_COUNT;
@@ -213,7 +214,8 @@ public class RateLimitingEdgeDecisionConverter {
               .addRules(
                   DerivationRule.newBuilder()
                       .setConditionExpression(
-                          JexlExpressionConfig.newBuilder().setJexlExpression("endUserId")))
+                          JexlExpressionConfig.newBuilder()
+                              .setJexlExpression(USER_ATTRIBUTION_VARIABLE_NAME.getValue())))
               .build());
     }
     if (resourceAccessThresholdConfig

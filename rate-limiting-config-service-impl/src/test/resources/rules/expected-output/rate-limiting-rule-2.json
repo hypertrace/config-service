@@ -43,7 +43,7 @@
           "name": "AGGREGATE_PER_USER",
           "rules": [{
             "condition_expression": {
-              "jexl_expression": "endUserId"
+              "jexl_expression": "TRACEABLE_USER_ID"
             }
           }]
         }, {

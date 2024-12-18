@@ -1,6 +1,7 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.config.service.v1.MatchOperator.MATCH_OPERATOR_LIKE;
 import static ai.traceable.edge.decision.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_LIKE;
 import static ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase.USER_ID_CONDITION;
@@ -34,7 +35,8 @@ public class RateLimitingUserIdConditionConverter implements RateLimitingConditi
                                   DataTransformationConfig.newBuilder()
                                       .setJexlExpression(
                                           JexlExpressionConfig.newBuilder()
-                                              .setJexlExpression("TRACEABLE_USER_ID")))));
+                                              .setJexlExpression(
+                                                  USER_ATTRIBUTION_VARIABLE_NAME.getValue())))));
       builder.setBinaryOperator(
           BinaryOperator.newBuilder()
               .setMatchOperator(
