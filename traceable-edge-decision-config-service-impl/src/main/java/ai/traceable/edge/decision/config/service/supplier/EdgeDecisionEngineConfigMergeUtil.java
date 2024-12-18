@@ -111,7 +111,7 @@ class EdgeDecisionEngineConfigMergeUtil {
     if (config2 == null || config2.getDisabled()) {
       return config1;
     }
-    EdgeDecisionEngineConfig.Builder merged = config1.toBuilder();
+    EdgeDecisionEngineConfig.Builder merged = EdgeDecisionEngineConfig.newBuilder();
     merged.setId(config1.getId() + ":" + config2.getId());
     merged.setName(config1.getName() + ":" + config2.getName());
     merged.setVersion(Math.max(config1.getVersion(), config2.getVersion()));
