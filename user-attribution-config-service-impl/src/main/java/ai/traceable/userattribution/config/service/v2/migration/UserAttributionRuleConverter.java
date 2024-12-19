@@ -33,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class UserAttributionRuleConverter {
+  static final String YAML_FORMAT_NOT_SUPPORTED =
+      "Unsupported format - yaml, cannot be converted to new format";
   static final String BASIC_AUTH_TYPE = "Basic";
   static final String DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME = "authorization";
   static final String DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP = "(?i)Basic:? (.*)";
@@ -49,7 +51,12 @@ class UserAttributionRuleConverter {
       rule.setData(createUserAttributionRuleData(legacyRule));
       return Optional.of(rule.build());
     } catch (Exception ex) {
-      log.error("Unable to translate legacy rule to new rule format : {}", legacyRule, ex);
+      if (ex instanceof LegacyUserAttributionRuleTranslationException
+          && ex.getMessage().equals(YAML_FORMAT_NOT_SUPPORTED)) {
+        log.debug("Unable to translate legacy rule to new rule format : {}", legacyRule, ex);
+      } else {
+        log.error("Unable to translate legacy rule to new rule format : {}", legacyRule, ex);
+      }
       return Optional.empty();
     }
   }
@@ -122,6 +129,8 @@ class UserAttributionRuleConverter {
       case CUSTOM_TOKEN_DATA:
         convertCustomToken(builder, data.getCustomTokenData());
         break;
+      case CUSTOM_DATA:
+        throw new LegacyUserAttributionRuleTranslationException(YAML_FORMAT_NOT_SUPPORTED);
       default:
         throw new LegacyUserAttributionRuleTranslationException(
             "Unsupported data case in new format");
