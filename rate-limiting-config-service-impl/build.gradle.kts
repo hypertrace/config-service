@@ -30,6 +30,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(commonLibs.traceable.platform.ipUtils)
   implementation(commonLibs.traceable.modsecurity.jni)
+  implementation(commonLibs.traceable.traceenricher.constants)
   implementation(commonLibs.commons.lang)
 
   implementation(commonLibs.traceable.activityevent.api)
