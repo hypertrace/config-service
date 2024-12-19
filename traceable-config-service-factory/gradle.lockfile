@@ -3,7 +3,7 @@
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.activity.event.service:activity-event-api:9.0.25=runtimeClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.3.1992=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.3.1996=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.16.23=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -26,8 +26,8 @@ ai.traceable.platform:api-naming-constants:6.0.3=runtimeClasspath,testRuntimeCla
 ai.traceable.platform:api-naming-model:6.0.3=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:conditions-matcher:2.0.68=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:config-providers:2.0.68=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-api:0.3.12=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:coraza-waf-service-client:0.3.12=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-api:0.3.14=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:coraza-waf-service-client:0.3.14=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.160=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:insights-service-api:2.0.125=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.132=runtimeClasspath,testRuntimeClasspath
