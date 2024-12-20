@@ -10,6 +10,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpTypeConditionConverter implements RateLimitingConditionConverter {
 
@@ -17,7 +18,8 @@ public class RateLimitingIpTypeConditionConverter implements RateLimitingConditi
       "$s.getIpIntelligenceData().getTraits().getIpTypes().contains(IPType.%s)";
 
   @Override
-  public MatchCondition buildMatchCondition(LeafCondition leafCondition) {
+  public MatchCondition buildMatchCondition(
+      final RequestContext requestContext, LeafCondition leafCondition) {
     IpLocationTypeCondition ipLocationTypeCondition = leafCondition.getIpLocationTypeCondition();
     List<EnrichedSpanConstants.IPType> ipTypes = getIpTypes(ipLocationTypeCondition);
     List<MatchCondition> matchConditions =

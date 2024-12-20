@@ -9,6 +9,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpAbuseVelocityConditionConverter
     implements RateLimitingConditionConverter {
@@ -17,7 +18,8 @@ public class RateLimitingIpAbuseVelocityConditionConverter
       "$s.getIpIntelligenceData().getTraits().getAbuseVelocity().equals(IpAbuseVelocity.%s)";
 
   @Override
-  public MatchCondition buildMatchCondition(LeafCondition leafCondition) {
+  public MatchCondition buildMatchCondition(
+      final RequestContext requestContext, LeafCondition leafCondition) {
     IpAbuseVelocityCondition ipAbuseVelocityCondition = leafCondition.getIpAbuseVelocityCondition();
     List<ai.traceable.platform.traceenricher.constants.v1.IpAbuseVelocity>
         applicableIpAbuseVelocities =

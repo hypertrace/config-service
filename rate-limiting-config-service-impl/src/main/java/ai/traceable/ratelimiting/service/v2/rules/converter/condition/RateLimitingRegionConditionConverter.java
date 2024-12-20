@@ -14,6 +14,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRegionConditionConverter implements RateLimitingConditionConverter {
 
@@ -21,7 +22,8 @@ public class RateLimitingRegionConditionConverter implements RateLimitingConditi
       "$s.getIpIntelligenceData().getCountry().getIsoCode()";
 
   @Override
-  public MatchCondition buildMatchCondition(LeafCondition leafCondition) {
+  public MatchCondition buildMatchCondition(
+      final RequestContext requestContext, LeafCondition leafCondition) {
     RegionCondition regionCondition = leafCondition.getRegionCondition();
 
     ListValue.Builder countryIsoCodes = ListValue.newBuilder();

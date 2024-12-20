@@ -201,6 +201,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
           GetRateLimitingEdgeDecisionRulesResponse.newBuilder()
               .setEdgeDecisionEngineConfig(
                   translator.convert(
+                      context,
                       rulesManager.getRateLimitingRules(context, request.getRulesFilter())))
               .build();
 

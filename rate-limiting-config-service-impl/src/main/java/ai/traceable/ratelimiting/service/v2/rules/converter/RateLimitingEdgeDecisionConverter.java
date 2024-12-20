@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class RateLimitingEdgeDecisionConverter {
@@ -71,22 +72,24 @@ public class RateLimitingEdgeDecisionConverter {
                     Maps::immutableEnumMap));
   }
 
-  public EdgeDecisionEngineConfig convert(final List<RateLimitingRule> rateLimitingRules) {
+  public EdgeDecisionEngineConfig convert(
+      final RequestContext requestContext, final List<RateLimitingRule> rateLimitingRules) {
     final EdgeDecisionEngineConfig.Builder builder = EdgeDecisionEngineConfig.newBuilder();
     rateLimitingRules.stream()
-        .map(this::convertRateLimitingRule)
+        .map(rule -> this.convertRateLimitingRule(requestContext, rule))
         .forEach(builder::addAllDecisionRules);
     return builder.build();
   }
 
-  private List<EdgeDecisionRule> convertRateLimitingRule(final RateLimitingRule rateLimitingRule) {
+  private List<EdgeDecisionRule> convertRateLimitingRule(
+      final RequestContext requestContext, final RateLimitingRule rateLimitingRule) {
     try {
       final RateLimitingRuleData data = rateLimitingRule.getData();
       final EdgeDecisionRuleStatus edgeDecisionRuleStatus = buildRuleStatus(data);
       final Optional<EdgeDecisionRuleScope> maybeEdgeDecisionRuleScope = buildRuleScope(data);
       final Optional<MatchCondition> mayBeMatchCondition =
           data.hasCondition()
-              ? Optional.of(buildMatchCondition(data.getCondition()))
+              ? Optional.of(buildMatchCondition(requestContext, data.getCondition()))
               : Optional.empty();
       return getResourceAccessThresholdConfigs(data).stream()
           .map(
@@ -172,18 +175,19 @@ public class RateLimitingEdgeDecisionConverter {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private MatchCondition buildMatchCondition(final Condition condition) {
+  private MatchCondition buildMatchCondition(
+      final RequestContext requestContext, final Condition condition) {
     switch (condition.getConditionCase()) {
       case LEAF_CONDITION:
         final LeafCondition leafCondition = condition.getLeafCondition();
         return getConditionConverter(leafCondition.getConditionCase())
-            .buildMatchCondition(leafCondition);
+            .buildMatchCondition(requestContext, leafCondition);
       case COMPOSITE_CONDITION:
         final CompositeCondition compositeCondition = condition.getCompositeCondition();
         final LogicalMatchCondition.Builder builder = LogicalMatchCondition.newBuilder();
         builder.addAllConditions(
             compositeCondition.getChildrenList().stream()
-                .map(this::buildMatchCondition)
+                .map(childCondition -> this.buildMatchCondition(requestContext, childCondition))
                 .collect(Collectors.toUnmodifiableList()));
         builder.setOperator(convertOperator(compositeCondition.getOperator()));
         return MatchCondition.newBuilder().setLogicalMatchCondition(builder).build();

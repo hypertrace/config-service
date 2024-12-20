@@ -16,11 +16,13 @@ import ai.traceable.edge.decision.config.service.v1.StructuredMatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingUserIdConditionConverter implements RateLimitingConditionConverter {
 
   @Override
-  public MatchCondition buildMatchCondition(final LeafCondition leafCondition) {
+  public MatchCondition buildMatchCondition(
+      final RequestContext requestContext, final LeafCondition leafCondition) {
     final UserIdCondition userIdCondition = leafCondition.getUserIdCondition();
     if (!userIdCondition.getUserIdRegexesList().isEmpty()) {
       final StructuredMatchCondition.Builder builder =

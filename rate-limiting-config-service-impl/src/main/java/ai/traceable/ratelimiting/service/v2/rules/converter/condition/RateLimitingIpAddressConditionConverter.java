@@ -18,6 +18,7 @@ import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpAddressConditionConverter implements RateLimitingConditionConverter {
 
@@ -33,7 +34,8 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
       JexlUtils.getMatchCondition(INTERNAL_IP_JEXL_EXP);
 
   @Override
-  public MatchCondition buildMatchCondition(LeafCondition leafCondition) {
+  public MatchCondition buildMatchCondition(
+      final RequestContext requestContext, LeafCondition leafCondition) {
     IpAddressCondition ipAddressCondition = leafCondition.getIpAddressCondition();
     switch (ipAddressCondition.getIpAddressConditionType()) {
       case IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL:
