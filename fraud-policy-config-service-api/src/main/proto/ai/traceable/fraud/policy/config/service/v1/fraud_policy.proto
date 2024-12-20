@@ -78,6 +78,9 @@ enum FraudPolicyStage {
 
   // policy is being tested, and MUST not be shown to external customers at all.
   FRAUD_POLICY_STAGE_INTERNAL = 3;
+
+  // a policy created as a simulation of another policy.
+  FRAUD_POLICY_STAGE_SIMULATION = 4;
 }
 
 enum FraudRiskSeverity {
@@ -112,8 +115,9 @@ message Schedule {
     string cron_expression = 1; // e.g. "0 0/10 * * * ?" (every 10 minutes)
     TimeObj interval = 2; // Interval between executions, if applicable
   }
-  optional int64 start_time = 3; // if we need to eval past windows
-  optional int64 end_time = 4; // if we need to stop eval beyond certain time
+  // applicable for simulations
+  optional int64 start_time = 3; // if we need to eval past windows - 15th Dec
+  optional int64 end_time = 4; // if we need to stop eval beyond certain time 18th Dec
 }
 
 // policy is a set of rules
@@ -244,7 +248,8 @@ message FraudRule {
     EntityMetricBasedFraudRule entity_metric_fraud_rule = 3;
     MetricBasedFraudRule metric_fraud_rule = 4;
     // currently, fraud detection event derivation config.
-    string inline_detection_config = 5;
+    // use a typed derivation config (edge decision rule)
+    string inline_detection_config = 5 [deprecated = true];
     // apply transformation on the input or output. for ex: leventhstein distance on an array_agg of usernames
     string transformation_config = 6 [deprecated = true];
     TransformationConfigBasedFraudRule transformation_config_fraud_rule = 7;

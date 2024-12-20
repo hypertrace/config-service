@@ -16,11 +16,47 @@ message DataQuery {
   }
 }
 
+enum Dialect {
+  DIALECT_UNSPECIFIED = 0;
+  DIALECT_TRINO = 1;
+  DIALECT_SPARK = 2;
+  DIALECT_PINOT = 3;
+  DIALECT_MONGO = 4;
+  DIALECT_POSTGRES = 5;
+  // others.
+}
+
+message Param {
+  oneof param_type {
+    // replace given value as is - no formatting required
+    LiteralParam literal_param = 2;
+    // replace given value by formatting based on the given type and dialect
+    TypedParam typed_param = 3;
+  }
+}
+
+message LiteralParam {
+  string name = 1;
+  string value = 2;
+}
+
+message TypedParam {
+  string name = 1;
+  ai.traceable.fraud.datamodel.config.service.v1.FieldType type = 2;
+  ai.traceable.fraud.datamodel.config.service.v1.FieldValue value = 3;
+}
+
+message QueryParams {
+  repeated Param query_params = 1;
+}
+
 message EntityGraphDataQuery {
   oneof entity_source {
     EntityGraphQuery entity_graph_query = 1;
     string raw_sql_query = 2;
   }
+  Dialect dialect = 3;
+  QueryParams query_params = 4;
 }
 
 message EntityMetricDataQuery {
@@ -28,6 +64,8 @@ message EntityMetricDataQuery {
     EntityMetricQuery entity_metric_query = 1;
     string raw_sql_query = 2;
   }
+  Dialect dialect = 3;
+  QueryParams query_params = 4;
 }
 
 message MetricDataQuery {
@@ -35,6 +73,8 @@ message MetricDataQuery {
     MetricQuery metric_query = 1;
     string raw_sql_query = 2;
   }
+  Dialect dialect = 3;
+  QueryParams query_params = 4;
 }
 
 message CountRelatedEntities {
