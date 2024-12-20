@@ -8,7 +8,6 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -47,7 +46,6 @@ public class RateLimitingIpTypeConditionConverter implements RateLimitingConditi
   private List<EnrichedSpanConstants.IPType> getIpTypes(IpLocationTypeCondition condition) {
     return condition.getIpLocationTypesList().stream()
         .map(this::getIpType)
-        .filter(Objects::nonNull)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -66,7 +64,7 @@ public class RateLimitingIpTypeConditionConverter implements RateLimitingConditi
       case IP_LOCATION_TYPE_SCANNER:
         return EnrichedSpanConstants.IPType.IP_TYPE_SCANNER;
       default:
-        return null;
+        throw new IllegalArgumentException("Invalid ipLocationType : " + ipLocationType);
     }
   }
 

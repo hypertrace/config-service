@@ -55,9 +55,11 @@ public class RateLimitingIpAbuseVelocityConditionConverter
         applicableIpAbuseVelocities.add(
             ai.traceable.platform.traceenricher.constants.v1.IpAbuseVelocity
                 .IP_ABUSE_VELOCITY_HIGH);
+        break;
       default:
-        return applicableIpAbuseVelocities;
+        throw new IllegalArgumentException("Invalid ipAbuseVelocity : " + minIpAbuseVelocity);
     }
+    return applicableIpAbuseVelocities;
   }
 
   @Override
