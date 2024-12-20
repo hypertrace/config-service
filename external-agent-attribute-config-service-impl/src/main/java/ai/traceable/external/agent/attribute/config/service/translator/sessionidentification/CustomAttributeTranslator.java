@@ -6,10 +6,10 @@ import ai.traceable.sessionidentification.config.service.v1.AttributeProjection;
 import ai.traceable.sessionidentification.config.service.v1.CustomAttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenDetails;
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

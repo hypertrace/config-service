@@ -9,8 +9,8 @@ import ai.traceable.risk.config.service.v2.RiskFactorConfigUpdateDetails;
 import ai.traceable.risk.config.service.v2.RiskFactorInfo;
 import ai.traceable.risk.config.service.v2.elements.validator.RiskElementConfigValidator;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Collection;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})

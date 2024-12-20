@@ -2,10 +2,10 @@ package ai.traceable.jwt.extraction.config.service;
 
 import ai.traceable.jwt.extraction.config.service.impl.DefaultJwtExtractionRule.DeletedDefaultJwtExtractionRule;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;

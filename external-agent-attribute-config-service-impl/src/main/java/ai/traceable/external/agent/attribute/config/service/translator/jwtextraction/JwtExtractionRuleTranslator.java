@@ -8,12 +8,12 @@ import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtLocation;
 import ai.traceable.jwt.extraction.config.service.v1.JwtProcessingInstruction;
 import ai.traceable.jwt.extraction.config.service.v1.Predicate;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -11,7 +11,7 @@ import ai.traceable.data.protection.config.service.v1.ScopedDataProtectionConfig
 import ai.traceable.data.protection.config.service.v1.UpsertScopedDataProtectionConfigRequest;
 import ai.traceable.data.protection.config.service.v1.UpsertScopedDataProtectionConfigResponse;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;

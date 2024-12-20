@@ -3,8 +3,8 @@ package ai.traceable.external.agent.attribute.config.service.translator.authdete
 import ai.traceable.auth.detection.config.service.v1.Predicate.PredicateCase;
 import ai.traceable.external.agent.attribute.config.service.translator.AttributeRuleBuilder;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

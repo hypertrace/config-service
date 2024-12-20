@@ -3,7 +3,7 @@ package ai.traceable.external.userattribution.config.service;
 import ai.traceable.external.userattribution.config.service.v1.ExternalUserAttributionRules;
 import ai.traceable.external.userattribution.config.service.v1.GetExternalUserAttributionRulesRequest;
 import ai.traceable.external.userattribution.config.service.v1.GetExternalUserAttributionRulesResponse;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 class ExternalUserAttributionRuleResponseBuilder {
 

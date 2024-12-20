@@ -19,12 +19,12 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesM
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesManager;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.core.grpcutils.context.RequestContext;

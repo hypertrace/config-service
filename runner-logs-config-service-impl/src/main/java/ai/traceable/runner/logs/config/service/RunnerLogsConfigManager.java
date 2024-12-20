@@ -10,7 +10,7 @@ import ai.traceable.runner.logs.config.service.v1.RunnerLogsPurgeConfig;
 import ai.traceable.runner.logs.config.service.v1.RunnerLogsPurgeConfigUpdate;
 import ai.traceable.runner.logs.config.service.v1.UpdateRunnerLogsPersistenceConfigRequest;
 import ai.traceable.runner.logs.config.service.v1.UpdateRunnerLogsPurgeConfigRequest;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

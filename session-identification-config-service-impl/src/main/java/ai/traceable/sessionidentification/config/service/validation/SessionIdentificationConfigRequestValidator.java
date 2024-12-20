@@ -10,10 +10,10 @@ import ai.traceable.sessionidentification.config.service.v1.SessionIdentificatio
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleScope;
 import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentificationRuleRequest;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;

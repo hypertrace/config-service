@@ -1,7 +1,7 @@
 package ai.traceable.reporting.config.service.v2;
 
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

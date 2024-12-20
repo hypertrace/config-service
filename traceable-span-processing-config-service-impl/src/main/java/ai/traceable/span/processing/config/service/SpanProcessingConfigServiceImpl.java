@@ -69,7 +69,7 @@ import ai.traceable.span.processing.config.service.v1.UpdateSpanIngestionRuleRes
 import ai.traceable.span.processing.config.service.validation.SpanProcessingConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;

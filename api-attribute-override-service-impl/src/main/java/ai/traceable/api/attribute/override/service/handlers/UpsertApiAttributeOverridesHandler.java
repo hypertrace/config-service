@@ -5,11 +5,11 @@ import ai.traceable.api.attribute.override.service.v1.AttributeOverride;
 import ai.traceable.api.attribute.override.service.v1.AttributeOverride.AttributeOverrideCase;
 import ai.traceable.api.attribute.override.service.v1.BooleanOverride;
 import ai.traceable.api.attribute.override.service.v1.UpsertApiAttributeOverridesRequest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class UpsertApiAttributeOverridesHandler {

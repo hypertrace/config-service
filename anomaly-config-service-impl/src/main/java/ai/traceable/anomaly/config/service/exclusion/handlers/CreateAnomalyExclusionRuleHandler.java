@@ -13,7 +13,7 @@ import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionInfo;
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionType;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class CreateAnomalyExclusionRuleHandler {

@@ -7,8 +7,8 @@ import ai.traceable.external.data.classification.config.service.v1.DataType;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigResponse;
 import ai.traceable.external.data.classification.config.service.v1.ObfuscationStrategy;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -11,8 +11,8 @@ import ai.traceable.edge.config.service.v1.ConfigPayloads;
 import ai.traceable.edge.config.service.v1.ConfigRequestElement;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import com.google.protobuf.AbstractMessageLite;
+import jakarta.inject.Inject;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class CaptchaSiteKeyConfigSupplier implements TraceableEdgeConfigSupplier {

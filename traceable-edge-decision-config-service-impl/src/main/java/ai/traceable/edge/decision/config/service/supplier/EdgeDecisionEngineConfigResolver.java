@@ -5,8 +5,8 @@ import static ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEng
 import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
+import jakarta.inject.Inject;
 import java.util.Set;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -3,10 +3,10 @@ package ai.traceable.userattribution.config.service.v2.migration;
 import ai.traceable.userattribution.config.service.v1.store.UserAttributionRuleStore;
 import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRule;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

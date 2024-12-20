@@ -2,8 +2,8 @@ package ai.traceable.policy.config.service.store;
 
 import ai.traceable.policy.config.service.v1.TraceablePolicy;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;

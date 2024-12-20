@@ -10,9 +10,9 @@ import ai.traceable.edge.bot.config.service.v1.GetFlowConfigRequest;
 import ai.traceable.edge.bot.config.service.v1.GetFlowConfigResponse;
 import ai.traceable.edge.bot.config.service.v1.UpsertFlowConfigRequest;
 import ai.traceable.edge.bot.config.service.v1.UpsertFlowConfigResponse;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

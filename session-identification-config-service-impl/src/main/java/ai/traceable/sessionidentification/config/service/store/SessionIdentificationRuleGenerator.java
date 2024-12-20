@@ -6,7 +6,7 @@ import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleStatus;
 import ai.traceable.sessionidentification.config.service.v1.UpdateSessionIdentificationRuleRequest;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class SessionIdentificationRuleGenerator {
   private final UuidGenerator uuidGenerator;

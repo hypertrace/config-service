@@ -9,9 +9,9 @@ import ai.traceable.sessionidentification.config.service.v1.RequestSessionTokenD
 import ai.traceable.sessionidentification.config.service.v1.ResponseSessionTokenDetails;
 import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

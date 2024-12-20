@@ -9,7 +9,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionReques
 import ai.traceable.anomaly.config.service.v1.trainer.UserRoleAction;
 import ai.traceable.anomaly.config.service.v1.trainer.UserScopeAction;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class TrainingActionValidatorImpl implements TrainingActionValidator {
 

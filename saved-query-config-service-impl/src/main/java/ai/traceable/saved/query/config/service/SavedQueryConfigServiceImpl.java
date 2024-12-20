@@ -15,7 +15,7 @@ import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryResponse;
 import ai.traceable.saved.query.config.service.validation.SavedQueryRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

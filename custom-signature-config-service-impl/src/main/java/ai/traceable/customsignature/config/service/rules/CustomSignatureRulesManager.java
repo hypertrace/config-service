@@ -6,10 +6,10 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRule.Builde
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;

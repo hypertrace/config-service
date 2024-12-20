@@ -19,8 +19,8 @@ import ai.traceable.data.handling.config.service.v1.UpdateDataHandlingRuleRespon
 import ai.traceable.data.handling.config.service.validation.DataHandlingConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

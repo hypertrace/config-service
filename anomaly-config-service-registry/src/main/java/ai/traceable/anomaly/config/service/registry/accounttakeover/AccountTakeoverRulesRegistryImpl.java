@@ -7,9 +7,9 @@ import ai.traceable.anomaly.config.service.v1.detector.AccountTakeoverAnomalyDet
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class AccountTakeoverRulesRegistryImpl implements AccountTakeoverRulesRegistry {
   private static final String ACCOUNT_TAKEOVER_DIRECTORY = "accounttakeover/";

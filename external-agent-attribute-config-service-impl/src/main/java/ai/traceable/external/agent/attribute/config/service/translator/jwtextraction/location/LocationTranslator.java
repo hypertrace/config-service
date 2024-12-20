@@ -3,10 +3,10 @@ package ai.traceable.external.agent.attribute.config.service.translator.jwtextra
 import ai.traceable.external.agent.attribute.config.service.translator.jwtextraction.JwtTranslationException;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtLocation;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

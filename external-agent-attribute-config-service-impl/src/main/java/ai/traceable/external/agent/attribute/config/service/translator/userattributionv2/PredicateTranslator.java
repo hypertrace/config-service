@@ -16,11 +16,11 @@ import ai.traceable.userattribution.config.service.v2.UserAttributionRuleData;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope;
 import ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

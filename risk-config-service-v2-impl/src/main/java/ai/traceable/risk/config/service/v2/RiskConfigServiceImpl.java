@@ -5,7 +5,7 @@ import ai.traceable.risk.config.service.v2.factors.manager.RiskFactorConfigsMana
 import ai.traceable.risk.config.service.v2.grid.manager.RiskScoringGridConfigManager;
 import ai.traceable.risk.config.service.v2.grid.validator.RiskScoringGridConfigValidator;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;

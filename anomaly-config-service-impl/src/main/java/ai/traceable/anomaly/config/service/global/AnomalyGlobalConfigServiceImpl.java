@@ -20,7 +20,7 @@ import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalCo
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

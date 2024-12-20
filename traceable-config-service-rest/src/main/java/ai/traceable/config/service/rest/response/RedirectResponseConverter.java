@@ -2,8 +2,8 @@ package ai.traceable.config.service.rest.response;
 
 import ai.traceable.config.service.rest.v1.HttpResponseMetadata;
 import ai.traceable.config.service.rest.v1.RedirectResponse;
+import jakarta.inject.Inject;
 import java.net.URI;
-import javax.inject.Inject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;

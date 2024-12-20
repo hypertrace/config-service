@@ -9,10 +9,10 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionConfigServi
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;

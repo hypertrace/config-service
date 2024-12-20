@@ -18,11 +18,11 @@ import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleAction;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleCondition;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleCondition.AttributeCondition;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleCondition.ConditionMatchOperator;
+import jakarta.inject.Inject;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

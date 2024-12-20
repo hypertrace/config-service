@@ -7,11 +7,11 @@ import ai.traceable.api.attribute.override.service.v1.AttributeOverrideIdentifie
 import ai.traceable.api.attribute.override.service.v1.AttributeOverrideIdentifier.AttributeOverrideIdentifierCase;
 import ai.traceable.api.attribute.override.service.v1.EmptyOverrideIdentifier;
 import ai.traceable.api.attribute.override.service.v1.RemoveApiAttributeOverridesRequest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RemoveApiAttributeOverridesHandler {

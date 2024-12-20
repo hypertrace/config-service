@@ -12,9 +12,9 @@ import ai.traceable.userattribution.config.service.v2.store.UserAttributionV2Rul
 import ai.traceable.userattribution.config.service.v2.validation.UserAttributionV2ConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

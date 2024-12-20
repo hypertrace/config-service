@@ -9,8 +9,8 @@ import ai.traceable.risk.config.service.v2.RiskScoringGridCell;
 import ai.traceable.risk.config.service.v2.RiskScoringGridConfigValues;
 import ai.traceable.risk.config.service.v2.UpdateRiskScoringGridConfigRequest;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Collection;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -7,9 +7,9 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.VolumetricAnomalyDetectionConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class VolumetricRulesRegistryImpl implements VolumetricRulesRegistry {
   private static final String VOLUMETRIC_DIRECTORY = "volumetric/";

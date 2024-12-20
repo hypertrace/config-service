@@ -6,11 +6,11 @@ import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatch
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
 import ai.traceable.modsecurity.rule.secrule.CustomSecRule;
 import ai.traceable.modsecurity.rule.secrule.ModsecSecRuleGroup;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class ModsecRuleConverterImpl implements ModsecRuleConverter {
 

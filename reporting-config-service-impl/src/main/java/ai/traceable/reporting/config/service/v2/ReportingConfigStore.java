@@ -2,8 +2,8 @@ package ai.traceable.reporting.config.service.v2;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;

@@ -7,11 +7,11 @@ import ai.traceable.risk.config.service.v2.RiskFactorConfig;
 import ai.traceable.risk.config.service.v2.RiskFactorInfo;
 import ai.traceable.risk.config.service.v2.factors.comparator.RiskFactorConfigsComparator;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})

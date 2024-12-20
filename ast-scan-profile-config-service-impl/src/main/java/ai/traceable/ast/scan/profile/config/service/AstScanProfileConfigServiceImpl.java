@@ -14,10 +14,10 @@ import ai.traceable.ast.scan.profile.config.service.v1.UpdateScanProfileResponse
 import ai.traceable.ast.scan.profile.config.service.v1.UpsertScanProfile;
 import ai.traceable.ast.scan.profile.config.service.validator.AstScanProfileConfigRequestValidator;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;

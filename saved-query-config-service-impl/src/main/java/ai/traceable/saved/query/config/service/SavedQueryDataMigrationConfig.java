@@ -1,7 +1,7 @@
 package ai.traceable.saved.query.config.service;
 
 import com.typesafe.config.Config;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.Getter;
 
 @Getter

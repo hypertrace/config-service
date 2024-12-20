@@ -42,11 +42,11 @@ import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
-import javax.inject.Inject;
 
 class CustomSignatureRulesValidator implements RulesValidator {
 

@@ -3,9 +3,9 @@ package ai.traceable.threatscoring.config.service;
 import static ai.traceable.threatscoring.config.service.store.ScopedThreatScoringConfigsStore.DEFAULT_THREAT_SCORING_CONTEXT;
 
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigScope;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

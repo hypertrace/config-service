@@ -7,9 +7,9 @@ import ai.traceable.api.gateway.config.service.v1.ConfigMetadata;
 import ai.traceable.api.gateway.config.service.v1.CreateMetadataRequest;
 import ai.traceable.api.gateway.config.service.v1.CreateMetadataResponse;
 import ai.traceable.api.gateway.config.service.v1.SourceInfo;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

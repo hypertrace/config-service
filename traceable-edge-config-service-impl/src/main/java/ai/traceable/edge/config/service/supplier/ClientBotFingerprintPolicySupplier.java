@@ -10,8 +10,8 @@ import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.policy.config.service.v1.ClientBotFingerprintPolicy;
 import ai.traceable.policy.config.service.v1.GetAllRequest;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
+import jakarta.inject.Inject;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ClientBotFingerprintPolicySupplier implements TraceableEdgeConfigSupplier {

@@ -6,9 +6,9 @@ import ai.traceable.external.agent.attribute.config.service.translator.Attribute
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
 import ai.traceable.jwt.extraction.config.service.v1.Predicate;
 import ai.traceable.jwt.extraction.config.service.v1.StringPredicate;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)

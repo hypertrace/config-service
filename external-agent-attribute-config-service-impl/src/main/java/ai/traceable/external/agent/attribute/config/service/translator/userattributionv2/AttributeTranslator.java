@@ -18,10 +18,10 @@ import ai.traceable.userattribution.config.service.v2.KeyMatch;
 import ai.traceable.userattribution.config.service.v2.KeyMatchOperator;
 import ai.traceable.userattribution.config.service.v2.Predicate.AttributePredicate;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -21,9 +21,9 @@ import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

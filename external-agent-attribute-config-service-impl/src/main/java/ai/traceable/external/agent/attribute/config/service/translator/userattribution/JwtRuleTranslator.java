@@ -8,9 +8,9 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.JwtUserAttributionRuleData;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})

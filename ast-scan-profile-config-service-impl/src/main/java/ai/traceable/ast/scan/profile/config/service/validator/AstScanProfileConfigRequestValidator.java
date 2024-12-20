@@ -13,9 +13,9 @@ import ai.traceable.ast.scan.profile.config.service.v1.UpdateScanProfileRequest;
 import ai.traceable.config.utils.RegexValidator;
 import com.google.common.base.Preconditions;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AstScanProfileConfigRequestValidator {

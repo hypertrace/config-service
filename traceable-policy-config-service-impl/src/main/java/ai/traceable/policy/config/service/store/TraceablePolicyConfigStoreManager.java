@@ -10,9 +10,9 @@ import ai.traceable.policy.config.service.v1.GetResponse;
 import ai.traceable.policy.config.service.v1.TraceablePolicy;
 import ai.traceable.policy.config.service.v1.UpsertRequest;
 import ai.traceable.policy.config.service.v1.UpsertResponse;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

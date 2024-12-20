@@ -14,9 +14,9 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Bui
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

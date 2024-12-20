@@ -20,12 +20,12 @@ import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import ai.traceable.platform.actor.v1.Status;
 import com.google.protobuf.Timestamp;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.NonNull;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

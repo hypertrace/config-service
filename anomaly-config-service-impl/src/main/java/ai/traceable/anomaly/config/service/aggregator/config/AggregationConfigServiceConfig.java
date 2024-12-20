@@ -4,8 +4,8 @@ import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.v1.aggregator.AggregationConfig;
 import ai.traceable.anomaly.config.service.v1.aggregator.EventAggregationGlobalConfig;
 import com.typesafe.config.Config;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 
 public class AggregationConfigServiceConfig {
   private static final String MODSEC_AGGREGATION_CONFIGS_PATH = "modsecAggregationConfig";

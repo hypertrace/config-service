@@ -9,7 +9,7 @@ import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestRequest;
 import ai.traceable.ast.hooks.config.service.v1.HookConfig;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import ai.traceable.config.utils.UuidGenerator;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -3,7 +3,7 @@ package ai.traceable.data.handling.config.service.utils;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.data.handling.config.service.v1.CreateDataHandlingRuleRequest;
 import ai.traceable.data.handling.config.service.v1.DataHandlingRule;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class DataHandlingRuleGenerator {
 

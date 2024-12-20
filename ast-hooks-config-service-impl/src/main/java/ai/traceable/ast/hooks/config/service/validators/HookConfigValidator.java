@@ -24,7 +24,7 @@ import ai.traceable.ast.hooks.config.service.v1.OauthPkceFlow;
 import ai.traceable.ast.hooks.config.service.v1.PopTokenSignature;
 import ai.traceable.ast.hooks.config.service.v1.RequestTokenInfo;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})

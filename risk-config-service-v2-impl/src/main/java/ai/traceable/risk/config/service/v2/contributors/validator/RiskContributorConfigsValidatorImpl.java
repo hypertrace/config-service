@@ -11,7 +11,7 @@ import ai.traceable.risk.config.service.v2.RiskFactorCategory;
 import ai.traceable.risk.config.service.v2.UpdateRiskContributorConfigsRequest;
 import ai.traceable.risk.config.service.v2.factors.validator.RiskFactorConfigsValidator;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

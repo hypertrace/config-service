@@ -32,9 +32,9 @@ import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
 import com.google.re2j.Pattern;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Set;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

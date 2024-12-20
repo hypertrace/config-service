@@ -5,10 +5,10 @@ import static ai.traceable.ast.hooks.config.service.store.AstHookConfigConstants
 import ai.traceable.ast.hooks.config.service.v1.AstHookTest;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestFilter;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;

@@ -14,9 +14,9 @@ import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRespo
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /**

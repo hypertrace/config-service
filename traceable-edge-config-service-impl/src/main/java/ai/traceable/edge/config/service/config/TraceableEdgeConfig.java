@@ -4,12 +4,12 @@ import com.google.protobuf.Duration;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigRenderOptions;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ClientConfig;
 
 public class TraceableEdgeConfig {

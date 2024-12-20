@@ -7,9 +7,9 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CredentialStuffingAnomalyDetectionConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class CredentialStuffingRulesRegistryImpl implements CredentialStuffingRulesRegistry {
   private static final String CREDENTIAL_STUFFING_DIRECTORY = "credentialstuffing/";

@@ -5,7 +5,7 @@ import static ai.traceable.userattribution.config.service.v1.store.UserAttributi
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.userattribution.config.service.v1.CreateUserAttributionRuleRequest;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class UserAttributionRuleGenerator {
 

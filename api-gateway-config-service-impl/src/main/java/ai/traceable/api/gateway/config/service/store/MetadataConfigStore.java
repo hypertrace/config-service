@@ -4,9 +4,9 @@ import ai.traceable.api.gateway.config.service.filter.MetadataConfigFilterToPred
 import ai.traceable.api.gateway.config.service.v1.ConfigMetadata;
 import ai.traceable.api.gateway.config.service.v1.MetadataFilter;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;

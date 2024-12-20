@@ -1,9 +1,9 @@
 package ai.traceable.anomaly.config.service.exclusion.handlers;
 
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

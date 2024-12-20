@@ -11,10 +11,10 @@ import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariable;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariableMetadata;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariableMetadataKey;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariableMetadataOperator;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 
 public class CustomModsecKeyValueMatchClauseConverter {
   private static final String REGEX_STARTING_ANCHOR_ENDPOINT = "^";

@@ -13,10 +13,10 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.ProjectorPredicate;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRuleScope;
 import ai.traceable.sessionidentification.config.service.v1.SessionTokenRule;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

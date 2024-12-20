@@ -6,7 +6,7 @@ import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConf
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleData;
 import ai.traceable.anomaly.config.service.v1.exclusion.UpdateAnomalyExclusionRuleRequest;
 import ai.traceable.anomaly.config.service.v1.exclusion.UpdateAnomalyExclusionRuleResponse;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class UpdateAnomalyExclusionRuleHandler {

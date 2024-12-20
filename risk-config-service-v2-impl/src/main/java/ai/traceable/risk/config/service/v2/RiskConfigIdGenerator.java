@@ -1,7 +1,7 @@
 package ai.traceable.risk.config.service.v2;
 
 import ai.traceable.config.utils.UuidGenerator;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})

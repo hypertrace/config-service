@@ -5,7 +5,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.threatscoring.config.service.v1.AnomalousEventConfidenceConfig;
 import ai.traceable.threatscoring.config.service.v1.OverrideEventConfidenceScoringConfigRequest;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -13,7 +13,7 @@ import ai.traceable.saved.filter.config.service.v1.UpdateSavedFilterResponse;
 import ai.traceable.saved.filter.config.service.validation.SavedFilterRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

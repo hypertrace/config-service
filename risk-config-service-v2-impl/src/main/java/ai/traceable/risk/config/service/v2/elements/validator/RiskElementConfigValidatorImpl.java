@@ -21,7 +21,7 @@ import ai.traceable.risk.config.service.v2.StringPredicate;
 import ai.traceable.risk.config.service.v2.VulnerabilitySeverityPredicate;
 import ai.traceable.risk.config.service.v2.VulnerabilitySeverityValue;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})

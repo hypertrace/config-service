@@ -7,7 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.translator.jwtextrac
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtProcessingInstruction;
 import com.google.common.base.Joiner;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

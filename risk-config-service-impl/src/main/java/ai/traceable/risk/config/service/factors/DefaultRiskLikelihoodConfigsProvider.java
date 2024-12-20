@@ -3,9 +3,9 @@ package ai.traceable.risk.config.service.factors;
 import ai.traceable.risk.config.service.RiskConfigServiceConfig;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskContributorConfigs;
+import com.google.inject.Provider;
 import io.grpc.Status;
-import javax.inject.Inject;
-import javax.inject.Provider;
+import jakarta.inject.Inject;
 
 public class DefaultRiskLikelihoodConfigsProvider implements Provider<RiskContributorConfigs> {
 

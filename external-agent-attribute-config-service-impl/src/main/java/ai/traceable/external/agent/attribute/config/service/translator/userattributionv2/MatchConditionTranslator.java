@@ -9,7 +9,7 @@ import ai.traceable.userattribution.config.service.v2.KeyMatchOperator;
 import ai.traceable.userattribution.config.service.v2.MatchCondition;
 import ai.traceable.userattribution.config.service.v2.ValueMatchOperator;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

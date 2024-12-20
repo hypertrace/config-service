@@ -28,11 +28,11 @@ import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusi
 import ai.traceable.detection.exclusion.config.service.v1.UpsertDetectionExclusionRuleData;
 import com.google.common.annotations.VisibleForTesting;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class DetectionExclusionRulesValidator implements RulesValidator {

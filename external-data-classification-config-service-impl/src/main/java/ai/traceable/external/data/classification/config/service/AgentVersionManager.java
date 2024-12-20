@@ -3,8 +3,8 @@ package ai.traceable.external.data.classification.config.service;
 import ai.traceable.config.utils.SemanticVersioningComparator;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.AgentCapabilities;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.Component;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

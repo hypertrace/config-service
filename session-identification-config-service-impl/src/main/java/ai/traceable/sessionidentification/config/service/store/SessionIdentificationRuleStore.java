@@ -4,9 +4,9 @@ import ai.traceable.sessionidentification.config.service.v1.GetSessionIdentifica
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;

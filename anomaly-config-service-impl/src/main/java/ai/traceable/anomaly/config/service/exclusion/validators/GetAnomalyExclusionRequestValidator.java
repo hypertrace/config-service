@@ -4,7 +4,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesRequest;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class GetAnomalyExclusionRequestValidator
     implements RequestValidator<GetAnomalyExclusionRulesRequest> {

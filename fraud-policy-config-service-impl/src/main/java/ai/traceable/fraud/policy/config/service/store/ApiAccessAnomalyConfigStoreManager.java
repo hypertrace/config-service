@@ -12,9 +12,9 @@ import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigsReq
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigsResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigResponse;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

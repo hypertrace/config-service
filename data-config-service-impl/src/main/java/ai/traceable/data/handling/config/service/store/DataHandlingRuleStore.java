@@ -4,10 +4,10 @@ import ai.traceable.data.handling.config.service.utils.DataHandlingRuleRankCalcu
 import ai.traceable.data.handling.config.service.v1.DataHandlingRule;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ContextualConfigObject;

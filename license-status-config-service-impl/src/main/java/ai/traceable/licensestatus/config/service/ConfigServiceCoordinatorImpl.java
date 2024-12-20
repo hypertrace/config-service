@@ -6,8 +6,8 @@ import static ai.traceable.licensestatus.config.service.LicenseStatusConstants.L
 import ai.traceable.licensestatus.config.service.v1.LicenseStatus;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;

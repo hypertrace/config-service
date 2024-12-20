@@ -4,12 +4,12 @@ import ai.traceable.risk.config.service.v1.RiskElementConfig;
 import ai.traceable.risk.config.service.v1.RiskFactor;
 import ai.traceable.risk.config.service.v1.RiskFactorConfig;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class RiskFactorListUtils {
   private final RiskFactorConfigUtils riskFactorConfigUtils;

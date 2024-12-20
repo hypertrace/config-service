@@ -2,7 +2,7 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.sessionidentification.config.service.v1.CustomAttributeRule.JwtAttributeExtraction;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

@@ -7,7 +7,7 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
 import ai.traceable.sessionidentification.config.service.v1.MatchOperator;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

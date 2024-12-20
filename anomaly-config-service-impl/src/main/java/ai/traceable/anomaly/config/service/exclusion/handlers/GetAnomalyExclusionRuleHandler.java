@@ -7,11 +7,11 @@ import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConf
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesRequest;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetAnomalyExclusionRulesResponse;
 import ai.traceable.anomaly.config.service.v1.exclusion.GetRulesFilter;
+import jakarta.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class GetAnomalyExclusionRuleHandler {

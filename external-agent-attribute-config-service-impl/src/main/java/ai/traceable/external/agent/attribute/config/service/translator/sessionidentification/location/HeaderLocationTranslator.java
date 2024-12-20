@@ -13,10 +13,10 @@ import ai.traceable.sessionidentification.config.service.v1.MatchCondition;
 import ai.traceable.sessionidentification.config.service.v1.RequestAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
 import ai.traceable.sessionidentification.config.service.v1.RuleCreationSource;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

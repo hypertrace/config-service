@@ -1,9 +1,9 @@
 package ai.traceable.config.service.rest.servlet;
 
+import com.google.inject.Provider;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

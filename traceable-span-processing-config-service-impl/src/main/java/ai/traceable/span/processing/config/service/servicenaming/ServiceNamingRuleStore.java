@@ -5,10 +5,10 @@ import ai.traceable.span.processing.config.service.SpanProcessingConfigConstants
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRuleFilter;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;

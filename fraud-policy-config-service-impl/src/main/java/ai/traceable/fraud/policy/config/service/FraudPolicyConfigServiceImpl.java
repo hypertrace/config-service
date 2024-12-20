@@ -25,8 +25,8 @@ import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfi
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.function.BiFunction;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

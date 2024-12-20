@@ -3,7 +3,7 @@ package ai.traceable.risk.config.service.v2.level.validator;
 import ai.traceable.risk.config.service.v2.RiskConfigServiceRequestValidator;
 import ai.traceable.risk.config.service.v2.RiskLevelConfigValues;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})

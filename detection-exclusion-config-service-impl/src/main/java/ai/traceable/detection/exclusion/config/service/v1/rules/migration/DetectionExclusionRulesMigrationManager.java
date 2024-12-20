@@ -16,6 +16,7 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusi
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.google.common.collect.Sets;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.ContextualKey;

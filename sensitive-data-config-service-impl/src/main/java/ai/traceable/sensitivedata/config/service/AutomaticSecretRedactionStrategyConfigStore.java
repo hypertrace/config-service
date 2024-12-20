@@ -4,8 +4,8 @@ import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils
 import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils.SENSITIVE_DATA_CONFIGURATION;
 
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;

@@ -2,10 +2,10 @@ package ai.traceable.auth.detection.config.service;
 
 import ai.traceable.auth.detection.config.service.impl.DefaultAuthDetectionRule.DeletedDefaultAuthDetectionRule;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;

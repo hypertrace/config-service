@@ -2,11 +2,11 @@ package ai.traceable.api.attribute.override.service.handlers;
 
 import ai.traceable.api.attribute.override.service.ApiAttributeOverridesConfigStore;
 import ai.traceable.api.attribute.override.service.v1.ApiAttributeOverrides;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

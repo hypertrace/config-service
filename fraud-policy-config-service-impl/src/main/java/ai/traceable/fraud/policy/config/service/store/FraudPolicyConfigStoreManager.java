@@ -14,8 +14,8 @@ import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyResponse;
 import io.grpc.Status;
 import io.grpc.StatusException;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

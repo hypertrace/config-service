@@ -30,7 +30,7 @@ import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionRuleResponse;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeRequest;
 import ai.traceable.sensitivedata.config.service.v1.UpdateRedactionStrategyForTypeResponse;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

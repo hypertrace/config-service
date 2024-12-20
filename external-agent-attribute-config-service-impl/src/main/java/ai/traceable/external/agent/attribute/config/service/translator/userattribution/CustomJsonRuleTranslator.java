@@ -8,8 +8,8 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Da
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.google.protobuf.util.JsonFormat.Parser;
+import jakarta.inject.Inject;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

@@ -10,7 +10,7 @@ import ai.traceable.anomaly.config.service.v1.exclusion.CreateAnomalyExclusionRu
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionInfo;
 import ai.traceable.anomaly.config.service.v1.exclusion.EventExclusionType;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class CreateAnomalyExclusionRequestValidator
     implements RequestValidator<CreateAnomalyExclusionRuleRequest> {

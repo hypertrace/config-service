@@ -5,8 +5,8 @@ import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfig;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfigValues;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.DefaultObjectStore;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -6,8 +6,8 @@ import static ai.traceable.sensitivedata.config.service.SensitiveDataConfigUtils
 import ai.traceable.sensitivedata.config.service.v1.InvalidJsonPolicy;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DefaultObjectStore;

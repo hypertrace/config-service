@@ -13,8 +13,8 @@ import ai.traceable.api.attribute.override.service.v1.UpsertApiAttributeOverride
 import ai.traceable.api.attribute.override.service.v1.UpsertApiAttributeOverridesResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import jakarta.inject.Inject;
 import java.util.Map;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

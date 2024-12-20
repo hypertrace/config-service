@@ -9,10 +9,10 @@ import ai.traceable.sensitivedata.config.service.v1.SensitiveDataConfigServiceGr
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.sessionidentification.config.service.validation.SessionIdentificationConfigRequestValidator;
 import com.google.common.util.concurrent.RateLimiter;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

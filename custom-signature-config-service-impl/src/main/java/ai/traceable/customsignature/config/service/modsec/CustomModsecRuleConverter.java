@@ -18,10 +18,10 @@ import ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata;
 import ai.traceable.modsecurity.rule.api.v1.ResponseKeyValueMatchMetadata;
 import ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata;
 import ai.traceable.modsecurity.rule.conversion.ModsecRuleConverter;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class CustomModsecRuleConverter {
 

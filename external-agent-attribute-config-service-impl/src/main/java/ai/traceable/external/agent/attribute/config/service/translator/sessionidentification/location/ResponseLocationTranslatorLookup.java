@@ -2,11 +2,11 @@ package ai.traceable.external.agent.attribute.config.service.translator.sessioni
 
 import ai.traceable.sessionidentification.config.service.v1.ResponseAttributeKeyLocation;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class ResponseLocationTranslatorLookup {
   private final Map<ResponseAttributeKeyLocation, ResponseLocationTranslator> translatorMap;

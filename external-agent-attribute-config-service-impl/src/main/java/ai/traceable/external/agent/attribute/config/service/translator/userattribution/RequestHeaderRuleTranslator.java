@@ -7,10 +7,10 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.Da
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.RequestHeaderUserAttributionRuleData;
+import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})

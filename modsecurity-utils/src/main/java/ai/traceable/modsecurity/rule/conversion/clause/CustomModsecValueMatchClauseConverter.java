@@ -3,8 +3,8 @@ package ai.traceable.modsecurity.rule.conversion.clause;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecValueMatchClause;
 import ai.traceable.modsecurity.rule.secrule.ModsecSecRule;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariable;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 
 public class CustomModsecValueMatchClauseConverter {
 

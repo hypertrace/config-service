@@ -11,6 +11,7 @@ import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.sessionidentification.config.service.v1.SessionIdentificationRule;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +20,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

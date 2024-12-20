@@ -22,8 +22,8 @@ import ai.traceable.ast.hooks.config.service.v1.TestStatusFilter;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.regex.Pattern;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

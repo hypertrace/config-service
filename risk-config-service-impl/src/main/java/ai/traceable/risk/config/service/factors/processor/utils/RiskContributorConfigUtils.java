@@ -6,9 +6,9 @@ import ai.traceable.risk.config.service.v1.RiskFactor;
 import ai.traceable.risk.config.service.v1.RiskFactorConfig;
 import com.google.protobuf.Message;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class RiskContributorConfigUtils extends RiskConfigUtils<RiskContributorConfigs> {
 

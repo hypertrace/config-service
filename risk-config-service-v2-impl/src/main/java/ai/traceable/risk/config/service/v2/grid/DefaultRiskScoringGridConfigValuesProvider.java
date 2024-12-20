@@ -4,10 +4,10 @@ import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
 import ai.traceable.risk.config.service.v2.RiskConfigServiceConfig;
 import ai.traceable.risk.config.service.v2.RiskScoringGridConfigValues;
 import ai.traceable.risk.config.service.v2.grid.validator.RiskScoringGridConfigValidator;
+import com.google.inject.Provider;
 import io.grpc.Status;
-import javax.inject.Inject;
-import javax.inject.Provider;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
 
 @Singleton

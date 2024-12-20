@@ -8,6 +8,7 @@ import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import com.google.common.io.Resources;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
+import jakarta.inject.Inject;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -19,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 
 public class ModsecCrsRulesHandler {
 

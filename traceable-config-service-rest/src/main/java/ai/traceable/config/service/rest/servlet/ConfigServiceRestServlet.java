@@ -1,7 +1,7 @@
 package ai.traceable.config.service.rest.servlet;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 @Singleton

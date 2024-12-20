@@ -4,8 +4,8 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.external.agent.attribute.config.service.v1.GetAgentAttributeRulesRequest;
 import ai.traceable.external.agent.attribute.config.service.v1.GetAgentAttributeRulesResponse;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 
 class ExternalAgentAttributeRuleResponseBuilder {
 

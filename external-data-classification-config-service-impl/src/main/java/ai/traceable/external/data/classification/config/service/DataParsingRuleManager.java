@@ -3,10 +3,10 @@ package ai.traceable.external.data.classification.config.service;
 import ai.traceable.external.data.classification.config.service.v1.DataParsingRule;
 import ai.traceable.external.data.classification.config.service.v1.DataParsingRule.DataParsingMode;
 import ai.traceable.external.data.classification.config.service.v1.GetDataClassificationConfigRequest.AgentCapabilities;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

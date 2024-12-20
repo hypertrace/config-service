@@ -6,8 +6,8 @@ import ai.traceable.api.gateway.config.service.store.ApiRoutesConfigStore;
 import ai.traceable.api.gateway.config.service.v1.ApiRoute;
 import ai.traceable.api.gateway.config.service.v1.DeleteRoutesRequest;
 import ai.traceable.api.gateway.config.service.v1.DeleteRoutesResponse;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

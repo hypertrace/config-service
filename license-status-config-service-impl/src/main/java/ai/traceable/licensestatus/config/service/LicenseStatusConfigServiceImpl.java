@@ -7,7 +7,7 @@ import ai.traceable.licensestatus.config.service.v1.LicenseStatusConfigServiceGr
 import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusRequest;
 import ai.traceable.licensestatus.config.service.v1.UpdateLicenseStatusResponse;
 import io.grpc.stub.StreamObserver;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

@@ -1,8 +1,8 @@
 package ai.traceable.config.service.rest.codegen;
 
+import com.google.inject.Provider;
 import com.google.protobuf.Message;
 import java.lang.reflect.Method;
-import javax.inject.Provider;
 import javax.ws.rs.core.Response;
 import lombok.SneakyThrows;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;

@@ -2,9 +2,9 @@ package ai.traceable.reporting.config.service.v2;
 
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class ReportingConfigManagerImpl implements ReportingConfigManager {

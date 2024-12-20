@@ -9,8 +9,8 @@ import ai.traceable.userattribution.config.service.v1.UserAttributionRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.CustomTokenRuleData;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.DataCase;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation;
+import jakarta.inject.Inject;
 import java.util.stream.Stream;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

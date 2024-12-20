@@ -10,10 +10,10 @@ import ai.traceable.platform.insights.api.v1.QueryInsightsResponse;
 import ai.traceable.platform.insights.api.v1.Value;
 import ai.traceable.sensitivedata.config.service.v1.ParamType;
 import ai.traceable.sensitivedata.config.service.v1.Parameter;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

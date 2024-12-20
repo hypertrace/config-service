@@ -6,8 +6,8 @@ import ai.traceable.span.processing.config.service.v1.ServiceNamingRule;
 import ai.traceable.span.processing.config.service.v1.ServiceNamingRule.Builder;
 import ai.traceable.span.processing.config.service.v1.UpdateServiceNamingRuleRequest;
 import com.google.protobuf.util.Timestamps;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 import org.hypertrace.config.objectstore.ConfigObject;
 

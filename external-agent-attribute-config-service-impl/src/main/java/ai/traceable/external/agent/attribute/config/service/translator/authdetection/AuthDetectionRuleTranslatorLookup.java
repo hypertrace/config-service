@@ -3,12 +3,12 @@ package ai.traceable.external.agent.attribute.config.service.translator.authdete
 import ai.traceable.auth.detection.config.service.v1.AuthDetectionRule;
 import ai.traceable.auth.detection.config.service.v1.Predicate;
 import ai.traceable.auth.detection.config.service.v1.Predicate.PredicateCase;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

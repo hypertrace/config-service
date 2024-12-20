@@ -6,9 +6,9 @@ import ai.traceable.data.protection.config.service.v1.DeleteScopedDataProtection
 import ai.traceable.data.protection.config.service.v1.GetResolvedScopedDataProtectionConfigRequest;
 import ai.traceable.data.protection.config.service.v1.ScopedDataProtectionConfig;
 import ai.traceable.data.protection.config.service.v1.UpsertScopedDataProtectionConfigRequest;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

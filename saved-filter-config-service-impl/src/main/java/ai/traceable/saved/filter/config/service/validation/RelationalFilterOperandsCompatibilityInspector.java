@@ -7,7 +7,7 @@ import ai.traceable.saved.filter.config.service.v1.RelationalFilterCondition;
 import ai.traceable.saved.filter.config.service.validation.SavedFilterValidator.ValidationContext;
 import com.google.protobuf.Value;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.attribute.service.v1.AttributeKind;
 

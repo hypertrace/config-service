@@ -10,8 +10,8 @@ import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRespo
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleResponse;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;

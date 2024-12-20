@@ -5,9 +5,9 @@ import static ai.traceable.external.agent.attribute.config.service.translator.Ag
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope;
 import ai.traceable.userattribution.config.service.v1.UserAttributionRuleScope.UrlScope;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = {@Inject})

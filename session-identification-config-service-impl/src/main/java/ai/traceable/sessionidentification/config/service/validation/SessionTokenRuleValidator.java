@@ -23,8 +23,8 @@ import ai.traceable.sessionidentification.config.service.v1.ValueProjection;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import io.grpc.Status;
+import jakarta.inject.Inject;
 import java.util.List;
-import javax.inject.Inject;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
 

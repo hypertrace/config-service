@@ -8,7 +8,7 @@ import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfi
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;

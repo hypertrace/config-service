@@ -8,9 +8,9 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.Region;
 import ai.traceable.malicioussources.config.service.v1.RuleActionType;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

@@ -16,9 +16,9 @@ import ai.traceable.saved.query.config.service.v1.UpdateSavedQueryResponse;
 import ai.traceable.saved.query.config.service.v1.User;
 import io.grpc.Status;
 import io.grpc.StatusException;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
