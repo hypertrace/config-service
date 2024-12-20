@@ -8,8 +8,9 @@ import ai.traceable.threatscoring.config.service.v1.ScoringLevel;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigs;
 import com.google.inject.Inject;
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +59,8 @@ public class DefaultThreatScoringConfig {
 
     String line;
     List<EventConfidenceMapping> eventConfidenceMappingList = new ArrayList<>();
-    try (BufferedReader br = new BufferedReader(new FileReader(resource.getPath()))) {
+    try (InputStream inputStream = resource.openStream();
+        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
       br.readLine(); // reads the column name
       while ((line = br.readLine()) != null) {
         String[] values = line.split(DELIMITER);
