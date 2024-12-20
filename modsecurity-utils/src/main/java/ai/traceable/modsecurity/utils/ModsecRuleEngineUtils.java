@@ -34,7 +34,7 @@ public class ModsecRuleEngineUtils {
   public static Status corazaValidate(String modsecRuleBlob) {
     String wafID = "testWaf";
     try {
-      client.intWaf(wafID, modsecRuleBlob, true);
+      client.intWaf(wafID, modsecRuleBlob, false);
       return Status.OK;
     } catch (Exception e) {
       return Status.INVALID_ARGUMENT
