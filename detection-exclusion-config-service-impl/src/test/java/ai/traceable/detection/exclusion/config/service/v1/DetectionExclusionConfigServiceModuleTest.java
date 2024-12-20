@@ -41,16 +41,19 @@ class DetectionExclusionConfigServiceModuleTest {
         .thenReturn(
             ConfigFactory.parseMap(
                 Map.of("host", "localhost", "port", "50059", "request.timeout", "10s")));
-    when(mockConfig.getConfig("entity.fetcher.cache.service.mapping.cache"))
+    when(mockConfig.getConfig("entity.fetcher.cache"))
         .thenReturn(
             ConfigFactory.parseString(
-                "entity.fetcher.cache = {\n"
-                    + "  service.mapping.cache = {\n"
+                "  service.mapping.cache = {\n"
                     + "    maxSize = 1000\n"
                     + "    refreshAfterWriteDuration = 10m\n"
                     + "    expireAfterWriteDuration = 1h\n"
                     + "  }\n"
-                    + "}\n"));
+                    + "  api.mapping.cache = {\n"
+                    + "    maxSize = 1000\n"
+                    + "    refreshAfterWriteDuration = 10m\n"
+                    + "    expireAfterAccessDuration = 1h\n"
+                    + "  }\n"));
     doReturn(mock(ManagedChannel.class))
         .when(mockGrpcChannelRegistry)
         .forPlaintextAddress("localhost", 50061);

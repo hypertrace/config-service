@@ -40,4 +40,24 @@ public class EntityQueryServiceConfig {
   public String getServiceEnvironmentColumnName() {
     return this.attributesMapConfig.getString("service.environment");
   }
+
+  public String getApiIdColumnName() {
+    return this.attributesMapConfig.getString("api.id");
+  }
+
+  public String getApiNameColumnName() {
+    return this.attributesMapConfig.getString("api.name");
+  }
+
+  public String getApiUrlPatternColumnName() {
+    return this.attributesMapConfig.getString("api.url.pattern");
+  }
+
+  public String getApiResolvedUrlPatternsColumnName() {
+    return this.attributesMapConfig.getString("api.resolved.url.patterns");
+  }
+
+  public String getApiLabelsColumnName() {
+    return this.attributesMapConfig.getString("api.labels");
+  }
 }

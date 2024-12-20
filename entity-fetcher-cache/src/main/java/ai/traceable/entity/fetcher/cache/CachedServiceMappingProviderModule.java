@@ -28,6 +28,7 @@ public class CachedServiceMappingProviderModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(CachedServiceMappingProvider.class).to(DefaultCachedServiceMappingProvider.class);
+    bind(CachedApiMappingProvider.class).to(DefaultCachedApiMappingProvider.class);
     bind(Clock.class).toInstance(Clock.systemUTC());
   }
 
