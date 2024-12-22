@@ -18,7 +18,7 @@ dependencies {
 
   implementation(commonLibs.hypertrace.documentstore)
   implementation(commonLibs.hypertrace.grpcutils.context)
-  implementation(localLibs.hypertrace.framework.documentstore.metrics)
+  implementation(commonLibs.hypertrace.framework.documentstore.metrics.jakarta)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
