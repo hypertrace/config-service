@@ -1,7 +1,7 @@
 package org.hypertrace.span.processing.config.service.store;
 
-import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

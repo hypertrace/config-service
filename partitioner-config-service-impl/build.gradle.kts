@@ -8,12 +8,12 @@ dependencies {
   api(projects.partitionerConfigServiceApi)
   implementation(commonLibs.protobuf.javautil)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.hypertrace.documentstore)
-  implementation(commonLibs.hypertrace.framework.grpc)
-  implementation(commonLibs.hypertrace.framework.documentstore.metrics)
+  implementation(commonLibs.hypertrace.framework.grpc.jakarta)
+  implementation(commonLibs.hypertrace.framework.documentstore.metrics.jakarta)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

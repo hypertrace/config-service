@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-  api(commonLibs.hypertrace.framework.grpc)
+  api(commonLibs.hypertrace.framework.grpc.jakarta)
 
   implementation(projects.configServiceChangeEventGenerator)
   implementation(commonLibs.hypertrace.documentstore)
@@ -15,5 +15,5 @@ dependencies {
   implementation(projects.notificationRuleConfigServiceImpl)
   implementation(projects.notificationChannelConfigServiceImpl)
   implementation(projects.spanProcessingConfigServiceImpl)
-  implementation(commonLibs.hypertrace.framework.documentstore.metrics)
+  implementation(commonLibs.hypertrace.framework.documentstore.metrics.jakarta)
 }
