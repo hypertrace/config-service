@@ -2699,6 +2699,49 @@ public class RateLimitingRulesValidatorTest {
     Status status = Status.fromThrowable(throwable);
     assertEquals("Block action unsupported on aggregation across users", status.getDescription());
 
+    // aggregation across all users supported for block action using threshold duration
+    ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .addRegionIdentifiers(
+                                        Region.newBuilder().setCountryIsoCode("ssfsd")))))
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Block.newBuilder()
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .setUseThresholdDuration(true)
+                                    .build())
+                            .build())
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(
+                                UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .build();
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest, List.of()));
+
     // aggregation across all users supported for alert
     ThresholdActionConfig thresholdActionConfig =
         ruleData.getThresholdActionConfigsList().get(0).toBuilder()

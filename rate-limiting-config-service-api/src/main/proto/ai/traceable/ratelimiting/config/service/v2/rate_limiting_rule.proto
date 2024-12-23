@@ -349,19 +349,59 @@ message Action {
     Block block = 1;
     Alert alert = 2;
     Allow allow = 3;
+    MarkForTesting mark_for_testing = 4;
   }
 
   message Block {
     EventSeverity event_severity = 1;
     optional string duration_iso = 2;
+    optional bool use_threshold_duration = 3; // use window duration configured in threshold config
   }
 
   message Alert {
     EventSeverity event_severity = 1;
+    oneof effect {
+      AgentRuleEffect agent_rule_effect = 3;
+    }
   }
 
   message Allow {
     optional string duration_iso = 1;
+  }
+
+  message MarkForTesting {
+    EventSeverity event_severity = 1;
+    oneof effect {
+      AgentRuleEffect agent_rule_effect = 2;
+    }
+  }
+
+  message AgentRuleEffect {
+    repeated AgentModification agent_modifications = 1;
+  }
+
+  message AgentModification {
+    oneof modification {
+      HeaderInjection header_injection = 1;
+    }
+  }
+
+  message HeaderInjection {
+    MatchCategory header_category = 1;
+    string header_name = 2;
+    FieldValue value = 3;
+  }
+
+  message FieldValue {
+    oneof value {
+      string static_value = 1;
+    }
+  }
+
+  enum MatchCategory {
+    MATCH_CATEGORY_UNSPECIFIED = 0;
+    MATCH_CATEGORY_REQUEST = 1;
+    MATCH_CATEGORY_RESPONSE = 2;
   }
 
   enum EventSeverity {

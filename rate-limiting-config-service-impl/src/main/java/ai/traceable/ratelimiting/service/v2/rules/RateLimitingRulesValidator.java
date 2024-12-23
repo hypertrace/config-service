@@ -371,15 +371,23 @@ public class RateLimitingRulesValidator implements RulesValidator {
       case ALERT:
         break;
       case BLOCK:
-        if (aggregateAcrossAllUsersPresent) {
-          validatorUtils.throwInvalidArgumentException(
-              "Block action unsupported on aggregation across users");
-        }
+        validateBlockAction(aggregateAcrossAllUsersPresent, action.getBlock());
         break;
       default:
         validatorUtils.throwInvalidArgumentException(
             String.format(
                 "Invalid Case in %s:%n %s", validatorUtils.getName(action), printMessage(action)));
+    }
+  }
+
+  private void validateBlockAction(boolean aggregateAcrossAllUsersPresent, Action.Block block) {
+    if (aggregateAcrossAllUsersPresent && !block.hasUseThresholdDuration()) {
+      validatorUtils.throwInvalidArgumentException(
+          "Block action unsupported on aggregation across users");
+    }
+    if (block.hasDurationIso() && block.hasUseThresholdDuration()) {
+      validatorUtils.throwInvalidArgumentException(
+          "Either duration or use threshold duration can be configured. Both of them cannot be configured together");
     }
   }
 }
