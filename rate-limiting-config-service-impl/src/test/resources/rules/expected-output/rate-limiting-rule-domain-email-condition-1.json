@@ -35,8 +35,8 @@
                       }]
                     },
                     "binary_operator": {
-                      "list_value": ["john@abc.com", "victor@xyz.com"],
-                      "match_operator": "MATCH_OPERATOR_IN"
+                      "string_value": "gmail.com",
+                      "match_operator": "MATCH_OPERATOR_CONTAINS"
                     }
                   }
                 }, {
@@ -53,12 +53,31 @@
                       }]
                     },
                     "binary_operator": {
-                      "regex": "user-id-1",
+                      "string_value": "yahoo.com",
+                      "match_operator": "MATCH_OPERATOR_CONTAINS"
+                    }
+                  }
+                }, {
+                  "structured_match_condition": {
+                    "lhs": {
+                      "name": "lhs",
+                      "type": "FIELD_TYPE_STR",
+                      "rules": [{
+                        "transformation_config": {
+                          "jexl_expression": {
+                            "jexl_expression": "TRACEABLE_USER_ID"
+                          }
+                        }
+                      }]
+                    },
+                    "binary_operator": {
+                      "regex": "john|victpr",
                       "match_operator": "MATCH_OPERATOR_LIKE"
                     }
                   }
                 }]
-              }
+              },
+              "negate": true
             }]
           }
         },

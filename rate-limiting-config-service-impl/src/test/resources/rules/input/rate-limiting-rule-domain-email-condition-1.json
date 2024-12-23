@@ -33,14 +33,16 @@
         "children": [
           {
             "leaf_condition": {
-              "user_id_condition": {
-                "user_id_regexes": [
-                  "user-id-1"
+              "email_domain_condition": {
+                "email_domains": [
+                    "gmail.com",
+                    "yahoo.com"
                 ],
-                "user_ids": [
-                  "john@abc.com",
-                  "victor@xyz.com"
-                ]
+                "email_regexes": [
+                  "john",
+                  "victpr"
+                ],
+                "exclude": true
               }
             }
           }

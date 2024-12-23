@@ -21,5 +21,7 @@ public class RateLimitingConditionModule extends AbstractModule {
     multiBinder.addBinding().to(RateLimitingIpConnectionTypeConditionConverter.class);
     multiBinder.addBinding().to(RateLimitingIpOrganisationConditionConverter.class);
     multiBinder.addBinding().to(RateLimitingIpReputationConditionConverter.class);
+    multiBinder.addBinding().to(RateLimitingEmailDomainConditionConverter.class);
+    multiBinder.addBinding().to(RateLimitingUserAgentConditionConverter.class);
   }
 }

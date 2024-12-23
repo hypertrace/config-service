@@ -29,13 +29,13 @@
                       "rules": [{
                         "transformation_config": {
                           "jexl_expression": {
-                            "jexl_expression": "TRACEABLE_USER_ID"
+                            "jexl_expression": "$s.getUserAgent()"
                           }
                         }
                       }]
                     },
                     "binary_operator": {
-                      "list_value": ["john@abc.com", "victor@xyz.com"],
+                      "list_value": ["Googlebot", "YandexAccessibilityBot"],
                       "match_operator": "MATCH_OPERATOR_IN"
                     }
                   }
@@ -47,18 +47,19 @@
                       "rules": [{
                         "transformation_config": {
                           "jexl_expression": {
-                            "jexl_expression": "TRACEABLE_USER_ID"
+                            "jexl_expression": "$s.getUserAgent()"
                           }
                         }
                       }]
                     },
                     "binary_operator": {
-                      "regex": "user-id-1",
+                      "regex": "mozilla|chrome",
                       "match_operator": "MATCH_OPERATOR_LIKE"
                     }
                   }
                 }]
-              }
+              },
+              "negate": true
             }]
           }
         },

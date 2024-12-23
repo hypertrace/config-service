@@ -33,14 +33,16 @@
         "children": [
           {
             "leaf_condition": {
-              "user_id_condition": {
-                "user_id_regexes": [
-                  "user-id-1"
+              "user_agent_condition": {
+                "user_agents": [
+                  "Googlebot",
+                  "YandexAccessibilityBot"
                 ],
-                "user_ids": [
-                  "john@abc.com",
-                  "victor@xyz.com"
-                ]
+                "user_agent_regexes": [
+                  "mozilla",
+                  "chrome"
+                ],
+                "exclude": true
               }
             }
           }
