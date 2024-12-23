@@ -15,7 +15,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.re2j)

@@ -15,7 +15,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.typesafe.config)
@@ -24,7 +24,7 @@ dependencies {
 
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
   // https://traceableai.atlassian.net/browse/ENG-10685
   // anomaly-config-service should be carved out soon to avoid chances of dependency loop..
   implementation(commonLibs.traceable.licensemetering.api)

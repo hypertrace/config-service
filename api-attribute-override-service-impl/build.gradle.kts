@@ -12,7 +12,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.typesafe.config)

@@ -20,7 +20,7 @@ dependencies {
   implementation(commonLibs.traceable.platform.eventInvalidationCache)
 
   implementation(commonLibs.guava)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.typesafe.config)
 
   testImplementation(commonLibs.junit.jupiter)

@@ -8,7 +8,7 @@ dependencies {
   api(projects.externalUserAttributionConfigServiceApi)
   api(commonLibs.typesafe.config)
   implementation(projects.userAttributionConfigServiceApi)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.grpcutils.context)

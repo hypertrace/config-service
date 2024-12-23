@@ -9,7 +9,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(localLibs.hypertrace.configservice.api)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
@@ -20,7 +20,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

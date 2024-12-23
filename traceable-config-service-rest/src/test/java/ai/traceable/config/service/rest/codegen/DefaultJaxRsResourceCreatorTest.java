@@ -2,8 +2,8 @@ package ai.traceable.config.service.rest.codegen;
 
 import ai.traceable.config.service.rest.codegen.error.JaxRsResourceGenerationException;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
-import com.google.inject.Provider;
-import javax.ws.rs.Path;
+import jakarta.inject.Provider;
+import jakarta.ws.rs.Path;
 import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.Assertions;

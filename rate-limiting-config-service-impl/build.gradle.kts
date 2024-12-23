@@ -20,7 +20,7 @@ dependencies {
 
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.re2j)
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)

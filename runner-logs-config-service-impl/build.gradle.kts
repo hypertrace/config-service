@@ -10,7 +10,7 @@ dependencies {
   api(localLibs.hypertrace.configservice.changeeventgenerator)
 
   implementation(projects.runnerLogsConfigServiceApi)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
 
   implementation(localLibs.hypertrace.configservice.validation)

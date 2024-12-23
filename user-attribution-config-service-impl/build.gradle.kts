@@ -10,7 +10,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.featureCachingClient)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.re2j)
   implementation(commonLibs.protobuf.javautil)

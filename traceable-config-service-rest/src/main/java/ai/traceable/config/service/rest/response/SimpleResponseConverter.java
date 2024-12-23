@@ -6,9 +6,9 @@ import static ai.traceable.config.service.rest.v1.HttpResponseMetadata.StatusCas
 import ai.traceable.config.service.rest.v1.HttpResponseMetadata;
 import com.google.common.collect.ImmutableMap;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.Map;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

@@ -1,10 +1,10 @@
 package ai.traceable.config.service.rest.response;
 
 import ai.traceable.config.service.rest.v1.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
 import java.util.List;
 import java.util.Optional;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.http.HttpCookie;
 

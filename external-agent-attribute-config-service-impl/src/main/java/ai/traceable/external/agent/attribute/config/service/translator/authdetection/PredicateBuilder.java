@@ -13,8 +13,8 @@ import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Pro
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.LogicalOperator;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.LogicalPredicate;
 import ai.traceable.external.agent.attribute.config.service.v1.AttributeRule.Projector.ConditionalProjector.Predicate.StringPredicate;
-import com.google.inject.Provider;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

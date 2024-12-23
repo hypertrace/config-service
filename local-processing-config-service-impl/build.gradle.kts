@@ -16,7 +16,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.api)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.spanProcessingUtils)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.typesafe.config)
@@ -31,7 +31,7 @@ dependencies {
   implementation(commonLibs.traceable.apinaming.model)
   implementation(commonLibs.traceable.platform.deepDataStore)
   implementation(commonLibs.traceable.platform.trainingEvaluationFramework)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

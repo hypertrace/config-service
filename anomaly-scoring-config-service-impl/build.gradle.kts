@@ -9,7 +9,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(localLibs.hypertrace.configservice.api)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)

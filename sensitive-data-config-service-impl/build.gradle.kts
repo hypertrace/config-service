@@ -23,7 +23,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(commonLibs.re2j)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.uuidcreator)
 
   annotationProcessor(commonLibs.lombok)

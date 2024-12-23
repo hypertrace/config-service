@@ -8,7 +8,7 @@ dependencies {
   api(commonLibs.grpc.api)
   api(commonLibs.typesafe.config)
   implementation(projects.astConfigServiceApi)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.re2j)
 

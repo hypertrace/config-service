@@ -4,9 +4,9 @@ import ai.traceable.config.service.rest.v1.HttpResponseMetadata;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
 import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Response;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor_ = @Inject)

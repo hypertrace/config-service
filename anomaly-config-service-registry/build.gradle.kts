@@ -9,7 +9,7 @@ dependencies {
   api(commonLibs.typesafe.config)
 
   implementation(projects.modsecurityUtils)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.re2j)
   implementation(commonLibs.jackson.yaml)

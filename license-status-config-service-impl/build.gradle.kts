@@ -7,7 +7,7 @@ plugins {
 dependencies {
   api(projects.licenseStatusConfigServiceApi)
   implementation(localLibs.hypertrace.configservice.api)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.typesafe.config)
@@ -21,7 +21,7 @@ dependencies {
   implementation(commonLibs.traceable.licensemetering.api)
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)

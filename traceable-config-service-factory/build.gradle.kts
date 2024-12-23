@@ -3,8 +3,8 @@ plugins {
 }
 
 dependencies {
-  api(commonLibs.hypertrace.framework.grpc)
-  api(commonLibs.hypertrace.framework.http)
+  api(commonLibs.hypertrace.framework.grpc.jakarta)
+  api(commonLibs.hypertrace.framework.http.jakarta)
 
   implementation(localLibs.hypertrace.configservice.factory)
   implementation(localLibs.hypertrace.configservice.impl)

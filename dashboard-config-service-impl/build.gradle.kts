@@ -8,7 +8,7 @@ dependencies {
 
   implementation(projects.dashboardConfigServiceApi)
   implementation(localLibs.hypertrace.configservice.api)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.hypertrace.grpcutils.context)

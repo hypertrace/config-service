@@ -11,7 +11,7 @@ dependencies {
 
   implementation(projects.configUtils)
   implementation(projects.fraudDatamodelDerivationConfigServiceApi)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
 
   implementation(localLibs.hypertrace.configservice.validation)

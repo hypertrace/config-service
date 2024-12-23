@@ -11,7 +11,7 @@ dependencies {
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.kafkaStreams.eventListener)

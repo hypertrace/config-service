@@ -21,10 +21,10 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(commonLibs.kafka.streams.protobuf.serde)
   implementation(commonLibs.commons.lang)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.bundles.grpc.api)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.junit)

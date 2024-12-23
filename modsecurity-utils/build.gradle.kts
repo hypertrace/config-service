@@ -44,7 +44,7 @@ dependencies {
   implementation(commonLibs.commons.net)
   implementation(commonLibs.commons.validator)
   implementation(commonLibs.typesafe.config)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.json.path)
   testImplementation(commonLibs.commons.lang)
   implementation(commonLibs.traceable.modsecurity.jni)

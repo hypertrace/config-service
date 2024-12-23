@@ -20,9 +20,9 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.objectstore)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
   implementation(commonLibs.slf4j2.api)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(projects.configUtils)
 

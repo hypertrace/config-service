@@ -5,7 +5,7 @@ plugins {
 }
 
 dependencies {
-  api(commonLibs.guice)
+  api(commonLibs.guice7)
   api(commonLibs.typesafe.config)
 
   implementation(commonLibs.hypertrace.grpcutils.context)

@@ -13,7 +13,7 @@ dependencies {
   implementation(projects.authDetectionConfigServiceApi)
   implementation(projects.jwtExtractionConfigServiceApi)
   implementation(projects.traceableSpanProcessingConfigServiceApi)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.grpcutils.context)

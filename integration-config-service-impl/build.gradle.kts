@@ -14,7 +14,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.grpcutils.context)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(projects.configUtils)
   implementation(commonLibs.slf4j2.api)
 

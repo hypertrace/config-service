@@ -23,7 +23,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.modsecurityUtils)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.typesafe.config)
@@ -34,7 +34,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(commonLibs.hypertrace.entityservice.api)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

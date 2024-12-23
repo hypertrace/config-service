@@ -17,7 +17,7 @@ dependencies {
   compileOnly(commonLibs.lombok)
 
   implementation(commonLibs.guava)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
 

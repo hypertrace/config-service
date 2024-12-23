@@ -4,9 +4,9 @@ import ai.traceable.risk.config.service.v2.RiskConfigBuilder;
 import ai.traceable.risk.config.service.v2.RiskConfigServiceConfig;
 import ai.traceable.risk.config.service.v2.RiskContributorConfigs;
 import ai.traceable.risk.config.service.v2.contributors.validator.RiskContributorConfigsValidator;
-import com.google.inject.Provider;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import lombok.AllArgsConstructor;
 

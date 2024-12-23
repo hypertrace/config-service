@@ -10,7 +10,7 @@ dependencies {
   implementation(projects.savedFilterConfigServiceApi)
   implementation(projects.configUtils)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.hypertrace.grpcutils.context)

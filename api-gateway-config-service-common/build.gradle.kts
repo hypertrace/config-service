@@ -8,7 +8,7 @@ plugins {
 dependencies {
   api(projects.apiGatewayConfigServiceApi)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)

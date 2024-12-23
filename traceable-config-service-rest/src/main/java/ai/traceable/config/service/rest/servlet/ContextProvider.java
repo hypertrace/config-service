@@ -5,12 +5,12 @@ import static org.hypertrace.core.grpcutils.context.RequestContextConstants.REQU
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Streams;
-import com.google.inject.Provider;
 import com.google.inject.servlet.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import java.util.function.Supplier;
-import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 

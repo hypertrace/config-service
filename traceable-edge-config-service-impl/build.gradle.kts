@@ -15,7 +15,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
 
   implementation(localLibs.hypertrace.configservice.validation)
@@ -23,7 +23,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
   implementation(localLibs.hypertrace.configservice.protoconverter)
 
   annotationProcessor(commonLibs.lombok)

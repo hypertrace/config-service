@@ -10,7 +10,7 @@ dependencies {
   implementation(projects.apiGatewayConfigServiceCommon)
   implementation(projects.configUtils)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.hypertrace.grpcutils.context)

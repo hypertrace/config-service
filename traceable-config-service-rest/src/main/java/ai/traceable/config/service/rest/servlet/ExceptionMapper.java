@@ -1,20 +1,20 @@
 package ai.traceable.config.service.rest.servlet;
 
-import com.google.inject.Provider;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Optional;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-@javax.ws.rs.ext.Provider
+@jakarta.ws.rs.ext.Provider
 @AllArgsConstructor(onConstructor_ = @Inject)
-public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Throwable> {
+public class ExceptionMapper implements jakarta.ws.rs.ext.ExceptionMapper<Throwable> {
 
   private final Provider<RequestContext> requestContextProvider;
 

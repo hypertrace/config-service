@@ -16,7 +16,7 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(projects.configUtils)
 
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
 

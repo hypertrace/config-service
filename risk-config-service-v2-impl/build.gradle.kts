@@ -10,7 +10,7 @@ dependencies {
   implementation(projects.riskConfigServiceApi)
   implementation(localLibs.hypertrace.configservice.api)
   implementation(localLibs.hypertrace.configservice.labelsConfigServiceApi)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.guava)
   implementation(commonLibs.commons.lang)
   implementation(commonLibs.protobuf.javautil)
@@ -24,7 +24,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(localLibs.hypertrace.configservice.validation)
-  implementation(commonLibs.hypertrace.framework.metrics)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

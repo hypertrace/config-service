@@ -26,7 +26,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
 
   implementation(commonLibs.jackson.databind)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.hypertrace.documentstore)

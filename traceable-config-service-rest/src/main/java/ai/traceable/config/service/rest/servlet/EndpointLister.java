@@ -1,7 +1,7 @@
 package ai.traceable.config.service.rest.servlet;
 
+import jakarta.ws.rs.Path;
 import java.util.Set;
-import javax.ws.rs.Path;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 

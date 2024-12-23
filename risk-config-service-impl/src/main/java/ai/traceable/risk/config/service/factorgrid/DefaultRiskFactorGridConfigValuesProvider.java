@@ -3,9 +3,9 @@ package ai.traceable.risk.config.service.factorgrid;
 import ai.traceable.risk.config.service.RiskConfigServiceConfig;
 import ai.traceable.risk.config.service.processor.RiskConfigUtils;
 import ai.traceable.risk.config.service.v1.RiskFactorGridConfigValues;
-import com.google.inject.Provider;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 
 public class DefaultRiskFactorGridConfigValuesProvider
     implements Provider<RiskFactorGridConfigValues> {

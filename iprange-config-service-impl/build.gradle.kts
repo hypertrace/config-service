@@ -13,7 +13,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.api)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
-  implementation(commonLibs.guice)
+  implementation(commonLibs.guice7)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.uuidcreator)
