@@ -321,6 +321,7 @@ message MetadataTrainingConfig {
     CorrelationAttributeTrainingConfig correlation_attribute = 29;
     NonAsciiUnicodeCharactersTrainingConfig non_ascii_unicode_characters = 31;
     ResponseContentTrainingConfig response_content = 32;
+    ResponseDurationTrainingConfig response_duration = 33;
   }
 }
 
@@ -950,4 +951,8 @@ message UserIdData {
     bool user_attribution_extracted_id_from_jwt = 2;
     string user_id_custom_attribute = 3;
   }
+}
+
+message ResponseDurationTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
 }

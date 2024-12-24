@@ -164,6 +164,7 @@ message ApiDefinitionMetadataAnomalyDetectionConfig {
     JwtAnomalyConfig jwt = 14;
     SpecialCharacterAnomalyConfig special_character = 16;
     ContentExplosionAnomalyConfig content_explosion = 17;
+    ResponseDurationAnomalyConfig response_duration = 18;
   }
   AnomalySubRuleConfigMap sub_rule_configs = 15;
 }
@@ -575,4 +576,8 @@ message UserIdData {
     bool user_attribution_extracted_id_from_jwt = 2;
     string user_id_custom_attribute = 3;
   }
+}
+
+message ResponseDurationAnomalyConfig {
+  optional int32 max_duration_difference = 1;
 }
