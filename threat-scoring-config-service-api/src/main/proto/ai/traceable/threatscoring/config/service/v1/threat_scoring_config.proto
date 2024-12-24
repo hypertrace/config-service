@@ -17,6 +17,9 @@ message EventConfidenceScoringConfig {
   EventConfidenceMatrixConfig event_confidence_matrix_config = 1;
   MaliciousSpanConfidenceScoring malicious_span_confidence_scoring = 2;
   AnomalousEventConfidenceConfig anomalous_event_confidence_config = 3;
+  ResponseConfidenceConfig response_confidence_config = 4;
+  ApiTrendConfidenceConfig api_trend_confidence_config = 5;
+  ActorMaliciousConfidenceConfig actor_malicious_confidence_config = 6;
 }
 
 //to be added later
@@ -43,9 +46,24 @@ message AnomalousEventConfidenceConfig {
   int32 min_number_of_unique_unexpected_characters = 4;
 }
 
+message ResponseConfidenceConfig {
+  ScoringLevelConfig level_config = 1;
+}
+
+message ApiTrendConfidenceConfig {
+  ScoringLevelConfig level_config = 1;
+}
+
+message ActorMaliciousConfidenceConfig {
+  IpReputationFactorMapping ip_reputation_factor_mapping = 1;
+  int32 actor_trend_factor = 2;
+  ScoringLevelConfig level_config = 3;
+}
+
 message ScoringLevelConfig {
-  int32 medium_level_min_score = 1;
-  int32 high_level_min_score = 2;
+  int32 medium_level_min_score = 1; // score is between 0-100
+  int32 high_level_min_score = 2; // score is between 0-100
+  int32 max_normalized_score = 3;
 }
 
 message ThreatScoringConfigScope {
@@ -63,4 +81,11 @@ enum ScoringLevel {
   SCORING_LEVEL_LOW = 1;
   SCORING_LEVEL_MEDIUM = 2;
   SCORING_LEVEL_HIGH = 3;
+}
+
+message IpReputationFactorMapping {
+  double low_ip_reputation_factor = 1;
+  double medium_ip_reputation_factor = 2;
+  double high_ip_reputation_factor = 3;
+  double critical_ip_reputation_factor = 4;
 }
