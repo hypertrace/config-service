@@ -9,9 +9,11 @@ import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY_SIZE;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_COOKIES_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_BODY;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_BODY_SIZE;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_COOKIES_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_STATUS_CODE;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_URL;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_USER_AGENT;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
@@ -44,12 +46,14 @@ import io.grpc.Status;
 import java.util.List;
 
 public class ValidatorUtils {
-  private static List<KeyValueCondition.Type> KEY_NULL_CONDITION_TYPES =
+  public static final List<KeyValueCondition.Type> KEY_NULL_CONDITION_TYPES =
       List.of(
           TYPE_URL,
           TYPE_HOST,
           TYPE_HTTP_METHOD,
           TYPE_USER_AGENT,
+          TYPE_STATUS_CODE,
+          TYPE_RESPONSE_BODY,
           TYPE_REQUEST_BODY,
           TYPE_RESPONSE_BODY_SIZE,
           TYPE_REQUEST_BODY_SIZE,

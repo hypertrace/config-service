@@ -1,0 +1,43 @@
+{
+  "id": "rate-limiting-rule-id",
+  "data": {
+    "category": "CATEGORY_RATE_LIMITING",
+    "name": "test-policy",
+    "enabled": true,
+    "condition": {
+      "leafCondition": {
+        "keyValueCondition": {
+          "type": "TYPE_URL",
+          "valueCondition": {
+            "operator": "MATCH_OPERATOR_MATCHES_REGEX",
+            "value": "https://www.abc.com/.*"
+          }
+        }
+      }
+    },
+    "thresholdActionConfigs": [{
+      "resourceAccessThresholdConfigs": [{
+        "userAggregateType": "USER_AGGREGATE_TYPE_PER_USER",
+        "apiAggregateType": "API_AGGREGATE_TYPE_PER_ENDPOINT",
+        "rollingWindowThresholdConfig": {
+          "countAllowed": "100",
+          "durationIso": "PT1M"
+        }
+      }],
+      "actions": [{
+        "block": {
+          "eventSeverity": "EVENT_SEVERITY_CRITICAL",
+          "durationIso": "PT1H"
+        }
+      }]
+    }],
+    "ruleConfigScope": {
+      "environmentScope": {
+        "environmentIds": ["test-env"]
+      }
+    },
+    "ruleStatus": {
+      "ruleCreationSource": "RULE_SOURCE_TRACEABLE"
+    }
+  }
+}
