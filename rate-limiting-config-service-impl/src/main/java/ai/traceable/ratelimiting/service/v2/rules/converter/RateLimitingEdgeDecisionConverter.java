@@ -4,6 +4,10 @@ import static ai.traceable.edge.decision.config.service.VariableConstants.USER_A
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
 import static ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType.AGGREGATION_TYPE_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.BLOCK;
+import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.MARK_FOR_TESTING;
+import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
+import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_RESPONSE;
 import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT;
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_PER_USER;
 import static java.util.function.UnaryOperator.identity;
@@ -11,6 +15,7 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toMap;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
+import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.edge.decision.config.service.v1.AggregateThresholdRule;
@@ -26,6 +31,9 @@ import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
 import ai.traceable.edge.decision.config.service.v1.LogicalMatchCondition;
 import ai.traceable.edge.decision.config.service.v1.LogicalMatchOperator;
 import ai.traceable.edge.decision.config.service.v1.MatchCondition;
+import ai.traceable.edge.decision.config.service.v1.PayloadDecoration;
+import ai.traceable.edge.decision.config.service.v1.RequestHeaderInjection;
+import ai.traceable.edge.decision.config.service.v1.ResponseHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
@@ -37,10 +45,12 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
+import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingConditionConverter;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.protobuf.Duration;
+import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +58,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -57,6 +68,10 @@ public class RateLimitingEdgeDecisionConverter {
   private static final EdgeDecision BLOCK_EDGE_DECISION =
       EdgeDecision.newBuilder()
           .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
+          .build();
+  private static final EdgeDecision ALLOW_EDGE_DECISION =
+      EdgeDecision.newBuilder()
+          .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_ALLOW)
           .build();
 
   private final Map<ConditionCase, RateLimitingConditionConverter> conditionConverterMap;
@@ -91,25 +106,92 @@ public class RateLimitingEdgeDecisionConverter {
           data.hasCondition()
               ? Optional.of(buildMatchCondition(requestContext, data.getCondition()))
               : Optional.empty();
-      return getResourceAccessThresholdConfigs(data).stream()
-          .map(
-              resourceAccessThresholdConfig -> {
-                EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
-                builder.setId(rateLimitingRule.getId());
-                builder.setName(data.getName());
-                builder.setRuleStatus(edgeDecisionRuleStatus);
-                builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
-                maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
-                builder.setRuleDecision(BLOCK_EDGE_DECISION);
-                builder.setRuleDefinition(
-                    buildRuleDefinition(resourceAccessThresholdConfig, mayBeMatchCondition));
-                return builder.build();
+      return getThresholdActionConfigs(data)
+          .flatMap(
+              action -> {
+                EdgeDecision edgeDecision = buildEdgeDecision(action);
+                return getResourceAccessThresholdConfigsList(action)
+                    .map(
+                        resourceAccessThresholdConfig -> {
+                          EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
+                          builder.setId(rateLimitingRule.getId());
+                          builder.setName(data.getName());
+                          builder.setRuleStatus(edgeDecisionRuleStatus);
+                          builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
+                          maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
+                          builder.setRuleDecision(edgeDecision);
+                          builder.setRuleDefinition(
+                              buildRuleDefinition(
+                                  resourceAccessThresholdConfig, mayBeMatchCondition));
+                          return builder.build();
+                        });
               })
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception ex) {
       log.warn("Unable to convert rate limiting rule: {}", rateLimitingRule, ex);
       return Collections.emptyList();
     }
+  }
+
+  private EdgeDecision buildEdgeDecision(ThresholdActionConfig thresholdActionConfig) {
+    Optional<Action> mayBeAction = filterActions(thresholdActionConfig);
+    if (mayBeAction.isEmpty()) {
+      // should never happen
+      throw new IllegalArgumentException("unable to find relevant action in threshold config");
+    }
+    Action action = mayBeAction.get();
+    if (action.hasBlock()) {
+      return BLOCK_EDGE_DECISION;
+    } else {
+      return ALLOW_EDGE_DECISION.toBuilder()
+          .addAllDecorations(buildPayloadDecorations(action))
+          .build();
+    }
+  }
+
+  private List<PayloadDecoration> buildPayloadDecorations(Action action) {
+    return action.getMarkForTesting().getAgentRuleEffect().getAgentModificationsList().stream()
+        .map(Action.AgentModification::getHeaderInjection)
+        .map(
+            headerInjection -> {
+              if (headerInjection.getHeaderCategory().equals(MATCH_CATEGORY_REQUEST)) {
+                return PayloadDecoration.newBuilder()
+                    .setRequestHeaderInjection(
+                        RequestHeaderInjection.newBuilder()
+                            .setHeaderKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue(headerInjection.getHeaderName())))
+                            .setHeaderValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue(
+                                                headerInjection.getValue().getStaticValue()))))
+                    .build();
+              } else if (headerInjection.getHeaderCategory().equals(MATCH_CATEGORY_RESPONSE)) {
+                return PayloadDecoration.newBuilder()
+                    .setResponseHeaderInjection(
+                        ResponseHeaderInjection.newBuilder()
+                            .setHeaderKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue(headerInjection.getHeaderName())))
+                            .setHeaderValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue(
+                                                headerInjection.getValue().getStaticValue()))))
+                    .build();
+              } else {
+                throw new IllegalArgumentException(
+                    "unknown header category: " + headerInjection.getHeaderCategory());
+              }
+            })
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private EdgeDecisionRuleStatus buildRuleStatus(final RateLimitingRuleData data) {
@@ -162,17 +244,26 @@ public class RateLimitingEdgeDecisionConverter {
     return builder.build();
   }
 
-  private List<ResourceAccessThresholdConfig> getResourceAccessThresholdConfigs(
-      final RateLimitingRuleData data) {
+  private Stream<ThresholdActionConfig> getThresholdActionConfigs(final RateLimitingRuleData data) {
     return data.getThresholdActionConfigsList().stream()
+        .filter(thresholdActionConfig -> filterActions(thresholdActionConfig).isPresent());
+  }
+
+  private Optional<Action> filterActions(ThresholdActionConfig thresholdActionConfig) {
+    return thresholdActionConfig.getActionsList().stream()
         .filter(
-            thresholdActionConfig ->
-                thresholdActionConfig.getActionsList().stream()
-                    .anyMatch(action -> action.getActionCase().equals(Action.ActionCase.BLOCK)))
-        .flatMap(
-            thresholdActionConfig ->
-                thresholdActionConfig.getResourceAccessThresholdConfigsList().stream())
-        .collect(Collectors.toUnmodifiableList());
+            action ->
+                (action.getActionCase().equals(BLOCK)
+                        && action.getBlock().getUseThresholdDuration())
+                    || (action.getActionCase().equals(MARK_FOR_TESTING)
+                        && action.getMarkForTesting().hasAgentRuleEffect()))
+        .findAny();
+  }
+
+  private Stream<ResourceAccessThresholdConfig> getResourceAccessThresholdConfigsList(
+      final ThresholdActionConfig thresholdActionConfig) {
+    return thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
+        .filter(ResourceAccessThresholdConfig::hasRollingWindowThresholdConfig);
   }
 
   private MatchCondition buildMatchCondition(

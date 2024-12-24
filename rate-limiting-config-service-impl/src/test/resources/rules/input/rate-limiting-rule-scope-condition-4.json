@@ -15,9 +15,21 @@
         ],
         "actions": [
           {
-            "block": {
-              "event_severity": "EVENT_SEVERITY_CRITICAL",
-              "use_threshold_duration": true
+            "mark_for_testing": {
+              "event_severity": "EVENT_SEVERITY_LOW",
+              "agent_rule_effect": {
+                "agent_modifications": [
+                  {
+                    "header_injection": {
+                      "header_category": "MATCH_CATEGORY_REQUEST",
+                      "header_name": "test-header",
+                      "value": {
+                        "static_value": "test-header-value"
+                      }
+                    }
+                  }
+                ]
+              }
             }
           }
         ]
@@ -33,16 +45,13 @@
         "children": [
           {
             "leaf_condition": {
-              "user_agent_condition": {
-                "user_agents": [
-                  "Googlebot",
-                  "YandexAccessibilityBot"
-                ],
-                "user_agent_regexes": [
-                  "mozilla",
-                  "chrome"
-                ],
-                "exclude": true
+              "scope_condition": {
+                "label_scope": {
+                  "label_type": "LABEL_TYPE_API",
+                  "label_ids": [
+                    "labelId1"
+                  ]
+                }
               }
             }
           }

@@ -23,7 +23,7 @@
       "actions": [{
         "block": {
           "eventSeverity": "EVENT_SEVERITY_CRITICAL",
-          "durationIso": "PT1H"
+          "use_threshold_duration": true
         }
       }]
     }],

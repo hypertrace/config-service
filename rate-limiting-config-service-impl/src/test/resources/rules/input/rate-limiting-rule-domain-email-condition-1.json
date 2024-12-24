@@ -17,7 +17,7 @@
           {
             "block": {
               "event_severity": "EVENT_SEVERITY_CRITICAL",
-              "duration_iso": "PT1H"
+              "use_threshold_duration": true
             }
           }
         ]
