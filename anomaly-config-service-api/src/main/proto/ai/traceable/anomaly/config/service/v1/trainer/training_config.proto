@@ -322,6 +322,7 @@ message MetadataTrainingConfig {
     NonAsciiUnicodeCharactersTrainingConfig non_ascii_unicode_characters = 31;
     ResponseContentTrainingConfig response_content = 32;
     ResponseDurationTrainingConfig response_duration = 33;
+    ParamEncodingTrainingConfig param_encoding = 34;
   }
 }
 
@@ -473,6 +474,8 @@ message StartTimeTrainingConfig {}
 message UserAgentTrainingConfig {}
 
 message ResponseContentTrainingConfig {}
+
+message ParamEncodingTrainingConfig {}
 
 message NonAsciiUnicodeCharactersTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
