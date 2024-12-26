@@ -2,11 +2,15 @@ package ai.traceable.threatscoring.config.service;
 
 import ai.traceable.threatscoring.config.service.v1.EventConfidenceMapping;
 import ai.traceable.threatscoring.config.service.v1.EventConfidenceMatrixConfig;
-import ai.traceable.threatscoring.config.service.v1.EventConfidenceScoringConfig;
 import ai.traceable.threatscoring.config.service.v1.ScopedThreatScoringConfigs;
 import ai.traceable.threatscoring.config.service.v1.ScoringLevel;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigs;
 import com.google.inject.Inject;
+import com.google.protobuf.Message;
+import com.google.protobuf.util.JsonFormat;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,11 +19,17 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DefaultThreatScoringConfig {
   private static final String EVENT_CONFIDENCE_MAPPING_FILE_NAME = "event_confidence_mapping.csv";
+  private static final String DEFAULT_THREAT_SCORING_CONFIG_FILE_NAME =
+      "default-threat-scoring-config.conf";
+  private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
+  private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
+
   private static final Map<String, ScoringLevel> SCORING_LEVEL_MAP =
       Map.of(
           "LOW", ScoringLevel.SCORING_LEVEL_LOW,
@@ -30,21 +40,18 @@ public class DefaultThreatScoringConfig {
 
   @Inject
   public DefaultThreatScoringConfig() {
-    defaultConfig =
-        ScopedThreatScoringConfigs.newBuilder()
-            .setConfigs(
-                ThreatScoringConfigs.newBuilder()
-                    .setEventConfidenceScoringConfig(
-                        EventConfidenceScoringConfig.newBuilder()
-                            .setEventConfidenceMatrixConfig(
-                                EventConfidenceMatrixConfig.newBuilder()
-                                    .addAllEventConfidenceMapping(loadEventConfidenceMapping())))
-                    .build())
-            .build();
+    ThreatScoringConfigs defaultThreatScoringConfigs = loadDefaultThreatScoringConfigs();
+    defaultConfig = mergeEventConfidenceMapping(defaultThreatScoringConfigs);
   }
 
   public ScopedThreatScoringConfigs getDefaultConfig() {
     return this.defaultConfig;
+  }
+
+  static ThreatScoringConfigs loadDefaultThreatScoringConfigs() {
+    ThreatScoringConfigs.Builder builder = ThreatScoringConfigs.newBuilder();
+    mergeFromConfig(ConfigFactory.parseResources(DEFAULT_THREAT_SCORING_CONFIG_FILE_NAME), builder);
+    return builder.build();
   }
 
   private static List<EventConfidenceMapping> loadEventConfidenceMapping() {
@@ -94,5 +101,23 @@ public class DefaultThreatScoringConfig {
       log.error("Unable to parse default event confidence mapping", e.getMessage());
     }
     return eventConfidenceMappingList;
+  }
+
+  private static ScopedThreatScoringConfigs mergeEventConfidenceMapping(
+      ThreatScoringConfigs defaultThreatScoringConfigs) {
+    return ScopedThreatScoringConfigs.newBuilder()
+        .setConfigs(
+            ThreatScoringConfigs.newBuilder()
+                .setEventConfidenceScoringConfig(
+                    defaultThreatScoringConfigs.getEventConfidenceScoringConfig().toBuilder()
+                        .setEventConfidenceMatrixConfig(
+                            EventConfidenceMatrixConfig.newBuilder()
+                                .addAllEventConfidenceMapping(loadEventConfidenceMapping()))))
+        .build();
+  }
+
+  @SneakyThrows
+  private static void mergeFromConfig(Config config, Message.Builder builder) {
+    JSON_PARSER.merge(config.root().render(CONFIG_RENDER_CONCISE), builder);
   }
 }
