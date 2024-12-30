@@ -14,6 +14,7 @@ dependencies {
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.protobuf.javautil)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
+  implementation(commonLibs.traceable.opadistributor.api)
 
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)

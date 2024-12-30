@@ -1,12 +1,19 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter;
 
+import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
+import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedRateLimitViolationInfo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingConditionConverter;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingConditionModule;
@@ -40,7 +47,6 @@ class RateLimitingEdgeDecisionConverterTest {
   private static final RequestContext REQUEST_CONTEXT = RequestContext.forTenantId(TENANT_ID);
 
   static RateLimitingEdgeDecisionConverter converter;
-  static CachedApiMappingProvider cachedApiMappingProvider;
 
   @BeforeAll
   static void setup() {
@@ -74,7 +80,37 @@ class RateLimitingEdgeDecisionConverterTest {
         converter.convert(REQUEST_CONTEXT, List.of(rateLimitingRuleBuilder.build()));
     EdgeDecisionEngineConfig.Builder expectedOutputBuilder = EdgeDecisionEngineConfig.newBuilder();
     parser.merge(expectedOutputFileStr, expectedOutputBuilder);
-    assertEquals(expectedOutputBuilder.build(), output);
+    // Add span attributes to expected rules
+    List<EdgeDecisionRule> updatedRules =
+        expectedOutputBuilder.getDecisionRulesList().stream()
+            .map(
+                rule -> {
+                  if (rule.getRuleDecision()
+                      .getEdgeDecisionType()
+                      .equals(EdgeDecisionType.EDGE_DECISION_TYPE_ALLOW)) {
+                    return rule;
+                  }
+                  EdgeDecision updatedEdgeDecision =
+                      rule.getRuleDecision().toBuilder()
+                          .addAllSpanAttributes(
+                              SpanAttributeHandler.getSpanAttributeDecorations(
+                                  rule.getId(),
+                                  false,
+                                  EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT,
+                                  getEncodedRateLimitViolationInfo(
+                                      "",
+                                      rule.getId(),
+                                      rule.getName(),
+                                      RateLimitCategory.RATE_LIMIT_CATEGORY_RATE_LIMITING,
+                                      Map.of())))
+                          .build();
+                  return rule.toBuilder().setRuleDecision(updatedEdgeDecision).build();
+                })
+            .collect(Collectors.toList());
+
+    assertEquals(
+        expectedOutputBuilder.clearDecisionRules().addAllDecisionRules(updatedRules).build(),
+        output);
   }
 
   static List<String> getInputFileNames() {

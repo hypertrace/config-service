@@ -1,8 +1,10 @@
 package ai.traceable.edge.decision.config.service.supplier.actor;
 
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
+import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedThreatActorViolationInfo;
 
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
+import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.ConfigTtl;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
@@ -75,7 +77,8 @@ public class ActorEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngine
     }
 
     EdgeDecisionType edgeDecisionType = EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
-    if (ALLOWED_ACTOR_STATUSES.contains(actorData.getStatus())) {
+    boolean isExemption = ALLOWED_ACTOR_STATUSES.contains(actorData.getStatus());
+    if (isExemption) {
       edgeDecisionType = EdgeDecisionType.EDGE_DECISION_TYPE_ALLOW;
     }
 
@@ -98,7 +101,15 @@ public class ActorEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngine
                                                 .setJexlExpression(
                                                     USER_ATTRIBUTION_JEXL_GENERATOR.apply(
                                                         actorData.getActorId())))))))
-        .setRuleDecision(EdgeDecision.newBuilder().setEdgeDecisionType(edgeDecisionType))
+        .setRuleDecision(
+            EdgeDecision.newBuilder()
+                .setEdgeDecisionType(edgeDecisionType)
+                .addAllSpanAttributes(
+                    SpanAttributeHandler.getSpanAttributeDecorations(
+                        actorData.getEntityId(),
+                        isExemption,
+                        EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR,
+                        getEncodedThreatActorViolationInfo(actorData.getEntityId()))))
         .setPolicyKind(PolicyKind.POLICY_KIND_WAF)
         .build();
   }

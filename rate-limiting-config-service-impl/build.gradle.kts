@@ -18,6 +18,9 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.modsecurityUtils)
 
+  implementation(commonLibs.traceable.actorservice.api)
+  implementation(commonLibs.traceable.opadistributor.api)
+
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.guice7)

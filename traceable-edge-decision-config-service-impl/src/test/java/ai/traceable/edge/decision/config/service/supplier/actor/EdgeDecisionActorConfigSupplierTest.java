@@ -1,5 +1,7 @@
 package ai.traceable.edge.decision.config.service.supplier.actor;
 
+import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR;
+import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedThreatActorViolationInfo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
@@ -76,6 +78,43 @@ class ActorEdgeDecisionEngineConfigSupplierTest {
             .getJexlExpression()
             .getJexlExpression());
     assertEquals("EDGE_DECISION_TYPE_ALLOW", rule1.getRuleDecision().getEdgeDecisionType().name());
+    assertEquals(2, rule1.getRuleDecision().getSpanAttributesCount());
+    assertEquals(
+        "traceableai.blocked.exemptions_actor-1.category",
+        rule1
+            .getRuleDecision()
+            .getSpanAttributesList()
+            .get(0)
+            .getSpanAttributeKey()
+            .getStaticValue()
+            .getStringValue());
+    assertEquals(
+        EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR.name(),
+        rule1
+            .getRuleDecision()
+            .getSpanAttributesList()
+            .get(0)
+            .getSpanAttributeValue()
+            .getStaticValue()
+            .getStringValue());
+    assertEquals(
+        "traceableai.blocked.exemptions_actor-1.info",
+        rule1
+            .getRuleDecision()
+            .getSpanAttributesList()
+            .get(1)
+            .getSpanAttributeKey()
+            .getStaticValue()
+            .getStringValue());
+    assertEquals(
+        getEncodedThreatActorViolationInfo("actor-1"),
+        rule1
+            .getRuleDecision()
+            .getSpanAttributesList()
+            .get(1)
+            .getSpanAttributeValue()
+            .getStaticValue()
+            .getStringValue());
 
     // Verify rule 2
     var rule2 = config.getDecisionRules(1);
@@ -92,6 +131,7 @@ class ActorEdgeDecisionEngineConfigSupplierTest {
             .getJexlExpression()
             .getJexlExpression());
     assertFalse(rule2.getRuleStatus().hasTtl());
+    assertEquals(2, rule2.getRuleDecision().getSpanAttributesCount());
   }
 
   @Test
