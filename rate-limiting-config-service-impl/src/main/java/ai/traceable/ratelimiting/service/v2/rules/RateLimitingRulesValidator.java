@@ -368,6 +368,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateAction(Action action, boolean aggregateAcrossAllUsersPresent) {
     switch (action.getActionCase()) {
+      case MARK_FOR_TESTING:
       case ALERT:
         break;
       case BLOCK:
