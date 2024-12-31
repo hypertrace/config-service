@@ -62,7 +62,7 @@
       }
     },
     "rule_decision": {
-      "edge_decision_type": "EDGE_DECISION_TYPE_ALLOW",
+      "edge_decision_type": "EDGE_DECISION_TYPE_MARK_FOR_TESTING",
       "decorations": [{
         "request_header_injection": {
           "header_key": {

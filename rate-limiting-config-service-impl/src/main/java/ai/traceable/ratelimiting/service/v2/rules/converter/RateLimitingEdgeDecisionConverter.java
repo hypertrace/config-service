@@ -2,6 +2,8 @@ package ai.traceable.ratelimiting.service.v2.rules.converter;
 
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
+import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
+import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_MARK_FOR_TESTING;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
 import static ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType.AGGREGATION_TYPE_COUNT;
 import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedRateLimitViolationInfo;
@@ -28,7 +30,6 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
 import ai.traceable.edge.decision.config.service.v1.LogicalMatchCondition;
 import ai.traceable.edge.decision.config.service.v1.LogicalMatchOperator;
@@ -136,29 +137,24 @@ public class RateLimitingEdgeDecisionConverter {
     }
 
     Action action = mayBeAction.get();
-    if (action.hasBlock()) {
-      return EdgeDecision.newBuilder()
-          .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
-          .addAllSpanAttributes(
-              SpanAttributeHandler.getSpanAttributeDecorations(
-                  rateLimitingRule.getId(),
-                  false,
-                  EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT,
-                  getEncodedRateLimitViolationInfo(
-                      "",
-                      rateLimitingRule.getId(),
-                      rateLimitingRule.getData().getName(),
-                      RateLimitCategory.forNumber(
-                          rateLimitingRule.getData().getCategory().getNumber()),
-                      rateLimitingRule.getData().getLabelsMap())))
-          .build();
-    } else {
-      // Not adding any span attributes in this case as the action has no effect on blocking
-      return EdgeDecision.newBuilder()
-          .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_ALLOW)
-          .addAllDecorations(buildPayloadDecorations(action))
-          .build();
+    EdgeDecision.Builder builder = EdgeDecision.newBuilder();
+    builder.setEdgeDecisionType(
+        action.hasBlock() ? EDGE_DECISION_TYPE_BLOCK : EDGE_DECISION_TYPE_MARK_FOR_TESTING);
+    if (action.hasMarkForTesting()) {
+      builder.addAllDecorations(buildPayloadDecorations(action));
     }
+    builder.addAllSpanAttributes(
+        SpanAttributeHandler.getSpanAttributeDecorations(
+            rateLimitingRule.getId(),
+            false,
+            EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT,
+            getEncodedRateLimitViolationInfo(
+                "",
+                rateLimitingRule.getId(),
+                rateLimitingRule.getData().getName(),
+                RateLimitCategory.forNumber(rateLimitingRule.getData().getCategory().getNumber()),
+                rateLimitingRule.getData().getLabelsMap())));
+    return builder.build();
   }
 
   private List<PayloadDecoration> buildPayloadDecorations(Action action) {

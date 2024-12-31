@@ -59,6 +59,7 @@ enum EdgeDecisionType {
   EDGE_DECISION_TYPE_ALLOW = 1;
   EDGE_DECISION_TYPE_BLOCK = 2;
   EDGE_DECISION_TYPE_CAPTCHA = 3;
+  EDGE_DECISION_TYPE_MARK_FOR_TESTING = 4;
 }
 
 message SpanAttributeDecoration {
