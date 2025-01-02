@@ -26,6 +26,8 @@ message CreateSavedFilterRequest {
   Visibility visibility = 3;
   // Criteria for filtering
   FilterCriteria filter_criteria = 4;
+
+  string category = 5;
 }
 
 message CreateSavedFilterResponse {
@@ -51,6 +53,7 @@ message GetSavedFiltersRequest {
   // user_id will be extracted from the request context and applied as a default filter
   string scope = 1;
   optional string id = 2;
+  optional string category = 3;
 }
 
 message GetSavedFiltersResponse {

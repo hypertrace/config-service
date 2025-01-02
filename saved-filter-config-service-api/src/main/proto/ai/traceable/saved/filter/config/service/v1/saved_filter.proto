@@ -24,6 +24,8 @@ message SavedFilter {
   google.protobuf.Timestamp created_timestamp = 7;
   // Last updated timestamp of the saved filter
   google.protobuf.Timestamp updated_timestamp = 8;
+
+  string category = 9;
 }
 
 message Visibility {
