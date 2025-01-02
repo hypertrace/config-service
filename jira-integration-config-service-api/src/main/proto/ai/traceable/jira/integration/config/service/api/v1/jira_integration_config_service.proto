@@ -147,6 +147,7 @@ message JiraIntegration {
   Scope scope = 6;
   EncryptedData encrypted_access_token = 7 [deprecated = true];
   JiraIntegrationDetails jira_integration_details = 8;
+  optional bool jira_bidirectional_sync_is_enabled = 9;
 }
 
 message JiraIntegrationDetails {

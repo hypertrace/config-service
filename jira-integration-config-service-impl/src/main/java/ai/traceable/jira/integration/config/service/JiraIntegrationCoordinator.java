@@ -15,6 +15,7 @@ import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRe
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateResponse;
@@ -23,7 +24,9 @@ import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueCon
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -31,6 +34,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class JiraIntegrationCoordinator {
   private final JiraIntegrationStore jiraIntegrationStore;
   private final JiraAdditionalConfigurationCoordinator jiraAdditionalConfigurationCoordinator;
+  private final JiraAdditionalConfigurationStore jiraAdditionalConfigurationStore;
 
   public CreateJiraIntegrationResponse createJiraIntegration(
       CreateJiraIntegrationRequest request, RequestContext requestContext) {
@@ -57,11 +61,39 @@ public class JiraIntegrationCoordinator {
 
   public List<JiraIntegration> getJiraIntegration(
       RequestContext requestContext, GetJiraIntegrationsRequest request) {
+    List<JiraIntegration> jiraIntegrations;
     if (request.hasJiraIntegrationFilter()) {
-      return jiraIntegrationStore.getAllConfigData(
-          requestContext, request.getJiraIntegrationFilter());
+      jiraIntegrations =
+          jiraIntegrationStore.getAllConfigData(requestContext, request.getJiraIntegrationFilter());
+    } else {
+      jiraIntegrations = jiraIntegrationStore.getAllConfigData(requestContext);
     }
-    return jiraIntegrationStore.getAllConfigData(requestContext);
+    // early return if no integrations exist
+    if (jiraIntegrations.isEmpty()) {
+      return jiraIntegrations;
+    }
+    List<JiraProjectIssueConfiguration> allProjectIssueConfigurations =
+        jiraAdditionalConfigurationStore.getAllConfigData(requestContext);
+    Map<String, Boolean> integrationIdToSyncFlag =
+        allProjectIssueConfigurations.stream()
+            .collect(
+                Collectors.toMap(
+                    config -> config.getJiraProjectIssueConfigurationDetails().getIntegrationId(),
+                    config ->
+                        config
+                            .getJiraProjectIssueConfigurationDetails()
+                            .getJiraBidirectionalSyncIsEnabled(),
+                    Boolean::logicalOr));
+    return jiraIntegrations.stream()
+        .map(
+            integration -> {
+              boolean biDirectionalSyncEnabled =
+                  integrationIdToSyncFlag.getOrDefault(integration.getId(), false);
+              return integration.toBuilder()
+                  .setJiraBidirectionalSyncIsEnabled(biDirectionalSyncEnabled)
+                  .build();
+            })
+        .collect(Collectors.toList());
   }
 
   public JiraIntegration updateJiraIntegration(

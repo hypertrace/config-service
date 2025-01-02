@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.CreateProjectIssueConfigurationRequest;
@@ -11,6 +12,7 @@ import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraIntegration
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.EncryptedData;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
@@ -73,7 +75,8 @@ class JiraIntegrationConfigServiceImplTest {
                 new JiraIntegrationConfigServiceValidator(jiraIntegrationStore),
                 new JiraIntegrationCoordinator(
                     jiraIntegrationStore,
-                    new JiraAdditionalConfigurationCoordinator(jiraAdditionalConfigurationStore))))
+                    new JiraAdditionalConfigurationCoordinator(jiraAdditionalConfigurationStore),
+                    jiraAdditionalConfigurationStore)))
         .start();
     stub = JiraIntegrationConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel());
   }
@@ -86,6 +89,9 @@ class JiraIntegrationConfigServiceImplTest {
               switch (tag) {
                 case "useMockUpsert":
                   mockGenericConfigService.mockUpsert();
+                  break;
+                case "useMockUpsertAll":
+                  mockGenericConfigService.mockUpsertAll();
                   break;
                 case "useMockGet":
                   mockGenericConfigService.mockGet();
@@ -107,6 +113,7 @@ class JiraIntegrationConfigServiceImplTest {
 
   @Test
   @Tag("useMockUpsert")
+  @Tag("useMockUpsertAll")
   @Tag("useMockGetAll")
   void getJiraIntegrations() {
     RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
@@ -128,7 +135,8 @@ class JiraIntegrationConfigServiceImplTest {
                             .setEnvironmentIds(StringList.newBuilder().addValues("env1"))))
             .build();
     assertEquals(
-        jiraIntegration1, stub.getJiraIntegrations(getJiraIntegrationsRequest1).getIntegration(0));
+        jiraIntegration1.toBuilder().setJiraBidirectionalSyncIsEnabled(false).build(),
+        stub.getJiraIntegrations(getJiraIntegrationsRequest1).getIntegration(0));
 
     GetJiraIntegrationsRequest getJiraIntegrationsRequest2 =
         GetJiraIntegrationsRequest.newBuilder()
@@ -139,7 +147,8 @@ class JiraIntegrationConfigServiceImplTest {
                             .setEnvironmentIds(StringList.newBuilder().addValues("env2"))))
             .build();
     assertEquals(
-        jiraIntegration2, stub.getJiraIntegrations(getJiraIntegrationsRequest2).getIntegration(0));
+        jiraIntegration2.toBuilder().setJiraBidirectionalSyncIsEnabled(false).build(),
+        stub.getJiraIntegrations(getJiraIntegrationsRequest2).getIntegration(0));
 
     GetJiraIntegrationsRequest getJiraIntegrationsRequest3 =
         GetJiraIntegrationsRequest.newBuilder()
@@ -150,7 +159,8 @@ class JiraIntegrationConfigServiceImplTest {
                             .setEnvironmentIds(StringList.newBuilder().addValues("env3"))))
             .build();
     assertEquals(
-        jiraIntegration2, stub.getJiraIntegrations(getJiraIntegrationsRequest3).getIntegration(0));
+        jiraIntegration2.toBuilder().setJiraBidirectionalSyncIsEnabled(false).build(),
+        stub.getJiraIntegrations(getJiraIntegrationsRequest3).getIntegration(0));
 
     GetJiraIntegrationsRequest getJiraIntegrationsRequest4 =
         GetJiraIntegrationsRequest.newBuilder()
@@ -176,7 +186,72 @@ class JiraIntegrationConfigServiceImplTest {
                             .setEnvironmentIds(StringList.newBuilder().addValues("newEnv"))))
             .build();
     assertEquals(
-        jiraIntegration3, stub.getJiraIntegrations(getJiraIntegrationsRequest5).getIntegration(0));
+        jiraIntegration3.toBuilder().setJiraBidirectionalSyncIsEnabled(false).build(),
+        stub.getJiraIntegrations(getJiraIntegrationsRequest5).getIntegration(0));
+
+    // test that if bidirectional config found, then correct status is returned
+    JiraStatusMapping jiraStatusMappingCommon1 =
+        CreateJiraStatusMapping(
+            "Under Review", TraceableEntityStatus.TRACEABLE_ENTITY_STATUS_ISSUES_COMMON_FIXED);
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMappingCommon1), jiraIntegration2.getId());
+
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration1 =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMappingCommon1), jiraIntegration3.getId());
+
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration2 =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMappingCommon1), jiraIntegration3.getId(), false);
+
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration3 =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMappingCommon1), jiraIntegration1.getId(), false);
+
+    jiraAdditionalConfigurationStore.upsertObjects(
+        requestContext,
+        List.of(
+            jiraProjectIssueConfiguration,
+            jiraProjectIssueConfiguration1,
+            jiraProjectIssueConfiguration2,
+            jiraProjectIssueConfiguration3));
+
+    GetJiraIntegrationsRequest getJiraIntegrationsRequest6 =
+        GetJiraIntegrationsRequest.newBuilder()
+            .setJiraIntegrationFilter(
+                JiraIntegrationFilter.newBuilder()
+                    .setFilterScope(
+                        Scope.newBuilder()
+                            .setEnvironmentIds(
+                                StringList.newBuilder()
+                                    .addAllValues(List.of("env2", "newEnv", "env1")))))
+            .build();
+    GetJiraIntegrationsResponse getJiraIntegrationsResponse =
+        stub.getJiraIntegrations(getJiraIntegrationsRequest6);
+    System.out.println(getJiraIntegrationsResponse);
+    assertEquals(3, getJiraIntegrationsResponse.getIntegrationCount());
+
+    assertFalse(
+        getJiraIntegrationsResponse.getIntegrationList().stream()
+            .filter(integration -> jiraIntegration1.getId().equals(integration.getId()))
+            .findFirst()
+            .get()
+            .getJiraBidirectionalSyncIsEnabled());
+
+    assertTrue(
+        getJiraIntegrationsResponse.getIntegrationList().stream()
+            .filter(integration -> jiraIntegration2.getId().equals(integration.getId()))
+            .findFirst()
+            .get()
+            .getJiraBidirectionalSyncIsEnabled());
+
+    assertTrue(
+        getJiraIntegrationsResponse.getIntegrationList().stream()
+            .filter(integration -> jiraIntegration3.getId().equals(integration.getId()))
+            .findFirst()
+            .get()
+            .getJiraBidirectionalSyncIsEnabled());
   }
 
   @Test
@@ -590,10 +665,29 @@ class JiraIntegrationConfigServiceImplTest {
   private JiraProjectIssueConfiguration createDummyJiraProjectIssueConfiguration(
       List<JiraStatusMapping> jiraStatusMappingList, String integrationId) {
     return JiraProjectIssueConfiguration.newBuilder()
-        .setConfigurationId(CONFIG_ID)
+        .setConfigurationId(CONFIG_ID + Math.random())
         .setJiraProjectIssueConfigurationDetails(
             JiraProjectIssueConfigurationDetails.newBuilder()
                 .setJiraBidirectionalSyncIsEnabled(true)
+                .setIntegrationId(integrationId)
+                .setProjectId(PROJECT_ID)
+                .setIssueType(ISSUE_TYPE)
+                .setJiraStatusMappingConfiguration(
+                    JiraStatusMappingConfiguration.newBuilder()
+                        .addAllStatusMappings(jiraStatusMappingList)
+                        .build()))
+        .build();
+  }
+
+  private JiraProjectIssueConfiguration createDummyJiraProjectIssueConfiguration(
+      List<JiraStatusMapping> jiraStatusMappingList,
+      String integrationId,
+      Boolean jiraSyncEnabled) {
+    return JiraProjectIssueConfiguration.newBuilder()
+        .setConfigurationId(CONFIG_ID + Math.random())
+        .setJiraProjectIssueConfigurationDetails(
+            JiraProjectIssueConfigurationDetails.newBuilder()
+                .setJiraBidirectionalSyncIsEnabled(jiraSyncEnabled)
                 .setIntegrationId(integrationId)
                 .setProjectId(PROJECT_ID)
                 .setIssueType(ISSUE_TYPE)
