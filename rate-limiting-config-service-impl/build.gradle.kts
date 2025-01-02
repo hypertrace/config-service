@@ -17,6 +17,7 @@ dependencies {
   implementation(projects.entityFetcherCache)
   implementation(projects.configUtils)
   implementation(projects.modsecurityUtils)
+  implementation(projects.featureCachingClient)
 
   implementation(commonLibs.traceable.actorservice.api)
   implementation(commonLibs.traceable.opadistributor.api)

@@ -1,6 +1,7 @@
 package ai.traceable.ratelimiting.service.v2;
 
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Stage;
@@ -16,7 +17,8 @@ public class RateLimitingConfigServiceFactory {
       Config config,
       ActivityEventProducer activityEventProducer,
       ConfigChangeEventGenerator configChangeEventGenerator,
-      GrpcChannelRegistry grpcChannelRegistry) {
+      GrpcChannelRegistry grpcChannelRegistry,
+      FeatureCachingClient featureCachingClient) {
     Injector injector =
         Guice.createInjector(
             Stage.PRODUCTION,
@@ -25,7 +27,8 @@ public class RateLimitingConfigServiceFactory {
                 config,
                 activityEventProducer,
                 configChangeEventGenerator,
-                grpcChannelRegistry));
+                grpcChannelRegistry,
+                featureCachingClient));
     return injector.getInstance(BindableService.class);
   }
 }

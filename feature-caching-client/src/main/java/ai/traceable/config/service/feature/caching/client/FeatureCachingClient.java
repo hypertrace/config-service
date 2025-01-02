@@ -39,6 +39,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_RASP_INSPECTION = false;
   private static final boolean DEFAULT_THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG_VALUE =
       false;
+  private static final boolean DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE = false;
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
   private static final String DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG =
@@ -55,6 +56,7 @@ public class FeatureCachingClient {
   private static final String RASP_INSPECTION = "enricher.rasp-inspection";
   private static final String THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG =
       "notifications.threat-scoring-configuration";
+  private static final String TRACEABLE_EDGE_DECISION_FLAG = "traceable-edge.edge-decision";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -69,7 +71,8 @@ public class FeatureCachingClient {
           TPA_CORAZA_BASED_EVALUATION,
           TPA_CRS_MSG_HIDE_MATCH_VALUE,
           RASP_INSPECTION,
-          THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG);
+          THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG,
+          TRACEABLE_EDGE_DECISION_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -250,6 +253,18 @@ public class FeatureCachingClient {
       log.warn(
           "Failed to retrieve current feature flag value for Session Identification V2", exception);
       return DEFAULT_SESSION_IDENTIFICATION_V2_FLAG_VALUE;
+    }
+  }
+
+  public boolean isEdgeDecisionEnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(TRACEABLE_EDGE_DECISION_FLAG));
+    } catch (Exception exception) {
+      log.warn("Failed to retrieve current feature flag value for edge decision flag", exception);
+      return DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE;
     }
   }
 

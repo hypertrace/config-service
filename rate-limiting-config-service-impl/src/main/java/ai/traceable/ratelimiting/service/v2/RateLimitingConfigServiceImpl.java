@@ -4,6 +4,8 @@ import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
@@ -45,6 +47,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
   private final ActivityEventProducer activityEventProducer;
   private final boolean shouldPublishActivityEvents;
   private final RateLimitingEdgeDecisionConverter translator;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public RateLimitingConfigServiceImpl(
@@ -52,12 +55,14 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       RulesManager rulesManager,
       ActivityEventProducer activityEventProducer,
       RateLimitingConfigServiceConfig config,
-      RateLimitingEdgeDecisionConverter translator) {
+      RateLimitingEdgeDecisionConverter translator,
+      FeatureCachingClient featureCachingClient) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.activityEventProducer = activityEventProducer;
     this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
     this.translator = translator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -197,12 +202,14 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
 
+      EdgeDecisionEngineConfig edgeDecisionEngineConfig =
+          featureCachingClient.isEdgeDecisionEnabledForTenant(context)
+              ? translator.convert(
+                  context, rulesManager.getRateLimitingRules(context, request.getRulesFilter()))
+              : EdgeDecisionEngineConfig.getDefaultInstance();
       GetRateLimitingEdgeDecisionRulesResponse response =
           GetRateLimitingEdgeDecisionRulesResponse.newBuilder()
-              .setEdgeDecisionEngineConfig(
-                  translator.convert(
-                      context,
-                      rulesManager.getRateLimitingRules(context, request.getRulesFilter())))
+              .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
               .build();
 
       responseObserver.onNext(response);

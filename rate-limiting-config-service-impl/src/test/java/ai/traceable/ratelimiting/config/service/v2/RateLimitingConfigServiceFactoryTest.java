@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceModule;
 import com.google.inject.Guice;
 import com.google.inject.Stage;
@@ -24,6 +25,7 @@ class RateLimitingConfigServiceFactoryTest {
     Config mockConfig = mock(Config.class);
     ActivityEventProducer mockActivityEventProducer = mock(ActivityEventProducer.class);
     GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
 
@@ -66,7 +68,8 @@ class RateLimitingConfigServiceFactoryTest {
                         mockConfig,
                         mockActivityEventProducer,
                         mockConfigChangeEventGenerator,
-                        mockGrpcChannelRegistry))
+                        mockGrpcChannelRegistry,
+                        featureCachingClient))
                 .getAllBindings());
   }
 }

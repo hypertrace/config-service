@@ -15,6 +15,7 @@ import ai.traceable.activity.event.SecurityConfigurationAction;
 import ai.traceable.activity.event.SecurityConfigurationChange;
 import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
@@ -36,19 +37,26 @@ public class RateLimitingConfigServiceImplTest {
   private RulesManager rulesManager;
   private ActivityEventProducer activityEventProducer;
   private RateLimitingConfigServiceImpl configService;
+  private FeatureCachingClient featureCachingClient;
 
   @BeforeEach
   void setUp() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
     activityEventProducer = mock(ActivityEventProducer.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
     // existingRules = Collections.emptyList();
     RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
     RateLimitingEdgeDecisionConverter translator = mock(RateLimitingEdgeDecisionConverter.class);
     when(config.shouldPublishActivityEvents()).thenReturn(true);
     configService =
         new RateLimitingConfigServiceImpl(
-            rulesValidator, rulesManager, activityEventProducer, config, translator);
+            rulesValidator,
+            rulesManager,
+            activityEventProducer,
+            config,
+            translator,
+            featureCachingClient);
   }
 
   @Test
