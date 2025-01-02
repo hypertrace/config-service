@@ -8,6 +8,7 @@ import static ai.traceable.userattribution.config.service.v2.ValueMatchOperator.
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP;
 import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP;
+import static ai.traceable.userattribution.config.service.v2.migration.UserAttributionRuleConverter.DEFAULT_TOKEN_REGEX_CAPTURE_GROUP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -102,6 +103,32 @@ class UserAttributionRuleConverterTest {
             TEMPLATE_JWT,
             buildAttributeProjectionRootTokenRuleV2(
                 "jwt", List.of(buildRegexCaptureGroupValueProjection("Bearer (.*)"))),
+            buildRootRelativeProjectionTokenRuleV2(List.of(buildJwtClaimValueProjection("email"))),
+            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"));
+    assertTrue(convertedRule.isPresent());
+    assertEquals(expectedRule, convertedRule.get());
+  }
+
+  @Test
+  void convertJwtAuthWithoutRegexCaptureGroup() {
+    UserAttributionRuleData data =
+        UserAttributionRuleData.newBuilder()
+            .setJwtData(
+                UserAttributionRuleData.JwtUserAttributionRuleData.newBuilder()
+                    .setAuthentication(Authentication.newBuilder().setType("OAUTH 2.0"))
+                    .setJwtLocation(
+                        UserAttributionRuleData.HeaderLocation.newBuilder().setHeaderName("jwt"))
+                    .setUserIdClaim("email"))
+            .build();
+    UserAttributionRule userAttributionRule = buildRuleV1(data);
+    Optional<ai.traceable.userattribution.config.service.v2.UserAttributionRule> convertedRule =
+        converter.convert(userAttributionRule);
+    ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
+        buildRuleV2(
+            TEMPLATE_JWT,
+            buildAttributeProjectionRootTokenRuleV2(
+                "jwt",
+                List.of(buildRegexCaptureGroupValueProjection(DEFAULT_TOKEN_REGEX_CAPTURE_GROUP))),
             buildRootRelativeProjectionTokenRuleV2(List.of(buildJwtClaimValueProjection("email"))),
             buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"));
     assertTrue(convertedRule.isPresent());

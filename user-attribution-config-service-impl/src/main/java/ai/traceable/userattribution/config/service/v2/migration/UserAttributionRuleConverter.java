@@ -1,5 +1,6 @@
 package ai.traceable.userattribution.config.service.v2.migration;
 
+import static ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget.TargetCase.REGEX_CAPTURE_GROUP;
 import static ai.traceable.userattribution.config.service.v2.KeyMatchOperator.KEY_MATCH_OPERATOR_EQUALS;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_BASIC;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_CUSTOM;
@@ -39,8 +40,17 @@ class UserAttributionRuleConverter {
   static final String DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME = "authorization";
   static final String DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP = "(?i)Basic:? (.*)";
   static final String DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP = "^([^:]+):?";
+  static final String DEFAULT_TOKEN_REGEX_CAPTURE_GROUP = "^(?:(?i)Bearer:? )?(.*)$";
   private static final AttributeProjection.Builder DEFAULT_BASIC_AUTHORIZATION_ATTRIBUTE_BUILDER =
       createDefaultBasicAuthorizationAttributeBuilder();
+  private static final Optional<ValueProjection>
+      DEFAULT_TOKEN_REGEX_CAPTURE_GROUP_VALUE_PROJECTION =
+          Optional.of(
+              ValueProjection.newBuilder()
+                  .setRegexCaptureGroup(
+                      ValueProjection.RegexCaptureGroupProjection.newBuilder()
+                          .setRegex(DEFAULT_TOKEN_REGEX_CAPTURE_GROUP))
+                  .build());
 
   Optional<UserAttributionRule> convert(
       ai.traceable.userattribution.config.service.v1.UserAttributionRule legacyRule) {
@@ -164,8 +174,14 @@ class UserAttributionRuleConverter {
       throw new LegacyUserAttributionRuleTranslationException(
           "unable to find root token rule in jwt rule");
     } else {
+      ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation
+          jwtLocation = jwtRuleData.getJwtLocation();
       AttributeProjection.Builder attributeProjectionBuilder =
-          createAttributeProjectionBuilder(jwtRuleData.getJwtLocation());
+          createAttributeProjectionBuilder(
+              jwtLocation,
+              jwtLocation.getParsingTarget().getTargetCase().equals(REGEX_CAPTURE_GROUP)
+                  ? null
+                  : DEFAULT_TOKEN_REGEX_CAPTURE_GROUP_VALUE_PROJECTION);
       builder.setRootTokenRule(
           UserAttributionRootTokenRule.newBuilder()
               .setAttributeProjection(attributeProjectionBuilder));
@@ -371,6 +387,14 @@ class UserAttributionRuleConverter {
       ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation
           headerLocation)
       throws LegacyUserAttributionRuleTranslationException {
+    return createAttributeProjectionBuilder(headerLocation, Optional.empty());
+  }
+
+  private AttributeProjection.Builder createAttributeProjectionBuilder(
+      ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.HeaderLocation
+          headerLocation,
+      Optional<ValueProjection> defaultValueProjection)
+      throws LegacyUserAttributionRuleTranslationException {
     AttributeProjection.Builder attributeProjectionBuilder = AttributeProjection.newBuilder();
     switch (headerLocation.getLocationCase()) {
       case HEADER_NAME:
@@ -399,6 +423,8 @@ class UserAttributionRuleConverter {
                   ValueProjection.RegexCaptureGroupProjection.newBuilder()
                       .setRegex(headerLocation.getParsingTarget().getRegexCaptureGroup()))
               .build());
+    } else if (defaultValueProjection.isPresent()) {
+      attributeProjectionBuilder.addValueProjections(defaultValueProjection.get());
     }
     return attributeProjectionBuilder;
   }
