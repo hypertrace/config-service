@@ -25,6 +25,7 @@ import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRespons
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.converter.RateLimitingEdgeDecisionConverter;
+import ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -80,10 +81,17 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
                     .addAllCategories(request.getFilter().getCategoriesList()));
       }
 
+      GetRateLimitingRulesFilter rulesFilter = request.getRulesFilter();
+      List<RateLimitingRule> rateLimitingRules =
+          rulesManager.getRateLimitingRules(context, rulesFilter);
+      if (rulesFilter.hasFilterEdgeDecisionRules()
+          && rulesFilter.getFilterEdgeDecisionRules()
+          && featureCachingClient.isEdgeDecisionEnabledForTenant(context)) {
+        rateLimitingRules = RateLimitingRulesEdgeDecisionFilter.getFilteredRules(rateLimitingRules);
+      }
+
       GetRateLimitingRulesResponse response =
-          GetRateLimitingRulesResponse.newBuilder()
-              .addAllRules(rulesManager.getRateLimitingRules(context, request.getRulesFilter()))
-              .build();
+          GetRateLimitingRulesResponse.newBuilder().addAllRules(rateLimitingRules).build();
 
       responseObserver.onNext(response);
       responseObserver.onCompleted();

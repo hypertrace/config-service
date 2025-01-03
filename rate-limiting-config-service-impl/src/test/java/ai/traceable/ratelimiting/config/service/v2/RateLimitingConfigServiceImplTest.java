@@ -49,6 +49,7 @@ public class RateLimitingConfigServiceImplTest {
     RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
     RateLimitingEdgeDecisionConverter translator = mock(RateLimitingEdgeDecisionConverter.class);
     when(config.shouldPublishActivityEvents()).thenReturn(true);
+    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
     configService =
         new RateLimitingConfigServiceImpl(
             rulesValidator,
@@ -119,6 +120,44 @@ public class RateLimitingConfigServiceImplTest {
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(rules).build());
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void testGetRateLimitingRulesWithEdgeDecisionFilter() {
+    StreamObserver<GetRateLimitingRulesResponse> responseObserver = mock(StreamObserver.class);
+    Runnable runnable =
+        () ->
+            configService.getRateLimitingRules(
+                GetRateLimitingRulesRequest.newBuilder()
+                    .setRulesFilter(
+                        GetRateLimitingRulesFilter.newBuilder().setFilterEdgeDecisionRules(true))
+                    .build(),
+                responseObserver);
+
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1)).onNext(GetRateLimitingRulesResponse.getDefaultInstance());
+    verify(responseObserver, times(1)).onCompleted();
+
+    RateLimitingRule rule1 =
+        buildRateLimitingRule1("id1", "rule1", Category.CATEGORY_RATE_LIMITING);
+    RateLimitingRule rule2 =
+        buildRateLimitingRule1("id2", "rule2", Category.CATEGORY_RATE_LIMITING);
+    RateLimitingRule rule3 =
+        buildRateLimitingRule1("id3", "rule3", Category.CATEGORY_DATA_EXFILTRATION);
+    RateLimitingRule rule4 =
+        buildRateLimitingRule2("id4", "rule4", Category.CATEGORY_RATE_LIMITING);
+    List<RateLimitingRule> rules = List.of(rule1, rule2, rule3, rule4);
+    reset(responseObserver);
+    when(rulesManager.getRateLimitingRules(any(), any())).thenReturn(rules);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1))
+        .onNext(
+            GetRateLimitingRulesResponse.newBuilder()
+                .addRules(rule1)
+                .addRules(rule2)
+                .addRules(rule3)
+                .build());
     verify(responseObserver, times(1)).onCompleted();
   }
 
@@ -204,5 +243,54 @@ public class RateLimitingConfigServiceImplTest {
 
   private RateLimitingRuleData buildRateLimitingRuleData(String name, Category category) {
     return RateLimitingRuleData.newBuilder().setName(name).setCategory(category).build();
+  }
+
+  private RateLimitingRule buildRateLimitingRule1(String id, String name, Category category) {
+    return RateLimitingRule.newBuilder()
+        .setId(id)
+        .setData(buildRateLimitingRuleData1(name, category))
+        .build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData1(String name, Category category) {
+    return RateLimitingRuleData.newBuilder()
+        .setName(name)
+        .setCategory(category)
+        .addThresholdActionConfigs(
+            ThresholdActionConfig.newBuilder()
+                .addActions(
+                    Action.newBuilder().setBlock(Action.Block.newBuilder().setDurationIso("1h")))
+                .addResourceAccessThresholdConfigs(
+                    ResourceAccessThresholdConfig.newBuilder()
+                        .setRollingWindowThresholdConfig(
+                            ResourceAccessThresholdConfig.RollingWindowThresholdConfig.newBuilder()
+                                .setCountAllowed(5)
+                                .setDurationIso("10m"))))
+        .build();
+  }
+
+  private RateLimitingRule buildRateLimitingRule2(String id, String name, Category category) {
+    return RateLimitingRule.newBuilder()
+        .setId(id)
+        .setData(buildRateLimitingRuleData2(name, category))
+        .build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData2(String name, Category category) {
+    return RateLimitingRuleData.newBuilder()
+        .setName(name)
+        .setCategory(category)
+        .addThresholdActionConfigs(
+            ThresholdActionConfig.newBuilder()
+                .addActions(
+                    Action.newBuilder()
+                        .setBlock(Action.Block.newBuilder().setUseThresholdDuration(true)))
+                .addResourceAccessThresholdConfigs(
+                    ResourceAccessThresholdConfig.newBuilder()
+                        .setRollingWindowThresholdConfig(
+                            ResourceAccessThresholdConfig.RollingWindowThresholdConfig.newBuilder()
+                                .setCountAllowed(5)
+                                .setDurationIso("10m"))))
+        .build();
   }
 }

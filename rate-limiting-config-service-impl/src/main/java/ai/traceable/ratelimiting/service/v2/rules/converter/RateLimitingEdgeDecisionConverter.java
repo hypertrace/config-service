@@ -7,12 +7,11 @@ import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
 import static ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType.AGGREGATION_TYPE_COUNT;
 import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedRateLimitViolationInfo;
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.BLOCK;
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.MARK_FOR_TESTING;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_RESPONSE;
 import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT;
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_PER_USER;
+import static ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter.findAnyMatchingEdgeDecisionAction;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toMap;
@@ -130,7 +129,7 @@ public class RateLimitingEdgeDecisionConverter {
 
   private EdgeDecision buildEdgeDecision(
       final RateLimitingRule rateLimitingRule, ThresholdActionConfig thresholdActionConfig) {
-    Optional<Action> mayBeAction = filterActions(thresholdActionConfig);
+    Optional<Action> mayBeAction = findAnyMatchingEdgeDecisionAction(thresholdActionConfig);
     if (mayBeAction.isEmpty()) {
       // should never happen
       throw new IllegalArgumentException("unable to find relevant action in threshold config");
@@ -254,18 +253,9 @@ public class RateLimitingEdgeDecisionConverter {
 
   private Stream<ThresholdActionConfig> getThresholdActionConfigs(final RateLimitingRuleData data) {
     return data.getThresholdActionConfigsList().stream()
-        .filter(thresholdActionConfig -> filterActions(thresholdActionConfig).isPresent());
-  }
-
-  private Optional<Action> filterActions(ThresholdActionConfig thresholdActionConfig) {
-    return thresholdActionConfig.getActionsList().stream()
         .filter(
-            action ->
-                (action.getActionCase().equals(BLOCK)
-                        && action.getBlock().getUseThresholdDuration())
-                    || (action.getActionCase().equals(MARK_FOR_TESTING)
-                        && action.getMarkForTesting().hasAgentRuleEffect()))
-        .findAny();
+            thresholdActionConfig ->
+                findAnyMatchingEdgeDecisionAction(thresholdActionConfig).isPresent());
   }
 
   private Stream<ResourceAccessThresholdConfig> getResourceAccessThresholdConfigsList(
