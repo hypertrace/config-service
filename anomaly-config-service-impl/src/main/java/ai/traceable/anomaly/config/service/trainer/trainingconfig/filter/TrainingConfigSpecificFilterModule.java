@@ -179,6 +179,10 @@ public class TrainingConfigSpecificFilterModule extends AbstractModule {
 
     trainingConfigSpecificFilterMatcherMultibinder
         .addBinding()
+        .to(VulnerabilityTrainingConfigFilterMatcher.class);
+
+    trainingConfigSpecificFilterMatcherMultibinder
+        .addBinding()
         .toInstance(
             new DefaultTrainingConfigTypeFilterMatcher(
                 METADATA_TRAINING_CONFIG_FILTER, METADATA_TRAINING_CONFIG));
