@@ -2,6 +2,9 @@ package ai.traceable.edge.decision.config.service.store;
 
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategoryFilter;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeFilter;
 import ai.traceable.edge.decision.config.service.v1.Filter;
 import ai.traceable.edge.decision.config.service.v1.GenericValueFilter;
 import ai.traceable.edge.decision.config.service.v1.LogicalFilter;
@@ -9,6 +12,7 @@ import ai.traceable.edge.decision.config.service.v1.TimeRangeFilter;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
+import java.util.Optional;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 
 public class FilterEvaluator {
@@ -32,6 +36,8 @@ public class FilterEvaluator {
         return evaluate(filter.getEdgeDecisionRuleCategoryFilter(), ruleWithContext.getData());
       case INCLUDE_DISABLED:
         return evaluate(filter.getIncludeDisabled(), ruleWithContext.getData());
+      case SCOPE_FILTER:
+        return evaluate(filter.getScopeFilter(), ruleWithContext.getData().getRuleScope());
       case FILTER_NOT_SET:
         return true;
       default:
@@ -93,5 +99,27 @@ public class FilterEvaluator {
 
   private boolean evaluate(boolean includeDisabled, EdgeDecisionRule rule) {
     return includeDisabled || !rule.getRuleStatus().getDisabled();
+  }
+
+  private boolean evaluate(
+      EdgeDecisionRuleScopeFilter scopeFilter, EdgeDecisionRuleScope ruleScope) {
+    switch (scopeFilter.getScopeCase()) {
+      case ENVIRONMENT_SCOPE:
+        Optional<EdgeDecisionRuleScopeCondition> environmentScopeCondition =
+            ruleScope.getScopeConditionsList().stream()
+                .filter(EdgeDecisionRuleScopeCondition::hasEnvironmentScope)
+                .findFirst();
+        if (environmentScopeCondition.isEmpty()) {
+          // no environment scope is defined => rule applies to all envs
+          return true;
+        }
+        return environmentScopeCondition.get().getEnvironmentScope().getEnvironmentsList().stream()
+            .anyMatch(env -> scopeFilter.getEnvironmentScope().getEnvironmentsList().contains(env));
+      case SCOPE_NOT_SET:
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unrecognized scope filter type: " + scopeFilter.getScopeCase())
+            .asRuntimeException();
+    }
   }
 }

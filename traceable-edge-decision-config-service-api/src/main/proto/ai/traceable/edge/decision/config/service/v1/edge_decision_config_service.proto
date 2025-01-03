@@ -122,6 +122,13 @@ message Filter {
     TimeRangeFilter last_updated_time_filter = 4;
     EdgeDecisionRuleCategoryFilter edge_decision_rule_category_filter = 5;
     bool include_disabled = 6;
+    EdgeDecisionRuleScopeFilter scope_filter = 7;
+  }
+}
+
+message EdgeDecisionRuleScopeFilter {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
   }
 }
 
