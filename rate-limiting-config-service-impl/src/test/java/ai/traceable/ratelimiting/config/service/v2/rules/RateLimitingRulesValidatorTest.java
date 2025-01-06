@@ -2746,7 +2746,23 @@ public class RateLimitingRulesValidatorTest {
     ThresholdActionConfig thresholdActionConfig =
         ruleData.getThresholdActionConfigsList().get(0).toBuilder()
             .clearActions()
-            .addActions(Action.newBuilder().setAlert(Action.Alert.newBuilder()))
+            .addActions(
+                Action.newBuilder()
+                    .setAlert(
+                        Action.Alert.newBuilder()
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                            .setAgentRuleEffect(
+                                Action.AgentRuleEffect.newBuilder()
+                                    .addAgentModifications(
+                                        Action.AgentModification.newBuilder()
+                                            .setHeaderInjection(
+                                                Action.HeaderInjection.newBuilder()
+                                                    .setHeaderCategory(
+                                                        Action.MatchCategory.MATCH_CATEGORY_REQUEST)
+                                                    .setHeaderName("test-header")
+                                                    .setValue(
+                                                        Action.FieldValue.newBuilder()
+                                                            .setStaticValue("test-value")))))))
             .build();
     ruleData =
         ruleData.toBuilder()

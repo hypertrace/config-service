@@ -7,6 +7,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.Action.HeaderInjection;
 import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
@@ -20,6 +21,8 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFil
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
+import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
@@ -147,11 +150,14 @@ public class RateLimitingRulesValidator implements RulesValidator {
       boolean isSelectedDataTypesSensitiveParamsEvaluationValid =
           isSelectedDataTypesSensitiveParamsEvaluationValid(
               data.getCondition(), data.getCategory());
+      boolean isEdgeDecisionCompatibleRule = isEdgeDecisionCompatibleRule(data);
       data.getThresholdActionConfigsList()
           .forEach(
               thresholdActionConfig ->
                   this.validateThresholdActionConfig(
-                      thresholdActionConfig, isSelectedDataTypesSensitiveParamsEvaluationValid));
+                      thresholdActionConfig,
+                      isSelectedDataTypesSensitiveParamsEvaluationValid,
+                      isEdgeDecisionCompatibleRule));
       validateCondition(data.getCondition());
     }
   }
@@ -201,7 +207,8 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateThresholdActionConfig(
       ThresholdActionConfig thresholdActionConfig,
-      boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
+      boolean isSelectedDataTypesSensitiveParamsEvaluationValid,
+      boolean isEdgeDecisionCompatibleRule) {
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig,
         ThresholdActionConfig.RESOURCE_ACCESS_THRESHOLD_CONFIGS_FIELD_NUMBER);
@@ -212,6 +219,10 @@ public class RateLimitingRulesValidator implements RulesValidator {
                 validateResourceAccessThresholdConfig(
                     resourceAccessThresholdConfig,
                     isSelectedDataTypesSensitiveParamsEvaluationValid));
+    final boolean isEdgeDecisionCompatibleThresholdActionConfig =
+        isEdgeDecisionCompatibleRule
+            && thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
+                .allMatch(ResourceAccessThresholdConfig::hasRollingWindowThresholdConfig);
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig, ThresholdActionConfig.ACTIONS_FIELD_NUMBER);
 
@@ -224,7 +235,12 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
     thresholdActionConfig
         .getActionsList()
-        .forEach(action -> validateAction(action, userAggregationAcrossAllPresent));
+        .forEach(
+            action ->
+                validateAction(
+                    action,
+                    userAggregationAcrossAllPresent,
+                    isEdgeDecisionCompatibleThresholdActionConfig));
   }
 
   private void validateResourceAccessThresholdConfig(
@@ -314,6 +330,48 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
+  private boolean isEdgeDecisionCompatibleRule(RateLimitingRuleData data) {
+    switch (data.getCategory()) {
+      case CATEGORY_RATE_LIMITING:
+        return isValidEdgeDecisionCondition(data.getCondition());
+      default:
+        return false;
+    }
+  }
+
+  private boolean isValidEdgeDecisionCondition(Condition condition) {
+    switch (condition.getConditionCase()) {
+      case LEAF_CONDITION:
+        LeafCondition leafCondition = condition.getLeafCondition();
+        return !(leafCondition.hasDatatypeCondition()
+            || leafCondition.hasRequestScannerTypeCondition()
+            || (leafCondition.hasKeyValueCondition()
+                && isInvalidEdgeDecisionKeyValueType(
+                    leafCondition.getKeyValueCondition().getType())));
+      case COMPOSITE_CONDITION:
+        return condition.getCompositeCondition().getChildrenList().stream()
+            .allMatch(this::isValidEdgeDecisionCondition);
+      default:
+        return false;
+    }
+  }
+
+  private boolean isInvalidEdgeDecisionKeyValueType(KeyValueCondition.Type type) {
+    switch (type) {
+      case TYPE_RESPONSE_BODY:
+      case TYPE_RESPONSE_HEADER:
+      case TYPE_RESPONSE_COOKIE:
+      case TYPE_RESPONSE_BODY_PARAMETER:
+      case TYPE_TAG:
+      case TYPE_RESPONSE_BODY_SIZE:
+      case TYPE_RESPONSE_HEADERS_COUNT:
+      case TYPE_RESPONSE_COOKIES_COUNT:
+        return true;
+      default:
+        return false;
+    }
+  }
+
   private boolean isSelectedDataTypesSensitiveParamsEvaluationValid(
       Condition condition, Category category) {
     switch (category) {
@@ -366,13 +424,18 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateAction(Action action, boolean aggregateAcrossAllUsersPresent) {
+  private void validateAction(
+      Action action, boolean aggregateAcrossAllUsersPresent, boolean isEdgeDecisionCompatibleRule) {
     switch (action.getActionCase()) {
       case MARK_FOR_TESTING:
+        validateMarkForTestingAction(action.getMarkForTesting(), isEdgeDecisionCompatibleRule);
+        break;
       case ALERT:
+        validateAlertAction(action.getAlert());
         break;
       case BLOCK:
-        validateBlockAction(aggregateAcrossAllUsersPresent, action.getBlock());
+        validateBlockAction(
+            aggregateAcrossAllUsersPresent, action.getBlock(), isEdgeDecisionCompatibleRule);
         break;
       default:
         validatorUtils.throwInvalidArgumentException(
@@ -381,7 +444,10 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateBlockAction(boolean aggregateAcrossAllUsersPresent, Action.Block block) {
+  private void validateBlockAction(
+      boolean aggregateAcrossAllUsersPresent,
+      Action.Block block,
+      boolean isEdgeDecisionCompatibleRule) {
     if (aggregateAcrossAllUsersPresent && !block.hasUseThresholdDuration()) {
       validatorUtils.throwInvalidArgumentException(
           "Block action unsupported on aggregation across users");
@@ -390,5 +456,49 @@ public class RateLimitingRulesValidator implements RulesValidator {
       validatorUtils.throwInvalidArgumentException(
           "Either duration or use threshold duration can be configured. Both of them cannot be configured together");
     }
+    if (block.getUseThresholdDuration() && !isEdgeDecisionCompatibleRule) {
+      validatorUtils.throwInvalidArgumentException(
+          "Block action with use threshold config is invalid with current rule conditions.");
+    }
+    validateNonDefaultPresenceOrThrow(block, Action.Block.EVENT_SEVERITY_FIELD_NUMBER);
+  }
+
+  private void validateAlertAction(Action.Alert alert) {
+    validateNonDefaultPresenceOrThrow(alert, Action.Alert.EVENT_SEVERITY_FIELD_NUMBER);
+    if (alert.hasAgentRuleEffect()) {
+      validategentRuleEffect(alert.getAgentRuleEffect());
+    }
+  }
+
+  private void validateMarkForTestingAction(
+      Action.MarkForTesting markForTesting, boolean isEdgeDecisionCompatibleRule) {
+    if (!isEdgeDecisionCompatibleRule) {
+      validatorUtils.throwInvalidArgumentException(
+          "Mark for testing action is invalid with current rule conditions.");
+    }
+    validateNonDefaultPresenceOrThrow(
+        markForTesting, Action.MarkForTesting.EVENT_SEVERITY_FIELD_NUMBER);
+    if (markForTesting.hasAgentRuleEffect()) {
+      validategentRuleEffect(markForTesting.getAgentRuleEffect());
+    }
+  }
+
+  private void validategentRuleEffect(Action.AgentRuleEffect agentRuleEffect) {
+    if (agentRuleEffect.getAgentModificationsList().isEmpty()) {
+      validatorUtils.throwInvalidArgumentException(
+          "Agent rule effect should have atleast one modification.");
+    }
+    agentRuleEffect
+        .getAgentModificationsList()
+        .forEach(
+            agentModification -> {
+              HeaderInjection headerInjection = agentModification.getHeaderInjection();
+              validateNonDefaultPresenceOrThrow(
+                  headerInjection, HeaderInjection.HEADER_CATEGORY_FIELD_NUMBER);
+              validateNonDefaultPresenceOrThrow(
+                  headerInjection, HeaderInjection.HEADER_NAME_FIELD_NUMBER);
+              validateNonDefaultPresenceOrThrow(
+                  headerInjection.getValue(), Action.FieldValue.STATIC_VALUE_FIELD_NUMBER);
+            });
   }
 }

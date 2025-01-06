@@ -39,6 +39,7 @@ import ai.traceable.edge.decision.config.service.v1.ResponseHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
@@ -94,6 +95,10 @@ public class RateLimitingEdgeDecisionConverter {
       final RequestContext requestContext, final RateLimitingRule rateLimitingRule) {
     try {
       final RateLimitingRuleData data = rateLimitingRule.getData();
+      // only rate limiting rules are currently converted to edge decision rules
+      if (!data.getCategory().equals(Category.CATEGORY_RATE_LIMITING)) {
+        return Collections.emptyList();
+      }
       final EdgeDecisionRuleStatus edgeDecisionRuleStatus = buildRuleStatus(data);
       final Optional<EdgeDecisionRuleScope> maybeEdgeDecisionRuleScope = buildRuleScope(data);
       final Optional<MatchCondition> mayBeMatchCondition =
