@@ -21,4 +21,6 @@ service DetectionExclusionConfigService {
 
   //API to blindly upsert documents which can replace existing ones, ID is generated using name and rule-source, should preferably be used only internally
   rpc BulkUpsertDetectionExclusionRules(BulkUpsertDetectionExclusionRulesRequest) returns (BulkUpsertDetectionExclusionRulesResponse) {}
+
+  rpc GetDetectionExclusionEdgeDecisionRules(GetDetectionExclusionEdgeDecisionRulesRequest) returns (GetDetectionExclusionEdgeDecisionRulesResponse) {}
 }
