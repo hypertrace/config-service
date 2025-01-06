@@ -639,6 +639,10 @@ anomalyConfigServiceConfig:
         }
       ]
 
+fraudDataModelDerivationConfigService:
+  defaultFraudDataModelDerivations: |-
+    []
+
 #defaultModsecDetectionConfigs: |-
 #  [
 #    {

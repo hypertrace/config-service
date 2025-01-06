@@ -1,6 +1,7 @@
 package ai.traceable.fraud.datamodel.derivation.config.service.store;
 
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.fraud.datamodel.derivation.config.service.DefaultFraudDataModelDerivationConfig;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.*;
 import io.grpc.Status;
 import io.grpc.StatusException;
@@ -15,16 +16,19 @@ public class FraudDataModelDerivationConfigStoreManager {
   private final FraudDataModelDerivationConfigStore fraudDataModelDerivationConfigStore;
   private final FraudDataModelDerivationTransformConfigStore
       fraudDataModelDerivationTransformConfigStore;
+  private final DefaultFraudDataModelDerivationConfig defaultFraudDataModelDerivationConfig;
   private final UuidGenerator uuidGenerator;
 
   @Inject
   public FraudDataModelDerivationConfigStoreManager(
       FraudDataModelDerivationConfigStore fraudDataModelDerivationConfigStore,
       FraudDataModelDerivationTransformConfigStore fraudDataModelDerivationTransformConfigStore,
+      DefaultFraudDataModelDerivationConfig defaultFraudDataModelDerivationConfig,
       UuidGenerator uuidGenerator) {
     this.fraudDataModelDerivationConfigStore = fraudDataModelDerivationConfigStore;
     this.fraudDataModelDerivationTransformConfigStore =
         fraudDataModelDerivationTransformConfigStore;
+    this.defaultFraudDataModelDerivationConfig = defaultFraudDataModelDerivationConfig;
     this.uuidGenerator = uuidGenerator;
   }
 
@@ -47,6 +51,13 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public UpdateDerivationConfigResponse updateDerivationConfig(
       RequestContext requestContext, UpdateDerivationConfigRequest request) throws StatusException {
+    if (defaultFraudDataModelDerivationConfig.isDefaultConfig(
+        request.getDerivationConfig().getId())) {
+      throw Status.UNIMPLEMENTED
+          .withDescription("Edit operation is not supported for default derivation configs")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
     // check if we have an existing config with the given id, before proceeding
     fetchExistingDerivationConfigOrThrow(request.getDerivationConfig().getId(), requestContext);
     DerivationConfig updatedDerivationConfig =
@@ -61,6 +72,13 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public UpsertDerivationConfigResponse upsertDerivationConfig(
       RequestContext requestContext, UpsertDerivationConfigRequest request) throws StatusException {
+    if (defaultFraudDataModelDerivationConfig.isDefaultConfig(
+        request.getDerivationConfig().getId())) {
+      throw Status.UNIMPLEMENTED
+          .withDescription("Edit operation is not supported for default derivation configs")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+
     DerivationConfig updatedDerivationConfig =
         DerivationConfig.newBuilder(request.getDerivationConfig()).build();
     ContextualConfigObject<DerivationConfig> configObject =
@@ -73,15 +91,27 @@ public class FraudDataModelDerivationConfigStoreManager {
 
   public GetDerivationConfigsResponse fetchDerivedConfigs(
       RequestContext requestContext, GetDerivationConfigsRequest request) {
-    List<DerivationConfig> derivationConfigs =
+    List<DerivationConfig> storedDerivationConfigs =
         fraudDataModelDerivationConfigStore.getAllConfigData(requestContext, request);
+
     return GetDerivationConfigsResponse.newBuilder()
-        .addAllDerivationConfigs(derivationConfigs)
+        .addAllDerivationConfigs(
+            defaultFraudDataModelDerivationConfig.getDerivationConfigsForType(
+                request.getDerivationConfigType()))
+        .addAllDerivationConfigs(storedDerivationConfigs)
         .build();
   }
 
   public GetDerivationConfigResponse fetchDerivedConfig(
       RequestContext requestContext, GetDerivationConfigRequest request) throws StatusException {
+    Optional<DerivationConfig> defaultConfig =
+        defaultFraudDataModelDerivationConfig.getDefaultConfig(request.getDerivationConfigId());
+    if (defaultConfig.isPresent()) {
+      return GetDerivationConfigResponse.newBuilder()
+          .setDerivationConfig(defaultConfig.get())
+          .build();
+    }
+
     GetDerivationConfigsRequest getDerivationConfigsRequest =
         GetDerivationConfigsRequest.newBuilder()
             .setDerivationConfigType(request.getDerivationConfigType())
@@ -110,6 +140,11 @@ public class FraudDataModelDerivationConfigStoreManager {
   }
 
   public void deleteDerivedConfig(RequestContext requestContext, String id) {
+    if (defaultFraudDataModelDerivationConfig.isDefaultConfig(id)) {
+      throw Status.UNIMPLEMENTED
+          .withDescription("Delete operation is not supported for default derivation configs")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
     fraudDataModelDerivationConfigStore.deleteObject(requestContext, id);
   }
 

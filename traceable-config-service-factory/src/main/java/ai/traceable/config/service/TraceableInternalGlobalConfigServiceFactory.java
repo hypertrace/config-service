@@ -35,6 +35,8 @@ public class TraceableInternalGlobalConfigServiceFactory implements GrpcPlatform
                 providers.getChannelRegistry())),
         new GrpcPlatformService(
             FraudDataModelDerivationConfigServiceFactory.build(
-                providers.getLocalChannel(), providers.getChangeEventGenerator())));
+                providers.getConfig(),
+                providers.getLocalChannel(),
+                providers.getChangeEventGenerator())));
   }
 }

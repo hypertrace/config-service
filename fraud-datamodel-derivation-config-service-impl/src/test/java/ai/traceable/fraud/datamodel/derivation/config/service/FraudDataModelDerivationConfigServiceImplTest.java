@@ -1,7 +1,9 @@
 package ai.traceable.fraud.datamodel.derivation.config.service;
 
+import static ai.traceable.fraud.datamodel.derivation.config.service.DefaultFraudDataModelDerivationConfig.FRAUD_DATAMODEL_DERIVATION_CONFIG_SERVICE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.datamodel.derivation.config.service.store.FraudDataModelDerivationConfigStore;
@@ -11,6 +13,7 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.ApiScope;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateDerivationConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateUserAgentMergeMappingConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.CreateUserAgentMergeMappingConfigResponse;
+import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteUserAgentMergeMappingConfigRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DeleteUserAgentMergeMappingConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.DerivationConfig;
@@ -32,6 +35,8 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.UserAgentMergeM
 import ai.traceable.fraud.datamodel.derivation.config.service.validation.FraudDataModelDerivationConfigRequestValidator;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.HashMap;
@@ -59,19 +64,47 @@ class FraudDataModelDerivationConfigServiceImplTest {
   private FraudDataModelDerivationConfigStoreManager storeManager;
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
+  @Mock private Config mockConfig;
 
   @BeforeEach
   void beforeEach() {
     UuidGenerator uuidGenerator = new UuidGenerator();
+
+    // Setup default config
+    String jsonString =
+        "\"default\": {\n"
+            + "    \"derivation\": {\n"
+            + "      \"configs\": [\n"
+            + "        {\n"
+            + "          \"id\": \"default-derivation-config-1\",\n"
+            + "          \"name\": \"Default Metric Derivation Config 1\",\n"
+            + "          \"derivation_config_type\": \"DERIVATION_CONFIG_TYPE_METRIC\",\n"
+            + "          \"derivation_config\": \"metric_yaml_config_1\"\n"
+            + "        },\n"
+            + "        {\n"
+            + "          \"id\": \"default-derivation-config-2\",\n"
+            + "          \"name\": \"Default Metric Derivation Config 2\",\n"
+            + "          \"derivation_config_type\": \"DERIVATION_CONFIG_TYPE_METRIC\",\n"
+            + "          \"derivation_config\": \"metric_yaml_config_2\"\n"
+            + "        }\n"
+            + "      ]\n"
+            + "    }\n"
+            + "  }";
+    when(mockConfig.getConfig(FRAUD_DATAMODEL_DERIVATION_CONFIG_SERVICE))
+        .thenReturn(ConfigFactory.parseString(jsonString));
+
     this.mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+
     this.storeManager =
         new FraudDataModelDerivationConfigStoreManager(
             new FraudDataModelDerivationConfigStore(genericStub, eventGenerator),
             new FraudDataModelDerivationTransformConfigStore(genericStub, eventGenerator),
+            new DefaultFraudDataModelDerivationConfig(mockConfig),
             uuidGenerator);
+
     this.mockGenericConfigService
         .addService(
             new FraudDataModelDerivationConfigServiceImpl(
@@ -92,6 +125,7 @@ class FraudDataModelDerivationConfigServiceImplTest {
 
   @Test
   void testDerivationConfigCRUD() {
+
     RequestContext requestContext = buildRequestContext();
     DerivationConfig createdDerivationConfig =
         requestContext.call(
@@ -146,6 +180,7 @@ class FraudDataModelDerivationConfigServiceImplTest {
                     GetDerivationConfigsRequest.newBuilder()
                         .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                         .build()));
+
     assertEquals(1, getDerivationConfigsResponse.getDerivationConfigsCount());
 
     getDerivationConfigsResponse =
@@ -233,6 +268,80 @@ class FraudDataModelDerivationConfigServiceImplTest {
                         .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                         .build()));
     assertEquals(0, getDerivationConfigsResponse.getDerivationConfigsCount());
+
+    String defaultConfigId1 = "default-derivation-config-1";
+    String defaultConfigId2 = "default-derivation-config-2";
+    String defaultConfigName1 = "Default Metric Derivation Config 1";
+
+    // Try to update default config - should fail
+    DerivationConfig updateConfig =
+        DerivationConfig.newBuilder()
+            .setId(defaultConfigId1)
+            .setName("Updated Name")
+            .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
+            .setDerivationConfig("updated_yaml_config")
+            .build();
+
+    StatusRuntimeException updateException =
+        Assertions.assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                requestContext.call(
+                    () ->
+                        this.fraudDataModelDerivationConfigServiceBlockingStub
+                            .updateDerivationConfig(
+                                UpdateDerivationConfigRequest.newBuilder()
+                                    .setDerivationConfig(updateConfig)
+                                    .build())));
+    assertEquals(
+        "Edit operation is not supported for default derivation configs",
+        updateException.getStatus().getDescription());
+
+    // Try to delete default config - should fail
+    StatusRuntimeException deleteException =
+        Assertions.assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                requestContext.call(
+                    () ->
+                        this.fraudDataModelDerivationConfigServiceBlockingStub
+                            .deleteDerivationConfigs(
+                                DeleteDerivationConfigsRequest.newBuilder()
+                                    .setDerivationConfigId(defaultConfigId1)
+                                    .build())));
+    assertEquals(
+        "Delete operation is not supported for default derivation configs",
+        deleteException.getStatus().getDescription());
+
+    // Get default config
+    GetDerivationConfigResponse getResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfig(
+                    GetDerivationConfigRequest.newBuilder()
+                        .setDerivationConfigId(defaultConfigId1)
+                        .build()));
+
+    DerivationConfig defaultDerivationConfig = getResponse.getDerivationConfig();
+    assertEquals(defaultConfigId1, defaultDerivationConfig.getId());
+    assertEquals(defaultConfigName1, defaultDerivationConfig.getName());
+    assertEquals("metric_yaml_config_1", defaultDerivationConfig.getDerivationConfig());
+    assertEquals(
+        DerivationConfigType.DERIVATION_CONFIG_TYPE_METRIC,
+        defaultDerivationConfig.getDerivationConfigType());
+
+    // List configs should include default config
+    GetDerivationConfigsResponse listResponse =
+        requestContext.call(
+            () ->
+                this.fraudDataModelDerivationConfigServiceBlockingStub.getDerivationConfigs(
+                    GetDerivationConfigsRequest.newBuilder()
+                        .setDerivationConfigType(DerivationConfigType.DERIVATION_CONFIG_TYPE_METRIC)
+                        .build()));
+
+    assertEquals(2, listResponse.getDerivationConfigsCount());
+    assertEquals(defaultConfigId1, listResponse.getDerivationConfigs(0).getId());
+    assertEquals(defaultConfigId2, listResponse.getDerivationConfigs(1).getId());
   }
 
   @Test

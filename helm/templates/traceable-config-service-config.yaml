@@ -383,7 +383,10 @@ data:
       port = {{ .Values.traceableConfigServiceConfig.attributeServiceConfig.port }}
       request.timeout = {{ .Values.traceableConfigServiceConfig.attributeServiceConfig.request.timeout }}
     }
-
+    
+    fraud.datamodel.derivation.config.service = {
+      default.derivation.configs = {{- .Values.fraudDataModelDerivationConfigService.defaultFraudDataModelDerivations | indent 6 }}
+    }
 
   anomaly.conf: |-
     modsecRuleVersion = {{ .Values.anomalyConfigServiceConfig.modsecRuleVersion }}
