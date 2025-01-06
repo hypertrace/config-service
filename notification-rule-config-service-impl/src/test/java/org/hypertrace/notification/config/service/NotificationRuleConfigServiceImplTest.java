@@ -1,7 +1,9 @@
 package org.hypertrace.notification.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -21,11 +23,13 @@ class NotificationRuleConfigServiceImplTest {
 
   MockGenericConfigService mockGenericConfigService;
   NotificationRuleConfigServiceGrpc.NotificationRuleConfigServiceBlockingStub notificationStub;
+  NotificationRuleStore notificationRuleStore;
 
   @BeforeEach
   void beforeEach() {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    notificationRuleStore = mock(NotificationRuleStore.class);
 
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockGenericConfigService
@@ -44,6 +48,7 @@ class NotificationRuleConfigServiceImplTest {
         getNotificationRuleMutableData("rule1", "channel1");
     NotificationRuleMutableData notificationRuleMutableData2 =
         getNotificationRuleMutableData("rule2", "channel1");
+    when(notificationRuleStore.getAllObjects(any())).thenReturn(List.of());
 
     NotificationRule notificationRule1 =
         notificationStub

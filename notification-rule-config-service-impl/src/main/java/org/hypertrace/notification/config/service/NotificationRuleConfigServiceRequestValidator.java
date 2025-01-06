@@ -4,28 +4,52 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import io.grpc.Status;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.NotificationIntegrationTarget;
+import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 
 public class NotificationRuleConfigServiceRequestValidator {
 
   public void validateCreateNotificationRuleRequest(
-      RequestContext requestContext, CreateNotificationRuleRequest request) {
+      RequestContext requestContext,
+      CreateNotificationRuleRequest request,
+      List<NotificationRule> existingNotificationRules) {
     validateRequestContextOrThrow(requestContext);
+    validateNonExistingNotificationRuleOrThrow(
+        request.getNotificationRuleMutableData().getRuleName(), existingNotificationRules);
     validateNotificationRuleMutableData(request.getNotificationRuleMutableData());
   }
 
   public void validateUpdateNotificationRuleRequest(
-      RequestContext requestContext, UpdateNotificationRuleRequest request) {
+      RequestContext requestContext,
+      UpdateNotificationRuleRequest request,
+      List<NotificationRule> existingNotificationRules) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateNotificationRuleRequest.ID_FIELD_NUMBER);
+    validateNonExistingNotificationRuleOrThrow(
+        request.getNotificationRuleMutableData().getRuleName(), existingNotificationRules);
     validateNotificationRuleMutableData(request.getNotificationRuleMutableData());
+  }
+
+  private void validateNonExistingNotificationRuleOrThrow(
+      String ruleName, List<NotificationRule> existingNotificationRules) {
+    for (NotificationRule existingNotificationRule : existingNotificationRules) {
+      if (existingNotificationRule
+          .getNotificationRuleMutableData()
+          .getRuleName()
+          .equals(ruleName)) {
+        throw Status.ALREADY_EXISTS
+            .withDescription("Notification Rule with the same name already exists.")
+            .asRuntimeException();
+      }
+    }
   }
 
   private void validateNotificationRuleMutableData(NotificationRuleMutableData data) {
