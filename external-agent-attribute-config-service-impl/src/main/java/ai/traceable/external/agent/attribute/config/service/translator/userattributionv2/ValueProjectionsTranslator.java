@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
 class ValueProjectionsTranslator {
   private static final String JSON_PATH_PREFIX = "$.";
+  private static final String JSON_ARRAY_PREFIX = "$[";
   private final AttributeRuleBuilder attributeRuleBuilder;
 
   AttributeRule translateValueProjections(
@@ -53,6 +54,8 @@ class ValueProjectionsTranslator {
 
   private String getJsonPath(ValueProjection.JsonPathProjection jsonPath) {
     String path = jsonPath.getPath();
-    return path.startsWith(JSON_PATH_PREFIX) ? path : JSON_PATH_PREFIX + path;
+    return (path.startsWith(JSON_PATH_PREFIX) || path.startsWith(JSON_ARRAY_PREFIX))
+        ? path
+        : JSON_PATH_PREFIX + path;
   }
 }
