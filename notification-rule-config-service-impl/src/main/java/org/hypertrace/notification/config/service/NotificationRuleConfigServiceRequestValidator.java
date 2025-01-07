@@ -22,7 +22,7 @@ public class NotificationRuleConfigServiceRequestValidator {
       CreateNotificationRuleRequest request,
       List<NotificationRule> existingNotificationRules) {
     validateRequestContextOrThrow(requestContext);
-    validateNonExistingNotificationRuleOrThrow(
+    validateNonDuplicateNotificationRuleOrThrow(
         request.getNotificationRuleMutableData().getRuleName(), existingNotificationRules);
     validateNotificationRuleMutableData(request.getNotificationRuleMutableData());
   }
@@ -33,12 +33,12 @@ public class NotificationRuleConfigServiceRequestValidator {
       List<NotificationRule> existingNotificationRules) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateNotificationRuleRequest.ID_FIELD_NUMBER);
-    validateNonExistingNotificationRuleOrThrow(
+    validateNonDuplicateNotificationRuleOrThrow(
         request.getNotificationRuleMutableData().getRuleName(), existingNotificationRules);
     validateNotificationRuleMutableData(request.getNotificationRuleMutableData());
   }
 
-  private void validateNonExistingNotificationRuleOrThrow(
+  private void validateNonDuplicateNotificationRuleOrThrow(
       String ruleName, List<NotificationRule> existingNotificationRules) {
     for (NotificationRule existingNotificationRule : existingNotificationRules) {
       if (existingNotificationRule
