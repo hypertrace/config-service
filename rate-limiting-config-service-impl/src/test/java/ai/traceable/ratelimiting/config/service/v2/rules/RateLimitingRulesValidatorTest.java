@@ -1,8 +1,11 @@
 package ai.traceable.ratelimiting.config.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
+import static ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND;
 import static ai.traceable.ratelimiting.config.service.v2.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
+import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,7 +17,6 @@ import ai.traceable.ratelimiting.config.service.v2.Action.EventSeverity;
 import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
-import ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DataLocation;
@@ -64,6 +66,8 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class RateLimitingRulesValidatorTest {
   private RequestContext requestContext;
@@ -101,7 +105,7 @@ public class RateLimitingRulesValidatorTest {
 
     CompositeCondition compositeCondition =
         CompositeCondition.newBuilder()
-            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+            .setOperator(LOGICAL_OPERATOR_AND)
             .addChildren(
                 Condition.newBuilder()
                     .setLeafCondition(
@@ -1342,8 +1346,7 @@ public class RateLimitingRulesValidatorTest {
                                 ScopeCondition.newBuilder()
                                     .setEntityScope(
                                         ScopeCondition.EntityScope.newBuilder()
-                                            .setEntityType(
-                                                ScopeCondition.EntityType.ENTITY_TYPE_API)
+                                            .setEntityType(ENTITY_TYPE_API)
                                             .addEntityIds("id1")
                                             .build())
                                     .build())
@@ -1526,7 +1529,7 @@ public class RateLimitingRulesValidatorTest {
                 Condition.newBuilder()
                     .setCompositeCondition(
                         CompositeCondition.newBuilder()
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                            .setOperator(LOGICAL_OPERATOR_AND)
                             .addChildren(
                                 Condition.newBuilder()
                                     .setLeafCondition(
@@ -1543,9 +1546,7 @@ public class RateLimitingRulesValidatorTest {
                                                 ScopeCondition.newBuilder()
                                                     .setEntityScope(
                                                         ScopeCondition.EntityScope.newBuilder()
-                                                            .setEntityType(
-                                                                ScopeCondition.EntityType
-                                                                    .ENTITY_TYPE_API)
+                                                            .setEntityType(ENTITY_TYPE_API)
                                                             .addEntityIds("id1")
                                                             .build())
                                                     .build())
@@ -1581,7 +1582,7 @@ public class RateLimitingRulesValidatorTest {
                 Condition.newBuilder()
                     .setCompositeCondition(
                         CompositeCondition.newBuilder()
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                            .setOperator(LOGICAL_OPERATOR_AND)
                             .addChildren(
                                 Condition.newBuilder()
                                     .setLeafCondition(
@@ -1598,9 +1599,7 @@ public class RateLimitingRulesValidatorTest {
                                                 ScopeCondition.newBuilder()
                                                     .setEntityScope(
                                                         ScopeCondition.EntityScope.newBuilder()
-                                                            .setEntityType(
-                                                                ScopeCondition.EntityType
-                                                                    .ENTITY_TYPE_API)
+                                                            .setEntityType(ENTITY_TYPE_API)
                                                             .addEntityIds("id1")
                                                             .build())
                                                     .build())
@@ -1766,14 +1765,12 @@ public class RateLimitingRulesValidatorTest {
                                                 ScopeCondition.newBuilder()
                                                     .setEntityScope(
                                                         ScopeCondition.EntityScope.newBuilder()
-                                                            .setEntityType(
-                                                                ScopeCondition.EntityType
-                                                                    .ENTITY_TYPE_API)
+                                                            .setEntityType(ENTITY_TYPE_API)
                                                             .addEntityIds("id1")
                                                             .build())
                                                     .build())
                                             .build()))
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                            .setOperator(LOGICAL_OPERATOR_AND))
                     .build())
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
@@ -1855,14 +1852,12 @@ public class RateLimitingRulesValidatorTest {
                                                 ScopeCondition.newBuilder()
                                                     .setEntityScope(
                                                         ScopeCondition.EntityScope.newBuilder()
-                                                            .setEntityType(
-                                                                ScopeCondition.EntityType
-                                                                    .ENTITY_TYPE_API)
+                                                            .setEntityType(ENTITY_TYPE_API)
                                                             .addEntityIds("id1")
                                                             .build())
                                                     .build())
                                             .build()))
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                            .setOperator(LOGICAL_OPERATOR_AND))
                     .build())
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
@@ -2009,9 +2004,7 @@ public class RateLimitingRulesValidatorTest {
                                                 ScopeCondition.newBuilder()
                                                     .setEntityScope(
                                                         ScopeCondition.EntityScope.newBuilder()
-                                                            .setEntityType(
-                                                                ScopeCondition.EntityType
-                                                                    .ENTITY_TYPE_API)
+                                                            .setEntityType(ENTITY_TYPE_API)
                                                             .addEntityIds("id1")
                                                             .build())
                                                     .build())
@@ -2090,7 +2083,7 @@ public class RateLimitingRulesValidatorTest {
                                                     .build())
                                             .build())
                                     .build())
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                            .setOperator(LOGICAL_OPERATOR_AND))
                     .build())
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
@@ -2699,7 +2692,79 @@ public class RateLimitingRulesValidatorTest {
     Status status = Status.fromThrowable(throwable);
     assertEquals("Block action unsupported on aggregation across users", status.getDescription());
 
-    // aggregation across all users supported for block action using threshold duration
+    // aggregation across all users supported for alert
+    ThresholdActionConfig thresholdActionConfig =
+        ruleData.getThresholdActionConfigsList().get(0).toBuilder()
+            .clearActions()
+            .addActions(
+                Action.newBuilder()
+                    .setAlert(
+                        Action.Alert.newBuilder()
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                            .setAgentRuleEffect(
+                                Action.AgentRuleEffect.newBuilder()
+                                    .addAgentModifications(
+                                        Action.AgentModification.newBuilder()
+                                            .setHeaderInjection(
+                                                Action.HeaderInjection.newBuilder()
+                                                    .setHeaderCategory(MATCH_CATEGORY_REQUEST)
+                                                    .setHeaderName("test-header")
+                                                    .setValue(
+                                                        Action.FieldValue.newBuilder()
+                                                            .setStaticValue("test-value")))))))
+            .build();
+    ruleData =
+        ruleData.toBuilder()
+            .clearThresholdActionConfigs()
+            .addThresholdActionConfigs(thresholdActionConfig)
+            .build();
+    CreateRateLimitingRuleRequest request1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+  }
+
+  @ParameterizedTest
+  @MethodSource("getEdgeDecisionCompatibleActions")
+  void testEdgeDecisionCompatibleRules(Action action) {
+    // aggregation across all apis supported for block action using threshold duration
+    RateLimitingRuleData ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setRegionCondition(
+                                RegionCondition.newBuilder()
+                                    .addRegionIdentifiers(
+                                        Region.newBuilder().setCountryIsoCode("ssfsd")))))
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(action)
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(
+                                ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS)
+                            .setUserAggregateType(
+                                UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .build();
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest, List.of()));
+
+    // aggregation per apis without api scope not supported for block action using threshold
+    // duration
     ruleData =
         RateLimitingRuleData.newBuilder()
             .setName("rule1")
@@ -2713,6 +2778,97 @@ public class RateLimitingRulesValidatorTest {
                                 RegionCondition.newBuilder()
                                     .addRegionIdentifiers(
                                         Region.newBuilder().setCountryIsoCode("ssfsd")))))
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(action)
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(
+                                UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .build();
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest1 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest1, List.of()));
+
+    // aggregation per apis with api scope supported for block action using threshold duration
+    ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setScopeCondition(
+                                ScopeCondition.newBuilder()
+                                    .setEntityScope(
+                                        ScopeCondition.EntityScope.newBuilder()
+                                            .setEntityType(ENTITY_TYPE_API)
+                                            .addEntityIds("apiId1")))))
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addActions(action)
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                            .setUserAggregateType(
+                                UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS)
+                            .setRollingWindowThresholdConfig(
+                                RollingWindowThresholdConfig.newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("P3Y6M4DT12H30M5S")
+                                    .build())
+                            .build()))
+            .build();
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest2 =
+        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest2, List.of()));
+
+    // aggregation per apis with api scope supported for block action using threshold duration
+    ruleData =
+        RateLimitingRuleData.newBuilder()
+            .setName("rule1")
+            .setCategory(Category.CATEGORY_RATE_LIMITING)
+            .setEnabled(true)
+            .setCondition(
+                Condition.newBuilder()
+                    .setCompositeCondition(
+                        CompositeCondition.newBuilder()
+                            .setOperator(LOGICAL_OPERATOR_AND)
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setScopeCondition(
+                                                ScopeCondition.newBuilder()
+                                                    .setEntityScope(
+                                                        ScopeCondition.EntityScope.newBuilder()
+                                                            .setEntityType(ENTITY_TYPE_API)
+                                                            .addEntityIds("apiId1")))))
+                            .addChildren(
+                                Condition.newBuilder()
+                                    .setLeafCondition(
+                                        LeafCondition.newBuilder()
+                                            .setRegionCondition(
+                                                RegionCondition.newBuilder()
+                                                    .addRegionIdentifiers(
+                                                        Region.newBuilder()
+                                                            .setCountryIsoCode("ssfsd")))))))
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
                     .addActions(
@@ -2735,43 +2891,12 @@ public class RateLimitingRulesValidatorTest {
                                     .build())
                             .build()))
             .build();
-    CreateRateLimitingRuleRequest createRateLimitingRuleRequest =
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest3 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(
         () ->
             rulesValidator.validateOrThrow(
-                requestContext, createRateLimitingRuleRequest, List.of()));
-
-    // aggregation across all users supported for alert
-    ThresholdActionConfig thresholdActionConfig =
-        ruleData.getThresholdActionConfigsList().get(0).toBuilder()
-            .clearActions()
-            .addActions(
-                Action.newBuilder()
-                    .setAlert(
-                        Action.Alert.newBuilder()
-                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
-                            .setAgentRuleEffect(
-                                Action.AgentRuleEffect.newBuilder()
-                                    .addAgentModifications(
-                                        Action.AgentModification.newBuilder()
-                                            .setHeaderInjection(
-                                                Action.HeaderInjection.newBuilder()
-                                                    .setHeaderCategory(
-                                                        Action.MatchCategory.MATCH_CATEGORY_REQUEST)
-                                                    .setHeaderName("test-header")
-                                                    .setValue(
-                                                        Action.FieldValue.newBuilder()
-                                                            .setStaticValue("test-value")))))))
-            .build();
-    ruleData =
-        ruleData.toBuilder()
-            .clearThresholdActionConfigs()
-            .addThresholdActionConfigs(thresholdActionConfig)
-            .build();
-    CreateRateLimitingRuleRequest request1 =
-        CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
-    assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request1, List.of()));
+                requestContext, createRateLimitingRuleRequest3, List.of()));
   }
 
   @Test
@@ -2839,7 +2964,7 @@ public class RateLimitingRulesValidatorTest {
                                                     .toBuilder()
                                                     .setDataLocation(
                                                         DataLocation.DATA_LOCATION_REQUEST))))
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                            .setOperator(LOGICAL_OPERATOR_AND))
                     .build())
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
@@ -2897,7 +3022,7 @@ public class RateLimitingRulesValidatorTest {
                                                     .toBuilder()
                                                     .setDataLocation(
                                                         DataLocation.DATA_LOCATION_RESPONSE))))
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                            .setOperator(LOGICAL_OPERATOR_AND))
                     .build())
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
@@ -2955,7 +3080,7 @@ public class RateLimitingRulesValidatorTest {
                                                     .toBuilder()
                                                     .setDataLocation(
                                                         DataLocation.DATA_LOCATION_REQUEST))))
-                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND))
+                            .setOperator(LOGICAL_OPERATOR_AND))
                     .build())
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
@@ -3040,7 +3165,7 @@ public class RateLimitingRulesValidatorTest {
             Condition.newBuilder()
                 .setCompositeCondition(
                     CompositeCondition.newBuilder()
-                        .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                        .setOperator(LOGICAL_OPERATOR_AND)
                         .addChildren(
                             Condition.newBuilder()
                                 .setLeafCondition(
@@ -3057,9 +3182,7 @@ public class RateLimitingRulesValidatorTest {
                                             ScopeCondition.newBuilder()
                                                 .setEntityScope(
                                                     ScopeCondition.EntityScope.newBuilder()
-                                                        .setEntityType(
-                                                            ScopeCondition.EntityType
-                                                                .ENTITY_TYPE_API)
+                                                        .setEntityType(ENTITY_TYPE_API)
                                                         .addEntityIds("id1")
                                                         .build())
                                                 .build())
@@ -3095,7 +3218,7 @@ public class RateLimitingRulesValidatorTest {
             Condition.newBuilder()
                 .setCompositeCondition(
                     CompositeCondition.newBuilder()
-                        .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                        .setOperator(LOGICAL_OPERATOR_AND)
                         .addChildren(
                             Condition.newBuilder()
                                 .setLeafCondition(
@@ -3112,9 +3235,7 @@ public class RateLimitingRulesValidatorTest {
                                             ScopeCondition.newBuilder()
                                                 .setEntityScope(
                                                     ScopeCondition.EntityScope.newBuilder()
-                                                        .setEntityType(
-                                                            ScopeCondition.EntityType
-                                                                .ENTITY_TYPE_API)
+                                                        .setEntityType(ENTITY_TYPE_API)
                                                         .addEntityIds("id1")
                                                         .build())
                                                 .build())
@@ -3165,5 +3286,31 @@ public class RateLimitingRulesValidatorTest {
                 .setIpAbuseVelocityCondition(
                     IpAbuseVelocityCondition.newBuilder().setMinIpAbuseVelocity(ipAbuseVelocity)))
         .build();
+  }
+
+  static List<Action> getEdgeDecisionCompatibleActions() {
+    return List.of(
+        Action.newBuilder()
+            .setBlock(
+                Block.newBuilder()
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .setUseThresholdDuration(true))
+            .build(),
+        Action.newBuilder()
+            .setMarkForTesting(
+                Action.MarkForTesting.newBuilder()
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .setAgentRuleEffect(
+                        Action.AgentRuleEffect.newBuilder()
+                            .addAgentModifications(
+                                Action.AgentModification.newBuilder()
+                                    .setHeaderInjection(
+                                        Action.HeaderInjection.newBuilder()
+                                            .setHeaderCategory(MATCH_CATEGORY_REQUEST)
+                                            .setHeaderName("test-header")
+                                            .setValue(
+                                                Action.FieldValue.newBuilder()
+                                                    .setStaticValue("test-value"))))))
+            .build());
   }
 }

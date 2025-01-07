@@ -2,6 +2,7 @@ package ai.traceable.ratelimiting.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_DEFAULT;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED;
+import static ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionValidator.checkConversionToEdgeDecisionRules;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
@@ -21,8 +22,6 @@ import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingModsecRulesFil
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRuleModsecRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
-import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
-import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
@@ -150,15 +149,13 @@ public class RateLimitingRulesValidator implements RulesValidator {
       boolean isSelectedDataTypesSensitiveParamsEvaluationValid =
           isSelectedDataTypesSensitiveParamsEvaluationValid(
               data.getCondition(), data.getCategory());
-      boolean isEdgeDecisionCompatibleRule = isEdgeDecisionCompatibleRule(data);
       data.getThresholdActionConfigsList()
           .forEach(
               thresholdActionConfig ->
                   this.validateThresholdActionConfig(
-                      thresholdActionConfig,
-                      isSelectedDataTypesSensitiveParamsEvaluationValid,
-                      isEdgeDecisionCompatibleRule));
+                      thresholdActionConfig, isSelectedDataTypesSensitiveParamsEvaluationValid));
       validateCondition(data.getCondition());
+      checkConversionToEdgeDecisionRules(data);
     }
   }
 
@@ -207,8 +204,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateThresholdActionConfig(
       ThresholdActionConfig thresholdActionConfig,
-      boolean isSelectedDataTypesSensitiveParamsEvaluationValid,
-      boolean isEdgeDecisionCompatibleRule) {
+      boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig,
         ThresholdActionConfig.RESOURCE_ACCESS_THRESHOLD_CONFIGS_FIELD_NUMBER);
@@ -219,10 +215,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
                 validateResourceAccessThresholdConfig(
                     resourceAccessThresholdConfig,
                     isSelectedDataTypesSensitiveParamsEvaluationValid));
-    final boolean isEdgeDecisionCompatibleThresholdActionConfig =
-        isEdgeDecisionCompatibleRule
-            && thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
-                .allMatch(ResourceAccessThresholdConfig::hasRollingWindowThresholdConfig);
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig, ThresholdActionConfig.ACTIONS_FIELD_NUMBER);
 
@@ -235,12 +227,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
     thresholdActionConfig
         .getActionsList()
-        .forEach(
-            action ->
-                validateAction(
-                    action,
-                    userAggregationAcrossAllPresent,
-                    isEdgeDecisionCompatibleThresholdActionConfig));
+        .forEach(action -> validateAction(action, userAggregationAcrossAllPresent));
   }
 
   private void validateResourceAccessThresholdConfig(
@@ -330,48 +317,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private boolean isEdgeDecisionCompatibleRule(RateLimitingRuleData data) {
-    switch (data.getCategory()) {
-      case CATEGORY_RATE_LIMITING:
-        return isValidEdgeDecisionCondition(data.getCondition());
-      default:
-        return false;
-    }
-  }
-
-  private boolean isValidEdgeDecisionCondition(Condition condition) {
-    switch (condition.getConditionCase()) {
-      case LEAF_CONDITION:
-        LeafCondition leafCondition = condition.getLeafCondition();
-        return !(leafCondition.hasDatatypeCondition()
-            || leafCondition.hasRequestScannerTypeCondition()
-            || (leafCondition.hasKeyValueCondition()
-                && isInvalidEdgeDecisionKeyValueType(
-                    leafCondition.getKeyValueCondition().getType())));
-      case COMPOSITE_CONDITION:
-        return condition.getCompositeCondition().getChildrenList().stream()
-            .allMatch(this::isValidEdgeDecisionCondition);
-      default:
-        return false;
-    }
-  }
-
-  private boolean isInvalidEdgeDecisionKeyValueType(KeyValueCondition.Type type) {
-    switch (type) {
-      case TYPE_RESPONSE_BODY:
-      case TYPE_RESPONSE_HEADER:
-      case TYPE_RESPONSE_COOKIE:
-      case TYPE_RESPONSE_BODY_PARAMETER:
-      case TYPE_TAG:
-      case TYPE_RESPONSE_BODY_SIZE:
-      case TYPE_RESPONSE_HEADERS_COUNT:
-      case TYPE_RESPONSE_COOKIES_COUNT:
-        return true;
-      default:
-        return false;
-    }
-  }
-
   private boolean isSelectedDataTypesSensitiveParamsEvaluationValid(
       Condition condition, Category category) {
     switch (category) {
@@ -424,18 +369,16 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateAction(
-      Action action, boolean aggregateAcrossAllUsersPresent, boolean isEdgeDecisionCompatibleRule) {
+  private void validateAction(Action action, boolean aggregateAcrossAllUsersPresent) {
     switch (action.getActionCase()) {
       case MARK_FOR_TESTING:
-        validateMarkForTestingAction(action.getMarkForTesting(), isEdgeDecisionCompatibleRule);
+        validateMarkForTestingAction(action.getMarkForTesting());
         break;
       case ALERT:
         validateAlertAction(action.getAlert());
         break;
       case BLOCK:
-        validateBlockAction(
-            aggregateAcrossAllUsersPresent, action.getBlock(), isEdgeDecisionCompatibleRule);
+        validateBlockAction(aggregateAcrossAllUsersPresent, action.getBlock());
         break;
       default:
         validatorUtils.throwInvalidArgumentException(
@@ -444,10 +387,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateBlockAction(
-      boolean aggregateAcrossAllUsersPresent,
-      Action.Block block,
-      boolean isEdgeDecisionCompatibleRule) {
+  private void validateBlockAction(boolean aggregateAcrossAllUsersPresent, Action.Block block) {
     if (aggregateAcrossAllUsersPresent && !block.hasUseThresholdDuration()) {
       validatorUtils.throwInvalidArgumentException(
           "Block action unsupported on aggregation across users");
@@ -455,10 +395,6 @@ public class RateLimitingRulesValidator implements RulesValidator {
     if (block.hasDurationIso() && block.hasUseThresholdDuration()) {
       validatorUtils.throwInvalidArgumentException(
           "Either duration or use threshold duration can be configured. Both of them cannot be configured together");
-    }
-    if (block.getUseThresholdDuration() && !isEdgeDecisionCompatibleRule) {
-      validatorUtils.throwInvalidArgumentException(
-          "Block action with use threshold config is invalid with current rule conditions.");
     }
     validateNonDefaultPresenceOrThrow(block, Action.Block.EVENT_SEVERITY_FIELD_NUMBER);
   }
@@ -470,12 +406,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
     }
   }
 
-  private void validateMarkForTestingAction(
-      Action.MarkForTesting markForTesting, boolean isEdgeDecisionCompatibleRule) {
-    if (!isEdgeDecisionCompatibleRule) {
-      validatorUtils.throwInvalidArgumentException(
-          "Mark for testing action is invalid with current rule conditions.");
-    }
+  private void validateMarkForTestingAction(Action.MarkForTesting markForTesting) {
     validateNonDefaultPresenceOrThrow(
         markForTesting, Action.MarkForTesting.EVENT_SEVERITY_FIELD_NUMBER);
     if (markForTesting.hasAgentRuleEffect()) {
