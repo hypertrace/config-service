@@ -1,16 +1,16 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
+import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.edge.decision.config.service.v1.BinaryOperator;
-import ai.traceable.edge.decision.config.service.v1.LogicalMatchCondition;
-import ai.traceable.edge.decision.config.service.v1.LogicalMatchOperator;
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
-import ai.traceable.edge.decision.config.service.v1.MatchOperator;
-import ai.traceable.edge.decision.config.service.v1.StructuredMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import com.google.protobuf.ListValue;

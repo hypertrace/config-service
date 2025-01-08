@@ -3,13 +3,13 @@ package ai.traceable.edge.decision.config.service.aggregator.attributes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
+import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
-import ai.traceable.edge.decision.config.service.v1.GenericMatchCondition;
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
 import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

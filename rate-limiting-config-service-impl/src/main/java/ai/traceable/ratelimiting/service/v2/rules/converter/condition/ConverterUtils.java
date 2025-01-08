@@ -1,20 +1,20 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_CONTAINS;
+import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_IN;
+import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_LIKE;
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
-import static ai.traceable.edge.decision.config.service.v1.MatchOperator.MATCH_OPERATOR_CONTAINS;
-import static ai.traceable.edge.decision.config.service.v1.MatchOperator.MATCH_OPERATOR_IN;
-import static ai.traceable.edge.decision.config.service.v1.MatchOperator.MATCH_OPERATOR_LIKE;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
+import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.edge.decision.config.service.v1.BinaryOperator;
-import ai.traceable.edge.decision.config.service.v1.LogicalMatchCondition;
-import ai.traceable.edge.decision.config.service.v1.LogicalMatchOperator;
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
-import ai.traceable.edge.decision.config.service.v1.StructuredMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.util.List;

@@ -6,7 +6,6 @@ import "ai/traceable/datamodel/data/transformation/config/v1/transformation.prot
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
-import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
@@ -42,7 +41,7 @@ message EdgeDecisionRuleScopeCondition {
     UrlScope url_scope = 3;
     UrlRegexScope url_regex_scope = 4;
     HttpMethodScope http_method_scope = 5;
-    MatchCondition match_condition_scope = 6;
+    ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition_scope = 6;
   }
 
   message ServiceScope {
@@ -107,19 +106,7 @@ message EdgeDecisionRuleDefinition {
 // "signature rules" that can be evaluated by risk decision engine
 // evaluate a payload to check if it matches the signature
 message SignatureRule {
-  MatchCondition match_condition = 1;
-}
-
-message MatchCondition {
-  oneof condition {
-    // to express any signature
-    GenericMatchCondition generic_match_condition = 1;
-    // when we want to express lhs match against rhs dataset
-    StructuredMatchCondition structured_match_condition = 2;
-    // when we want complex expression using AND/OR
-    LogicalMatchCondition logical_match_condition = 3;
-  }
-  bool negate = 4;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
 }
 
 // entity rules that can be evaluated by risk decision engine
@@ -138,7 +125,7 @@ message EntityRule {
 // agg_fn(dimension) by (dim1, dim2..dimN) over [timewindow] , threshold
 message AggregateThresholdRule {
   // this should refer to a match criteria that's evaluated in variables so that we don't evaluate again and again
-  MatchCondition match_condition = 1;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
 
   // group-by to be applied on the payload
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping group_by_dimensions = 2;
@@ -163,8 +150,8 @@ message AccessPatternRule {
   // correlation key to be computed on the request payload(s)
   CorrelationKey correlation_key = 1;
   // common filters that must be applied on all payloads (client_type == '')
-  MatchCondition filter = 2;
-  MatchCondition target_request = 3;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition filter = 2;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition target_request = 3;
 
   // what other requests do we expect in this window, before the target is invoked
   repeated RequestInvocation pre_requests = 4; // Collection of requests that are expected.
@@ -177,7 +164,7 @@ message AccessPatternRule {
 
 message EntityRuleData {
   ai.traceable.datamodel.data.transformation.config.v1.DataModelEntity entity = 1;
-  MatchCondition match_condition = 2;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 2;
 }
 
 message ValueAggregateThreshold {
@@ -226,96 +213,10 @@ message ToleranceThreshold {
   }
 }
 
-message LogicalMatchCondition {
-  LogicalMatchOperator operator = 1;
-  repeated MatchCondition conditions = 2;
-}
-
-enum LogicalMatchOperator {
-  LOGICAL_MATCH_OPERATOR_UNSPECIFIED = 0;
-  LOGICAL_MATCH_OPERATOR_AND = 1;
-  LOGICAL_MATCH_OPERATOR_OR = 2;
-}
-
-message StructuredMatchCondition {
-  // how do we derive this fingerprint keys from the request payload? (LHS)
-  ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping lhs = 1;
-  oneof operator {
-    // doesn't need RHS.
-    UnaryOperator unary_operator = 2;
-    BinaryOperator binary_operator = 3;
-  }
-}
-
-message BinaryOperator {
-  // RHS. what should we match against?
-  oneof rhs {
-    // allowed operators: IN, NOT_IN
-    google.protobuf.ListValue list_value = 2;
-    // allowed operators: LIKE, NOT_LIKE
-    string regex = 3;
-    // allowed operators: NOT_IN (because bloom filter can answer if an element is NOT present)
-    bytes bloom_filter = 4;
-    // allowed operators: GT, LT, GTE, LTE
-    double number_value = 5;
-    // allowed operators: EQ, NOT_EQ
-    bool bool_value = 6;
-    // allowed operators: EQ, NOT_EQ
-    google.protobuf.NullValue null_value = 7;
-    // allowed operators: EQ, NOT_EQ, STARTS_WITH, ENDS_WITH, CONTAINS, EQ_IGNORE_CASE
-    string string_value = 8;
-    // allowed operators: IN, NOT_IN, BETWEEN
-    RangeValue range_value = 9;
-    // allowed operators: IN, NOT_IN, BETWEEN
-    // NOTE: unit is "seconds". both for lhs and rhs.
-    TimeRangeValue time_range_value = 10;
-  }
-
-  // validate against "rhs" type
-  MatchOperator match_operator = 11;
-}
-
-message RangeValue {
-  double lower = 1;
-  double upper = 2;
-}
-
-message TimeRangeValue {
-  google.protobuf.Timestamp start = 1;
-  google.protobuf.Timestamp end = 2;
-}
-
-enum UnaryOperator {
-  UNARY_OPERATOR_UNSPECIFIED = 0;
-  UNARY_OPERATOR_IS_NULL = 1;
-  UNARY_OPERATOR_IS_NOT_NULL = 2;
-  UNARY_OPERATOR_IS_EMPTY = 3;
-  UNARY_OPERATOR_IS_NOT_EMPTY = 4;
-}
-
-enum MatchOperator {
-  MATCH_OPERATOR_UNSPECIFIED = 0;
-  MATCH_OPERATOR_IN = 1;
-  MATCH_OPERATOR_NOT_IN = 2;
-  MATCH_OPERATOR_LIKE = 3;
-  MATCH_OPERATOR_NOT_LIKE = 4;
-  MATCH_OPERATOR_EQ = 5;
-  MATCH_OPERATOR_NOT_EQ = 6;
-  MATCH_OPERATOR_GT = 7;
-  MATCH_OPERATOR_LT = 8;
-  MATCH_OPERATOR_GTE = 9;
-  MATCH_OPERATOR_LTE = 10;
-  MATCH_OPERATOR_BETWEEN = 11;
-  MATCH_OPERATOR_CONTAINS = 12;
-  MATCH_OPERATOR_STARTS_WITH = 13;
-  MATCH_OPERATOR_ENDS_WITH = 14;
-  MATCH_OPERATOR_EQ_IGNORE_CASE = 15;
-}
-
 message RequestInvocation {
   // required for tracking this invocation.
   string request_invocation_id = 1;
-  MatchCondition match_condition = 2;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 2;
   int32 weight = 3;
   double median_percent = 4;
 }

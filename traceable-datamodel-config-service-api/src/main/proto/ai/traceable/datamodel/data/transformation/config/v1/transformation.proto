@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.datamodel.data.transformation.config.v1;
 
 import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
@@ -73,7 +74,8 @@ message ConditionalConfig {
 message DerivationRule {
   DataTransformationConfig transformation_config = 1;
   // apply the rule only if "condition", must eval to bool. if not, assume False.
-  JexlExpressionConfig condition_expression = 3;
+  JexlExpressionConfig condition_expression = 3 [deprecated = true];
+  MatchCondition match_condition = 4;
 }
 
 // represents a single attribute that needs to be extracted from the transformation context
@@ -95,4 +97,110 @@ message VariableDerivationMapping {
   // ordered list of derivation rules, that provide the value for the attribute
   // first non-null rule
   repeated DerivationRule rules = 3;
+}
+
+message MatchCondition {
+  oneof condition {
+    // to express any signature
+    GenericMatchCondition generic_match_condition = 1;
+    // when we want to express lhs match against rhs dataset
+    StructuredMatchCondition structured_match_condition = 2;
+    // when we want complex expression using AND/OR
+    LogicalMatchCondition logical_match_condition = 3;
+  }
+  bool negate = 4;
+}
+
+message LogicalMatchCondition {
+  LogicalMatchOperator operator = 1;
+  repeated MatchCondition conditions = 2;
+}
+
+enum LogicalMatchOperator {
+  LOGICAL_MATCH_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_MATCH_OPERATOR_AND = 1;
+  LOGICAL_MATCH_OPERATOR_OR = 2;
+}
+
+message GenericMatchCondition {
+  oneof condition {
+    // this needs to be a boolean expression. if it's non-boolean, then it's false.
+    JexlExpressionConfig jexl_expression = 1;
+    JexlScriptConfig jexl_script = 2;
+  }
+}
+
+message StructuredMatchCondition {
+  // how do we derive this fingerprint keys from the request payload? (LHS)
+  AttributeDerivationMapping lhs = 1;
+  oneof operator {
+    // doesn't need RHS.
+    UnaryOperator unary_operator = 2;
+    BinaryOperator binary_operator = 3;
+  }
+}
+
+message BinaryOperator {
+  // RHS. what should we match against?
+  oneof rhs {
+    // allowed operators: IN, NOT_IN
+    google.protobuf.ListValue list_value = 2;
+    // allowed operators: LIKE, NOT_LIKE
+    string regex = 3;
+    // allowed operators: NOT_IN (because bloom filter can answer if an element is NOT present)
+    bytes bloom_filter = 4;
+    // allowed operators: GT, LT, GTE, LTE
+    double number_value = 5;
+    // allowed operators: EQ, NOT_EQ
+    bool bool_value = 6;
+    // allowed operators: EQ, NOT_EQ
+    google.protobuf.NullValue null_value = 7;
+    // allowed operators: EQ, NOT_EQ, STARTS_WITH, ENDS_WITH, CONTAINS, EQ_IGNORE_CASE
+    string string_value = 8;
+    // allowed operators: IN, NOT_IN, BETWEEN
+    RangeValue range_value = 9;
+    // allowed operators: IN, NOT_IN, BETWEEN
+    // NOTE: unit is "seconds". both for lhs and rhs.
+    TimeRangeValue time_range_value = 10;
+  }
+
+  // validate against "rhs" type
+  MatchOperator match_operator = 11;
+}
+
+message RangeValue {
+  double lower = 1;
+  double upper = 2;
+}
+
+message TimeRangeValue {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+}
+
+enum UnaryOperator {
+  UNARY_OPERATOR_UNSPECIFIED = 0;
+  UNARY_OPERATOR_IS_NULL = 1;
+  UNARY_OPERATOR_IS_NOT_NULL = 2;
+  UNARY_OPERATOR_IS_EMPTY = 3;
+  UNARY_OPERATOR_IS_NOT_EMPTY = 4;
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_IN = 1;
+  MATCH_OPERATOR_NOT_IN = 2;
+  MATCH_OPERATOR_LIKE = 3;
+  MATCH_OPERATOR_NOT_LIKE = 4;
+  MATCH_OPERATOR_EQ = 5;
+  MATCH_OPERATOR_NOT_EQ = 6;
+  MATCH_OPERATOR_GT = 7;
+  MATCH_OPERATOR_LT = 8;
+  MATCH_OPERATOR_GTE = 9;
+  MATCH_OPERATOR_LTE = 10;
+  MATCH_OPERATOR_BETWEEN = 11;
+  MATCH_OPERATOR_CONTAINS = 12;
+  MATCH_OPERATOR_STARTS_WITH = 13;
+  MATCH_OPERATOR_ENDS_WITH = 14;
+  MATCH_OPERATOR_EQ_IGNORE_CASE = 15;
 }

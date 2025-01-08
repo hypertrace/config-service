@@ -1,8 +1,8 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
-import ai.traceable.edge.decision.config.service.v1.LogicalMatchCondition;
-import ai.traceable.edge.decision.config.service.v1.LogicalMatchOperator;
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.platform.traceenricher.constants.EnrichedSpanConstants;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;

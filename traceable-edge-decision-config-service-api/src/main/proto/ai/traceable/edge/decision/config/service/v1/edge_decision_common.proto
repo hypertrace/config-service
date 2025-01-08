@@ -8,14 +8,6 @@ import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
-message GenericMatchCondition {
-  oneof condition {
-    // this needs to be a boolean expression. if it's non-boolean, then it's false.
-    ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig jexl_expression = 1;
-    ai.traceable.datamodel.data.transformation.config.v1.JexlScriptConfig jexl_script = 2;
-  }
-}
-
 message EnvironmentScope {
   // OR
   repeated string environments = 1;

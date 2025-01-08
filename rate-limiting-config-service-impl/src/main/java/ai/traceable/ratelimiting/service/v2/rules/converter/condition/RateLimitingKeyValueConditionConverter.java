@@ -5,15 +5,15 @@ import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIE
 import static ai.traceable.ratelimiting.service.v2.rules.ValidatorUtils.KEY_NULL_CONDITION_TYPES;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
+import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
+import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.edge.decision.config.service.v1.BinaryOperator;
-import ai.traceable.edge.decision.config.service.v1.GenericMatchCondition;
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
-import ai.traceable.edge.decision.config.service.v1.MatchOperator;
-import ai.traceable.edge.decision.config.service.v1.StructuredMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import java.util.Set;

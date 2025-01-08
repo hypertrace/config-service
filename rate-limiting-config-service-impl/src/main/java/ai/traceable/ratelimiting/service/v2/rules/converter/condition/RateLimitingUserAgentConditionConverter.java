@@ -10,7 +10,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationM
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;

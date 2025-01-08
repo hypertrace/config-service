@@ -6,7 +6,7 @@ import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.Con
 import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.buildLikeOperatorMatchCondition;
 import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.joinChildConditions;
 
-import ai.traceable.edge.decision.config.service.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
