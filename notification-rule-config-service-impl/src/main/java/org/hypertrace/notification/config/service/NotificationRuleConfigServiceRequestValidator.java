@@ -5,6 +5,8 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import io.grpc.Status;
 import java.util.List;
+import java.util.Objects;
+import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationRuleRequest;
@@ -23,7 +25,7 @@ public class NotificationRuleConfigServiceRequestValidator {
       List<NotificationRule> existingNotificationRules) {
     validateRequestContextOrThrow(requestContext);
     validateNonDuplicateNotificationRuleOrThrow(
-        request.getNotificationRuleMutableData().getRuleName(), existingNotificationRules);
+        null, request.getNotificationRuleMutableData().getRuleName(), existingNotificationRules);
     validateNotificationRuleMutableData(request.getNotificationRuleMutableData());
   }
 
@@ -41,23 +43,9 @@ public class NotificationRuleConfigServiceRequestValidator {
   }
 
   private void validateNonDuplicateNotificationRuleOrThrow(
-      String ruleName, List<NotificationRule> existingNotificationRules) {
+      @Nullable String id, String ruleName, List<NotificationRule> existingNotificationRules) {
     for (NotificationRule existingNotificationRule : existingNotificationRules) {
-      if (existingNotificationRule
-          .getNotificationRuleMutableData()
-          .getRuleName()
-          .equals(ruleName)) {
-        throw Status.ALREADY_EXISTS
-            .withDescription("Notification Rule with the same name already exists.")
-            .asRuntimeException();
-      }
-    }
-  }
-
-  private void validateNonDuplicateNotificationRuleOrThrow(
-      String id, String ruleName, List<NotificationRule> existingNotificationRules) {
-    for (NotificationRule existingNotificationRule : existingNotificationRules) {
-      if (!existingNotificationRule.getId().equals(id)
+      if ((Objects.isNull(id) || !existingNotificationRule.getId().equals(id))
           && existingNotificationRule
               .getNotificationRuleMutableData()
               .getRuleName()
