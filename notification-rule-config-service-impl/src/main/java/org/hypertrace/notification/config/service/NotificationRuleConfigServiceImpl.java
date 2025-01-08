@@ -3,6 +3,7 @@ package org.hypertrace.notification.config.service;
 import io.grpc.Channel;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,12 @@ public class NotificationRuleConfigServiceImpl
       StreamObserver<CreateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateCreateNotificationRuleRequest(requestContext, request);
+      List<NotificationRule> existingNotificationRules =
+          notificationRuleStore.getAllObjects(requestContext).stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toList());
+      validator.validateCreateNotificationRuleRequest(
+          requestContext, request, existingNotificationRules);
       NotificationRule notificationRule =
           NotificationRule.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -66,7 +72,12 @@ public class NotificationRuleConfigServiceImpl
       StreamObserver<UpdateNotificationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      validator.validateUpdateNotificationRuleRequest(requestContext, request);
+      List<NotificationRule> existingNotificationRules =
+          notificationRuleStore.getAllObjects(requestContext).stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toList());
+      validator.validateUpdateNotificationRuleRequest(
+          requestContext, request, existingNotificationRules);
       NotificationRule notificationRule =
           NotificationRule.newBuilder()
               .setId(request.getId())
