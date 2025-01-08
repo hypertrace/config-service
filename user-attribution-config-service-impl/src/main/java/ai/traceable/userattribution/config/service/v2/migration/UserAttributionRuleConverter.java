@@ -39,7 +39,7 @@ class UserAttributionRuleConverter {
   static final String BASIC_AUTH_TYPE = "Basic";
   static final String DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME = "authorization";
   static final String DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP = "(?i)Basic:? (.*)";
-  static final String DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP = "^([^:]+):?";
+  static final String DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP = "^([^:]+):?.*";
   static final String DEFAULT_TOKEN_REGEX_CAPTURE_GROUP = "^(?:(?i)Bearer:? )?(.*)$";
   private static final AttributeProjection.Builder DEFAULT_BASIC_AUTHORIZATION_ATTRIBUTE_BUILDER =
       createDefaultBasicAuthorizationAttributeBuilder();
