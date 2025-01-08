@@ -5,7 +5,6 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import io.grpc.Status;
 import java.util.List;
-import java.util.Objects;
 import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.CreateNotificationRuleRequest;
@@ -45,7 +44,7 @@ public class NotificationRuleConfigServiceRequestValidator {
   private void validateNonDuplicateNotificationRuleOrThrow(
       @Nullable String id, String ruleName, List<NotificationRule> existingNotificationRules) {
     for (NotificationRule existingNotificationRule : existingNotificationRules) {
-      if ((Objects.isNull(id) || !existingNotificationRule.getId().equals(id))
+      if (!existingNotificationRule.getId().equals(id)
           && existingNotificationRule
               .getNotificationRuleMutableData()
               .getRuleName()
