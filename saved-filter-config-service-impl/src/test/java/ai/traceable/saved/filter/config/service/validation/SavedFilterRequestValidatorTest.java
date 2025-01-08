@@ -493,12 +493,6 @@ class SavedFilterRequestValidatorTest {
                 mockRequestContext, GetSavedFiltersRequest.newBuilder().build()));
     when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
 
-    assertInvalidArgStatus(
-        "GetSavedFiltersRequest.scope",
-        () ->
-            validator.validateOrThrow(
-                mockRequestContext, GetSavedFiltersRequest.newBuilder().build()));
-
     assertDoesNotThrow(
         () ->
             validator.validateOrThrow(

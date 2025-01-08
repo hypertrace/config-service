@@ -73,7 +73,6 @@ public class SavedFilterRequestValidator {
 
   public void validateOrThrow(RequestContext requestContext, GetSavedFiltersRequest request) {
     validateRequestContext(requestContext);
-    validateNonDefaultPresenceOrThrow(request, GetSavedFiltersRequest.SCOPE_FIELD_NUMBER);
   }
 
   private static void validateVisibility(Visibility visibility) {
