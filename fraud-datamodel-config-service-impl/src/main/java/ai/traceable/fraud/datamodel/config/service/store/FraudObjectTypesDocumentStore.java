@@ -4,9 +4,9 @@ import static ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils.ge
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
 
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectType;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeReference;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Value;
 import io.grpc.Status;

@@ -1,7 +1,7 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.InternalFieldMetadata;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.InternalFieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;

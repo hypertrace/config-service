@@ -7,8 +7,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.InternalFieldMetadata;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.InternalFieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,8 +1,8 @@
 package ai.traceable.fraud.datamodel.config.service;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectType;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeReference;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;

@@ -3,10 +3,10 @@ package ai.traceable.fraud.datamodel.config.service;
 import ai.traceable.fraud.datamodel.config.service.v1.EntityType;
 import ai.traceable.fraud.datamodel.config.service.v1.EventType;
 import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectType;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeReference;
 import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -32,7 +32,6 @@ modules:
   - path: external-user-attribution-config-service-api/src/main/proto
   - path: external-wasm-config-service-api/src/main/proto
   - path: fraud-datamodel-config-service-api/src/main/proto
-  - path: fraud-datamodel-config-service-impl/src/main/proto
   - path: fraud-datamodel-derivation-config-service-api/src/main/proto
   - path: fraud-policy-config-service-api/src/main/proto
   - path: github-integration-config-service-api/src/main/proto

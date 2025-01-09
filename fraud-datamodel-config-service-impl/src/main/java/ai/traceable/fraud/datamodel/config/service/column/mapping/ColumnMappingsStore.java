@@ -1,6 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import java.io.IOException;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;

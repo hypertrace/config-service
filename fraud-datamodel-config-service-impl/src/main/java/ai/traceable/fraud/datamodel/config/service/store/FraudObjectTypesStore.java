@@ -1,8 +1,8 @@
 package ai.traceable.fraud.datamodel.config.service.store;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeReference;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectType;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeReference;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;

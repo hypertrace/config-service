@@ -2,7 +2,7 @@ package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
 import ai.traceable.fraud.datamodel.config.service.v1.EntityFieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.InternalFieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.InternalFieldMetadata;
 import java.util.HashMap;
 import java.util.Map;
 

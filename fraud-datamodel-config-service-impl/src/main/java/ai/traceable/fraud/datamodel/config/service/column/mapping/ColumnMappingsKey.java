@@ -1,6 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import lombok.Value;

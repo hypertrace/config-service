@@ -4,8 +4,8 @@ import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnM
 import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.toFieldMetadataMap;
 
 import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeColumnMappings;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;

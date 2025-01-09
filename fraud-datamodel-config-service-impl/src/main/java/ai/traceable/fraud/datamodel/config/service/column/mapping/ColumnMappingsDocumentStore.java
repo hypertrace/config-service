@@ -4,7 +4,7 @@ import static ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils.ge
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
 import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.IN;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;

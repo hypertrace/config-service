@@ -3,9 +3,9 @@ package ai.traceable.fraud.datamodel.config.service.column.mapping;
 import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.entityFieldMetaToInternalFieldMetadataMap;
 import static ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapperUtils.toEntityFieldMetadataMap;
 
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeColumnMappings;
 import ai.traceable.fraud.datamodel.config.service.v1.RelationshipType;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectKind;
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;

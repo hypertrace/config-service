@@ -1,6 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
-import ai.traceable.fraud.datamodel.config.service.v1.internal.ObjectTypeColumnMappings;
+import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeColumnMappings;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import java.util.List;
