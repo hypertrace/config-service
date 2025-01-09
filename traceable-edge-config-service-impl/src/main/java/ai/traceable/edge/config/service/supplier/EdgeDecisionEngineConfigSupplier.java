@@ -9,7 +9,6 @@ import ai.traceable.edge.config.service.v1.ConfigRequestElement;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
-import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import jakarta.inject.Inject;
@@ -48,11 +47,12 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
     GetEdgeDecisionConfigsFilter.Builder filter = GetEdgeDecisionConfigsFilter.newBuilder();
-    for (var component : agentCapabilities.getComponentsList()) {
-      if (component.hasTraceableEdgeBotServiceVersion()) {
-        filter.addEdgeInputKinds(EdgeInputKind.EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA);
-      }
-    }
+    // todo: convert agent capabilities to input kind filter
+    //    for (var component : agentCapabilities.getComponentsList()) {
+    //      if (component.hasTraceableEdgeBotServiceVersion()) {
+    //        filter.addEdgeInputKinds(EdgeInputKind.EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA);
+    //      }
+    //    }
     EdgeDecisionEngineConfig edgeDecisionEngineConfig =
         getResolvedEdgeDecisionEngineConfig(requestContext, filter.build());
     ConfigPayloads configPayloads =
