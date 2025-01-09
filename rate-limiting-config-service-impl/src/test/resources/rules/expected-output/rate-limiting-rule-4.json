@@ -50,7 +50,7 @@
           "name": "AGGREGATE_PER_API",
           "rules": [{
             "conditionExpression": {
-              "jexlExpression": "$s.getRequestUrl()"
+              "jexlExpression":"TRACEABLE_ENDPOINT_ID"
             }
           }]
         }],

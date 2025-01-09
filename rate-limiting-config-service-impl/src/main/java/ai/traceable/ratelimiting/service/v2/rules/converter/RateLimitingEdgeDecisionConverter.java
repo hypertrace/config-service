@@ -11,6 +11,7 @@ import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.M
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_RESPONSE;
 import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT;
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_PER_USER;
+import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingScopeConditionConverter.ENDPOINT_ID;
 import static ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter.findAnyMatchingEdgeDecisionAction;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -23,6 +24,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.v1.AggregateThresholdRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
@@ -101,7 +103,7 @@ public class RateLimitingEdgeDecisionConverter {
       }
       final EdgeDecisionRuleStatus edgeDecisionRuleStatus = buildRuleStatus(data);
       final Optional<EdgeDecisionRuleScope> maybeEdgeDecisionRuleScope = buildRuleScope(data);
-      final Optional<MatchCondition> mayBeMatchCondition =
+      final Optional<MatchConditionVariablesTuple> mayBeMatchCondition =
           data.hasCondition()
               ? Optional.of(buildMatchCondition(requestContext, data.getCondition()))
               : Optional.empty();
@@ -232,20 +234,22 @@ public class RateLimitingEdgeDecisionConverter {
 
   private EdgeDecisionRuleDefinition buildRuleDefinition(
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
-      final Optional<MatchCondition> mayBeMatchCondition) {
+      final Optional<MatchConditionVariablesTuple> mayBeMatchCondition) {
     final EdgeDecisionRuleDefinition.Builder builder = EdgeDecisionRuleDefinition.newBuilder();
     builder.setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
     builder.setAggregateThresholdRule(
         buildAggregateThresholdRule(resourceAccessThresholdConfig, mayBeMatchCondition));
+    mayBeMatchCondition.ifPresent(
+        tuple -> builder.addAllRuleVariables(tuple.getVariableDerivationMappings()));
     return builder.build();
   }
 
   @SneakyThrows
   private AggregateThresholdRule buildAggregateThresholdRule(
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
-      final Optional<MatchCondition> mayBeMatchCondition) {
+      final Optional<MatchConditionVariablesTuple> mayBeMatchCondition) {
     final AggregateThresholdRule.Builder builder = AggregateThresholdRule.newBuilder();
-    mayBeMatchCondition.ifPresent(builder::setMatchCondition);
+    mayBeMatchCondition.ifPresent(tuple -> builder.setMatchCondition(tuple.getMatchCondition()));
     builder.addAllGroupByDimensions(buildGroupByDimensions(resourceAccessThresholdConfig));
     builder.setValueAggregateThreshold(buildValueAggregateThreshold(resourceAccessThresholdConfig));
     final java.time.Duration duration =
@@ -269,22 +273,40 @@ public class RateLimitingEdgeDecisionConverter {
         .filter(ResourceAccessThresholdConfig::hasRollingWindowThresholdConfig);
   }
 
-  private MatchCondition buildMatchCondition(
+  private MatchConditionVariablesTuple buildMatchCondition(
       final RequestContext requestContext, final Condition condition) {
     switch (condition.getConditionCase()) {
       case LEAF_CONDITION:
         final LeafCondition leafCondition = condition.getLeafCondition();
-        return getConditionConverter(leafCondition.getConditionCase())
-            .buildMatchCondition(requestContext, leafCondition);
+        final RateLimitingConditionConverter conditionConverter =
+            getConditionConverter(leafCondition.getConditionCase());
+        final List<VariableDerivationMapping> variableDerivationMappings =
+            conditionConverter.buildVariableDerivationMapping(requestContext, leafCondition);
+        final MatchCondition matchCondition =
+            conditionConverter.buildMatchCondition(requestContext, leafCondition);
+        return new MatchConditionVariablesTuple(variableDerivationMappings, matchCondition);
       case COMPOSITE_CONDITION:
         final CompositeCondition compositeCondition = condition.getCompositeCondition();
+        final List<VariableDerivationMapping> compositeConditionVariableDerivationMappings =
+            new ArrayList<>();
+        final List<MatchCondition> childMatchConditions = new ArrayList<>();
+        compositeCondition
+            .getChildrenList()
+            .forEach(
+                childCondition -> {
+                  final MatchConditionVariablesTuple tuple =
+                      this.buildMatchCondition(requestContext, childCondition);
+                  compositeConditionVariableDerivationMappings.addAll(
+                      tuple.getVariableDerivationMappings());
+                  childMatchConditions.add(tuple.getMatchCondition());
+                });
         final LogicalMatchCondition.Builder builder = LogicalMatchCondition.newBuilder();
-        builder.addAllConditions(
-            compositeCondition.getChildrenList().stream()
-                .map(childCondition -> this.buildMatchCondition(requestContext, childCondition))
-                .collect(Collectors.toUnmodifiableList()));
+        builder.addAllConditions(childMatchConditions);
         builder.setOperator(convertOperator(compositeCondition.getOperator()));
-        return MatchCondition.newBuilder().setLogicalMatchCondition(builder).build();
+        final MatchCondition compostiveMatchCondition =
+            MatchCondition.newBuilder().setLogicalMatchCondition(builder).build();
+        return new MatchConditionVariablesTuple(
+            compositeConditionVariableDerivationMappings, compostiveMatchCondition);
       default:
         throw new IllegalArgumentException(
             "Unknown condition case: " + condition.getConditionCase());
@@ -325,8 +347,7 @@ public class RateLimitingEdgeDecisionConverter {
               .addRules(
                   DerivationRule.newBuilder()
                       .setConditionExpression(
-                          JexlExpressionConfig.newBuilder()
-                              .setJexlExpression("$s.getRequestUrl()")))
+                          JexlExpressionConfig.newBuilder().setJexlExpression(ENDPOINT_ID)))
               .build());
     }
     return attributeDerivationMappings;
@@ -355,5 +376,11 @@ public class RateLimitingEdgeDecisionConverter {
             () ->
                 new IllegalArgumentException(
                     "No matching condition converter found for condition case: " + conditionCase));
+  }
+
+  @lombok.Value
+  private static class MatchConditionVariablesTuple {
+    List<VariableDerivationMapping> variableDerivationMappings;
+    MatchCondition matchCondition;
   }
 }

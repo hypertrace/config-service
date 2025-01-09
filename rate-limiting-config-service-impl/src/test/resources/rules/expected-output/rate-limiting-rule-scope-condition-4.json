@@ -14,6 +14,33 @@
     },
     "rule_definition": {
       "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId1"
+          },
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
+                    }
+                  }
+                }]
+              },
+              "binary_operator": {
+                "regex": "/api1",
+                "match_operator": "MATCH_OPERATOR_LIKE"
+              }
+            }
+          }
+        }]
+      }],
       "aggregate_threshold_rule": {
         "match_condition": {
           "logical_match_condition": {
@@ -26,15 +53,12 @@
                   "rules": [{
                     "transformation_config": {
                       "jexl_expression": {
-                        "jexl_expression": "$s.getPath()"
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       }
                     }
                   }]
                 },
-                "binary_operator": {
-                  "regex": "/api1",
-                  "match_operator": "MATCH_OPERATOR_LIKE"
-                }
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
             }]
           }
@@ -50,7 +74,7 @@
           "name": "AGGREGATE_PER_API",
           "rules": [{
             "condition_expression": {
-              "jexl_expression": "$s.getRequestUrl()"
+              "jexl_expression":"TRACEABLE_ENDPOINT_ID"
             }
           }]
         }],

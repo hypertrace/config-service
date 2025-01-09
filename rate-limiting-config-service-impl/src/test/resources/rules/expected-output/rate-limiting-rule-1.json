@@ -63,7 +63,7 @@
               "rules": [
                 {
                   "condition_expression": {
-                    "jexl_expression": "$s.getRequestUrl()"
+                    "jexl_expression":"TRACEABLE_ENDPOINT_ID"
                   }
                 }
               ]
