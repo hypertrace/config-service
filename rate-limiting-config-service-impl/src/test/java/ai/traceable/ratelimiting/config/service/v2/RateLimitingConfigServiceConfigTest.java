@@ -30,7 +30,7 @@ class RateLimitingConfigServiceConfigTest {
   private void assertDefaultRateLimitingRules(List<RateLimitingRule> rateLimitingRules) {
 
     int rateLimitingRulesCount = rateLimitingRules.size();
-    assertEquals(10, rateLimitingRulesCount);
+    assertEquals(11, rateLimitingRulesCount);
 
     assertEquals(
         rateLimitingRulesCount,
