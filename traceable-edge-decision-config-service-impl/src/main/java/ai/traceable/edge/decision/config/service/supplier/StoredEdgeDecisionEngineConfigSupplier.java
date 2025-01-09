@@ -13,10 +13,12 @@ import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesReque
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 /**
@@ -44,13 +46,15 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
   }
 
   @Override
-  public EdgeDecisionEngineConfig get(RequestContext requestContext) {
+  public EdgeDecisionEngineConfig get(
+      RequestContext requestContext, GetEdgeDecisionConfigsFilter filter) {
     validateRequestContext(requestContext);
     return mergeStoredConfigAndStoredRules(
         requestContext,
         GetEdgeDecisionEngineConfigRequest.newBuilder()
             .setId(requestContext.getTenantId().get())
-            .build());
+            .build(),
+        filter);
   }
 
   private EdgeDecisionEngineConfig getStoredEdgeDecisionEngineConfig(
@@ -85,7 +89,9 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
   }
 
   public EdgeDecisionEngineConfig mergeStoredConfigAndStoredRules(
-      RequestContext requestContext, GetEdgeDecisionEngineConfigRequest request) {
+      RequestContext requestContext,
+      GetEdgeDecisionEngineConfigRequest request,
+      GetEdgeDecisionConfigsFilter filter) {
     validateRequestContext(requestContext);
     Optional<String> tenantIdHolder = requestContext.getTenantId();
     EdgeDecisionEngineConfig decisionEngineConfig =
@@ -96,6 +102,17 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
         merge(decisionEngineConfig.getDecisionRulesList(), decisionRules, EdgeDecisionRule::getId);
     List<EdgeDecisionSpec> mergedSpecs =
         merge(decisionEngineConfig.getDecisionSpecsList(), decisionSpecs, EdgeDecisionSpec::getId);
+    // apply filters.
+    if (!isEmpty(filter)) {
+      mergedRules =
+          mergedRules.stream()
+              .filter(rule -> applyFilter(rule, filter))
+              .collect(Collectors.toList());
+      mergedSpecs =
+          mergedSpecs.stream()
+              .filter(spec -> applyFilter(spec, filter))
+              .collect(Collectors.toList());
+    }
     return decisionEngineConfig.toBuilder()
         .setId(tenantIdHolder.get())
         .clearDecisionRules()
@@ -103,5 +120,34 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
         .addAllDecisionRules(mergedRules)
         .addAllDecisionSpecs(mergedSpecs)
         .build();
+  }
+
+  private boolean isEmpty(GetEdgeDecisionConfigsFilter filter) {
+    return filter == null
+        || (filter.getEdgeInputKindsCount() == 0
+            && filter.getRuleCategoriesCount() == 0
+            && filter.getDecisionTypesCount() == 0);
+  }
+
+  private boolean applyFilter(EdgeDecisionRule rule, GetEdgeDecisionConfigsFilter filter) {
+    var inputKinds = filter.getEdgeInputKindsList();
+    var decisionTypes = filter.getDecisionTypesList();
+    var ruleCategories = filter.getRuleCategoriesList();
+    if (!inputKinds.isEmpty()) {
+      if (!inputKinds.contains(rule.getRuleDefinition().getEdgeInputKind())) {
+        return false;
+      }
+    }
+    if (!decisionTypes.isEmpty()) {
+      if (!decisionTypes.contains(rule.getRuleDecision().getEdgeDecisionType())) {
+        return false;
+      }
+    }
+    return ruleCategories.isEmpty() || ruleCategories.contains(rule.getRuleCategory());
+  }
+
+  private boolean applyFilter(EdgeDecisionSpec spec, GetEdgeDecisionConfigsFilter filter) {
+    var inputKinds = filter.getEdgeInputKindsList();
+    return inputKinds.isEmpty() || inputKinds.contains(spec.getEdgeInputKind());
   }
 }

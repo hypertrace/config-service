@@ -23,6 +23,7 @@ import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesReque
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
@@ -116,7 +117,8 @@ class EdgeDecisionConfigService
         responseObserver,
         (requestContext, request1) -> {
           EdgeDecisionEngineConfig config =
-              storedEdgeDecisionEngineConfigSupplier.get(requestContext);
+              storedEdgeDecisionEngineConfigSupplier.get(
+                  requestContext, GetEdgeDecisionConfigsFilter.getDefaultInstance());
           return GetEdgeDecisionEngineConfigResponse.newBuilder()
               .setEdgeDecisionEngineConfig(config)
               .build();

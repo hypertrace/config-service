@@ -18,6 +18,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus.Builder;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import ai.traceable.platform.actor.v1.Status;
@@ -49,7 +50,16 @@ public class ActorEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngine
   }
 
   @Override
-  public EdgeDecisionEngineConfig get(RequestContext requestContext) {
+  public EdgeDecisionEngineConfig get(
+      RequestContext requestContext, GetEdgeDecisionConfigsFilter filter) {
+    if (filter != null) {
+      List<EdgeInputKind> inputKinds = filter.getEdgeInputKindsList();
+      if (!inputKinds.isEmpty()
+          && !inputKinds.contains(EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST)) {
+        // currently, this supplier doesn't provide any other input kind.
+        return EdgeDecisionEngineConfig.getDefaultInstance();
+      }
+    }
     Optional<String> environment = Optional.empty();
     List<ActorData> actorDataList =
         actorDataCache.getActorData(requestContext.buildInternalContextualKey(environment));

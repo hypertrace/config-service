@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.platform.actor.v1.Status;
 import com.google.protobuf.Timestamp;
 import java.util.List;
@@ -55,7 +56,8 @@ class ActorEdgeDecisionEngineConfigSupplierTest {
     when(actorDataCache.getActorData(requestContext.buildInternalContextualKey(Optional.empty())))
         .thenReturn(actorDataList);
 
-    EdgeDecisionEngineConfig config = configSupplier.get(requestContext);
+    EdgeDecisionEngineConfig config =
+        configSupplier.get(requestContext, GetEdgeDecisionConfigsFilter.getDefaultInstance());
 
     assertEquals("actor-rule-id-test-tenant", config.getId());
     assertEquals("user-based-actor-blocking", config.getName());
@@ -140,7 +142,8 @@ class ActorEdgeDecisionEngineConfigSupplierTest {
     when(actorDataCache.getActorData(requestContext.buildInternalContextualKey(Optional.empty())))
         .thenReturn(List.of());
 
-    EdgeDecisionEngineConfig config = configSupplier.get(requestContext);
+    EdgeDecisionEngineConfig config =
+        configSupplier.get(requestContext, GetEdgeDecisionConfigsFilter.getDefaultInstance());
 
     assertEquals("actor-rule-id-tenant", config.getId());
     assertEquals("user-based-actor-blocking", config.getName());

@@ -9,6 +9,8 @@ import ai.traceable.edge.config.service.v1.ConfigRequestElement;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import jakarta.inject.Inject;
 import java.util.Optional;
@@ -45,8 +47,14 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
       RequestContext requestContext,
       ConfigRequestElement requestElement,
       AgentCapabilities agentCapabilities) {
+    GetEdgeDecisionConfigsFilter.Builder filter = GetEdgeDecisionConfigsFilter.newBuilder();
+    for (var component : agentCapabilities.getComponentsList()) {
+      if (component.hasTraceableEdgeBotServiceVersion()) {
+        filter.addEdgeInputKinds(EdgeInputKind.EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA);
+      }
+    }
     EdgeDecisionEngineConfig edgeDecisionEngineConfig =
-        getStoredEdgeDecisionEngineConfig(requestContext);
+        getResolvedEdgeDecisionEngineConfig(requestContext, filter.build());
     ConfigPayloads configPayloads =
         ConfigPayloads.newBuilder().addConfigBytes(edgeDecisionEngineConfig.toByteString()).build();
     return ConfigResponseElement.newBuilder()
@@ -59,9 +67,8 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
         .build();
   }
 
-  private EdgeDecisionEngineConfig getStoredEdgeDecisionEngineConfig(
-      RequestContext requestContext) {
-    // get stored config. by default, get the config that's stored with the tenant id as its id.
+  private EdgeDecisionEngineConfig getResolvedEdgeDecisionEngineConfig(
+      RequestContext requestContext, GetEdgeDecisionConfigsFilter filter) {
     Optional<String> tenantIdHolder = requestContext.getTenantId();
     return tenantIdHolder
         .map(
@@ -74,6 +81,7 @@ public class EdgeDecisionEngineConfigSupplier implements TraceableEdgeConfigSupp
                                     TimeUnit.MILLISECONDS)
                                 .getResolvedEdgeDecisionEngineConfigs(
                                     GetResolvedEdgeDecisionEngineConfigsRequest.newBuilder()
+                                        .setFilter(filter)
                                         .build()))
                     .getEdgeDecisionEngineConfig())
         .orElseGet(EdgeDecisionEngineConfig::getDefaultInstance);

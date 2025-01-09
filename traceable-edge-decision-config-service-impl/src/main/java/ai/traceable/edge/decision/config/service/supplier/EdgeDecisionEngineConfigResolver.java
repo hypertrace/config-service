@@ -27,7 +27,6 @@ public class EdgeDecisionEngineConfigResolver {
     this.ruleVariableEnricher = ruleVariableEnricher;
   }
 
-  // todo: further enhance to process the filters provided in the request.
   public EdgeDecisionEngineConfig getResolvedEdgeDecisionEngineConfig(
       RequestContext requestContext, GetResolvedEdgeDecisionEngineConfigsRequest request) {
     EdgeDecisionEngineConfig finalConfig = null;
@@ -35,7 +34,7 @@ public class EdgeDecisionEngineConfigResolver {
       if (configSupplier != null) {
         String supplierName = configSupplier.getName();
         try {
-          EdgeDecisionEngineConfig config = configSupplier.get(requestContext);
+          EdgeDecisionEngineConfig config = configSupplier.get(requestContext, request.getFilter());
           if (finalConfig == null) {
             finalConfig = config;
           } else {
