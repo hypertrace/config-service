@@ -267,7 +267,11 @@ class UserAttributionRuleConverter {
       } else {
         UrlScope urlScope = scopeBuilder.getUrlScope();
         if (!urlScope.getUrlMatchRegexes().getValuesList().contains(urlMatchRegex)) {
-          urlScope.getUrlMatchRegexes().getValuesList().add(urlMatchRegex);
+          scopeBuilder.setUrlScope(
+              urlScope.toBuilder()
+                  .setUrlMatchRegexes(
+                      urlScope.getUrlMatchRegexes().toBuilder().addValues(urlMatchRegex))
+                  .build());
         }
       }
     }
