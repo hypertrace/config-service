@@ -18,6 +18,7 @@ message GithubIntegrationFilter {
   optional string github_installation_target_name = 1;
   optional string config_id = 2;
   optional string request_user_email = 3;
+  optional int64 installation_id = 4;
 }
 
 message GetGithubIntegrationsResponse {

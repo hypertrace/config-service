@@ -48,8 +48,15 @@ class GithubIntegrationStore
     return Optional.of(data)
         .filter(githubIntegration -> this.satisfiesAnyOwnerFilter(filter, githubIntegration))
         .filter(githubIntegration -> this.satisfiesIdFilter(filter, githubIntegration))
+        .filter(githubIntegration -> this.satisfiesAnyInstallId(filter, githubIntegration))
         .filter(
             githubIntegration -> this.satisfiesRequestUserEmailFilter(filter, githubIntegration));
+  }
+
+  private boolean satisfiesAnyInstallId(
+      GithubIntegrationFilter filter, GithubIntegration integration) {
+    return !filter.hasInstallationId()
+        || filter.getInstallationId() == integration.getStatus().getCompleted().getInstallationId();
   }
 
   private boolean satisfiesAnyOwnerFilter(
