@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service;
 
+import ai.traceable.fraud.datamodel.config.service.clients.attributeservice.EventTypeToAttributeMetadataAdapter;
 import ai.traceable.fraud.datamodel.config.service.clients.attributeservice.MetricTypeToAttributeMetadataAdapter;
 import ai.traceable.fraud.datamodel.config.service.column.mapping.ColumnMapper;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesStore;
@@ -56,6 +57,7 @@ public class FraudDataModelConfigServiceImpl
   private final ColumnMapper<MetricType> metricTypeColumnMapper;
   private final ColumnMapper<BaselineType> baselineTypeColumnMapper;
   private final MetricTypeToAttributeMetadataAdapter metricTypeToAttributeMetadataAdapter;
+  private final EventTypeToAttributeMetadataAdapter eventTypeToAttributeMetadataAdapter;
 
   @Inject
   public FraudDataModelConfigServiceImpl(
@@ -66,7 +68,8 @@ public class FraudDataModelConfigServiceImpl
       ColumnMapper<EventType> eventTypeColumnMapper,
       ColumnMapper<MetricType> metricTypeColumnMapper,
       ColumnMapper<BaselineType> baselineTypeColumnMapper,
-      MetricTypeToAttributeMetadataAdapter metricTypeToAttributeMetadataAdapter) {
+      MetricTypeToAttributeMetadataAdapter metricTypeToAttributeMetadataAdapter,
+      EventTypeToAttributeMetadataAdapter eventTypeToAttributeMetadataAdapter) {
     this.fraudObjectTypesStore = fraudObjectTypesStore;
     this.validator = validator;
     this.entityTypeColumnMapper = entityTypeColumnMapper;
@@ -75,6 +78,7 @@ public class FraudDataModelConfigServiceImpl
     this.metricTypeColumnMapper = metricTypeColumnMapper;
     this.baselineTypeColumnMapper = baselineTypeColumnMapper;
     this.metricTypeToAttributeMetadataAdapter = metricTypeToAttributeMetadataAdapter;
+    this.eventTypeToAttributeMetadataAdapter = eventTypeToAttributeMetadataAdapter;
   }
 
   @Override
@@ -163,6 +167,7 @@ public class FraudDataModelConfigServiceImpl
               .setEventType(finalTypeForUpsert.getEventType())
               .build());
       responseObserver.onCompleted();
+      eventTypeToAttributeMetadataAdapter.onUpsertEventType(finalTypeForUpsert.getEventType());
     } catch (Exception e) {
       log.error("Put Event type failed for request:{}", request, e);
       responseObserver.onError(e);
@@ -272,6 +277,11 @@ public class FraudDataModelConfigServiceImpl
               objectType ->
                   metricTypeToAttributeMetadataAdapter.onDeleteMetricType(
                       objectType.getMetricType()));
+      allTypes.stream()
+          .filter(ObjectType::hasEventType)
+          .forEach(
+              objectType ->
+                  eventTypeToAttributeMetadataAdapter.onDeleteEventType(objectType.getEventType()));
     } catch (Exception e) {
       log.error("Delete data model failed:{}", request, e);
       responseObserver.onError(e);
