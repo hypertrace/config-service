@@ -46,7 +46,6 @@ message EdgeDecision {
   repeated SpanAttributeDecoration span_attributes = 6;
   // OR of edge decision targets with respect to the edge decision (for eg. targets to apply the EXCLUDE decision on)
   repeated EdgeDecisionTarget edge_decision_targets = 7;
-
 }
 
 message EdgeDecisionTarget {

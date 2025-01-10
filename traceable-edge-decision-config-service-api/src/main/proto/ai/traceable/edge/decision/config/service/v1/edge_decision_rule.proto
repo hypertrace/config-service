@@ -66,8 +66,6 @@ message EdgeDecisionRuleScopeCondition {
   }
 }
 
-
-
 message EdgeDecisionRuleStatus {
   bool disabled = 1;
   bool internal = 2;
