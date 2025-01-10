@@ -1,9 +1,11 @@
 package ai.traceable.saved.filter.config.service.validation;
 
+import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.ARRAY_FILTER;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.FILTERCONDITION_NOT_SET;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.LOGICAL_FILTER;
 import static ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase.RELATIONAL_FILTER;
 
+import ai.traceable.saved.filter.config.service.v1.ArrayFilterCondition;
 import ai.traceable.saved.filter.config.service.v1.FilterCriteria;
 import ai.traceable.saved.filter.config.service.v1.FilterCriteria.FilterConditionCase;
 import ai.traceable.saved.filter.config.service.v1.LogicalFilterCondition;
@@ -15,15 +17,18 @@ public class FilterValidator implements SavedFilterValidator<FilterCriteria> {
 
   private final SavedFilterValidator<LogicalFilterCondition> logicalFilterConditionValidator;
   private final SavedFilterValidator<RelationalFilterCondition> relationalFilterConditionValidator;
+  private final SavedFilterValidator<ArrayFilterCondition> arrayFilterConditionValidator;
   private final EnumSwitcher<FilterConditionCase, FilterCriteria, ValidationContext, Void>
       enumSwitcher;
 
   @Inject
   public FilterValidator(
       SavedFilterValidator<LogicalFilterCondition> logicalFilterConditionValidator,
-      SavedFilterValidator<RelationalFilterCondition> relationalFilterConditionValidator) {
+      SavedFilterValidator<RelationalFilterCondition> relationalFilterConditionValidator,
+      final SavedFilterValidator<ArrayFilterCondition> arrayFilterConditionValidator) {
     this.logicalFilterConditionValidator = logicalFilterConditionValidator;
     this.relationalFilterConditionValidator = relationalFilterConditionValidator;
+    this.arrayFilterConditionValidator = arrayFilterConditionValidator;
     this.enumSwitcher = buildSwitcher();
   }
 
@@ -40,6 +45,7 @@ public class FilterValidator implements SavedFilterValidator<FilterCriteria> {
             FilterConditionCase.class)
         .addCase(LOGICAL_FILTER, this::validateLogicalFilter)
         .addCase(RELATIONAL_FILTER, this::validateRelationalFilter)
+        .addCase(ARRAY_FILTER, this::validateArrayFilter)
         .addExclusion(FILTERCONDITION_NOT_SET)
         .exceptionSupplier(
             (expression, context, caseEnum) ->
@@ -58,5 +64,10 @@ public class FilterValidator implements SavedFilterValidator<FilterCriteria> {
   private void validateLogicalFilter(
       final FilterCriteria filterCriteria, final ValidationContext validationContext) {
     logicalFilterConditionValidator.validate(filterCriteria.getLogicalFilter(), validationContext);
+  }
+
+  private void validateArrayFilter(
+      final FilterCriteria filterCriteria, final ValidationContext validationContext) {
+    arrayFilterConditionValidator.validate(filterCriteria.getArrayFilter(), validationContext);
   }
 }

@@ -28,8 +28,7 @@ import java.util.Set;
 import org.hypertrace.core.attribute.service.v1.AttributeKind;
 
 public class AttributeKindAndOperatorValidatorImpl implements AttributeKindAndOperatorValidator {
-
-  public static final Map<AttributeKind, Set<RelationalOperator>>
+  private static final Map<AttributeKind, Set<RelationalOperator>>
       ATTRIBUTE_KIND_TO_SUPPORTED_OPERATORS_MAP =
           Maps.immutableEnumMap(
               Map.ofEntries(
@@ -82,15 +81,15 @@ public class AttributeKindAndOperatorValidatorImpl implements AttributeKindAndOp
                           RELATIONAL_OPERATOR_GREATER_THAN_OR_EQUAL_TO))));
 
   @Override
-  public void validate(AttributeKind attributeKind, RelationalOperator operator) {
+  public void validate(AttributeKind lhsAttributeKind, RelationalOperator operator) {
 
     Set<RelationalOperator> supportedOps =
-        ATTRIBUTE_KIND_TO_SUPPORTED_OPERATORS_MAP.getOrDefault(attributeKind, emptySet());
+        ATTRIBUTE_KIND_TO_SUPPORTED_OPERATORS_MAP.getOrDefault(lhsAttributeKind, emptySet());
     if (!supportedOps.contains(operator)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
-                  "Unsupported operator %s for attributeKind %s", operator, attributeKind))
+                  "Unsupported operator %s for attributeKind %s", operator, lhsAttributeKind))
           .asRuntimeException();
     }
   }

@@ -2,26 +2,72 @@ package ai.traceable.saved.filter.config.service.validation;
 
 import static ai.traceable.saved.filter.config.service.v1.Expression.TypeCase.VALUE;
 
+import ai.traceable.saved.filter.config.service.v1.ArrayFilterCondition;
+import ai.traceable.saved.filter.config.service.v1.ArrayOperator;
 import ai.traceable.saved.filter.config.service.v1.Expression;
 import ai.traceable.saved.filter.config.service.v1.RelationalFilterCondition;
-import ai.traceable.saved.filter.config.service.validation.RelationalFilterInspector.RelationalFilterInspectionContext;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.Set;
-import lombok.AllArgsConstructor;
 import org.hypertrace.core.attribute.service.v1.AttributeKind;
 
-@AllArgsConstructor(onConstructor_ = {@Inject})
-public class RelationalFilterValidator implements SavedFilterValidator<RelationalFilterCondition> {
+public class ArrayFilterValidator implements SavedFilterValidator<ArrayFilterCondition> {
+  private static final Set<ArrayOperator> DENYLISTED_OPERATORS =
+      Set.of(ArrayOperator.ARRAY_OPERATOR_UNSPECIFIED, ArrayOperator.UNRECOGNIZED);
 
+  private final ArrayContentTypeFetcher arrayContentTypeFetcher;
   private final Set<RelationalFilterInspector> relationalFilterInspectors;
   private final ExpressionValidator expressionValidator;
   private final AttributeKindExtractor attributeKindExtractor;
+  private final EnumSwitcher<
+          ArrayFilterCondition.TypeCase, ArrayFilterCondition, ValidationContext, Void>
+      enumSwitcher;
+
+  @Inject
+  public ArrayFilterValidator(
+      final ArrayContentTypeFetcher arrayContentTypeFetcher,
+      final Set<RelationalFilterInspector> relationalFilterInspectors,
+      final ExpressionValidator expressionValidator,
+      final AttributeKindExtractor attributeKindExtractor) {
+    this.arrayContentTypeFetcher = arrayContentTypeFetcher;
+    this.relationalFilterInspectors = relationalFilterInspectors;
+    this.expressionValidator = expressionValidator;
+    this.attributeKindExtractor = attributeKindExtractor;
+    this.enumSwitcher = buildEnumSwitcher();
+  }
 
   @Override
   public void validate(
-      RelationalFilterCondition relationalFilterCondition, ValidationContext validationContext) {
+      final ArrayFilterCondition arrayFilter, final ValidationContext validationContext) {
+    if (DENYLISTED_OPERATORS.contains(arrayFilter.getOperator())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Array filter operator is mandatory")
+          .asRuntimeException();
+    }
+
+    enumSwitcher.apply(arrayFilter.getTypeCase(), arrayFilter, validationContext);
+  }
+
+  private EnumSwitcher<ArrayFilterCondition.TypeCase, ArrayFilterCondition, ValidationContext, Void>
+      buildEnumSwitcher() {
+    return EnumSwitcher
+        .<ArrayFilterCondition.TypeCase, ArrayFilterCondition, ValidationContext, Void>builder(
+            ArrayFilterCondition.TypeCase.class)
+        .addCase(ArrayFilterCondition.TypeCase.RELATIONAL_FILTER, this::validateRelationalFilter)
+        .addExclusion(ArrayFilterCondition.TypeCase.TYPE_NOT_SET)
+        .exceptionSupplier(
+            (expression, context, caseEnum) ->
+                Status.UNIMPLEMENTED
+                    .withDescription("Array filter type " + caseEnum + " is not supported")
+                    .asRuntimeException())
+        .build();
+  }
+
+  private void validateRelationalFilter(
+      final ArrayFilterCondition arrayFilter, final ValidationContext validationContext) {
+    final RelationalFilterCondition relationalFilterCondition = arrayFilter.getRelationalFilter();
+
     if (!relationalFilterCondition.getFieldName().isEmpty()
         || !Value.getDefaultInstance().equals(relationalFilterCondition.getFieldValue())) {
       // No need to perform any validation for the old flow
@@ -42,15 +88,17 @@ public class RelationalFilterValidator implements SavedFilterValidator<Relationa
     final AttributeKind lhsAttributeKind =
         extractAttributeKind(relationalFilterCondition.getLhsExpression(), validationContext);
 
+    final AttributeKind lhsContentKind = arrayContentTypeFetcher.getContentType(lhsAttributeKind);
+
     final AttributeKind rhsAttributeKind =
         extractAttributeKind(relationalFilterCondition.getRhsExpression(), validationContext);
 
-    final RelationalFilterInspectionContext inspectionContext =
-        RelationalFilterInspectionContext.builder()
-            .lhsAttributeKind(lhsAttributeKind)
+    final RelationalFilterInspector.RelationalFilterInspectionContext inspectionContext =
+        RelationalFilterInspector.RelationalFilterInspectionContext.builder()
+            .lhsAttributeKind(lhsContentKind)
             .rhsAttributeKind(rhsAttributeKind)
             .operator(relationalFilterCondition.getOperator())
-            .loggingContext(relationalFilterCondition.toString())
+            .loggingContext(arrayFilter.toString())
             .build();
 
     relationalFilterInspectors.forEach(

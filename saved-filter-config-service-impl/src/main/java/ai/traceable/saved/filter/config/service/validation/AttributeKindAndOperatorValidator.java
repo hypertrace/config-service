@@ -6,5 +6,5 @@ import org.hypertrace.core.attribute.service.v1.AttributeKind;
 
 @ImplementedBy(AttributeKindAndOperatorValidatorImpl.class)
 public interface AttributeKindAndOperatorValidator {
-  void validate(AttributeKind attributeKind, RelationalOperator operator);
+  void validate(AttributeKind lhsAttributeKind, RelationalOperator operator);
 }

@@ -1,6 +1,6 @@
 package ai.traceable.saved.filter.config.service.validation;
 
-import ai.traceable.saved.filter.config.service.v1.RelationalFilterCondition;
+import ai.traceable.saved.filter.config.service.v1.RelationalOperator;
 import ai.traceable.saved.filter.config.service.validation.SavedFilterValidator.ValidationContext;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -11,32 +11,22 @@ import org.hypertrace.core.attribute.service.v1.AttributeKind;
 public class RelationalFilterOperatorInspector implements RelationalFilterInspector {
 
   private final AttributeKindAndOperatorValidator attributeKindAndOperatorValidator;
-  private final AttributeKindExtractor attributeKindExtractor;
 
   @Override
-  public void inspect(RelationalFilterCondition filter, ValidationContext validationContext) {
-
-    if (!filter.getFieldName().isEmpty()) {
-      return;
-    }
-
-    AttributeKind lhsAttributeKind;
+  public void inspect(
+      final RelationalFilterInspectionContext inspectionContext,
+      final ValidationContext validationContext) {
+    final AttributeKind lhsAttributeKind = inspectionContext.lhsAttributeKind();
+    final RelationalOperator operator = inspectionContext.operator();
 
     try {
-      lhsAttributeKind =
-          attributeKindExtractor.extractAttributeKind(filter.getLhsExpression(), validationContext);
-    } catch (Exception e) {
-      throw Status.INVALID_ARGUMENT.withDescription("Invalid LHS type").asRuntimeException();
-    }
-
-    try {
-      attributeKindAndOperatorValidator.validate(lhsAttributeKind, filter.getOperator());
+      attributeKindAndOperatorValidator.validate(lhsAttributeKind, operator);
     } catch (IllegalArgumentException e) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
                   "LHS of filter (%s) has attributeKind (%s) which is not compatible with operator (%s) ",
-                  filter, lhsAttributeKind, filter.getOperator()))
+                  inspectionContext.loggingContext(), lhsAttributeKind, operator))
           .asRuntimeException();
     }
   }

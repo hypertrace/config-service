@@ -1,7 +1,11 @@
 package ai.traceable.saved.filter.config.service.validation;
 
+import static ai.traceable.saved.filter.config.service.v1.ArrayOperator.ARRAY_OPERATOR_ALL;
+import static ai.traceable.saved.filter.config.service.v1.ArrayOperator.ARRAY_OPERATOR_ANY;
 import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_BOOL;
+import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_INT64_ARRAY;
 import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_STRING;
+import static org.hypertrace.core.attribute.service.v1.AttributeKind.TYPE_STRING_ARRAY;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.saved.filter.config.service.store.SavedFilterStoreManager;
+import ai.traceable.saved.filter.config.service.v1.ArrayFilterCondition;
 import ai.traceable.saved.filter.config.service.v1.CreateSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.DeleteSavedFilterRequest;
 import ai.traceable.saved.filter.config.service.v1.Expression;
@@ -309,7 +314,7 @@ class SavedFilterRequestValidatorTest {
                                         Expression.newBuilder()
                                             .setField(Field.newBuilder().setKey("validKey"))
                                             .build())
-                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_NOT_IN)
                                     .setRhsExpression(
                                         Expression.newBuilder()
                                             .setValue(
@@ -358,6 +363,179 @@ class SavedFilterRequestValidatorTest {
                                                 Value.newBuilder().setStringValue("v1").build())
                                             .build())
                                     .build()))
+                    .build()));
+  }
+
+  @Test
+  void testValidArrayFilterConditionWithSingleValue() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(
+            Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING_ARRAY).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("traces")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setArrayFilter(
+                                ArrayFilterCondition.newBuilder()
+                                    .setOperator(ARRAY_OPERATOR_ANY)
+                                    .setRelationalFilter(
+                                        RelationalFilterCondition.newBuilder()
+                                            .setLhsExpression(
+                                                Expression.newBuilder()
+                                                    .setField(
+                                                        Field.newBuilder().setKey("validKey")))
+                                            .setOperator(
+                                                RelationalOperator.RELATIONAL_OPERATOR_GREATER_THAN)
+                                            .setRhsExpression(
+                                                Expression.newBuilder()
+                                                    .setValue(
+                                                        Value.newBuilder().setStringValue("v1"))))))
+                    .build()));
+  }
+
+  @Test
+  void testValidArrayFilterConditionWithIncompatibleTypes() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(
+            Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_INT64_ARRAY).build()));
+
+    final StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setArrayFilter(
+                                    ArrayFilterCondition.newBuilder()
+                                        .setOperator(ARRAY_OPERATOR_ANY)
+                                        .setRelationalFilter(
+                                            RelationalFilterCondition.newBuilder()
+                                                .setLhsExpression(
+                                                    Expression.newBuilder()
+                                                        .setField(
+                                                            Field.newBuilder().setKey("validKey")))
+                                                .setOperator(
+                                                    RelationalOperator
+                                                        .RELATIONAL_OPERATOR_GREATER_THAN)
+                                                .setRhsExpression(
+                                                    Expression.newBuilder()
+                                                        .setValue(
+                                                            Value.newBuilder()
+                                                                .setStringValue("v1"))))))
+                        .build()));
+
+    assertEquals(
+        "INVALID_ARGUMENT: Incompatible attribute kind for operator 'RELATIONAL_OPERATOR_GREATER_THAN':LHS (TYPE_INT64) and RHS (TYPE_STRING)",
+        statusRuntimeException.getMessage());
+  }
+
+  @Test
+  void testValidArrayFilterConditionWithoutOperator() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+
+    final StatusRuntimeException statusRuntimeException =
+        assertThrows(
+            StatusRuntimeException.class,
+            () ->
+                validator.validateOrThrow(
+                    mockRequestContext,
+                    CreateSavedFilterRequest.newBuilder()
+                        .setName("f1")
+                        .setScope("traces")
+                        .setVisibility(
+                            Visibility.newBuilder()
+                                .setPublic(PublicVisibility.newBuilder().build())
+                                .build())
+                        .setFilterCriteria(
+                            FilterCriteria.newBuilder()
+                                .setArrayFilter(
+                                    ArrayFilterCondition.newBuilder()
+                                        .setRelationalFilter(
+                                            RelationalFilterCondition.newBuilder()
+                                                .setLhsExpression(
+                                                    Expression.newBuilder()
+                                                        .setField(
+                                                            Field.newBuilder().setKey("validKey")))
+                                                .setOperator(
+                                                    RelationalOperator
+                                                        .RELATIONAL_OPERATOR_GREATER_THAN)
+                                                .setRhsExpression(
+                                                    Expression.newBuilder()
+                                                        .setValue(
+                                                            Value.newBuilder()
+                                                                .setStringValue("v1"))))))
+                        .build()));
+
+    assertEquals(
+        "INVALID_ARGUMENT: Array filter operator is mandatory",
+        statusRuntimeException.getMessage());
+  }
+
+  @Test
+  void testValidArrayFilterConditionWithMultipleValues() {
+    when(mockRequestContext.getUserId()).thenReturn(Optional.of(TEST_USER_ID));
+    when(mockRequestContext.getTenantId()).thenReturn(Optional.of(TEST_TENANT_ID));
+    when(mockAttributeServiceCachedClient.get(mockRequestContext, "traces", "validKey"))
+        .thenReturn(
+            Optional.of(AttributeMetadata.newBuilder().setValueKind(TYPE_STRING_ARRAY).build()));
+
+    assertDoesNotThrow(
+        () ->
+            validator.validateOrThrow(
+                mockRequestContext,
+                CreateSavedFilterRequest.newBuilder()
+                    .setName("f1")
+                    .setScope("traces")
+                    .setVisibility(
+                        Visibility.newBuilder()
+                            .setPublic(PublicVisibility.newBuilder().build())
+                            .build())
+                    .setFilterCriteria(
+                        FilterCriteria.newBuilder()
+                            .setArrayFilter(
+                                ArrayFilterCondition.newBuilder()
+                                    .setOperator(ARRAY_OPERATOR_ALL)
+                                    .setRelationalFilter(
+                                        RelationalFilterCondition.newBuilder()
+                                            .setLhsExpression(
+                                                Expression.newBuilder()
+                                                    .setField(
+                                                        Field.newBuilder().setKey("validKey")))
+                                            .setOperator(RelationalOperator.RELATIONAL_OPERATOR_IN)
+                                            .setRhsExpression(
+                                                Expression.newBuilder()
+                                                    .setValue(
+                                                        Value.newBuilder()
+                                                            .setListValue(
+                                                                ListValue.newBuilder()
+                                                                    .addValues(
+                                                                        Value.newBuilder()
+                                                                            .setStringValue(
+                                                                                "v1"))))))))
                     .build()));
   }
 

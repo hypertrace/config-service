@@ -45,6 +45,7 @@ message FilterCriteria {
   oneof filter_condition {
     LogicalFilterCondition logical_filter = 1;
     RelationalFilterCondition relational_filter = 2;
+    ArrayFilterCondition array_filter = 3;
   }
 }
 
@@ -62,6 +63,14 @@ message RelationalFilterCondition {
   // Value to compare with
   google.protobuf.Value field_value = 3 [deprecated = true];
   Expression rhs_expression = 5;
+}
+
+message ArrayFilterCondition {
+  ArrayOperator operator = 1;
+
+  oneof type {
+    RelationalFilterCondition relational_filter = 2;
+  }
 }
 
 message Expression {
@@ -93,4 +102,10 @@ enum RelationalOperator {
   RELATIONAL_OPERATOR_LESS_THAN_OR_EQUAL_TO = 6;
   RELATIONAL_OPERATOR_GREATER_THAN = 7;
   RELATIONAL_OPERATOR_GREATER_THAN_OR_EQUAL_TO = 8;
+}
+
+enum ArrayOperator {
+  ARRAY_OPERATOR_UNSPECIFIED = 0;
+  ARRAY_OPERATOR_ANY = 1;
+  ARRAY_OPERATOR_ALL = 2;
 }
