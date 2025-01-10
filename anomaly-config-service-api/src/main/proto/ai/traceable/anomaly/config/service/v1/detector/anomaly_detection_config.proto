@@ -580,4 +580,6 @@ message UserIdData {
 
 message ResponseDurationAnomalyConfig {
   optional int32 max_duration_difference = 1;
+  optional int32 max_duration_ratio = 2;
+  optional bool enabled_for_internal_ips = 3;
 }
