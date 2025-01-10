@@ -44,6 +44,23 @@ message EdgeDecision {
   string threat_type = 5;
   // what are the decorations to be added to the span that's exported to traceable platform.
   repeated SpanAttributeDecoration span_attributes = 6;
+  // OR of edge decision targets with respect to the edge decision (for eg. targets to apply the EXCLUDE decision on)
+  repeated EdgeDecisionTarget edge_decision_targets = 7;
+
+}
+
+message EdgeDecisionTarget {
+  // decision type target for the edge decision
+  EdgeDecisionType edge_decision_type = 1;
+  // OR of rule targets for the edge decision
+  repeated EdgeDecisionRuleTarget edge_decision_rule_targets = 2;
+}
+
+message EdgeDecisionRuleTarget {
+  EdgeDecisionRuleCategory edge_decision_rule_category = 1;
+  repeated string rule_ids = 2;
+  // AND of result attributes from the rules which need to be matched for the decision
+  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping result_attribute_derivations = 3;
 }
 
 enum EdgeDecisionType {
@@ -52,6 +69,18 @@ enum EdgeDecisionType {
   EDGE_DECISION_TYPE_BLOCK = 2;
   EDGE_DECISION_TYPE_CAPTCHA = 3;
   EDGE_DECISION_TYPE_MARK_FOR_TESTING = 4;
+  EDGE_DECISION_TYPE_EXCLUDE = 5;
+}
+
+// this is our implementation detail.
+enum EdgeDecisionRuleCategory {
+  EDGE_DECISION_RULE_CATEGORY_UNSPECIFIED = 0;
+  EDGE_DECISION_RULE_CATEGORY_ORIGINAL = 1; // rules stored directly in this format
+  EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE = 2;
+  EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT = 3;
+  EDGE_DECISION_RULE_CATEGORY_MALICIOUS_SOURCES = 4;
+  EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR = 5;
+  EDGE_DECISION_RULE_CATEGORY_DETECTION_EXCLUSION = 6;
 }
 
 message SpanAttributeDecoration {

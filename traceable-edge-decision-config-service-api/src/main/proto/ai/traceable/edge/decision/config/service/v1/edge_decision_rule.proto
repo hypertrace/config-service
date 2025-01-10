@@ -66,15 +66,7 @@ message EdgeDecisionRuleScopeCondition {
   }
 }
 
-// this is our implementation detail.
-enum EdgeDecisionRuleCategory {
-  EDGE_DECISION_RULE_CATEGORY_UNSPECIFIED = 0;
-  EDGE_DECISION_RULE_CATEGORY_ORIGINAL = 1; // rules stored directly in this format
-  EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE = 2;
-  EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT = 3;
-  EDGE_DECISION_RULE_CATEGORY_MALICIOUS_SOURCES = 4;
-  EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR = 5;
-}
+
 
 message EdgeDecisionRuleStatus {
   bool disabled = 1;
