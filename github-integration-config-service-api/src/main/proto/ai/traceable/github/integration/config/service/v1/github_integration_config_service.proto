@@ -51,6 +51,7 @@ message IntegrationStatus {
     AwaitingRequest awaiting_request = 1;
     AwaitingApproval awaiting_approval = 2;
     Completed completed = 3;
+    Suspended suspended = 4;
   }
   message AwaitingRequest {
     string request_user_email = 1;
@@ -59,6 +60,12 @@ message IntegrationStatus {
     string github_installation_target_name = 1;
   }
   message Completed {
+    int64 installation_id = 1;
+    string github_installation_target_name = 2;
+    string github_installation_url = 3;
+  }
+
+  message Suspended {
     int64 installation_id = 1;
     string github_installation_target_name = 2;
     string github_installation_url = 3;

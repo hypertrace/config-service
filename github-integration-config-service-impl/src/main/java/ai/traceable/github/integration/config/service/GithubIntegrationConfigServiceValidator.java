@@ -1,6 +1,9 @@
 package ai.traceable.github.integration.config.service;
 
-import static ai.traceable.github.integration.config.service.v1.IntegrationStatus.StatusCase.*;
+import static ai.traceable.github.integration.config.service.v1.IntegrationStatus.StatusCase.AWAITING_APPROVAL;
+import static ai.traceable.github.integration.config.service.v1.IntegrationStatus.StatusCase.AWAITING_REQUEST;
+import static ai.traceable.github.integration.config.service.v1.IntegrationStatus.StatusCase.COMPLETED;
+import static ai.traceable.github.integration.config.service.v1.IntegrationStatus.StatusCase.SUSPENDED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
@@ -11,6 +14,7 @@ import ai.traceable.github.integration.config.service.v1.IntegrationStatus;
 import ai.traceable.github.integration.config.service.v1.IntegrationStatus.AwaitingApproval;
 import ai.traceable.github.integration.config.service.v1.IntegrationStatus.Completed;
 import ai.traceable.github.integration.config.service.v1.IntegrationStatus.StatusCase;
+import ai.traceable.github.integration.config.service.v1.IntegrationStatus.Suspended;
 import ai.traceable.github.integration.config.service.v1.UpdateGithubIntegrationRequest;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.SetMultimap;
@@ -21,7 +25,9 @@ class GithubIntegrationConfigServiceValidator {
       ImmutableSetMultimap.of(
           AWAITING_REQUEST, AWAITING_APPROVAL,
           AWAITING_REQUEST, COMPLETED,
-          AWAITING_APPROVAL, COMPLETED);
+          AWAITING_APPROVAL, COMPLETED,
+          COMPLETED, SUSPENDED,
+          SUSPENDED, COMPLETED);
 
   void validateGetGithubIntegrations(
       GetGithubIntegrationsRequest request, RequestContext requestContext) {
@@ -58,6 +64,14 @@ class GithubIntegrationConfigServiceValidator {
         validateNonDefaultPresenceOrThrow(
             request.getStatus().getCompleted(), Completed.GITHUB_INSTALLATION_URL_FIELD_NUMBER);
         return;
+      case SUSPENDED:
+        validateNonDefaultPresenceOrThrow(
+            request.getStatus().getSuspended(), Suspended.INSTALLATION_ID_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            request.getStatus().getSuspended(),
+            Suspended.GITHUB_INSTALLATION_TARGET_NAME_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            request.getStatus().getSuspended(), Suspended.GITHUB_INSTALLATION_URL_FIELD_NUMBER);
       case AWAITING_REQUEST: // Not updatable, this is the initial state
       default:
         throw io.grpc.Status.INVALID_ARGUMENT

@@ -56,7 +56,8 @@ class GithubIntegrationStore
   private boolean satisfiesAnyInstallId(
       GithubIntegrationFilter filter, GithubIntegration integration) {
     return !filter.hasInstallationId()
-        || filter.getInstallationId() == integration.getStatus().getCompleted().getInstallationId();
+        || filter.getInstallationId() == integration.getStatus().getCompleted().getInstallationId()
+        || filter.getInstallationId() == integration.getStatus().getSuspended().getInstallationId();
   }
 
   private boolean satisfiesAnyOwnerFilter(
@@ -69,7 +70,11 @@ class GithubIntegrationStore
         || filter
             .getGithubInstallationTargetName()
             .equalsIgnoreCase(
-                integration.getStatus().getCompleted().getGithubInstallationTargetName());
+                integration.getStatus().getCompleted().getGithubInstallationTargetName())
+        || filter
+            .getGithubInstallationTargetName()
+            .equalsIgnoreCase(
+                integration.getStatus().getSuspended().getGithubInstallationTargetName());
   }
 
   private boolean satisfiesIdFilter(GithubIntegrationFilter filter, GithubIntegration integration) {
