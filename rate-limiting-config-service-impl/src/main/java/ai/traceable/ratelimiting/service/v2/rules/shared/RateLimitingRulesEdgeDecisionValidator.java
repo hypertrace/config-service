@@ -11,6 +11,7 @@ import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
+import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.ValueType;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
 import ai.traceable.ratelimiting.service.v2.rules.ValidatorUtils;
 
@@ -30,6 +31,18 @@ public class RateLimitingRulesEdgeDecisionValidator {
                       thresholdActionConfig,
                       isCompatibleCondition,
                       hasScopeConditionWithSpecificEntityIds));
+    } else if (data.getCategory().equals(Category.CATEGORY_ENUMERATION)) {
+      final boolean isCompatibleCondition = isCompatibleCondition(data.getCondition());
+      final boolean hasScopeConditionWithSpecificEntityIds =
+          hasScopeConditionWithSpecificEntityIds(data.getCondition());
+      data.getThresholdActionConfigsList()
+          .forEach(
+              thresholdActionConfig ->
+                  RateLimitingRulesEdgeDecisionValidator
+                      .isCompatibleThresholdActionConfigForEnumerationRule(
+                          thresholdActionConfig,
+                          isCompatibleCondition,
+                          hasScopeConditionWithSpecificEntityIds));
     }
   }
 
@@ -109,6 +122,41 @@ public class RateLimitingRulesEdgeDecisionValidator {
                     hasScopeConditionWithSpecificEntityIds));
   }
 
+  private static void isCompatibleThresholdActionConfigForEnumerationRule(
+      ThresholdActionConfig thresholdActionConfig,
+      boolean isCompatibleEdgeDecisionCondition,
+      boolean hasScopeConditionWithSpecificEntityIds) {
+    boolean isCompatibleResourceAccessThresholdConfig =
+        isCompatibleEdgeDecisionCondition
+            && thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
+                .allMatch(
+                    resourceAccessThresholdConfig ->
+                        isCompatibleResourceAccessThresholdConfigForEnumerationRule(
+                            resourceAccessThresholdConfig, hasScopeConditionWithSpecificEntityIds));
+    thresholdActionConfig
+        .getActionsList()
+        .forEach(
+            action ->
+                isCompatibleActionForEnumerationRule(
+                    action, isCompatibleResourceAccessThresholdConfig));
+  }
+
+  private static boolean isCompatibleResourceAccessThresholdConfigForEnumerationRule(
+      ResourceAccessThresholdConfig resourceAccessThresholdConfig,
+      boolean hasScopeConditionWithSpecificEntityIds) {
+    ValueType valueType =
+        resourceAccessThresholdConfig.getValueBasedThresholdConfig().getValueType();
+    if (valueType == ValueType.VALUE_TYPE_SENSITIVE_PARAMS) {
+      return false;
+    }
+    if (valueType == ValueType.VALUE_TYPE_PATH_PARAMS) {
+      return hasScopeConditionWithSpecificEntityIds
+          && resourceAccessThresholdConfig.getApiAggregateType()
+              != ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS;
+    }
+    return true;
+  }
+
   private static void isCompatibleAction(
       Action action,
       boolean isCompatibleThresholdActionConfig,
@@ -136,6 +184,27 @@ public class RateLimitingRulesEdgeDecisionValidator {
             validatorUtils.throwInvalidArgumentException(
                 "Block action with per endpoint will work only with scope set to specific endpoints or endpoint labels");
           }
+        }
+        break;
+      default:
+        // Nothing to do here
+    }
+  }
+
+  private static void isCompatibleActionForEnumerationRule(
+      Action action, boolean isCompatibleResourceAccessThresholdConfig) {
+    switch (action.getActionCase()) {
+      case MARK_FOR_TESTING:
+        if (!isCompatibleResourceAccessThresholdConfig) {
+          validatorUtils.throwInvalidArgumentException(
+              "Mark for testing action is incompatible with current rule conditions.");
+        }
+        break;
+      case BLOCK:
+        Action.Block block = action.getBlock();
+        if (block.getUseThresholdDuration() && !isCompatibleResourceAccessThresholdConfig) {
+          validatorUtils.throwInvalidArgumentException(
+              "Block action with use threshold config is incompatible with current rule conditions.");
         }
         break;
       default:

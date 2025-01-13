@@ -24,6 +24,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.v1.AggregateThresholdRule;
@@ -39,6 +40,8 @@ import ai.traceable.edge.decision.config.service.v1.PayloadDecoration;
 import ai.traceable.edge.decision.config.service.v1.RequestHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ResponseHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold;
+import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType;
+import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.ThresholdOperator;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Category;
@@ -49,6 +52,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
+import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.ValueType;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
@@ -112,19 +116,25 @@ public class RateLimitingEdgeDecisionConverter {
               action -> {
                 EdgeDecision edgeDecision = buildEdgeDecision(rateLimitingRule, action);
                 return getResourceAccessThresholdConfigsList(action)
-                    .map(
+                    .flatMap(
                         resourceAccessThresholdConfig -> {
-                          EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
-                          builder.setId(rateLimitingRule.getId());
-                          builder.setName(data.getName());
-                          builder.setRuleStatus(edgeDecisionRuleStatus);
-                          builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
-                          maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
-                          builder.setRuleDecision(edgeDecision);
-                          builder.setRuleDefinition(
-                              buildRuleDefinition(
-                                  resourceAccessThresholdConfig, mayBeMatchCondition));
-                          return builder.build();
+                          List<EdgeDecisionRuleDefinition> ruleDefinitions =
+                              buildRuleDefinitions(
+                                  resourceAccessThresholdConfig, mayBeMatchCondition);
+                          return ruleDefinitions.stream()
+                              .map(
+                                  ruleDefinition -> {
+                                    EdgeDecisionRule.Builder builder =
+                                        EdgeDecisionRule.newBuilder();
+                                    builder.setId(rateLimitingRule.getId());
+                                    builder.setName(data.getName());
+                                    builder.setRuleStatus(edgeDecisionRuleStatus);
+                                    builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
+                                    maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
+                                    builder.setRuleDecision(edgeDecision);
+                                    builder.setRuleDefinition(ruleDefinition);
+                                    return builder.build();
+                                  });
                         });
               })
           .collect(Collectors.toUnmodifiableList());
@@ -232,32 +242,52 @@ public class RateLimitingEdgeDecisionConverter {
         : Optional.of(builder.build());
   }
 
-  private EdgeDecisionRuleDefinition buildRuleDefinition(
+  private List<EdgeDecisionRuleDefinition> buildRuleDefinitions(
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
       final Optional<MatchConditionVariablesTuple> mayBeMatchCondition) {
-    final EdgeDecisionRuleDefinition.Builder builder = EdgeDecisionRuleDefinition.newBuilder();
-    builder.setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
-    builder.setAggregateThresholdRule(
-        buildAggregateThresholdRule(resourceAccessThresholdConfig, mayBeMatchCondition));
-    mayBeMatchCondition.ifPresent(
-        tuple -> builder.addAllRuleVariables(tuple.getVariableDerivationMappings()));
-    return builder.build();
+    return buildAggregateThresholdRules(resourceAccessThresholdConfig, mayBeMatchCondition).stream()
+        .map(
+            aggregateThresholdRule -> {
+              final EdgeDecisionRuleDefinition.Builder builder =
+                  EdgeDecisionRuleDefinition.newBuilder();
+              builder.setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
+              builder.setAggregateThresholdRule(aggregateThresholdRule);
+              mayBeMatchCondition.ifPresent(
+                  tuple -> builder.addAllRuleVariables(tuple.getVariableDerivationMappings()));
+              return builder.build();
+            })
+        .collect(Collectors.toList());
   }
 
   @SneakyThrows
-  private AggregateThresholdRule buildAggregateThresholdRule(
+  private List<AggregateThresholdRule> buildAggregateThresholdRules(
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
       final Optional<MatchConditionVariablesTuple> mayBeMatchCondition) {
-    final AggregateThresholdRule.Builder builder = AggregateThresholdRule.newBuilder();
-    mayBeMatchCondition.ifPresent(tuple -> builder.setMatchCondition(tuple.getMatchCondition()));
-    builder.addAllGroupByDimensions(buildGroupByDimensions(resourceAccessThresholdConfig));
-    builder.setValueAggregateThreshold(buildValueAggregateThreshold(resourceAccessThresholdConfig));
+    final List<ValueAggregateThreshold> valueAggregateThresholds =
+        buildValueAggregateThresholds(
+            resourceAccessThresholdConfig,
+            mayBeMatchCondition.map(MatchConditionVariablesTuple::getMatchCondition));
     final java.time.Duration duration =
         java.time.Duration.parse(
             resourceAccessThresholdConfig.getRollingWindowThresholdConfig().getDurationIso());
-    builder.setTimeWindow(
-        Duration.newBuilder().setSeconds(duration.getSeconds()).setNanos(duration.getNano()));
-    return builder.build();
+    final Duration timeWindow =
+        Duration.newBuilder()
+            .setSeconds(duration.getSeconds())
+            .setNanos(duration.getNano())
+            .build();
+    return valueAggregateThresholds.stream()
+        .map(
+            valueAggregateThreshold -> {
+              final AggregateThresholdRule.Builder builder = AggregateThresholdRule.newBuilder();
+              mayBeMatchCondition.ifPresent(
+                  tuple -> builder.setMatchCondition(tuple.getMatchCondition()));
+              builder.addAllGroupByDimensions(
+                  buildGroupByDimensions(resourceAccessThresholdConfig));
+              builder.setValueAggregateThreshold(valueAggregateThreshold);
+              builder.setTimeWindow(timeWindow);
+              return builder.build();
+            })
+        .collect(Collectors.toList());
   }
 
   private Stream<ThresholdActionConfig> getThresholdActionConfigs(final RateLimitingRuleData data) {
@@ -353,21 +383,51 @@ public class RateLimitingEdgeDecisionConverter {
     return attributeDerivationMappings;
   }
 
-  private ValueAggregateThreshold buildValueAggregateThreshold(
-      final ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
-    final ValueAggregateThreshold.Builder builder = ValueAggregateThreshold.newBuilder();
-    builder.setAggregationType(AGGREGATION_TYPE_COUNT);
+  private List<ValueAggregateThreshold> buildValueAggregateThresholds(
+      final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
+      final Optional<MatchCondition> mayBeMatchCondition) {
+    List<ValueAggregateThreshold> valueAggregateThresholds = new ArrayList<>();
     switch (resourceAccessThresholdConfig.getThresholdConfigCase()) {
       case ROLLING_WINDOW_THRESHOLD_CONFIG:
+        final ValueAggregateThreshold.Builder builder = ValueAggregateThreshold.newBuilder();
+        builder.setAggregationType(AGGREGATION_TYPE_COUNT);
         builder.setStaticThreshold(
             resourceAccessThresholdConfig.getRollingWindowThresholdConfig().getCountAllowed());
+        valueAggregateThresholds.add(builder.build());
+        break;
+      case VALUE_BASED_THRESHOLD_CONFIG:
+        ValueType valueType =
+            resourceAccessThresholdConfig.getValueBasedThresholdConfig().getValueType();
+        List<String> jexlExpressions = getJexlExpressions(valueType, mayBeMatchCondition);
+
+        for (String jexlExpression : jexlExpressions) {
+          final ValueAggregateThreshold.Builder valueBasedBuilder =
+              ValueAggregateThreshold.newBuilder();
+          valueBasedBuilder.setDimension(
+              AttributeDerivationMapping.newBuilder()
+                  .setName("DISTINCT_COUNT_" + valueType.name())
+                  .addRules(
+                      DerivationRule.newBuilder()
+                          .setTransformationConfig(
+                              DataTransformationConfig.newBuilder()
+                                  .setJexlExpression(
+                                      JexlExpressionConfig.newBuilder()
+                                          .setJexlExpression(jexlExpression)))));
+          valueBasedBuilder.setAggregationType(AggregationType.AGGREGATION_TYPE_DISTINCT_COUNT);
+          valueBasedBuilder.setStaticThreshold(
+              resourceAccessThresholdConfig
+                  .getValueBasedThresholdConfig()
+                  .getUniqueValuesAllowed());
+          valueBasedBuilder.setThresholdOperator(ThresholdOperator.THRESHOLD_OPERATOR_ABOVE);
+          valueAggregateThresholds.add(valueBasedBuilder.build());
+        }
         break;
       default:
         throw new IllegalArgumentException(
             "Unsupported resource access threshold case: "
                 + resourceAccessThresholdConfig.getThresholdConfigCase());
     }
-    return builder.build();
+    return valueAggregateThresholds;
   }
 
   private RateLimitingConditionConverter getConditionConverter(final ConditionCase conditionCase) {
@@ -376,6 +436,78 @@ public class RateLimitingEdgeDecisionConverter {
             () ->
                 new IllegalArgumentException(
                     "No matching condition converter found for condition case: " + conditionCase));
+  }
+
+  private List<String> getJexlExpressions(
+      final ValueType valueType, final Optional<MatchCondition> mayBeMatchCondition) {
+    switch (valueType) {
+      case VALUE_TYPE_REQUEST_BODY:
+        return Collections.singletonList("$s.getRequestBody()");
+      case VALUE_TYPE_SENSITIVE_PARAMS:
+        // we don't support conversion of sensitive params condition yet.
+        throw new IllegalArgumentException(
+            "Cannot convert enumeration rule for which the condition is specified on sensitive param");
+      case VALUE_TYPE_PATH_PARAMS:
+        // currently we will support the case where the rule is defined for 1 endpoint only.
+        Optional<StructuredMatchCondition> maybeParamPathCondition =
+            mayBeMatchCondition.flatMap(this::getParamPathCondition);
+        if (maybeParamPathCondition.isPresent()) {
+          String urlRegex = maybeParamPathCondition.get().getBinaryOperator().getRegex();
+          // replace ith occurrence of ".*" in urlRegex with "(.*)" and add it to jexlExpressions
+          // list.
+          List<String> jexlExpressions = new ArrayList<>();
+          int index = -1;
+          // find and replace each occurrence of ".*" with "(.*)" and create corresponding jexl
+          // expressions
+          while ((index = urlRegex.indexOf(".*", index + 1)) != -1) {
+            String urlRegexCaptureGroup =
+                urlRegex.substring(0, index) + "(.*)" + urlRegex.substring(index + 2);
+            // add jexl expression for capturing the path param
+            jexlExpressions.add("$s.getPath().replaceFirst(" + urlRegexCaptureGroup + ", $1)");
+          }
+          return jexlExpressions;
+        }
+        throw new IllegalArgumentException(
+            "Cannot convert enumeration rule where the path param condition doesn't have any url pattern");
+      case VALUE_TYPE_UNSPECIFIED:
+      default:
+        throw new IllegalArgumentException("Unsupported value type: " + valueType);
+    }
+  }
+
+  private Optional<StructuredMatchCondition> getParamPathCondition(MatchCondition matchCondition) {
+    switch (matchCondition.getConditionCase()) {
+      case STRUCTURED_MATCH_CONDITION:
+        List<DerivationRule> derivationRules =
+            matchCondition.getStructuredMatchCondition().getLhs().getRulesList();
+        if (derivationRules.size() == 1
+            &&
+            // this condition should be the same as the transformation done in
+            // RateLimitingScopeConditionConverter
+            derivationRules
+                .get(0)
+                .getTransformationConfig()
+                .getJexlExpression()
+                .getJexlExpression()
+                .equals("$s.getPath()")) {
+          return Optional.of(matchCondition.getStructuredMatchCondition());
+        }
+        return Optional.empty();
+      case LOGICAL_MATCH_CONDITION:
+        for (MatchCondition childCondition :
+            matchCondition.getLogicalMatchCondition().getConditionsList()) {
+          Optional<StructuredMatchCondition> maybeParamPathCondition =
+              getParamPathCondition(childCondition);
+          if (maybeParamPathCondition.isPresent()) {
+            return maybeParamPathCondition;
+          }
+        }
+        return Optional.empty();
+      case GENERIC_MATCH_CONDITION:
+      case CONDITION_NOT_SET:
+      default:
+        return Optional.empty();
+    }
   }
 
   @lombok.Value
