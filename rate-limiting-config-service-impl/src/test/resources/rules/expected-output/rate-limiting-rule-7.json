@@ -39,13 +39,13 @@
             }, {
               "genericMatchCondition": {
                 "jexlExpression": {
-                  "jexlExpression": "!(ipValidationUtils:isIpAddressInRange(\u00273.4.5.6/24\u0027, $s.getIpAddress()))"
+                  "jexlExpression": "!(ipValidation:isIpAddressInRange(\u00273.4.5.6/24\u0027, $s.getIpAddress()))"
                 }
               }
             }, {
               "genericMatchCondition": {
                 "jexlExpression": {
-                  "jexlExpression": "!(ipValidationUtils:isIpAddressInRange(\u00275.6.7.8/24\u0027, $s.getIpAddress()))"
+                  "jexlExpression": "!(ipValidation:isIpAddressInRange(\u00275.6.7.8/24\u0027, $s.getIpAddress()))"
                 }
               }
             }]

@@ -29,10 +29,11 @@
               }]
             },
             "binaryOperator": {
-              "listValue": ["org1", "org2"],
-              "matchOperator": "MATCH_OPERATOR_NOT_LIKE"
+              "regex": "org1|org2",
+              "matchOperator": "MATCH_OPERATOR_LIKE"
             }
-          }
+          },
+          "negate": true
         },
         "groupByDimensions": [{
           "name": "AGGREGATE_PER_USER",

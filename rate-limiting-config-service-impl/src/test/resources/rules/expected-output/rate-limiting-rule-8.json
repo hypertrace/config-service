@@ -29,7 +29,7 @@
               }]
             },
             "binaryOperator": {
-              "listValue": ["12.*", "345"],
+              "regex": "12.*|345",
               "matchOperator": "MATCH_OPERATOR_LIKE"
             }
           }

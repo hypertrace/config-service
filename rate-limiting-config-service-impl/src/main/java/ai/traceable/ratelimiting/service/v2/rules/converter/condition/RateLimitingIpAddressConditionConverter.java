@@ -24,7 +24,7 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
 
   private static final String IP_ADDRESS_JEXL_EXP = "$s.getIpAddress()";
   private static final String IS_IP_IN_RANGE_JEXL_EXP =
-      "ipValidationUtils:isIpAddressInRange('%s', $s.getIpAddress())";
+      "ipValidation:isIpAddressInRange('%s', $s.getIpAddress())";
   private static final String EXTERNAL_IP_JEXL_EXP = "$s.getIpValidationResult().isExternalIp()";
   private static final String INTERNAL_IP_JEXL_EXP =
       JexlUtils.getNotJexlExpression(EXTERNAL_IP_JEXL_EXP);
