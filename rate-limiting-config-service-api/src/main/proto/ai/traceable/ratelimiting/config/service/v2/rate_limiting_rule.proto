@@ -49,10 +49,10 @@ message RateLimitingRuleData {
 }
 
 message RuleStatus {
-  optional bool hidden = 1 [deprecated = true];
-  optional bool generate_internal_events = 2 [deprecated = true];
+  optional bool hidden = 1;
+  optional bool generate_internal_events = 2;
   RuleSource rule_creation_source = 3;
-  bool internal = 4;
+  bool internal = 4 [deprecated = true];
 
   enum RuleSource {
     RULE_SOURCE_UNSPECIFIED = 0;
