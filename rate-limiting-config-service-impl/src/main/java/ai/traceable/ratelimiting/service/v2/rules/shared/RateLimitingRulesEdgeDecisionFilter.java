@@ -35,9 +35,7 @@ public class RateLimitingRulesEdgeDecisionFilter {
   private static Optional<RateLimitingRule> getFilteredRule(RateLimitingRule rule) {
     List<ThresholdActionConfig> filteredThresholdActionConfigs =
         rule.getData().getThresholdActionConfigsList().stream()
-            .filter(
-                thresholdActionConfig ->
-                    findAnyMatchingEdgeDecisionAction(thresholdActionConfig).isEmpty())
+            .filter(RateLimitingRulesEdgeDecisionFilter::doesNotContainMatchingEdgeDecisionAction)
             .collect(Collectors.toUnmodifiableList());
     if (filteredThresholdActionConfigs.isEmpty()) {
       return Optional.empty();
@@ -50,5 +48,11 @@ public class RateLimitingRulesEdgeDecisionFilter {
       return Optional.of(rule.toBuilder().setData(builder).build());
     }
     return Optional.of(rule);
+  }
+
+  private static boolean doesNotContainMatchingEdgeDecisionAction(
+      ThresholdActionConfig thresholdActionConfig) {
+    // if matching edge decision actions are empty, then return true
+    return findAnyMatchingEdgeDecisionAction(thresholdActionConfig).isEmpty();
   }
 }

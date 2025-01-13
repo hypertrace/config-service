@@ -175,6 +175,12 @@ public class RateLimitingRulesValidator implements RulesValidator {
           .withDescription("Cannot filter for UNSPECIFIED category")
           .asRuntimeException();
     }
+    if (filter.hasFilterEdgeDecisionRules() && !filter.getFilterEdgeDecisionRules()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Need to use get edge decision rules api and not call this api with filterEdgeDecisionRules set to false")
+          .asRuntimeException();
+    }
   }
 
   private void validateModsecFilter(GetRateLimitingModsecRulesFilter filter) {
