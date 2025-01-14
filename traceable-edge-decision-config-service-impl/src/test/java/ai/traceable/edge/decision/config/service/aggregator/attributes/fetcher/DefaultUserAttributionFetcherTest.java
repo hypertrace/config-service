@@ -8,6 +8,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.io.File;
 import java.util.List;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,8 +26,10 @@ class DefaultUserAttributionFetcherTest {
   void testGetConfigsForTenant_validTenant() {
     DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(config);
 
-    List<DerivationRule> tenant1Configs = fetchers.getUserAttributionRules("tenant1");
-    List<DerivationRule> tenant2Configs = fetchers.getUserAttributionRules("tenant2");
+    List<DerivationRule> tenant1Configs =
+        fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant1"));
+    List<DerivationRule> tenant2Configs =
+        fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant2"));
 
     assertEquals(2, tenant1Configs.size(), "Tenant1 should have 2 configs");
     assertEquals(
@@ -39,7 +42,8 @@ class DefaultUserAttributionFetcherTest {
   void testGetConfigsForTenant_missingTenant() {
     DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(config);
 
-    List<DerivationRule> missingTenantConfigs = fetchers.getUserAttributionRules("missingTenant");
+    List<DerivationRule> missingTenantConfigs =
+        fetchers.getUserAttributionRules(RequestContext.forTenantId("missingTenant"));
 
     assertTrue(missingTenantConfigs.isEmpty(), "Missing tenant should return an empty list");
   }
@@ -59,7 +63,8 @@ class DefaultUserAttributionFetcherTest {
                 + "        }}");
 
     DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(invalidConfig);
-    List<DerivationRule> tenant1Configs = fetchers.getUserAttributionRules("tenant1");
+    List<DerivationRule> tenant1Configs =
+        fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant1"));
     // Tenant1 should skip invalid rules and only return valid configs
     assertEquals(1, tenant1Configs.size());
   }
@@ -68,7 +73,8 @@ class DefaultUserAttributionFetcherTest {
   void testNoConfigPath() {
     Config emptyConfig = ConfigFactory.empty();
     DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(emptyConfig);
-    List<DerivationRule> tenantConfigs = fetchers.getUserAttributionRules("tenant1");
+    List<DerivationRule> tenantConfigs =
+        fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant1"));
     assertTrue(tenantConfigs.isEmpty(), "No configurations should return an empty list");
   }
 }

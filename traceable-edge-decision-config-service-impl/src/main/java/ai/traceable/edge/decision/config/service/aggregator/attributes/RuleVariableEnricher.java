@@ -5,6 +5,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import com.google.inject.Inject;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RuleVariableEnricher {
   private final CheckAndAddVariableToRule variableChecker;
@@ -19,14 +20,14 @@ public class RuleVariableEnricher {
   }
 
   public EdgeDecisionEngineConfig enrichRule(
-      String tenantId, EdgeDecisionEngineConfig edgeDecisionEngineConfig) {
+      RequestContext requestContext, EdgeDecisionEngineConfig edgeDecisionEngineConfig) {
     for (Entry<VariableConstants, VariableEnricherBase> enricherEntry :
         variableEnricherMap.entrySet()) {
       edgeDecisionEngineConfig =
           variableChecker.checkAndAddVariableToRule(
               edgeDecisionEngineConfig,
               enricherEntry.getKey().getValue(),
-              enricherEntry.getValue().getVariable(tenantId));
+              enricherEntry.getValue().getVariable(requestContext));
     }
     return edgeDecisionEngineConfig;
   }

@@ -3,7 +3,6 @@ package ai.traceable.edge.decision.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -112,7 +111,7 @@ class EdgeDecisionConfigServiceTest {
   void testCrudForEdgeDecisionEngineConfigs() {
     RequestContext requestContext = buildRequestContext();
     // Send the original edge decision rule as is
-    when(ruleVariableEnricher.enrichRule(anyString(), any()))
+    when(ruleVariableEnricher.enrichRule(any(), any()))
         .thenAnswer(invocation -> invocation.getArgument(1));
 
     EdgeDecisionEngineConfig created =
@@ -208,7 +207,7 @@ class EdgeDecisionConfigServiceTest {
             .build();
 
     // Send the original edge decision rule as is
-    when(ruleVariableEnricher.enrichRule("t1", new_config())).thenReturn(modified_config);
+    when(ruleVariableEnricher.enrichRule(requestContext, new_config())).thenReturn(modified_config);
 
     EdgeDecisionEngineConfig created =
         requestContext

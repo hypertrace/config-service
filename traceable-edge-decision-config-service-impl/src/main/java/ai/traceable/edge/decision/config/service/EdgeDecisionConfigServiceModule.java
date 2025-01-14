@@ -4,7 +4,7 @@ import static ai.traceable.edge.decision.config.service.VariableConstants.USER_A
 
 import ai.traceable.edge.decision.config.service.aggregator.attributes.UserAttributionVariableEnricher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.VariableEnricherBase;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.DefaultUserAttributionFetcher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.StoredUserAttributionFetcher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.UserAttributionFetcher;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
@@ -13,6 +13,7 @@ import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServ
 import ai.traceable.edge.decision.config.service.supplier.ratelimiting.RateLimitingEdgeDecisionEngineConfigSupplier;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
+import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.multibindings.MapBinder;
@@ -45,7 +46,7 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     bind(Config.class).toInstance(config);
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
     bind(BindableService.class).to(EdgeDecisionConfigService.class);
-    bind(UserAttributionFetcher.class).to(DefaultUserAttributionFetcher.class);
+    bind(UserAttributionFetcher.class).to(StoredUserAttributionFetcher.class);
     bind(ActorServiceConfig.class).toInstance(new ActorServiceConfig(config));
 
     MapBinder<VariableConstants, VariableEnricherBase> mapBinder =
@@ -80,6 +81,14 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
   RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub
       providesRateLimitingConfigServiceBlockingStub() {
     return RateLimitingConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub
+      providesUserAttributionConfigServiceBlockingStub() {
+    return UserAttributionConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

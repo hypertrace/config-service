@@ -8,6 +8,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
   implementation(projects.externalAgentAttributeConfigServiceApi)
+  implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.rateLimitingConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
@@ -15,6 +16,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(commonLibs.traceable.opadistributor.api)
+  implementation(commonLibs.guava)
 
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)

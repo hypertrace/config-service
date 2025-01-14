@@ -49,8 +49,7 @@ public class EdgeDecisionEngineConfigResolver {
       finalConfig = EdgeDecisionEngineConfig.getDefaultInstance();
     }
     // Check if we need to add variable definition of any missing variables
-    finalConfig =
-        ruleVariableEnricher.enrichRule(requestContext.getTenantId().orElse(""), finalConfig);
+    finalConfig = ruleVariableEnricher.enrichRule(requestContext, finalConfig);
     return finalConfig;
   }
 }

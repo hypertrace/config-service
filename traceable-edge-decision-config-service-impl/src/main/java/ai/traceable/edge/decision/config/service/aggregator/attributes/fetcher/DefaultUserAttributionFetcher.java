@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
@@ -32,8 +33,9 @@ public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
     this.tenantUserAttributionConfigs = loadTenantConfigs(config);
   }
 
-  public List<DerivationRule> getUserAttributionRules(String tenantId) {
-    return tenantUserAttributionConfigs.getOrDefault(tenantId, Collections.emptyList());
+  public List<DerivationRule> getUserAttributionRules(RequestContext requestContext) {
+    return tenantUserAttributionConfigs.getOrDefault(
+        requestContext.getTenantId().orElse(""), Collections.emptyList());
   }
 
   /** Loads and parses the tenant-specific user attribution rules. */
@@ -72,7 +74,7 @@ public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  /** Converts a single Config into a DataTransformationConfig, logging and skipping on failure. */
+  /** Converts a single Config into a DataTransformationConfig */
   private Optional<DataTransformationConfig> convertDataTransformationConfig(
       String tenantId, Config config) {
     try {
