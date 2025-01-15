@@ -67,6 +67,7 @@ class ColumnMapperUtils {
         .setDisabled(fieldMetadata.getDisabled())
         .setEntityType(fieldMetadata.getEntityType())
         .setRelationshipType(fieldMetadata.getRelationshipType())
+        .setIndexed(fieldMetadata.getIndexed())
         .build();
   }
 
@@ -77,6 +78,7 @@ class ColumnMapperUtils {
         .setDisabled(internalFieldMetadata.getDisabled())
         .setEntityType(internalFieldMetadata.getEntityType())
         .setRelationshipType(internalFieldMetadata.getRelationshipType())
+        .setIndexed(internalFieldMetadata.getIndexed())
         .build();
   }
 }

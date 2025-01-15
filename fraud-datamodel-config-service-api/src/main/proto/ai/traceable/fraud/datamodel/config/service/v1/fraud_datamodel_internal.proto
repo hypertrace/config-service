@@ -46,4 +46,5 @@ message InternalFieldMetadata {
     string entity_type = 5;
     string relationship_type = 6;
   }
+  bool indexed = 7;
 }

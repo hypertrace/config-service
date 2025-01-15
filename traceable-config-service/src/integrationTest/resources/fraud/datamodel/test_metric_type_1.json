@@ -17,7 +17,8 @@
     "ip_address": {
       "fieldType": "FIELD_TYPE_STR",
       "versioned": false,
-      "disabled": false
+      "disabled": false,
+      "indexed": true
     },
     "start_time_millis_ts": {
       "fieldType": "FIELD_TYPE_TIMESTAMP",

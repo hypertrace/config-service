@@ -1,6 +1,7 @@
 package ai.traceable.fraud.datamodel.config.service;
 
 import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
+import ai.traceable.fraud.datamodel.config.service.v1.InternalFieldMetadata;
 import java.util.Map;
 
 public abstract class FraudDataModelConstants {
@@ -14,6 +15,7 @@ public abstract class FraudDataModelConstants {
   public static final String COL_BINARY_PREFIX = "binary";
   public static final String COL_INT_PREFIX = "int";
   private static final String COL_SEGMENT = "_col";
+  private static final String COL_INDEX_PREFIX = "idx";
 
   public static final Map<FieldType, String> TYPE_TO_COLUMN_LOOKUP_MAP =
       Map.of(
@@ -55,18 +57,24 @@ public abstract class FraudDataModelConstants {
           COL_BINARY_PREFIX,
           5,
           COL_INT_PREFIX,
-          20);
+          20,
+          COL_INDEX_PREFIX,
+          25);
 
   public static String getColumnPrefix() {
     return COL_SEGMENT;
   }
 
-  public static String getKeyPrefix(FieldType fieldType) {
+  public static String getKeyPrefix(InternalFieldMetadata fieldMetadata) {
+    if (fieldMetadata.getIndexed()) {
+      return COL_INDEX_PREFIX;
+    }
+    FieldType fieldType = fieldMetadata.getFieldType();
     return TYPE_TO_COLUMN_LOOKUP_MAP.get(fieldType);
   }
 
-  public static String getColumnName(FieldType fieldType, int index) {
-    String fieldPrefix = getKeyPrefix(fieldType);
+  public static String getColumnName(InternalFieldMetadata fieldMetadata, int index) {
+    String fieldPrefix = getKeyPrefix(fieldMetadata);
     String colPrefix = getColumnPrefix();
     return fieldPrefix + colPrefix + index;
   }

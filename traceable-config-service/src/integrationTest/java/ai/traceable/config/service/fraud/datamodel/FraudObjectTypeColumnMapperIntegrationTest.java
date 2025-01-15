@@ -1,5 +1,8 @@
 package ai.traceable.config.service.fraud.datamodel;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import ai.traceable.config.service.fraud.ResourceUtils;
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelTestUtils;
 import ai.traceable.fraud.datamodel.config.service.store.FraudObjectTypesDocumentStore;
@@ -104,7 +107,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
 
     ColumnMappingMeta updatedColumnMappings = response.getEntityType().getColumnMappingMeta();
 
-    Assertions.assertEquals(createdColumnMappings, updatedColumnMappings);
+    assertEquals(createdColumnMappings, updatedColumnMappings);
 
     // upsert the type with a new field, verify previous mappings stay the same.
     entityType =
@@ -131,7 +134,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         createdColumnMappings.getColumnMappingMap().entrySet()) {
       // verify mappings did not change for any of the previous columns
       ColumnMapping updatedColumnMapping = updatedFieldMappings.get(entry.getKey());
-      Assertions.assertEquals(entry.getValue(), updatedColumnMapping);
+      assertEquals(entry.getValue(), updatedColumnMapping);
     }
     // verify that the new field has a mapping
     ColumnMapping newFieldMapping = updatedFieldMappings.get("updated_field");
@@ -142,11 +145,11 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         createdColumnMappings.getRevColumnMappingMap().entrySet()) {
       // verify rev mappings did not change for any of the previous columns
       String revMapping = updatedRevColMappings.get(entry.getKey());
-      Assertions.assertEquals(entry.getValue(), revMapping);
+      assertEquals(entry.getValue(), revMapping);
     }
     // verify that the new field has a rev mapping
     String newFieldRevMapping = updatedRevColMappings.get(newFieldMapping.getColumnId());
-    Assertions.assertEquals("updated_field", newFieldRevMapping);
+    assertEquals("updated_field", newFieldRevMapping);
   }
 
   @Test
@@ -166,14 +169,20 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
     Assertions.assertNotNull(response.getMetricType());
-    Assertions.assertEquals(
+    assertEquals(
         response.getMetricType().getFieldsMetaCount(),
         response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
-    Assertions.assertEquals(
+    assertEquals(
         response.getMetricType().getFieldsMetaCount(),
         response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
 
     ColumnMappingMeta createdColumnMappings = response.getMetricType().getColumnMappingMeta();
+    assertTrue(
+        createdColumnMappings
+            .getColumnMappingMap()
+            .get("ip_address")
+            .getColumnId()
+            .startsWith("idx"));
 
     // upsert the same type again, verify mappings don't change.
     response =
@@ -181,7 +190,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
             .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
     Assertions.assertNotNull(response.getMetricType());
     ColumnMappingMeta updatedColumnMappings = response.getMetricType().getColumnMappingMeta();
-    Assertions.assertEquals(createdColumnMappings, updatedColumnMappings);
+    assertEquals(createdColumnMappings, updatedColumnMappings);
 
     // upsert another metric type. for columns of same name (As those in the previous type),
     // we should get the same mappings for this type
@@ -199,10 +208,10 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request2));
     Assertions.assertNotNull(response.getMetricType());
-    Assertions.assertEquals(
+    assertEquals(
         response.getMetricType().getFieldsMetaCount(),
         response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
-    Assertions.assertEquals(
+    assertEquals(
         response.getMetricType().getFieldsMetaCount(),
         response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
 
@@ -212,7 +221,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     for (Map.Entry<String, ColumnMapping> entryForMetric2 :
         columnMappingsForMetric2.getColumnMappingMap().entrySet()) {
       if (columnMappingsForMetric1.getColumnMappingMap().containsKey(entryForMetric2.getKey())) {
-        Assertions.assertEquals(
+        assertEquals(
             columnMappingsForMetric1.getColumnMappingMap().get(entryForMetric2.getKey()),
             entryForMetric2.getValue(),
             entryForMetric2.getKey());
@@ -228,11 +237,11 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
             .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
     Assertions.assertNotNull(response.getMetricType());
     updatedColumnMappings = response.getMetricType().getColumnMappingMeta();
-    Assertions.assertEquals(createdColumnMappings, updatedColumnMappings);
-    Assertions.assertEquals(
+    assertEquals(createdColumnMappings, updatedColumnMappings);
+    assertEquals(
         response.getMetricType().getFieldsMetaCount(),
         response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
-    Assertions.assertEquals(
+    assertEquals(
         response.getMetricType().getFieldsMetaCount(),
         response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
   }
@@ -263,7 +272,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
 
     ColumnMappingMeta updatedColumnMappings = response.getEventType().getColumnMappingMeta();
 
-    Assertions.assertEquals(createdColumnMappings, updatedColumnMappings);
+    assertEquals(createdColumnMappings, updatedColumnMappings);
 
     // upsert the type with a new field, verify previous mappings stay the same.
     eventType =
@@ -289,7 +298,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         createdColumnMappings.getColumnMappingMap().entrySet()) {
       // verify mappings did not change for any of the previous columns
       ColumnMapping updatedColumnMapping = updatedFieldMappings.get(entry.getKey());
-      Assertions.assertEquals(entry.getValue(), updatedColumnMapping);
+      assertEquals(entry.getValue(), updatedColumnMapping);
     }
     // verify that the new field has a mapping
     ColumnMapping newFieldMapping = updatedFieldMappings.get("updated_field");
@@ -300,11 +309,11 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         createdColumnMappings.getRevColumnMappingMap().entrySet()) {
       // verify rev mappings did not change for any of the previous columns
       String revMapping = updatedRevColMappings.get(entry.getKey());
-      Assertions.assertEquals(entry.getValue(), revMapping);
+      assertEquals(entry.getValue(), revMapping);
     }
     // verify that the new field has a rev mapping
     String newFieldRevMapping = updatedRevColMappings.get(newFieldMapping.getColumnId());
-    Assertions.assertEquals("updated_field", newFieldRevMapping);
+    assertEquals("updated_field", newFieldRevMapping);
   }
 
   @Test
@@ -334,15 +343,14 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
                     fraudDataModelConfigServiceBlockingStub
                         .getRelationshipTypes(GetRelationshipTypesRequest.getDefaultInstance())
                         .getRelationshipTypesList());
-    Assertions.assertEquals(
-        FraudDataModelTestUtils.relationshipTypes().size(), relationshipTypes.size());
+    assertEquals(FraudDataModelTestUtils.relationshipTypes().size(), relationshipTypes.size());
     GetTypesResponse allTypes =
         RequestContext.forTenantId(TENANT_ID)
             .call(
                 () ->
                     fraudDataModelConfigServiceBlockingStub.getTypes(
                         GetTypesRequest.getDefaultInstance()));
-    Assertions.assertEquals(
+    assertEquals(
         FraudDataModelTestUtils.relationshipTypes().size(), allTypes.getRelationshipTypesCount());
   }
 
@@ -369,15 +377,14 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
                     fraudDataModelConfigServiceBlockingStub
                         .getEntityTypes(GetEntityTypesRequest.getDefaultInstance())
                         .getEntityTypesList());
-    Assertions.assertEquals(FraudDataModelTestUtils.entityTypes().size(), entityTypes.size());
+    assertEquals(FraudDataModelTestUtils.entityTypes().size(), entityTypes.size());
     var allTypes =
         RequestContext.forTenantId(TENANT_ID)
             .call(
                 () ->
                     fraudDataModelConfigServiceBlockingStub.getTypes(
                         GetTypesRequest.getDefaultInstance()));
-    Assertions.assertEquals(
-        FraudDataModelTestUtils.entityTypes().size(), allTypes.getEntityTypesCount());
+    assertEquals(FraudDataModelTestUtils.entityTypes().size(), allTypes.getEntityTypesCount());
   }
 
   private static Collection getFraudObjectTypesStore() {

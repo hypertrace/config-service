@@ -7,7 +7,6 @@ import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstant
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelUtils;
 import ai.traceable.fraud.datamodel.config.service.v1.ColumnMapping;
 import ai.traceable.fraud.datamodel.config.service.v1.ColumnMappingMeta;
-import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
 import ai.traceable.fraud.datamodel.config.service.v1.InternalFieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
 import ai.traceable.fraud.datamodel.config.service.v1.ObjectTypeColumnMappings;
@@ -140,10 +139,9 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
       InternalFieldMetadata fieldMetadata,
       String typeId,
       Map<String, Integer> fieldCountMap) {
-    FieldType fieldType = fieldMetadata.getFieldType();
-    String keyPrefix = getKeyPrefix(fieldType);
+    String keyPrefix = getKeyPrefix(fieldMetadata);
     for (int i = 0; i < fieldCountMap.get(keyPrefix); i++) {
-      String possibleKey = getColumnName(fieldType, i);
+      String possibleKey = getColumnName(fieldMetadata, i);
       if (!colMap.containsKey(possibleKey)) {
         return possibleKey;
       }
