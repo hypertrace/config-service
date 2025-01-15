@@ -6,7 +6,6 @@ import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationCo
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.userattribution.config.service.v2.Attribute;
 import ai.traceable.userattribution.config.service.v2.AttributeProjection;
 import ai.traceable.userattribution.config.service.v2.KeyMatch;
@@ -166,7 +165,6 @@ class UserAttributionJexlGeneratorTest {
                 .setJexlExpression(
                     JexlExpressionConfig.newBuilder().setJexlExpression(jexlExpression))
                 .setOutputType(FieldType.FIELD_TYPE_STR))
-        .setMatchCondition(MatchCondition.newBuilder().build())
         .build();
   }
 }

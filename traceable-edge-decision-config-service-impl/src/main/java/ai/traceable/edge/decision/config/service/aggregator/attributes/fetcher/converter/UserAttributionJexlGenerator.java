@@ -19,7 +19,6 @@ public class UserAttributionJexlGenerator {
                     JexlExpressionConfig.newBuilder()
                         .setJexlExpression(generateJexlExpression(ruleData)))
                 .setOutputType(FieldType.FIELD_TYPE_STR))
-        .setMatchCondition(generateMatchCondition(ruleData))
         .build();
   }
 
