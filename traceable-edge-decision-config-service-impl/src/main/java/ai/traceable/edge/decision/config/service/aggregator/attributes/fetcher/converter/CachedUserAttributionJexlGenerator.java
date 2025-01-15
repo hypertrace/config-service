@@ -9,6 +9,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
@@ -23,7 +24,8 @@ public class CachedUserAttributionJexlGenerator {
   private static final int MAX_CACHE_SIZE = 10000;
 
   // Cached on hash of user-attribution
-  private final LoadingCache<ContextualKey<UserAttributionRuleData>, DerivationRule> jexlCache;
+  private final LoadingCache<ContextualKey<UserAttributionRuleData>, Optional<DerivationRule>>
+      jexlCache;
   private final UserAttributionJexlGenerator userAttributionJexlGenerator;
 
   @Inject
@@ -45,23 +47,27 @@ public class CachedUserAttributionJexlGenerator {
     this.userAttributionJexlGenerator = userAttributionJexlGenerator;
   }
 
-  public DerivationRule convert(
+  public Optional<DerivationRule> convert(
       RequestContext requestContext, UserAttributionRuleData userAttributionRuleData) {
-    try {
-      ContextualKey<UserAttributionRuleData> contextualKey =
-          requestContext.buildInternalContextualKey(userAttributionRuleData);
-      return jexlCache.get(contextualKey);
-    } catch (Exception e) {
-      log.error(
-          "Error retrieving converted user attribution jexl from cache for tenant - {}: {}",
-          requestContext.getTenantId(),
-          userAttributionRuleData.getName(),
-          e);
-      return DerivationRule.getDefaultInstance();
-    }
+    ContextualKey<UserAttributionRuleData> contextualKey =
+        requestContext.buildInternalContextualKey(userAttributionRuleData);
+    return jexlCache.getUnchecked(contextualKey);
   }
 
-  private DerivationRule loadValue(ContextualKey<UserAttributionRuleData> contextualKey) {
-    return userAttributionJexlGenerator.convert(contextualKey.getData());
+  private Optional<DerivationRule> loadValue(ContextualKey<UserAttributionRuleData> contextualKey) {
+    UserAttributionRuleData ruleData = contextualKey.getData();
+    try {
+      if (!ruleData.hasUserIdRule()) {
+        return Optional.empty();
+      }
+      return Optional.of(userAttributionJexlGenerator.convert(contextualKey.getData()));
+    } catch (Exception e) {
+      log.warn(
+          "Error converting user attribution to jexl for tenant {} : {}",
+          contextualKey.getContext().getTenantId(),
+          ruleData.getName(),
+          e);
+      return Optional.empty();
+    }
   }
 }

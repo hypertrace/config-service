@@ -1,0 +1,27 @@
+{
+  "transformation_config": {
+    "jexl_expression": {
+      "jexl_expression": "$s.getRequestHeaders().get(\u0027x-username\u0027)"
+    },
+    "output_type": "FIELD_TYPE_STR"
+  },
+  "match_condition": {
+    "structured_match_condition": {
+      "lhs": {
+        "name": "lhs",
+        "type": "FIELD_TYPE_STR",
+        "rules": [{
+          "transformation_config": {
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
+            }
+          }
+        }]
+      },
+      "binary_operator": {
+        "regex": "url1|url2",
+        "match_operator": "MATCH_OPERATOR_LIKE"
+      }
+    }
+  }
+}

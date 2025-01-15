@@ -1,0 +1,26 @@
+{
+  "name": "X-Username",
+  "scope": {
+    "environment_scope": {
+      "environment_names": {
+        "values": ["env1", "env2"]
+      }
+    },
+    "url_scope": {
+      "url_match_regexes": {
+        "values": ["url1", "url2"]
+      }
+    }
+  },
+  "user_id_rule": {
+    "attribute_projection": {
+      "attribute": {
+        "request_header": {
+          "operator": "KEY_MATCH_OPERATOR_EQUALS",
+          "match_key": "x-username"
+        }
+      }
+    }
+  },
+  "template": "TEMPLATE_CUSTOM"
+}

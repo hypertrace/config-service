@@ -1,0 +1,32 @@
+{
+  "name": "X-Username",
+  "user_id_rule": {
+    "token_conditional_predicate": {
+      "attribute_predicate": {
+        "attribute_projection": {
+          "attribute": {
+            "request_header": {
+              "operator": "KEY_MATCH_OPERATOR_EQUALS",
+              "match_key": "test-header"
+            }
+          }
+        },
+        "attribute_value_match_condition": {
+          "operator": "VALUE_MATCH_OPERATOR_EQUALS",
+          "match_value": {
+            "string_value": "test-value"
+          }
+        }
+      }
+    },
+    "attribute_projection": {
+      "attribute": {
+        "request_header": {
+          "operator": "KEY_MATCH_OPERATOR_EQUALS",
+          "match_key": "x-username"
+        }
+      }
+    }
+  },
+  "template": "TEMPLATE_CUSTOM"
+}

@@ -10,6 +10,7 @@ import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServi
 import ai.traceable.userattribution.config.service.v2.UserAttributionRule;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ClientConfig;
@@ -43,6 +44,7 @@ public class StoredUserAttributionFetcher implements UserAttributionFetcher {
         .map(
             userAttributionRuleData ->
                 userAttributionJexlGenerator.convert(requestContext, userAttributionRuleData))
+        .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
 }

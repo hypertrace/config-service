@@ -41,6 +41,7 @@ dependencies {
   testImplementation(commonLibs.grpc.core)
   testRuntimeOnly(commonLibs.grpc.netty)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
+  testImplementation(commonLibs.commons.io)
 }
 
 tasks.test {

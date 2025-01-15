@@ -19,9 +19,22 @@ import ai.traceable.userattribution.config.service.v2.ValueProjection;
 import ai.traceable.userattribution.config.service.v2.ValueProjection.Base64Projection;
 import ai.traceable.userattribution.config.service.v2.ValueProjection.JwtPayloadClaimProjection;
 import ai.traceable.userattribution.config.service.v2.ValueProjection.RegexCaptureGroupProjection;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class UserAttributionJexlGeneratorTest {
+  private static final String INPUT_DIR = "rules/input";
+  private static final String EXPECTED_OUTPUT_DIR = "rules/expected-output";
+  private static final JsonFormat.Parser parser = JsonFormat.parser().ignoringUnknownFields();
   private final UserAttributionJexlGenerator userAttributionJexlGenerator =
       new UserAttributionJexlGenerator();
 
@@ -156,6 +169,43 @@ class UserAttributionJexlGeneratorTest {
             + ", \"sub\", \"PAYLOAD\")";
 
     assertEquals(makeDerivationRule(expectedJexl), userAttributionJexlGenerator.convert(ruleData));
+  }
+
+  @ParameterizedTest
+  @MethodSource("getInputFileNames")
+  void testUserAttributionRuleConversion(String fileName) throws InvalidProtocolBufferException {
+    String inputFileStr = readResourceFileAsString(INPUT_DIR, fileName);
+    String expectedOutputFileStr = readResourceFileAsString(EXPECTED_OUTPUT_DIR, fileName);
+    UserAttributionRuleData.Builder inputBuilder = UserAttributionRuleData.newBuilder();
+    parser.merge(inputFileStr, inputBuilder);
+    DerivationRule output = userAttributionJexlGenerator.convert(inputBuilder.build());
+    DerivationRule.Builder expectedOutputBuilder = DerivationRule.newBuilder();
+    parser.merge(expectedOutputFileStr, expectedOutputBuilder);
+    assertEquals(expectedOutputBuilder.build(), output);
+  }
+
+  static List<String> getInputFileNames() {
+    String folderName =
+        UserAttributionJexlGeneratorTest.class.getClassLoader().getResource(INPUT_DIR).getFile();
+    File queriesFolder = new File(folderName);
+
+    return Arrays.stream(queriesFolder.listFiles())
+        .map(File::getName)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private String readResourceFileAsString(String dirName, String fileName) {
+    try {
+      File file =
+          new File(
+              this.getClass()
+                  .getClassLoader()
+                  .getResource(dirName + File.separator + fileName)
+                  .toURI());
+      return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   DerivationRule makeDerivationRule(String jexlExpression) {
