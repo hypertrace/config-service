@@ -18,6 +18,7 @@ public class SavedFilterConfigStore
     extends IdentifiedObjectStoreWithFilter<SavedFilter, GetSavedFiltersRequest> {
 
   private static final String SAVED_FILTER_RESOURCE_NAME = "saved-filter";
+  private static final String PERSISTED_FILTER_CATEGORY = "PERSISTED_FILTER";
   private static final String SAVED_FILTER_CONFIG_RESOURCE_NAMESPACE = "saved-filter-config";
 
   @Inject
@@ -56,8 +57,11 @@ public class SavedFilterConfigStore
     boolean idMatches = !request.hasId() || request.getId().equals(data.getId());
     boolean scopeMatches =
         request.getScope().isEmpty() || request.getScope().equals(data.getScope());
+    boolean categoryMatches;
 
-    return (idMatches && scopeMatches) ? Optional.of(data) : Optional.empty();
+    categoryMatches = isCategoryMatches(data, request);
+
+    return (idMatches && scopeMatches && categoryMatches) ? Optional.of(data) : Optional.empty();
   }
 
   @Override
@@ -73,5 +77,18 @@ public class SavedFilterConfigStore
                             .getCreatedByUserId()
                             .equals(requestContext.getUserId().orElseThrow())))
         .collect((Collectors.toUnmodifiableList()));
+  }
+
+  private boolean isCategoryMatches(SavedFilter data, GetSavedFiltersRequest request) {
+    boolean categoryMatches;
+    if (request.getCategory().isBlank()) {
+      categoryMatches = true;
+    } else if (request.getCategory().equals(PERSISTED_FILTER_CATEGORY)) {
+      categoryMatches =
+          data.getCategory().isEmpty() || data.getCategory().equals(PERSISTED_FILTER_CATEGORY);
+    } else {
+      categoryMatches = data.getCategory().equals(request.getCategory());
+    }
+    return categoryMatches;
   }
 }
