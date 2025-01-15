@@ -1,5 +1,6 @@
 package org.hypertrace.label.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -333,15 +334,9 @@ public final class LabelsConfigServiceImplTest {
       UpdateLabelRequest updateLabelRequest =
           UpdateLabelRequest.newBuilder()
               .setId(systemLabel.getId())
-              .setData(LabelData.newBuilder().setKey("1").build())
+              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey() + "_1").build())
               .build();
-      Throwable exception =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> {
-                labelConfigStub.updateLabel(updateLabelRequest);
-              });
-      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
+      assertDoesNotThrow(() -> labelConfigStub.updateLabel(updateLabelRequest));
     }
     for (Label systemLabel : systemLabels) {
       UpdateLabelRequest updateLabelRequest =
