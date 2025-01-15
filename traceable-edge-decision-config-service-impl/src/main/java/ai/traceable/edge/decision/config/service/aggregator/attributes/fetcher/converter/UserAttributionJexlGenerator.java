@@ -12,7 +12,7 @@ import java.util.Optional;
 public class UserAttributionJexlGenerator {
   static final String JEXL_BASE_EXPRESSION = "$s";
 
-  private final ScopeConverter scopeConverter = new ScopeConverter();
+  private final UserAttributionScopeConverter scopeConverter = new UserAttributionScopeConverter();
 
   DerivationRule convert(UserAttributionRuleData ruleData) {
     DerivationRule.Builder builder = DerivationRule.newBuilder();

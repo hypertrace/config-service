@@ -14,7 +14,8 @@
           "transformation_config": {
             "jexl_expression": {
               "jexl_expression": "$s.getPath()"
-            }
+            },
+            "output_type": "FIELD_TYPE_STR"
           }
         }]
       },

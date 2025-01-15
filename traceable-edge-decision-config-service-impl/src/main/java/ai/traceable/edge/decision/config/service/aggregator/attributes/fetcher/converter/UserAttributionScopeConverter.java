@@ -37,31 +37,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ScopeConverter {
+public class UserAttributionScopeConverter {
   private static final AttributeDerivationMapping ENVIRONMENT_DERIVATION_RULE =
-      AttributeDerivationMapping.newBuilder()
-          .setType(FIELD_TYPE_STR)
-          .setName("lhs")
-          .addRules(
-              DerivationRule.newBuilder()
-                  .setTransformationConfig(
-                      DataTransformationConfig.newBuilder()
-                          .setJexlExpression(
-                              JexlExpressionConfig.newBuilder()
-                                  .setJexlExpression(JEXL_BASE_EXPRESSION + ".getEnvironment()"))))
-          .build();
+      createAttributeDerivationMapping(JEXL_BASE_EXPRESSION, ".getEnvironment()");
   private static final AttributeDerivationMapping PATH_DERIVATION_RULE =
-      AttributeDerivationMapping.newBuilder()
-          .setType(FIELD_TYPE_STR)
-          .setName("lhs")
-          .addRules(
-              DerivationRule.newBuilder()
-                  .setTransformationConfig(
-                      DataTransformationConfig.newBuilder()
-                          .setJexlExpression(
-                              JexlExpressionConfig.newBuilder()
-                                  .setJexlExpression(JEXL_BASE_EXPRESSION + ".getPath()"))))
-          .build();
+      createAttributeDerivationMapping(JEXL_BASE_EXPRESSION, ".getPath()");
 
   public Optional<MatchCondition> convert(UserAttributionRuleData ruleData) {
     List<MatchCondition> conditions = new ArrayList<>();
@@ -216,5 +196,21 @@ public class ScopeConverter {
         throw new IllegalArgumentException(
             "unknown match operator case: " + attributeValueMatchCondition.getOperator());
     }
+  }
+
+  private static AttributeDerivationMapping createAttributeDerivationMapping(
+      String inputExpression, String methodSuffix) {
+    return AttributeDerivationMapping.newBuilder()
+        .setType(FIELD_TYPE_STR)
+        .setName("lhs")
+        .addRules(
+            DerivationRule.newBuilder()
+                .setTransformationConfig(
+                    DataTransformationConfig.newBuilder()
+                        .setJexlExpression(
+                            JexlExpressionConfig.newBuilder()
+                                .setJexlExpression(inputExpression + methodSuffix))
+                        .setOutputType(FIELD_TYPE_STR)))
+        .build();
   }
 }

@@ -17,7 +17,8 @@
               "transformation_config": {
                 "jexl_expression": {
                   "jexl_expression": "$s.getEnvironment()"
-                }
+                },
+                "output_type": "FIELD_TYPE_STR"
               }
             }]
           },
@@ -35,7 +36,8 @@
               "transformation_config": {
                 "jexl_expression": {
                   "jexl_expression": "$s.getPath()"
-                }
+                },
+                "output_type": "FIELD_TYPE_STR"
               }
             }]
           },
