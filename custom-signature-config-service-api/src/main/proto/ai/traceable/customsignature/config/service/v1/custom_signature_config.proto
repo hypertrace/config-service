@@ -170,6 +170,18 @@ message Clause {
     KeyValueExpression key_value_expression = 2;
     AttributeKeyValueExpression attribute_key_value_expression = 3;
     CustomSecRule custom_sec_rule = 4;
+    IpAddressExpression ip_address_expression = 5;
+    IpTypeExpression ip_type_expression = 6;
+    IpReputationExpression ip_reputation_expression = 7;
+    IpConnectionTypeExpression ip_connection_type_expression = 8;
+    IpOrganisationExpression ip_organisation_expression = 9;
+    IpAsnExpression ip_asn_expression = 10;
+    IpAbuseVelocityExpression ip_abuse_velocity_expression = 11;
+    RegionExpression region_expression = 12;
+    UserIdExpression user_id_expression = 13;
+    EmailDomainExpression email_domain_expression = 14;
+    UserAgentExpression user_agent_expression = 15;
+    RequestScannerTypeExpression request_scanner_type_expression = 16;
   }
 }
 
@@ -201,6 +213,76 @@ message AttributeKeyValueExpression {
   string match_value = 4 [deprecated = true];
   StringCondition key_condition = 5;
   StringCondition value_condition = 6;
+}
+
+message IpAddressExpression {
+  repeated string cidr_ip_ranges = 1;
+  repeated string ip_addresses = 2;
+  repeated string raw_input_ip_data = 3;
+  IpAddressExpressionType ip_address_expression_type = 4;
+  bool exclude = 5;
+}
+
+message IpTypeExpression {
+  repeated IpType ip_types = 1;
+  bool exclude = 2;
+}
+
+message IpReputationExpression {
+  IpReputationSeverity min_ip_reputation_severity = 1;
+}
+
+message IpConnectionTypeExpression {
+  repeated IpConnectionType ip_connection_types = 1;
+  bool exclude = 2;
+}
+
+message IpOrganisationExpression {
+  repeated string ip_organisation_regexes = 1;
+  bool exclude = 2;
+}
+
+message IpAsnExpression {
+  repeated string ip_asn_regexes = 1;
+  bool exclude = 2;
+}
+
+message IpAbuseVelocityExpression {
+  IpAbuseVelocity min_ip_abuse_velocity = 1;
+}
+
+message UserIdExpression {
+  repeated string user_id_regexes = 1;
+  repeated string user_ids = 2;
+  bool exclude = 3;
+}
+
+message EmailDomainExpression {
+  repeated string email_domains = 1;
+  repeated string email_regexes = 2;
+  bool exclude = 3;
+}
+
+message RegionExpression {
+  repeated Region region_identifiers = 1;
+  bool exclude = 2;
+
+  message Region {
+    oneof region {
+      string country_iso_code = 1;
+    }
+  }
+}
+
+message UserAgentExpression {
+  repeated string user_agents = 1;
+  repeated string user_agent_regexes = 2;
+  bool exclude = 3;
+}
+
+message RequestScannerTypeExpression {
+  repeated string scanner_types = 1;
+  bool exclude = 2;
 }
 
 message StringCondition {
@@ -304,4 +386,44 @@ enum RuleSource {
   RULE_SOURCE_CUSTOMER = 1;
   RULE_SOURCE_TRACEABLE = 2;
   RULE_SOURCE_SYSTEM = 3;
+}
+
+enum IpAddressExpressionType {
+  IP_ADDRESS_EXPRESSION_TYPE_UNSPECIFIED = 0;
+  IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL = 1;
+  IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL = 2;
+}
+
+enum IpType {
+  IP_TYPE_UNSPECIFIED = 0;
+  IP_TYPE_ANONYMOUS_VPN = 1;
+  IP_TYPE_HOSTING_PROVIDER = 2;
+  IP_TYPE_PUBLIC_PROXY = 3;
+  IP_TYPE_TOR_EXIT_NODE = 4;
+  IP_TYPE_BOT = 5;
+  IP_TYPE_SCANNER = 6;
+}
+
+enum IpReputationSeverity {
+  IP_REPUTATION_SEVERITY_UNSPECIFIED = 0;
+  IP_REPUTATION_SEVERITY_LOW = 1;
+  IP_REPUTATION_SEVERITY_MEDIUM = 2;
+  IP_REPUTATION_SEVERITY_HIGH = 3;
+  IP_REPUTATION_SEVERITY_CRITICAL = 4;
+}
+
+enum IpConnectionType {
+  IP_CONNECTION_TYPE_UNSPECIFIED = 0;
+  IP_CONNECTION_TYPE_RESIDENTIAL = 1;
+  IP_CONNECTION_TYPE_MOBILE = 2;
+  IP_CONNECTION_TYPE_CORPORATE = 3;
+  IP_CONNECTION_TYPE_DATA_CENTER = 4;
+  IP_CONNECTION_TYPE_EDUCATION = 5;
+}
+
+enum IpAbuseVelocity {
+  IP_ABUSE_VELOCITY_UNSPECIFIED = 0;
+  IP_ABUSE_VELOCITY_LOW = 1;
+  IP_ABUSE_VELOCITY_MEDIUM = 2;
+  IP_ABUSE_VELOCITY_HIGH = 3;
 }
