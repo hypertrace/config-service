@@ -1,0 +1,28 @@
+{
+  "id": "rule-id",
+  "ruleInfo": {
+    "name": "rule-name",
+    "conditions": [{
+      "attributeMatchCondition": {
+        "keyMatchCondition": {
+          "metadata": "KEY_METADATA_REQUEST_COOKIE",
+          "matchCondition": {
+            "operator": "MATCH_OPERATOR_MATCHES_REGEX",
+            "value": "cookie.*"
+          }
+        },
+        "valueMatchCondition": {
+          "operator": "MATCH_OPERATOR_EQUALS",
+          "value": "val"
+        }
+      }
+    }, {
+      "eventCondition": {
+        "customRuleEvents": [{
+          "ruleFamily": "CUSTOM_RULE_FAMILY_RATE_LIMIT"
+        }]
+      }
+    }],
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+  }
+}

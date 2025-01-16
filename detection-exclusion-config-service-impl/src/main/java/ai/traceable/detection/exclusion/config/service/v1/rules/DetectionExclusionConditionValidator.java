@@ -83,7 +83,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DetectionExclusionConditionValidator {
 
-  private static final Set<KeyMetadata> KEY_NULL_META_DATAS =
+  public static final Set<KeyMetadata> KEY_NULL_META_DATAS =
       Set.of(
           KEY_METADATA_URL,
           KEY_METADATA_HOST,

@@ -11,9 +11,21 @@
       "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
       "signatureRule": {
         "matchCondition": {
-          "genericMatchCondition": {
-            "jexlExpression": {
-              "jexlExpression": "$s.getIpIntelligenceData().getTraits().getIpTypes().contains(IPType.IP_TYPE_BOT)"
+          "structuredMatchCondition": {
+            "lhs": {
+              "name": "lhs",
+              "type": "FIELD_TYPE_STR",
+              "rules": [{
+                "transformationConfig": {
+                  "jexlExpression": {
+                    "jexlExpression": "$s.getIpIntelligenceData().getCountry().getIsoCode()"
+                  }
+                }
+              }]
+            },
+            "binaryOperator": {
+              "listValue": ["IND"],
+              "matchOperator": "MATCH_OPERATOR_IN"
             }
           }
         }

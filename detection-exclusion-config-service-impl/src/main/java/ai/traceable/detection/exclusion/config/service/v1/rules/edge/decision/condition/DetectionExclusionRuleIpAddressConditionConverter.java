@@ -1,26 +1,20 @@
-package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
+package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
-import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
-import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
-import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
-import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
-import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
-import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
-import com.google.protobuf.ListValue;
-import com.google.protobuf.Value;
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
+import ai.traceable.detection.exclusion.config.service.v1.IpAddressCondition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class RateLimitingIpAddressConditionConverter implements RateLimitingConditionConverter {
+class DetectionExclusionRuleIpAddressConditionConverter
+    implements DetectionExclusionRuleConditionConverter {
 
   private static final String IP_ADDRESS_JEXL_EXP = "$s.getIpAddress()";
   private static final String IS_IP_IN_RANGE_JEXL_EXP =
@@ -32,11 +26,23 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
       JexlUtils.getMatchCondition(EXTERNAL_IP_JEXL_EXP);
   private static final MatchCondition INTERNAL_IP_MATCH_CONDITION =
       JexlUtils.getMatchCondition(INTERNAL_IP_JEXL_EXP);
+  private static final AttributeDerivationMapping IP_ADDRESS_ATTRIBUTE =
+      AttributeDerivationMapping.newBuilder()
+          .setName("lhs")
+          .setType(FieldType.FIELD_TYPE_STR)
+          .addRules(
+              DerivationRule.newBuilder()
+                  .setTransformationConfig(
+                      DataTransformationConfig.newBuilder()
+                          .setJexlExpression(
+                              JexlExpressionConfig.newBuilder()
+                                  .setJexlExpression(IP_ADDRESS_JEXL_EXP))))
+          .build();
 
   @Override
   public MatchCondition buildMatchCondition(
-      final RequestContext requestContext, LeafCondition leafCondition) {
-    IpAddressCondition ipAddressCondition = leafCondition.getIpAddressCondition();
+      RequestContext requestContext, DetectionExclusionCondition condition) {
+    IpAddressCondition ipAddressCondition = condition.getIpAddressCondition();
     switch (ipAddressCondition.getIpAddressConditionType()) {
       case IP_ADDRESS_CONDITION_TYPE_ALL_EXTERNAL:
         return EXTERNAL_IP_MATCH_CONDITION;
@@ -63,14 +69,8 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
     } else if (matchConditions.size() == 1) {
       return matchConditions.get(0);
     } else {
-      return MatchCondition.newBuilder()
-          .setLogicalMatchCondition(
-              LogicalMatchCondition.newBuilder()
-                  .setOperator(
-                      ipAddressCondition.getExclude()
-                          ? LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND
-                          : LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
-                  .addAllConditions(matchConditions))
+      return JexlUtils.buildOrMatchConditions(matchConditions)
+          .setNegate(ipAddressCondition.getExclude())
           .build();
     }
   }
@@ -86,36 +86,14 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
   }
 
   private MatchCondition getIpAddressMatchCondition(IpAddressCondition ipAddressCondition) {
-    ListValue.Builder ipAddressListValue = ListValue.newBuilder();
-    ipAddressCondition.getIpAddressesList().stream()
-        .map(ipAddress -> Value.newBuilder().setStringValue(ipAddress))
-        .forEach(ipAddressListValue::addValues);
-    return MatchCondition.newBuilder()
-        .setStructuredMatchCondition(
-            StructuredMatchCondition.newBuilder()
-                .setLhs(
-                    AttributeDerivationMapping.newBuilder()
-                        .setName("lhs")
-                        .setType(FieldType.FIELD_TYPE_STR)
-                        .addRules(
-                            DerivationRule.newBuilder()
-                                .setTransformationConfig(
-                                    DataTransformationConfig.newBuilder()
-                                        .setJexlExpression(
-                                            JexlExpressionConfig.newBuilder()
-                                                .setJexlExpression(IP_ADDRESS_JEXL_EXP)))))
-                .setBinaryOperator(
-                    BinaryOperator.newBuilder()
-                        .setMatchOperator(
-                            ipAddressCondition.getExclude()
-                                ? MatchOperator.MATCH_OPERATOR_NOT_IN
-                                : MatchOperator.MATCH_OPERATOR_IN)
-                        .setListValue(ipAddressListValue)))
+    return JexlUtils.buildInOperatorMatchCondition(
+            IP_ADDRESS_ATTRIBUTE, ipAddressCondition.getIpAddressesList())
+        .setNegate(ipAddressCondition.getExclude())
         .build();
   }
 
   @Override
-  public LeafCondition.ConditionCase getConditionCase() {
-    return LeafCondition.ConditionCase.IP_ADDRESS_CONDITION;
+  public DetectionExclusionCondition.ConditionCase getConditionCase() {
+    return DetectionExclusionCondition.ConditionCase.IP_ADDRESS_CONDITION;
   }
 }

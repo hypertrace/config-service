@@ -13,7 +13,7 @@
         "matchCondition": {
           "genericMatchCondition": {
             "jexlExpression": {
-              "jexlExpression": "$s.getIpIntelligenceData().getTraits().getIpTypes().contains(IPType.IP_TYPE_BOT)"
+              "jexlExpression": "map:match($s.getRequestCookies(), predicate:matchesRegex(\u0027cookie.*\u0027), predicate:equals(\u0027val\u0027))"
             }
           }
         }
