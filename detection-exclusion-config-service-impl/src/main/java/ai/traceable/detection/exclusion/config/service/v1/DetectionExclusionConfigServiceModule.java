@@ -5,6 +5,7 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusi
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
+import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition.DetectionExclusionRuleConditionModule;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationModule;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesModule;
 import com.google.inject.AbstractModule;
@@ -45,11 +46,11 @@ class DetectionExclusionConfigServiceModule extends AbstractModule {
     bind(RulesManager.class).to(DetectionExclusionRulesManager.class);
     bind(RulesValidator.class).to(DetectionExclusionRulesValidator.class);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+    bind(FeatureCachingClient.class).toInstance(featureCachingClient);
 
-    install(
-        new DetectionExclusionRulesMigrationModule(
-            featureCachingClient, config, grpcChannelRegistry));
+    install(new DetectionExclusionRulesMigrationModule(config, grpcChannelRegistry));
     install(new ExclusionModsecRulesModule(channel, config, grpcChannelRegistry));
+    install(new DetectionExclusionRuleConditionModule());
   }
 
   @Provides

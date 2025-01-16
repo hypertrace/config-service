@@ -20,6 +20,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EnvironmentScope;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
+import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionEdgeDecisionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
@@ -47,6 +48,13 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
   @Override
   public void validateOrThrow(
       RequestContext requestContext, GetDetectionExclusionRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+    validateFilter(request.getFilter());
+  }
+
+  @Override
+  public void validateOrThrow(
+      RequestContext requestContext, GetDetectionExclusionEdgeDecisionRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
     validateFilter(request.getFilter());
   }

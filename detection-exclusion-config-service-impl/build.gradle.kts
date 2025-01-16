@@ -16,6 +16,7 @@ dependencies {
   implementation(projects.anomalyConfigServiceRegistry)
   implementation(projects.entityFetcherCache)
   implementation(projects.modsecurityUtils)
+  implementation(projects.traceableDatamodelConfigServiceApi)
 
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
@@ -32,6 +33,7 @@ dependencies {
   implementation(commonLibs.traceable.anomalydetection.configProviders)
   implementation(commonLibs.traceable.actorservice.api)
   implementation(commonLibs.traceable.modsecurity.jni)
+  implementation(commonLibs.traceable.traceenricher.constants)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
@@ -40,6 +42,7 @@ dependencies {
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.hypertrace.grpcutils.client)
   testImplementation(commonLibs.commons.lang)
+  testImplementation(commonLibs.commons.io)
   testImplementation(commonLibs.grpc.core)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }

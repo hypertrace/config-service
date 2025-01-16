@@ -11,15 +11,11 @@ import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 
 public class DetectionExclusionRulesMigrationModule extends AbstractModule {
 
-  private final FeatureCachingClient featureCachingClient;
   private final Config config;
   private final GrpcChannelRegistry grpcChannelRegistry;
 
   public DetectionExclusionRulesMigrationModule(
-      FeatureCachingClient featureCachingClient,
-      Config config,
-      GrpcChannelRegistry grpcChannelRegistry) {
-    this.featureCachingClient = featureCachingClient;
+      Config config, GrpcChannelRegistry grpcChannelRegistry) {
     this.config = config;
     this.grpcChannelRegistry = grpcChannelRegistry;
   }
@@ -27,7 +23,7 @@ public class DetectionExclusionRulesMigrationModule extends AbstractModule {
   @Override
   public void configure() {
     requireBinding(AnomalyExclusionRuleConfigStore.class);
-    bind(FeatureCachingClient.class).toInstance(this.featureCachingClient);
+    requireBinding(FeatureCachingClient.class);
     bind(RulesMigrationManager.class).to(DetectionExclusionRulesMigrationManager.class);
   }
 

@@ -1,7 +1,9 @@
 package ai.traceable.detection.exclusion.config.service.v1;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
+import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.DetectionExclusionRuleEdgeDecisionConverter;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -14,12 +16,19 @@ public class DetectionExclusionConfigServiceImpl
 
   private final RulesManager rulesManager;
   private final RulesValidator rulesValidator;
+  private final FeatureCachingClient featureCachingClient;
+  private final DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter;
 
   @Inject
   public DetectionExclusionConfigServiceImpl(
-      RulesManager rulesManager, RulesValidator rulesValidator) {
+      RulesManager rulesManager,
+      RulesValidator rulesValidator,
+      FeatureCachingClient featureCachingClient,
+      DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter) {
     this.rulesManager = rulesManager;
     this.rulesValidator = rulesValidator;
+    this.featureCachingClient = featureCachingClient;
+    this.edgeDecisionConverter = edgeDecisionConverter;
   }
 
   @Override
@@ -34,6 +43,32 @@ public class DetectionExclusionConfigServiceImpl
           GetDetectionExclusionRulesResponse.newBuilder()
               .addAllRules(rulesManager.getDetectionExclusionRules(context, request.getFilter()))
               .build();
+
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getDetectionExclusionEdgeDecisionRules(
+      GetDetectionExclusionEdgeDecisionRulesRequest request,
+      StreamObserver<GetDetectionExclusionEdgeDecisionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validateOrThrow(context, request);
+
+      GetDetectionExclusionEdgeDecisionRulesResponse response =
+          featureCachingClient.isEdgeDecisionEnabledForTenant(context)
+              ? GetDetectionExclusionEdgeDecisionRulesResponse.newBuilder()
+                  .setEdgeDecisionEngineConfig(
+                      edgeDecisionConverter.convert(
+                          context,
+                          rulesManager.getDetectionExclusionRules(context, request.getFilter())))
+                  .build()
+              : GetDetectionExclusionEdgeDecisionRulesResponse.getDefaultInstance();
 
       responseObserver.onNext(response);
       responseObserver.onCompleted();

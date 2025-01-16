@@ -4,6 +4,7 @@ import ai.traceable.detection.exclusion.config.service.v1.BulkDeleteDetectionExc
 import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DeleteDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
+import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionEdgeDecisionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetDetectionExclusionRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.GetExclusionModsecRulesRequest;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
@@ -13,6 +14,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public interface RulesValidator {
   void validateOrThrow(RequestContext requestContext, GetDetectionExclusionRulesRequest request);
+
+  void validateOrThrow(
+      RequestContext requestContext, GetDetectionExclusionEdgeDecisionRulesRequest request);
 
   void validateOrThrow(
       RequestContext requestContext,

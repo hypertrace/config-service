@@ -9,8 +9,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
+import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.DetectionExclusionRuleEdgeDecisionConverter;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -22,6 +24,8 @@ class DetectionExclusionConfigServiceImplTest {
 
   private RulesManager rulesManager;
   private RulesValidator rulesValidator;
+  private FeatureCachingClient featureCachingClient;
+  private DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter;
   private DetectionExclusionConfigServiceImpl detectionExclusionConfigService;
   private final RequestContext requestContext = RequestContext.forTenantId("tenantId");
 
@@ -29,8 +33,11 @@ class DetectionExclusionConfigServiceImplTest {
   void setUp() {
     rulesManager = mock(RulesManager.class);
     rulesValidator = mock(RulesValidator.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
+    edgeDecisionConverter = mock(DetectionExclusionRuleEdgeDecisionConverter.class);
     detectionExclusionConfigService =
-        new DetectionExclusionConfigServiceImpl(rulesManager, rulesValidator);
+        new DetectionExclusionConfigServiceImpl(
+            rulesManager, rulesValidator, featureCachingClient, edgeDecisionConverter);
   }
 
   @Test
