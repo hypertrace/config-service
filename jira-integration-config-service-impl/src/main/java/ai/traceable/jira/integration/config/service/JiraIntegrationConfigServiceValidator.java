@@ -115,8 +115,13 @@ public class JiraIntegrationConfigServiceValidator {
   public void validateDeleteProjectIssueConfiguration(
       DeleteProjectIssueConfigurationRequest request, RequestContext requestContext) {
     validateRequestContextOrThrow(requestContext);
-    validateNonDefaultPresenceOrThrow(
-        request, DeleteProjectIssueConfigurationRequest.CONFIGURATION_ID_FIELD_NUMBER);
+    if (!request.getConfigurationId().isEmpty()) {
+      validateNonDefaultPresenceOrThrow(
+          request, DeleteProjectIssueConfigurationRequest.CONFIGURATION_ID_FIELD_NUMBER);
+    } else {
+      validateNonDefaultPresenceOrThrow(
+          request, DeleteProjectIssueConfigurationRequest.CONFIGURATION_IDS_FIELD_NUMBER);
+    }
   }
 
   public void validateGetProjectIssueConfiguration(

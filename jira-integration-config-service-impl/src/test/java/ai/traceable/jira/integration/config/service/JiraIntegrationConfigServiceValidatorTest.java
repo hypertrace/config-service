@@ -1,5 +1,6 @@
 package ai.traceable.jira.integration.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.jira.integration.config.service.api.v1.CreateJiraIntegrationRequest;
@@ -417,12 +418,24 @@ class JiraIntegrationConfigServiceValidatorTest {
         StatusRuntimeException.class,
         () -> validator.validateDeleteProjectIssueConfiguration(request, requestContext));
 
-    // Should pass with config id set
     RequestContext requestContext1 = RequestContext.forTenantId("tenant_id");
+
+    // Delete should fail if config id or config ids not set
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> validator.validateDeleteProjectIssueConfiguration(request, requestContext));
+
+    // Should pass with config id set
     DeleteProjectIssueConfigurationRequest request1 =
         request.toBuilder().setConfigurationId(CONFIG_ID).build();
     Assertions.assertDoesNotThrow(
         () -> validator.validateDeleteProjectIssueConfiguration(request1, requestContext1));
+
+    // Should pass with config ids set
+    DeleteProjectIssueConfigurationRequest request2 =
+        request.toBuilder().addAllConfigurationIds(List.of(CONFIG_ID)).build();
+    Assertions.assertDoesNotThrow(
+        () -> validator.validateDeleteProjectIssueConfiguration(request2, requestContext1));
   }
 
   private JiraStatusMapping CreateJiraStatusMapping(

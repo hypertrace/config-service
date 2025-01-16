@@ -102,6 +102,9 @@ class JiraIntegrationConfigServiceImplTest {
                 case "useMockGetAll":
                   mockGenericConfigService.mockGetAll();
                   break;
+                case "useMockDeleteAll":
+                  mockGenericConfigService.mockDeleteAll();
+                  break;
               }
             });
   }
@@ -606,13 +609,14 @@ class JiraIntegrationConfigServiceImplTest {
   }
 
   @Test
-  @Tag("useMockUpsert")
+  @Tag("useMockUpsertAll")
   @Tag("useMockDelete")
+  @Tag("useMockDeleteAll")
   @Tag("useMockGet")
   public void deleteProjectIssueConfigurationTest() {
     RequestContext requestContext = RequestContext.forTenantId(TENANT_ID);
     JiraIntegration jiraIntegration1 = dummyJiraIntegration(2, "env2");
-    jiraIntegrationStore.upsertObject(requestContext, jiraIntegration1);
+    jiraIntegrationStore.upsertObjects(requestContext, List.of(jiraIntegration1));
 
     JiraStatusMapping jiraStatusMapping1 =
         CreateJiraStatusMapping(
@@ -620,24 +624,62 @@ class JiraIntegrationConfigServiceImplTest {
     JiraProjectIssueConfiguration jiraProjectIssueConfiguration =
         createDummyJiraProjectIssueConfiguration(
             List.of(jiraStatusMapping1), jiraIntegration1.getId());
-    jiraAdditionalConfigurationStore.upsertObject(requestContext, jiraProjectIssueConfiguration);
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration1 =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMapping1), jiraIntegration1.getId());
+    JiraProjectIssueConfiguration jiraProjectIssueConfiguration2 =
+        createDummyJiraProjectIssueConfiguration(
+            List.of(jiraStatusMapping1), jiraIntegration1.getId());
+    jiraAdditionalConfigurationStore.upsertObjects(
+        requestContext,
+        List.of(
+            jiraProjectIssueConfiguration,
+            jiraProjectIssueConfiguration1,
+            jiraProjectIssueConfiguration2));
 
     // Delete should fail if config id not found
-    DeleteProjectIssueConfigurationRequest request =
+    DeleteProjectIssueConfigurationRequest request1 =
         DeleteProjectIssueConfigurationRequest.newBuilder()
             .setConfigurationId("config_id_not_found")
             .build();
-    assertThrows(StatusRuntimeException.class, () -> stub.deleteProjectIssueConfiguration(request));
+    assertThrows(
+        StatusRuntimeException.class, () -> stub.deleteProjectIssueConfiguration(request1));
+
+    // Delete should fail if config ids not found
+    DeleteProjectIssueConfigurationRequest request2 =
+        DeleteProjectIssueConfigurationRequest.newBuilder()
+            .addAllConfigurationIds(List.of("config_id_not_found"))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> stub.deleteProjectIssueConfiguration(request2));
 
     // Delete should pass if config id found
-    DeleteProjectIssueConfigurationRequest request1 =
+    DeleteProjectIssueConfigurationRequest request3 =
         DeleteProjectIssueConfigurationRequest.newBuilder()
             .setConfigurationId(jiraProjectIssueConfiguration.getConfigurationId())
             .build();
-    assertDoesNotThrow(() -> stub.deleteProjectIssueConfiguration(request1));
+    assertDoesNotThrow(() -> stub.deleteProjectIssueConfiguration(request3));
     assertFalse(
         jiraAdditionalConfigurationStore
             .getData(requestContext, jiraProjectIssueConfiguration.getConfigurationId())
+            .isPresent());
+
+    // Delete should pass if config ids found
+    DeleteProjectIssueConfigurationRequest request4 =
+        DeleteProjectIssueConfigurationRequest.newBuilder()
+            .addAllConfigurationIds(
+                List.of(
+                    jiraProjectIssueConfiguration1.getConfigurationId(),
+                    jiraProjectIssueConfiguration2.getConfigurationId()))
+            .build();
+    assertDoesNotThrow(() -> stub.deleteProjectIssueConfiguration(request4));
+    assertFalse(
+        jiraAdditionalConfigurationStore
+            .getData(requestContext, jiraProjectIssueConfiguration1.getConfigurationId())
+            .isPresent());
+    assertFalse(
+        jiraAdditionalConfigurationStore
+            .getData(requestContext, jiraProjectIssueConfiguration2.getConfigurationId())
             .isPresent());
   }
 

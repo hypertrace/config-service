@@ -117,7 +117,8 @@ message UpdateProjectIssueConfigurationResponse {
 }
 
 message DeleteProjectIssueConfigurationRequest {
-  string configuration_id = 1;
+  string configuration_id = 1 [deprecated = true];
+  repeated string configuration_ids = 2;
 }
 
 message DeleteProjectIssueConfigurationResponse {}

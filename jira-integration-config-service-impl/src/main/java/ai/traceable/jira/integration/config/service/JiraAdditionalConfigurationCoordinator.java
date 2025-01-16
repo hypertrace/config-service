@@ -243,12 +243,26 @@ class JiraAdditionalConfigurationCoordinator {
 
   DeleteProjectIssueConfigurationResponse deleteProjectIssueConfiguration(
       DeleteProjectIssueConfigurationRequest request, RequestContext requestContext) {
-
-    this.jiraAdditionalConfigurationStore
-        .deleteObject(requestContext, request.getConfigurationId())
-        .orElseThrow(
-            () -> Status.NOT_FOUND.withDescription("Configuration not found").asRuntimeException());
-
+    if (!request.getConfigurationId().isEmpty()) {
+      this.jiraAdditionalConfigurationStore
+          .deleteObject(requestContext, request.getConfigurationId())
+          .orElseThrow(
+              () ->
+                  Status.NOT_FOUND
+                      .withDescription(
+                          "Configuration not found for ID: " + request.getConfigurationId())
+                      .asRuntimeException());
+    } else {
+      try {
+        this.jiraAdditionalConfigurationStore.deleteObjects(
+            requestContext, request.getConfigurationIdsList());
+      } catch (Exception e) {
+        throw Status.NOT_FOUND
+            .withDescription("One or more configurations not found")
+            .withCause(e)
+            .asRuntimeException();
+      }
+    }
     return DeleteProjectIssueConfigurationResponse.getDefaultInstance();
   }
 
