@@ -377,7 +377,8 @@ public class RateLimitingEdgeDecisionConverter {
                               .setOutputType(FIELD_TYPE_STR)
                               .setJexlExpression(
                                   JexlExpressionConfig.newBuilder()
-                                      .setJexlExpression(USER_ATTRIBUTION_VARIABLE_NAME.name()))))
+                                      .setJexlExpression(
+                                          USER_ATTRIBUTION_VARIABLE_NAME.getValue()))))
               .build());
     }
     if (resourceAccessThresholdConfig

@@ -45,7 +45,7 @@
           "rules": [{
             "transformation_config": {
               "jexl_expression": {
-                "jexl_expression": "USER_ATTRIBUTION_VARIABLE_NAME"
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
               "output_type": "FIELD_TYPE_STR"
             }
