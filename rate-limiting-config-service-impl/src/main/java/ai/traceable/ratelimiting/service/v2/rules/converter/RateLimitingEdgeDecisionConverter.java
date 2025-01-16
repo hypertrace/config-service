@@ -9,7 +9,9 @@ import static ai.traceable.edge.decision.config.service.v1.ValueAggregateThresho
 import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedRateLimitViolationInfo;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_RESPONSE;
+import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS;
 import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT;
+import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_ACROSS_USERS;
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_PER_USER;
 import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingScopeConditionConverter.ENDPOINT_ID;
 import static ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter.findAnyMatchingEdgeDecisionAction;
@@ -283,6 +285,8 @@ public class RateLimitingEdgeDecisionConverter {
                   tuple -> builder.setMatchCondition(tuple.getMatchCondition()));
               builder.addAllGroupByDimensions(
                   buildGroupByDimensions(resourceAccessThresholdConfig));
+              buildAggregateWithoutGrouping(resourceAccessThresholdConfig)
+                  .ifPresent(builder::setAggregateWithoutGrouping);
               builder.setValueAggregateThreshold(valueAggregateThreshold);
               builder.setTimeWindow(timeWindow);
               return builder.build();
@@ -381,6 +385,19 @@ public class RateLimitingEdgeDecisionConverter {
               .build());
     }
     return attributeDerivationMappings;
+  }
+
+  private Optional<Boolean> buildAggregateWithoutGrouping(
+      ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
+    if (resourceAccessThresholdConfig
+            .getApiAggregateType()
+            .equals(API_AGGREGATE_TYPE_ACROSS_ENDPOINTS)
+        && resourceAccessThresholdConfig
+            .getUserAggregateType()
+            .equals(USER_AGGREGATE_TYPE_ACROSS_USERS)) {
+      return Optional.of(true);
+    }
+    return Optional.empty();
   }
 
   private List<ValueAggregateThreshold> buildValueAggregateThresholds(
