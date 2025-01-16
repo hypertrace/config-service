@@ -118,7 +118,12 @@ message AggregateThresholdRule {
   ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
 
   // group-by to be applied on the payload
+  // no group by dimensions should be provided if aggregate_without_grouping boolean is set to true
   repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping group_by_dimensions = 2;
+
+  // boolean to indicate that aggregate should be done without grouping
+  // group_by_dimensions should be empty if this boolean is set to true
+  optional bool aggregate_without_grouping = 5;
 
   // time window over which aggregate must be computed
   google.protobuf.Duration time_window = 3;
