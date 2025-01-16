@@ -216,6 +216,9 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
         response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
 
     ColumnMappingMeta columnMappingsForMetric1 = createdColumnMappings;
+    Assertions.assertEquals(
+        "start_time_millis_ts",
+        createdColumnMappings.getColumnMappingMap().get("start_time_millis_ts").getColumnId());
     ColumnMappingMeta columnMappingsForMetric2 = response.getMetricType().getColumnMappingMeta();
     // verify that additional fields of metric2 have mappings.
     for (Map.Entry<String, ColumnMapping> entryForMetric2 :
@@ -263,6 +266,9 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     Assertions.assertNotNull(response.getEventType());
 
     ColumnMappingMeta createdColumnMappings = response.getEventType().getColumnMappingMeta();
+    Assertions.assertEquals(
+        "start_time_millis_ts",
+        createdColumnMappings.getColumnMappingMap().get("start_time_millis_ts").getColumnId());
 
     // upsert the same type again, verify mappings don't change.
     response =

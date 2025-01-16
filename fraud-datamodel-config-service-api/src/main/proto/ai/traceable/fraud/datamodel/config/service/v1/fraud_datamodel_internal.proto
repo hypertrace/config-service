@@ -47,4 +47,6 @@ message InternalFieldMetadata {
     string relationship_type = 6;
   }
   bool indexed = 7;
+  // no mapping is created, because this field is reserved (and cannot be used for column mapping)
+  bool reserved = 8;
 }

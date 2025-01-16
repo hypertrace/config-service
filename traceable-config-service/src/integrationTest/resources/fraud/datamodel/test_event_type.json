@@ -61,7 +61,8 @@
       "fieldType": "FIELD_TYPE_TIMESTAMP",
       "versioned": false,
       "disabled": false,
-      "relationshipType": ""
+      "relationshipType": "",
+      "reserved": true
     },
     "session_id": {
       "fieldType": "FIELD_TYPE_STR"

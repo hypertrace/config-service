@@ -23,7 +23,8 @@
     "start_time_millis_ts": {
       "fieldType": "FIELD_TYPE_TIMESTAMP",
       "versioned": false,
-      "disabled": false
+      "disabled": false,
+      "reserved": true
     }
   },
   "timestampField": "start_time_millis_ts"

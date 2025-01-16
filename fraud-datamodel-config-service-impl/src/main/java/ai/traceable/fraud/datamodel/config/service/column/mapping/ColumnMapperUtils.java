@@ -31,6 +31,8 @@ class ColumnMapperUtils {
         .setFieldType(entityFieldMetadata.getFieldType())
         .setVersioned(entityFieldMetadata.getVersioned())
         .setDisabled(entityFieldMetadata.getDisabled())
+        .setIndexed(entityFieldMetadata.getIndexed())
+        .setReserved(entityFieldMetadata.getReserved())
         .build();
   }
 
@@ -39,6 +41,8 @@ class ColumnMapperUtils {
         .setFieldType(internalFieldMetadata.getFieldType())
         .setVersioned(internalFieldMetadata.getVersioned())
         .setDisabled(internalFieldMetadata.getDisabled())
+        .setIndexed(internalFieldMetadata.getIndexed())
+        .setReserved(internalFieldMetadata.getReserved())
         .build();
   }
 
@@ -68,6 +72,7 @@ class ColumnMapperUtils {
         .setEntityType(fieldMetadata.getEntityType())
         .setRelationshipType(fieldMetadata.getRelationshipType())
         .setIndexed(fieldMetadata.getIndexed())
+        .setReserved(fieldMetadata.getReserved())
         .build();
   }
 
@@ -79,6 +84,7 @@ class ColumnMapperUtils {
         .setEntityType(internalFieldMetadata.getEntityType())
         .setRelationshipType(internalFieldMetadata.getRelationshipType())
         .setIndexed(internalFieldMetadata.getIndexed())
+        .setReserved(internalFieldMetadata.getReserved())
         .build();
   }
 }

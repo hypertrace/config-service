@@ -126,7 +126,7 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
       String propName,
       InternalFieldMetadata fieldMeta,
       Map<String, ColumnMappingsDocument> colMap) {
-    String colName = createNewMapping(colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
+    String colName = createNewMapping(propName, colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
     String tenantId = FraudDataModelUtils.getTenantId(requestContext);
     ColumnMappingsDocument columnMappingsDocument =
         new ColumnMappingsDocument(tenantId, objectKind, typeId, propName, colName, fieldMeta);
@@ -135,10 +135,14 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
   }
 
   private String createNewMapping(
+      String propName,
       Map<String, ColumnMappingsDocument> colMap,
       InternalFieldMetadata fieldMetadata,
       String typeId,
       Map<String, Integer> fieldCountMap) {
+    if (fieldMetadata.getReserved()) {
+      return propName;
+    }
     String keyPrefix = getKeyPrefix(fieldMetadata);
     for (int i = 0; i < fieldCountMap.get(keyPrefix); i++) {
       String possibleKey = getColumnName(fieldMetadata, i);

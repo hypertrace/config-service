@@ -98,6 +98,9 @@ message EntityFieldMetadata {
   FieldType field_type = 1;
   bool versioned = 2;
   bool disabled = 3;
+  bool indexed = 4;
+  // no mapping is created, because this field is reserved (and cannot be used for column mapping)
+  bool reserved = 5;
 }
 
 message FieldMetadata {
@@ -109,6 +112,8 @@ message FieldMetadata {
     string relationship_type = 6;
   }
   bool indexed = 7;
+  // no mapping is created, because this field is reserved (and cannot be used for column mapping)
+  bool reserved = 8;
 }
 
 enum MetricDataType {
