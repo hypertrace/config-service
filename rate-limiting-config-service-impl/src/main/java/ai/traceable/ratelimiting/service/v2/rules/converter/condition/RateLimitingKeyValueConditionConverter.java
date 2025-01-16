@@ -75,6 +75,7 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
                           DerivationRule.newBuilder()
                               .setTransformationConfig(
                                   DataTransformationConfig.newBuilder()
+                                      .setOutputType(fieldType)
                                       .setJexlExpression(
                                           JexlExpressionConfig.newBuilder()
                                               .setJexlExpression(getJexlExp(type))))))

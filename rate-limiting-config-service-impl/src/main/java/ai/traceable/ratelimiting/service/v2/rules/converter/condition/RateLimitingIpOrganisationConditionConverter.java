@@ -31,6 +31,7 @@ public class RateLimitingIpOrganisationConditionConverter
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
                         DataTransformationConfig.newBuilder()
+                            .setOutputType(FIELD_TYPE_STR)
                             .setJexlExpression(
                                 JexlExpressionConfig.newBuilder()
                                     .setJexlExpression(IP_ORGANISATION_JEXL_EXP))))

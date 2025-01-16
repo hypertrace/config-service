@@ -1,63 +1,70 @@
 {
-  "decisionRules": [{
+  "decision_rules": [{
     "id": "rate-limiting-rule-id",
     "name": "test-policy",
-    "ruleScope": {
-      "scopeConditions": [{
-        "environmentScope": {
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
           "environments": ["test-env"]
         }
       }]
     },
-    "ruleCategory": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "ruleStatus": {
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
     },
-    "ruleDefinition": {
-      "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "aggregateThresholdRule": {
-        "matchCondition": {
-          "structuredMatchCondition": {
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "structured_match_condition": {
             "lhs": {
               "name": "lhs",
               "type": "FIELD_TYPE_STR",
               "rules": [{
-                "transformationConfig": {
-                  "jexlExpression": {
-                    "jexlExpression": "$s.getIpIntelligenceData().getCountry().getIsoCode()"
-                  }
+                "transformation_config": {
+                  "jexl_expression": {
+                    "jexl_expression": "$s.getIpIntelligenceData().getCountry().getIsoCode()"
+                  },
+                  "output_type": "FIELD_TYPE_STR"
                 }
               }]
             },
-            "binaryOperator": {
-              "listValue": ["IND", "AUS"],
-              "matchOperator": "MATCH_OPERATOR_IN"
+            "binary_operator": {
+              "list_value": ["IND", "AUS"],
+              "match_operator": "MATCH_OPERATOR_IN"
             }
           }
         },
-        "groupByDimensions": [{
+        "group_by_dimensions": [{
           "name": "AGGREGATE_PER_USER",
           "rules": [{
-            "conditionExpression": {
-              "jexlExpression": "TRACEABLE_USER_ID"
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "USER_ATTRIBUTION_VARIABLE_NAME"
+              },
+              "output_type": "FIELD_TYPE_STR"
             }
           }]
         }, {
           "name": "AGGREGATE_PER_API",
           "rules": [{
-            "conditionExpression": {
-              "jexlExpression":"TRACEABLE_ENDPOINT_ID"
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
+              },
+              "output_type": "FIELD_TYPE_STR"
             }
           }]
         }],
-        "timeWindow": "60s",
-        "valueAggregateThreshold": {
-          "aggregationType": "AGGREGATION_TYPE_COUNT",
-          "staticThreshold": 100.0
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "aggregation_type": "AGGREGATION_TYPE_COUNT",
+          "static_threshold": 100.0
         }
       }
     },
-    "ruleDecision": {
-      "edgeDecisionType": "EDGE_DECISION_TYPE_BLOCK"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK"
     }
   }]
 }

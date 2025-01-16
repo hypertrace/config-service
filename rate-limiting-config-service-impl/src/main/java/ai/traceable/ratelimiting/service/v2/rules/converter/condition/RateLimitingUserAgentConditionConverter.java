@@ -30,6 +30,7 @@ public class RateLimitingUserAgentConditionConverter implements RateLimitingCond
               DerivationRule.newBuilder()
                   .setTransformationConfig(
                       DataTransformationConfig.newBuilder()
+                          .setOutputType(FIELD_TYPE_STR)
                           .setJexlExpression(
                               JexlExpressionConfig.newBuilder()
                                   .setJexlExpression(USER_AGENT_JEXL_EXP))))

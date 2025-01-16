@@ -101,6 +101,7 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
                             DerivationRule.newBuilder()
                                 .setTransformationConfig(
                                     DataTransformationConfig.newBuilder()
+                                        .setOutputType(FieldType.FIELD_TYPE_STR)
                                         .setJexlExpression(
                                             JexlExpressionConfig.newBuilder()
                                                 .setJexlExpression(IP_ADDRESS_JEXL_EXP)))))

@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter;
 
+import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
@@ -186,11 +187,13 @@ public class RateLimitingEdgeDecisionConverter {
                         RequestHeaderInjection.newBuilder()
                             .setHeaderKey(
                                 DataTransformationConfig.newBuilder()
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .setStaticValue(
                                         Value.newBuilder()
                                             .setStringValue(headerInjection.getHeaderName())))
                             .setHeaderValue(
                                 DataTransformationConfig.newBuilder()
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .setStaticValue(
                                         Value.newBuilder()
                                             .setStringValue(
@@ -202,11 +205,13 @@ public class RateLimitingEdgeDecisionConverter {
                         ResponseHeaderInjection.newBuilder()
                             .setHeaderKey(
                                 DataTransformationConfig.newBuilder()
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .setStaticValue(
                                         Value.newBuilder()
                                             .setStringValue(headerInjection.getHeaderName())))
                             .setHeaderValue(
                                 DataTransformationConfig.newBuilder()
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .setStaticValue(
                                         Value.newBuilder()
                                             .setStringValue(
@@ -367,9 +372,12 @@ public class RateLimitingEdgeDecisionConverter {
               .setName("AGGREGATE_PER_USER")
               .addRules(
                   DerivationRule.newBuilder()
-                      .setConditionExpression(
-                          JexlExpressionConfig.newBuilder()
-                              .setJexlExpression(USER_ATTRIBUTION_VARIABLE_NAME.getValue())))
+                      .setTransformationConfig(
+                          DataTransformationConfig.newBuilder()
+                              .setOutputType(FIELD_TYPE_STR)
+                              .setJexlExpression(
+                                  JexlExpressionConfig.newBuilder()
+                                      .setJexlExpression(USER_ATTRIBUTION_VARIABLE_NAME.name()))))
               .build());
     }
     if (resourceAccessThresholdConfig
@@ -380,8 +388,12 @@ public class RateLimitingEdgeDecisionConverter {
               .setName("AGGREGATE_PER_API")
               .addRules(
                   DerivationRule.newBuilder()
-                      .setConditionExpression(
-                          JexlExpressionConfig.newBuilder().setJexlExpression(ENDPOINT_ID)))
+                      .setTransformationConfig(
+                          DataTransformationConfig.newBuilder()
+                              .setOutputType(FIELD_TYPE_STR)
+                              .setJexlExpression(
+                                  JexlExpressionConfig.newBuilder()
+                                      .setJexlExpression(ENDPOINT_ID))))
               .build());
     }
     return attributeDerivationMappings;
@@ -427,6 +439,7 @@ public class RateLimitingEdgeDecisionConverter {
                       DerivationRule.newBuilder()
                           .setTransformationConfig(
                               DataTransformationConfig.newBuilder()
+                                  .setOutputType(FIELD_TYPE_STR)
                                   .setJexlExpression(
                                       JexlExpressionConfig.newBuilder()
                                           .setJexlExpression(jexlExpression)))));

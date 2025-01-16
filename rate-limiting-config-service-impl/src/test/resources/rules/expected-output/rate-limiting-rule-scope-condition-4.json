@@ -29,7 +29,8 @@
                   "transformation_config": {
                     "jexl_expression": {
                       "jexl_expression": "$s.getPath()"
-                    }
+                    },
+                    "output_type": "FIELD_TYPE_STR"
                   }
                 }]
               },
@@ -54,7 +55,8 @@
                     "transformation_config": {
                       "jexl_expression": {
                         "jexl_expression": "TRACEABLE_ENDPOINT_ID"
-                      }
+                      },
+                      "output_type": "FIELD_TYPE_STR"
                     }
                   }]
                 },
@@ -66,15 +68,21 @@
         "group_by_dimensions": [{
           "name": "AGGREGATE_PER_USER",
           "rules": [{
-            "condition_expression": {
-              "jexl_expression": "TRACEABLE_USER_ID"
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "USER_ATTRIBUTION_VARIABLE_NAME"
+              },
+              "output_type": "FIELD_TYPE_STR"
             }
           }]
         }, {
           "name": "AGGREGATE_PER_API",
           "rules": [{
-            "condition_expression": {
-              "jexl_expression":"TRACEABLE_ENDPOINT_ID"
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
+              },
+              "output_type": "FIELD_TYPE_STR"
             }
           }]
         }],
@@ -90,10 +98,12 @@
       "decorations": [{
         "request_header_injection": {
           "header_key": {
-            "static_value": "test-header"
+            "static_value": "test-header",
+            "output_type": "FIELD_TYPE_STR"
           },
           "header_value": {
-            "static_value": "test-header-value"
+            "static_value": "test-header-value",
+            "output_type": "FIELD_TYPE_STR"
           }
         }
       }]

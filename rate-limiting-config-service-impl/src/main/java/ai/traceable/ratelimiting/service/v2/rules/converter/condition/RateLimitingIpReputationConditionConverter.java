@@ -46,6 +46,7 @@ public class RateLimitingIpReputationConditionConverter implements RateLimitingC
                         DerivationRule.newBuilder()
                             .setTransformationConfig(
                                 DataTransformationConfig.newBuilder()
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .setJexlExpression(
                                         JexlExpressionConfig.newBuilder()
                                             .setJexlExpression(IP_REPUTATION_LEVEL_JEXL_EXP)))))

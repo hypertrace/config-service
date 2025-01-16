@@ -41,6 +41,7 @@ public class RateLimitingRegionConditionConverter implements RateLimitingConditi
                         DerivationRule.newBuilder()
                             .setTransformationConfig(
                                 DataTransformationConfig.newBuilder()
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .setJexlExpression(
                                         JexlExpressionConfig.newBuilder()
                                             .setJexlExpression(COUNTRY_ISO_CODE_JEXL_EXP)))))

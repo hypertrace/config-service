@@ -45,6 +45,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
                       DerivationRule.newBuilder()
                           .setTransformationConfig(
                               DataTransformationConfig.newBuilder()
+                                  .setOutputType(FIELD_TYPE_STR)
                                   .setJexlExpression(
                                       JexlExpressionConfig.newBuilder()
                                           .setJexlExpression("$s.getPath()")))))
@@ -59,6 +60,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
                       DerivationRule.newBuilder()
                           .setTransformationConfig(
                               DataTransformationConfig.newBuilder()
+                                  .setOutputType(FIELD_TYPE_STR)
                                   .setJexlExpression(
                                       JexlExpressionConfig.newBuilder()
                                           .setJexlExpression(ENDPOINT_ID)))))

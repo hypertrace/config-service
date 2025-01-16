@@ -29,6 +29,7 @@ public class RateLimitingIpAsnConditionConverter implements RateLimitingConditio
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
                         DataTransformationConfig.newBuilder()
+                            .setOutputType(FIELD_TYPE_STR)
                             .setJexlExpression(
                                 JexlExpressionConfig.newBuilder()
                                     .setJexlExpression(IP_ASN_JEXL_EXP))))
