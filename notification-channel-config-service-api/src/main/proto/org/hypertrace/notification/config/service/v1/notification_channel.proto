@@ -50,7 +50,7 @@ message WebhookHeader {
   string name = 1;
   string value = 2; // omitted on response if isSecret is true
   bool is_secret = 3;
-  string key_id = 4; // set if isSecret is true
+  optional string key_id = 4; // set if isSecret is true
 }
 
 message SplunkIntegrationChannelConfig {
