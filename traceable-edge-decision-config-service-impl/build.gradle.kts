@@ -10,6 +10,7 @@ dependencies {
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.rateLimitingConfigServiceApi)
+  implementation(projects.detectionExclusionConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)

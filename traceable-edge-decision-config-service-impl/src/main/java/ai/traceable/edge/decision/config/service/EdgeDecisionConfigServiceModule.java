@@ -2,6 +2,7 @@ package ai.traceable.edge.decision.config.service;
 
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 
+import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.UserAttributionVariableEnricher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.VariableEnricherBase;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.StoredUserAttributionFetcher;
@@ -10,6 +11,7 @@ import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConf
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.actor.ActorEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServiceConfig;
+import ai.traceable.edge.decision.config.service.supplier.detectionexclusion.DetectionExclusionEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.ratelimiting.RateLimitingEdgeDecisionEngineConfigSupplier;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
@@ -58,6 +60,7 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     configBinder.addBinding().to(StoredEdgeDecisionEngineConfigSupplier.class);
     configBinder.addBinding().to(ActorEdgeDecisionEngineConfigSupplier.class);
     configBinder.addBinding().to(RateLimitingEdgeDecisionEngineConfigSupplier.class);
+    configBinder.addBinding().to(DetectionExclusionEdgeDecisionConfigSupplier.class);
   }
 
   @Provides
@@ -81,6 +84,14 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
   RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub
       providesRateLimitingConfigServiceBlockingStub() {
     return RateLimitingConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  DetectionExclusionConfigServiceGrpc.DetectionExclusionConfigServiceBlockingStub
+      provideDetectionExclusionConfigServiceBlockingStub() {
+    return DetectionExclusionConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }
