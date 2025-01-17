@@ -475,7 +475,9 @@ message UserAgentTrainingConfig {}
 
 message ResponseContentTrainingConfig {}
 
-message ParamEncodingTrainingConfig {}
+message ParamEncodingTrainingConfig {
+  ThresholdFamilyConfig threshold_family_config = 1;
+}
 
 message NonAsciiUnicodeCharactersTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
