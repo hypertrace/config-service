@@ -334,7 +334,7 @@ public final class LabelsConfigServiceImplTest {
       UpdateLabelRequest updateLabelRequest =
           UpdateLabelRequest.newBuilder()
               .setId(systemLabel.getId())
-              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey() + "_1").build())
+              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey()).build())
               .build();
       assertDoesNotThrow(() -> labelConfigStub.updateLabel(updateLabelRequest));
     }
