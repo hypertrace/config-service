@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +53,6 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private final LabelStore labelStore;
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
-  private final Map<String, Label> systemLabelsKeyLabelMap;
 
   public LabelsConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
@@ -74,13 +74,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       systemLabels = buildSystemLabelList(systemLabelsObjectList);
       systemLabelsIdLabelMap =
           systemLabels.stream().collect(Collectors.toUnmodifiableMap(Label::getId, identity()));
-      systemLabelsKeyLabelMap =
-          systemLabels.stream()
-              .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
     } else {
       systemLabels = Collections.emptyList();
       systemLabelsIdLabelMap = Collections.emptyMap();
-      systemLabelsKeyLabelMap = Collections.emptyMap();
     }
   }
 
@@ -194,15 +190,13 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     RequestContext requestContext = RequestContext.CURRENT.get();
     String labelId = request.getId();
     try {
-      Label label;
-      if (systemLabelsIdLabelMap.containsKey(labelId)) {
-        label = systemLabelsIdLabelMap.get(labelId);
-      } else {
-        label =
-            labelStore
-                .getData(requestContext, labelId)
-                .orElseThrow(Status.NOT_FOUND::asRuntimeException);
-      }
+      Label label =
+          labelStore
+              .getData(requestContext, labelId)
+              .orElseGet(
+                  () ->
+                      Optional.ofNullable(systemLabelsIdLabelMap.get(labelId))
+                          .orElseThrow(Status.NOT_FOUND::asRuntimeException));
       responseObserver.onNext(GetLabelResponse.newBuilder().setLabel(label).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -214,12 +208,17 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   public void getLabels(
       GetLabelsRequest request, StreamObserver<GetLabelsResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    List<Label> allLabels = new ArrayList<>(systemLabels);
     List<Label> tenantLabels =
         labelStore.getAllObjects(requestContext).stream()
             .map(ContextualConfigObject::getData)
             .collect(Collectors.toUnmodifiableList());
-    allLabels.addAll(tenantLabels);
+    Map<String, Label> tenantLabelsMap =
+        tenantLabels.stream()
+            .collect(Collectors.toUnmodifiableMap(Label::getId, Function.identity()));
+    List<Label> allLabels = new ArrayList<>(tenantLabels);
+    systemLabels.stream()
+        .filter(label -> !tenantLabelsMap.containsKey(label.getId()))
+        .forEach(allLabels::add);
     responseObserver.onNext(GetLabelsResponse.newBuilder().addAllLabels(allLabels).build());
     responseObserver.onCompleted();
   }
@@ -230,11 +229,7 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
     try {
       LabelData updateLabelData = request.getData();
       RequestContext requestContext = RequestContext.CURRENT.get();
-      if (systemLabelsIdLabelMap.containsKey(request.getId())) {
-        // Updating a system label will error
-        responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
-        return;
-      }
+
       if (isDuplicateKey(requestContext, request.getId(), updateLabelData.getKey())) {
         responseObserver.onError(new StatusRuntimeException(Status.ALREADY_EXISTS));
         return;
@@ -242,7 +237,10 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       Label oldLabel =
           labelStore
               .getData(requestContext, request.getId())
-              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+              .orElseGet(
+                  () ->
+                      Optional.ofNullable(systemLabelsIdLabelMap.get(request.getId()))
+                          .orElseThrow(Status.NOT_FOUND::asRuntimeException));
       Label updateLabel = oldLabel.toBuilder().setData(updateLabelData).build();
       Label updateLabelInRes = labelStore.upsertObject(requestContext, updateLabel).getData();
       responseObserver.onNext(UpdateLabelResponse.newBuilder().setLabel(updateLabelInRes).build());
@@ -284,10 +282,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   }
 
   private Map<String, Label> getLabelsMap(RequestContext requestContext) {
-    Map<String, Label> existingLabelsMap = new HashMap<>(systemLabelsKeyLabelMap);
+    Map<String, Label> mergedLabels = new HashMap<>(systemLabelsIdLabelMap);
     labelStore.getAllObjects(requestContext).stream()
         .map(ContextualConfigObject::getData)
-        .forEach(label -> existingLabelsMap.put(label.getData().getKey(), label));
-    return Collections.unmodifiableMap(existingLabelsMap);
+        .forEach(label -> mergedLabels.put(label.getId(), label));
+    return mergedLabels.values().stream()
+        .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
   }
 }

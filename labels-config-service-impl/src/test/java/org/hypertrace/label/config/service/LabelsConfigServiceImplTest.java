@@ -1,5 +1,6 @@
 package org.hypertrace.label.config.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -329,25 +330,22 @@ public final class LabelsConfigServiceImplTest {
   @Test
   void test_system_updateLabel() {
     List<Label> createdLabelsList = createLabels();
+    // updating system label key, should not throw error.
     for (Label systemLabel : systemLabels) {
       UpdateLabelRequest updateLabelRequest =
           UpdateLabelRequest.newBuilder()
               .setId(systemLabel.getId())
-              .setData(LabelData.newBuilder().setKey("1").build())
+              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey() + "_1").build())
               .build();
-      Throwable exception =
-          assertThrows(
-              StatusRuntimeException.class,
-              () -> {
-                labelConfigStub.updateLabel(updateLabelRequest);
-              });
-      assertEquals(Status.INVALID_ARGUMENT, Status.fromThrowable(exception));
+      assertDoesNotThrow(() -> labelConfigStub.updateLabel(updateLabelRequest));
     }
+
+    // updating existing label with updated system label key, should throw error.
     for (Label systemLabel : systemLabels) {
       UpdateLabelRequest updateLabelRequest =
           UpdateLabelRequest.newBuilder()
               .setId(createdLabelsList.get(0).getId())
-              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey()).build())
+              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey() + "_1").build())
               .build();
       Throwable exception =
           assertThrows(
@@ -356,6 +354,16 @@ public final class LabelsConfigServiceImplTest {
                 labelConfigStub.updateLabel(updateLabelRequest);
               });
       assertEquals(Status.ALREADY_EXISTS, Status.fromThrowable(exception));
+    }
+
+    // updating existing label with system label keys present in config, should not throw error.
+    for (Label systemLabel : systemLabels) {
+      UpdateLabelRequest updateLabelRequest =
+          UpdateLabelRequest.newBuilder()
+              .setId(createdLabelsList.get(0).getId())
+              .setData(LabelData.newBuilder().setKey(systemLabel.getData().getKey()).build())
+              .build();
+      assertDoesNotThrow(() -> labelConfigStub.updateLabel(updateLabelRequest));
     }
   }
 
