@@ -16,7 +16,7 @@ public class RateLimitingIpOrganisationConditionConverter
     implements RateLimitingConditionConverter {
 
   private static final String IP_ORGANISATION_JEXL_EXP =
-      "$s.getIpIntelligenceData().getIspData().getOrganisation()";
+      "$s.getIpIntelligenceData().getIspData().getOrganization()";
 
   @Override
   public MatchCondition buildMatchCondition(

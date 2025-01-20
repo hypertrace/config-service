@@ -23,7 +23,7 @@
               "rules": [{
                 "transformation_config": {
                   "jexl_expression": {
-                    "jexl_expression": "$s.getIpIntelligenceData().getIspData().getOrganisation()"
+                    "jexl_expression": "$s.getIpIntelligenceData().getIspData().getOrganization()"
                   },
                   "output_type": "FIELD_TYPE_STR"
                 }
