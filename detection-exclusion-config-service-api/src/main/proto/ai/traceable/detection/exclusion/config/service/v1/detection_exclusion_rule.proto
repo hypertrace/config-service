@@ -25,6 +25,7 @@ message EnvironmentScope {
 message DetectionExclusionRuleInfo {
   string name = 1;
   string description = 2;
+  // implicit AND over elements
   repeated DetectionExclusionCondition conditions = 3;
   DetectionExclusionRuleStatus rule_status = 4;
   repeated ExclusionTarget exclusion_targets = 5;
@@ -50,7 +51,13 @@ message DetectionExclusionCondition {
     EmailDomainCondition email_domain_condition = 16;
     UserAgentCondition user_agent_condition = 17;
     RequestScannerTypeCondition request_scanner_type_condition = 18;
+    LogicalConditionalExpression conditional_expression = 19;
   }
+}
+
+message LogicalConditionalExpression {
+  LogicalOperator operator = 1;
+  repeated DetectionExclusionCondition expressions = 2;
 }
 
 message DetectionExclusionRuleStatus {
@@ -70,6 +77,12 @@ message ExpirationDetails {
   // Timestamp at which the blocking expires.
   // If expiration_timestamp_millis is not set and expiration_duration is set, the value gets derived from the expiration_duration field
   optional int64 expiration_timestamp_millis = 2;
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
 }
 
 enum ExclusionTarget {
