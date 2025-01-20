@@ -282,11 +282,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   }
 
   private Map<String, Label> getLabelsMap(RequestContext requestContext) {
-    Map<String, Label> existingLabelsMap = new HashMap<>(systemLabelsIdLabelMap);
+    Map<String, Label> mergedLabels = new HashMap<>(systemLabelsIdLabelMap);
     labelStore.getAllObjects(requestContext).stream()
         .map(ContextualConfigObject::getData)
-        .forEach(label -> existingLabelsMap.put(label.getId(), label));
-    return existingLabelsMap.values().stream()
+        .forEach(label -> mergedLabels.put(label.getId(), label));
+    return mergedLabels.values().stream()
         .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
   }
 }
