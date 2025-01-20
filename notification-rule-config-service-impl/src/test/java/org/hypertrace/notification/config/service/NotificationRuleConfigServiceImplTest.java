@@ -14,6 +14,7 @@ import org.hypertrace.notification.config.service.v1.GetAllNotificationRulesRequ
 import org.hypertrace.notification.config.service.v1.GetNotificationRuleRequest;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleConfigServiceGrpc;
+import org.hypertrace.notification.config.service.v1.NotificationRuleFilter;
 import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,13 +24,13 @@ class NotificationRuleConfigServiceImplTest {
 
   MockGenericConfigService mockGenericConfigService;
   NotificationRuleConfigServiceGrpc.NotificationRuleConfigServiceBlockingStub notificationStub;
-  NotificationRuleStore notificationRuleStore;
+  NotificationRuleFilteredStore notificationRuleStore;
 
   @BeforeEach
   void beforeEach() {
     mockGenericConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
-    notificationRuleStore = mock(NotificationRuleStore.class);
+    notificationRuleStore = mock(NotificationRuleFilteredStore.class);
 
     ConfigChangeEventGenerator configChangeEventGenerator = mock(ConfigChangeEventGenerator.class);
     mockGenericConfigService
@@ -88,7 +89,13 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         List.of(notificationRule2, notificationRule1),
         notificationStub
-            .getAllNotificationRules(GetAllNotificationRulesRequest.getDefaultInstance())
+            .getAllNotificationRules(
+                GetAllNotificationRulesRequest.newBuilder()
+                    .setFilter(
+                        NotificationRuleFilter.newBuilder()
+                            .addEventConditionType("metricAnomalyEventCondition")
+                            .build())
+                    .build())
             .getNotificationRulesList());
 
     NotificationRule ruleToUpdate =
@@ -111,7 +118,13 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         List.of(notificationRule2, updatedRule),
         notificationStub
-            .getAllNotificationRules(GetAllNotificationRulesRequest.getDefaultInstance())
+            .getAllNotificationRules(
+                GetAllNotificationRulesRequest.newBuilder()
+                    .setFilter(
+                        NotificationRuleFilter.newBuilder()
+                            .addEventConditionType("metricAnomalyEventCondition")
+                            .build())
+                    .build())
             .getNotificationRulesList());
 
     notificationStub.deleteNotificationRule(
@@ -121,7 +134,13 @@ class NotificationRuleConfigServiceImplTest {
     assertEquals(
         List.of(updatedRule),
         notificationStub
-            .getAllNotificationRules(GetAllNotificationRulesRequest.getDefaultInstance())
+            .getAllNotificationRules(
+                GetAllNotificationRulesRequest.newBuilder()
+                    .setFilter(
+                        NotificationRuleFilter.newBuilder()
+                            .addEventConditionType("metricAnomalyEventCondition")
+                            .build())
+                    .build())
             .getNotificationRulesList());
   }
 

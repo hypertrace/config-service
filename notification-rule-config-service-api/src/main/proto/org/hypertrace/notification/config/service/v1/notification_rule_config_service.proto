@@ -31,7 +31,13 @@ message UpdateNotificationRuleResponse {
   NotificationRule notification_rule = 1;
 }
 
-message GetAllNotificationRulesRequest {}
+message GetAllNotificationRulesRequest {
+  NotificationRuleFilter filter = 3;
+}
+
+message NotificationRuleFilter {
+  repeated string event_condition_type = 1;
+}
 
 message GetAllNotificationRulesResponse {
   repeated NotificationRule notification_rules = 1;

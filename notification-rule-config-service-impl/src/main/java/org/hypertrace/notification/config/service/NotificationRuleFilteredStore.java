@@ -6,20 +6,22 @@ import io.grpc.Channel;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
+import org.hypertrace.notification.config.service.v1.NotificationRuleFilter;
 
 @Slf4j
-public class NotificationRuleStore extends IdentifiedObjectStore<NotificationRule> {
+public class NotificationRuleFilteredStore
+    extends IdentifiedObjectStoreWithFilter<NotificationRule, NotificationRuleFilter> {
 
   private static final String NOTIFICATION_CONFIG_NAMESPACE = "notification-v1";
   private static final String NOTIFICATION_RULE_CONFIG_RESOURCE_NAME = "notificationRuleConfig";
 
-  public NotificationRuleStore(
+  public NotificationRuleFilteredStore(
       Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         ConfigServiceGrpc.newBlockingStub(channel)
@@ -51,5 +53,17 @@ public class NotificationRuleStore extends IdentifiedObjectStore<NotificationRul
   @Override
   protected String getContextFromData(NotificationRule object) {
     return object.getId();
+  }
+
+  @Override
+  protected Optional<NotificationRule> filterConfigData(
+      NotificationRule data, NotificationRuleFilter filter) {
+    return Optional.of(data)
+        .filter(
+            notificationRule ->
+                filter
+                    .getEventConditionTypeList()
+                    .contains(
+                        notificationRule.getNotificationRuleMutableData().getEventConditionType()));
   }
 }
