@@ -53,7 +53,6 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   private final LabelStore labelStore;
   private final List<Label> systemLabels;
   private final Map<String, Label> systemLabelsIdLabelMap;
-  private final Map<String, Label> systemLabelsKeyLabelMap;
 
   public LabelsConfigServiceImpl(
       Channel configChannel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
@@ -75,13 +74,9 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
       systemLabels = buildSystemLabelList(systemLabelsObjectList);
       systemLabelsIdLabelMap =
           systemLabels.stream().collect(Collectors.toUnmodifiableMap(Label::getId, identity()));
-      systemLabelsKeyLabelMap =
-          systemLabels.stream()
-              .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
     } else {
       systemLabels = Collections.emptyList();
       systemLabelsIdLabelMap = Collections.emptyMap();
-      systemLabelsKeyLabelMap = Collections.emptyMap();
     }
   }
 
@@ -287,10 +282,11 @@ public class LabelsConfigServiceImpl extends LabelsConfigServiceGrpc.LabelsConfi
   }
 
   private Map<String, Label> getLabelsMap(RequestContext requestContext) {
-    Map<String, Label> existingLabelsMap = new HashMap<>(systemLabelsKeyLabelMap);
+    Map<String, Label> existingLabelsMap = new HashMap<>(systemLabelsIdLabelMap);
     labelStore.getAllObjects(requestContext).stream()
         .map(ContextualConfigObject::getData)
-        .forEach(label -> existingLabelsMap.put(label.getData().getKey(), label));
-    return Collections.unmodifiableMap(existingLabelsMap);
+        .forEach(label -> existingLabelsMap.put(label.getId(), label));
+    return existingLabelsMap.values().stream()
+        .collect(Collectors.toUnmodifiableMap(label -> label.getData().getKey(), identity()));
   }
 }
