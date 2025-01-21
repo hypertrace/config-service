@@ -7,7 +7,7 @@
 anomaly-config-service-registry/src/main/resources/modsec/crs @piyushroshan @soujanyanmbri
 anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99
 detection-exclusion-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
-rate-limiting-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
+rate-limiting-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @saxenakshitiz
 custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
 malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
 iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
