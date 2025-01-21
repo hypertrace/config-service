@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AdvancedMode;
 import ai.traceable.ast.hooks.config.service.v1.AllowedRunners;
 import ai.traceable.ast.hooks.config.service.v1.AllowedRunnersInfo;
@@ -26,6 +27,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Objects;
 import java.util.Optional;
+import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
+import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,10 +43,15 @@ class RequestValidatorTest {
   private RequestValidator requestValidator;
 
   @Mock private RequestContext mockRequestContext;
+  @Mock private ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
+  @Mock private ConfigChangeEventGenerator configChangeEventGenerator;
 
   @BeforeEach
   void setUp() {
-    requestValidator = new RequestValidator(new HookConfigValidator());
+    requestValidator =
+        new RequestValidator(
+            new HookConfigValidator(),
+            new AstHooksConfigStore(configServiceBlockingStub, configChangeEventGenerator));
   }
 
   @Test

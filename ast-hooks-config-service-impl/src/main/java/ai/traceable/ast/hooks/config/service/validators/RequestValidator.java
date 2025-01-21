@@ -4,7 +4,9 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.ast.hooks.config.service.store.AstHooksConfigStore;
 import ai.traceable.ast.hooks.config.service.v1.AllowedRunners;
+import ai.traceable.ast.hooks.config.service.v1.AstHook;
 import ai.traceable.ast.hooks.config.service.v1.AstHookDetails;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestDetails;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestFilter;
@@ -13,6 +15,7 @@ import ai.traceable.ast.hooks.config.service.v1.CreateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestRequest;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookTestsRequest;
+import ai.traceable.ast.hooks.config.service.v1.GetAstHookFilter;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
 import ai.traceable.ast.hooks.config.service.v1.HookConfig;
@@ -23,6 +26,7 @@ import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -33,13 +37,9 @@ public class RequestValidator extends ValidatorBase {
   private static final Pattern AST_HOOK_NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]*$");
 
   private final HookConfigValidator hookConfigValidator;
+  private final AstHooksConfigStore astHooksConfigStore;
 
   public void validate(RequestContext requestContext, CreateAstHookRequest request) {
-    if (isBlank(request.getHookDetails().getName())) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("name not found while trying to create ast hooks config")
-          .asRuntimeException(requestContext.buildTrailers());
-    }
     // TODO: We should not throw invalid argument because code snippet in hook details is deprecated
     //    if (isBlank(request.getHookDetails().getCodeSnippet())) {
     //      throw Status.INVALID_ARGUMENT
@@ -53,7 +53,16 @@ public class RequestValidator extends ValidatorBase {
               "Code snippet not found while trying to create ast hooks config in advanced mode")
           .asRuntimeException(requestContext.buildTrailers());
     }
+    validateUniqueHookName(requestContext, request.getHookDetails().getName());
     validateHookDetails(requestContext, request.getHookDetails(), false);
+  }
+
+  private void validateNonBlankName(RequestContext requestContext, String name) {
+    if (isBlank(name)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("name not found while trying to create ast hooks config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
   }
 
   public void validate(RequestContext requestContext, UpdateAstHookRequest request) {
@@ -64,12 +73,20 @@ public class RequestValidator extends ValidatorBase {
           .withDescription("unrecognized ast hook type")
           .asRuntimeException(requestContext.buildTrailers());
     }
+    AstHook currentAstHook = validateAndGetExistingHookById(requestContext, request.getId());
+    if (!currentAstHook.getHookDetails().getName().equals(request.getAstHookDetails().getName())) {
+      validateUniqueHookName(requestContext, request.getAstHookDetails().getName());
+    }
     if (request.hasAstHookDetails()) {
       validateHookDetails(requestContext, request.getAstHookDetails(), true);
     }
     if (request.hasHookTestId()) {
       validateStringNotBlank(request.getHookTestId(), "hook test id not found");
     }
+  }
+
+  private AstHook validateAndGetExistingHookById(RequestContext requestContext, String id) {
+    return astHooksConfigStore.getAstHook(requestContext, id);
   }
 
   public void validate(RequestContext requestContext, DeleteAstHookRequest request) {
@@ -82,7 +99,7 @@ public class RequestValidator extends ValidatorBase {
 
   private void validateHookDetails(
       RequestContext requestContext, AstHookDetails astHookDetails, boolean isUpdateRequest) {
-    if (!isValidAstHookName(astHookDetails.getName())) {
+    if (!AST_HOOK_NAME_PATTERN.asPredicate().test(astHookDetails.getName())) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Provided ast hook name is not valid: " + astHookDetails.getName())
           .asRuntimeException();
@@ -107,8 +124,16 @@ public class RequestValidator extends ValidatorBase {
     //    validateRole(astHookDetails.getRole());
   }
 
-  boolean isValidAstHookName(String name) {
-    return AST_HOOK_NAME_PATTERN.matcher(name).find();
+  private void validateUniqueHookName(RequestContext requestContext, String name) {
+    validateNonBlankName(requestContext, name);
+    if (!astHooksConfigStore
+        .getAllConfigData(
+            requestContext, GetAstHookFilter.newBuilder().addAllName(List.of(name)).build())
+        .isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Hook with name " + name + " already exists.")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
   }
 
   private void validateHookConfig(HookConfig hookConfig, boolean isUpdateRequest) {
