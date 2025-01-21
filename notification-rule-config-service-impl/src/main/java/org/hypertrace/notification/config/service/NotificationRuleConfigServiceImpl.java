@@ -27,12 +27,13 @@ import org.hypertrace.notification.config.service.v1.UpdateNotificationRuleRespo
 public class NotificationRuleConfigServiceImpl
     extends NotificationRuleConfigServiceGrpc.NotificationRuleConfigServiceImplBase {
 
-  private final NotificationRuleStore notificationRuleStore;
+  private final NotificationRuleFilteredStore notificationRuleStore;
   private final NotificationRuleConfigServiceRequestValidator validator;
 
   public NotificationRuleConfigServiceImpl(
       Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
-    this.notificationRuleStore = new NotificationRuleStore(channel, configChangeEventGenerator);
+    this.notificationRuleStore =
+        new NotificationRuleFilteredStore(channel, configChangeEventGenerator);
     this.validator = new NotificationRuleConfigServiceRequestValidator();
   }
 
@@ -105,7 +106,7 @@ public class NotificationRuleConfigServiceImpl
       responseObserver.onNext(
           GetAllNotificationRulesResponse.newBuilder()
               .addAllNotificationRules(
-                  notificationRuleStore.getAllObjects(requestContext).stream()
+                  notificationRuleStore.getAllObjects(requestContext, request.getFilter()).stream()
                       .map(ConfigObject::getData)
                       .collect(Collectors.toUnmodifiableList()))
               .build());
