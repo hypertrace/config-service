@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
+import ai.traceable.anomaly.config.service.v1.trainer.ApiDiscoveryConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
@@ -109,6 +110,9 @@ public class TrainingConfigValidator {
 
     EnumMap<DemoApplicationConfig.ConfigCase, TrainingConfig> demoApplicationConfigMap =
         new EnumMap<>(DemoApplicationConfig.ConfigCase.class);
+
+    EnumMap<ApiDiscoveryConfig.ConfigCase, TrainingConfig> apiDiscoveryConfigMap =
+        new EnumMap<>(ApiDiscoveryConfig.ConfigCase.class);
 
     for (TrainingConfig trainingConfig : trainingConfigs) {
       Status status;
@@ -241,6 +245,17 @@ public class TrainingConfigValidator {
           }
           break;
 
+        case API_DISCOVERY_CONFIG:
+          ApiDiscoveryConfig.ConfigCase apiDiscoveryConfigCase =
+              trainingConfig.getApiDiscoveryConfig().getConfigCase();
+          if (apiDiscoveryConfigMap.containsKey(apiDiscoveryConfigCase)) {
+            return Status.INVALID_ARGUMENT.withDescription(
+                "UpdateScopedTrainingConfigRequest should have only one training config for apiDiscoveryConfig: "
+                    + apiDiscoveryConfigCase);
+          } else {
+            apiDiscoveryConfigMap.put(apiDiscoveryConfigCase, trainingConfig);
+          }
+          break;
         default:
           break;
       }

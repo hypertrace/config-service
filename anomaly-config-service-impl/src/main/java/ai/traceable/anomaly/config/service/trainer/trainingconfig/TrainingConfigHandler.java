@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.trainer.trainingconfig;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
+import ai.traceable.anomaly.config.service.v1.trainer.ApiDiscoveryConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ApiNamingTrainingConfig.ConfigCase;
 import ai.traceable.anomaly.config.service.v1.trainer.DemoApplicationConfig;
@@ -68,6 +69,9 @@ public class TrainingConfigHandler {
         case TRAINING_CONFIG_TYPE_DEMO_APPLICATION_CONFIG:
           configCases.add(TrainingConfigCase.DEMO_APPLICATION_CONFIG);
           break;
+        case TRAINING_CONFIG_TYPE_API_DISCOVERY_CONFIG:
+          configCases.add(TrainingConfigCase.API_DISCOVERY_CONFIG);
+          break;
         default:
           break;
       }
@@ -111,6 +115,9 @@ public class TrainingConfigHandler {
     EnumMap<DemoApplicationConfig.ConfigCase, TrainingConfig> demoApplicationConfigMap =
         new EnumMap<>(DemoApplicationConfig.ConfigCase.class);
 
+    EnumMap<ApiDiscoveryConfig.ConfigCase, TrainingConfig> apiDiscoveryConfigMap =
+        new EnumMap<>(ApiDiscoveryConfig.ConfigCase.class);
+
     preferredConfig
         .getTrainingConfigsList()
         .forEach(
@@ -148,6 +155,10 @@ public class TrainingConfigHandler {
                 case DEMO_APPLICATION_CONFIG:
                   demoApplicationConfigMap.put(
                       trainingConfig.getDemoApplicationConfig().getConfigCase(), trainingConfig);
+                  break;
+                case API_DISCOVERY_CONFIG:
+                  apiDiscoveryConfigMap.put(
+                      trainingConfig.getApiDiscoveryConfig().getConfigCase(), trainingConfig);
                   break;
                 default:
                   break;
@@ -206,6 +217,11 @@ public class TrainingConfigHandler {
                       demoApplicationConfigMap,
                       trainingConfig.getDemoApplicationConfig().getConfigCase(),
                       trainingConfig);
+                case API_DISCOVERY_CONFIG:
+                  resolve(
+                      apiDiscoveryConfigMap,
+                      trainingConfig.getApiDiscoveryConfig().getConfigCase(),
+                      trainingConfig);
                   break;
                 default:
                   break;
@@ -222,6 +238,7 @@ public class TrainingConfigHandler {
         .addAllTrainingConfigs(localTrainingConfigMap.values())
         .addAllTrainingConfigs(volumetricTrainingConfigMap.values())
         .addAllTrainingConfigs(demoApplicationConfigMap.values())
+        .addAllTrainingConfigs(apiDiscoveryConfigMap.values())
         .build();
   }
 
@@ -313,6 +330,15 @@ public class TrainingConfigHandler {
                     filter
                         .getConfigCase()
                         .equals(trainingConfig.getVolumetricTrainingConfig().getConfigCase()));
+      case API_DISCOVERY_CONFIG:
+        return configFilter.stream()
+            .filter(TrainingConfig::hasApiDiscoveryConfig)
+            .map(TrainingConfig::getApiDiscoveryConfig)
+            .anyMatch(
+                filter ->
+                    filter
+                        .getConfigCase()
+                        .equals(trainingConfig.getApiDiscoveryConfig().getConfigCase()));
       default:
         return false;
     }

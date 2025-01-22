@@ -17,6 +17,7 @@ enum TrainingConfigType {
   TRAINING_CONFIG_TYPE_LOCAL_TRAINING = 6;
   TRAINING_CONFIG_TYPE_VOLUMETRIC_TRAINING = 7;
   TRAINING_CONFIG_TYPE_DEMO_APPLICATION_CONFIG = 8;
+  TRAINING_CONFIG_TYPE_API_DISCOVERY_CONFIG = 9;
 }
 
 message GetTrainingConfigsFilter {
@@ -34,6 +35,7 @@ message TrainingConfigTypeSpecificFilter {
     LocalTrainingConfigFilter local_training_config_filter = 6;
     VolumetricTrainingConfigFilter volumetric_training_config_filter = 7;
     DemoApplicationTrainingConfigFilter demo_application_training_config_filter = 8;
+    ApiDiscoveryConfigFilter api_discovery_config_filter = 9;
   }
 }
 
@@ -50,6 +52,8 @@ message LocalTrainingConfigFilter {}
 message VolumetricTrainingConfigFilter {}
 
 message DemoApplicationTrainingConfigFilter {}
+
+message ApiDiscoveryConfigFilter {}
 
 message VulnerabilityTrainingConfigFilter {
   repeated VulnerabilityTypeFilter vulnerability_type_filter = 1;
@@ -194,12 +198,19 @@ message TrainingConfig {
     VolumetricTrainingConfig volumetric_training_config = 8;
     DemoApplicationConfig demo_application_config = 9;
     DomainDiscoveryConfig domain_discovery_config = 10;
+    ApiDiscoveryConfig api_discovery_config = 12;
   }
 }
 
 message DomainDiscoveryConfig {
   oneof config {
     DomainFilterConfig domain_filter_config = 1;
+  }
+}
+
+message ApiDiscoveryConfig {
+  oneof config {
+    StaticApiDiscoveryConfig static_api_discovery_config = 1;
   }
 }
 
@@ -741,6 +752,11 @@ message DomainFilterConfig {
   SpanAttributeFilterConfigList span_attribute_rejection_config_list = 4;
 }
 
+message StaticApiDiscoveryConfig {
+  StaticApiDiscoveryAction static_api_discovery_action = 1;
+  Filter discovery_filter = 2;
+}
+
 message RegexFilterConfigList {
   repeated RegexFilterConfig regex_filter_configs = 1;
 }
@@ -899,6 +915,8 @@ enum KeyLocation {
   KEY_LOCATION_STATUS_CODE = 6;
   KEY_LOCATION_URL_PATH = 7;
   KEY_LOCATION_FULL_URL_PATH = 8;
+  KEY_LOCATION_REQUEST_BODY_SIZE = 9;
+  KEY_LOCATION_RESPONSE_BODY_SIZE = 10;
 }
 
 enum LogicalOperator {
@@ -920,6 +938,13 @@ enum RelationalOperator {
   RELATIONAL_OPERATOR_EXISTS = 8;
   RELATIONAL_OPERATOR_NOT_IN = 9;
   RELATIONAL_OPERATOR_NOT_CONTAINS = 10;
+}
+
+enum StaticApiDiscoveryAction {
+  STATIC_API_DISCOVERY_ACTION_UNSPECIFIED = 0;
+  STATIC_API_DISCOVERY_ACTION_SHOW = 1;
+  STATIC_API_DISCOVERY_ACTION_HIDE = 2;
+  STATIC_API_DISCOVERY_ACTION_REJECT = 3;
 }
 
 message ThresholdRegexConfig {
