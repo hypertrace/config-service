@@ -181,6 +181,8 @@ message JiraDataCenterAuthCredentials {
   oneof auth_credentials {
     EncryptedData encrypted_personal_access_token = 1;
   }
+  bool is_mtls_enabled = 2;
+  optional string ssl_ca_certificate = 3;
 }
 
 message JiraIntegrationFilter {
