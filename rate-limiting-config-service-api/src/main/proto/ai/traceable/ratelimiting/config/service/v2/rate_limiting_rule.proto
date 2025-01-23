@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.ratelimiting.config.service.v2;
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
@@ -150,13 +151,40 @@ message ScopeCondition {
 }
 
 message KeyValueCondition {
-  Type type = 1;
-  StringCondition key_condition = 2;
-  StringCondition value_condition = 3;
+  Type type = 1 [deprecated = true];
+  StringCondition key_condition = 2 [deprecated = true];
+  StringCondition value_condition = 3 [deprecated = true];
+
+  oneof condition_type {
+    StaticValueCondition static_value_condition = 4;
+    LhsRhsKeysCondition lhs_rhs_condition = 5;
+  }
+
+  message StaticValueCondition {
+    KeyCondition key_condition = 1;
+    MatchOperatorCondition value_match_operator_condition = 2;
+  }
+
+  message LhsRhsKeysCondition {
+    KeyCondition lhs_key_condition = 1;
+    KeyCondition rhs_key_condition = 2;
+    MatchOperator lhs_rhs_match_operator = 3;
+  }
+
+  message KeyCondition {
+    Type key_type = 1;
+    MatchOperatorCondition key_match_operator_condition = 2;
+  }
 
   message StringCondition {
+    option deprecated = true;
     MatchOperator operator = 1;
     string value = 2;
+  }
+
+  message MatchOperatorCondition {
+    MatchOperator operator = 1;
+    google.protobuf.Value value = 2;
   }
 
   enum Type {
