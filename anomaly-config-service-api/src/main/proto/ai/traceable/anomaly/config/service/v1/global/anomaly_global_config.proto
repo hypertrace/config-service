@@ -56,21 +56,49 @@ message GetAnomalyRuleInfosResponse {
 
 message ScopedAnomalyConfigStatus {
   AnomalyConfigScope config_scope = 1;
-  AnomalyConfigStatus config_status = 2;
-  ExcludedEventsGenerationConfig excluded_events_config = 3;
-  AnomalyConfidenceLevel min_confidence_level = 4;
-  bool enabled_for_exit_spans = 5;
+  AnomalyConfigStatus config_status = 2 [deprecated = true];
+  ExcludedEventsGenerationConfig excluded_events_config = 3 [deprecated = true];
+  AnomalyConfidenceLevel min_confidence_level = 4 [deprecated = true];
+  bool enabled_for_exit_spans = 5 [deprecated = true];
   ModsecGlobalConfig modsec_global_config = 6;
+  ApiGlobalConfig api_global_config = 7;
 }
 
 // any addition here requires update in ScopedGlobalConfigStatusChangeConverter logic
 message ScopedAnomalyConfigStatusChange {
   AnomalyConfigScope config_scope = 1;
-  AnomalyConfigStatusChange config_status = 2;
-  ExcludedEventsGenerationConfig excluded_events_config = 3;
-  optional AnomalyConfidenceLevel min_confidence_level = 4;
-  optional bool enabled_for_exit_spans = 5;
+  AnomalyConfigStatusChange config_status = 2 [deprecated = true];
+  ExcludedEventsGenerationConfig excluded_events_config = 3 [deprecated = true];
+  optional AnomalyConfidenceLevel min_confidence_level = 4 [deprecated = true];
+  optional bool enabled_for_exit_spans = 5 [deprecated = true];
   ModsecGlobalConfig modsec_global_config = 6;
+  ApiGlobalConfig api_global_config = 7;
+}
+
+message ModsecGlobalConfig {
+  optional bool blocking_available_for_regular_rules = 1;
+  optional bool use_test_rules = 2;
+  optional bool disabled = 3;
+  ModsecDefaultConfigsType default_configs_type = 4;
+  AnomalyConfidenceLevel min_confidence_level = 5;
+  optional bool enabled_for_exit_spans = 6;
+}
+
+enum ModsecDefaultConfigsType {
+  MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED = 0;
+  MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED = 1;
+  MODSEC_DEFAULT_CONFIGS_TYPE_AGGRESSIVE_DISABLED = 2;
+}
+
+message ApiGlobalConfig {
+  optional bool disabled = 1;
+  optional ApiDefaultConfigsType default_configs_type = 2;
+  optional bool enabled_for_exit_spans = 3;
+}
+
+enum ApiDefaultConfigsType {
+  API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED = 0;
+  API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED = 1;
 }
 
 message ExcludedEventsGenerationConfig {
@@ -78,11 +106,6 @@ message ExcludedEventsGenerationConfig {
     bool enabled_for_all = 1;
     StringList exclusion_rule_ids = 2;
   }
-}
-
-message ModsecGlobalConfig {
-  optional bool blocking_available_for_regular_rules = 1;
-  optional bool use_test_rules = 2;
 }
 
 message DeleteScopedAnomalyGlobalConfigStatusRequest {
