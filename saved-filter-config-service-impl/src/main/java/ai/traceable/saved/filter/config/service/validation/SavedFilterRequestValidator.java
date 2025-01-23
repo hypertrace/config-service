@@ -72,7 +72,7 @@ public class SavedFilterRequestValidator {
   }
 
   public void validateOrThrow(RequestContext requestContext, GetSavedFiltersRequest request) {
-    validateRequestContext(requestContext);
+    validateRequestContextOrThrow(requestContext);
   }
 
   private static void validateVisibility(Visibility visibility) {
