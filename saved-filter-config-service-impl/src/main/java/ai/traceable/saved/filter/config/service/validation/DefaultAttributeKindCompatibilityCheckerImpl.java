@@ -34,8 +34,8 @@ public class DefaultAttributeKindCompatibilityCheckerImpl
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(
-                  "Incompatible attribute kind for operator '%s':LHS (%s) and RHS (%s)",
-                  operator, lhs, rhs))
+                  "Incompatible attribute kind for operator '%s': LHS is of type %s and derived RHS is of type %s",
+                  operator, lhs, rhsTypeToCompare))
           .asRuntimeException();
     }
   }

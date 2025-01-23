@@ -67,8 +67,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
 
     for (final SavedFilterKey key : keys) {
       try {
-
-        savedFilterMap.put(key, savedFilterCache.get(context.buildUserContextualKey(key)));
+        savedFilterMap.put(key, savedFilterCache.get(context.buildInternalContextualKey(key)));
       } catch (ExecutionException e) {
         log.error("Error while fetching saved filters for key {}", key, e);
       }
@@ -146,7 +145,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
     SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(savedFilter.getId()).build();
 
     ContextualKey<SavedFilterKey> contextualKey =
-        RequestContext.forTenantId(tenantId).buildUserContextualKey(savedFilterKey);
+        RequestContext.forTenantId(tenantId).buildInternalContextualKey(savedFilterKey);
     savedFilterCache.put(contextualKey, savedFilter);
   }
 
@@ -157,7 +156,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
     SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(latestSavedFilter.getId()).build();
 
     ContextualKey<SavedFilterKey> contextualKey =
-        RequestContext.forTenantId(tenantId).buildUserContextualKey(savedFilterKey);
+        RequestContext.forTenantId(tenantId).buildInternalContextualKey(savedFilterKey);
     if (savedFilterCache.getIfPresent(contextualKey) != null) {
       savedFilterCache.put(contextualKey, latestSavedFilter);
     }
@@ -170,7 +169,7 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
     SavedFilterKey savedFilterKey = SavedFilterKey.builder().id(deletedSavedFilter.getId()).build();
 
     ContextualKey<SavedFilterKey> contextualKey =
-        RequestContext.forTenantId(tenantId).buildUserContextualKey(savedFilterKey);
+        RequestContext.forTenantId(tenantId).buildInternalContextualKey(savedFilterKey);
     savedFilterCache.invalidate(contextualKey);
   }
 

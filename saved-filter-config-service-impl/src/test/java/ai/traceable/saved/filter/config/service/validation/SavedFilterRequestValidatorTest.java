@@ -448,7 +448,7 @@ class SavedFilterRequestValidatorTest {
                         .build()));
 
     assertEquals(
-        "INVALID_ARGUMENT: Incompatible attribute kind for operator 'RELATIONAL_OPERATOR_GREATER_THAN':LHS (TYPE_INT64) and RHS (TYPE_STRING)",
+        "INVALID_ARGUMENT: Incompatible attribute kind for operator 'RELATIONAL_OPERATOR_GREATER_THAN': LHS is of type TYPE_INT64 and derived RHS is of type TYPE_STRING",
         statusRuntimeException.getMessage());
   }
 
