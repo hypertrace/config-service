@@ -23,11 +23,6 @@ class DetectionExclusionRuleIpTypeConditionConverter
     List<MatchCondition> matchConditions =
         ipTypes.stream()
             .map(ipType -> String.format(IP_TYPE_COMPARISON_JEXL_EXP, ipType.name()))
-            .map(
-                jexlExp ->
-                    ipLocationTypeCondition.getExclude()
-                        ? JexlUtils.getNotJexlExpression(jexlExp)
-                        : jexlExp)
             .map(JexlUtils::getMatchCondition)
             .collect(Collectors.toUnmodifiableList());
 

@@ -67,7 +67,7 @@ class DetectionExclusionRuleIpAddressConditionConverter
       throw new IllegalArgumentException(
           "No ip addresses or ranges present in ip address condition");
     } else if (matchConditions.size() == 1) {
-      return matchConditions.get(0);
+      return matchConditions.get(0).toBuilder().setNegate(ipAddressCondition.getExclude()).build();
     } else {
       return JexlUtils.buildOrMatchConditions(matchConditions)
           .setNegate(ipAddressCondition.getExclude())
@@ -78,9 +78,6 @@ class DetectionExclusionRuleIpAddressConditionConverter
   private List<MatchCondition> getIpRangeMatchConditions(IpAddressCondition ipAddressCondition) {
     return ipAddressCondition.getCidrIpRangesList().stream()
         .map(ipRange -> String.format(IS_IP_IN_RANGE_JEXL_EXP, ipRange))
-        .map(
-            jexlExp ->
-                ipAddressCondition.getExclude() ? JexlUtils.getNotJexlExpression(jexlExp) : jexlExp)
         .map(JexlUtils::getMatchCondition)
         .collect(Collectors.toUnmodifiableList());
   }
@@ -88,7 +85,6 @@ class DetectionExclusionRuleIpAddressConditionConverter
   private MatchCondition getIpAddressMatchCondition(IpAddressCondition ipAddressCondition) {
     return JexlUtils.buildInOperatorMatchCondition(
             IP_ADDRESS_ATTRIBUTE, ipAddressCondition.getIpAddressesList())
-        .setNegate(ipAddressCondition.getExclude())
         .build();
   }
 

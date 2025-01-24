@@ -13,9 +13,10 @@
         "matchCondition": {
           "genericMatchCondition": {
             "jexlExpression": {
-              "jexlExpression": "!(ipValidation:isIpAddressInRange(\u00271.2.3.4/24\u0027, $s.getIpAddress()))"
+              "jexlExpression": "ipValidation:isIpAddressInRange(\u00271.2.3.4/24\u0027, $s.getIpAddress())"
             }
-          }
+          },
+          "negate": true
         }
       }
     },
