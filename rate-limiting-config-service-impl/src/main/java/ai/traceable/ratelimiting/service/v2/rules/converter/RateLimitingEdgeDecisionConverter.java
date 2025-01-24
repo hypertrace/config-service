@@ -3,6 +3,7 @@ package ai.traceable.ratelimiting.service.v2.rules.converter;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
+import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_ALERT;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_MARK_FOR_TESTING;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
@@ -38,6 +39,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
 import ai.traceable.edge.decision.config.service.v1.PayloadDecoration;
 import ai.traceable.edge.decision.config.service.v1.RequestHeaderInjection;
@@ -47,7 +49,7 @@ import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.Aggr
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.ThresholdOperator;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.Action;
-import ai.traceable.ratelimiting.config.service.v2.Category;
+import ai.traceable.ratelimiting.config.service.v2.Action.AgentRuleEffect;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
@@ -104,10 +106,6 @@ public class RateLimitingEdgeDecisionConverter {
       final RequestContext requestContext, final RateLimitingRule rateLimitingRule) {
     try {
       final RateLimitingRuleData data = rateLimitingRule.getData();
-      // only rate limiting rules are currently converted to edge decision rules
-      if (!data.getCategory().equals(Category.CATEGORY_RATE_LIMITING)) {
-        return Collections.emptyList();
-      }
       final EdgeDecisionRuleStatus edgeDecisionRuleStatus = buildRuleStatus(data);
       final Optional<EdgeDecisionRuleScope> maybeEdgeDecisionRuleScope = buildRuleScope(data);
       final Optional<MatchConditionVariablesTuple> mayBeMatchCondition =
@@ -157,10 +155,12 @@ public class RateLimitingEdgeDecisionConverter {
 
     Action action = mayBeAction.get();
     EdgeDecision.Builder builder = EdgeDecision.newBuilder();
-    builder.setEdgeDecisionType(
-        action.hasBlock() ? EDGE_DECISION_TYPE_BLOCK : EDGE_DECISION_TYPE_MARK_FOR_TESTING);
-    if (action.hasMarkForTesting()) {
-      builder.addAllDecorations(buildPayloadDecorations(action));
+    builder.setEdgeDecisionType(convertAction(action));
+    if (action.getMarkForTesting().hasAgentRuleEffect()) {
+      builder.addAllDecorations(
+          buildPayloadDecorations(action.getMarkForTesting().getAgentRuleEffect()));
+    } else if (action.getAlert().hasAgentRuleEffect()) {
+      builder.addAllDecorations(buildPayloadDecorations(action.getAlert().getAgentRuleEffect()));
     }
     builder.addAllSpanAttributes(
         SpanAttributeHandler.getSpanAttributeDecorations(
@@ -176,8 +176,21 @@ public class RateLimitingEdgeDecisionConverter {
     return builder.build();
   }
 
-  private List<PayloadDecoration> buildPayloadDecorations(Action action) {
-    return action.getMarkForTesting().getAgentRuleEffect().getAgentModificationsList().stream()
+  private EdgeDecisionType convertAction(Action action) {
+    switch (action.getActionCase()) {
+      case BLOCK:
+        return EDGE_DECISION_TYPE_BLOCK;
+      case MARK_FOR_TESTING:
+        return EDGE_DECISION_TYPE_MARK_FOR_TESTING;
+      case ALERT:
+        return EDGE_DECISION_TYPE_ALERT;
+      default:
+        throw new IllegalArgumentException("unknown action case: " + action.getActionCase());
+    }
+  }
+
+  private List<PayloadDecoration> buildPayloadDecorations(AgentRuleEffect agentRuleEffect) {
+    return agentRuleEffect.getAgentModificationsList().stream()
         .map(Action.AgentModification::getHeaderInjection)
         .map(
             headerInjection -> {

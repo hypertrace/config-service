@@ -69,6 +69,7 @@ enum EdgeDecisionType {
   EDGE_DECISION_TYPE_CAPTCHA = 3;
   EDGE_DECISION_TYPE_MARK_FOR_TESTING = 4;
   EDGE_DECISION_TYPE_EXCLUDE = 5;
+  EDGE_DECISION_TYPE_ALERT = 6;
 }
 
 // this is our implementation detail.

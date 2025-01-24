@@ -211,7 +211,9 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       EdgeDecisionEngineConfig edgeDecisionEngineConfig =
           featureCachingClient.isEdgeDecisionEnabledForTenant(context)
               ? translator.convert(
-                  context, rulesManager.getRateLimitingRules(context, request.getRulesFilter()))
+                  context,
+                  RateLimitingRulesEdgeDecisionFilter.getConvertibleRules(
+                      rulesManager.getRateLimitingRules(context, request.getRulesFilter())))
               : EdgeDecisionEngineConfig.getDefaultInstance();
       GetRateLimitingEdgeDecisionRulesResponse response =
           GetRateLimitingEdgeDecisionRulesResponse.newBuilder()
