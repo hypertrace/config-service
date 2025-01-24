@@ -25,6 +25,7 @@
       - A parameter like country_code might have a medium impact in your application by allowing country-block bypass.
     references: |
       - OWASP API Top 10 - 2019 - A6 Mass Assignment - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa6-mass-assignment.md
+      - OWASP API Security Top 10 - 2023 - API3:2023 Broken Object Property Level Authorization - https://github.com/OWASP/API-Security/blob/master/editions/2023/en/0xa3-broken-object-property-level-authorization.md
       - CWE - SANS - TOP 25 - http://cwe.mitre.org/top25/
       - Common Weakness Enumeration - Improperly Controlled Modification of Dynamically-Determined Object Attributes - https://cwe.mitre.org/data/definitions/915.html
 
@@ -39,9 +40,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The value of an enumeration in the request does not match the expected values. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
-    mitigation: "Implement input validation in your API to ensure all enumeration values are within the expected range. Consider using a schema validation library to automate this process."
-    impact: "If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities."
+    description: |
+      An Invalid Enumerations attack is flagged when the value of an enumerable parameter in the request does not match the expected values.
+    mitigation: |
+      Implement input validation in your API to ensure all enumeration values are within the expected range. Consider using a schema validation library to automate this process.
+    impact: |
+      If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities.
     references: |
       - CWE-183: Permissive List of Allowed Inputs - https://cwe.mitre.org/data/definitions/183.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
@@ -80,9 +84,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The type of a parameter in the request does not match the expected type. This could indicate a malformed request or an attempt to exploit a type-related vulnerability."
-    mitigation: "Implement input validation in your API to ensure all parameters are of the correct type. Consider using a schema validation library to automate this process."
-    impact: "If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities."
+    description: |
+      A Type Anomaly attack is flagged when the type of a parameter in the request does not match the expected type.
+    mitigation: |
+      Implement input validation in your API to ensure all parameters are of the correct type. Consider using a schema validation library to automate this process.
+    impact: |
+      If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities.
     references: |
       - CWE-843: Access of Resource Using Incompatible Type ('Type Confusion') - https://cwe.mitre.org/data/definitions/843.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
@@ -98,12 +105,15 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "A required field is missing in the request parameters. This could indicate a malformed request or an attempt to bypass security controls."
-    mitigation: "Implement input validation in your API to ensure all required fields are present in the request. Consider using a schema validation library to automate this process."
-    impact: "If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities."
+    description: |
+      A Missing Field attack is flagged when a required field is missing in the request parameters.
+    mitigation: |
+      Implement input validation in your API to ensure all required fields are present in the request. Consider using a schema validation library to automate this process.
+    impact: |
+      If not mitigated, this could lead to unexpected behavior or errors in your application, and potentially security vulnerabilities.
     references: |
       - CWE-287: Improper Authentication - https://cwe.mitre.org/data/definitions/287.html
-      - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
+      - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication - https://github.com/OWASP/API-Security/blob/master/editions/2023/en/0xa2-broken-authentication.md
 
 - ruleId: specialCharacter
   ruleName: Special Character Tampering
@@ -115,9 +125,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "A special characters in the request parameters are being tampered beyond the learnt normal characters, which may indicate an attempt to exploit a security vulnerability."
-    mitigation: "Implement input validation and sanitization in your API. Ensure that special characters in request parameters are handled safely."
-    impact: "If not mitigated, this could lead to security vulnerabilities such as SQL Injection, Cross-Site Scripting (XSS), and Command Injection."
+    description: |
+      A Special Character Tampering attack is flagged when special characters in the request parameters are being tampered beyond the learnt normal characters, which may indicate an attempt to exploit a security vulnerability.
+    mitigation: |
+      Implement input validation and sanitization in your API. Ensure that special characters in request parameters are handled safely.
+    impact: |
+      If not mitigated, this could lead to security vulnerabilities such as SQL Injection, Cross-Site Scripting (XSS), and Command Injection.
     references: |
       - CWE-159: Failure to Sanitize Special Element - https://cwe.mitre.org/data/definitions/159.html
       - OWASP Top 10 2021: A3 - Injection - https://owasp.org/Top10/A03_2021-Injection/
@@ -132,9 +145,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The size of the content in a request or response significantly increases due to nested references, which may indicate an attempt to overload the system (a type of Denial of Service attack)."
-    mitigation: "Implement rate limiting and data size checks in your API. Disable reference expansion by default and limit depth of request structures being processed. Monitor the size of requests and responses and set reasonable limits."
-    impact: "If not mitigated, this could lead to system overload and potential Denial of Service (DoS)."
+    description: |
+      A Content Explosion attack is flagged when the size of the content in a request or response significantly increases due to nested references, which may indicate an attempt to overload the system (a type of Denial of Service attack).
+    mitigation: |
+      Implement rate limiting and data size checks in your API. Disable reference expansion by default and limit depth of request structures being processed. Monitor the size of requests and responses and set reasonable limits.
+    impact: |
+      If not mitigated, this could lead to system overload and potential Denial of Service (DoS).
     references: |
       - CWE-405: Asymmetric Resource Consumption (Resource Exhaustion) - https://cwe.mitre.org/data/definitions/405.html
       - OWASP Top 10 2021: A3 - Injection - https://owasp.org/Top10/A03_2021-Injection/
@@ -149,9 +165,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The User Agent in the request headers is significantly different from the expected values."
-    mitigation: "Ensure that your API is expecting the correct User Agents for each operation. Consider implementing checks in your API to validate the User Agents."
-    impact: "If not mitigated, this could lead to unauthorized access or misuse of your API, potentially leading to security vulnerabilities."
+    description: |
+      An Unexpected User Agent attack is flagged when the User Agent in the request headers is significantly different from the expected values.
+    mitigation: |
+      Ensure that your API is expecting the correct User Agents for each operation. Consider implementing checks in your API to validate the User Agents.
+    impact: |
+      If not mitigated, this could lead to unauthorized access or misuse of your API, potentially leading to security vulnerabilities.
     references: |
       - CWE-644: Improper Neutralization of HTTP Headers for Scripting Syntax - https://cwe.mitre.org/data/definitions/644.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
@@ -167,9 +186,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The HTTP response code of a request is significantly different from the expected values."
-    mitigation: "Ensure that your API is returning the correct HTTP response codes for each operation. Consider implementing checks in your API to validate the response codes."
-    impact: "If not mitigated, this could lead to incorrect handling of responses, potentially leading to security vulnerabilities or functional issues."
+    description: |
+      An Unexpected HTTP Response Code attack is flagged when the HTTP response code of a request is significantly different from the expected values.
+    mitigation: |
+      Ensure that your API is returning the correct HTTP response codes for each operation. Consider implementing checks in your API to validate the response codes.
+    impact: |
+      If not mitigated, this could lead to incorrect handling of responses, potentially leading to security vulnerabilities or functional issues.
     references: |
       - CWE-204: Response Discrepancy Information Leak - https://cwe.mitre.org/data/definitions/204.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
@@ -185,9 +207,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The content type of a request or response is significantly different from the norm or expected value."
-    mitigation: "Ensure that the content type of requests and responses is within expected values. Consider implementing content type checks in your API."
-    impact: "If not mitigated, this could lead to unexpected behavior in the handling of requests and responses, potentially leading to security vulnerabilities."
+    description: |
+      A Content Type Anomaly attack is flagged when the content type of a request or response is significantly different from the norm or expected value.
+    mitigation: |
+      Ensure that the content type of requests and responses is within expected values. Consider implementing content type checks in your API.
+    impact: |
+      If not mitigated, this could lead to unexpected behavior in the handling of requests and responses, potentially leading to security vulnerabilities.
     references: |
       - CWE-436: Interpretation Conflict - https://cwe.mitre.org/data/definitions/436.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Security Misconfiguration - https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
@@ -203,9 +228,12 @@
     MITRE_TACTIC: TA0043
     MITRE_TECHNIQUE: T1595.002
   eventDetails:
-    description: "The size of the content in a request or response is significantly different from the norm."
-    mitigation: "Ensure that the size of the content in requests and responses is within expected limits. Consider implementing rate limiting and data size checks in your API."
-    impact: "If not mitigated, this could lead to denial of service attacks, where an attacker sends large amounts of data to overwhelm the system, or information disclosure, where an unusually large response size might indicate a data leak."
+    description: |
+      A Content Size Anomaly is flagged when the size of the content in a request or response is significantly different from the norm.
+    mitigation: |
+      Ensure that the size of the content in requests and responses is within expected limits. Consider implementing rate limiting and data size checks in your API.
+    impact: |
+      If not mitigated, this could lead to denial of service attacks, where an attacker sends large amounts of data to overwhelm the system, or information disclosure, where an unusually large response size might indicate a data leak.
     references: |
       - CWE-1043: Insufficiently Controlled Size of Resource Requested ('Resource Exhaustion') - https://cwe.mitre.org/data/definitions/1043.html
       - OWASP API Security Top 10 - 2023 - API8:2023 - Denial of Service - https://owasp.org/API-Security/editions/2023/en/0xa8-denial-of-service/
@@ -221,7 +249,7 @@
     MITRE_TECHNIQUE: T1552.005
   eventDetails:
     description: |
-      SSRF is a type of attack where an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
+      A SSRF attack is flagged when an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
     mitigation: |
       Validate the input URL and prevent internal services from reaching internet applications:
       - Use regular expressions to validate possible URLs, avoiding unwanted domain names, ports, and protocols
@@ -241,6 +269,7 @@
       - Common Attack Pattern Enumerations and Classifications (CAPEC) - https://capec.mitre.org/data/definitions/664.html
       - MITRE Attack - T1190 Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
       - SSRF Bible Cheatsheet - https://cheatsheetseries.owasp.org/assets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet_SSRF_Bible.pdf
+      - OWASP API Security Top 10 - 2023 - API7:2023 - Server Side Request Forgery - https://github.com/OWASP/API-Security/blob/master/editions/2023/en/0xa7-server-side-request-forgery.md
 
 - ruleId: bfla
   ruleName: Broken Function Level Authorization (BFLA)
@@ -254,7 +283,7 @@
     MITRE_TECHNIQUE: T1548.002
   eventDetails:
     description: |
-      Broken Function Level Authorization attack behaviour is detected.
+      A Broken Function Level Authorization attack behaviour is detected.
       Humans are predictable in nature and they tend to follow several patterns when it comes to hosting endpoints, for example it usually occurs that higher privilege endpoints are hosted on the same relative path, which makes it easier for the attackers to guess these endpoints but that alone does not make the attack successful.
       Attackers have to be able to access endpoints as lower privileged users as well of course. This access can occur by executing the provided HTTP method (for example POST) but it can also occur on other methods that the developers left enabled (un)intentionally (for example DELETE). These issues are often made worse by how predictable the endpoints are (for example /books?id=0 might indicate the presence of an endpoint /books/all which may print out books the user should not be able to access.).
     mitigation: |
@@ -271,11 +300,30 @@
       - OWASP API Top 10 - 2019 - API5:Broken Function Level Authorization - https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/
       - OWASP Development Guide: Chapter on Authorization - https://www.owasp.org/index.php/Category:Access_Control
       - CWE-285: Improper Authorization - https://cwe.mitre.org/data/definitions/285.html
+      - OWASP API Security Top 10 - 2023 - API5:2023 - Broken Function Level Authorization (https://github.com/OWASP/API-Security/blob/master/editions/2023/en/0xa5-broken-function-level-authorization.md)
 
 - ruleId: jwt
   ruleName: JWT Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHENTICATION_AND_TOKEN_VIOLATIONS
   severityLevel: ANOMALY_SEVERITY_LEVEL_LOW
+  eventLabels:
+    CWE: 347
+    OWASP_API_2023: API2
+    OWASP_API_2019: API2
+    MITRE_TACTIC: TA0005
+    MITRE_TECHNIQUE: T1134.003
+  eventDetails:
+    description: |
+      A JWT Anomaly attack is detected. This occured as one of the claims present is missing or incorrectly configured. The misconfiguration of such claims could result in the token behaving differently than intended.
+    mitigation: |
+      Ensure standard claims and algorithms are used in the JWT tokens with validations for every field used.
+    impact: |
+      If such attacks are not mitigated, exploitation could lead to unauthorized access and potential data breaches.
+    references: |
+        - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.5)
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)
+        - CWE-613: Insufficient Session Expiration (https://cwe.mitre.org/data/definitions/613.html)
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
   subRuleInfos:
   - ruleId: jwt_exp
     ruleName: JWT Expired
@@ -289,14 +337,14 @@
       MITRE_TECHNIQUE: T1134.001
     eventDetails:
       description: |
-        JWT claims supports the field "iat" to declare the token creation timestamp, and the field "exp" to declare the token expiration timestamp. If the token is expired, it must be rejected. But sometimes, expiration is handled internally by using the "iat" claim. Absence of these checks leads to possible attacks.
+        A JWT Expired attack is flagged. JWT claims supports the field "iat" to declare the token creation timestamp, and the field "exp" to declare the token expiration timestamp. If the token is expired, it must be rejected. But sometimes, expiration is handled internally by using the "iat" claim. Absence of these checks leads to possible attacks.
       mitigation: |
         "iat" and "exp" claims must be present in the JWT token. The application must reject the token if the "exp" claim is expired, or it must reject the token if the "iat" claim is older than the configured maximum age.
       impact: |
         A token that never expires can be used to access the API indefinitely. If no expiration information is available, the only way to invalidate the token is to change the secret.
       references: |
         - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.5)
-        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)
         - CWE-613: Insufficient Session Expiration (https://cwe.mitre.org/data/definitions/613.html)
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
@@ -311,12 +359,15 @@
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.001
     eventDetails:
-      description: "A JWT token is used before its 'Not Before' (nbf) claim."
-      mitigation: "Ensure that the 'Not Before' (nbf) claim in JWT tokens is properly validated."
-      impact: "If not mitigated, this could lead to tokens being used prematurely, potentially causing authorization issues."
+      description: |
+        A JWT Premature Usage attack is flagged when the JWT token is used before its 'Not Before' (nbf) claim.
+      mitigation: |
+        Ensure that the 'Not Before' (nbf) claim in JWT tokens is properly validated.
+      impact: |
+        If not mitigated, this could lead to tokens being used prematurely, potentially causing authorization issues.
       references: |
         - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.5)
-        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)
         - CWE-613: Insufficient Session Expiration (https://cwe.mitre.org/data/definitions/613.html)
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
@@ -331,12 +382,15 @@
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
-      description: "A JWT token has been issued by an unknown or untrusted source."
-      mitigation: "Ensure that JWT tokens are issued by a trusted source and that the issuer is validated."
-      impact: "If not mitigated, this could lead to unauthorized access and potential data breaches."
+      description: |
+        An Unknown JWT Issuer attack is flagged when the JWT token has been issued by an unknown or untrusted source.
+      mitigation: |
+        Ensure that JWT tokens are issued by a trusted source and that the issuer is validated.
+      impact: |
+        If not mitigated, this could lead to unauthorized access and potential data breaches.
       references: |
         - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.1)
-        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)
         - CWE-639: Authorization Bypass Through User-Controlled Key (https://cwe.mitre.org/data/definitions/639.html)
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
@@ -351,12 +405,15 @@
       MITRE_TACTIC: TA0005
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
-      description: "A JWT token has an audience (aud) claim that the server does not expect. This could indicate an attempt to use a token issued for a different service."
-      mitigation: "Ensure that the server validates the 'aud' claim of the JWT token and only accepts tokens intended for itself."
-      impact: "If this issue is not addressed, it could potentially allow an attacker to use a token issued for a different service, leading to unauthorized access."
+      description: |
+        An Unauthorized JWT audience attack is flagged. A JWT token has an audience (aud) claim that the server does not expect. This could indicate an attempt to use a token issued for a different service.
+      mitigation: |
+        Ensure that the server validates the 'aud' claim of the JWT token and only accepts tokens intended for itself.
+      impact: |
+        If this issue is not addressed, it could potentially allow an attacker to use a token issued for a different service, leading to unauthorized access.
       references: |
         - JWT specifications (https://tools.ietf.org/html/rfc7519#section-4.1.3)
-        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)
         - CWE-347: Improper Verification of Cryptographic Signature (https://cwe.mitre.org/data/definitions/347.html)
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
@@ -372,7 +429,7 @@
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: |
-        JWT declares the signing algorithm in the headers block. There are cases where the authorization code is designed to handle a single algorithm, but the JWT token is signed with a different algorithm by the attacker. This can lead to token confusion.
+        A JWT Algorithm Confusion attack is flagged. JWT declares the signing algorithm in the headers block. There are cases where the authorization code is designed to handle a single algorithm, but the JWT token is signed with a different algorithm by the attacker. This can lead to token confusion.
       mitigation: |
         The authorization code has to handle only supported algorithms, and return an error if the algorithm is not supported.
       impact: |
@@ -396,7 +453,7 @@
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: |
-        The JWT token signature is invalid or None. This could indicate an attempt to tamper with the token or use a token without a valid signature.
+        A JWT Invalid Signature attack is flagged. The JWT token signature is invalid or None. This could indicate an attempt to tamper with the token or use a token without a valid signature.
       mitigation: |
         Ensure that the JWT token signature is properly validated and that the token is rejected if the signature is invalid or missing.
       impact: |
@@ -404,7 +461,7 @@
       references: |
         - JWT documentation - https://jwt.io/introduction
         - JWT Invalid Signature: https://portswigger.net/web-security/jwt#exploiting-flawed-jwt-signature-verification
-        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)"
+        - OWASP JWT Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.html)
         - CWE-347: Improper Verification of Cryptographic Signature (https://cwe.mitre.org/data/definitions/347.html)
         - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 
@@ -420,7 +477,7 @@
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: |
-        The ALBeast vulnerability is a configuration-based issue affecting AWS Application Load Balancers (ALBs) that can lead to unauthorized access. It arises from inadequate validation of authentication tokens and misconfigured security groups, enabling attackers to bypass critical security controls. Organizations must ensure that token signers are properly validated and that traffic is restricted to trusted ALB instances to mitigate this vulnerability.
+        A JWT AlBeast Anomaly attack is flagged. The ALBeast vulnerability is a configuration-based issue affecting AWS Application Load Balancers (ALBs) that can lead to unauthorized access. It arises from inadequate validation of authentication tokens and misconfigured security groups, enabling attackers to bypass critical security controls. Organizations must ensure that token signers are properly validated and that traffic is restricted to trusted ALB instances to mitigate this vulnerability.
       mitigation: |
         Ensure that the ALB authentication process properly validates the signer of the tokens and that security groups are configured to accept traffic only from trusted ALB instances. Regularly review application configurations to align with the latest AWS best practices.
       impact: |
@@ -429,7 +486,7 @@
         - AlBeast Vulnerability: https://www.ankercloud.com/blogs/albeast-vulnerability-what-it-is-and-how-to-protect-your-applications
         - AWS Application Load Balancer Documentation: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/introduction.html
         - Miggo Research on ALBeast Vulnerability: [Link to research, if available]
-        - OWASP API Security Top 10 - 2023 - API2: Broken Authentication: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
         - CWE-347: Improper Verification of Cryptographic Signature: https://cwe.mitre.org/data/definitions/347.html
 
   - ruleId: jwt_jku
@@ -444,13 +501,13 @@
       MITRE_TECHNIQUE: T1134.003
     eventDetails:
       description: |
-        JWT Token received with unknown JKU (JWK Set URL) header. The JWT includes a JKU claim that specifies the URL of the key used for signing. If not properly validated, an attacker could substitute a malicious key URL, leading to unauthorized access and compromising the security of the application
+        A JWT JKU Integrity Violation attack is flagged. JWT Token received with unknown JKU (JWK Set URL) header. The JWT includes a JKU claim that specifies the URL of the key used for signing. If not properly validated, an attacker could substitute a malicious key URL, leading to unauthorized access and compromising the security of the application
       mitigation: |
         Ensure that the JKU claim in JWT tokens is properly validated and that the key URL is trusted. Implement strict validation checks to prevent unauthorized access and data breaches.
       impact: |
         If not mitigated, this could lead to unauthorized access, data breaches, and increased risk of insider threats.
       references: |
         - JWT specifications (https://tools.ietf.org/html/rfc7515#section-4.1.5)
-        - OWASP API Security Top 10 - 2023 - API2: Broken Authentication: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+        - OWASP API Security Top 10 - 2023 - API2:2023 - Broken Authentication (https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
         - CWE-347: Improper Verification of Cryptographic Signature: https://cwe.mitre.org/data/definitions/347.html
         - JWT JKU Integrity Violation: https://portswigger.net/web-security/jwt
