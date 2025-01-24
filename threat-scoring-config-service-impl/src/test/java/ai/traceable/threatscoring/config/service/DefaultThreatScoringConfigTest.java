@@ -29,6 +29,18 @@ class DefaultThreatScoringConfigTest {
   }
 
   @Test
+  void test_threat_activity_confidence_mapping() {
+    Assertions.assertEquals(
+        84,
+        defaultThreatScoringConfig
+            .getDefaultConfig()
+            .getConfigs()
+            .getThreatActivityConfidenceScoringConfig()
+            .getThreatActivityConfidenceMatrixConfig()
+            .getThreatActivityConfidenceMappingCount());
+  }
+
+  @Test
   void test_threat_scoring_config() {
     Assertions.assertEquals(
         ThreatScoringConfigs.newBuilder()

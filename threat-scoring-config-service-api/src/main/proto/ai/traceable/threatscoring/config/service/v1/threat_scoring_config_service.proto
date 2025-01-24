@@ -10,4 +10,6 @@ service ThreatScoringConfigService {
   rpc GetScopedThreatScoringConfigs(GetScopedThreatScoringConfigsRequest) returns (GetScopedThreatScoringConfigsResponse) {}
   rpc OverrideEventConfidenceScoringConfig(OverrideEventConfidenceScoringConfigRequest) returns (OverrideEventConfidenceScoringConfigResponse) {}
   rpc DeleteEventConfidenceScoringConfigOverrides(DeleteEventConfidenceScoringConfigOverridesRequest) returns (DeleteEventConfidenceScoringConfigOverridesResponse) {}
+  rpc OverrideThreatActivityConfidenceScoringConfig(OverrideThreatActivityConfidenceScoringConfigRequest) returns (OverrideThreatActivityConfidenceScoringConfigResponse) {}
+  rpc DeleteThreatActivityConfidenceScoringConfigOverrides(DeleteThreatActivityConfidenceScoringConfigOverridesRequest) returns (DeleteThreatActivityConfidenceScoringConfigOverridesResponse) {}
 }

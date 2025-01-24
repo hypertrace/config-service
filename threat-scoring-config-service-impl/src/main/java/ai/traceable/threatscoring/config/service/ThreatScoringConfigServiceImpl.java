@@ -2,10 +2,14 @@ package ai.traceable.threatscoring.config.service;
 
 import ai.traceable.threatscoring.config.service.v1.DeleteEventConfidenceScoringConfigOverridesRequest;
 import ai.traceable.threatscoring.config.service.v1.DeleteEventConfidenceScoringConfigOverridesResponse;
+import ai.traceable.threatscoring.config.service.v1.DeleteThreatActivityConfidenceScoringConfigOverridesRequest;
+import ai.traceable.threatscoring.config.service.v1.DeleteThreatActivityConfidenceScoringConfigOverridesResponse;
 import ai.traceable.threatscoring.config.service.v1.GetScopedThreatScoringConfigsRequest;
 import ai.traceable.threatscoring.config.service.v1.GetScopedThreatScoringConfigsResponse;
 import ai.traceable.threatscoring.config.service.v1.OverrideEventConfidenceScoringConfigRequest;
 import ai.traceable.threatscoring.config.service.v1.OverrideEventConfidenceScoringConfigResponse;
+import ai.traceable.threatscoring.config.service.v1.OverrideThreatActivityConfidenceScoringConfigRequest;
+import ai.traceable.threatscoring.config.service.v1.OverrideThreatActivityConfidenceScoringConfigResponse;
 import ai.traceable.threatscoring.config.service.v1.ScopedThreatScoringConfigs;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigServiceGrpc;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigs;
@@ -22,6 +26,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class ThreatScoringConfigServiceImpl
     extends ThreatScoringConfigServiceGrpc.ThreatScoringConfigServiceImplBase {
   private EventConfidenceScoringConfigManager eventConfidenceScoringConfigManager;
+  private ThreatActivityConfidenceScoringConfigManager threatActivityConfidenceScoringConfigManager;
   private ThreatScoringConfigRequestValidator validator;
 
   @Override
@@ -98,28 +103,94 @@ public class ThreatScoringConfigServiceImpl
     }
   }
 
+  @Override
+  public void overrideThreatActivityConfidenceScoringConfig(
+      OverrideThreatActivityConfidenceScoringConfigRequest request,
+      StreamObserver<OverrideThreatActivityConfidenceScoringConfigResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.validator.validateOverrideThreatActivityConfidenceScoringConfigRequest(
+          requestContext, request);
+      responseObserver.onNext(
+          OverrideThreatActivityConfidenceScoringConfigResponse.newBuilder()
+              .setDefaultThreatActivityConfidenceScoringConfig(
+                  threatActivityConfidenceScoringConfigManager
+                      .getDefaultThreatActivityConfidenceScoringConfig())
+              .setResolvedThreatActivityConfidenceScoringConfig(
+                  threatActivityConfidenceScoringConfigManager.overrideConfig(
+                      request, requestContext))
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+
+      log.warn(
+          "Error overriding threat activity confidence scoring configs for customer with request context {}",
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void deleteThreatActivityConfidenceScoringConfigOverrides(
+      DeleteThreatActivityConfidenceScoringConfigOverridesRequest request,
+      StreamObserver<DeleteThreatActivityConfidenceScoringConfigOverridesResponse>
+          responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.validator.validateGetOrDeleteRequest(requestContext);
+      threatActivityConfidenceScoringConfigManager.deleteOverrides(request, requestContext);
+      responseObserver.onNext(
+          DeleteThreatActivityConfidenceScoringConfigOverridesResponse.newBuilder()
+              .setDefaultThreatActivityConfidenceScoringConfig(
+                  threatActivityConfidenceScoringConfigManager
+                      .getDefaultThreatActivityConfidenceScoringConfig())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+
+      log.warn(
+          "Error deleting threat activity confidence scoring configs for customer with request context {}",
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
   private ScopedThreatScoringConfigs fetchThreatScoringConfigs(
       GetScopedThreatScoringConfigsRequest request, RequestContext requestContext) {
-    ScopedThreatScoringConfigs.Builder builder = ScopedThreatScoringConfigs.newBuilder();
+    ThreatScoringConfigs.Builder builder = ThreatScoringConfigs.newBuilder();
 
     switch (request.getFilter().getConfigType()) {
       case THREAT_SCORING_CONFIG_TYPE_EVENT_CONFIDENCE_SCORING:
+        builder.setEventConfidenceScoringConfig(
+            eventConfidenceScoringConfigManager.getResolvedConfig(request, requestContext));
+        break;
+      case THREAT_SCORING_CONFIG_TYPE_THREAT_ACTIVITY_CONFIDENCE_SCORING:
+        builder.setThreatActivityConfidenceScoringConfig(
+            threatActivityConfidenceScoringConfigManager.getResolvedConfig(
+                request, requestContext));
+        break;
       case THREAT_SCORING_CONFIG_TYPE_UNSPECIFIED:
-        return builder
-            .setConfigScope(request.getConfigScope())
-            .setConfigs(
-                ThreatScoringConfigs.newBuilder()
-                    .setEventConfidenceScoringConfig(
-                        eventConfidenceScoringConfigManager.getResolvedConfig(
-                            request, requestContext)))
-            .build();
+        builder
+            .setThreatActivityConfidenceScoringConfig(
+                threatActivityConfidenceScoringConfigManager.getResolvedConfig(
+                    request, requestContext))
+            .setEventConfidenceScoringConfig(
+                eventConfidenceScoringConfigManager.getResolvedConfig(request, requestContext));
+        break;
       default:
         log.error(
             "Invalid Threat scoring config type {} for tenant ID {}",
             request.getFilter().getConfigType(),
             requestContext.getTenantId());
-        return builder.build();
     }
+    return ScopedThreatScoringConfigs.newBuilder()
+        .setConfigScope(request.getConfigScope())
+        .setConfigs(builder)
+        .build();
   }
 
   private Exception decorateException(RequestContext requestContext, Exception exception) {

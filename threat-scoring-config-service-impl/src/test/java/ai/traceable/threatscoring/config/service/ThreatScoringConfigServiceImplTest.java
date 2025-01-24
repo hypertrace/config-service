@@ -9,13 +9,18 @@ import static org.mockito.Mockito.when;
 import ai.traceable.threatscoring.config.service.v1.AnomalousEventConfidenceConfig;
 import ai.traceable.threatscoring.config.service.v1.DeleteEventConfidenceScoringConfigOverridesRequest;
 import ai.traceable.threatscoring.config.service.v1.DeleteEventConfidenceScoringConfigOverridesResponse;
+import ai.traceable.threatscoring.config.service.v1.DeleteThreatActivityConfidenceScoringConfigOverridesRequest;
+import ai.traceable.threatscoring.config.service.v1.DeleteThreatActivityConfidenceScoringConfigOverridesResponse;
 import ai.traceable.threatscoring.config.service.v1.EnvironmentScope;
 import ai.traceable.threatscoring.config.service.v1.EventConfidenceScoringConfig;
 import ai.traceable.threatscoring.config.service.v1.GetScopedThreatScoringConfigsRequest;
 import ai.traceable.threatscoring.config.service.v1.OverrideEventConfidenceScoringConfigRequest;
 import ai.traceable.threatscoring.config.service.v1.OverrideEventConfidenceScoringConfigResponse;
+import ai.traceable.threatscoring.config.service.v1.OverrideThreatActivityConfidenceScoringConfigRequest;
+import ai.traceable.threatscoring.config.service.v1.OverrideThreatActivityConfidenceScoringConfigResponse;
 import ai.traceable.threatscoring.config.service.v1.ScopedThreatScoringConfigs;
 import ai.traceable.threatscoring.config.service.v1.ScoringLevelConfig;
+import ai.traceable.threatscoring.config.service.v1.ThreatActivityConfidenceScoringConfig;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigScope;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigServiceGrpc;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigs;
@@ -32,6 +37,7 @@ class ThreatScoringConfigServiceImplTest {
       threatScoringConfigServiceStub;
   private MockGenericConfigService mockGenericConfigService;
   private EventConfidenceScoringConfigManager eventConfidenceScoringConfigManager;
+  private ThreatActivityConfidenceScoringConfigManager threatActivityConfidenceScoringConfigManager;
 
   @BeforeEach
   void beforeEach() {
@@ -50,10 +56,14 @@ class ThreatScoringConfigServiceImplTest {
     this.threatScoringConfigServiceStub =
         ThreatScoringConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     eventConfidenceScoringConfigManager = mock(EventConfidenceScoringConfigManager.class);
+    threatActivityConfidenceScoringConfigManager =
+        mock(ThreatActivityConfidenceScoringConfigManager.class);
     this.mockGenericConfigService
         .addService(
             new ThreatScoringConfigServiceImpl(
-                eventConfidenceScoringConfigManager, new ThreatScoringConfigRequestValidator()))
+                eventConfidenceScoringConfigManager,
+                threatActivityConfidenceScoringConfigManager,
+                new ThreatScoringConfigRequestValidator()))
         .start();
   }
 
@@ -82,11 +92,15 @@ class ThreatScoringConfigServiceImplTest {
             .build();
     when(eventConfidenceScoringConfigManager.getResolvedConfig(eq(request), any()))
         .thenReturn(eventConfidenceScoringConfig);
+    when(threatActivityConfidenceScoringConfigManager.getResolvedConfig(eq(request), any()))
+        .thenReturn(ThreatActivityConfidenceScoringConfig.getDefaultInstance());
     assertEquals(
         ScopedThreatScoringConfigs.newBuilder()
             .setConfigScope(request.getConfigScope())
             .setConfigs(
                 ThreatScoringConfigs.newBuilder()
+                    .setThreatActivityConfidenceScoringConfig(
+                        ThreatActivityConfidenceScoringConfig.newBuilder().build())
                     .setEventConfidenceScoringConfig(eventConfidenceScoringConfig))
             .build(),
         threatScoringConfigServiceStub
@@ -96,11 +110,15 @@ class ThreatScoringConfigServiceImplTest {
     request = GetScopedThreatScoringConfigsRequest.getDefaultInstance();
     when(eventConfidenceScoringConfigManager.getResolvedConfig(eq(request), any()))
         .thenReturn(eventConfidenceScoringConfig);
+    when(threatActivityConfidenceScoringConfigManager.getResolvedConfig(eq(request), any()))
+        .thenReturn(ThreatActivityConfidenceScoringConfig.getDefaultInstance());
     assertEquals(
         ScopedThreatScoringConfigs.newBuilder()
             .setConfigScope(request.getConfigScope())
             .setConfigs(
                 ThreatScoringConfigs.newBuilder()
+                    .setThreatActivityConfidenceScoringConfig(
+                        ThreatActivityConfidenceScoringConfig.newBuilder().build())
                     .setEventConfidenceScoringConfig(eventConfidenceScoringConfig))
             .build(),
         threatScoringConfigServiceStub
@@ -137,6 +155,32 @@ class ThreatScoringConfigServiceImplTest {
   }
 
   @Test
+  void test_overrideThreatActivityConfidenceScoringConfig() {
+    ThreatActivityConfidenceScoringConfig threatActivityConfidenceScoringConfig =
+        ThreatActivityConfidenceScoringConfig.newBuilder()
+            .setPreviousActivityEventCountLevelConfig(
+                ScoringLevelConfig.newBuilder().setMediumLevelMinScore(20))
+            .build();
+
+    OverrideThreatActivityConfidenceScoringConfigRequest request =
+        OverrideThreatActivityConfidenceScoringConfigRequest.newBuilder()
+            .setThreatActivityConfidenceScoringConfig(threatActivityConfidenceScoringConfig)
+            .build();
+    when(threatActivityConfidenceScoringConfigManager
+            .getDefaultThreatActivityConfidenceScoringConfig())
+        .thenReturn(ThreatActivityConfidenceScoringConfig.getDefaultInstance());
+    when(threatActivityConfidenceScoringConfigManager.overrideConfig(eq(request), any()))
+        .thenReturn(threatActivityConfidenceScoringConfig);
+    assertEquals(
+        OverrideThreatActivityConfidenceScoringConfigResponse.newBuilder()
+            .setDefaultThreatActivityConfidenceScoringConfig(
+                ThreatActivityConfidenceScoringConfig.getDefaultInstance())
+            .setResolvedThreatActivityConfidenceScoringConfig(threatActivityConfidenceScoringConfig)
+            .build(),
+        threatScoringConfigServiceStub.overrideThreatActivityConfidenceScoringConfig(request));
+  }
+
+  @Test
   void test_deleteEventConfidenceScoringConfigOverrides() {
     DeleteEventConfidenceScoringConfigOverridesRequest request =
         DeleteEventConfidenceScoringConfigOverridesRequest.newBuilder().build();
@@ -148,5 +192,21 @@ class ThreatScoringConfigServiceImplTest {
                 EventConfidenceScoringConfig.getDefaultInstance())
             .build(),
         threatScoringConfigServiceStub.deleteEventConfidenceScoringConfigOverrides(request));
+  }
+
+  @Test
+  void test_deleteThreatActivityConfidenceScoringConfigOverrides() {
+    DeleteThreatActivityConfidenceScoringConfigOverridesRequest request =
+        DeleteThreatActivityConfidenceScoringConfigOverridesRequest.newBuilder().build();
+    when(threatActivityConfidenceScoringConfigManager
+            .getDefaultThreatActivityConfidenceScoringConfig())
+        .thenReturn(ThreatActivityConfidenceScoringConfig.getDefaultInstance());
+    assertEquals(
+        DeleteThreatActivityConfidenceScoringConfigOverridesResponse.newBuilder()
+            .setDefaultThreatActivityConfidenceScoringConfig(
+                ThreatActivityConfidenceScoringConfig.getDefaultInstance())
+            .build(),
+        threatScoringConfigServiceStub.deleteThreatActivityConfidenceScoringConfigOverrides(
+            request));
   }
 }

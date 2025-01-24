@@ -11,6 +11,7 @@ message ScopedThreatScoringConfigs {
 
 message ThreatScoringConfigs {
   EventConfidenceScoringConfig event_confidence_scoring_config = 1;
+  ThreatActivityConfidenceScoringConfig threat_activity_confidence_scoring_config = 2;
 }
 
 message EventConfidenceScoringConfig {
@@ -22,9 +23,19 @@ message EventConfidenceScoringConfig {
   ActorMaliciousConfidenceConfig actor_malicious_confidence_config = 6;
 }
 
+message ThreatActivityConfidenceScoringConfig {
+  ThreatActivityConfidenceMatrixConfig threat_activity_confidence_matrix_config = 1;
+  ScoringLevelConfig previous_activity_event_count_level_config = 2;
+  ScoringLevelConfig previous_unique_params_count_level_config = 3;
+}
+
 //to be added later
 message EventConfidenceMatrixConfig {
   repeated EventConfidenceMapping event_confidence_mapping = 1;
+}
+
+message ThreatActivityConfidenceMatrixConfig {
+  repeated ThreatActivityConfidenceMapping threat_activity_confidence_mapping = 1;
 }
 
 message EventConfidenceMapping {
@@ -34,6 +45,14 @@ message EventConfidenceMapping {
   ScoringLevel trend_confidence = 4;
   ScoringLevel response_confidence = 5;
   ScoringLevel event_confidence = 6;
+}
+
+message ThreatActivityConfidenceMapping {
+  ScoringLevel current_event_confidence = 1;
+  ScoringLevel previous_activity_confidence = 2;
+  ScoringLevel previous_activity_event_count = 3;
+  ScoringLevel previous_unique_params_count = 4;
+  ScoringLevel new_activity_confidence = 5;
 }
 
 message MaliciousSpanConfidenceScoring {

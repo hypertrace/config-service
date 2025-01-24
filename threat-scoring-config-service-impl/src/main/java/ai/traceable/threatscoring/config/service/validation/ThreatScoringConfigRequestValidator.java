@@ -4,6 +4,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 
 import ai.traceable.threatscoring.config.service.v1.AnomalousEventConfidenceConfig;
 import ai.traceable.threatscoring.config.service.v1.OverrideEventConfidenceScoringConfigRequest;
+import ai.traceable.threatscoring.config.service.v1.OverrideThreatActivityConfidenceScoringConfigRequest;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,11 @@ public class ThreatScoringConfigRequestValidator {
     validateRequestContextOrThrow(requestContext);
     validateAnomalousEventConfidenceScoringConfig(
         request.getEventConfidenceScoringConfig().getAnomalousEventConfidenceConfig());
+  }
+
+  public void validateOverrideThreatActivityConfidenceScoringConfigRequest(
+      RequestContext requestContext, OverrideThreatActivityConfidenceScoringConfigRequest request) {
+    validateRequestContextOrThrow(requestContext);
   }
 
   private void validateAnomalousEventConfidenceScoringConfig(

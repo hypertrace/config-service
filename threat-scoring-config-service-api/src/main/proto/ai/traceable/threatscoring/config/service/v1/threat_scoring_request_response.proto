@@ -35,6 +35,25 @@ message DeleteEventConfidenceScoringConfigOverridesResponse {
   EventConfidenceScoringConfig default_event_confidence_scoring_config = 1;
 }
 
+message OverrideThreatActivityConfidenceScoringConfigRequest {
+  ThreatScoringConfigScope scope = 1;
+  ThreatActivityConfidenceScoringConfig threat_activity_confidence_scoring_config = 2;
+}
+
+message OverrideThreatActivityConfidenceScoringConfigResponse {
+  ThreatScoringConfigScope scope = 1;
+  ThreatActivityConfidenceScoringConfig resolved_threat_activity_confidence_scoring_config = 2;
+  ThreatActivityConfidenceScoringConfig default_threat_activity_confidence_scoring_config = 3;
+}
+
+message DeleteThreatActivityConfidenceScoringConfigOverridesRequest {
+  ThreatScoringConfigScope config_scope = 1;
+}
+
+message DeleteThreatActivityConfidenceScoringConfigOverridesResponse {
+  ThreatActivityConfidenceScoringConfig default_threat_activity_confidence_scoring_config = 1;
+}
+
 message GetScopedThreatScoringConfigsFilter {
   ThreatScoringConfigType config_type = 1;
 }
@@ -42,4 +61,5 @@ message GetScopedThreatScoringConfigsFilter {
 enum ThreatScoringConfigType {
   THREAT_SCORING_CONFIG_TYPE_UNSPECIFIED = 0;
   THREAT_SCORING_CONFIG_TYPE_EVENT_CONFIDENCE_SCORING = 1;
+  THREAT_SCORING_CONFIG_TYPE_THREAT_ACTIVITY_CONFIDENCE_SCORING = 2;
 }
