@@ -75,6 +75,16 @@ message ScopedAnomalyConfigStatusChange {
   ApiGlobalConfig api_global_config = 7;
 }
 
+enum CorazaEngineVersion {
+  CORAZA_ENGINE_VERSION_UNSPECIFIED = 0;
+  CORAZA_ENGINE_VERSION_LATEST_STABLE = 1;
+  CORAZA_ENGINE_VERSION_LATEST_TEST = 2;
+}
+
+message ModsecEvaluationEngineConfig {
+  CorazaEngineVersion coraza_engine_version = 1;
+}
+
 message ModsecGlobalConfig {
   optional bool blocking_available_for_regular_rules = 1;
   optional bool use_test_rules = 2;
@@ -82,6 +92,7 @@ message ModsecGlobalConfig {
   ModsecDefaultConfigsType default_configs_type = 4;
   AnomalyConfidenceLevel min_confidence_level = 5;
   optional bool enabled_for_exit_spans = 6;
+  ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
 }
 
 enum ModsecDefaultConfigsType {
