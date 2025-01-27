@@ -14,6 +14,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.platform.actor.v1.RateLimitCategory;
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingConditionConverter;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingConditionModule;
@@ -76,8 +77,8 @@ class RateLimitingEdgeDecisionConverterTest {
     String expectedOutputFileStr = readResourceFileAsString(EXPECTED_OUTPUT_DIR, fileName);
     RateLimitingRule.Builder rateLimitingRuleBuilder = RateLimitingRule.newBuilder();
     parser.merge(inputFileStr, rateLimitingRuleBuilder);
-    EdgeDecisionEngineConfig output =
-        converter.convert(REQUEST_CONTEXT, List.of(rateLimitingRuleBuilder.build()));
+    RateLimitingRule rateLimitingRule = rateLimitingRuleBuilder.build();
+    EdgeDecisionEngineConfig output = converter.convert(REQUEST_CONTEXT, List.of(rateLimitingRule));
     EdgeDecisionEngineConfig.Builder expectedOutputBuilder = EdgeDecisionEngineConfig.newBuilder();
     parser.merge(expectedOutputFileStr, expectedOutputBuilder);
     // Add span attributes to expected rules
@@ -101,7 +102,8 @@ class RateLimitingEdgeDecisionConverterTest {
                                       "",
                                       rule.getId(),
                                       rule.getName(),
-                                      RateLimitCategory.RATE_LIMIT_CATEGORY_RATE_LIMITING,
+                                      getRateLimitCategory(
+                                          rateLimitingRule.getData().getCategory()),
                                       Map.of())))
                           .build();
                   return rule.toBuilder().setRuleDecision(updatedEdgeDecision).build();
@@ -111,6 +113,19 @@ class RateLimitingEdgeDecisionConverterTest {
     assertEquals(
         expectedOutputBuilder.clearDecisionRules().addAllDecisionRules(updatedRules).build(),
         output);
+  }
+
+  private RateLimitCategory getRateLimitCategory(Category category) {
+    switch (category) {
+      case CATEGORY_RATE_LIMITING:
+        return RateLimitCategory.RATE_LIMIT_CATEGORY_RATE_LIMITING;
+      case CATEGORY_ENUMERATION:
+        return RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION;
+      case CATEGORY_DATA_EXFILTRATION:
+        return RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION;
+      default:
+        throw new IllegalArgumentException("Unknown category: " + category);
+    }
   }
 
   static List<String> getInputFileNames() {

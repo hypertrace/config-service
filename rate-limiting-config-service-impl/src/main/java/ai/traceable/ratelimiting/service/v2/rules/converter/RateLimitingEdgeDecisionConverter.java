@@ -287,9 +287,14 @@ public class RateLimitingEdgeDecisionConverter {
         buildValueAggregateThresholds(
             resourceAccessThresholdConfig,
             mayBeMatchCondition.map(MatchConditionVariablesTuple::getMatchCondition));
-    final java.time.Duration duration =
-        java.time.Duration.parse(
-            resourceAccessThresholdConfig.getRollingWindowThresholdConfig().getDurationIso());
+    String durationIso = null;
+    if (resourceAccessThresholdConfig.hasValueBasedThresholdConfig()) {
+      durationIso = resourceAccessThresholdConfig.getValueBasedThresholdConfig().getDurationIso();
+    } else if (resourceAccessThresholdConfig.hasRollingWindowThresholdConfig()) {
+      durationIso =
+          resourceAccessThresholdConfig.getRollingWindowThresholdConfig().getDurationIso();
+    }
+    final java.time.Duration duration = java.time.Duration.parse(durationIso);
     final Duration timeWindow =
         Duration.newBuilder()
             .setSeconds(duration.getSeconds())
@@ -322,7 +327,10 @@ public class RateLimitingEdgeDecisionConverter {
   private Stream<ResourceAccessThresholdConfig> getResourceAccessThresholdConfigsList(
       final ThresholdActionConfig thresholdActionConfig) {
     return thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
-        .filter(ResourceAccessThresholdConfig::hasRollingWindowThresholdConfig);
+        .filter(
+            resourceAccessThresholdConfig ->
+                resourceAccessThresholdConfig.hasRollingWindowThresholdConfig()
+                    || resourceAccessThresholdConfig.hasValueBasedThresholdConfig());
   }
 
   private MatchConditionVariablesTuple buildMatchCondition(
