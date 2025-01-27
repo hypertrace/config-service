@@ -334,6 +334,7 @@ message MetadataTrainingConfig {
     ResponseContentTrainingConfig response_content = 32;
     ResponseDurationTrainingConfig response_duration = 33;
     ParamEncodingTrainingConfig param_encoding = 34;
+    UserAttributionTrainingConfig user_attribution = 35;
   }
 }
 
@@ -488,6 +489,12 @@ message ResponseContentTrainingConfig {}
 
 message ParamEncodingTrainingConfig {
   ThresholdFamilyConfig threshold_family_config = 1;
+}
+
+message UserAttributionTrainingConfig {
+  int32 rule_limit = 1;
+  StringList user_id_keywords = 2;
+  StringList user_role_keywords = 3;
 }
 
 message NonAsciiUnicodeCharactersTrainingConfig {

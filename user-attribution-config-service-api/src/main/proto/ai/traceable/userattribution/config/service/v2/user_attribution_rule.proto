@@ -22,6 +22,7 @@ message UserAttributionRuleData {
   UserAttributionTokenRule auth_type_rule = 9;
   map<string, UserAttributionTokenRule> custom_token_rules = 10; // map of token name to its associated rule
   Template template = 11;
+  Source source = 12;
 }
 
 enum Template {
@@ -29,6 +30,12 @@ enum Template {
   TEMPLATE_BASIC = 1;
   TEMPLATE_JWT = 2;
   TEMPLATE_CUSTOM = 3;
+}
+
+enum Source {
+  SOURCE_UNSPECIFIED = 0; // To be treated as SOURCE_USER
+  SOURCE_USER = 1;
+  SOURCE_AUTOMATIC = 2;
 }
 
 message UserAttributionRuleScope {
