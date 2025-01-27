@@ -11,7 +11,9 @@ import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.attribute.service.v1.AttributeCreateRequest;
@@ -61,69 +63,80 @@ public class EventTypeToAttributeMetadataAdapter {
 
   public Empty onUpsertEventType(EventType eventType) {
     onDeleteEventType(eventType);
+    Set<String> fqns = new HashSet<>();
 
     AttributeCreateRequest.Builder builder = AttributeCreateRequest.newBuilder();
     for (Map.Entry<String, ColumnMapping> entry :
         eventType.getColumnMappingMeta().getColumnMappingMap().entrySet()) {
+      String fqn = getScopeForEventType(eventType) + DOT + entry.getKey();
+      if (fqns.add(fqn)) {
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(from(entry.getValue().getFieldType()))
+                .setScopeString(getScopeForEventType(eventType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(fqn)
+                .setKey(entry.getKey())
+                .setDisplayName(entry.getKey())
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(
+                            Projection.newBuilder()
+                                .setAttributeId(
+                                    GENERIC_EVENT + DOT + entry.getValue().getColumnId())
+                                .build())
+                        .build())
+                .setInternal(false)
+                .build());
+      }
+    }
+
+    String fqn = getScopeForEventType(eventType) + DOT + "startTime";
+    if (fqns.add(fqn)) {
+      // these time attributes are needed by Gateway Service
       builder.addAttributes(
           AttributeMetadata.newBuilder()
-              .setValueKind(from(entry.getValue().getFieldType()))
+              .setValueKind(AttributeKind.TYPE_STRING)
               .setScopeString(getScopeForEventType(eventType))
               .addSources(AttributeSource.QS)
               .setType(AttributeType.ATTRIBUTE)
               .setGroupable(true)
-              .setFqn(getScopeForEventType(eventType) + DOT + entry.getKey())
-              .setKey(entry.getKey())
-              .setDisplayName(entry.getKey())
+              .setFqn(fqn)
+              .setKey("startTime")
+              .setDisplayName("startTime")
               .setDefinition(
                   AttributeDefinition.newBuilder()
                       .setProjection(
                           Projection.newBuilder()
-                              .setAttributeId(GENERIC_EVENT + DOT + entry.getValue().getColumnId())
-                              .build())
-                      .build())
+                              .setAttributeId(GENERIC_EVENT + DOT + "startTime")
+                              .build()))
               .setInternal(false)
               .build());
     }
 
-    // these time attributes are needed by Gateway Service
-    builder.addAttributes(
-        AttributeMetadata.newBuilder()
-            .setValueKind(AttributeKind.TYPE_STRING)
-            .setScopeString(getScopeForEventType(eventType))
-            .addSources(AttributeSource.QS)
-            .setType(AttributeType.ATTRIBUTE)
-            .setGroupable(true)
-            .setFqn(getScopeForEventType(eventType) + DOT + "startTime")
-            .setKey("startTime")
-            .setDisplayName("startTime")
-            .setDefinition(
-                AttributeDefinition.newBuilder()
-                    .setProjection(
-                        Projection.newBuilder()
-                            .setAttributeId(GENERIC_EVENT + DOT + "startTime")
-                            .build()))
-            .setInternal(false)
-            .build());
-
-    builder.addAttributes(
-        AttributeMetadata.newBuilder()
-            .setValueKind(AttributeKind.TYPE_STRING)
-            .setScopeString(getScopeForEventType(eventType))
-            .addSources(AttributeSource.QS)
-            .setType(AttributeType.ATTRIBUTE)
-            .setGroupable(true)
-            .setFqn(getScopeForEventType(eventType) + DOT + "type_id")
-            .setKey("type_id")
-            .setDisplayName("type_id")
-            .setDefinition(
-                AttributeDefinition.newBuilder()
-                    .setProjection(
-                        Projection.newBuilder()
-                            .setAttributeId(GENERIC_EVENT + DOT + "type_id")
-                            .build()))
-            .setInternal(false)
-            .build());
+    fqn = getScopeForEventType(eventType) + DOT + "type_id";
+    if (fqns.add(fqn)) {
+      builder.addAttributes(
+          AttributeMetadata.newBuilder()
+              .setValueKind(AttributeKind.TYPE_STRING)
+              .setScopeString(getScopeForEventType(eventType))
+              .addSources(AttributeSource.QS)
+              .setType(AttributeType.ATTRIBUTE)
+              .setGroupable(true)
+              .setFqn(fqn)
+              .setKey("type_id")
+              .setDisplayName("type_id")
+              .setDefinition(
+                  AttributeDefinition.newBuilder()
+                      .setProjection(
+                          Projection.newBuilder()
+                              .setAttributeId(GENERIC_EVENT + DOT + "type_id")
+                              .build()))
+              .setInternal(false)
+              .build());
+    }
 
     return attributeServiceBlockingStub.create(builder.build());
   }
