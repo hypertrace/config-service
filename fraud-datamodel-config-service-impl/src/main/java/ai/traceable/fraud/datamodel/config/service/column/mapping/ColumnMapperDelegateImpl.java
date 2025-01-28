@@ -76,13 +76,16 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
         continue;
       }
       builder.putFieldsMeta(mapping.getFieldName(), fieldMeta);
-      columnMappingBuilder.putColumnMapping(
-          mapping.getFieldName(),
-          ColumnMapping.newBuilder()
-              .setColumnId(mapping.getColumnId())
-              .setFieldType(fieldMeta.getFieldType())
-              .build());
-      columnMappingBuilder.putRevColumnMapping(mapping.getColumnId(), mapping.getFieldName());
+      if (!fieldMeta.getReserved()
+          && !columnMappingBuilder.getColumnMappingMap().containsKey(mapping.getFieldName())) {
+        columnMappingBuilder.putColumnMapping(
+            mapping.getFieldName(),
+            ColumnMapping.newBuilder()
+                .setColumnId(mapping.getColumnId())
+                .setFieldType(fieldMeta.getFieldType())
+                .build());
+        columnMappingBuilder.putRevColumnMapping(mapping.getColumnId(), mapping.getFieldName());
+      }
     }
     return builder.setColumnMappingMeta(columnMappingBuilder).build();
   }
