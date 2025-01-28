@@ -51,6 +51,7 @@ message RetentionAction {
 message Predicate {
   oneof predicate {
     StringPredicate target_key_predicate = 1;
+    BooleanPredicate anomalous_span_predicate = 2;
   }
 }
 
@@ -73,6 +74,10 @@ message StringPredicate {
     OPERATOR_ENDS_WITH = 4;
     OPERATOR_CONTAINS = 5;
   }
+}
+
+message BooleanPredicate {
+  bool match_value = 1;
 }
 
 enum DataLocation {
