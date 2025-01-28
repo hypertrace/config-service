@@ -35,10 +35,15 @@ import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpReputationCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
+import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.RegionCondition;
 import ai.traceable.ratelimiting.config.service.v2.RequestScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
+import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityScope;
+import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.LabelScope;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import com.google.protobuf.Message;
@@ -46,7 +51,7 @@ import io.grpc.Status;
 import java.util.List;
 
 public class ValidatorUtils {
-  public static final List<KeyValueCondition.Type> KEY_NULL_CONDITION_TYPES =
+  public static final List<Type> KEY_NULL_CONDITION_TYPES =
       List.of(
           TYPE_URL,
           TYPE_HOST,
@@ -173,6 +178,12 @@ public class ValidatorUtils {
     throw Status.INVALID_ARGUMENT.withDescription(description).asRuntimeException();
   }
 
+  public void throwInvalidArgumentExceptionIf(boolean condition, String description) {
+    if (condition) {
+      throw Status.INVALID_ARGUMENT.withDescription(description).asRuntimeException();
+    }
+  }
+
   public String getName(Message message) {
     return message.getDescriptorForType().getName();
   }
@@ -253,11 +264,9 @@ public class ValidatorUtils {
     }
   }
 
-  public void validateStringCondition(KeyValueCondition.StringCondition stringCondition) {
-    validateNonDefaultPresenceOrThrow(
-        stringCondition, KeyValueCondition.StringCondition.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        stringCondition, KeyValueCondition.StringCondition.VALUE_FIELD_NUMBER);
+  public void validateStringCondition(StringCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
     if (isInvalidMathematicalOperation(stringCondition)) {
       throwInvalidArgumentException(
           String.format(
@@ -265,20 +274,14 @@ public class ValidatorUtils {
               stringCondition.getOperator()));
     }
     if (stringCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
-        || stringCondition.getOperator()
-            == KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+        || stringCondition.getOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
       validateRegex(stringCondition.getValue());
     }
   }
 
-  private boolean isInvalidMathematicalOperation(
-      KeyValueCondition.StringCondition stringCondition) {
-    return (stringCondition
-                .getOperator()
-                .equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-            || stringCondition
-                .getOperator()
-                .equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_LESS_THAN))
+  private boolean isInvalidMathematicalOperation(StringCondition stringCondition) {
+    return (stringCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+            || stringCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_LESS_THAN))
         && !isNumber(stringCondition.getValue());
   }
 
@@ -297,17 +300,14 @@ public class ValidatorUtils {
     }
   }
 
-  private void validateEntityScope(ScopeCondition.EntityScope entityScope) {
-    validateNonDefaultPresenceOrThrow(
-        entityScope, ScopeCondition.EntityScope.ENTITY_TYPE_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        entityScope, ScopeCondition.EntityScope.ENTITY_IDS_FIELD_NUMBER);
+  private void validateEntityScope(EntityScope entityScope) {
+    validateNonDefaultPresenceOrThrow(entityScope, EntityScope.ENTITY_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(entityScope, EntityScope.ENTITY_IDS_FIELD_NUMBER);
   }
 
-  private void validateLabelScope(ScopeCondition.LabelScope labelScope) {
-    validateNonDefaultPresenceOrThrow(
-        labelScope, ScopeCondition.LabelScope.LABEL_TYPE_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(labelScope, ScopeCondition.LabelScope.LABEL_IDS_FIELD_NUMBER);
+  private void validateLabelScope(LabelScope labelScope) {
+    validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_TYPE_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(labelScope, LabelScope.LABEL_IDS_FIELD_NUMBER);
   }
 
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {

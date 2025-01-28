@@ -1,5 +1,6 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
+import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_DEFAULT;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionValidator.checkConversionToEdgeDecisionRules;
@@ -8,6 +9,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
+import ai.traceable.ratelimiting.config.service.v2.Action.BodyModification;
 import ai.traceable.ratelimiting.config.service.v2.Action.HeaderInjection;
 import ai.traceable.ratelimiting.config.service.v2.ApiAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.Category;
@@ -423,19 +425,38 @@ public class RateLimitingRulesValidator implements RulesValidator {
   private void validategentRuleEffect(Action.AgentRuleEffect agentRuleEffect) {
     if (agentRuleEffect.getAgentModificationsList().isEmpty()) {
       validatorUtils.throwInvalidArgumentException(
-          "Agent rule effect should have atleast one modification.");
+          "Agent rule effect should have at least one modification.");
     }
+
     agentRuleEffect
         .getAgentModificationsList()
         .forEach(
             agentModification -> {
-              HeaderInjection headerInjection = agentModification.getHeaderInjection();
-              validateNonDefaultPresenceOrThrow(
-                  headerInjection, HeaderInjection.HEADER_CATEGORY_FIELD_NUMBER);
-              validateNonDefaultPresenceOrThrow(
-                  headerInjection, HeaderInjection.HEADER_NAME_FIELD_NUMBER);
-              validateNonDefaultPresenceOrThrow(
-                  headerInjection.getValue(), Action.FieldValue.STATIC_VALUE_FIELD_NUMBER);
+              // Check which oneof field is set and validate accordingly
+              if (agentModification.hasHeaderInjection()) {
+                HeaderInjection headerInjection = agentModification.getHeaderInjection();
+                validateNonDefaultPresenceOrThrow(
+                    headerInjection, HeaderInjection.HEADER_CATEGORY_FIELD_NUMBER);
+                validateNonDefaultPresenceOrThrow(
+                    headerInjection, HeaderInjection.HEADER_NAME_FIELD_NUMBER);
+                validateNonDefaultPresenceOrThrow(
+                    headerInjection.getValue(), Action.FieldValue.STATIC_VALUE_FIELD_NUMBER);
+              } else if (agentModification.hasStatusCodeModification()) {
+                // Do nothing
+              } else if (agentModification.hasBodyModification()) {
+                BodyModification bodyModification = agentModification.getBodyModification();
+                validatorUtils.throwInvalidArgumentExceptionIf(
+                    agentModification
+                        .getBodyModification()
+                        .getLocationCategory()
+                        .equals(MATCH_CATEGORY_REQUEST),
+                    "Request body modification not supported yet.");
+                validateNonDefaultPresenceOrThrow(
+                    bodyModification.getBodyValue(), Action.FieldValue.STATIC_VALUE_FIELD_NUMBER);
+              } else {
+                validatorUtils.throwInvalidArgumentException(
+                    "Agent modification must specify a valid modification type.");
+              }
             });
   }
 }

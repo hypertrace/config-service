@@ -122,6 +122,8 @@ message AgentRuleEffect {
 message AgentModification {
   oneof modification {
     HeaderInjection header_injection = 1;
+    StatusCodeModification status_code_modification = 2;
+    BodyModification body_modification = 3;
   }
 }
 
@@ -129,6 +131,15 @@ message HeaderInjection {
   MatchCategory header_category = 1;
   string header_name = 2;
   FieldValue value = 3;
+}
+
+message StatusCodeModification {
+  int32 status_code = 1;
+}
+
+message BodyModification {
+  MatchCategory location_category = 1;
+  FieldValue body_value = 2;
 }
 
 message FieldValue {

@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HOST;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HTTP_METHOD;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
@@ -15,7 +16,9 @@ import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -26,6 +29,8 @@ import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.FieldValue;
+import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
@@ -34,6 +39,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
@@ -194,11 +200,62 @@ class CustomSignatureRulesValidator implements RulesValidator {
               "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type %s.",
               ruleEffect.getEventType()));
     }
+    ruleEffect.getEffectsList().forEach(this::validateRuleEffectWithModification);
     return Status.OK;
   }
 
+  private void validateRuleEffectWithModification(RuleEffectWithModifications effect) {
+    if (!effect.hasAgentRuleEffect()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Modification rule effect should have at least one modification.")
+          .asRuntimeException();
+    }
+    validateNonDefaultPresenceOrThrow(
+        effect.getAgentRuleEffect(), RuleEffectWithModifications.AGENT_RULE_EFFECT_FIELD_NUMBER);
+    AgentRuleEffect agentRuleEffect = effect.getAgentRuleEffect();
+    if (agentRuleEffect.getAgentModificationsList().isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Agent rule effect should have at least one modification.")
+          .asRuntimeException();
+    }
+
+    agentRuleEffect
+        .getAgentModificationsList()
+        .forEach(
+            agentModification -> {
+              // Check which oneof field is set and validate accordingly
+              if (agentModification.hasHeaderInjection()) {
+                HeaderInjection headerInjection = agentModification.getHeaderInjection();
+                validateNonDefaultPresenceOrThrow(
+                    headerInjection, HeaderInjection.HEADER_CATEGORY_FIELD_NUMBER);
+                validateNonDefaultPresenceOrThrow(
+                    headerInjection, HeaderInjection.HEADER_NAME_FIELD_NUMBER);
+                validateNonDefaultPresenceOrThrow(
+                    headerInjection.getValue(), FieldValue.STATIC_VALUE_FIELD_NUMBER);
+              } else if (agentModification.hasStatusCodeModification()) {
+                // Do nothing
+              } else if (agentModification.hasBodyModification()) {
+                BodyModification bodyModification = agentModification.getBodyModification();
+                if (agentModification
+                    .getBodyModification()
+                    .getLocationCategory()
+                    .equals(MATCH_CATEGORY_REQUEST)) {
+                  throw Status.INVALID_ARGUMENT
+                      .withDescription("Request body modification not supported yet.")
+                      .asRuntimeException();
+                }
+                validateNonDefaultPresenceOrThrow(
+                    bodyModification.getBodyValue(), FieldValue.STATIC_VALUE_FIELD_NUMBER);
+              } else {
+                throw Status.INVALID_ARGUMENT
+                    .withDescription("Agent modification must specify a valid modification type.")
+                    .asRuntimeException();
+              }
+            });
+  }
+
   private Status validateRuleDefinition(RuleDefinition ruleDefinition) {
-    if (ruleDefinition.getLabelsMap().size() > CUSTOM_LABELS_LIMIT) {
+    if (ruleDefinition.getLabelsMap().size() > CustomSignatureRulesValidator.CUSTOM_LABELS_LIMIT) {
       return Status.INVALID_ARGUMENT.withDescription("Custom labels limit exceeded");
     }
     if (!ruleDefinition.hasClauseGroup()) {
