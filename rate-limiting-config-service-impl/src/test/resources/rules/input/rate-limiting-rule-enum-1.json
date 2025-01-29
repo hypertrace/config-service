@@ -1,0 +1,80 @@
+{
+  "id": "rate-limiting-rule-id",
+  "data": {
+    "threshold_action_configs": [
+      {
+        "resource_access_threshold_configs": [
+          {
+            "user_aggregate_type": "USER_AGGREGATE_TYPE_PER_USER",
+            "api_aggregate_type": "API_AGGREGATE_TYPE_PER_ENDPOINT",
+            "value_based_threshold_config": {
+              "unique_values_allowed": "3",
+              "duration_iso": "PT1M",
+              "value_type": "VALUE_TYPE_REQUEST_BODY",
+              "sensitive_params_evaluation": "SENSITIVE_PARAMS_EVALUATION_UNSPECIFIED"
+            }
+          }
+        ],
+        "actions": [
+          {
+            "block": {
+              "event_severity": "EVENT_SEVERITY_LOW",
+              "use_threshold_duration": true
+            }
+          }
+        ]
+      }
+    ],
+    "labels": {},
+    "category": "CATEGORY_ENUMERATION",
+    "name": "test-policy",
+    "description": "",
+    "enabled": true,
+    "condition": {
+      "composite_condition": {
+        "children": [
+          {
+            "leaf_condition": {
+              "scope_condition": {
+                "entity_scope": {
+                  "entity_ids": [
+                    "apiId1"
+                  ],
+                  "entity_type": "ENTITY_TYPE_API"
+                }
+              }
+            }
+          },
+          {
+            "leaf_condition": {
+              "ip_address_condition": {
+                "cidr_ip_ranges": [],
+                "ip_addresses": [
+                  "212.122.122.162"
+                ],
+                "raw_input_ip_data": [
+                  "212.122.122.162"
+                ],
+                "exclude": false,
+                "ip_address_condition_type": "IP_ADDRESS_CONDITION_TYPE_UNSPECIFIED"
+              }
+            }
+          }
+        ],
+        "operator": "LOGICAL_OPERATOR_AND"
+      }
+    },
+    "rule_config_scope": {
+      "environment_scope": {
+        "environment_ids": [
+          "test-env"
+        ]
+      }
+    },
+    "rule_status": {
+      "rule_creation_source": "RULE_SOURCE_TRACEABLE",
+      "internal": false
+    },
+    "transaction_action_config": null
+  }
+}

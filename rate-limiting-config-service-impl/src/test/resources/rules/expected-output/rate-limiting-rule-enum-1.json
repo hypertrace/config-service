@@ -1,0 +1,131 @@
+{
+  "decision_rules": [{
+    "id": "rate-limiting-rule-id",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
+        }
+      }]
+    },
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId1"
+          },
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
+                    },
+                    "output_type": "FIELD_TYPE_STR"
+                  }
+                }]
+              },
+              "binary_operator": {
+                "regex": "/api1",
+                "match_operator": "MATCH_OPERATOR_LIKE"
+              }
+            }
+          }
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
+                      },
+                      "output_type": "FIELD_TYPE_STR"
+                    }
+                  }]
+                },
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
+              }
+            }, {
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "$s.getIpAddress()"
+                      },
+                      "output_type": "FIELD_TYPE_STR"
+                    }
+                  }]
+                },
+                "binary_operator": {
+                  "list_value": ["212.122.122.162"],
+                  "match_operator": "MATCH_OPERATOR_IN"
+                }
+              }
+            }]
+          }
+        },
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
+              },
+              "output_type": "FIELD_TYPE_STR"
+            }
+          }]
+        }, {
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
+              },
+              "output_type": "FIELD_TYPE_STR"
+            }
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_VALUE_TYPE_REQUEST_BODY",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "$s.getRequestBody()"
+                },
+                "output_type": "FIELD_TYPE_STR"
+              }
+            }]
+          },
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
+        }
+      }
+    },
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK"
+    }
+  }]
+}
