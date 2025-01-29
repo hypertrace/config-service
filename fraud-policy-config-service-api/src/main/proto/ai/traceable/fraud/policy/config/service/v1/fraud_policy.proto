@@ -15,6 +15,15 @@ enum FraudPolicyCategory {
   FRAUD_POLICY_CATEGORY_BOT = 3;
 }
 
+// certain policy types are templatized and dedicated ux is provided, everything else goes into custom.
+enum PolicyType {
+  POLICY_TYPE_UNSPECIFIED = 0;
+  POLICY_TYPE_VOLUMETRIC = 1;
+  POLICY_TYPE_API_ACCESS = 2;
+  POLICY_TYPE_ACCOUNT_TAKEOVER = 3;
+  POLICY_TYPE_CUSTOM = 4;
+}
+
 enum PolicyGroup {
   POLICY_GROUP_UNSPECIFIED = 0;
   POLICY_GROUP_BOT = 1;
@@ -168,7 +177,11 @@ message FraudPolicy {
   // track updates, use for optimistic locking.
   int64 version = 17;
 
+  // categorizes the product group (bot, waf, api protection, etc)
   PolicyGroup policy_group = 18;
+
+  // certain policy types are templatized and dedicated ux is provided, everything else goes into custom.
+  PolicyType policy_type = 19;
 
   // store information for creating incidents from the policy.
   // at this point, we don't know yet what is the actual structure.
