@@ -172,7 +172,7 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
       case KEY_METADATA_HOST:
         return "$s.getHost()";
       case KEY_METADATA_HTTP_METHOD:
-        return "$s.getHttpMethod()";
+        return "$s.getMethod()";
       case KEY_METADATA_USER_AGENT:
         return "$s.getUserAgent()";
       case KEY_METADATA_REQUEST_BODY:

@@ -155,7 +155,7 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
       case TYPE_HOST:
         return "$s.getHost()";
       case TYPE_HTTP_METHOD:
-        return "$s.getHttpMethod()";
+        return "$s.getMethod()";
       case TYPE_USER_AGENT:
         return "$s.getUserAgent()";
       case TYPE_REQUEST_BODY:
