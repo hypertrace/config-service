@@ -6,13 +6,13 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.RateLimiter;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,13 +24,6 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
       MODSEC_DIRECTORY + "modsec-rule-details.yaml";
 
   private static final RateLimiter LOG_RATE_LIMITER = RateLimiter.create(0.01);
-
-  private static final List<AnomalySubRuleType> SUPPORTED_SUB_RULE_TYPES =
-      ImmutableList.of(
-          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR,
-          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
-          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSAFE,
-          AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
 
   private final ConfigConverter configConverter;
   private final ModsecCrsRulesHandler modsecCrsRulesHandler;
@@ -90,9 +83,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
 
   private void initAnomalyRulesInfoMap() {
     Map<String, AnomalyRuleInfo> anomalyRulesInfoMap =
-        new HashMap<>(
-            configConverter.getAnomalyRuleInfos(
-                MODSEC_RULE_DETAILS_FILE_PATH, AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC));
+        configConverter.getAnomalyRuleInfos(
+            MODSEC_RULE_DETAILS_FILE_PATH, AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC);
 
     Map<String, AnomalyRuleInfo> allMergedModsecRules = new HashMap<>(anomalyRulesInfoMap);
     versionedModsecRules = new HashMap<>();
@@ -111,8 +103,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
                 modsecCrsRulesHandler.loadModsecCrsFileContents(
                     getModsecCrsConfig(ruleVersion).rulesFilePath));
         versionedModsecRules.put(
-            ruleVersion, mergeAnomalyRuleInfos(anomalyRulesInfoMap, modsecRulesMap));
-        allMergedModsecRules = mergeAnomalyRuleInfos(allMergedModsecRules, modsecRulesMap);
+            ruleVersion, mergeAnomalyRuleInfos(anomalyRulesInfoMap, modsecRulesMap, false));
+        allMergedModsecRules = mergeAnomalyRuleInfos(allMergedModsecRules, modsecRulesMap, true);
       }
     }
     versionedModsecRules.put(
@@ -121,50 +113,52 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
   }
 
   private Map<String, AnomalyRuleInfo> mergeAnomalyRuleInfos(
-      Map<String, AnomalyRuleInfo> anomalyRulesInfoMap,
-      Map<String, List<AnomalySubRuleInfo>> modsecRulesMap) {
-    Map<String, AnomalyRuleInfo> result = new HashMap<>(anomalyRulesInfoMap);
-    modsecRulesMap.forEach(
-        (ruleId, subRules) -> {
-          if (result.containsKey(ruleId)) {
-            result.put(
-                ruleId,
-                mergeAnomalyRuleInfos(
-                    result.get(ruleId),
-                    AnomalyRuleInfo.newBuilder()
-                        .setRuleId(ruleId)
-                        .addAllSubRuleInfos(subRules)
-                        .build()));
-          }
-        });
-    return result;
+      Map<String, AnomalyRuleInfo> defaultAnomalyRulesInfoMap,
+      Map<String, List<AnomalySubRuleInfo>> modsecRulesMap,
+      boolean keepAllDefault) {
+
+    Map<String, AnomalySubRuleInfo> subRulesMap =
+        defaultAnomalyRulesInfoMap.values().stream()
+            .map(AnomalyRuleInfo::getSubRuleInfosList)
+            .flatMap(List::stream)
+            .collect(Collectors.toMap(AnomalySubRuleInfo::getRuleId, Function.identity()));
+
+    Map<String, AnomalyRuleInfo> resultMap =
+        keepAllDefault ? new HashMap<>(defaultAnomalyRulesInfoMap) : new HashMap<>();
+
+    modsecRulesMap.entrySet().stream()
+        .filter(entry -> defaultAnomalyRulesInfoMap.containsKey(entry.getKey()))
+        .forEach(
+            entry -> {
+              AnomalyRuleInfo.Builder builder =
+                  defaultAnomalyRulesInfoMap.get(entry.getKey()).toBuilder();
+              Map<String, AnomalySubRuleInfo> subRules = new HashMap<>();
+              if (keepAllDefault) {
+                builder
+                    .getSubRuleInfosList()
+                    .forEach(subRule -> subRules.put(subRule.getRuleId(), subRule));
+              }
+              builder.clearSubRuleInfos();
+              entry.getValue().stream()
+                  .filter(subRule -> subRulesMap.containsKey(subRule.getRuleId()))
+                  .forEach(
+                      subRule ->
+                          subRules.put(
+                              subRule.getRuleId(),
+                              mergeSubRules(subRule, subRulesMap.get(subRule.getRuleId()))));
+              resultMap.put(
+                  builder.getRuleId(), builder.addAllSubRuleInfos(subRules.values()).build());
+            });
+
+    return resultMap;
   }
 
-  private AnomalyRuleInfo mergeAnomalyRuleInfos(AnomalyRuleInfo v1, AnomalyRuleInfo v2) {
-    // for a given rule id merge subRule infos, assuming all non id fields match
-    // same in case of subRule info comparison, if id is same assume all others match
-    Map<String, AnomalySubRuleInfo> mergedSubRuleInfos = new HashMap<>();
-    v1.getSubRuleInfosList()
-        .forEach(subRuleInfo -> mergedSubRuleInfos.put(subRuleInfo.getRuleId(), subRuleInfo));
-    v2.getSubRuleInfosList()
-        .forEach(
-            otherSubRuleInfo ->
-                mergedSubRuleInfos.merge(
-                    otherSubRuleInfo.getRuleId(),
-                    otherSubRuleInfo,
-                    (subRuleInfo1, subRuleInfo2) -> {
-                      AnomalySubRuleInfo.Builder builder =
-                          subRuleInfo1.toBuilder().mergeFrom(subRuleInfo2);
-                      List<AnomalySubRuleType> subRuleTypes =
-                          builder.getSubRuleTypesList().stream()
-                              .distinct()
-                              .collect(Collectors.toList());
-                      builder.clearSubRuleTypes().addAllSubRuleTypes(subRuleTypes);
-                      return builder.build();
-                    }));
-    return v1.toBuilder()
-        .clearSubRuleInfos()
-        .addAllSubRuleInfos(mergedSubRuleInfos.values())
-        .build();
+  private AnomalySubRuleInfo mergeSubRules(
+      AnomalySubRuleInfo subRuleInfo1, AnomalySubRuleInfo subRuleInfo2) {
+    AnomalySubRuleInfo.Builder builder = subRuleInfo1.toBuilder().mergeFrom(subRuleInfo2);
+    List<AnomalySubRuleType> subRuleTypes =
+        builder.getSubRuleTypesList().stream().distinct().collect(Collectors.toList());
+    builder.clearSubRuleTypes().addAllSubRuleTypes(subRuleTypes);
+    return builder.build();
   }
 }

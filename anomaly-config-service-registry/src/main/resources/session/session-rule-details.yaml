@@ -10,7 +10,7 @@
     MITRE_TECHNIQUE: T1548.002
   eventDetails:
     description: |
-      An anomaly characteristic of Broken Object Level Authorization (BOLA) attack is detected by flagging the deviation from the baseline of the API sequences and the data flow between them.
+      A Broken Object Level Authorization (BOLA) attack arises when there is a deviation in the expected API sequences or data flow, enabling unauthorized access to resources or operations.
       It is an access control attack where unvalidated user input can be used for unauthorized access to resources or operations and is also known as Insecure Direct Object Reference (IDOR).
       The attack occurs when the web application exposes a direct reference to an internal implementation object, and then fails to run proper authorization checks to ensure whether the current user is permitted to access a resource or operation.
       A Authorization Bypass attack occurs when the following three conditions are met:
@@ -53,16 +53,15 @@
     MITRE_TECHNIQUE: T1548.002
   eventDetails:
     description: |
-        An anomaly characteristic is detected for Authorization Bypass at User Level, by building a baseline of API parameter values with user metadata, and flagging any deviation from the baseline.
-        The attacker can gain unauthorized access to resources or operations not intended for them by manipulating the API metadata.
-        The attack occurs when the web application exposes a direct reference to an internal implementation object, and then fails to run proper authorization checks to ensure whether the current user is permitted to access a resource or operation.
-        A Authorization Bypass attack occurs when the following three conditions are met:
-        - The attacked application reveals a direct reference to an internal resource or operation.
-        - The attacker is able to manipulate a URL or form parameter to modify the direct reference.
-        - The application grants attacker the access to the internal object without checking if the user is authorized.
+      Authorization Bypass is a vulnerability that arises when weak or improperly implemented access controls allow attackers to access restricted resources or perform unauthorized actions. This often occurs due to flaws in the application’s logic or improper validation of user permissions.
+      An attacker can exploit this vulnerability by manipulating API metadata or other input parameters to gain unauthorized access to resources or operations not intended for them. The vulnerability often stems from the application exposing a direct reference to an internal implementation object without performing proper authorization checks to verify whether the current user is permitted to access the resource or operation.
+      An Authorization Bypass attack typically occurs under the following conditions:
+      - The application exposes a direct reference to an internal resource or operation.
+      - The attacker is able to manipulate a URL, API parameter, or form input to modify the direct reference.
+      - The application grants access to the internal object without validating whether the user is authorized to perform the action or access the resource.
+
     mitigation: |
       The best way to protect your code against Authorization Bypass is to implement authorization checks on APIs and parameters in request as well as responses.
-
       To protect in Traceable:
       - Add an enumeration policy on the API endpoint to restrict the number of objects that can be accessed.
       - Add a data protection policy on the API endpoint to restrict the number of sensitive data that can be exposed.
@@ -86,6 +85,29 @@
 - ruleId: sessionv
   ruleName: Session Violation
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_AUTHORIZATION_VIOLATIONS
+  eventDetails:
+    description: |
+      A Session Violation occurs when the integrity, confidentiality, or validity of session management mechanisms is compromised, allowing attackers to exploit vulnerabilities in how user sessions are handled. Sessions are critical to maintaining a user’s authenticated state across interactions with an application, and their misuse can lead to unauthorized access, privilege escalation, or data breaches.
+      Session Violations typically manifest under the following conditions:
+      - Session token exposure: Session tokens are improperly transmitted or stored, such as being included in URLs, logged in plaintext, or inadvertently exposed to unauthorized parties.
+      - Inadequate session expiration policies: Tokens are not properly expired, allowing attackers to exploit long-lived or reused tokens.
+      - Lack of session integrity validation: The application fails to validate the authenticity or validity of tokens before granting access.
+      - Session fixation: Attackers leverage predefined or stolen tokens to hijack legitimate user sessions.
+      - Improper session termination: Sessions are not terminated after logout or a specified inactivity period, leaving them susceptible to misuse.
+
+    mitigation: |
+      - Implement secure session management practices, such as using secure, HttpOnly, and SameSite flags for cookies.
+      - Ensure session tokens are rotated frequently, especially after authentication or privilege escalation.
+      - Use robust mechanisms for session expiration and enforce reauthentication for critical operations.
+      - Monitor and log session activity to detect anomalies and unauthorized usage.
+      - Educate developers on secure coding practices to prevent session management vulnerabilities.
+      - Regularly test session handling mechanisms using penetration testing and automated security tools.
+    impact: |
+      A session violation can have severe consequences, including unauthorized access to sensitive user data, privilege escalation, and potential compromise of the entire application. It can damage user trust, lead to regulatory non-compliance, and result in financial and reputational losses for the organization.
+    references: |
+      - OWASP API Top 10 - 2023 - API2:Broken Authentication - https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+      - OWASP Top 10 - 2021 - A2:Broken Authentication - https://owasp.org/Top10/A02_2021-Broken_Authentication/
+      - Common Weakness Enumeration (CWE) - CWE-501:Trust Boundary Violation - https://cwe.mitre.org/data/definitions/501.html
   subRuleInfos:
   - ruleId: sessionv_landspeed
     ruleName: Land Speed Violation

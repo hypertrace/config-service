@@ -145,15 +145,7 @@ class AnomalyRuleInfoManagerImplTest {
             new VolumetricRulesRegistryImpl(configConverter),
             new CredentialStuffingRulesRegistryImpl(configConverter),
             new AccountTakeoverRulesRegistryImpl(configConverter));
-    ruleInfoManager.getAnomalyRuleInfos(
-        requestContext,
-        List.of(
-            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
-            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
-            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
-            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
-            AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
-        ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+
     for (AnomalyRuleInfo ruleInfo :
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext,
@@ -164,6 +156,10 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)) {
+
+      assertFalse(
+          ruleInfo.getEventDetails().getDescription().isBlank(),
+          "Description is blank for ruleId:" + ruleInfo.getRuleId());
       if (ruleInfo.getSubRuleInfosList().isEmpty()
           && !ruleInfo.getRuleId().equals("volumetricApiCallSpike")
           && !ruleInfo.getRuleId().equals("credentialStuffing")) {
@@ -177,6 +173,7 @@ class AnomalyRuleInfoManagerImplTest {
             AnomalySeverityLevel.ANOMALY_SEVERITY_LEVEL_UNSPECIFIED,
             subRuleInfo.getSeverityLevel());
         assertFalse(subRuleInfo.getEventLabelsMap().isEmpty());
+        assertFalse(subRuleInfo.getEventDetails().getDescription().isBlank());
       }
     }
   }

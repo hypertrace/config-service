@@ -45,9 +45,22 @@ public class ModsecRulesRegistryTest {
   }
 
   private void testModsecCrsRules(ModsecRuleVersion version) throws IOException {
+    Collection<AnomalyRuleInfo> anomalyRules =
+        modsecRulesRegistry.getModsecRuleInfos(version).values();
+    anomalyRules.forEach(
+        rule -> {
+          assertFalse(rule.getEventDetails().getDescription().isBlank());
+          rule.getSubRuleInfosList()
+              .forEach(
+                  subRule -> {
+                    assertFalse(subRule.getEventDetails().getDescription().isBlank());
+                    assertFalse(subRule.getEventLabelsMap().isEmpty());
+                  });
+        });
+
     String secRuleRemoveByIdKeyword = "SecRuleRemoveById";
     List<AnomalySubRuleInfo> subRules =
-        modsecRulesRegistry.getModsecRuleInfos(version).values().stream()
+        anomalyRules.stream()
             .map(AnomalyRuleInfo::getSubRuleInfosList)
             .flatMap(List::stream)
             .collect(Collectors.toList());
@@ -60,6 +73,7 @@ public class ModsecRulesRegistryTest {
 
     long allRulesCount = subRules.size();
     assertEquals(allRulesCount, regularRulesCount + safeRulesCount);
+    assertEquals(safeRulesCount, blockingRulesCount);
 
     {
       String crsRulesBlob =
@@ -380,9 +394,6 @@ public class ModsecRulesRegistryTest {
     assertEquals(
         subRulesRead.size(), subRulesCollected.size(), "Blocking rule count mismatch in Test File");
   }
-
-  @Test
-  void testName() {}
 
   @Test
   public void testSubRuleInfoConsistencyAcrossVersions() {
