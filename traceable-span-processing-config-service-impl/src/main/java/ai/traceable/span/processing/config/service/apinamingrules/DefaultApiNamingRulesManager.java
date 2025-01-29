@@ -3,12 +3,13 @@ package ai.traceable.span.processing.config.service.apinamingrules;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Stream.empty;
 
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
-import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
+import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub;
 import ai.traceable.api.spec.config.service.v1.ApiSpecFilter;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.StringList;
@@ -43,6 +44,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -50,22 +52,13 @@ import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
+@AllArgsConstructor(onConstructor_ = {@Inject})
 public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
 
-  private final TimestampConverter timestampConverter;
   private final ApiNamingRulesConfigStore apiNamingRulesConfigStore;
-  private final ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub
-      apiSpecConfigServiceBlockingStub;
-
-  @Inject
-  public DefaultApiNamingRulesManager(
-      ApiNamingRulesConfigStore apiNamingRulesConfigStore,
-      TimestampConverter timestampConverter,
-      ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub apiSpecConfigServiceBlockingStub) {
-    this.timestampConverter = timestampConverter;
-    this.apiNamingRulesConfigStore = apiNamingRulesConfigStore;
-    this.apiSpecConfigServiceBlockingStub = apiSpecConfigServiceBlockingStub;
-  }
+  private final TimestampConverter timestampConverter;
+  private final ApiSpecConfigServiceBlockingStub apiSpecConfigServiceBlockingStub;
+  private final ApiNamingRulesManagerConfig apiNamingRulesManagerConfig;
 
   @Override
   public List<ApiNamingRuleDetails> getAllApiNamingRuleDetails(RequestContext requestContext) {
@@ -417,7 +410,7 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
             .distinct()
             .collect(Collectors.toUnmodifiableList());
     Map<String, Boolean> specIdsToApiNamingEnabledMap =
-        getApiSpecsFromIds(specIdsInUpdatedRules).stream()
+        getApiSpecsFromIds(requestContext, specIdsInUpdatedRules).stream()
             .collect(
                 Collectors.toUnmodifiableMap(ApiSpec::getSpecId, ApiSpec::getApiNamingEnabled));
     for (String apiNamingRuleId : updatedApiNamingRuleIds) {
@@ -481,13 +474,21 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
     return unmodifiableList(cleanedUpApiNamingRules);
   }
 
-  private List<ApiSpec> getApiSpecsFromIds(List<String> apiSpecIds) {
+  private List<ApiSpec> getApiSpecsFromIds(RequestContext requestContext, List<String> apiSpecIds) {
     GetApiSpecsRequest request =
         GetApiSpecsRequest.newBuilder()
             .setApiSpecFilter(
                 ApiSpecFilter.newBuilder().setIds(StringList.newBuilder().addAllValues(apiSpecIds)))
             .build();
-    return this.apiSpecConfigServiceBlockingStub.getApiSpecs(request).getApiSpecsList();
+    return requestContext
+        .call(
+            () ->
+                this.apiSpecConfigServiceBlockingStub
+                    .withDeadlineAfter(
+                        apiNamingRulesManagerConfig.getApiSpecServiceTimeout().toMillis(),
+                        MILLISECONDS)
+                    .getApiSpecs(request))
+        .getApiSpecsList();
   }
 
   private ApiNamingRule buildApiNamingRuleAndSetRuleDisabled(

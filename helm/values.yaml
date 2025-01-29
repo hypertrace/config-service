@@ -145,6 +145,7 @@ bucketPrefix: traceable-saas
 s3.config:
   - fs.s3a.endpoint: "s3-us-west-2.amazonaws.com"
 
+hypertraceConfigServiceTimeout: 10s
 iamServiceAccountSecret: gcs-iam-secret
 
 trieModels:
@@ -367,6 +368,7 @@ traceableConfigServiceConfig:
       refresh: 1m
       maxSize: 1000
   spanProcessingConfig:
+    apiSpecConfigServiceTimeout: 10s
     defaultRequestHeaderRetentionRules: |-
       [
         {

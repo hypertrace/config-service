@@ -21,6 +21,7 @@ import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
 import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManager;
+import ai.traceable.span.processing.config.service.apinamingrules.ApiNamingRulesManagerConfig;
 import ai.traceable.span.processing.config.service.apinamingrules.DefaultApiNamingRulesManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.DefaultProtectionSpanRulesManager;
 import ai.traceable.span.processing.config.service.protectionspanrules.ProtectionSpanRulesManager;
@@ -80,6 +81,7 @@ import com.google.protobuf.Duration;
 import com.google.protobuf.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -96,6 +98,7 @@ class SpanProcessingConfigServiceImplTest {
       spanProcessingConfigServiceStub;
   private ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub
       apiSpecConfigServiceBlockingStub;
+  private ApiNamingRulesManagerConfig apiNamingRulesManagerConfig;
 
   @BeforeEach
   void beforeEach() {
@@ -115,11 +118,15 @@ class SpanProcessingConfigServiceImplTest {
     TimestampConverter timestampConverter = mock(TimestampConverter.class);
     this.apiSpecConfigServiceBlockingStub =
         mock(ApiSpecConfigServiceGrpc.ApiSpecConfigServiceBlockingStub.class, Answers.RETURNS_SELF);
+    apiNamingRulesManagerConfig = mock(ApiNamingRulesManagerConfig.class);
+    when(apiNamingRulesManagerConfig.getApiSpecServiceTimeout())
+        .thenReturn(java.time.Duration.ofSeconds(10));
 
     SamplingConfigsConfigStore samplingConfigsConfigStore =
         new SamplingConfigsConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
     ApiNamingRulesConfigStore apiNamingRulesConfigStore =
-        new ApiNamingRulesConfigStore(genericStub, timestampConverter, configChangeEventGenerator);
+        new ApiNamingRulesConfigStore(
+            genericStub, timestampConverter, configChangeEventGenerator, ClientConfig.DEFAULT);
     ProtectionSpanRulesConfigStore protectionSpanRulesConfigStore =
         new ProtectionSpanRulesConfigStore(
             genericStub, timestampConverter, configChangeEventGenerator);
@@ -127,7 +134,10 @@ class SpanProcessingConfigServiceImplTest {
         new DefaultSamplingConfigManager(timestampConverter, samplingConfigsConfigStore);
     ApiNamingRulesManager apiNamingRulesManager =
         new DefaultApiNamingRulesManager(
-            apiNamingRulesConfigStore, timestampConverter, this.apiSpecConfigServiceBlockingStub);
+            apiNamingRulesConfigStore,
+            timestampConverter,
+            this.apiSpecConfigServiceBlockingStub,
+            apiNamingRulesManagerConfig);
     ProtectionSpanRulesManager protectionSpanRulesManager =
         new DefaultProtectionSpanRulesManager(timestampConverter, protectionSpanRulesConfigStore);
     DefaultProtectionSpanRuleEvaluationStatusConfigStore

@@ -7,15 +7,22 @@ import ai.traceable.span.processing.config.service.servicenaming.ServiceNamingRu
 import ai.traceable.span.processing.config.service.spaningestionrules.SpanIngestionRulesManagerModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import java.time.Clock;
+import java.time.Duration;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 public class SpanProcessingConfigServiceModule extends AbstractModule {
+  private static final String SPAN_PROCESSING_CONFIG_SERVICE_CONFIG_PATH =
+      "span.processing.config.service";
+  private static final String HYPERTRACE_CONFIG_SERVICE_TIMEOUT_CONFIG_PATH =
+      "hypertrace.config.service.timeout";
 
   private final Channel channel;
   private final Config config;
@@ -36,7 +43,9 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
 
     install(new SamplingConfigManagerModule());
-    install(new ApiNamingRulesManagerModule());
+    install(
+        new ApiNamingRulesManagerModule(
+            config.getConfig(SPAN_PROCESSING_CONFIG_SERVICE_CONFIG_PATH)));
     install(new ProtectionSpanRulesManagerModule());
     install(new ServiceNamingRuleModule());
     install(new SpanIngestionRulesManagerModule(config));
@@ -52,5 +61,14 @@ public class SpanProcessingConfigServiceModule extends AbstractModule {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Singleton
+  @Provides
+  ClientConfig providesClientConfig() {
+    return new ClientConfig(
+        this.config.hasPath(HYPERTRACE_CONFIG_SERVICE_TIMEOUT_CONFIG_PATH)
+            ? this.config.getDuration(HYPERTRACE_CONFIG_SERVICE_TIMEOUT_CONFIG_PATH)
+            : Duration.ofSeconds(10));
   }
 }

@@ -56,6 +56,7 @@ import io.grpc.StatusRuntimeException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -87,10 +88,14 @@ class ApiSpecConfigServiceImplTest {
     ApiSpecStatusConverter apiSpecStatusConverter = new ApiSpecStatusConverter();
     ApiSpecConfigStore apiSpecConfigStore =
         new ApiSpecConfigStore(
-            genericStub, timestampConverter, configChangeEventGenerator, apiSpecStatusConverter);
+            genericStub,
+            timestampConverter,
+            configChangeEventGenerator,
+            apiSpecStatusConverter,
+            ClientConfig.DEFAULT);
     Config testConfig =
         ConfigFactory.parseMap(
-            Map.of("maxAllowedSpecsPerTenant", TEST_MAX_ALLOWED_SPECS_PER_TENANT));
+            Map.of("max.allowed.specs.per.tenant", TEST_MAX_ALLOWED_SPECS_PER_TENANT));
     mockGenericConfigService
         .addService(
             new ApiSpecConfigServiceImpl(

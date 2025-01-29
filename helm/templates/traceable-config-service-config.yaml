@@ -40,6 +40,7 @@ data:
       }
       publish.change.events = {{ .Values.traceableConfigServiceConfig.publishChangeEvents }}
     }
+    hypertrace.config.service.timeout = {{ .Values.hypertraceConfigServiceTimeout }}
     partitioner.config.service {
       default.profiles = [
       {{- range $k,$v := $.Values.traceableConfigServiceConfig.partitionerServiceConfig.defaultProfiles }}
@@ -325,6 +326,9 @@ data:
       {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "systemExcludeSpanRules" }}
       system.exclude.span.rules = {{- .Values.traceableConfigServiceConfig.spanProcessingConfig.systemExcludeSpanRules | indent 6 }}
       {{- end }}
+      {{- if hasKey .Values.traceableConfigServiceConfig.spanProcessingConfig "apiSpecConfigServiceTimeout" }}
+      api.spec.config.service.timeout = {{ .Values.traceableConfigServiceConfig.spanProcessingConfig.apiSpecConfigServiceTimeout }}
+      {{- end }}
     }
     {{- end }}
     span.exclusion.rules = {
@@ -332,7 +336,7 @@ data:
     }
     
     api.spec.config = {
-      maxAllowedSpecsPerTenant = {{ .Values.traceableConfigServiceConfig.apiSpecConfig.maxAllowedSpecsPerTenant }}
+      max.allowed.specs.per.tenant = {{ .Values.traceableConfigServiceConfig.apiSpecConfig.maxAllowedSpecsPerTenant }}
     }
     
     local.api.naming.config = {

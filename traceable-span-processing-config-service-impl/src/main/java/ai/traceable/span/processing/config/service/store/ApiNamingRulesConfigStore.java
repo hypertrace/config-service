@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -48,12 +49,14 @@ public class ApiNamingRulesConfigStore
   public ApiNamingRulesConfigStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       TimestampConverter timestampConverter,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      ClientConfig clientConfig) {
     super(
         configServiceBlockingStub,
         SpanProcessingConfigConstants.RESOURCE_NAMESPACE,
         API_NAMING_RULES_RESOURCE_NAME,
-        configChangeEventGenerator);
+        configChangeEventGenerator,
+        clientConfig);
     this.timestampConverter = timestampConverter;
   }
 
