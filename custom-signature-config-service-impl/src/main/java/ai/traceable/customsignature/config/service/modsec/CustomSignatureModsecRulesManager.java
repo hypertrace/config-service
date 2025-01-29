@@ -129,8 +129,20 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   @Override
   public boolean isModsecRuleMappingSupported(ClauseGroup clauseGroup) {
     for (Clause clause : clauseGroup.getClausesList()) {
-      // attribute clause can not be converted to modsec
-      if (clause.hasAttributeKeyValueExpression()) {
+      // following clauses can not be converted to modsec
+      if (clause.hasAttributeKeyValueExpression()
+          || clause.hasIpAddressExpression()
+          || clause.hasIpTypeExpression()
+          || clause.hasIpReputationExpression()
+          || clause.hasIpConnectionTypeExpression()
+          || clause.hasIpOrganisationExpression()
+          || clause.hasIpAsnExpression()
+          || clause.hasIpAbuseVelocityExpression()
+          || clause.hasRegionExpression()
+          || clause.hasUserIdExpression()
+          || clause.hasEmailDomainExpression()
+          || clause.hasUserAgentExpression()
+          || clause.hasRequestScannerTypeExpression()) {
         return false;
       }
       // response-cookie metadata is not supported in modsec

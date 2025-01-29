@@ -1,0 +1,457 @@
+package ai.traceable.customsignature.config.service.rules;
+
+import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL;
+import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HOST;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HTTP_METHOD;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_URL;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_USER_AGENT;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX;
+import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
+import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
+
+import ai.traceable.config.utils.RegexValidator;
+import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.CustomSecRule;
+import ai.traceable.customsignature.config.service.v1.EmailDomainExpression;
+import ai.traceable.customsignature.config.service.v1.IpAbuseVelocityExpression;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpressionType;
+import ai.traceable.customsignature.config.service.v1.IpAsnExpression;
+import ai.traceable.customsignature.config.service.v1.IpConnectionType;
+import ai.traceable.customsignature.config.service.v1.IpConnectionTypeExpression;
+import ai.traceable.customsignature.config.service.v1.IpOrganisationExpression;
+import ai.traceable.customsignature.config.service.v1.IpReputationExpression;
+import ai.traceable.customsignature.config.service.v1.IpType;
+import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
+import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
+import ai.traceable.customsignature.config.service.v1.MatchExpression;
+import ai.traceable.customsignature.config.service.v1.MatchKey;
+import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
+import ai.traceable.customsignature.config.service.v1.StringCondition;
+import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
+import ai.traceable.customsignature.config.service.v1.UserIdExpression;
+import ai.traceable.platform.utils.ip.IpValidationUtils;
+import com.google.protobuf.Message;
+import com.google.re2j.Matcher;
+import com.google.re2j.Pattern;
+import com.google.re2j.PatternSyntaxException;
+import io.grpc.Status;
+import java.util.List;
+import java.util.Set;
+
+class ClauseValidator {
+
+  private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
+
+  private static final Set<MatchKey> INVALID_RESPONSE_MATCH_KEYS =
+      Set.of(
+          MATCH_KEY_URL,
+          MATCH_KEY_QUERY_PARAMS_COUNT,
+          MATCH_KEY_HOST,
+          MATCH_KEY_HTTP_METHOD,
+          MATCH_KEY_USER_AGENT);
+
+  public Status validateClause(Clause clause) {
+    switch (clause.getClauseCase()) {
+      case MATCH_EXPRESSION:
+        return validateMatchExpression(clause.getMatchExpression());
+      case KEY_VALUE_EXPRESSION:
+        return validateKeyValueExpression(clause.getKeyValueExpression());
+      case ATTRIBUTE_KEY_VALUE_EXPRESSION:
+        return validateAttributeKeyValueExpression(clause.getAttributeKeyValueExpression());
+      case CUSTOM_SEC_RULE:
+        return validateCustomSecRule(clause.getCustomSecRule());
+      case IP_ADDRESS_EXPRESSION:
+        return validateIpAddressExpression(clause.getIpAddressExpression());
+      case IP_TYPE_EXPRESSION:
+        return validateIpTypeExpression(clause.getIpTypeExpression());
+      case IP_REPUTATION_EXPRESSION:
+        return validateIpReputationExpression(clause.getIpReputationExpression());
+      case IP_CONNECTION_TYPE_EXPRESSION:
+        return validateIpConnectionTypeExpression(clause.getIpConnectionTypeExpression());
+      case IP_ORGANISATION_EXPRESSION:
+        return validateIpOrganisationExpression(clause.getIpOrganisationExpression());
+      case IP_ASN_EXPRESSION:
+        return validateIpAsnExpression(clause.getIpAsnExpression());
+      case IP_ABUSE_VELOCITY_EXPRESSION:
+        return validateIpAbuseVelocityExpression(clause.getIpAbuseVelocityExpression());
+      case REGION_EXPRESSION:
+        return validateRegionExpression(clause.getRegionExpression());
+      case USER_ID_EXPRESSION:
+        return validateUserIdExpression(clause.getUserIdExpression());
+      case EMAIL_DOMAIN_EXPRESSION:
+        return validateEmailDomainExpression(clause.getEmailDomainExpression());
+      case USER_AGENT_EXPRESSION:
+        return validateUserAgentExpression(clause.getUserAgentExpression());
+      case REQUEST_SCANNER_TYPE_EXPRESSION:
+        return validateRequestScannerTypeExpression(clause.getRequestScannerTypeExpression());
+      default:
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format("Invalid Custom Signature Rule Clause expression %s ", clause));
+    }
+  }
+
+  private Status validateRequestScannerTypeExpression(
+      RequestScannerTypeExpression requestScannerTypeExpression) {
+    validateNonDefaultPresenceOrThrow(
+        requestScannerTypeExpression, RequestScannerTypeExpression.SCANNER_TYPES_FIELD_NUMBER);
+    if (requestScannerTypeExpression.getScannerTypesList().isEmpty()
+        || requestScannerTypeExpression.getScannerTypesList().stream().anyMatch(String::isBlank)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Invalid request scanner type expression : %s", requestScannerTypeExpression));
+    }
+    return Status.OK;
+  }
+
+  private Status validateUserAgentExpression(UserAgentExpression userAgentExpression) {
+    List<String> userAgents = userAgentExpression.getUserAgentsList();
+    List<String> userAgentRegexes = userAgentExpression.getUserAgentRegexesList();
+    if (userAgents.isEmpty() && userAgentRegexes.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Invalid expression for type %s:%n %s",
+              getName(userAgentExpression), printMessage(userAgentExpression)));
+    }
+    RegexValidator.validateRegexesWithNonWide(userAgentRegexes);
+    return Status.OK;
+  }
+
+  private Status validateEmailDomainExpression(EmailDomainExpression emailDomainExpression) {
+    List<String> emailDomains = emailDomainExpression.getEmailDomainsList();
+    List<String> emailRegexes = emailDomainExpression.getEmailRegexesList();
+    if (emailDomains.isEmpty() && emailRegexes.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Invalid expression for type %s:%n %s",
+              getName(emailDomainExpression), printMessage(emailDomainExpression)));
+    }
+    RegexValidator.validateRegexesWithNonWide(emailRegexes);
+    return Status.OK;
+  }
+
+  private Status validateUserIdExpression(UserIdExpression userIdExpression) {
+    List<String> userIdRegexes = userIdExpression.getUserIdRegexesList();
+    List<String> userIds = userIdExpression.getUserIdsList();
+    if (userIdRegexes.isEmpty() && userIds.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Invalid expression for type %s:%n %s",
+              getName(userIdExpression), printMessage(userIdExpression)));
+    }
+    RegexValidator.validateRegexesWithNonWide(userIdRegexes);
+    return Status.OK;
+  }
+
+  private Status validateRegionExpression(RegionExpression regionExpression) {
+    if (regionExpression.getRegionIdentifiersList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "At least one region id should be provided for region expression : %s",
+              regionExpression));
+    }
+    for (RegionExpression.Region region : regionExpression.getRegionIdentifiersList()) {
+      if (region.getCountryIsoCode().isEmpty()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "Region value cannot be empty for region expression : %s", regionExpression));
+      }
+    }
+    return Status.OK;
+  }
+
+  private Status validateIpAbuseVelocityExpression(
+      IpAbuseVelocityExpression ipAbuseVelocityExpression) {
+    validateNonDefaultPresenceOrThrow(
+        ipAbuseVelocityExpression, IpAbuseVelocityExpression.MIN_IP_ABUSE_VELOCITY_FIELD_NUMBER);
+    return Status.OK;
+  }
+
+  private Status validateIpAsnExpression(IpAsnExpression ipAsnExpression) {
+    RegexValidator.validateRegexesWithNonWide(ipAsnExpression.getIpAsnRegexesList());
+    return Status.OK;
+  }
+
+  private Status validateIpOrganisationExpression(
+      IpOrganisationExpression ipOrganisationExpression) {
+    RegexValidator.validateRegexesWithNonWide(
+        ipOrganisationExpression.getIpOrganisationRegexesList());
+    return Status.OK;
+  }
+
+  private Status validateIpConnectionTypeExpression(
+      IpConnectionTypeExpression ipConnectionTypeExpression) {
+    validateNonDefaultPresenceOrThrow(
+        ipConnectionTypeExpression, IpConnectionTypeExpression.IP_CONNECTION_TYPES_FIELD_NUMBER);
+    for (IpConnectionType ipConnectionType :
+        ipConnectionTypeExpression.getIpConnectionTypesList()) {
+      Status status = validateIpConnectionType(ipConnectionType);
+      if (!status.isOk()) {
+        return status;
+      }
+    }
+    return Status.OK;
+  }
+
+  private Status validateIpConnectionType(IpConnectionType ipConnectionType) {
+    if (ipConnectionType.equals(IpConnectionType.IP_CONNECTION_TYPE_UNSPECIFIED)
+        || ipConnectionType.equals(IpConnectionType.UNRECOGNIZED)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format("Invalid IP Connection Type : %s", ipConnectionType));
+    }
+    return Status.OK;
+  }
+
+  private Status validateIpReputationExpression(IpReputationExpression ipReputationExpression) {
+    validateNonDefaultPresenceOrThrow(
+        ipReputationExpression, IpReputationExpression.MIN_IP_REPUTATION_SEVERITY_FIELD_NUMBER);
+    return Status.OK;
+  }
+
+  private Status validateIpAddressExpression(IpAddressExpression ipAddressExpression) {
+    List<String> cidrIpRanges = ipAddressExpression.getCidrIpRangesList();
+    List<String> ipAddresses = ipAddressExpression.getIpAddressesList();
+    List<String> rawInputIpData = ipAddressExpression.getRawInputIpDataList();
+    IpAddressExpressionType expressionType = ipAddressExpression.getIpAddressExpressionType();
+    if (expressionType.equals(IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL)
+        || expressionType.equals(IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL)) {
+      if (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty() || !rawInputIpData.isEmpty()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "RawInputIpData, cidrIpRanges and ipAddresses should be empty for ip address expression type : %s ",
+                ipAddressExpression.getIpAddressExpressionType()));
+      }
+      return Status.OK;
+    }
+    return validateIpAddressesAndRanges(
+        ipAddressExpression, cidrIpRanges, ipAddresses, rawInputIpData);
+  }
+
+  private Status validateIpAddressesAndRanges(
+      IpAddressExpression ipAddressExpression,
+      List<String> cidrIpRanges,
+      List<String> ipAddresses,
+      List<String> rawInputIpData) {
+    if (cidrIpRanges.isEmpty() && ipAddresses.isEmpty() && rawInputIpData.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Invalid ipAddressExpression for custom signature rule :%n %s",
+              printMessage(ipAddressExpression)));
+    }
+    if ((!rawInputIpData.isEmpty()) && (!cidrIpRanges.isEmpty() || !ipAddresses.isEmpty())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "IpAddressExpression should not have rawInputIpData and (cidrIpRanges or ipAddresses) simultaneously :%n %s",
+              printMessage(ipAddressExpression)));
+    }
+    if (!ipAddresses.stream().allMatch(IpValidationUtils::isValidIpAddress)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "IpAddressExpression should have valid IP addresses");
+    }
+    if (!cidrIpRanges.stream().allMatch(IpValidationUtils::isValidSubnet)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "IpAddressExpression should have valid CIDR IP ranges");
+    }
+    return Status.OK;
+  }
+
+  private Status validateIpTypeExpression(IpTypeExpression ipTypeExpression) {
+    validateNonDefaultPresenceOrThrow(ipTypeExpression, IpTypeExpression.IP_TYPES_FIELD_NUMBER);
+    for (IpType ipType : ipTypeExpression.getIpTypesList()) {
+      Status status = validateIpType(ipType);
+      if (!status.isOk()) {
+        return status;
+      }
+    }
+    return Status.OK;
+  }
+
+  private Status validateIpType(IpType ipType) {
+    if (ipType.equals(IpType.IP_TYPE_UNSPECIFIED)) {
+      return Status.INVALID_ARGUMENT.withDescription("Invalid IP Type");
+    }
+    return Status.OK;
+  }
+
+  private Status validateMatchExpression(MatchExpression matchExpression) {
+    if (MatchKey.MATCH_KEY_UNSPECIFIED.equals(matchExpression.getMatchKey())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule match expression should have a valid match key.");
+    }
+    if (MatchOperator.MATCH_OPERATOR_UNSPECIFIED.equals(matchExpression.getMatchOperator())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule match expression should have a valid match operator.");
+    }
+    if (matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
+        && INVALID_RESPONSE_MATCH_KEYS.contains(matchExpression.getMatchKey())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Invalid match key : %s for match category : %s for custom signature rule",
+              matchExpression.getMatchKey(), matchExpression.getMatchCategory()));
+    }
+    if (isInvalidMathematicalOperation(matchExpression)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format(
+              "Custom Signature Rule match expression should have numerical value for match operator : %s",
+              matchExpression.getMatchOperator()));
+    }
+    if (MATCH_OPERATOR_MATCHES_REGEX.equals(matchExpression.getMatchOperator())
+        || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(matchExpression.getMatchOperator())) {
+      return validateRegex(matchExpression.getMatchValue());
+    }
+    return Status.OK;
+  }
+
+  private boolean isInvalidMathematicalOperation(MatchExpression matchExpression) {
+    return (matchExpression.getMatchOperator().equals(MATCH_OPERATOR_GREATER_THAN)
+            || matchExpression.getMatchOperator().equals(MATCH_OPERATOR_LESS_THAN))
+        && !isNumber(matchExpression.getMatchValue());
+  }
+
+  private Status validateKeyValueExpression(KeyValueExpression keyValueExpression) {
+    if (KeyValueTag.KEY_VALUE_TAG_UNSPECIFIED.equals(keyValueExpression.getTag())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule key-value expression should have a valid tag.");
+    }
+    return validateExpression(
+        false,
+        keyValueExpression.getMatchKey(),
+        keyValueExpression.getKeyMatchOperator(),
+        keyValueExpression.getMatchValue(),
+        keyValueExpression.getValueMatchOperator());
+  }
+
+  private Status validateAttributeKeyValueExpression(
+      AttributeKeyValueExpression attributeKeyValueExpression) {
+    if (!attributeKeyValueExpression.hasKeyCondition()) {
+      Status status =
+          validateExpression(
+              true,
+              attributeKeyValueExpression.getMatchKey(),
+              attributeKeyValueExpression.getKeyMatchOperator(),
+              attributeKeyValueExpression.getMatchValue(),
+              attributeKeyValueExpression.getValueMatchOperator());
+      if (!status.isOk()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format(
+                "Invalid attribute key value expression : %s", attributeKeyValueExpression));
+      }
+      return Status.OK;
+    }
+    validateStringCondition(attributeKeyValueExpression.getKeyCondition());
+    if (attributeKeyValueExpression.hasValueCondition()) {
+      validateStringCondition(attributeKeyValueExpression.getValueCondition());
+    }
+    return Status.OK;
+  }
+
+  private void validateStringCondition(StringCondition stringCondition) {
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
+    if (MATCH_OPERATOR_MATCHES_REGEX.equals(stringCondition.getOperator())
+        || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(stringCondition.getOperator())) {
+      Status status = validateRegex(stringCondition.getValue());
+      if (!status.isOk()) {
+        throw status.asRuntimeException();
+      }
+    }
+  }
+
+  private Status validateExpression(
+      boolean isEmptyValueAllowed,
+      String matchKey,
+      MatchOperator keyMatchOperator,
+      String matchValue,
+      MatchOperator valueMatchOperator) {
+    if (matchKey.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule expression should have a valid match key.");
+    }
+    if (MatchOperator.MATCH_OPERATOR_UNSPECIFIED.equals(keyMatchOperator)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule expression should have a valid key match operator.");
+    }
+    if (!isEmptyValueAllowed && matchValue.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule expression should have a valid match value.");
+    }
+    if (!matchValue.isEmpty()
+        && MatchOperator.MATCH_OPERATOR_UNSPECIFIED.equals(valueMatchOperator)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule expression should have a valid value match operator.");
+    }
+    if (MATCH_OPERATOR_MATCHES_REGEX.equals(valueMatchOperator)
+        || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(valueMatchOperator)) {
+      return validateRegex(matchValue);
+    }
+    return Status.OK;
+  }
+
+  private Status validateRegex(String regexPattern) {
+    if (regexPattern.startsWith(UTF_8_REGEX_PREFIX)) {
+      return Status.OK;
+    }
+    // compiling an invalid regex throws PatternSyntaxException
+    try {
+      Pattern.compile(regexPattern);
+      return Status.OK;
+    } catch (PatternSyntaxException e) {
+      return Status.INVALID_ARGUMENT
+          .withCause(e)
+          .withDescription("Invalid Regex Value for the custom signature rule expression");
+    }
+  }
+
+  private Status validateCustomSecRule(CustomSecRule rule) {
+    String inputSecRule = rule.getInputSecRule();
+    if (!inputSecRule.startsWith(SEC_RULE)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Sec Rule should be start with keyword SecRule");
+    }
+
+    if (!SEC_RULE_ID_REGEX.matcher(inputSecRule).find()) {
+      return Status.INVALID_ARGUMENT.withDescription("Sec Rule actions should start with \"id: ");
+    }
+
+    if (checkChainKeywords(inputSecRule)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Chain keyword should be there between any 2 directives containing SecAction or SecRule or SecRuleScript");
+    }
+    if (!rule.getSanitisedSecRule().isBlank()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Sanitized Sec Rule should be empty in create/update request");
+    }
+    return Status.OK;
+  }
+
+  private boolean checkChainKeywords(String inputSecRule) {
+    Matcher matcher = SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX.matcher(inputSecRule);
+    return matcher.matches();
+  }
+
+  private boolean isNumber(String value) {
+    try {
+      Double.parseDouble(value);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private String getName(Message message) {
+    return message.getDescriptorForType().getName();
+  }
+}

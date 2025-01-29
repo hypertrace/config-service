@@ -61,57 +61,68 @@ public class CustomSignatureConfigServiceImpl
   public void createCustomSignatureRule(
       CreateCustomSignatureRuleRequest request,
       StreamObserver<CreateCustomSignatureRuleResponse> responseObserver) {
-    Status status = rulesValidator.validate(request);
-    if (!status.isOk()) {
-      log.error("Create Custom Signature Rule Request is not valid {}", status.getDescription());
-      responseObserver.onError(status.asException());
-      return;
-    }
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error("Create Custom Signature Rule Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
 
-    Optional<CustomSignatureRule> customSignatureRuleOptional =
-        rulesManager.createCustomSignatureRule(RequestContext.CURRENT.get(), request);
-    if (customSignatureRuleOptional.isEmpty()) {
-      responseObserver.onError(
-          Status.INTERNAL
-              .withDescription(
-                  String.format("Unable to create custom signature rule %s", request.getName()))
-              .asException());
-      return;
+      Optional<CustomSignatureRule> customSignatureRuleOptional =
+          rulesManager.createCustomSignatureRule(RequestContext.CURRENT.get(), request);
+      if (customSignatureRuleOptional.isEmpty()) {
+        responseObserver.onError(
+            Status.INTERNAL
+                .withDescription(
+                    String.format("Unable to create custom signature rule %s", request.getName()))
+                .asException());
+        return;
+      }
+      responseObserver.onNext(
+          CreateCustomSignatureRuleResponse.newBuilder()
+              .setRule(customSignatureRuleOptional.get())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to create custom signature rule", e);
+      responseObserver.onError(e);
     }
-    responseObserver.onNext(
-        CreateCustomSignatureRuleResponse.newBuilder()
-            .setRule(customSignatureRuleOptional.get())
-            .build());
-    responseObserver.onCompleted();
   }
 
   @Override
   public void updateCustomSignatureRule(
       UpdateCustomSignatureRuleRequest request,
       StreamObserver<UpdateCustomSignatureRuleResponse> responseObserver) {
-    Status status = rulesValidator.validate(request);
-    if (!status.isOk()) {
-      log.error("Update Custom Signature Rule Request is not valid {}", status.getDescription());
-      responseObserver.onError(status.asException());
-      return;
-    }
+    try {
+      Status status = rulesValidator.validate(request);
+      if (!status.isOk()) {
+        log.error("Update Custom Signature Rule Request is not valid {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
 
-    Optional<CustomSignatureRule> customSignatureRuleOptional =
-        rulesManager.updateCustomSignatureRule(RequestContext.CURRENT.get(), request.getRule());
-    if (customSignatureRuleOptional.isEmpty()) {
-      responseObserver.onError(
-          Status.INTERNAL
-              .withDescription(
-                  String.format(
-                      "Unable to update custom signature rule %s", request.getRule().getId()))
-              .asException());
-      return;
+      Optional<CustomSignatureRule> customSignatureRuleOptional =
+          rulesManager.updateCustomSignatureRule(RequestContext.CURRENT.get(), request.getRule());
+      if (customSignatureRuleOptional.isEmpty()) {
+        responseObserver.onError(
+            Status.INTERNAL
+                .withDescription(
+                    String.format(
+                        "Unable to update custom signature rule %s", request.getRule().getId()))
+                .asException());
+        return;
+      }
+      responseObserver.onNext(
+          UpdateCustomSignatureRuleResponse.newBuilder()
+              .setRule(customSignatureRuleOptional.get())
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Unable to update custom signature rule with id {} :", request.getRule().getId(), e);
+      responseObserver.onError(e);
     }
-    responseObserver.onNext(
-        UpdateCustomSignatureRuleResponse.newBuilder()
-            .setRule(customSignatureRuleOptional.get())
-            .build());
-    responseObserver.onCompleted();
   }
 
   @Override

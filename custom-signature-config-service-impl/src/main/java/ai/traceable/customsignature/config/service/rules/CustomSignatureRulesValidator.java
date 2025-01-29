@@ -1,29 +1,15 @@
 package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HOST;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HTTP_METHOD;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_URL;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_USER_AGENT;
-import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
-import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
-import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
-import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
-import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
-import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX;
-import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_ID_REGEX;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
-import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
-import ai.traceable.customsignature.config.service.v1.CustomSecRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
@@ -31,22 +17,13 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
-import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
-import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
-import ai.traceable.customsignature.config.service.v1.MatchExpression;
-import ai.traceable.customsignature.config.service.v1.MatchKey;
-import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
-import ai.traceable.customsignature.config.service.v1.StringCondition;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
-import com.google.re2j.Matcher;
-import com.google.re2j.Pattern;
-import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.time.Duration;
@@ -56,24 +33,20 @@ import java.util.Set;
 
 class CustomSignatureRulesValidator implements RulesValidator {
 
-  private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
   private static final Set<EventType> INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES =
       Set.of(EventType.EVENT_TYPE_ALLOW, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
 
-  private static final Set<MatchKey> INVALID_RESPONSE_MATCH_KEYS =
-      Set.of(
-          MATCH_KEY_URL,
-          MATCH_KEY_QUERY_PARAMS_COUNT,
-          MATCH_KEY_HOST,
-          MATCH_KEY_HTTP_METHOD,
-          MATCH_KEY_USER_AGENT);
   private static final Integer CUSTOM_LABELS_LIMIT = 5;
 
   private final ModsecRulesManager modsecRulesManager;
 
+  private final ClauseValidator clauseValidator;
+
   @Inject
-  public CustomSignatureRulesValidator(ModsecRulesManager modsecRulesManager) {
+  public CustomSignatureRulesValidator(
+      ModsecRulesManager modsecRulesManager, ClauseValidator clauseValidator) {
     this.modsecRulesManager = modsecRulesManager;
+    this.clauseValidator = clauseValidator;
   }
 
   @Override
@@ -83,12 +56,17 @@ class CustomSignatureRulesValidator implements RulesValidator {
           "Create custom signature rule should have a valid name.");
     }
 
-    Status status;
-    ClauseGroup clauseGroup = request.getDefinition().getClauseGroup();
+    if (!request.hasDefinition()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Create custom signature rule should have a valid definition.");
+    }
+
     if (!request.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
+    Status status;
+    ClauseGroup clauseGroup = request.getDefinition().getClauseGroup();
     if ((status =
             validateRuleEffect(
                 request.getEffect(), hasResponseOrAttribute(clauseGroup.getClausesList())))
@@ -96,10 +74,6 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    if (!request.hasDefinition()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Create custom signature rule should have a valid definition.");
-    }
     if ((status = validateRuleDefinition(request.getDefinition())) != Status.OK) {
       return status;
     }
@@ -137,21 +111,22 @@ class CustomSignatureRulesValidator implements RulesValidator {
           .asRuntimeException();
     }
 
-    Status status;
-    List<Clause> clauses = rule.getDefinition().getClauseGroup().getClausesList();
-    boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
-    if (!rule.hasEffect()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Create custom signature rule should have a valid effect.");
-    }
-    if ((status = validateRuleEffect(rule.getEffect(), hasResponseOrAttribute)) != Status.OK) {
-      return status;
-    }
-
     if (!rule.hasDefinition()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid definition.");
     }
+
+    if (!rule.hasEffect()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Create custom signature rule should have a valid effect.");
+    }
+    Status status;
+    List<Clause> clauses = rule.getDefinition().getClauseGroup().getClausesList();
+    boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
+    if ((status = validateRuleEffect(rule.getEffect(), hasResponseOrAttribute)) != Status.OK) {
+      return status;
+    }
+
     if ((status = validateRuleDefinition(rule.getDefinition())) != Status.OK) {
       return status;
     }
@@ -276,135 +251,9 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
     Status status;
     for (Clause clause : clauseGroup.getClausesList()) {
-      if ((status = validateClause(clause)) != Status.OK) {
+      if ((status = clauseValidator.validateClause(clause)) != Status.OK) {
         return status;
       }
-    }
-    return Status.OK;
-  }
-
-  private Status validateClause(Clause clause) {
-    switch (clause.getClauseCase()) {
-      case MATCH_EXPRESSION:
-        return validateMatchExpression(clause.getMatchExpression());
-      case KEY_VALUE_EXPRESSION:
-        return validateKeyValueExpression(clause.getKeyValueExpression());
-      case ATTRIBUTE_KEY_VALUE_EXPRESSION:
-        return validateAttributeKeyValueExpression(clause.getAttributeKeyValueExpression());
-      case CUSTOM_SEC_RULE:
-        return validateCustomSecRule(clause.getCustomSecRule());
-      default:
-        return Status.INVALID_ARGUMENT.withDescription(
-            "Custom Signature Rule Clause should have a valid expression");
-    }
-  }
-
-  private Status validateMatchExpression(MatchExpression matchExpression) {
-    if (matchExpression.getMatchKey() == MatchKey.MATCH_KEY_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule match expression should have a valid match key.");
-    }
-    if (matchExpression.getMatchOperator() == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule match expression should have a valid match operator.");
-    }
-    if (matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
-        && INVALID_RESPONSE_MATCH_KEYS.contains(matchExpression.getMatchKey())) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          String.format(
-              "Invalid match key : %s for match category : %s for custom signature rule",
-              matchExpression.getMatchKey(), matchExpression.getMatchCategory()));
-    }
-    if (isInvalidMathematicalOperation(matchExpression)) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          String.format(
-              "Custom Signature Rule match expression should have numerical value for match operator : %s",
-              matchExpression.getMatchOperator()));
-    }
-    if (matchExpression.getMatchOperator() == MATCH_OPERATOR_MATCHES_REGEX
-        || matchExpression.getMatchOperator() == MATCH_OPERATOR_NOT_MATCH_REGEX) {
-      return validateRegex(matchExpression.getMatchValue());
-    }
-    return Status.OK;
-  }
-
-  private boolean isInvalidMathematicalOperation(MatchExpression matchExpression) {
-    return (matchExpression.getMatchOperator().equals(MATCH_OPERATOR_GREATER_THAN)
-            || matchExpression.getMatchOperator().equals(MATCH_OPERATOR_LESS_THAN))
-        && !isNumber(matchExpression.getMatchValue());
-  }
-
-  private Status validateKeyValueExpression(KeyValueExpression keyValueExpression) {
-    if (keyValueExpression.getTag() == KeyValueTag.KEY_VALUE_TAG_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule key-value expression should have a valid tag.");
-    }
-    return validateExpression(
-        false,
-        keyValueExpression.getMatchKey(),
-        keyValueExpression.getKeyMatchOperator(),
-        keyValueExpression.getMatchValue(),
-        keyValueExpression.getValueMatchOperator());
-  }
-
-  private Status validateAttributeKeyValueExpression(
-      AttributeKeyValueExpression attributeKeyValueExpression) {
-    if (!attributeKeyValueExpression.hasKeyCondition()) {
-      Status status =
-          validateExpression(
-              true,
-              attributeKeyValueExpression.getMatchKey(),
-              attributeKeyValueExpression.getKeyMatchOperator(),
-              attributeKeyValueExpression.getMatchValue(),
-              attributeKeyValueExpression.getValueMatchOperator());
-      if (status != Status.OK) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            String.format(
-                "Invalid attribute key value expression : %s", attributeKeyValueExpression));
-      }
-      return Status.OK;
-    }
-    validateStringCondition(attributeKeyValueExpression.getKeyCondition());
-    if (attributeKeyValueExpression.hasValueCondition()) {
-      validateStringCondition(attributeKeyValueExpression.getValueCondition());
-    }
-    return Status.OK;
-  }
-
-  private void validateStringCondition(StringCondition stringCondition) {
-    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
-    if (stringCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
-        || stringCondition.getOperator() == MATCH_OPERATOR_NOT_MATCH_REGEX) {
-      validateRegex(stringCondition.getValue());
-    }
-  }
-
-  private Status validateExpression(
-      boolean isEmptyValueAllowed,
-      String matchKey,
-      MatchOperator keyMatchOperator,
-      String matchValue,
-      MatchOperator valueMatchOperator) {
-    if (matchKey.isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule expression should have a valid match key.");
-    }
-    if (keyMatchOperator == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule expression should have a valid key match operator.");
-    }
-    if (!isEmptyValueAllowed && matchValue.isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule expression should have a valid match value.");
-    }
-    if (!matchValue.isEmpty() && valueMatchOperator == MatchOperator.MATCH_OPERATOR_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule expression should have a valid value match operator.");
-    }
-    if (valueMatchOperator == MATCH_OPERATOR_MATCHES_REGEX
-        || valueMatchOperator == MATCH_OPERATOR_NOT_MATCH_REGEX) {
-      return validateRegex(matchValue);
     }
     return Status.OK;
   }
@@ -418,21 +267,6 @@ class CustomSignatureRulesValidator implements RulesValidator {
       }
     }
     return Status.OK;
-  }
-
-  private Status validateRegex(String regexPattern) {
-    if (regexPattern.startsWith(UTF_8_REGEX_PREFIX)) {
-      return Status.OK;
-    }
-    // compiling an invalid regex throws PatternSyntaxException
-    try {
-      Pattern.compile(regexPattern);
-      return Status.OK;
-    } catch (PatternSyntaxException e) {
-      return Status.INVALID_ARGUMENT
-          .withCause(e)
-          .withDescription("Invalid Regex Value for the custom signature rule expression");
-    }
   }
 
   private boolean hasResponseOrAttribute(List<Clause> clauses) {
@@ -463,42 +297,6 @@ class CustomSignatureRulesValidator implements RulesValidator {
       }
     } else {
       return Status.OK;
-    }
-  }
-
-  private Status validateCustomSecRule(CustomSecRule rule) {
-    String inputSecRule = rule.getInputSecRule();
-    if (!inputSecRule.startsWith(SEC_RULE)) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Sec Rule should be start with keyword SecRule");
-    }
-
-    if (!SEC_RULE_ID_REGEX.matcher(inputSecRule).find()) {
-      return Status.INVALID_ARGUMENT.withDescription("Sec Rule actions should start with \"id: ");
-    }
-
-    if (checkChainKeywords(inputSecRule)) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Chain keyword should be there between any 2 directives containing SecAction or SecRule or SecRuleScript");
-    }
-    if (!rule.getSanitisedSecRule().isBlank()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Sanitized Sec Rule should be empty in create/update request");
-    }
-    return Status.OK;
-  }
-
-  public boolean checkChainKeywords(String inputSecRule) {
-    Matcher matcher = SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX.matcher(inputSecRule);
-    return matcher.matches();
-  }
-
-  private boolean isNumber(String value) {
-    try {
-      Double.parseDouble(value);
-      return true;
-    } catch (Exception e) {
-      return false;
     }
   }
 }

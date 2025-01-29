@@ -6,6 +6,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -22,6 +23,9 @@ import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.IpAbuseVelocity;
+import ai.traceable.customsignature.config.service.v1.IpAbuseVelocityExpression;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
@@ -56,6 +60,17 @@ class CustomSignatureRulesManagerTest {
           .setRuleScope(
               RuleScope.newBuilder()
                   .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("prod")))
+          .build();
+  private static final RuleDefinition testRuleDefinition =
+      RuleDefinition.newBuilder()
+          .setClauseGroup(
+              ClauseGroup.newBuilder()
+                  .addClauses(
+                      Clause.newBuilder()
+                          .setIpAbuseVelocityExpression(
+                              IpAbuseVelocityExpression.newBuilder()
+                                  .setMinIpAbuseVelocity(IpAbuseVelocity.IP_ABUSE_VELOCITY_MEDIUM)))
+                  .build())
           .build();
 
   @BeforeEach
@@ -97,6 +112,7 @@ class CustomSignatureRulesManagerTest {
                 .setName("name-1")
                 .setDisabled(true)
                 .setInternal(true)
+                .setDefinition(testRuleDefinition)
                 .setEffect(
                     RuleEffect.newBuilder()
                         .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
@@ -106,6 +122,7 @@ class CustomSignatureRulesManagerTest {
             CustomSignatureRule.newBuilder()
                 .setId("id2")
                 .setName("name-2")
+                .setDefinition(testRuleDefinition)
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .setRuleScope(getRuleScope(List.of("dev")))
@@ -114,7 +131,8 @@ class CustomSignatureRulesManagerTest {
                 .setId("id3")
                 .setName("name-3")
                 .setDefinition(
-                    RuleDefinition.newBuilder().putLabels("label-key-3", "label-value-3"))
+                    RuleDefinition.newBuilder(testRuleDefinition)
+                        .putLabels("label-key-3", "label-value-3"))
                 .setEffect(
                     RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
                 .build(),
@@ -332,7 +350,7 @@ class CustomSignatureRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
-            .setDefinition(RuleDefinition.newBuilder().build())
+            .setDefinition(testRuleDefinition)
             .setEffect(RuleEffect.newBuilder().build())
             .setRuleScope(getRuleScope(List.of("dev")))
             .setInternal(true)
@@ -341,6 +359,7 @@ class CustomSignatureRulesManagerTest {
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
             .setRuleScope(getRuleScope(List.of("dev")))
+            .setDefinition(testRuleDefinition)
             .setInternal(true)
             .build();
     assertEquals(
@@ -359,9 +378,83 @@ class CustomSignatureRulesManagerTest {
   }
 
   @Test
+  void testRawIpAdressesClauseForCreateRule() throws InvalidProtocolBufferException {
+    when(rulesManager.generateRuleId()).thenReturn("id1");
+    RuleDefinition ruleDefinition1 =
+        RuleDefinition.newBuilder()
+            .setClauseGroup(
+                ClauseGroup.newBuilder()
+                    .addClauses(
+                        Clause.newBuilder()
+                            .setIpAddressExpression(
+                                IpAddressExpression.newBuilder()
+                                    .addRawInputIpData("192.168.1.0/24"))))
+            .build();
+    RuleDefinition effectiveRuleDefinition =
+        RuleDefinition.newBuilder()
+            .setClauseGroup(
+                ClauseGroup.newBuilder()
+                    .addClauses(
+                        Clause.newBuilder()
+                            .setIpAddressExpression(
+                                IpAddressExpression.newBuilder()
+                                    .addRawInputIpData("192.168.1.0/24")
+                                    .addCidrIpRanges("192.168.1.0/24"))))
+            .build();
+    CustomSignatureRule customSignatureRule1 =
+        CustomSignatureRule.newBuilder()
+            .setId("id1")
+            .setName("name")
+            .setDefinition(effectiveRuleDefinition)
+            .setEffect(RuleEffect.newBuilder().build())
+            .setRuleScope(getRuleScope(List.of("dev")))
+            .setInternal(true)
+            .build();
+    CreateCustomSignatureRuleRequest createRuleRequest1 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setRuleScope(getRuleScope(List.of("dev")))
+            .setDefinition(ruleDefinition1)
+            .setInternal(true)
+            .build();
+    assertEquals(
+        customSignatureRule1,
+        rulesManager.createCustomSignatureRule(requestContext, createRuleRequest1).get());
+
+    when(rulesManager.generateRuleId()).thenReturn("id2");
+    RuleDefinition ruleDefinition2 =
+        RuleDefinition.newBuilder()
+            .setClauseGroup(
+                ClauseGroup.newBuilder()
+                    .addClauses(
+                        Clause.newBuilder()
+                            .setIpAddressExpression(
+                                IpAddressExpression.newBuilder().addRawInputIpData("1234"))))
+            .build();
+    CreateCustomSignatureRuleRequest createRuleRequest2 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setRuleScope(getRuleScope(List.of("dev")))
+            .setDefinition(ruleDefinition2)
+            .setInternal(true)
+            .build();
+    IllegalArgumentException thrownException =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              rulesManager.createCustomSignatureRule(requestContext, createRuleRequest2);
+            });
+    assertTrue(thrownException.getMessage().contains("Invalid IP range"));
+  }
+
+  @Test
   void testUpdateRule() throws InvalidProtocolBufferException {
     CustomSignatureRule customSignatureRule =
-        CustomSignatureRule.newBuilder().setId("id").setName("name").build();
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setDefinition(testRuleDefinition)
+            .setName("name")
+            .build();
     assertTrue(
         rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).isEmpty());
 
@@ -417,12 +510,15 @@ class CustomSignatureRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
-            .setDefinition(RuleDefinition.newBuilder().build())
+            .setDefinition(testRuleDefinition)
             .setEffect(RuleEffect.newBuilder().build())
             .setRuleScope(RuleScope.newBuilder())
             .build();
     CreateCustomSignatureRuleRequest createRuleRequest =
-        CreateCustomSignatureRuleRequest.newBuilder().setName("name").build();
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setDefinition(testRuleDefinition)
+            .build();
     assertEquals(
         customSignatureRule,
         rulesManager.createCustomSignatureRule(requestContext, createRuleRequest).get());
@@ -480,7 +576,11 @@ class CustomSignatureRulesManagerTest {
   @Test
   void testBlockingExpiryForUpdateRule() {
     CustomSignatureRule customSignatureRule =
-        CustomSignatureRule.newBuilder().setId("id").setName("name").build();
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setDefinition(testRuleDefinition)
+            .setName("name")
+            .build();
     assertTrue(
         rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).isEmpty());
 
@@ -492,6 +592,7 @@ class CustomSignatureRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
+            .setDefinition(testRuleDefinition)
             .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("PT2H").build())
             .build();
     long expiryTimestampMillis =
@@ -507,6 +608,7 @@ class CustomSignatureRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
+            .setDefinition(testRuleDefinition)
             .setBlockingExpiryDetails(
                 ExpiryDetails.newBuilder()
                     .setExpiryTimestampMillis(System.currentTimeMillis() + 5 * 24 * 3600 * 1000)
@@ -525,6 +627,7 @@ class CustomSignatureRulesManagerTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
+            .setDefinition(testRuleDefinition)
             .setBlockingExpiryDetails(
                 ExpiryDetails.newBuilder()
                     .setExpiryDuration("PT2H")
@@ -540,7 +643,12 @@ class CustomSignatureRulesManagerTest {
     assertEquals(23456789, expiryTimestampMillis);
 
     // Expiry duration and expiry timestamp are not set
-    customSignatureRule = CustomSignatureRule.newBuilder().setId("id").setName("name").build();
+    customSignatureRule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setDefinition(testRuleDefinition)
+            .setName("name")
+            .build();
     assertEquals(
         customSignatureRule,
         rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).get());

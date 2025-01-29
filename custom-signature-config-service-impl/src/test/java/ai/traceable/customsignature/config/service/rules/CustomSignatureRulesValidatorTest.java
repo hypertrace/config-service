@@ -39,13 +39,15 @@ public class CustomSignatureRulesValidatorTest {
 
   private ModsecRulesManager modsecRulesManager;
   private CustomSignatureRulesValidator rulesValidator;
+  private ClauseValidator clauseValidator;
 
   @BeforeEach
   public void setup() {
     this.modsecRulesManager = mock(ModsecRulesManager.class);
+    this.clauseValidator = new ClauseValidator();
     when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
     when(modsecRulesManager.isModsecRuleMappingSupported(any())).thenReturn(true);
-    this.rulesValidator = new CustomSignatureRulesValidator(modsecRulesManager);
+    this.rulesValidator = new CustomSignatureRulesValidator(modsecRulesManager, clauseValidator);
   }
 
   @Test
@@ -61,11 +63,21 @@ public class CustomSignatureRulesValidatorTest {
     request = CreateCustomSignatureRuleRequest.newBuilder().setName("name").build();
     status = rulesValidator.validate(request);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("valid definition"));
+
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setDefinition(RuleDefinition.newBuilder().build())
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     assertTrue(status.getDescription().contains("valid effect"));
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
+            .setDefinition(RuleDefinition.newBuilder().build())
             .setEffect(RuleEffect.newBuilder().build())
             .build();
     status = rulesValidator.validate(request);
@@ -112,12 +124,6 @@ public class CustomSignatureRulesValidatorTest {
             .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
             .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
             .build();
-
-    request =
-        CreateCustomSignatureRuleRequest.newBuilder().setName("name").setEffect(ruleEffect).build();
-    status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid definition"));
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -173,7 +179,7 @@ public class CustomSignatureRulesValidatorTest {
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid expression"));
+    assertTrue(status.getDescription().contains("Clause expression"));
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -733,12 +739,25 @@ public class CustomSignatureRulesValidatorTest {
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertTrue(status.getDescription().contains("valid definition"));
+
+    rule =
+        CustomSignatureRule.newBuilder()
+            .setId("id")
+            .setName("name")
+            .setDefinition(RuleDefinition.newBuilder().build())
+            .build();
+    status =
+        rulesValidator.validate(
+            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     assertTrue(status.getDescription().contains("valid effect"));
 
     rule =
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
+            .setDefinition(RuleDefinition.newBuilder().build())
             .setEffect(RuleEffect.newBuilder().build())
             .build();
     status =
@@ -785,14 +804,6 @@ public class CustomSignatureRulesValidatorTest {
             .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
             .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
             .build();
-
-    rule =
-        CustomSignatureRule.newBuilder().setId("id").setName("name").setEffect(ruleEffect).build();
-    status =
-        rulesValidator.validate(
-            UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid definition"));
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -860,7 +871,7 @@ public class CustomSignatureRulesValidatorTest {
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid expression"));
+    assertTrue(status.getDescription().contains("Clause expression"));
 
     rule =
         CustomSignatureRule.newBuilder()

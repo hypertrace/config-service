@@ -1,15 +1,23 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
+
+import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule.Builder;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -42,7 +50,7 @@ class CustomSignatureRulesManager implements RulesManager {
             .setId(ruleId)
             .setName(createRuleRequest.getName())
             .setDescription(createRuleRequest.getDescription())
-            .setDefinition(createRuleRequest.getDefinition())
+            .setDefinition(processRuleDefinition(createRuleRequest.getDefinition()))
             .setEffect(createRuleRequest.getEffect())
             .setRuleScope(createRuleRequest.getRuleScope())
             .setDisabled(false)
@@ -68,6 +76,8 @@ class CustomSignatureRulesManager implements RulesManager {
           customSignatureRuleBuilder, customSignatureRule.getBlockingExpiryDetails());
     }
     customSignatureRuleBuilder.setRuleSource(originalRule.get().getRuleSource());
+    customSignatureRuleBuilder.setDefinition(
+        processRuleDefinition(customSignatureRule.getDefinition()));
     return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 
@@ -112,5 +122,42 @@ class CustomSignatureRulesManager implements RulesManager {
               .toString());
     }
     customSignatureRuleBuilder.setBlockingExpiryDetails(expiryDetailsBuilder.build());
+  }
+
+  private RuleDefinition processRuleDefinition(RuleDefinition ruleDefinition) {
+    RuleDefinition.Builder builder = ruleDefinition.toBuilder();
+    builder.setClauseGroup(processClauseGroup(ruleDefinition.getClauseGroup()));
+    return builder.build();
+  }
+
+  private ClauseGroup processClauseGroup(ClauseGroup clauseGroup) {
+    return ClauseGroup.newBuilder()
+        .setClauseOperator(clauseGroup.getClauseOperator())
+        .addAllClauses(
+            clauseGroup.getClausesList().stream()
+                .map(this::processClause)
+                .collect(Collectors.toUnmodifiableList()))
+        .build();
+  }
+
+  private Clause processClause(Clause clause) {
+    if (clause.getIpAddressExpression().getRawInputIpDataList().isEmpty()) {
+      return clause;
+    }
+    return processRawIpAddressesClause(clause);
+  }
+
+  private Clause processRawIpAddressesClause(Clause clause) {
+    Clause.Builder builder = clause.toBuilder();
+    IpAddressExpression ipAddressExpression = clause.getIpAddressExpression();
+    List<String> rawIps = ipAddressExpression.getRawInputIpDataList();
+    IpAddressParsingUtils.IpParsingResults parsedResults = parseRawIpRange(rawIps);
+    IpAddressExpression.Builder ipAddressExpressionBuilder =
+        builder.getIpAddressExpressionBuilder();
+    ipAddressExpressionBuilder
+        .addAllCidrIpRanges(parsedResults.getIpRanges())
+        .addAllIpAddresses(parsedResults.getIpAddresses())
+        .setExclude(ipAddressExpression.getExclude());
+    return builder.build();
   }
 }

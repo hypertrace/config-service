@@ -129,7 +129,7 @@ public class ValidatorUtils {
     if (requestScannerTypeCondition.getScannerTypesList().stream().anyMatch(String::isBlank)) {
       throwInvalidArgumentException(
           String.format(
-              "RequestScannerTypeCondition should not contain blank string : {}",
+              "RequestScannerTypeCondition should not contain blank string : %s",
               requestScannerTypeCondition));
     }
   }
