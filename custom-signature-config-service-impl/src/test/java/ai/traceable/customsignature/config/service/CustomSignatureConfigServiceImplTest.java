@@ -9,10 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
@@ -33,7 +29,6 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,24 +40,14 @@ public class CustomSignatureConfigServiceImplTest {
   private ModsecRulesManager modsecRulesManager;
 
   private CustomSignatureConfigServiceImpl configService;
-  private ActivityEventProducer mockActivityEventProducer;
 
   @BeforeEach
   public void setup() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
     modsecRulesManager = mock(ModsecRulesManager.class);
-    mockActivityEventProducer = mock(ActivityEventProducer.class);
-    CustomSignatureConfigServiceConfig mockCustomSignatureConfigServiceConfig =
-        mock(CustomSignatureConfigServiceConfig.class);
-    when(mockCustomSignatureConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
     configService =
-        new CustomSignatureConfigServiceImpl(
-            rulesValidator,
-            rulesManager,
-            modsecRulesManager,
-            mockCustomSignatureConfigServiceConfig,
-            mockActivityEventProducer);
+        new CustomSignatureConfigServiceImpl(rulesValidator, rulesManager, modsecRulesManager);
   }
 
   @Test
@@ -120,17 +105,6 @@ public class CustomSignatureConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(CreateCustomSignatureRuleResponse.newBuilder().setRule(rule).build());
     verify(responseObserver, times(1)).onCompleted();
-
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId("id1")
-                    .setRuleName(rule.getName())
-                    .setSecurityConfigurationType(SecurityConfigurationType.CUSTOM_SIGNATURE_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
-                    .build()));
   }
 
   @Test
@@ -162,17 +136,6 @@ public class CustomSignatureConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(UpdateCustomSignatureRuleResponse.newBuilder().setRule(rule).build());
     verify(responseObserver, times(1)).onCompleted();
-
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId("id1")
-                    .setRuleName(rule.getName())
-                    .setSecurityConfigurationType(SecurityConfigurationType.CUSTOM_SIGNATURE_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
-                    .build()));
   }
 
   @Test
@@ -200,17 +163,6 @@ public class CustomSignatureConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(DeleteCustomSignatureRuleResponse.getDefaultInstance());
     verify(responseObserver, times(1)).onCompleted();
-
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId("id")
-                    .setRuleName(CustomSignatureRule.getDefaultInstance().getName())
-                    .setSecurityConfigurationType(SecurityConfigurationType.CUSTOM_SIGNATURE_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
-                    .build()));
   }
 
   @Test

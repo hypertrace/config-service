@@ -1,9 +1,5 @@
 package ai.traceable.customsignature.config.service;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
@@ -34,21 +30,15 @@ public class CustomSignatureConfigServiceImpl
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
   private final ModsecRulesManager modsecRulesManager;
-  private final ActivityEventProducer activityEventProducer;
-  private final boolean shouldPublishActivityEvents;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
       RulesValidator rulesValidator,
       RulesManager rulesManager,
-      ModsecRulesManager modsecRulesManager,
-      CustomSignatureConfigServiceConfig config,
-      ActivityEventProducer activityEventProducer) {
+      ModsecRulesManager modsecRulesManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
-    this.activityEventProducer = activityEventProducer;
-    this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
   }
 
   @Override
@@ -93,13 +83,6 @@ public class CustomSignatureConfigServiceImpl
             .setRule(customSignatureRuleOptional.get())
             .build());
     responseObserver.onCompleted();
-
-    if (shouldPublishActivityEvents) {
-      activityEventProducer.publishSecurityConfigurationChangeEvent(
-          RequestContext.CURRENT.get(),
-          buildSecurityConfigurationChangeEvent(
-              customSignatureRuleOptional.get(), SecurityConfigurationAction.ADD));
-    }
   }
 
   @Override
@@ -129,13 +112,6 @@ public class CustomSignatureConfigServiceImpl
             .setRule(customSignatureRuleOptional.get())
             .build());
     responseObserver.onCompleted();
-
-    if (shouldPublishActivityEvents) {
-      activityEventProducer.publishSecurityConfigurationChangeEvent(
-          RequestContext.CURRENT.get(),
-          buildSecurityConfigurationChangeEvent(
-              customSignatureRuleOptional.get(), SecurityConfigurationAction.UPDATE));
-    }
   }
 
   @Override
@@ -150,16 +126,9 @@ public class CustomSignatureConfigServiceImpl
         return;
       }
       String ruleId = request.getId();
-      Optional<CustomSignatureRule> deletedCustomSignatureRuleConfig =
-          rulesManager.deleteCustomSignatureRule(RequestContext.CURRENT.get(), ruleId);
+      rulesManager.deleteCustomSignatureRule(RequestContext.CURRENT.get(), ruleId);
       responseObserver.onNext(DeleteCustomSignatureRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
-      if (shouldPublishActivityEvents && deletedCustomSignatureRuleConfig.isPresent()) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            RequestContext.CURRENT.get(),
-            buildSecurityConfigurationChangeEvent(
-                deletedCustomSignatureRuleConfig.get(), SecurityConfigurationAction.REMOVE));
-      }
     } catch (Exception e) {
       log.error("Unable to delete custom signature rule with id {} :", request.getId(), e);
       responseObserver.onError(e);
@@ -184,16 +153,5 @@ public class CustomSignatureConfigServiceImpl
               .withDescription("Unable to fetch modsec custom signature rules")
               .asException());
     }
-  }
-
-  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
-      CustomSignatureRule customSignatureRuleConfig,
-      SecurityConfigurationAction securityConfigurationAction) {
-    return SecurityConfigurationChange.newBuilder()
-        .setRuleId(customSignatureRuleConfig.getId())
-        .setRuleName(customSignatureRuleConfig.getName())
-        .setSecurityConfigurationType(SecurityConfigurationType.CUSTOM_SIGNATURE_RULE)
-        .setSecurityConfigurationAction(securityConfigurationAction)
-        .build();
   }
 }

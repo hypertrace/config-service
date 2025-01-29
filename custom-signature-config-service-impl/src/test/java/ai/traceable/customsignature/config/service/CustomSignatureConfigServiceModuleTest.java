@@ -3,7 +3,6 @@ package ai.traceable.customsignature.config.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
@@ -15,17 +14,13 @@ class CustomSignatureConfigServiceModuleTest {
   public void testResolveBindings() {
     Config mockConfig = mock(Config.class);
     Channel mockChannel = mock(Channel.class);
-    ActivityEventProducer mockActivityEventProducer = mock(ActivityEventProducer.class);
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
     assertDoesNotThrow(
         () ->
             Guice.createInjector(
                     new CustomSignatureConfigServiceModule(
-                        mockChannel,
-                        mockConfig,
-                        mockActivityEventProducer,
-                        mockConfigChangeEventGenerator))
+                        mockChannel, mockConfig, mockConfigChangeEventGenerator))
                 .getAllBindings());
   }
 }

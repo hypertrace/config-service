@@ -5,7 +5,6 @@ plugins {
 }
 
 dependencies {
-  api(projects.activityEventProducer)
   api(commonLibs.grpc.api)
   api(commonLibs.typesafe.config)
 
