@@ -26,6 +26,8 @@ import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRe
 import ai.traceable.anomaly.config.service.v1.*;
 import ai.traceable.anomaly.config.service.v1.detector.*;
 import ai.traceable.anomaly.config.service.v1.detector.CredentialStuffingAnomalyDetectionConfig.ConfigCase;
+import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
@@ -249,6 +251,8 @@ public class AnomalyDetectionConfigManagerTest {
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(
                 AnomalyConfigStatus.newBuilder().setDisabled(true).setInternal(true).build())
+            .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true).build())
+            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
             .build();
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
             any(RequestContext.class), any(AnomalyConfigScope.class)))
@@ -1065,20 +1069,28 @@ public class AnomalyDetectionConfigManagerTest {
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
             .setConfigScope(apiConfigScope)
+            .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true).build())
+            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
             .build();
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus2 =
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true).build())
+            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
             .setConfigScope(serviceConfigScope)
             .build();
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus3 =
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true).build())
+            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
             .setConfigScope(environmentConfigScope)
             .build();
     ScopedAnomalyConfigStatus scopedAnomalyConfigStatus4 =
         ScopedAnomalyConfigStatus.newBuilder()
             .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+            .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true).build())
+            .setApiGlobalConfig(ApiGlobalConfig.newBuilder().setDisabled(true).build())
             .setConfigScope(customerConfigScope)
             .build();
 

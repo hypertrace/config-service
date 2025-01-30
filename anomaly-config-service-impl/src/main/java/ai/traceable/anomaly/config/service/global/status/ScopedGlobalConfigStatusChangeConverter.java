@@ -39,7 +39,15 @@ public class ScopedGlobalConfigStatusChangeConverter {
                 ? config.getMinConfidenceLevel()
                 : defaultConfidenceLevel)
         .setEnabledForExitSpans(config.getEnabledForExitSpans())
-        .setModsecGlobalConfig(config.getModsecGlobalConfig())
+        .setModsecGlobalConfig(
+            config.toBuilder()
+                .getModsecGlobalConfigBuilder()
+                .setMinConfidenceLevel(
+                    config.getModsecGlobalConfig().getMinConfidenceLevel()
+                            == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED
+                        ? defaultConfidenceLevel
+                        : config.getModsecGlobalConfig().getMinConfidenceLevel()))
+        .setApiGlobalConfig(config.getApiGlobalConfig())
         .build();
   }
 

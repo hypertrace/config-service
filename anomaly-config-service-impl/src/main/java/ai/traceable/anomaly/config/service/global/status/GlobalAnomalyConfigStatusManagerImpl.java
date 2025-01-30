@@ -6,9 +6,12 @@ import static ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServ
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.common.license.LicenseInfoLoader;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.license.metering.service.api.v1.LicenseInfo;
@@ -98,11 +101,19 @@ public class GlobalAnomalyConfigStatusManagerImpl
                             scopedAnomalyConfigStatusChange.getConfigScope())))
             .collect(Collectors.toList());
     if (!configMap.containsKey(getTenantId(requestContext))) {
+      AnomalyConfigStatus configStatus = getDefaultTierConfig(requestContext);
       resolvedConfigs.add(
           ScopedAnomalyConfigStatus.newBuilder()
               .setConfigScope(anomalyConfigScopeUtils.getDefaultCustomerConfigScope())
-              .setConfigStatus(getDefaultTierConfig(requestContext))
+              .setConfigStatus(configStatus)
               .setMinConfidenceLevel(config.getMinConfidenceLevel())
+              .setApiGlobalConfig(
+                  ApiGlobalConfig.newBuilder().setDisabled(configStatus.getDisabled()).build())
+              .setModsecGlobalConfig(
+                  ModsecGlobalConfig.newBuilder()
+                      .setDisabled(configStatus.getDisabled())
+                      .setMinConfidenceLevel(config.getMinConfidenceLevel())
+                      .build())
               .build());
     }
     return Collections.unmodifiableList(resolvedConfigs);
@@ -112,7 +123,9 @@ public class GlobalAnomalyConfigStatusManagerImpl
   public List<ScopedAnomalyConfigStatusChange> getAllUnresolvedScopedAnomalyConfigStatusConfigs(
       RequestContext requestContext) {
     Map<String, ScopedAnomalyConfigStatusChange> configMap = fetchConfigMap(requestContext);
-    return configMap.values().stream().collect(Collectors.toUnmodifiableList());
+    return configMap.values().stream()
+        .map(this::migrateScopedAnomalyConfigStatusChange)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -131,9 +144,10 @@ public class GlobalAnomalyConfigStatusManagerImpl
       RequestContext requestContext, AnomalyConfigScope configScope) {
     Optional<ScopedAnomalyConfigStatusChange> scopedAnomalyConfigStatusChangeOptional =
         getData(
-            requestContext,
-            anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(
-                getTenantId(requestContext), configScope));
+                requestContext,
+                anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(
+                    getTenantId(requestContext), configScope))
+            .map(this::migrateScopedAnomalyConfigStatusChange);
     return scopedAnomalyConfigStatusChangeOptional.orElse(
         ScopedAnomalyConfigStatusChange.newBuilder().setConfigScope(configScope).build());
   }
@@ -178,7 +192,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     }
     scopedAnomalyConfigBuilder.setConfigScope(configScope);
     return configConverter.convertScopedConfig(
-        scopedAnomalyConfigBuilder.build(),
+        migrateScopedAnomalyConfigStatusChange(scopedAnomalyConfigBuilder.build()),
         config.getMinConfidenceLevel(),
         configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)));
   }
@@ -187,6 +201,49 @@ public class GlobalAnomalyConfigStatusManagerImpl
       RequestContext requestContext) {
     return getAllObjects(requestContext).stream()
         .collect(Collectors.toMap(ContextualConfigObject::getContext, ConfigObject::getData));
+  }
+
+  private ScopedAnomalyConfigStatusChange migrateScopedAnomalyConfigStatusChange(
+      ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
+    ScopedAnomalyConfigStatusChange.Builder builder =
+        ScopedAnomalyConfigStatusChange.newBuilder(scopedAnomalyConfigStatusChange);
+    if (scopedAnomalyConfigStatusChange.getConfigStatus().hasDisabled()) {
+      if (!scopedAnomalyConfigStatusChange.getModsecGlobalConfig().hasDisabled()) {
+        builder
+            .getModsecGlobalConfigBuilder()
+            .setDisabled(scopedAnomalyConfigStatusChange.getConfigStatus().getDisabled());
+      }
+      if (!scopedAnomalyConfigStatusChange.getApiGlobalConfig().hasDisabled()) {
+        builder
+            .getApiGlobalConfigBuilder()
+            .setDisabled(scopedAnomalyConfigStatusChange.getConfigStatus().getDisabled());
+      }
+    }
+
+    if (scopedAnomalyConfigStatusChange.hasEnabledForExitSpans()) {
+      if (!scopedAnomalyConfigStatusChange.getModsecGlobalConfig().hasEnabledForExitSpans()) {
+        builder
+            .getModsecGlobalConfigBuilder()
+            .setEnabledForExitSpans(scopedAnomalyConfigStatusChange.getEnabledForExitSpans());
+      }
+      if (!scopedAnomalyConfigStatusChange.getApiGlobalConfig().hasEnabledForExitSpans()) {
+        builder
+            .getApiGlobalConfigBuilder()
+            .setEnabledForExitSpans(scopedAnomalyConfigStatusChange.getEnabledForExitSpans());
+      }
+    }
+
+    if (scopedAnomalyConfigStatusChange.hasMinConfidenceLevel()) {
+      if (!scopedAnomalyConfigStatusChange
+          .getModsecGlobalConfig()
+          .getMinConfidenceLevel()
+          .equals(AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED)) {
+        builder
+            .getModsecGlobalConfigBuilder()
+            .setMinConfidenceLevel(scopedAnomalyConfigStatusChange.getMinConfidenceLevel());
+      }
+    }
+    return builder.build();
   }
 
   private AnomalyConfigStatus getDefaultTierConfig(RequestContext requestContext) {
