@@ -2,8 +2,8 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.activity.event.service:activity-event-api:9.0.45=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.70=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.23=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.77=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.15=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.15=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.132=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
