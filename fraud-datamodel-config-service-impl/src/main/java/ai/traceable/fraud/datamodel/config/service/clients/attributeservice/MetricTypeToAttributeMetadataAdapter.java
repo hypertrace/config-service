@@ -1,6 +1,6 @@
 package ai.traceable.fraud.datamodel.config.service.clients.attributeservice;
 
-import ai.traceable.fraud.datamodel.config.service.v1.ColumnMapping;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
 import ai.traceable.fraud.datamodel.config.service.v1.MetricDataType;
 import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
@@ -12,7 +12,9 @@ import io.grpc.ClientInterceptor;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import jakarta.inject.Inject;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.attribute.service.v1.AttributeCreateRequest;
@@ -63,108 +65,132 @@ public class MetricTypeToAttributeMetadataAdapter {
   public Empty onUpsertMetricType(MetricType metricType) {
     onDeleteMetricType(metricType);
 
+    Set<String> fqns = new HashSet<>();
+
     AttributeCreateRequest.Builder builder = AttributeCreateRequest.newBuilder();
-    for (Map.Entry<String, ColumnMapping> entry :
-        metricType.getColumnMappingMeta().getColumnMappingMap().entrySet()) {
-      builder.addAttributes(
-          AttributeMetadata.newBuilder()
-              .setValueKind(from(entry.getValue().getFieldType()))
-              .setScopeString(getScopeForMetricType(metricType))
-              .addSources(AttributeSource.QS)
-              .setType(AttributeType.ATTRIBUTE)
-              .setGroupable(true)
-              .setFqn(getScopeForMetricType(metricType) + DOT + entry.getKey())
-              .setKey(entry.getKey())
-              .setDisplayName(entry.getKey())
-              .setDefinition(
-                  AttributeDefinition.newBuilder()
-                      .setProjection(
-                          Projection.newBuilder()
-                              .setAttributeId(GENERIC_METRIC + DOT + entry.getValue().getColumnId())
-                              .build())
-                      .build())
-              .setInternal(false)
-              .build());
+    for (Map.Entry<String, FieldMetadata> entry : metricType.getFieldsMetaMap().entrySet()) {
+      String fqn = getScopeForMetricType(metricType) + DOT + entry.getKey();
+      if (fqns.add(fqn)) {
+        String attributeId = GENERIC_METRIC + DOT;
+        if (entry.getValue().getReserved()) {
+          attributeId += entry.getKey();
+        } else {
+          attributeId +=
+              metricType
+                  .getColumnMappingMeta()
+                  .getColumnMappingMap()
+                  .get(entry.getKey())
+                  .getColumnId();
+        }
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(from(entry.getValue().getFieldType()))
+                .setScopeString(getScopeForMetricType(metricType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(getScopeForMetricType(metricType) + DOT + entry.getKey())
+                .setKey(entry.getKey())
+                .setDisplayName(entry.getKey())
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(Projection.newBuilder().setAttributeId(attributeId).build())
+                        .build())
+                .setInternal(false)
+                .build());
+      }
     }
 
     if (metricType.getMetricDataType() == MetricDataType.METRIC_DATA_TYPE_COUNTER) {
-      builder.addAttributes(
-          AttributeMetadata.newBuilder()
-              .setValueKind(AttributeKind.TYPE_INT64)
-              .setScopeString(getScopeForMetricType(metricType))
-              .addSources(AttributeSource.QS)
-              .setType(AttributeType.ATTRIBUTE)
-              .setGroupable(true)
-              .setFqn(getScopeForMetricType(metricType) + DOT + "counter_metric_value")
-              .setKey("counter_metric_value")
-              .setDisplayName("counter_metric_value")
-              .setInternal(false)
-              .setDefinition(
-                  AttributeDefinition.newBuilder()
-                      .setProjection(
-                          Projection.newBuilder()
-                              .setAttributeId(GENERIC_METRIC + DOT + "counter_metric_value")
-                              .build()))
-              .build());
+      String fqn = getScopeForMetricType(metricType) + DOT + "counter_metric_value";
+      if (fqns.add(fqn)) {
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(AttributeKind.TYPE_INT64)
+                .setScopeString(getScopeForMetricType(metricType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(fqn)
+                .setKey("counter_metric_value")
+                .setDisplayName("counter_metric_value")
+                .setInternal(false)
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(
+                            Projection.newBuilder()
+                                .setAttributeId(GENERIC_METRIC + DOT + "counter_metric_value")
+                                .build()))
+                .build());
+      }
     } else if (metricType.getMetricDataType() == MetricDataType.METRIC_DATA_TYPE_GAUGE) {
+      String fqn = getScopeForMetricType(metricType) + DOT + "gauge_metric_value";
+      if (fqns.add(fqn)) {
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(AttributeKind.TYPE_INT64)
+                .setScopeString(getScopeForMetricType(metricType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(fqn)
+                .setKey("gauge_metric_value")
+                .setDisplayName("gauge_metric_value")
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(
+                            Projection.newBuilder()
+                                .setAttributeId(GENERIC_METRIC + DOT + "gauge_metric_value")
+                                .build()))
+                .setInternal(false)
+                .build());
+      }
+    }
+
+    String fqn = getScopeForMetricType(metricType) + DOT + "startTime";
+    if (fqns.add(fqn)) {
+      // these time attributes are needed by Gateway Service
       builder.addAttributes(
           AttributeMetadata.newBuilder()
-              .setValueKind(AttributeKind.TYPE_INT64)
+              .setValueKind(AttributeKind.TYPE_STRING)
               .setScopeString(getScopeForMetricType(metricType))
               .addSources(AttributeSource.QS)
               .setType(AttributeType.ATTRIBUTE)
               .setGroupable(true)
-              .setFqn(getScopeForMetricType(metricType) + DOT + "gauge_metric_value")
-              .setKey("gauge_metric_value")
-              .setDisplayName("gauge_metric_value")
+              .setFqn(fqn)
+              .setKey("startTime")
+              .setDisplayName("startTime")
               .setDefinition(
                   AttributeDefinition.newBuilder()
                       .setProjection(
                           Projection.newBuilder()
-                              .setAttributeId(GENERIC_METRIC + DOT + "gauge_metric_value")
+                              .setAttributeId(GENERIC_METRIC + DOT + "startTime")
                               .build()))
               .setInternal(false)
               .build());
     }
 
-    // these time attributes are needed by Gateway Service
-    builder.addAttributes(
-        AttributeMetadata.newBuilder()
-            .setValueKind(AttributeKind.TYPE_STRING)
-            .setScopeString(getScopeForMetricType(metricType))
-            .addSources(AttributeSource.QS)
-            .setType(AttributeType.ATTRIBUTE)
-            .setGroupable(true)
-            .setFqn(getScopeForMetricType(metricType) + DOT + "startTime")
-            .setKey("startTime")
-            .setDisplayName("startTime")
-            .setDefinition(
-                AttributeDefinition.newBuilder()
-                    .setProjection(
-                        Projection.newBuilder()
-                            .setAttributeId(GENERIC_METRIC + DOT + "startTime")
-                            .build()))
-            .setInternal(false)
-            .build());
-
-    builder.addAttributes(
-        AttributeMetadata.newBuilder()
-            .setValueKind(AttributeKind.TYPE_STRING)
-            .setScopeString(getScopeForMetricType(metricType))
-            .addSources(AttributeSource.QS)
-            .setType(AttributeType.ATTRIBUTE)
-            .setGroupable(true)
-            .setFqn(getScopeForMetricType(metricType) + DOT + "type_id")
-            .setKey("type_id")
-            .setDisplayName("type_id")
-            .setDefinition(
-                AttributeDefinition.newBuilder()
-                    .setProjection(
-                        Projection.newBuilder()
-                            .setAttributeId(GENERIC_METRIC + DOT + "type_id")
-                            .build()))
-            .setInternal(false)
-            .build());
+    fqn = getScopeForMetricType(metricType) + DOT + "type_id";
+    if (fqns.add(fqn)) {
+      builder.addAttributes(
+          AttributeMetadata.newBuilder()
+              .setValueKind(AttributeKind.TYPE_STRING)
+              .setScopeString(getScopeForMetricType(metricType))
+              .addSources(AttributeSource.QS)
+              .setType(AttributeType.ATTRIBUTE)
+              .setGroupable(true)
+              .setFqn(fqn)
+              .setKey("type_id")
+              .setDisplayName("type_id")
+              .setDefinition(
+                  AttributeDefinition.newBuilder()
+                      .setProjection(
+                          Projection.newBuilder()
+                              .setAttributeId(GENERIC_METRIC + DOT + "type_id")
+                              .build()))
+              .setInternal(false)
+              .build());
+    }
 
     return attributeServiceBlockingStub.create(builder.build());
   }

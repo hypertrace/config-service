@@ -1,7 +1,7 @@
 package ai.traceable.fraud.datamodel.config.service.clients.attributeservice;
 
-import ai.traceable.fraud.datamodel.config.service.v1.ColumnMapping;
 import ai.traceable.fraud.datamodel.config.service.v1.EventType;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldMetadata;
 import ai.traceable.fraud.datamodel.config.service.v1.FieldType;
 import com.typesafe.config.Config;
 import io.grpc.CallOptions;
@@ -66,10 +66,22 @@ public class EventTypeToAttributeMetadataAdapter {
     Set<String> fqns = new HashSet<>();
 
     AttributeCreateRequest.Builder builder = AttributeCreateRequest.newBuilder();
-    for (Map.Entry<String, ColumnMapping> entry :
-        eventType.getColumnMappingMeta().getColumnMappingMap().entrySet()) {
+
+    for (Map.Entry<String, FieldMetadata> entry : eventType.getFieldsMetaMap().entrySet()) {
       String fqn = getScopeForEventType(eventType) + DOT + entry.getKey();
       if (fqns.add(fqn)) {
+        String attributeId = GENERIC_EVENT + DOT;
+        if (entry.getValue().getReserved()) {
+          attributeId = attributeId + entry.getKey();
+        } else {
+          attributeId =
+              attributeId
+                  + eventType
+                      .getColumnMappingMeta()
+                      .getColumnMappingMap()
+                      .get(entry.getKey())
+                      .getColumnId();
+        }
         builder.addAttributes(
             AttributeMetadata.newBuilder()
                 .setValueKind(from(entry.getValue().getFieldType()))
@@ -82,11 +94,7 @@ public class EventTypeToAttributeMetadataAdapter {
                 .setDisplayName(entry.getKey())
                 .setDefinition(
                     AttributeDefinition.newBuilder()
-                        .setProjection(
-                            Projection.newBuilder()
-                                .setAttributeId(
-                                    GENERIC_EVENT + DOT + entry.getValue().getColumnId())
-                                .build())
+                        .setProjection(Projection.newBuilder().setAttributeId(attributeId).build())
                         .build())
                 .setInternal(false)
                 .build());
