@@ -9,12 +9,12 @@
       - Implement Strong Password Policies: Encourage or enforce the use of complex, unique passwords.
       - Monitor for Suspicious Activity: Track unusual login attempts and account changes.
       - Educate Users: Raise awareness of phishing risks and the importance of account security.
-    impact:
+    impact: |
       - The attacker may use the account to impersonate the user.
       - Businesses may suffer damage if customer accounts are compromised.
       - Sensitive personal or business data may be stolen or exposed.
       - Attackers could steal funds or make unauthorized purchases.
-    References:
+    References: |
       - https://owasp.org/www-project-automated-threats-to-web-applications/assets/oats/EN/OAT-008_Credential_Stuffing
       - https://docs.rapid7.com/tcell/account-takeover/
   subRuleInfos:
@@ -30,11 +30,11 @@
           Credential stuffing is the automated injection of stolen username and password pairs into application entry points such as login endpoints, in order to fraudulently gain access to user accounts. Since many users tend to re-use the same password and username/email, when those credentials are exposed emanating from database breach or phishing attack their accounts can be compromised. Most applications have dedicated API’s for web, mobile, partner services etc which then have associated API tokens associated with each user and session. Credential stuffing is carried out using the login API’s and hence the defense layer also needs to be built via API Security.
         mitigation: |
           Typical approaches include implementing and enforcing strong password policies, using multi-factor authentication (MFA), single sign-on (SSO), using passwordless authentication etc.
-        impact:
+        impact: |
           - The attacker may use the account to impersonate the user.
           - Businesses may suffer damage if customer accounts are compromised.
           - Sensitive personal or business data may be stolen or exposed.
           - Attackers could steal funds or make unauthorized purchases.
-        References:
+        References: |
           - https://owasp.org/www-project-automated-threats-to-web-applications/assets/oats/EN/OAT-008_Credential_Stuffing
           - https://docs.rapid7.com/tcell/account-takeover/
