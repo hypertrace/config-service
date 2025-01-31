@@ -10,6 +10,8 @@ import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataClassificationOverridesRequest;
 import ai.traceable.data.classification.config.service.v1.IdFilter;
+import ai.traceable.data.classification.config.service.v1.LogicalDataClassificationOverrideFilter;
+import ai.traceable.data.classification.config.service.v1.ScopeFilter;
 import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideRequest;
 import io.grpc.Status;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -85,7 +87,10 @@ public class DataClassificationOverrideConfigRequestValidator {
         validateNonDefaultPresenceOrThrow(filter.getIdFilter(), IdFilter.IDS_FIELD_NUMBER);
         return;
       case SCOPE_FILTER:
-        validateScopeFilter(filter);
+        validateScopeFilter(filter.getScopeFilter());
+        return;
+      case LOGICAL_AND_FILTER:
+        validateLogicalAndFilter(filter.getLogicalAndFilter());
         return;
       default:
         throw Status.INVALID_ARGUMENT
@@ -112,7 +117,11 @@ public class DataClassificationOverrideConfigRequestValidator {
     }
   }
 
-  private void validateScopeFilter(DataClassificationOverrideFilter filter) {
-    filter.getScopeFilter().getScopesList().forEach(this::validateScope);
+  private void validateScopeFilter(ScopeFilter scopeFilter) {
+    scopeFilter.getScopesList().forEach(this::validateScope);
+  }
+
+  private void validateLogicalAndFilter(LogicalDataClassificationOverrideFilter filter) {
+    filter.getFiltersList().forEach(this::validateDataClassificationOverrideFilter);
   }
 }

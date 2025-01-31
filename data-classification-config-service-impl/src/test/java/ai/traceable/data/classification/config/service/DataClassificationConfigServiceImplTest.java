@@ -6,6 +6,7 @@ import static ai.traceable.data.classification.config.service.RedactionRulesDao.
 import static ai.traceable.data.classification.config.service.v1.DataTypeRule.Location.LOCATION_REQUEST_HEADER;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_REDACT;
 import static ai.traceable.sensitivedata.config.service.v1.RedactionStrategy.REDACTION_STRATEGY_UNSPECIFIED;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -21,6 +22,8 @@ import ai.traceable.data.classification.config.service.v1.DataClassificationConf
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideFilter;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataClassificationOverrideScope;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.EnvironmentScope;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo;
 import ai.traceable.data.classification.config.service.v1.DataSetInfo.DataSuppression;
@@ -45,6 +48,7 @@ import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesRequest.DataTypeOrdering;
 import ai.traceable.data.classification.config.service.v1.GetDataTypesResponse;
 import ai.traceable.data.classification.config.service.v1.IdFilter;
+import ai.traceable.data.classification.config.service.v1.LogicalDataClassificationOverrideFilter;
 import ai.traceable.data.classification.config.service.v1.ScopeFilter;
 import ai.traceable.data.classification.config.service.v1.SystemDataSetVersion;
 import ai.traceable.data.classification.config.service.v1.UpdateDataClassificationOverrideRequest;
@@ -574,6 +578,48 @@ class DataClassificationConfigServiceImplTest {
         dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
   }
 
+  @Test
+  void getDataClassificationOverridesByLogicalAndFilterTest() {
+    registerAndStartService();
+    DataClassificationOverrideRule rule1 = getDataClassificationOverrideRule();
+    DataClassificationOverrideRule rule2 = getDataClassificationOverrideRule();
+    CreateDataClassificationOverrideResponse dco1 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule1)
+                .build());
+    CreateDataClassificationOverrideResponse dco2 =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(rule2)
+                .build());
+    GetDataClassificationOverridesResponse response =
+        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
+            GetDataClassificationOverridesRequest.newBuilder()
+                .setFilter(
+                    DataClassificationOverrideFilter.newBuilder()
+                        .setLogicalAndFilter(
+                            LogicalDataClassificationOverrideFilter.newBuilder()
+                                .addFilters(
+                                    DataClassificationOverrideFilter.newBuilder()
+                                        .setIdFilter(
+                                            IdFilter.newBuilder()
+                                                .addAllIds(
+                                                    List.of(
+                                                        dco1.getCreatedDataClassificationOverride()
+                                                            .getId(),
+                                                        dco2.getCreatedDataClassificationOverride()
+                                                            .getId()))))
+                                .addFilters(
+                                    DataClassificationOverrideFilter.newBuilder()
+                                        .setScopeFilter(
+                                            ScopeFilter.newBuilder().addScopes(rule1.getScope())))))
+                .build());
+    assertEquals(1, response.getDataClassificationOverridesCount());
+    assertEquals(
+        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
+  }
+
   // No filter set gets all the data classification Overrides.
   @Test
   void getAllDataClassificationOverrides() {
@@ -613,6 +659,93 @@ class DataClassificationConfigServiceImplTest {
         () ->
             new DataClassificationOverrideConfigRequestValidator()
                 .validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void getDataClassificationOverridesFilterRequestValidatorTest_idFilter() {
+    registerAndStartService();
+    RequestContext requestContext = RequestContext.forTenantId("test_id");
+    GetDataClassificationOverridesRequest request =
+        GetDataClassificationOverridesRequest.newBuilder()
+            .setFilter(
+                DataClassificationOverrideFilter.newBuilder()
+                    .setIdFilter(IdFilter.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(requestContext, request));
+  }
+
+  @Test
+  void getDataClassificationOverridesFilterRequestValidatorTest_environmentFilter() {
+    registerAndStartService();
+    RequestContext requestContext = RequestContext.forTenantId("test_id");
+    assertDoesNotThrow(
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(
+                    requestContext,
+                    GetDataClassificationOverridesRequest.newBuilder()
+                        .setFilter(
+                            DataClassificationOverrideFilter.newBuilder()
+                                .setScopeFilter(ScopeFilter.getDefaultInstance()))
+                        .build()));
+
+    assertDoesNotThrow(
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(
+                    requestContext,
+                    GetDataClassificationOverridesRequest.newBuilder()
+                        .setFilter(
+                            DataClassificationOverrideFilter.newBuilder()
+                                .setScopeFilter(
+                                    ScopeFilter.newBuilder()
+                                        .addScopes(
+                                            DataClassificationOverrideScope.getDefaultInstance())))
+                        .build()));
+
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(
+                    requestContext,
+                    GetDataClassificationOverridesRequest.newBuilder()
+                        .setFilter(
+                            DataClassificationOverrideFilter.newBuilder()
+                                .setScopeFilter(
+                                    ScopeFilter.newBuilder()
+                                        .addScopes(
+                                            DataClassificationOverrideScope.newBuilder()
+                                                .setEnvironmentScope(
+                                                    EnvironmentScope.getDefaultInstance()))))
+                        .build()));
+  }
+
+  @Test
+  void getDataClassificationOverridesFilterRequestValidatorTest_logicalAndFilter() {
+    registerAndStartService();
+    RequestContext requestContext = RequestContext.forTenantId("test_id");
+    assertDoesNotThrow(
+        () ->
+            new DataClassificationOverrideConfigRequestValidator()
+                .validateOrThrow(
+                    requestContext,
+                    GetDataClassificationOverridesRequest.newBuilder()
+                        .setFilter(
+                            DataClassificationOverrideFilter.newBuilder()
+                                .setLogicalAndFilter(
+                                    LogicalDataClassificationOverrideFilter.newBuilder()
+                                        .addFilters(
+                                            DataClassificationOverrideFilter.newBuilder()
+                                                .setIdFilter(IdFilter.newBuilder().addIds("id1")))
+                                        .addFilters(
+                                            DataClassificationOverrideFilter.newBuilder()
+                                                .setIdFilter(IdFilter.newBuilder().addIds("id2")))))
+                        .build()));
   }
 
   @Test

@@ -161,7 +161,12 @@ message DataClassificationOverrideFilter {
   oneof filter {
     IdFilter id_filter = 1;
     ScopeFilter scope_filter = 2;
+    LogicalDataClassificationOverrideFilter logical_and_filter = 3;
   }
+}
+
+message LogicalDataClassificationOverrideFilter {
+  repeated DataClassificationOverrideFilter filters = 1;
 }
 
 message IdFilter {
