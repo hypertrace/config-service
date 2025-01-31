@@ -67,7 +67,12 @@ public class UserAttributionV2ConfigRequestValidator {
   public void validateOrThrow(UserAttributionRule existingRule, UserAttributionRule rule) {
     if (!existingRule.getData().getTemplate().equals(rule.getData().getTemplate())) {
       throw Status.INVALID_ARGUMENT
-          .withDescription(String.format("User Attribution rule template cannot be updated"))
+          .withDescription("User Attribution rule template cannot be updated")
+          .asRuntimeException();
+    }
+    if (!existingRule.getData().getSource().equals(rule.getData().getSource())) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("User Attribution rule source cannot be updated")
           .asRuntimeException();
     }
   }
@@ -127,17 +132,15 @@ public class UserAttributionV2ConfigRequestValidator {
       validateUserAttributionTokenRule(ruleData.getAuthTypeRule(), hasRootTokenRule);
     }
     Map<String, UserAttributionTokenRule> customTokenRulesMap = ruleData.getCustomTokenRulesMap();
-    customTokenRulesMap
-        .entrySet()
-        .forEach(
-            entry -> {
-              if (entry.getKey().isBlank()) {
-                throw Status.INVALID_ARGUMENT
-                    .withDescription("Custom attribute should have a valid token name")
-                    .asRuntimeException();
-              }
-              validateUserAttributionTokenRule(entry.getValue(), hasRootTokenRule);
-            });
+    customTokenRulesMap.forEach(
+        (key, value) -> {
+          if (key.isBlank()) {
+            throw Status.INVALID_ARGUMENT
+                .withDescription("Custom attribute should have a valid token name")
+                .asRuntimeException();
+          }
+          validateUserAttributionTokenRule(value, hasRootTokenRule);
+        });
   }
 
   private void validateRuleScope(UserAttributionRuleScope scope) {
@@ -236,7 +239,7 @@ public class UserAttributionV2ConfigRequestValidator {
         if (hasRootTokenRule) {
           validateRootRelativeProjection(tokenRule.getRootRelativeProjection());
         } else {
-          Status.INVALID_ARGUMENT
+          throw Status.INVALID_ARGUMENT
               .withDescription("Root relative projection requires a root projection")
               .asRuntimeException();
         }
@@ -305,7 +308,7 @@ public class UserAttributionV2ConfigRequestValidator {
     LiteralValue literalValue = literalValueProjection.getLiteralValue();
     switch (literalValue.getValueCase()) {
       case STRING_VALUE:
-        validateNonDefaultPresenceOrThrow(literalValue, literalValue.STRING_VALUE_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(literalValue, LiteralValue.STRING_VALUE_FIELD_NUMBER);
         break;
       case VALUE_NOT_SET:
         throw Status.INVALID_ARGUMENT
@@ -385,19 +388,20 @@ public class UserAttributionV2ConfigRequestValidator {
                       String.format("Unexpected value projection: %s", printMessage(projection)))
                   .asRuntimeException();
             case REGEX_CAPTURE_GROUP:
-              Status status =
+              Status regexValidatorStatus =
                   RegexValidator.validateCaptureGroupCount(
                       projection.getRegexCaptureGroup().getRegex(), REGEX_CAPTURE_GROUP_COUNT);
-              if (!status.isOk()) {
-                throw status.asRuntimeException();
+              if (!regexValidatorStatus.isOk()) {
+                throw regexValidatorStatus.asRuntimeException();
               }
               break;
             case JSON_PATH:
               validateNonDefaultPresenceOrThrow(
                   projection.getJsonPath(), ValueProjection.JsonPathProjection.PATH_FIELD_NUMBER);
-              status = JsonPathValidator.validate(projection.getJsonPath().getPath());
-              if (!status.isOk()) {
-                throw status.asRuntimeException();
+              Status jsonPathValidatorStatus =
+                  JsonPathValidator.validate(projection.getJsonPath().getPath());
+              if (!jsonPathValidatorStatus.isOk()) {
+                throw jsonPathValidatorStatus.asRuntimeException();
               }
               break;
             case JWT_PAYLOAD_CLAIM:

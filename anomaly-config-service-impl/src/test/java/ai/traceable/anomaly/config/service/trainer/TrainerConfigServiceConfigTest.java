@@ -13,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.ThresholdCountConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdFamilyConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdsFamilyTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UserAttributionTrainingConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
@@ -564,5 +565,16 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(99.9, enumerationsTrainingConfig.getMinEnumOccurrencePercent());
 
     assertFalse(metadataTrainingConfigs.get(11).getDisabled());
+
+    assertFalse(metadataTrainingConfigs.get(12).getDisabled());
+    UserAttributionTrainingConfig userAttributionTrainingConfig =
+        metadataTrainingConfigs.get(12).getMetadataTrainingConfig().getUserAttribution();
+    assertEquals(1000, userAttributionTrainingConfig.getRuleLimit());
+    assertEquals(
+        List.of("sub", "user", "user_id", "uid", "email", "username", "clientid"),
+        userAttributionTrainingConfig.getUserIdKeywords().getValuesList());
+    assertEquals(
+        List.of("role", "roles", "user_role", "scope"),
+        userAttributionTrainingConfig.getUserRoleKeywords().getValuesList());
   }
 }

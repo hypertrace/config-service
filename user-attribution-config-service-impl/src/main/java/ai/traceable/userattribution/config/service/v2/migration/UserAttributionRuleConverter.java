@@ -2,6 +2,7 @@ package ai.traceable.userattribution.config.service.v2.migration;
 
 import static ai.traceable.userattribution.config.service.v1.UserAttributionRuleData.ParsingTarget.TargetCase.REGEX_CAPTURE_GROUP;
 import static ai.traceable.userattribution.config.service.v2.KeyMatchOperator.KEY_MATCH_OPERATOR_EQUALS;
+import static ai.traceable.userattribution.config.service.v2.Source.SOURCE_USER;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_BASIC;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_CUSTOM;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_JWT;
@@ -36,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 class UserAttributionRuleConverter {
   static final String YAML_FORMAT_NOT_SUPPORTED =
       "Unsupported format - yaml, cannot be converted to new format";
-  static final String BASIC_AUTH_TYPE = "Basic";
   static final String DEFAULT_BASIC_AUTHORIZATION_HEADER_NAME = "authorization";
   static final String DEFAULT_BASIC_AUTHORIZATION_REGEX_CAPTURE_GROUP = "(?i)Basic:? (.*)";
   static final String DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP = "^([^:]+):?.*";
@@ -81,6 +81,7 @@ class UserAttributionRuleConverter {
     }
     updateData(builder, legacyRule.getData());
     builder.setDisabled(legacyRule.getDisabled());
+    builder.setSource(SOURCE_USER); // All legacy rules were user created
     return builder.build();
   }
 
@@ -180,7 +181,7 @@ class UserAttributionRuleConverter {
           createAttributeProjectionBuilder(
               jwtLocation,
               jwtLocation.getParsingTarget().getTargetCase().equals(REGEX_CAPTURE_GROUP)
-                  ? null
+                  ? Optional.empty()
                   : DEFAULT_TOKEN_REGEX_CAPTURE_GROUP_VALUE_PROJECTION);
       builder.setRootTokenRule(
           UserAttributionRootTokenRule.newBuilder()
@@ -427,8 +428,8 @@ class UserAttributionRuleConverter {
                   ValueProjection.RegexCaptureGroupProjection.newBuilder()
                       .setRegex(headerLocation.getParsingTarget().getRegexCaptureGroup()))
               .build());
-    } else if (defaultValueProjection.isPresent()) {
-      attributeProjectionBuilder.addValueProjections(defaultValueProjection.get());
+    } else {
+      defaultValueProjection.ifPresent(attributeProjectionBuilder::addValueProjections);
     }
     return attributeProjectionBuilder;
   }

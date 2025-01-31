@@ -1,6 +1,7 @@
 package ai.traceable.userattribution.config.service.v2.migration;
 
 import static ai.traceable.userattribution.config.service.v2.KeyMatchOperator.KEY_MATCH_OPERATOR_EQUALS;
+import static ai.traceable.userattribution.config.service.v2.Source.SOURCE_USER;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_BASIC;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_CUSTOM;
 import static ai.traceable.userattribution.config.service.v2.Template.TEMPLATE_JWT;
@@ -78,7 +79,8 @@ class UserAttributionRuleConverterTest {
                     buildBase64ValueProjection(),
                     buildRegexCaptureGroupValueProjection(
                         DEFAULT_BASIC_AUTHORIZATION_USERNAME_REGEX_CAPTURE_GROUP))),
-            null);
+            null,
+            Scope.SCOPE_WITHOUT_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -107,7 +109,8 @@ class UserAttributionRuleConverterTest {
             buildAttributeProjectionRootTokenRuleV2(
                 "jwt", List.of(buildRegexCaptureGroupValueProjection("Bearer (.*)"))),
             buildRootRelativeProjectionTokenRuleV2(List.of(buildJwtClaimValueProjection("email"))),
-            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"));
+            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"),
+            Scope.SCOPE_WITHOUT_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -133,7 +136,8 @@ class UserAttributionRuleConverterTest {
                 "jwt",
                 List.of(buildRegexCaptureGroupValueProjection(DEFAULT_TOKEN_REGEX_CAPTURE_GROUP))),
             buildRootRelativeProjectionTokenRuleV2(List.of(buildJwtClaimValueProjection("email"))),
-            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"));
+            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"),
+            Scope.SCOPE_WITHOUT_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -161,7 +165,8 @@ class UserAttributionRuleConverterTest {
             null,
             buildAttributeProjectionTokenRuleV2(
                 "jwt", List.of(buildRegexCaptureGroupValueProjection("Bearer (.*)"))),
-            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"));
+            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"),
+            Scope.SCOPE_WITHOUT_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -187,14 +192,15 @@ class UserAttributionRuleConverterTest {
     Optional<ai.traceable.userattribution.config.service.v2.UserAttributionRule> convertedRule =
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
-        buildRuleV2WithUrlScope(
+        buildRuleV2(
             TEMPLATE_CUSTOM,
             null,
             buildAttributeProjectionTokenRuleV2(
                 List.of(
                     buildJsonPathValueProjection("$.user.email"),
                     buildRegexCaptureGroupValueProjection("(.*)@"))),
-            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"));
+            buildLiteralValueProjectionTokenRuleV2("OAUTH 2.0"),
+            Scope.SCOPE_WITH_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -211,7 +217,12 @@ class UserAttributionRuleConverterTest {
     Optional<ai.traceable.userattribution.config.service.v2.UserAttributionRule> convertedRule =
         converter.convert(userAttributionRule);
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
-        buildRuleV2(TEMPLATE_CUSTOM, null, null, buildCustomProjectionTokenRuleV2("Custom json"));
+        buildRuleV2(
+            TEMPLATE_CUSTOM,
+            null,
+            null,
+            buildCustomProjectionTokenRuleV2("Custom json"),
+            Scope.SCOPE_WITHOUT_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -255,7 +266,7 @@ class UserAttributionRuleConverterTest {
                     .setLiteralValue(LiteralValue.newBuilder().setStringValue("OAUTH 2.0")))
             .build();
     ai.traceable.userattribution.config.service.v2.UserAttributionRule expectedRule =
-        buildRuleV2(TEMPLATE_CUSTOM, null, null, authRule);
+        buildRuleV2(TEMPLATE_CUSTOM, null, null, authRule, Scope.SCOPE_WITHOUT_URL);
     assertTrue(convertedRule.isPresent());
     assertEquals(expectedRule, convertedRule.get());
   }
@@ -304,17 +315,19 @@ class UserAttributionRuleConverterTest {
       Template template,
       ai.traceable.userattribution.config.service.v2.UserAttributionRootTokenRule rootTokenRule,
       ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule userIdRule,
-      ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule authTypeRule) {
+      ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule authTypeRule,
+      Scope scope) {
     ai.traceable.userattribution.config.service.v2.UserAttributionRuleData.Builder dataBuilder =
         ai.traceable.userattribution.config.service.v2.UserAttributionRuleData.newBuilder();
     dataBuilder.setName(RULE_NAME);
     dataBuilder.setDisabled(RULE_DISABLED);
+    dataBuilder.setSource(SOURCE_USER);
     dataBuilder.setTemplate(template);
-    dataBuilder.setScope(
-        ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope.newBuilder()
-            .setEnvironmentScope(
-                ai.traceable.userattribution.config.service.v2.EnvironmentScope.newBuilder()
-                    .setEnvironmentNames(StringList.newBuilder().addValues(TEST_ENVIRONMENT))));
+    if (scope.equals(Scope.SCOPE_WITH_URL)) {
+      dataBuilder.setScope(buildV2RuleScopeWithUrlScope());
+    } else {
+      dataBuilder.setScope(buildV2RuleScope());
+    }
     Optional.ofNullable(rootTokenRule).ifPresent(dataBuilder::setRootTokenRule);
     Optional.ofNullable(userIdRule).ifPresent(dataBuilder::setUserIdRule);
     Optional.ofNullable(authTypeRule).ifPresent(dataBuilder::setAuthTypeRule);
@@ -325,33 +338,24 @@ class UserAttributionRuleConverterTest {
         .build();
   }
 
-  private ai.traceable.userattribution.config.service.v2.UserAttributionRule
-      buildRuleV2WithUrlScope(
-          Template template,
-          ai.traceable.userattribution.config.service.v2.UserAttributionRootTokenRule rootTokenRule,
-          ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule userIdRule,
-          ai.traceable.userattribution.config.service.v2.UserAttributionTokenRule authTypeRule) {
-    ai.traceable.userattribution.config.service.v2.UserAttributionRuleData.Builder dataBuilder =
-        ai.traceable.userattribution.config.service.v2.UserAttributionRuleData.newBuilder();
-    dataBuilder.setName(RULE_NAME);
-    dataBuilder.setDisabled(RULE_DISABLED);
-    dataBuilder.setTemplate(template);
-    dataBuilder.setScope(
-        ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope.newBuilder()
-            .setEnvironmentScope(
-                ai.traceable.userattribution.config.service.v2.EnvironmentScope.newBuilder()
-                    .setEnvironmentNames(StringList.newBuilder().addValues(TEST_ENVIRONMENT)))
-            .setUrlScope(
-                UrlScope.newBuilder()
-                    .setUrlMatchRegexes(
-                        StringList.newBuilder().addAllValues(TEST_URL_MATCH_REGEXES))));
-    Optional.ofNullable(rootTokenRule).ifPresent(dataBuilder::setRootTokenRule);
-    Optional.ofNullable(userIdRule).ifPresent(dataBuilder::setUserIdRule);
-    Optional.ofNullable(authTypeRule).ifPresent(dataBuilder::setAuthTypeRule);
-    return ai.traceable.userattribution.config.service.v2.UserAttributionRule.newBuilder()
-        .setId(RULE_ID)
-        .setData(dataBuilder)
-        .setRank(RULE_RANK)
+  private ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope
+      buildV2RuleScope() {
+    return ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope.newBuilder()
+        .setEnvironmentScope(
+            ai.traceable.userattribution.config.service.v2.EnvironmentScope.newBuilder()
+                .setEnvironmentNames(StringList.newBuilder().addValues(TEST_ENVIRONMENT)))
+        .build();
+  }
+
+  private ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope
+      buildV2RuleScopeWithUrlScope() {
+    return ai.traceable.userattribution.config.service.v2.UserAttributionRuleScope.newBuilder()
+        .setEnvironmentScope(
+            ai.traceable.userattribution.config.service.v2.EnvironmentScope.newBuilder()
+                .setEnvironmentNames(StringList.newBuilder().addValues(TEST_ENVIRONMENT)))
+        .setUrlScope(
+            UrlScope.newBuilder()
+                .setUrlMatchRegexes(StringList.newBuilder().addAllValues(TEST_URL_MATCH_REGEXES)))
         .build();
   }
 
@@ -439,5 +443,10 @@ class UserAttributionRuleConverterTest {
         .setRegexCaptureGroup(
             ValueProjection.RegexCaptureGroupProjection.newBuilder().setRegex(regexCaptureGroup))
         .build();
+  }
+
+  enum Scope {
+    SCOPE_WITH_URL,
+    SCOPE_WITHOUT_URL
   }
 }
