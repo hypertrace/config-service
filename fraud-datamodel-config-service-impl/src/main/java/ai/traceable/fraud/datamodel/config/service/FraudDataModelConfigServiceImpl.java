@@ -41,6 +41,7 @@ import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -260,28 +261,72 @@ public class FraudDataModelConfigServiceImpl
   @Override
   public void deleteDataModel(
       DeleteDataModelRequest request, StreamObserver<DeleteDataModelResponse> responseObserver) {
+    // todo: we don't cleanup the column mappings intentionally as there may be data stored in those
+    // columns.
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       validator.validateRequestContext(requestContext);
-      List<ObjectType> allTypes =
-          fraudObjectTypesStore.getAllObjectTypes(
-              requestContext, ObjectKind.OBJECT_KIND_UNSPECIFIED);
+      List<ObjectType> allTypes = Collections.emptyList();
+      if (request.getTypeReferencesCount() > 0) {
+        allTypes =
+            request.getTypeReferencesList().stream()
+                .map(
+                    ref -> {
+                      try {
+                        return fraudObjectTypesStore
+                            .getObjectType(requestContext, ref)
+                            .orElse(null);
+                      } catch (Exception e) {
+                        log.error("Failed to get object type for ref:{}", ref, e);
+                        return null;
+                      }
+                    })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+      } else if (request.getDeleteAll()) {
+        allTypes =
+            fraudObjectTypesStore.getAllObjectTypes(
+                requestContext, ObjectKind.OBJECT_KIND_UNSPECIFIED);
+      }
       List<ObjectTypeReference> allTypeRefs =
           allTypes.stream()
               .map(FraudDataModelUtils::getObjectTypeReference)
               .collect(Collectors.toList());
-      fraudObjectTypesStore.deleteObjectTypes(requestContext, allTypeRefs);
-      allTypes.stream()
-          .filter(ObjectType::hasMetricType)
-          .forEach(
-              objectType ->
-                  metricTypeToAttributeMetadataAdapter.onDeleteMetricType(
-                      objectType.getMetricType()));
-      allTypes.stream()
-          .filter(ObjectType::hasEventType)
-          .forEach(
-              objectType ->
-                  eventTypeToAttributeMetadataAdapter.onDeleteEventType(objectType.getEventType()));
+      if (!request.getDryRun()) {
+        fraudObjectTypesStore.deleteObjectTypes(requestContext, allTypeRefs);
+        if (request.getPurgeColumnMappings()) {
+          for (var type : allTypes) {
+            if (type.hasEntityType()) {
+              entityTypeColumnMapper.deleteColumnMappings(requestContext, type.getEntityType());
+            } else if (type.hasRelationshipType()) {
+              relationshipTypeColumnMapper.deleteColumnMappings(
+                  requestContext, type.getRelationshipType());
+            } else if (type.hasEventType()) {
+              eventTypeColumnMapper.deleteColumnMappings(requestContext, type.getEventType());
+            } else if (type.hasMetricType()) {
+              metricTypeColumnMapper.deleteColumnMappings(requestContext, type.getMetricType());
+            } else if (type.hasBaselineType()) {
+              baselineTypeColumnMapper.deleteColumnMappings(requestContext, type.getBaselineType());
+            }
+          }
+        }
+        allTypes.stream()
+            .filter(ObjectType::hasMetricType)
+            .forEach(
+                objectType ->
+                    metricTypeToAttributeMetadataAdapter.onDeleteMetricType(
+                        objectType.getMetricType()));
+        allTypes.stream()
+            .filter(ObjectType::hasEventType)
+            .forEach(
+                objectType ->
+                    eventTypeToAttributeMetadataAdapter.onDeleteEventType(
+                        objectType.getEventType()));
+      } else {
+        log.info("Dry run delete data model request:{}", request);
+      }
+      var response = DeleteDataModelResponse.newBuilder().addAllDeletedTypes(allTypes).build();
+      responseObserver.onNext(response);
     } catch (Exception e) {
       log.error("Delete data model failed:{}", request, e);
       responseObserver.onError(e);

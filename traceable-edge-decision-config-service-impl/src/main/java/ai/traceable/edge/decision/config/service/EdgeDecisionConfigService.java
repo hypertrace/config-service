@@ -26,6 +26,10 @@ import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRespo
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsResponse;
 import ai.traceable.edge.decision.config.service.v1.GetScopedResolvedEdgeDecisionConfigRequest;
@@ -144,6 +148,20 @@ class EdgeDecisionConfigService
       UpdateEdgeDecisionRuleRequest request,
       StreamObserver<UpdateEdgeDecisionRuleResponse> responseObserver) {
     handleConfigOperation(request, responseObserver, edgeDecisionRuleStoreManager::update);
+  }
+
+  @Override
+  public void getEdgeDecisionRule(
+      GetEdgeDecisionRuleRequest request,
+      StreamObserver<GetEdgeDecisionRuleResponse> responseObserver) {
+    handleConfigOperation(request, responseObserver, edgeDecisionRuleStoreManager::get);
+  }
+
+  @Override
+  public void getEdgeDecisionSpec(
+      GetEdgeDecisionSpecRequest request,
+      StreamObserver<GetEdgeDecisionSpecResponse> responseObserver) {
+    handleConfigOperation(request, responseObserver, edgeDecisionSpecStoreManager::get);
   }
 
   @Override

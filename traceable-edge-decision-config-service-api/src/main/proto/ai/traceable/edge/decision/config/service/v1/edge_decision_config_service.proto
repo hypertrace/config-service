@@ -6,6 +6,7 @@ import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto"
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -30,12 +31,14 @@ service EdgeDecisionConfigService {
   rpc UpdateEdgeDecisionRule(UpdateEdgeDecisionRuleRequest) returns (UpdateEdgeDecisionRuleResponse) {}
   rpc GetAllEdgeDecisionRules(GetAllEdgeDecisionRulesRequest) returns (GetAllEdgeDecisionRulesResponse) {}
   rpc DeleteEdgeDecisionRule(DeleteEdgeDecisionRuleRequest) returns (DeleteEdgeDecisionRuleResponse) {}
+  rpc GetEdgeDecisionRule(GetEdgeDecisionRuleRequest) returns (GetEdgeDecisionRuleResponse) {}
 
   // CRUD for specs
   rpc CreateEdgeDecisionSpec(CreateEdgeDecisionSpecRequest) returns (CreateEdgeDecisionSpecResponse) {}
   rpc UpdateEdgeDecisionSpec(UpdateEdgeDecisionSpecRequest) returns (UpdateEdgeDecisionSpecResponse) {}
   rpc GetAllEdgeDecisionSpecs(GetAllEdgeDecisionSpecsRequest) returns (GetAllEdgeDecisionSpecsResponse) {}
   rpc DeleteEdgeDecisionSpec(DeleteEdgeDecisionSpecRequest) returns (DeleteEdgeDecisionSpecResponse) {}
+  rpc GetEdgeDecisionSpec(GetEdgeDecisionSpecRequest) returns (GetEdgeDecisionSpecResponse) {}
 }
 
 message GetResolvedEdgeDecisionEngineConfigsRequest {
@@ -72,6 +75,7 @@ message CreateEdgeDecisionEngineConfigResponse {
 message UpdateEdgeDecisionEngineConfigRequest {
   int64 current_version = 1;
   EdgeDecisionEngineConfig edge_decision_engine_config = 2;
+  google.protobuf.FieldMask update_mask = 3;
 }
 
 message UpdateEdgeDecisionEngineConfigResponse {
@@ -103,6 +107,7 @@ message CreateEdgeDecisionRuleResponse {
 message UpdateEdgeDecisionRuleRequest {
   int64 current_version = 1;
   EdgeDecisionRule edge_decision_rule = 2;
+  google.protobuf.FieldMask update_mask = 3;
 }
 
 message UpdateEdgeDecisionRuleResponse {
@@ -111,6 +116,14 @@ message UpdateEdgeDecisionRuleResponse {
 
 message GetAllEdgeDecisionRulesRequest {
   Filter filter = 1;
+}
+
+message GetEdgeDecisionRuleRequest {
+  string id = 1;
+}
+
+message GetEdgeDecisionRuleResponse {
+  EdgeDecisionRule edge_decision_rule = 1;
 }
 
 message Filter {
@@ -189,6 +202,7 @@ message CreateEdgeDecisionSpecResponse {
 message UpdateEdgeDecisionSpecRequest {
   int64 current_version = 1;
   EdgeDecisionSpec edge_decision_spec = 2;
+  google.protobuf.FieldMask update_mask = 3;
 }
 
 message UpdateEdgeDecisionSpecResponse {
@@ -199,6 +213,14 @@ message GetAllEdgeDecisionSpecsRequest {}
 
 message GetAllEdgeDecisionSpecsResponse {
   repeated EdgeDecisionSpec edge_decision_specs = 1;
+}
+
+message GetEdgeDecisionSpecRequest {
+  string id = 1;
+}
+
+message GetEdgeDecisionSpecResponse {
+  EdgeDecisionSpec edge_decision_spec = 1;
 }
 
 message DeleteEdgeDecisionSpecRequest {

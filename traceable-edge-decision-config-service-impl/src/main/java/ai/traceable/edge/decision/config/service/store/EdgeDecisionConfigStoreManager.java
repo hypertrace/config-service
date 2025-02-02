@@ -1,5 +1,7 @@
 package ai.traceable.edge.decision.config.service.store;
 
+import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
+
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -79,8 +81,12 @@ public class EdgeDecisionConfigStoreManager {
                   request.getCurrentVersion(), existing.getVersion()))
           .asException();
     }
+    // Merge the existing object with the new object, using update masks
+    EdgeDecisionEngineConfig updatedResource =
+        applyFieldMask(existing, config, request.getUpdateMask());
+
     ContextualConfigObject<EdgeDecisionEngineConfig> configObject =
-        edgeDecisionConfigStore.upsertObject(requestContext, config);
+        edgeDecisionConfigStore.upsertObject(requestContext, updatedResource);
     return UpdateEdgeDecisionEngineConfigResponse.newBuilder()
         .setEdgeDecisionEngineConfig(configObject.getData())
         .build();

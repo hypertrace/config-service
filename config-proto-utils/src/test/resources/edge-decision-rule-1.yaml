@@ -1,0 +1,25 @@
+id: "__default__traceable_session_cookie_verification_eds_rule"
+name: "default_traceable_session_cookie_verification_eds_rule"
+version: 0
+rule_scope: {}
+rule_definition:
+  signature_rule:
+    match_condition:
+      negate: true
+      generic_match_condition:
+        jexl_expression:
+          jexl_expression: "jwt:verifyTraceableSessionSignature($s.getTraceableSessionCookie(), $s.getTraceableSessionCookie().getDecodedPayload().get('siteKey').asText())"
+  custom_fields: {}
+  edge_input_kind: EDGE_INPUT_KIND_HTTP_REQUEST
+rule_decision:
+  edge_decision_type: EDGE_DECISION_TYPE_BLOCK
+  threat_type: "Bot Risk"
+  span_attributes:
+    - span_attribute_key:
+        static_value: "traceableai_is_bot"
+      span_attribute_value:
+        static_value: "true"
+policy_kind: POLICY_KIND_BOT_MITIGATION
+rule_status:
+  disabled: false
+rule_category: EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE

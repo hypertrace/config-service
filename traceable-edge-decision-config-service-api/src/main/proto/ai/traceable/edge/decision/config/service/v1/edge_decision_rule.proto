@@ -27,6 +27,9 @@ message EdgeDecisionRule {
   EdgeDecisionRuleDefinition rule_definition = 7;
   EdgeDecision rule_decision = 8;
   PolicyKind policy_kind = 9;
+  string description = 10;
+  // if this rule is generated from a template / default rule, store the template id
+  optional string template_id = 11;
 }
 
 message EdgeDecisionRuleScope {

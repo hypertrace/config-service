@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
   implementation(projects.configUtils)
+  implementation(projects.configProtoUtils)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.userAttributionConfigServiceApi)

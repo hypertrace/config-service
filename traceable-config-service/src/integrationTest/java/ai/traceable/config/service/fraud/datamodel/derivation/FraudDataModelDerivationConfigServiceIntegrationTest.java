@@ -9,6 +9,7 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationCo
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.GetDerivationConfigsRequest;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateDerivationConfigRequest;
 import com.google.common.io.Resources;
+import com.google.protobuf.FieldMask;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
@@ -59,7 +60,10 @@ public class FraudDataModelDerivationConfigServiceIntegrationTest
 
     DerivationConfig updatedConfig = config.toBuilder().setName("updated_config").build();
     UpdateDerivationConfigRequest updateDerivationConfigRequest =
-        UpdateDerivationConfigRequest.newBuilder().setDerivationConfig(updatedConfig).build();
+        UpdateDerivationConfigRequest.newBuilder()
+            .setDerivationConfig(updatedConfig)
+            .setUpdateMask(FieldMask.newBuilder().addPaths("name"))
+            .build();
     var updateDerivationConfigResponse =
         RequestContext.forTenantId(TENANT_ID)
             .call(() -> serviceStub.updateDerivationConfig(updateDerivationConfigRequest));

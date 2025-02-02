@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.fraud.datamodel.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel_internal.proto";
 
 option java_multiple_files = true;
 
@@ -145,6 +146,9 @@ message GetBaselineTypesResponse {
 
 message DeleteDataModelRequest {
   bool dry_run = 1;
+  bool delete_all = 2;
+  bool purge_column_mappings = 3;
+  repeated ObjectTypeReference type_references = 4;
 }
 
 message DeleteDataModelResponse {
@@ -152,4 +156,5 @@ message DeleteDataModelResponse {
   int32 num_relationship_types = 2;
   int32 num_event_types = 3;
   int32 num_metric_types = 4;
+  repeated ObjectType deleted_types = 5;
 }

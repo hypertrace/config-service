@@ -69,4 +69,11 @@ public class RelationshipTypeColumnMapper implements ColumnMapper<RelationshipTy
     newTypeBldr.putAllFieldsMeta(toEntityFieldMetadataMap(internalFieldsMetaMap));
     return newTypeBldr.build();
   }
+
+  @Override
+  public void deleteColumnMappings(RequestContext requestContext, RelationshipType objectType)
+      throws IOException {
+    delegate.deleteColumnMappings(
+        requestContext, ObjectKind.OBJECT_KIND_RELATIONSHIP, objectType.getId());
+  }
 }

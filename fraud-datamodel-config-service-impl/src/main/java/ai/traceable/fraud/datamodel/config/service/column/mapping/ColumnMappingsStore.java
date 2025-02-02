@@ -17,4 +17,7 @@ public interface ColumnMappingsStore {
       String objectTypeId,
       List<String> fieldNames)
       throws IOException;
+
+  List<ColumnMappingsDocument> deleteColumnMappings(
+      RequestContext requestContext, ObjectKind objectKind, String objectTypeId) throws IOException;
 }

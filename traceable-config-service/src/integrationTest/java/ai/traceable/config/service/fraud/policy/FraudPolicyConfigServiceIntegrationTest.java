@@ -8,6 +8,7 @@ import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyList;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
+import com.google.protobuf.FieldMask;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
@@ -56,6 +57,7 @@ public class FraudPolicyConfigServiceIntegrationTest
         UpdateFraudPolicyRequest.newBuilder()
             .setFraudPolicyId(updatedFraudPolicy.getId())
             .setFraudPolicy(updatedFraudPolicy)
+            .setUpdateMask(FieldMask.newBuilder().addPaths("fraud_policy"))
             .build();
     var updateFraudPolicyResponse =
         RequestContext.forTenantId(TENANT_ID)

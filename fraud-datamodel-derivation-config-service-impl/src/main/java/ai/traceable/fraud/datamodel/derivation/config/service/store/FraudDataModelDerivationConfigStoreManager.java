@@ -1,5 +1,6 @@
 package ai.traceable.fraud.datamodel.derivation.config.service.store;
 
+import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.datamodel.derivation.config.service.DefaultFraudDataModelDerivationConfig;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.*;
@@ -59,11 +60,14 @@ public class FraudDataModelDerivationConfigStoreManager {
     }
 
     // check if we have an existing config with the given id, before proceeding
-    fetchExistingDerivationConfigOrThrow(request.getDerivationConfig().getId(), requestContext);
-    DerivationConfig updatedDerivationConfig =
-        DerivationConfig.newBuilder(request.getDerivationConfig()).build();
+    var existing =
+        fetchExistingDerivationConfigOrThrow(request.getDerivationConfig().getId(), requestContext);
+    var updatedResource =
+        FieldMaskUtils.applyFieldMask(
+            existing, request.getDerivationConfig(), request.getUpdateMask());
+
     ContextualConfigObject<DerivationConfig> configObject =
-        fraudDataModelDerivationConfigStore.upsertObject(requestContext, updatedDerivationConfig);
+        fraudDataModelDerivationConfigStore.upsertObject(requestContext, updatedResource);
     DerivationConfig derivationConfig = buildDerivationConfig(configObject);
     return UpdateDerivationConfigResponse.newBuilder()
         .setDerivationConfig(derivationConfig)

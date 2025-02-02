@@ -67,4 +67,11 @@ public class BaselineTypeColumnMapper implements ColumnMapper<BaselineType> {
     newTypeBldr.putAllFieldsMeta(toFieldMetadataMap(typeColumnMappings.getFieldsMetaMap()));
     return newTypeBldr.build();
   }
+
+  @Override
+  public void deleteColumnMappings(RequestContext requestContext, BaselineType objectType)
+      throws IOException {
+    delegate.deleteColumnMappings(
+        requestContext, ObjectKind.OBJECT_KIND_BASELINE, objectType.getId());
+  }
 }

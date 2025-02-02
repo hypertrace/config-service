@@ -4,6 +4,7 @@ package ai.traceable.fraud.policy.config.service.v1;
 
 import "ai/traceable/fraud/policy/config/service/v1/api_access_config.proto";
 import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
+import "google/protobuf/field_mask.proto";
 
 option java_multiple_files = true;
 
@@ -40,6 +41,7 @@ message UpdateFraudPolicyRequest {
   string fraud_policy_id = 1;
   FraudPolicy fraud_policy = 2;
   int64 current_version = 3;
+  google.protobuf.FieldMask update_mask = 4;
 }
 
 message UpdateFraudPolicyResponse {
@@ -88,6 +90,7 @@ message CreateApiAccessAnomalyConfigResponse {
 
 message UpdateApiAccessAnomalyConfigRequest {
   ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig config = 1;
+  google.protobuf.FieldMask update_mask = 2;
 }
 
 message UpdateApiAccessAnomalyConfigResponse {

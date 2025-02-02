@@ -1,5 +1,7 @@
 package ai.traceable.edge.decision.config.service.store;
 
+import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
+
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecRequest;
@@ -7,9 +9,12 @@ import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecRespon
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecResponse;
 import io.grpc.Status;
+import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.List;
 import lombok.SneakyThrows;
@@ -34,6 +39,19 @@ public class EdgeDecisionSpecStoreManager {
         .build();
   }
 
+  public GetEdgeDecisionSpecResponse get(
+      RequestContext requestContext, GetEdgeDecisionSpecRequest request) {
+    EdgeDecisionSpec spec;
+    try {
+      spec = edgeDecisionSpecStore.fetchExisting(request.getId(), requestContext);
+    } catch (StatusException e) {
+      throw Status.NOT_FOUND
+          .withDescription(String.format("EdgeDecisionSpec with id=%s not found", request.getId()))
+          .asRuntimeException();
+    }
+    return GetEdgeDecisionSpecResponse.newBuilder().setEdgeDecisionSpec(spec).build();
+  }
+
   @SneakyThrows
   public UpdateEdgeDecisionSpecResponse update(
       RequestContext requestContext, UpdateEdgeDecisionSpecRequest request) {
@@ -48,8 +66,12 @@ public class EdgeDecisionSpecStoreManager {
                   request.getCurrentVersion(), existing.getVersion()))
           .asException();
     }
+    // Merge the existing object with the new object, using update masks
+    EdgeDecisionSpec updatedResource =
+        applyFieldMask(edgeDecisionSpec, request.getEdgeDecisionSpec(), request.getUpdateMask());
+
     ContextualConfigObject<EdgeDecisionSpec> configObject =
-        edgeDecisionSpecStore.upsertObject(requestContext, edgeDecisionSpec);
+        edgeDecisionSpecStore.upsertObject(requestContext, updatedResource);
     return UpdateEdgeDecisionSpecResponse.newBuilder()
         .setEdgeDecisionSpec(configObject.getData())
         .build();

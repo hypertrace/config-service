@@ -33,6 +33,7 @@ import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateUserAgent
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UpdateUserAgentMergeMappingConfigResponse;
 import ai.traceable.fraud.datamodel.derivation.config.service.v1.UserAgentMergeMappingConfig;
 import ai.traceable.fraud.datamodel.derivation.config.service.validation.FraudDataModelDerivationConfigRequestValidator;
+import com.google.protobuf.FieldMask;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import com.typesafe.config.Config;
@@ -156,6 +157,10 @@ class FraudDataModelDerivationConfigServiceImplTest {
                                         DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                                     .setName("derivation_config_updated")
                                     .setDerivationConfig("yaml_config_updated"))
+                            .setUpdateMask(
+                                FieldMask.newBuilder()
+                                    .addPaths("name")
+                                    .addPaths("derivation_config"))
                             .build())
                     .getDerivationConfig());
 
@@ -206,6 +211,11 @@ class FraudDataModelDerivationConfigServiceImplTest {
                                         DerivationConfigType.DERIVATION_CONFIG_TYPE_EVENT)
                                     .setName("derivation_config_updated")
                                     .setDerivationConfig("yaml_config_updated"))
+                            .setUpdateMask(
+                                FieldMask.newBuilder()
+                                    .addPaths("disabled")
+                                    .addPaths("name")
+                                    .addPaths("derivation_config"))
                             .build())
                     .getDerivationConfig());
 

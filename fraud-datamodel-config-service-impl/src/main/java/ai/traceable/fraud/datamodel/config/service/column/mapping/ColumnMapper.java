@@ -14,4 +14,6 @@ public interface ColumnMapper<T extends Message> {
   T forUpdate(RequestContext requestContext, T currType, T newType) throws IOException;
 
   T populateFieldMappings(T objectType, List<ColumnMappingsDocument> mappings);
+
+  void deleteColumnMappings(RequestContext requestContext, T objectType) throws IOException;
 }

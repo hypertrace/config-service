@@ -12,6 +12,8 @@ import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
+  // todo: deprecate this, use typeid level mappings just like other types. otherwise these are
+  // tenant level mappings
   private static final String METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID = "metric_column_mappings";
 
   private final ColumnMapperDelegate delegate;
@@ -67,5 +69,11 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
     newTypeBldr.setColumnMappingMeta(typeColumnMappings.getColumnMappingMeta());
     newTypeBldr.putAllFieldsMeta(toFieldMetadataMap(typeColumnMappings.getFieldsMetaMap()));
     return newTypeBldr.build();
+  }
+
+  @Override
+  public void deleteColumnMappings(RequestContext requestContext, MetricType objectType)
+      throws IOException {
+    // no op until we make mappings type specific
   }
 }

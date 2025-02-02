@@ -26,6 +26,9 @@ message DerivationConfig {
   string name = 3;
   string derivation_config = 4;
   bool disabled = 5;
+  string description = 6;
+  // if this derivation is generated from a template / default derivation, store the template id
+  optional string template_id = 20;
 }
 
 message UserAgentMergeMappingConfig {

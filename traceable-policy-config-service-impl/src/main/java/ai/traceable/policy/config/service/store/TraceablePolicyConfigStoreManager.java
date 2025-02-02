@@ -1,5 +1,6 @@
 package ai.traceable.policy.config.service.store;
 
+import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.policy.config.service.v1.DeleteRequest;
 import ai.traceable.policy.config.service.v1.DeleteResponse;
@@ -8,8 +9,11 @@ import ai.traceable.policy.config.service.v1.GetAllResponse;
 import ai.traceable.policy.config.service.v1.GetRequest;
 import ai.traceable.policy.config.service.v1.GetResponse;
 import ai.traceable.policy.config.service.v1.TraceablePolicy;
+import ai.traceable.policy.config.service.v1.UpdateRequest;
+import ai.traceable.policy.config.service.v1.UpdateResponse;
 import ai.traceable.policy.config.service.v1.UpsertRequest;
 import ai.traceable.policy.config.service.v1.UpsertResponse;
+import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +34,24 @@ public class TraceablePolicyConfigStoreManager {
   public GetAllResponse getAll(RequestContext requestContext, GetAllRequest request) {
     List<TraceablePolicy> policies = traceablePolicyConfigStore.getAllConfigData(requestContext);
     return GetAllResponse.newBuilder().addAllPolicies(policies).build();
+  }
+
+  public UpdateResponse update(RequestContext requestContext, UpdateRequest updateRequest) {
+    Optional<TraceablePolicy> config =
+        traceablePolicyConfigStore.getData(requestContext, updateRequest.getPolicy().getId());
+    if (config.isEmpty()) {
+      throw Status.NOT_FOUND
+          .withDescription(
+              String.format("Policy with id=%s not found", updateRequest.getPolicy().getId()))
+          .asRuntimeException();
+    }
+    // merge
+    TraceablePolicy updated =
+        FieldMaskUtils.applyFieldMask(
+            config.get(), updateRequest.getPolicy(), updateRequest.getUpdateMask());
+    ContextualConfigObject<TraceablePolicy> configObject =
+        traceablePolicyConfigStore.upsertObject(requestContext, updated);
+    return UpdateResponse.newBuilder().setUpdatedPolicy(configObject.getData()).build();
   }
 
   public GetResponse get(RequestContext requestContext, GetRequest request) {

@@ -60,4 +60,10 @@ public class EventTypeColumnMapper implements ColumnMapper<EventType> {
     newTypeBldr.putAllFieldsMeta(toFieldMetadataMap(typeColumnMappings.getFieldsMetaMap()));
     return newTypeBldr.build();
   }
+
+  @Override
+  public void deleteColumnMappings(RequestContext requestContext, EventType objectType)
+      throws IOException {
+    delegate.deleteColumnMappings(requestContext, ObjectKind.OBJECT_KIND_EVENT, objectType.getId());
+  }
 }

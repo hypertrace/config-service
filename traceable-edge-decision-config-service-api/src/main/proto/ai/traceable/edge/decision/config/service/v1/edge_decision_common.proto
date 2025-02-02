@@ -46,6 +46,9 @@ message EdgeDecision {
   repeated SpanAttributeDecoration span_attributes = 6;
   // OR of edge decision targets with respect to the edge decision (for eg. targets to apply the EXCLUDE decision on)
   repeated EdgeDecisionTarget edge_decision_targets = 7;
+  // when a rule triggers, the rule's information is added to a fixed span attribute called "traceableai.decision.info"
+  // the value of this attribute is a base64 string which is an array of all rules triggered with their rule infos
+  repeated RuleInfoDecoration rule_info_decorations = 8;
 }
 
 message EdgeDecisionTarget {
@@ -81,6 +84,11 @@ enum EdgeDecisionRuleCategory {
   EDGE_DECISION_RULE_CATEGORY_MALICIOUS_SOURCES = 4;
   EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR = 5;
   EDGE_DECISION_RULE_CATEGORY_DETECTION_EXCLUSION = 6;
+}
+
+message RuleInfoDecoration {
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig rule_info_key = 1;
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig rule_info_value = 2;
 }
 
 message SpanAttributeDecoration {

@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.fraud.datamodel.derivation.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/derivation/config/service/v1/fraud_datamodel_derivation_config.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
@@ -33,6 +34,7 @@ message CreateDerivationConfigResponse {
 
 message UpdateDerivationConfigRequest {
   DerivationConfig derivation_config = 1;
+  google.protobuf.FieldMask update_mask = 2;
 }
 
 message UpdateDerivationConfigResponse {

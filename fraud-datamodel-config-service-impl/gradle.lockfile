@@ -1,13 +1,14 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.44=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.64=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-annotations:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-core:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-databind:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.luben:zstd-jni:1.5.6-3=runtimeClasspath,testRuntimeClasspath
 com.google.android:annotations:4.1.1.4=runtimeClasspath,testRuntimeClasspath
@@ -79,4 +80,5 @@ org.postgresql:postgresql:42.5.5=runtimeClasspath,testRuntimeClasspath
 org.projectlombok:lombok:1.18.30=annotationProcessor,compileClasspath
 org.slf4j:slf4j-api:2.0.7=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.xerial.snappy:snappy-java:1.1.10.5=runtimeClasspath,testRuntimeClasspath
+org.yaml:snakeyaml:2.2=runtimeClasspath,testRuntimeClasspath
 empty=

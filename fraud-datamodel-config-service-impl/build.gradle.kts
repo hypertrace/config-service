@@ -25,6 +25,7 @@ dependencies {
   implementation(commonLibs.protobuf.java)
   implementation(commonLibs.protobuf.javautil)
 
+  implementation(projects.configProtoUtils)
   implementation(commonLibs.jackson.databind)
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)

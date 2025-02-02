@@ -90,6 +90,12 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
     return builder.setColumnMappingMeta(columnMappingBuilder).build();
   }
 
+  @Override
+  public void deleteColumnMappings(RequestContext requestContext, ObjectKind kind, String typeId)
+      throws IOException {
+    columnMappingsStore.deleteColumnMappings(requestContext, kind, typeId);
+  }
+
   private List<ColumnMappingsDocument> doMapProperties(
       RequestContext requestContext,
       ObjectKind kind,

@@ -17,4 +17,7 @@ public interface ColumnMapperDelegate {
 
   ObjectTypeColumnMappings buildObjectTypeColumnMappings(
       Set<String> fields, List<ColumnMappingsDocument> mappings);
+
+  void deleteColumnMappings(RequestContext requestContext, ObjectKind kind, String typeId)
+      throws IOException;
 }

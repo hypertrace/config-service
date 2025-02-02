@@ -17,6 +17,8 @@ message TraceablePolicy {
     ClientBotFingerprintPolicy client_bot_fingerprint_policy = 6;
     // other policy kinds will be added here when we migrate existing "fraud policy" to this module
   }
+  // if this policy is generated from a template / default rule, store the template id
+  optional string template_id = 20;
 }
 
 message TraceablePolicyList {

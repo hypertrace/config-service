@@ -9,6 +9,7 @@ dependencies {
   api(commonLibs.typesafe.config)
   api(localLibs.hypertrace.configservice.changeeventgenerator)
 
+  implementation(projects.configProtoUtils)
   implementation(projects.configUtils)
   implementation(projects.fraudDatamodelDerivationConfigServiceApi)
   implementation(commonLibs.guice7)

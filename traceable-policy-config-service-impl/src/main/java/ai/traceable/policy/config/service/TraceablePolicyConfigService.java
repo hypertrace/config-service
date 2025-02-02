@@ -8,6 +8,8 @@ import ai.traceable.policy.config.service.v1.GetAllResponse;
 import ai.traceable.policy.config.service.v1.GetRequest;
 import ai.traceable.policy.config.service.v1.GetResponse;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
+import ai.traceable.policy.config.service.v1.UpdateRequest;
+import ai.traceable.policy.config.service.v1.UpdateResponse;
 import ai.traceable.policy.config.service.v1.UpsertRequest;
 import ai.traceable.policy.config.service.v1.UpsertResponse;
 import ai.traceable.policy.config.service.validation.RequestValidator;
@@ -31,6 +33,11 @@ class TraceablePolicyConfigService
       RequestValidator requestValidator) {
     this.traceablePolicyConfigStoreManager = traceablePolicyConfigStoreManager;
     this.requestValidator = requestValidator;
+  }
+
+  @Override
+  public void update(UpdateRequest request, StreamObserver<UpdateResponse> responseObserver) {
+    handleConfigOperation(request, responseObserver, traceablePolicyConfigStoreManager::update);
   }
 
   @Override

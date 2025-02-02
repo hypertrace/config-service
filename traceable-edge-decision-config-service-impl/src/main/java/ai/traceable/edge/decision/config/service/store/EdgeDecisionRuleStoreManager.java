@@ -1,5 +1,7 @@
 package ai.traceable.edge.decision.config.service.store;
 
+import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
+
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleRequest;
@@ -7,6 +9,8 @@ import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleRespon
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleResponse;
 import io.grpc.Status;
@@ -35,6 +39,13 @@ public class EdgeDecisionRuleStoreManager {
   }
 
   @SneakyThrows
+  public GetEdgeDecisionRuleResponse get(
+      RequestContext requestContext, GetEdgeDecisionRuleRequest request) {
+    EdgeDecisionRule rule = edgeDecisionRuleStore.fetchExisting(request.getId(), requestContext);
+    return GetEdgeDecisionRuleResponse.newBuilder().setEdgeDecisionRule(rule).build();
+  }
+
+  @SneakyThrows
   public UpdateEdgeDecisionRuleResponse update(
       RequestContext requestContext, UpdateEdgeDecisionRuleRequest request) {
     var edgeDecisionRule = request.getEdgeDecisionRule();
@@ -48,8 +59,12 @@ public class EdgeDecisionRuleStoreManager {
                   request.getCurrentVersion(), existing.getVersion()))
           .asException();
     }
+    // Merge the existing object with the new object, using update masks
+    EdgeDecisionRule updatedResource =
+        applyFieldMask(edgeDecisionRule, request.getEdgeDecisionRule(), request.getUpdateMask());
+
     ContextualConfigObject<EdgeDecisionRule> configObject =
-        edgeDecisionRuleStore.upsertObject(requestContext, edgeDecisionRule);
+        edgeDecisionRuleStore.upsertObject(requestContext, updatedResource);
     return UpdateEdgeDecisionRuleResponse.newBuilder()
         .setEdgeDecisionRule(configObject.getData())
         .build();

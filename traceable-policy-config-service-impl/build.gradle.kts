@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+  implementation(projects.configProtoUtils)
   implementation(projects.configUtils)
   implementation(projects.traceablePolicyConfigServiceApi)
 

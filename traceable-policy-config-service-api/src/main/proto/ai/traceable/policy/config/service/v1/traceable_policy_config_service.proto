@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.policy.config.service.v1;
 
 import "ai/traceable/policy/config/service/v1/traceable_policy.proto";
+import "google/protobuf/field_mask.proto";
 
 option java_multiple_files = true;
 option java_package = "ai.traceable.policy.config.service.v1";
@@ -12,6 +13,7 @@ service TraceablePolicyConfigService {
   rpc Get(GetRequest) returns (GetResponse) {}
   rpc GetAll(GetAllRequest) returns (GetAllResponse) {}
   rpc Delete(DeleteRequest) returns (DeleteResponse) {}
+  rpc Update(UpdateRequest) returns (UpdateResponse) {}
 }
 
 message UpsertRequest {
@@ -37,6 +39,15 @@ message GetAllRequest {
 
 message GetAllResponse {
   repeated TraceablePolicy policies = 1;
+}
+
+message UpdateRequest {
+  TraceablePolicy policy = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateResponse {
+  TraceablePolicy updated_policy = 1;
 }
 
 message DeleteRequest {
