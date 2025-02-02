@@ -1,12 +1,85 @@
 syntax = "proto3";
 package ai.traceable.edge.bot.config.service.v1;
 
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+
 option java_multiple_files = true;
 
 message FlowConfig {
   string id = 1;
   string name = 2;
   bool disabled = 3;
-  repeated string page_ids = 4;
+  repeated string page_ids = 4 [deprecated = true];
   repeated string api_ids = 5;
+  repeated PageDerivationRules pages = 6;
+}
+
+message PageDerivationRules {
+  string page_id = 1;
+  // AND. if specified. if not specified, true
+  repeated ScopeCondition scope_conditions = 2;
+  // ordered list of rules
+  repeated PageDerivationRule rules = 3;
+}
+
+message PageDerivationRule {
+  oneof rule {
+    UrlBasedDerivationRule url_based_rule = 1;
+    WindowLocationBasedDerivationRule window_location_based_rule = 2;
+  }
+}
+
+message UrlBasedDerivationRule {
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
+}
+
+message RequestBodyBasedDerivationRule {
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
+}
+
+message WindowLocationBasedDerivationRule {
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
+}
+
+message ScopeCondition {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+    ServiceScope service_scope = 2;
+    UrlScope url_scope = 3;
+    UrlRegexScope url_regex_scope = 4;
+    HttpMethodScope http_method_scope = 5;
+    ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition_scope = 6;
+  }
+
+  message EnvironmentScope {
+    // OR
+    repeated string environments = 1;
+  }
+
+  message ServiceScope {
+    // OR
+    repeated string service_names = 1;
+  }
+
+  message UrlRegexScope {
+    // OR
+    repeated string url_regexes = 1;
+  }
+
+  message UrlScope {
+    // OR
+    repeated string urls = 1;
+  }
+
+  message HttpMethodScope {
+    // OR
+    // POST / PUT / GET / DELETE, etc
+    repeated string http_methods = 1;
+  }
+}
+
+message PageConfig {
+  string id = 1;
+  string name = 2;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 3;
 }

@@ -1,6 +1,8 @@
 syntax = "proto3";
 package ai.traceable.edge.bot.config.service.v1;
 
+import "ai/traceable/edge/bot/config/service/v1/flow_config.proto";
+
 option java_multiple_files = true;
 
 enum CaptchaMode {
@@ -26,9 +28,20 @@ message CaptchaSiteKeyConfig {
   CaptchaDifficulty captcha_difficulty = 7;
   bool disabled = 8;
   map<string, string> labels = 9;
-  string flow = 11;
+  string flow = 11 [deprecated = true];
   string mt_captcha_sitekey = 12;
   string environment = 13;
+  string default_flow = 14; // default flow for the tenant
+  // specify how to derive the "flow" based on the request
+  // these are generated from the flow configs on the tenant
+  // all match conditions are evaluated for a packet and all of them are added to "flows" in the jwt
+  repeated FlowDerivationConfig flow_derivation_configs = 15;
+}
+
+// bot-service can only derive the flow based on the pages
+message FlowDerivationConfig {
+  string flow = 1;
+  repeated PageDerivationRules pages = 2;
 }
 
 message CaptchaSiteKeyConfigList {

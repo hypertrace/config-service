@@ -70,9 +70,9 @@ public class EdgeDecisionConfigStoreManager {
   @SneakyThrows
   public UpdateEdgeDecisionEngineConfigResponse update(
       RequestContext requestContext, UpdateEdgeDecisionEngineConfigRequest request) {
-    EdgeDecisionEngineConfig config = request.getEdgeDecisionEngineConfig();
     EdgeDecisionEngineConfig existing =
-        edgeDecisionConfigStore.fetchExisting(config.getId(), requestContext);
+        edgeDecisionConfigStore.fetchExisting(
+            request.getEdgeDecisionEngineConfig().getId(), requestContext);
     if (existing.getVersion() != request.getCurrentVersion()) {
       throw Status.FAILED_PRECONDITION
           .withDescription(
@@ -83,7 +83,7 @@ public class EdgeDecisionConfigStoreManager {
     }
     // Merge the existing object with the new object, using update masks
     EdgeDecisionEngineConfig updatedResource =
-        applyFieldMask(existing, config, request.getUpdateMask());
+        applyFieldMask(existing, request.getEdgeDecisionEngineConfig(), request.getUpdateMask());
 
     ContextualConfigObject<EdgeDecisionEngineConfig> configObject =
         edgeDecisionConfigStore.upsertObject(requestContext, updatedResource);

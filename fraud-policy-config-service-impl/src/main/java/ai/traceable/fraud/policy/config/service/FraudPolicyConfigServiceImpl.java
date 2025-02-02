@@ -21,6 +21,8 @@ import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigR
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigResponse;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.UpsertFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfigServiceRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
 import io.grpc.Status;
@@ -38,8 +40,6 @@ class FraudPolicyConfigServiceImpl
   private final FraudPolicyConfigRequestValidator requestValidator;
 
   private final ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
-  private final ApiAccessAnomalyConfigServiceRequestValidator
-      apiAccessAnomalyConfigServiceRequestValidator;
 
   @Inject
   FraudPolicyConfigServiceImpl(
@@ -50,8 +50,6 @@ class FraudPolicyConfigServiceImpl
     this.fraudPolicyConfigStoreManager = fraudPolicyConfigStoreManager;
     this.requestValidator = requestValidator;
     this.apiAccessAnomalyConfigStoreManager = apiAccessAnomalyConfigStoreManager;
-    this.apiAccessAnomalyConfigServiceRequestValidator =
-        apiAccessAnomalyConfigServiceRequestValidator;
   }
 
   @Override
@@ -60,9 +58,30 @@ class FraudPolicyConfigServiceImpl
       StreamObserver<CreateFraudPolicyResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateOrThrow(requestContext, request);
+      this.requestValidator.validateRequestContext(requestContext);
       responseObserver.onNext(
           fraudPolicyConfigStoreManager.createFraudPolicy(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while creating fraud policy config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void upsertFraudPolicy(
+      UpsertFraudPolicyRequest request,
+      StreamObserver<UpsertFraudPolicyResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateRequestContext(requestContext);
+      responseObserver.onNext(
+          fraudPolicyConfigStoreManager.upsertFraudPolicy(requestContext, request));
       responseObserver.onCompleted();
     } catch (Exception exception) {
       Exception decoratedException = decorateException(requestContext, exception);
@@ -81,7 +100,7 @@ class FraudPolicyConfigServiceImpl
       StreamObserver<UpdateFraudPolicyResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
-      this.requestValidator.validateOrThrow(requestContext, request);
+      this.requestValidator.validateRequestContext(requestContext);
       responseObserver.onNext(
           fraudPolicyConfigStoreManager.updateFraudPolicy(requestContext, request));
       responseObserver.onCompleted();

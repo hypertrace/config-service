@@ -57,7 +57,7 @@ public class FraudPolicyConfigServiceIntegrationTest
         UpdateFraudPolicyRequest.newBuilder()
             .setFraudPolicyId(updatedFraudPolicy.getId())
             .setFraudPolicy(updatedFraudPolicy)
-            .setUpdateMask(FieldMask.newBuilder().addPaths("fraud_policy"))
+            .setUpdateMask(FieldMask.newBuilder().addPaths("name").addPaths("fraud_policy"))
             .build();
     var updateFraudPolicyResponse =
         RequestContext.forTenantId(TENANT_ID)

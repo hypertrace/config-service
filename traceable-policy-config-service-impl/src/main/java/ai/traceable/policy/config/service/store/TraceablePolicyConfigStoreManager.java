@@ -1,6 +1,7 @@
 package ai.traceable.policy.config.service.store;
 
-import ai.traceable.config.proto.utils.FieldMaskUtils;
+import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
+
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.policy.config.service.v1.DeleteRequest;
 import ai.traceable.policy.config.service.v1.DeleteResponse;
@@ -47,8 +48,8 @@ public class TraceablePolicyConfigStoreManager {
     }
     // merge
     TraceablePolicy updated =
-        FieldMaskUtils.applyFieldMask(
-            config.get(), updateRequest.getPolicy(), updateRequest.getUpdateMask());
+        applyFieldMask(config.get(), updateRequest.getPolicy(), updateRequest.getUpdateMask());
+
     ContextualConfigObject<TraceablePolicy> configObject =
         traceablePolicyConfigStore.upsertObject(requestContext, updated);
     return UpdateResponse.newBuilder().setUpdatedPolicy(configObject.getData()).build();

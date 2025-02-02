@@ -1,5 +1,7 @@
 package ai.traceable.fraud.policy.config.service.store;
 
+import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
+
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyResponse;
@@ -48,7 +50,6 @@ public class FraudPolicyConfigStoreManager {
     // check existence of the policy before updating.
     FraudPolicy existing =
         fetchExistingFraudPolicyOrThrow(request.getFraudPolicyId(), requestContext);
-    FraudPolicy updatedFraudPolicy = request.getFraudPolicy();
     // do not allow update if the version provided is not the same as the one in the store.
     // caller must get latest and update if this exception is thrown
     if (existing.getVersion() != request.getCurrentVersion()) {
@@ -59,6 +60,8 @@ public class FraudPolicyConfigStoreManager {
                   request.getCurrentVersion(), existing.getVersion()))
           .asException();
     }
+    FraudPolicy updatedFraudPolicy =
+        applyFieldMask(existing, request.getFraudPolicy(), request.getUpdateMask());
     ContextualConfigObject<FraudPolicy> configObject =
         fraudPolicyConfigStore.upsertObject(requestContext, updatedFraudPolicy);
     FraudPolicy updated = buildFraudPolicy(configObject);

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
@@ -33,6 +34,7 @@ import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigR
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfigServiceRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
+import com.google.protobuf.FieldMask;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -40,6 +42,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -108,6 +111,10 @@ class FraudPolicyConfigServiceImplTest {
                     .getFraudPolicy());
 
     assertEquals(UUID_1, createdFraudPolicy.getId());
+
+    FraudPolicy policy = FraudPolicy.newBuilder().setId(UUID_1).setName("updated").build();
+    FieldMask output = FieldMaskUtils.generateFieldMask(policy);
+    Assertions.assertEquals(2, output.getPathsCount());
 
     FraudPolicy updatedFraudPolicy =
         requestContext.call(

@@ -46,7 +46,30 @@ public class FieldMaskUtilsTest {
             .setRuleStatus(EdgeDecisionRuleStatus.newBuilder().setDisabled(true))
             .build();
     updated = FieldMaskUtils.applyFieldMask(existing, update, FieldMask.getDefaultInstance());
-    // ignore updates if field mask is empty.
-    Assertions.assertEquals(existing, updated);
+    Assertions.assertEquals(existing.getId(), updated.getId());
+    Assertions.assertEquals("test3", updated.getName());
+    Assertions.assertEquals(existing.getRuleDefinition(), updated.getRuleDefinition());
+  }
+
+  @Test
+  public void testCreateFieldMaskFromPopulatedFields() throws IOException {
+    var existing =
+        ResourceUtils.readProtoFromYaml("edge-decision-rule-1.yaml", EdgeDecisionRule.newBuilder())
+            .build();
+    var update =
+        EdgeDecisionRule.newBuilder()
+            .setId(existing.getId())
+            .setName("test3")
+            .setRuleStatus(EdgeDecisionRuleStatus.newBuilder().setDisabled(true))
+            .build();
+    var generatedFieldMask = FieldMaskUtils.generateFieldMask(update);
+    System.out.println(generatedFieldMask);
+    Assertions.assertEquals(4, generatedFieldMask.getPathsCount());
+    var updated = FieldMaskUtils.applyFieldMask(existing, update, generatedFieldMask);
+    // System.out.println(ProtoUtils.serialize(updated));
+    Assertions.assertEquals(existing.getId(), updated.getId());
+    Assertions.assertEquals("test3", updated.getName());
+    Assertions.assertEquals(existing.getRuleDefinition(), updated.getRuleDefinition());
+    Assertions.assertTrue(updated.getRuleStatus().getDisabled());
   }
 }
