@@ -73,6 +73,8 @@ message ConditionalConfig {
 // represents a single rule that derives a value from the transformation context
 message DerivationRule {
   DataTransformationConfig transformation_config = 1;
+  // ordered list of transformations to be applied
+  repeated DataTransformationConfig transformation_configs = 2;
   // apply the rule only if "condition", must eval to bool. if not, assume False.
   JexlExpressionConfig condition_expression = 3 [deprecated = true];
   MatchCondition match_condition = 4;
