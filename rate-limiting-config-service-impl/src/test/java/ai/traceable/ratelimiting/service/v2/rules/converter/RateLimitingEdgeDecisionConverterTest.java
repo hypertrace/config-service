@@ -28,6 +28,7 @@ import com.google.protobuf.util.JsonFormat;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,14 @@ class RateLimitingEdgeDecisionConverterTest {
                                       rule.getName(),
                                       getRateLimitCategory(
                                           rateLimitingRule.getData().getCategory()),
-                                      Map.of())))
+                                      Map.of()),
+                                  Base64.getEncoder()
+                                      .encodeToString(
+                                          rateLimitingRule
+                                              .getData()
+                                              .getThresholdActionConfigs(0)
+                                              .getResourceAccessThresholdConfigs(0)
+                                              .toByteArray())))
                           .build();
                   return rule.toBuilder().setRuleDecision(updatedEdgeDecision).build();
                 })

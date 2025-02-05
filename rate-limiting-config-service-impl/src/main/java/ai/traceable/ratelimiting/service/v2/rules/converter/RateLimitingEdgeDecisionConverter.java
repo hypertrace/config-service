@@ -67,6 +67,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.Duration;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -114,30 +115,32 @@ public class RateLimitingEdgeDecisionConverter {
               : Optional.empty();
       return getThresholdActionConfigs(data)
           .flatMap(
-              action -> {
-                EdgeDecision edgeDecision = buildEdgeDecision(rateLimitingRule, action);
-                return getResourceAccessThresholdConfigsList(action)
-                    .flatMap(
-                        resourceAccessThresholdConfig -> {
-                          List<EdgeDecisionRuleDefinition> ruleDefinitions =
-                              buildRuleDefinitions(
-                                  resourceAccessThresholdConfig, mayBeMatchCondition);
-                          return ruleDefinitions.stream()
-                              .map(
-                                  ruleDefinition -> {
-                                    EdgeDecisionRule.Builder builder =
-                                        EdgeDecisionRule.newBuilder();
-                                    builder.setId(rateLimitingRule.getId());
-                                    builder.setName(data.getName());
-                                    builder.setRuleStatus(edgeDecisionRuleStatus);
-                                    builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
-                                    maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
-                                    builder.setRuleDecision(edgeDecision);
-                                    builder.setRuleDefinition(ruleDefinition);
-                                    return builder.build();
-                                  });
-                        });
-              })
+              action ->
+                  getResourceAccessThresholdConfigsList(action)
+                      .flatMap(
+                          resourceAccessThresholdConfig -> {
+                            EdgeDecision edgeDecision =
+                                buildEdgeDecision(
+                                    rateLimitingRule, action, resourceAccessThresholdConfig);
+                            List<EdgeDecisionRuleDefinition> ruleDefinitions =
+                                buildRuleDefinitions(
+                                    resourceAccessThresholdConfig, mayBeMatchCondition);
+                            return ruleDefinitions.stream()
+                                .map(
+                                    ruleDefinition -> {
+                                      EdgeDecisionRule.Builder builder =
+                                          EdgeDecisionRule.newBuilder();
+                                      builder.setId(rateLimitingRule.getId());
+                                      builder.setName(data.getName());
+                                      builder.setRuleStatus(edgeDecisionRuleStatus);
+                                      builder.setRuleCategory(
+                                          EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
+                                      maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
+                                      builder.setRuleDecision(edgeDecision);
+                                      builder.setRuleDefinition(ruleDefinition);
+                                      return builder.build();
+                                    });
+                          }))
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception ex) {
       log.warn("Unable to convert rate limiting rule: {}", rateLimitingRule, ex);
@@ -146,7 +149,9 @@ public class RateLimitingEdgeDecisionConverter {
   }
 
   private EdgeDecision buildEdgeDecision(
-      final RateLimitingRule rateLimitingRule, ThresholdActionConfig thresholdActionConfig) {
+      final RateLimitingRule rateLimitingRule,
+      ThresholdActionConfig thresholdActionConfig,
+      ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
     Optional<Action> mayBeAction = findAnyMatchingEdgeDecisionAction(thresholdActionConfig);
     if (mayBeAction.isEmpty()) {
       // should never happen
@@ -172,7 +177,8 @@ public class RateLimitingEdgeDecisionConverter {
                 rateLimitingRule.getId(),
                 rateLimitingRule.getData().getName(),
                 RateLimitCategory.forNumber(rateLimitingRule.getData().getCategory().getNumber()),
-                rateLimitingRule.getData().getLabelsMap())));
+                rateLimitingRule.getData().getLabelsMap()),
+            Base64.getEncoder().encodeToString(resourceAccessThresholdConfig.toByteArray())));
     return builder.build();
   }
 
