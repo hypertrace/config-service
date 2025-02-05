@@ -12,6 +12,7 @@ service FraudPolicyConfigService {
   rpc CreateFraudPolicy(CreateFraudPolicyRequest) returns (CreateFraudPolicyResponse) {}
   rpc UpdateFraudPolicy(UpdateFraudPolicyRequest) returns (UpdateFraudPolicyResponse) {}
   rpc UpsertFraudPolicy(UpsertFraudPolicyRequest) returns (UpsertFraudPolicyResponse) {}
+  rpc DeleteFraudPolicy(DeleteFraudPolicyRequest) returns (DeleteFraudPolicyResponse) {}
   rpc GetFraudPolicyList(GetFraudPolicyListRequest) returns (GetFraudPolicyListResponse) {}
   rpc GetFraudPolicy(GetFraudPolicyRequest) returns (GetFraudPolicyResponse) {}
   rpc GetApiAccessAnomalyConfigs(GetApiAccessAnomalyConfigsRequest) returns (GetApiAccessAnomalyConfigsResponse) {}
@@ -64,6 +65,14 @@ message GetFraudPolicyRequest {
 
 message GetFraudPolicyResponse {
   FraudPolicy fraud_policy = 1;
+}
+
+message DeleteFraudPolicyRequest {
+  repeated string fraud_policy_id_list = 1;
+}
+
+message DeleteFraudPolicyResponse {
+  repeated FraudPolicy fraud_policy_list = 1;
 }
 
 message GetApiAccessAnomalyConfigRequest {
