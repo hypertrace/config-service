@@ -30,6 +30,8 @@ message EdgeDecisionRule {
   string description = 10;
   // if this rule is generated from a template / default rule, store the template id
   optional string template_id = 11;
+  // if this rule is generated from a policy, store the policy id
+  optional string policy_id = 12;
 }
 
 message EdgeDecisionRuleScope {
