@@ -8,6 +8,8 @@ import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigResponse;
+import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigResponse;
@@ -108,6 +110,27 @@ class FraudPolicyConfigServiceImpl
       Exception decoratedException = decorateException(requestContext, exception);
       log.warn(
           "Error while updating fraud policy config for request: {} with context: {}",
+          request,
+          requestContext,
+          decoratedException);
+      responseObserver.onError(decoratedException);
+    }
+  }
+
+  @Override
+  public void deleteFraudPolicy(
+      DeleteFraudPolicyRequest request,
+      StreamObserver<DeleteFraudPolicyResponse> responseObserver) {
+    RequestContext requestContext = RequestContext.CURRENT.get();
+    try {
+      this.requestValidator.validateRequestContext(requestContext);
+      responseObserver.onNext(
+          fraudPolicyConfigStoreManager.deleteFraudPolicyList(requestContext, request));
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      Exception decoratedException = decorateException(requestContext, exception);
+      log.warn(
+          "Error while deleting fraud policy configs for request: {} with context: {}",
           request,
           requestContext,
           decoratedException);

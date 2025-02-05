@@ -18,6 +18,8 @@ import ai.traceable.fraud.policy.config.service.v1.CorrelationKey;
 import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicy;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigRequest;
@@ -44,7 +46,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -64,9 +68,18 @@ class FraudPolicyConfigServiceImplTest {
   @Mock private UuidGenerator uuidGenerator;
 
   @BeforeEach
+  void setUp(TestInfo testInfo) {
+    if (testInfo.getTags().contains("fraudPolicy")) {
+      this.mockGenericConfigService =
+          new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDeleteAll();
+    } else if (testInfo.getTags().contains("apiAccessAnomaly")) {
+      this.mockGenericConfigService =
+          new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    }
+  }
+
+  @BeforeEach
   void beforeEach() {
-    this.mockGenericConfigService =
-        new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     this.storeManager =
@@ -98,6 +111,7 @@ class FraudPolicyConfigServiceImplTest {
   }
 
   @Test
+  @Tag("fraudPolicy")
   void testFraudPolicyCRUD() {
     RequestContext requestContext = buildRequestContext();
     FraudPolicy createdFraudPolicy =
@@ -178,17 +192,24 @@ class FraudPolicyConfigServiceImplTest {
                         .build()));
     assertEquals(UUID_1, fraudPolicyResponse.getFraudPolicy().getId());
 
-    storeManager.deleteDerivedConfig(requestContext, UUID_1);
+    DeleteFraudPolicyResponse deleteFraudPolicyResponse =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub.deleteFraudPolicy(
+                    DeleteFraudPolicyRequest.newBuilder().addFraudPolicyIdList(UUID_1).build()));
+    assertEquals(1, deleteFraudPolicyResponse.getFraudPolicyListCount());
+    assertEquals(UUID_1, deleteFraudPolicyResponse.getFraudPolicyList(0).getId());
 
     fraudPolicyListResponse =
         requestContext.call(
             () ->
                 this.fraudPolicyConfigServiceBlockingStub.getFraudPolicyList(
-                    GetFraudPolicyListRequest.getDefaultInstance()));
+                    GetFraudPolicyListRequest.newBuilder().setIncludeDisabled(true).build()));
     assertEquals(0, fraudPolicyListResponse.getFraudPolicyListCount());
   }
 
   @Test
+  @Tag("apiAccessAnomaly")
   public void testCrud() {
     RequestContext requestContext = buildRequestContext();
     ApiAccessAnomalyConfig expected = new_config();

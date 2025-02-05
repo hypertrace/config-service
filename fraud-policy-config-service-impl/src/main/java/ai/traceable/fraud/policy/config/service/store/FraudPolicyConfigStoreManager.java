@@ -5,6 +5,8 @@ import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicy;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListResponse;
@@ -18,7 +20,10 @@ import io.grpc.Status;
 import io.grpc.StatusException;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
+import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class FraudPolicyConfigStoreManager {
@@ -77,6 +82,21 @@ public class FraudPolicyConfigStoreManager {
     return UpsertFraudPolicyResponse.newBuilder().setFraudPolicy(upserted).build();
   }
 
+  public DeleteFraudPolicyResponse deleteFraudPolicyList(
+      RequestContext requestContext, DeleteFraudPolicyRequest request) throws StatusException {
+    List<String> ids = request.getFraudPolicyIdListList();
+    if (ids.isEmpty()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("No policy IDs provided for deletion.")
+          .asException();
+    }
+    List<DeletedContextualConfigObject<FraudPolicy>> configObject =
+        fraudPolicyConfigStore.deleteObjects(requestContext, ids);
+    return DeleteFraudPolicyResponse.newBuilder()
+        .addAllFraudPolicyList(buildFraudPolicies(configObject))
+        .build();
+  }
+
   public GetFraudPolicyListResponse fetchFraudPolicyList(
       RequestContext requestContext, GetFraudPolicyListRequest request) {
     List<FraudPolicy> fraudPolicies =
@@ -117,6 +137,15 @@ public class FraudPolicyConfigStoreManager {
 
   private FraudPolicy buildFraudPolicy(ContextualConfigObject<FraudPolicy> configObject) {
     return FraudPolicy.newBuilder(configObject.getData()).build();
+  }
+
+  private List<FraudPolicy> buildFraudPolicies(
+      List<DeletedContextualConfigObject<FraudPolicy>> configObjects) {
+    return configObjects.stream()
+        .map(DeletedContextualConfigObject::getDeletedData)
+        .filter(Optional::isPresent)
+        .map(data -> FraudPolicy.newBuilder(data.get()).build())
+        .collect(Collectors.toList());
   }
 
   private FraudPolicy fetchExistingFraudPolicyOrThrow(String id, RequestContext requestContext)
