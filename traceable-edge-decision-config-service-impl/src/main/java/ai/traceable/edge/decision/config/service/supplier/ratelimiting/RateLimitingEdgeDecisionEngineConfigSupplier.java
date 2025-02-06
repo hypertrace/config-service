@@ -5,6 +5,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -13,6 +14,11 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingEdgeDecisionEngineConfigSupplier
     implements EdgeDecisionEngineConfigSupplier {
+  private static final GetRateLimitingEdgeDecisionRulesRequest
+      RATE_LIMITING_EDGE_DECISION_RULES_REQUEST =
+          GetRateLimitingEdgeDecisionRulesRequest.newBuilder()
+              .setRulesFilter(GetRateLimitingRulesFilter.newBuilder().setDisabled(false))
+              .build();
   private final RateLimitingConfigServiceBlockingStub stub;
 
   @Inject
@@ -44,7 +50,7 @@ public class RateLimitingEdgeDecisionEngineConfigSupplier
                     .call(
                         () ->
                             stub.getRateLimitingEdgeDecisionRules(
-                                GetRateLimitingEdgeDecisionRulesRequest.getDefaultInstance()))
+                                RATE_LIMITING_EDGE_DECISION_RULES_REQUEST))
                     .getEdgeDecisionEngineConfig())
         .orElseGet(EdgeDecisionEngineConfig::getDefaultInstance);
   }

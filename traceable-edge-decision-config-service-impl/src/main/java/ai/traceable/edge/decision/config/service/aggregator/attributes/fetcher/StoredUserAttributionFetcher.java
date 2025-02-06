@@ -5,6 +5,7 @@ import static org.hypertrace.config.objectstore.ClientConfig.DEFAULT;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.converter.CachedUserAttributionJexlGenerator;
 import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest;
+import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter;
 import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesResponse;
 import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc.UserAttributionConfigServiceBlockingStub;
 import ai.traceable.userattribution.config.service.v2.UserAttributionRule;
@@ -17,6 +18,10 @@ import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class StoredUserAttributionFetcher implements UserAttributionFetcher {
+  private static final GetUserAttributionRulesRequest USER_ATTRIBUTION_RULES_REQUEST =
+      GetUserAttributionRulesRequest.newBuilder()
+          .setFilter(GetUserAttributionRulesFilter.newBuilder().setDisabled(false))
+          .build();
   private final CachedUserAttributionJexlGenerator userAttributionJexlGenerator;
   private final UserAttributionConfigServiceBlockingStub configServiceBlockingStub;
   private final ClientConfig clientConfig;
@@ -37,7 +42,7 @@ public class StoredUserAttributionFetcher implements UserAttributionFetcher {
             () ->
                 configServiceBlockingStub
                     .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                    .getUserAttributionRules(GetUserAttributionRulesRequest.getDefaultInstance()));
+                    .getUserAttributionRules(USER_ATTRIBUTION_RULES_REQUEST));
 
     return response.getRulesList().stream()
         .map(UserAttributionRule::getData)
