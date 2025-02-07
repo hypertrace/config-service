@@ -162,6 +162,7 @@ message ApiSpecMetadata {
     PostmanCollectionMetadata postman_collection_metadata = 2;
     PostmanEnvironmentMetadata postman_environment_metadata = 3;
     GraphqlSchemaMetadata graphql_schema_metadata = 4;
+    WsdlMetadata wsdl_metadata = 5;
   }
 }
 
@@ -181,6 +182,8 @@ message PostmanCollectionMetadata {}
 message PostmanEnvironmentMetadata {}
 
 message GraphqlSchemaMetadata {}
+
+message WsdlMetadata {}
 
 message OpenApiSpecReference {
   string resolved_spec_path = 1;
@@ -207,6 +210,7 @@ enum SpecType {
   SPEC_TYPE_POSTMAN_COLLECTION = 2;
   SPEC_TYPE_POSTMAN_ENVIRONMENT = 3;
   SPEC_TYPE_GRAPHQL_SCHEMA = 4;
+  SPEC_TYPE_WSDL = 5;
 }
 
 enum ApiSpecStatus {
