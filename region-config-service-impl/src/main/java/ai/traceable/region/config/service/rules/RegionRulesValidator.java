@@ -1,5 +1,6 @@
 package ai.traceable.region.config.service.rules;
 
+import ai.traceable.region.config.service.v1.AgentModification;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.DeleteRegionRuleRequest;
 import ai.traceable.region.config.service.v1.EventSeverity;
@@ -36,6 +37,17 @@ class RegionRulesValidator implements RulesValidator {
     if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "create region rule should have a valid action type");
+    }
+
+    if ((request.getActionType().equals(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+            || request
+                .getActionType()
+                .equals(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
+        && request.getEffectsList().stream()
+            .flatMap(effect -> effect.getAgentRuleEffect().getAgentModificationsList().stream())
+            .anyMatch(AgentModification::hasHeaderInjection)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "create region rule with block action should not have header injection");
     }
 
     if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT
@@ -84,6 +96,17 @@ class RegionRulesValidator implements RulesValidator {
     if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "update region rule should have a valid action type");
+    }
+
+    if ((request.getActionType().equals(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK)
+            || request
+                .getActionType()
+                .equals(RegionRuleActionType.REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT))
+        && request.getEffectsList().stream()
+            .flatMap(effect -> effect.getAgentRuleEffect().getAgentModificationsList().stream())
+            .anyMatch(AgentModification::hasHeaderInjection)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "update region rule with block action should not have header injection");
     }
 
     if (request.getActionType() == RegionRuleActionType.REGION_RULE_ACTION_TYPE_ALERT

@@ -4,6 +4,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.v1.AgentModification;
 import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.Clause;
@@ -166,6 +167,13 @@ class CustomSignatureRulesValidator implements RulesValidator {
         && ruleEffect.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect with alert action should have a valid event severity.");
+    }
+    if (eventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING
+        && ruleEffect.getEffectsList().stream()
+            .flatMap(effect -> effect.getAgentRuleEffect().getAgentModificationsList().stream())
+            .anyMatch(AgentModification::hasHeaderInjection)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule Effect with block action should not have header injection.");
     }
 
     if (hasMatchCategoryResponseOrAttributeKeyValueExpression

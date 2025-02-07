@@ -3,6 +3,7 @@ package ai.traceable.iprange.config.service.rules;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
 
 import ai.traceable.config.utils.RegexValidator;
+import ai.traceable.iprange.config.service.v1.AgentModification;
 import ai.traceable.iprange.config.service.v1.CreateIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.DeleteIpRangeRuleRequest;
 import ai.traceable.iprange.config.service.v1.EventSeverity;
@@ -113,6 +114,15 @@ class IpRangeRulesValidator implements RulesValidator {
     if (details.getRuleAction() == RuleAction.RULE_ACTION_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "IP Range rule should have a valid action type");
+    }
+
+    if ((details.getRuleAction() == RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT
+            || details.getRuleAction() == RuleAction.RULE_ACTION_BLOCK)
+        && details.getEffectsList().stream()
+            .flatMap(effect -> effect.getAgentRuleEffect().getAgentModificationsList().stream())
+            .anyMatch(AgentModification::hasHeaderInjection)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "IP Range rule with BLOCK action should not have header injection");
     }
 
     if (details.getRuleAction() == RuleAction.RULE_ACTION_ALERT

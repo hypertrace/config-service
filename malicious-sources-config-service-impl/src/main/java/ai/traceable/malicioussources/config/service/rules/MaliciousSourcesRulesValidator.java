@@ -1,5 +1,6 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import ai.traceable.malicioussources.config.service.v1.AgentModification;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.EmailDomainCondition;
@@ -327,6 +328,14 @@ public class MaliciousSourcesRulesValidator implements RulesValidator {
         && ruleAction.getEventSeverity() == EventSeverity.EVENT_SEVERITY_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "MaliciousSourcesRuleAction in Malicious Sources rule with action other than ALLOW should have a valid severity");
+    }
+    if ((ruleAction.getActionType() == RuleActionType.RULE_ACTION_TYPE_BLOCK
+            || ruleAction.getActionType() == RuleActionType.RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT)
+        && ruleAction.getEffectsList().stream()
+            .flatMap(effect -> effect.getAgentRuleEffect().getAgentModificationsList().stream())
+            .anyMatch(AgentModification::hasHeaderInjection)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "MaliciousSourcesRuleAction in Malicious Sources rule with action block should not have header injection");
     }
     return Status.OK;
   }
