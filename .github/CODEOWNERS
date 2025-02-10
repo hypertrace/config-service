@@ -6,6 +6,8 @@
 # module specific owners
 anomaly-config-service-registry/src/main/resources/modsec/crs @piyushroshan @soujanyanmbri
 anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99
+api-spec-config-service-api/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
+api-spec-config-service-impl/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
 detection-exclusion-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
 rate-limiting-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @saxenakshitiz
 custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
@@ -29,3 +31,5 @@ traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @
 traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz
 traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz
 traceable-config-service-rest/src @sunilgattupalle @surajpuvvada @avinashkolluru @aaron-steinfeld @vinaysrini
+user-attribution-config-service-api/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
+user-attribution-config-service-impl/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
