@@ -182,8 +182,8 @@ message JiraDataCenterAuthCredentials {
     EncryptedData encrypted_personal_access_token = 1;
   }
   bool is_mtls_enabled = 2;
-  optional string ssl_ca_certificate = 3 [deprecated = true];
-  EncryptedData encrypted_ssl_ca_certificate = 4;
+  optional string ssl_ca_certificate = 3;
+  EncryptedData encrypted_ssl_ca_certificate = 4 [deprecated = true];
 }
 
 message JiraIntegrationFilter {
