@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.customsignature.config.service.v1;
 
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
+
 option java_multiple_files = true;
 
 message CreateCustomSignatureRuleRequest {
@@ -49,6 +51,13 @@ message GetCustomSignatureModsecRulesRequest {
 message GetCustomSignatureModsecRulesResponse {
   string modsec_rules_blob = 1;
   repeated CustomSignatureRuleDetails rules = 2;
+}
+
+message GetCustomSignatureEdgeDecisionRulesRequest {
+  GetRulesFilter rules_filter = 1;
+}
+message GetCustomSignatureEdgeDecisionRulesResponse {
+  ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
 
 message GetRulesFilter {

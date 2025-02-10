@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.rules.CustomSignatureEdgeDecisionConverter;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -38,6 +39,7 @@ public class CustomSignatureConfigServiceImplTest {
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
   private ModsecRulesManager modsecRulesManager;
+  private CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
 
   private CustomSignatureConfigServiceImpl configService;
 
@@ -46,8 +48,10 @@ public class CustomSignatureConfigServiceImplTest {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
     modsecRulesManager = mock(ModsecRulesManager.class);
+    edgeDecisionConverter = mock(CustomSignatureEdgeDecisionConverter.class);
     configService =
-        new CustomSignatureConfigServiceImpl(rulesValidator, rulesManager, modsecRulesManager);
+        new CustomSignatureConfigServiceImpl(
+            rulesValidator, rulesManager, modsecRulesManager, edgeDecisionConverter);
   }
 
   @Test

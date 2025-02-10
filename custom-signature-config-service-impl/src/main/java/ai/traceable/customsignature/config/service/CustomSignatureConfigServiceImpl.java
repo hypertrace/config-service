@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.rules.CustomSignatureEdgeDecisionConverter;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -9,6 +10,8 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
@@ -30,15 +33,18 @@ public class CustomSignatureConfigServiceImpl
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
   private final ModsecRulesManager modsecRulesManager;
+  private final CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
       RulesValidator rulesValidator,
       RulesManager rulesManager,
-      ModsecRulesManager modsecRulesManager) {
+      ModsecRulesManager modsecRulesManager,
+      CustomSignatureEdgeDecisionConverter edgeDecisionConverter) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
+    this.edgeDecisionConverter = edgeDecisionConverter;
   }
 
   @Override
@@ -162,6 +168,28 @@ public class CustomSignatureConfigServiceImpl
       responseObserver.onError(
           Status.INTERNAL
               .withDescription("Unable to fetch modsec custom signature rules")
+              .asException());
+    }
+  }
+
+  @Override
+  public void getCustomSignatureEdgeDecisionRules(
+      GetCustomSignatureEdgeDecisionRulesRequest request,
+      StreamObserver<GetCustomSignatureEdgeDecisionRulesResponse> responseObserver) {
+    try {
+      GetCustomSignatureEdgeDecisionRulesResponse response =
+          GetCustomSignatureEdgeDecisionRulesResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(
+                  edgeDecisionConverter.convert(
+                      rulesManager.getCustomSignatureRules(
+                          RequestContext.CURRENT.get(), request.getRulesFilter())))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      responseObserver.onError(
+          Status.INTERNAL
+              .withDescription("Unable to fetch custom signature edge decision rules")
               .asException());
     }
   }

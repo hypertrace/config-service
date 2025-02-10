@@ -16,4 +16,6 @@ service CustomSignatureConfigService {
   rpc DeleteCustomSignatureRule(DeleteCustomSignatureRuleRequest) returns (DeleteCustomSignatureRuleResponse) {}
 
   rpc GetCustomSignatureModsecRules(GetCustomSignatureModsecRulesRequest) returns (GetCustomSignatureModsecRulesResponse) {}
+
+  rpc GetCustomSignatureEdgeDecisionRules(GetCustomSignatureEdgeDecisionRulesRequest) returns (GetCustomSignatureEdgeDecisionRulesResponse) {}
 }
