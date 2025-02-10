@@ -1,8 +1,6 @@
 package ai.traceable.userattribution.config.service.v2;
 
 import static ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest.UserAttributionRuleSource.USER_ATTRIBUTION_RULE_SOURCE_V2;
-import static ai.traceable.userattribution.config.service.v2.Source.SOURCE_UNSPECIFIED;
-import static ai.traceable.userattribution.config.service.v2.Source.SOURCE_USER;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
@@ -64,7 +62,6 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
             this.legacyRuleStore.getUserAttributionRulesFromLegacyStore(
                 requestContext, request.getFilter());
       }
-      allRules = allRules.stream().map(this::setSourceIfNotSet).collect(toUnmodifiableList());
       responseObserver.onNext(
           GetUserAttributionRulesResponse.newBuilder().addAllRules(allRules).build());
       responseObserver.onCompleted();
@@ -72,17 +69,6 @@ class UserAttributionV2ConfigServiceImpl extends UserAttributionConfigServiceImp
       log.error("Error retrieving user attribution rules", exception);
       responseObserver.onError(exception);
     }
-  }
-
-  private UserAttributionRule setSourceIfNotSet(UserAttributionRule rule) {
-    if (SOURCE_UNSPECIFIED.equals(rule.getData().getSource())) {
-      return rule.toBuilder()
-          .setData(
-              rule.getData().toBuilder().setSource(SOURCE_USER) // For backward compatibility
-              )
-          .build();
-    }
-    return rule;
   }
 
   @Override

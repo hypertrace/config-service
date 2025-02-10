@@ -1,5 +1,9 @@
 package ai.traceable.userattribution.config.service.v2.store;
 
+import static ai.traceable.userattribution.config.service.v2.Source.SOURCE_UNSPECIFIED;
+import static ai.traceable.userattribution.config.service.v2.Source.SOURCE_USER;
+import static java.util.stream.Collectors.toUnmodifiableList;
+
 import ai.traceable.config.utils.RankCalculator;
 import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter;
 import ai.traceable.userattribution.config.service.v2.GetUserAttributionRulesRequest.GetUserAttributionRulesFilter.EnvironmentFilter;
@@ -19,6 +23,7 @@ import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class UserAttributionV2RuleStore
@@ -39,6 +44,28 @@ public class UserAttributionV2RuleStore
         USER_ATTRIBUTION_RULE_RESOURCE_NAME,
         configChangeEventGenerator);
     this.rankCalculator = rankCalculator;
+  }
+
+  @Override
+  public List<UserAttributionRule> getAllConfigData(
+      RequestContext requestContext, GetUserAttributionRulesFilter filter) {
+    return super.getAllConfigData(requestContext, filter).stream()
+        .map(this::setSourceIfNotSet)
+        .collect(toUnmodifiableList());
+  }
+
+  @Override
+  public ContextualConfigObject<UserAttributionRule> upsertObject(
+      RequestContext context, UserAttributionRule rule) {
+    return super.upsertObject(context, setSourceIfNotSet(rule));
+  }
+
+  @Override
+  public List<ContextualConfigObject<UserAttributionRule>> upsertObjects(
+      RequestContext context, List<UserAttributionRule> rules) {
+    List<UserAttributionRule> rulesWithSource =
+        rules.stream().map(this::setSourceIfNotSet).collect(toUnmodifiableList());
+    return super.upsertObjects(context, rulesWithSource);
   }
 
   @Override
@@ -95,5 +122,16 @@ public class UserAttributionV2RuleStore
     Set<String> ruleEnvironmentNames =
         Set.copyOf(scope.getEnvironmentScope().getEnvironmentNames().getValuesList());
     return !Sets.intersection(environmentNamesInFilter, ruleEnvironmentNames).isEmpty();
+  }
+
+  private UserAttributionRule setSourceIfNotSet(UserAttributionRule rule) {
+    if (SOURCE_UNSPECIFIED.equals(rule.getData().getSource())) {
+      return rule.toBuilder()
+          .setData(
+              rule.getData().toBuilder().setSource(SOURCE_USER) // For backward compatibility
+              )
+          .build();
+    }
+    return rule;
   }
 }
