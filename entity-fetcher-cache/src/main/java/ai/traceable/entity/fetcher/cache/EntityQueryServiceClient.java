@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import lombok.NonNull;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.entity.query.service.v1.ColumnIdentifier;
@@ -43,32 +42,54 @@ class EntityQueryServiceClient {
     this.timeoutMillis = config.getTimeout().toMillis();
   }
 
-  Optional<ServiceIdentifierEntity> getServiceEntity(
-      @NonNull final ContextualKey<String> serviceIdContextualKey) {
-    EntityQueryRequest serviceEntityQueryRequest =
-        buildServiceQueryRequest(serviceIdContextualKey.getData());
+  Map<ContextualKey<String>, Optional<ServiceIdentifierEntity>> getServiceEntities(
+      final Iterable<? extends ContextualKey<String>> keys) {
+    Iterator<? extends ContextualKey<String>> iterator = keys.iterator();
+    if (!iterator.hasNext()) {
+      return Collections.emptyMap();
+    }
+    final Map<String, ContextualKey<String>> serviceIdContextualKeyMap = new HashMap<>();
+    RequestContext requestContext = null;
+    while (iterator.hasNext()) {
+      ContextualKey<String> key = iterator.next();
+      if (requestContext == null) {
+        requestContext = key.getContext();
+      }
+      serviceIdContextualKeyMap.put(key.getData(), key);
+    }
+    Set<String> serviceIds = serviceIdContextualKeyMap.keySet();
+    EntityQueryRequest serviceEntityQueryRequest = buildServiceQueryRequest(serviceIds);
     Iterator<ResultSetChunk> resultSetChunkIterator =
-        serviceIdContextualKey.callInContext(
+        requestContext.call(
             () ->
                 entityQueryServiceBlockingStub
                     .withDeadlineAfter(timeoutMillis, TimeUnit.MILLISECONDS)
                     .execute(serviceEntityQueryRequest));
 
+    Map<String, Optional<ServiceIdentifierEntity>> serviceEntitiesMap = new HashMap<>();
+    serviceIds.forEach(serviceId -> serviceEntitiesMap.put(serviceId, Optional.empty()));
     if (resultSetChunkIterator.hasNext()) {
       ResultSetChunk chunk = resultSetChunkIterator.next();
-      if (!chunk.getRowList().isEmpty()) {
-        return Optional.of(
-            new ServiceIdentifierEntity(
-                chunk.getRow(0).getColumn(1).getString(),
-                chunk.getRow(0).getColumn(2).getString().isEmpty()
-                    ? Optional.empty()
-                    : Optional.of(chunk.getRow(0).getColumn(2).getString())));
-      }
+      chunk
+          .getRowList()
+          .forEach(
+              row ->
+                  serviceEntitiesMap.put(
+                      row.getColumn(0).getString(),
+                      Optional.of(
+                          new ServiceIdentifierEntity(
+                              row.getColumn(1).getString(),
+                              row.getColumn(2).getString().isEmpty()
+                                  ? Optional.empty()
+                                  : Optional.of(row.getColumn(2).getString())))));
     }
-    return Optional.empty();
+    return serviceEntitiesMap.entrySet().stream()
+        .collect(
+            Collectors.toUnmodifiableMap(
+                entry -> serviceIdContextualKeyMap.get(entry.getKey()), Map.Entry::getValue));
   }
 
-  public Map<ContextualKey<String>, Optional<ApiIdentifierEntity>> getApiEntities(
+  Map<ContextualKey<String>, Optional<ApiIdentifierEntity>> getApiEntities(
       final Iterable<? extends ContextualKey<String>> keys) {
     Iterator<? extends ContextualKey<String>> iterator = keys.iterator();
     if (!iterator.hasNext()) {
@@ -116,7 +137,7 @@ class EntityQueryServiceClient {
                 entry -> apiIdContextualKeyMap.get(entry.getKey()), Map.Entry::getValue));
   }
 
-  public Map<ContextualKey<String>, Set<ApiIdentifierEntity>> getApiEntitiesHavingLabels(
+  Map<ContextualKey<String>, Set<ApiIdentifierEntity>> getApiEntitiesHavingLabels(
       final Iterable<? extends ContextualKey<String>> keys) {
     Iterator<? extends ContextualKey<String>> iterator = keys.iterator();
     if (!iterator.hasNext()) {
@@ -170,14 +191,14 @@ class EntityQueryServiceClient {
                 entry -> apiLabelIdContextualKeyMap.get(entry.getKey()), Map.Entry::getValue));
   }
 
-  private EntityQueryRequest buildServiceQueryRequest(String serviceId) {
+  private EntityQueryRequest buildServiceQueryRequest(Set<String> serviceIds) {
     return EntityQueryRequest.newBuilder()
         .setEntityType(EntityType.SERVICE.name())
         .addSelection(buildSelectionExpression(entityQueryServiceConfig.getServiceIdColumnName()))
         .addSelection(buildSelectionExpression(entityQueryServiceConfig.getServiceNameColumnName()))
         .addSelection(
             buildSelectionExpression(entityQueryServiceConfig.getServiceEnvironmentColumnName()))
-        .setFilter(buildServiceIdFilter(serviceId))
+        .setFilter(buildServiceIdFilter(serviceIds))
         .build();
   }
 
@@ -216,18 +237,18 @@ class EntityQueryServiceClient {
         .build();
   }
 
-  private Filter buildServiceIdFilter(String serviceId) {
+  private Filter buildServiceIdFilter(Set<String> serviceIds) {
     return Filter.newBuilder()
         .setLhs(buildSelectionExpression(entityQueryServiceConfig.getServiceIdColumnName()))
-        .setOperator(Operator.EQ)
+        .setOperator(Operator.IN)
         .setRhs(
             Expression.newBuilder()
                 .setLiteral(
                     LiteralConstant.newBuilder()
                         .setValue(
                             Value.newBuilder()
-                                .setValueType(ValueType.STRING)
-                                .setString(serviceId))))
+                                .setValueType(ValueType.STRING_ARRAY)
+                                .addAllStringArray(serviceIds))))
         .build();
   }
 

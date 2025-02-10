@@ -67,20 +67,25 @@ class EntityQueryServiceClientTest {
   void testClient() {
     when(queryServiceBlockingStub
             .withDeadlineAfter(10000L, TimeUnit.MILLISECONDS)
-            .execute(buildRequest()))
-        .thenReturn(List.of(getResultSetChunk()).iterator());
+            .execute(buildServiceIdsRequest()))
+        .thenReturn(List.of(getServiceIdsResultSetChunk()).iterator());
 
-    Optional<ServiceIdentifierEntity> serviceIdentifierEntity =
-        entityQueryServiceClient.getServiceEntity(
-            REQUEST_CONTEXT.buildInternalContextualKey("serviceId"));
+    ContextualKey<String> contextualKey1 = REQUEST_CONTEXT.buildInternalContextualKey("serviceId1");
+    ContextualKey<String> contextualKey2 = REQUEST_CONTEXT.buildInternalContextualKey("serviceId2");
+    Map<ContextualKey<String>, Optional<ServiceIdentifierEntity>> serviceIdentifierEntities =
+        entityQueryServiceClient.getServiceEntities(Set.of(contextualKey1, contextualKey2));
+    assertEquals(2, serviceIdentifierEntities.size());
     assertEquals(
-        Optional.of(new ServiceIdentifierEntity("serviceName", Optional.of("environment"))),
-        serviceIdentifierEntity);
+        Optional.of(new ServiceIdentifierEntity("serviceName1", Optional.of("environment1"))),
+        serviceIdentifierEntities.get(contextualKey1));
+    assertEquals(
+        Optional.of(new ServiceIdentifierEntity("serviceName2", Optional.of("environment2"))),
+        serviceIdentifierEntities.get(contextualKey2));
 
-    serviceIdentifierEntity =
-        entityQueryServiceClient.getServiceEntity(
-            REQUEST_CONTEXT.buildInternalContextualKey("id2"));
-    assertTrue(serviceIdentifierEntity.isEmpty());
+    contextualKey1 = REQUEST_CONTEXT.buildInternalContextualKey("id2");
+    serviceIdentifierEntities = entityQueryServiceClient.getServiceEntities(Set.of(contextualKey1));
+    assertEquals(1, serviceIdentifierEntities.size());
+    assertTrue(serviceIdentifierEntities.get(contextualKey1).isEmpty());
   }
 
   @Test
@@ -138,7 +143,7 @@ class EntityQueryServiceClientTest {
     assertEquals(Set.of(), apiIdentifierEntitiesMap.get(labelId3Key));
   }
 
-  private static EntityQueryRequest buildRequest() {
+  private static EntityQueryRequest buildServiceIdsRequest() {
     return EntityQueryRequest.newBuilder()
         .setEntityType(EntityType.SERVICE.name())
         .addSelection(
@@ -155,19 +160,19 @@ class EntityQueryServiceClientTest {
                 .setLhs(
                     Expression.newBuilder()
                         .setColumnIdentifier(ColumnIdentifier.newBuilder().setColumnName("ID")))
-                .setOperator(Operator.EQ)
+                .setOperator(Operator.IN)
                 .setRhs(
                     Expression.newBuilder()
                         .setLiteral(
                             LiteralConstant.newBuilder()
                                 .setValue(
                                     Value.newBuilder()
-                                        .setValueType(ValueType.STRING)
-                                        .setString("serviceId")))))
+                                        .setValueType(ValueType.STRING_ARRAY)
+                                        .addAllStringArray(List.of("serviceId1", "serviceId2"))))))
         .build();
   }
 
-  private ResultSetChunk getResultSetChunk() {
+  private ResultSetChunk getServiceIdsResultSetChunk() {
     ResultSetChunk.Builder resultSetChunkBuilder = ResultSetChunk.newBuilder();
     List<String> columnNames = List.of("ID", "Name", "Environment");
     List<ColumnMetadata> columnMetadataBuilders =
@@ -184,10 +189,16 @@ class EntityQueryServiceClientTest {
 
     resultSetChunkBuilder.addRow(
         Row.newBuilder()
-            .addColumn(Value.newBuilder().setString("serviceId").setValueType(ValueType.STRING))
-            .addColumn(Value.newBuilder().setString("serviceName").setValueType(ValueType.STRING))
-            .addColumn(Value.newBuilder().setString("environment").setValueType(ValueType.STRING)));
-
+            .addColumn(Value.newBuilder().setString("serviceId1").setValueType(ValueType.STRING))
+            .addColumn(Value.newBuilder().setString("serviceName1").setValueType(ValueType.STRING))
+            .addColumn(
+                Value.newBuilder().setString("environment1").setValueType(ValueType.STRING)));
+    resultSetChunkBuilder.addRow(
+        Row.newBuilder()
+            .addColumn(Value.newBuilder().setString("serviceId2").setValueType(ValueType.STRING))
+            .addColumn(Value.newBuilder().setString("serviceName2").setValueType(ValueType.STRING))
+            .addColumn(
+                Value.newBuilder().setString("environment2").setValueType(ValueType.STRING)));
     return resultSetChunkBuilder.build();
   }
 

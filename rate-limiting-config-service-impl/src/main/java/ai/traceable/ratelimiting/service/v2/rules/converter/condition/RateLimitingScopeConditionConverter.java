@@ -70,7 +70,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
   private static final MatchCondition MATCH_CONDITION_WITH_ENDPOINT_ID =
       MatchCondition.newBuilder().setStructuredMatchCondition(CONDITION_WITH_ENDPOINT_ID).build();
 
-  CachedApiMappingProvider cachedApiMappingProvider;
+  private final CachedApiMappingProvider cachedApiMappingProvider;
 
   @Override
   public List<VariableDerivationMapping> buildVariableDerivationMapping(

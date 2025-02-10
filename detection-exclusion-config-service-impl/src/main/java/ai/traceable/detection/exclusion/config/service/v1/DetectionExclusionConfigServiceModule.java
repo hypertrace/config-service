@@ -8,6 +8,7 @@ import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition.DetectionExclusionRuleConditionModule;
 import ai.traceable.detection.exclusion.config.service.v1.rules.migration.DetectionExclusionRulesMigrationModule;
 import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesModule;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -20,6 +21,8 @@ import org.hypertrace.core.grpcutils.client.GrpcChannelRegistry;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 
 class DetectionExclusionConfigServiceModule extends AbstractModule {
+  private static final String CACHED_SERVICE_MAPPING_NAME =
+      "cachedServiceMapping-detectionExclusionConfig";
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final FeatureCachingClient featureCachingClient;
@@ -49,8 +52,11 @@ class DetectionExclusionConfigServiceModule extends AbstractModule {
     bind(FeatureCachingClient.class).toInstance(featureCachingClient);
 
     install(new DetectionExclusionRulesMigrationModule(config, grpcChannelRegistry));
-    install(new ExclusionModsecRulesModule(channel, config, grpcChannelRegistry));
+    install(new ExclusionModsecRulesModule(channel));
     install(new DetectionExclusionRuleConditionModule());
+    install(
+        new CachedServiceMappingProviderModule(
+            grpcChannelRegistry, config, CACHED_SERVICE_MAPPING_NAME));
   }
 
   @Provides

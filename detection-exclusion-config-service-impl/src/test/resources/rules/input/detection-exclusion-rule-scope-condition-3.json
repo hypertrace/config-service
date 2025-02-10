@@ -1,0 +1,23 @@
+{
+  "id": "rule-id",
+  "ruleInfo": {
+    "name": "rule-name",
+    "conditions": [{
+      "scopeCondition": {
+        "labelScope": {
+          "labelType": "LABEL_TYPE_API",
+          "labelIds": [
+            "labelId1"
+          ]
+        }
+      }
+    }, {
+      "eventCondition": {
+        "customRuleEvents": [{
+          "ruleFamily": "CUSTOM_RULE_FAMILY_RATE_LIMIT"
+        }]
+      }
+    }],
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+  }
+}
