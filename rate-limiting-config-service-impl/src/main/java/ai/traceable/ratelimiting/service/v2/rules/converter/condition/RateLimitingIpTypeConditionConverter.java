@@ -7,6 +7,7 @@ import ai.traceable.platform.traceenricher.constants.EnrichedSpanConstants;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -17,7 +18,7 @@ public class RateLimitingIpTypeConditionConverter implements RateLimitingConditi
       "$s.getIpIntelligenceData().getTraits().getIpTypes().contains(IPType.%s)";
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, LeafCondition leafCondition) {
     IpLocationTypeCondition ipLocationTypeCondition = leafCondition.getIpLocationTypeCondition();
     List<EnrichedSpanConstants.IPType> ipTypes = getIpTypes(ipLocationTypeCondition);
@@ -32,15 +33,18 @@ public class RateLimitingIpTypeConditionConverter implements RateLimitingConditi
             .map(JexlUtils::getMatchCondition)
             .collect(Collectors.toUnmodifiableList());
 
-    return MatchCondition.newBuilder()
-        .setLogicalMatchCondition(
-            LogicalMatchCondition.newBuilder()
-                .setOperator(
-                    ipLocationTypeCondition.getExclude()
-                        ? LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND
-                        : LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
-                .addAllConditions(matchConditions))
-        .build();
+    return new MatchConditionDetails(
+        MatchCondition.newBuilder()
+            .setLogicalMatchCondition(
+                LogicalMatchCondition.newBuilder()
+                    .setOperator(
+                        ipLocationTypeCondition.getExclude()
+                            ? LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND
+                            : LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
+                    .addAllConditions(matchConditions))
+            .build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   private List<EnrichedSpanConstants.IPType> getIpTypes(IpLocationTypeCondition condition) {

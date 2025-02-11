@@ -7,9 +7,9 @@ import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationM
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpAsnCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import java.util.Collections;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpAsnConditionConverter implements RateLimitingConditionConverter {
@@ -17,7 +17,7 @@ public class RateLimitingIpAsnConditionConverter implements RateLimitingConditio
   private static final String IP_ASN_JEXL_EXP = "$s.getIpIntelligenceData().getNetwork().getAsn()";
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     IpAsnCondition ipAsnCondition = leafCondition.getIpAsnCondition();
 
@@ -35,10 +35,13 @@ public class RateLimitingIpAsnConditionConverter implements RateLimitingConditio
                                     .setJexlExpression(IP_ASN_JEXL_EXP))))
             .build();
 
-    return buildLikeOperatorMatchCondition(
-            attributeDerivationMapping, ipAsnCondition.getIpAsnRegexesList())
-        .setNegate(ipAsnCondition.getExclude())
-        .build();
+    return new MatchConditionDetails(
+        buildLikeOperatorMatchCondition(
+                attributeDerivationMapping, ipAsnCondition.getIpAsnRegexesList())
+            .setNegate(ipAsnCondition.getExclude())
+            .build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   @Override

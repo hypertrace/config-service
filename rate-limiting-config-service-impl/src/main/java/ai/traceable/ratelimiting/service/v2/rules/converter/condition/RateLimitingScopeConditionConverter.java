@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -72,11 +73,10 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
 
   private final CachedApiMappingProvider cachedApiMappingProvider;
 
-  @Override
-  public List<VariableDerivationMapping> buildVariableDerivationMapping(
-      RequestContext requestContext, LeafCondition leafCondition) {
-    final ScopeCondition scopeCondition = leafCondition.getScopeCondition();
+  private List<ApiIdentifierEntity> getApiIdentifierEntities(
+      RequestContext requestContext, ScopeCondition scopeCondition) {
     final List<DerivationRule> derivationRules = new ArrayList<>();
+    final List<ApiIdentifierEntity> apiIdentifierEntityList = new ArrayList<>();
     switch (scopeCondition.getScopeCase()) {
       case ENTITY_SCOPE:
         ScopeCondition.EntityScope entityScope = scopeCondition.getEntityScope();
@@ -87,13 +87,9 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
         Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntities =
             cachedApiMappingProvider.getApiIdentifierEntities(
                 requestContext, Set.copyOf(entityScope.getEntityIdsList()));
-        apiIdentifierEntities.values().stream()
+        return apiIdentifierEntities.values().stream()
             .flatMap(Optional::stream)
-            .distinct()
-            .forEach(
-                apiIdentifierEntity ->
-                    derivationRules.add(createDerivationRule(apiIdentifierEntity)));
-        break;
+            .collect(Collectors.toUnmodifiableList());
       case LABEL_SCOPE:
         ScopeCondition.LabelScope labelScope = scopeCondition.getLabelScope();
         if (!labelScope.getLabelType().equals(LABEL_TYPE_API)) {
@@ -103,27 +99,17 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
         Map<String, Set<ApiIdentifierEntity>> apiIdentifierEntitiesMap =
             cachedApiMappingProvider.getApiIdentifierEntitiesHavingLabels(
                 requestContext, Set.copyOf(labelScope.getLabelIdsList()));
-        apiIdentifierEntitiesMap.values().stream()
+        return apiIdentifierEntitiesMap.values().stream()
             .flatMap(Collection::stream)
             .distinct()
-            .forEach(
-                apiIdentifierEntity ->
-                    derivationRules.add(createDerivationRule(apiIdentifierEntity)));
-        break;
+            .collect(Collectors.toUnmodifiableList());
       default:
-        // nothing to do here
+        return Collections.emptyList();
     }
-    return derivationRules.isEmpty()
-        ? Collections.emptyList()
-        : List.of(
-            VariableDerivationMapping.newBuilder()
-                .setName(ENDPOINT_ID)
-                .addAllRules(derivationRules)
-                .build());
   }
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, final LeafCondition leafCondition) {
     final ScopeCondition scopeCondition = leafCondition.getScopeCondition();
     switch (scopeCondition.getScopeCase()) {
@@ -135,10 +121,16 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
                     BinaryOperator.newBuilder()
                         .setMatchOperator(MATCH_OPERATOR_LIKE)
                         .setRegex(regexes));
-        return MatchCondition.newBuilder().setStructuredMatchCondition(builderWithPath).build();
+        return new MatchConditionDetails(
+            MatchCondition.newBuilder().setStructuredMatchCondition(builderWithPath).build(),
+            Collections.emptyList(),
+            Collections.emptyList());
       case ENTITY_SCOPE:
       case LABEL_SCOPE:
-        return MATCH_CONDITION_WITH_ENDPOINT_ID;
+        return new MatchConditionDetails(
+            MATCH_CONDITION_WITH_ENDPOINT_ID,
+            Collections.emptyList(),
+            getApiIdentifierEntities(requestContext, scopeCondition));
       default:
         throw new IllegalArgumentException("Unknown scope case: " + scopeCondition.getScopeCase());
     }
@@ -149,7 +141,23 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
     return SCOPE_CONDITION;
   }
 
-  private DerivationRule createDerivationRule(ApiIdentifierEntity apiIdentifierEntity) {
+  public static Optional<VariableDerivationMapping> buildVariableDerivationMapping(
+      List<ApiIdentifierEntity> apiIdentifierEntities) {
+    List<DerivationRule> derivationRules = new ArrayList<>();
+    apiIdentifierEntities.forEach(
+        apiIdentifierEntity -> {
+          derivationRules.add(createDerivationRule(apiIdentifierEntity));
+        });
+    return derivationRules.isEmpty()
+        ? Optional.empty()
+        : Optional.of(
+            VariableDerivationMapping.newBuilder()
+                .setName(ENDPOINT_ID)
+                .addAllRules(derivationRules)
+                .build());
+  }
+
+  private static DerivationRule createDerivationRule(ApiIdentifierEntity apiIdentifierEntity) {
     DerivationRule.Builder builder = DerivationRule.newBuilder();
     String regexes = String.join("|", apiIdentifierEntity.getResolvedUrlPatterns());
     builder.setMatchCondition(

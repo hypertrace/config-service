@@ -7,6 +7,7 @@ import ai.traceable.ratelimiting.config.service.v2.IpAbuseVelocity;
 import ai.traceable.ratelimiting.config.service.v2.IpAbuseVelocityCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -18,7 +19,7 @@ public class RateLimitingIpAbuseVelocityConditionConverter
       "$s.getIpIntelligenceData().getTraits().getAbuseVelocity().equals(IpAbuseVelocity.%s)";
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, LeafCondition leafCondition) {
     IpAbuseVelocityCondition ipAbuseVelocityCondition = leafCondition.getIpAbuseVelocityCondition();
     List<ai.traceable.platform.traceenricher.constants.v1.IpAbuseVelocity>
@@ -31,12 +32,15 @@ public class RateLimitingIpAbuseVelocityConditionConverter
                     String.format(IP_ABUSE_VELOCITY_COMPARISON_JEXL_EXP, ipAbuseVelocity.name()))
             .map(JexlUtils::getMatchCondition)
             .collect(Collectors.toUnmodifiableList());
-    return MatchCondition.newBuilder()
-        .setLogicalMatchCondition(
-            LogicalMatchCondition.newBuilder()
-                .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
-                .addAllConditions(matchConditions))
-        .build();
+    return new MatchConditionDetails(
+        MatchCondition.newBuilder()
+            .setLogicalMatchCondition(
+                LogicalMatchCondition.newBuilder()
+                    .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
+                    .addAllConditions(matchConditions))
+            .build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   private List<ai.traceable.platform.traceenricher.constants.v1.IpAbuseVelocity>

@@ -56,12 +56,30 @@ class RateLimitingEdgeDecisionConverterTest {
     ApiIdentifierEntity api1 =
         new ApiIdentifierEntity(
             "apiId1", "apiName1", "/api1", List.of("/api1"), Collections.emptyList());
-    Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntityMap =
+    ApiIdentifierEntity api2 =
+        new ApiIdentifierEntity(
+            "apiId2",
+            "apiName2",
+            "/apiId2/{apiId2-id}",
+            List.of("/apiId2/.*"),
+            Collections.emptyList());
+    ApiIdentifierEntity api3 =
+        new ApiIdentifierEntity(
+            "apiId3",
+            "apiName2",
+            "/apiId3/abc/{apiId3-id}",
+            List.of("/apiId3/abc/.*"),
+            Collections.emptyList());
+    Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntityMap1 =
         Map.of("apiId1", Optional.of(api1));
+    Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntityMap2 =
+        Map.of("apiId2", Optional.of(api2), "apiId3", Optional.of(api3));
     Map<String, Set<ApiIdentifierEntity>> apiIdentifierEntityLabelMap =
         Map.of("labelId1", Set.of(api1));
     when(provider.getApiIdentifierEntities(REQUEST_CONTEXT, Set.of("apiId1")))
-        .thenReturn(apiIdentifierEntityMap);
+        .thenReturn(apiIdentifierEntityMap1);
+    when(provider.getApiIdentifierEntities(REQUEST_CONTEXT, Set.of("apiId2", "apiId3")))
+        .thenReturn(apiIdentifierEntityMap2);
     when(provider.getApiIdentifierEntitiesHavingLabels(REQUEST_CONTEXT, Set.of("labelId1")))
         .thenReturn(apiIdentifierEntityLabelMap);
     Injector injector =
@@ -83,7 +101,7 @@ class RateLimitingEdgeDecisionConverterTest {
     EdgeDecisionEngineConfig.Builder expectedOutputBuilder = EdgeDecisionEngineConfig.newBuilder();
     parser.merge(expectedOutputFileStr, expectedOutputBuilder);
     // Add span attributes to expected rules
-    List<EdgeDecisionRule> updatedRules =
+    Set<EdgeDecisionRule> updatedRules =
         expectedOutputBuilder.getDecisionRulesList().stream()
             .map(
                 rule -> {
@@ -116,11 +134,9 @@ class RateLimitingEdgeDecisionConverterTest {
                           .build();
                   return rule.toBuilder().setRuleDecision(updatedEdgeDecision).build();
                 })
-            .collect(Collectors.toList());
+            .collect(Collectors.toUnmodifiableSet());
 
-    assertEquals(
-        expectedOutputBuilder.clearDecisionRules().addAllDecisionRules(updatedRules).build(),
-        output);
+    assertEquals(updatedRules, Set.copyOf(output.getDecisionRulesList()));
   }
 
   private RateLimitCategory getRateLimitCategory(Category category) {

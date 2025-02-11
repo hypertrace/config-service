@@ -6,6 +6,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionType;
 import ai.traceable.ratelimiting.config.service.v2.IpConnectionTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -17,7 +18,7 @@ public class RateLimitingIpConnectionTypeConditionConverter
       "$s.getIpIntelligenceData().getTraits().getConnectionType().equals(IpConnectionType.%s)";
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     IpConnectionTypeCondition ipConnectionTypeCondition =
         leafCondition.getIpConnectionTypeCondition();
@@ -34,15 +35,18 @@ public class RateLimitingIpConnectionTypeConditionConverter
             .map(JexlUtils::getMatchCondition)
             .collect(Collectors.toUnmodifiableList());
 
-    return MatchCondition.newBuilder()
-        .setLogicalMatchCondition(
-            LogicalMatchCondition.newBuilder()
-                .setOperator(
-                    ipConnectionTypeCondition.getExclude()
-                        ? LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND
-                        : LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
-                .addAllConditions(matchConditions))
-        .build();
+    return new MatchConditionDetails(
+        MatchCondition.newBuilder()
+            .setLogicalMatchCondition(
+                LogicalMatchCondition.newBuilder()
+                    .setOperator(
+                        ipConnectionTypeCondition.getExclude()
+                            ? LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND
+                            : LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
+                    .addAllConditions(matchConditions))
+            .build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   private List<ai.traceable.platform.traceenricher.constants.v1.IpConnectionType>

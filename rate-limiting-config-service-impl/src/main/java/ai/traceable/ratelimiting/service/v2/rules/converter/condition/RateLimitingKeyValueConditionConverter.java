@@ -16,6 +16,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import java.util.Collections;
 import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -47,7 +48,7 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
           KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX);
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     KeyValueCondition keyValueCondition = leafCondition.getKeyValueCondition();
     KeyValueCondition.Type type = keyValueCondition.getType();
@@ -89,7 +90,8 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
           .equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN)) {
         matchConditionBuilder.setNegate(true);
       }
-      return matchConditionBuilder.build();
+      return new MatchConditionDetails(
+          matchConditionBuilder.build(), Collections.emptyList(), Collections.emptyList());
     } else {
       // types supporting both key and value condition are stored as Map<String, String> or
       // Map<String, List<String>> in the edge-decision-service
@@ -116,11 +118,15 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
                 getPredicateJexlExp(keyValueCondition.getKeyCondition()),
                 NEGATE_OPERATORS.contains(keyValueCondition.getKeyCondition().getOperator()));
       }
-      return MatchCondition.newBuilder()
-          .setGenericMatchCondition(
-              GenericMatchCondition.newBuilder()
-                  .setJexlExpression(JexlExpressionConfig.newBuilder().setJexlExpression(jexlExp)))
-          .build();
+      return new MatchConditionDetails(
+          MatchCondition.newBuilder()
+              .setGenericMatchCondition(
+                  GenericMatchCondition.newBuilder()
+                      .setJexlExpression(
+                          JexlExpressionConfig.newBuilder().setJexlExpression(jexlExp)))
+              .build(),
+          Collections.emptyList(),
+          Collections.emptyList());
     }
   }
 

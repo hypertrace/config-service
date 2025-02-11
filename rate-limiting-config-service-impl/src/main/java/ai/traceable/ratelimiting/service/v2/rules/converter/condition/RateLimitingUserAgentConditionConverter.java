@@ -15,6 +15,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -37,7 +38,7 @@ public class RateLimitingUserAgentConditionConverter implements RateLimitingCond
           .build();
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, final LeafCondition leafCondition) {
     final UserAgentCondition userAgentCondition = leafCondition.getUserAgentCondition();
     List<MatchCondition.Builder> childMatchConditions = new ArrayList<>();
@@ -50,7 +51,10 @@ public class RateLimitingUserAgentConditionConverter implements RateLimitingCond
           buildLikeOperatorMatchCondition(
               USER_AGENT_LHS, userAgentCondition.getUserAgentRegexesList()));
     }
-    return joinChildConditions(childMatchConditions, userAgentCondition.getExclude());
+    return new MatchConditionDetails(
+        joinChildConditions(childMatchConditions, userAgentCondition.getExclude()),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   @Override

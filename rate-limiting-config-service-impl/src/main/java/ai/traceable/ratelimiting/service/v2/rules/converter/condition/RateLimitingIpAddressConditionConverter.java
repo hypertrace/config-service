@@ -16,6 +16,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -28,13 +29,19 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
   private static final String EXTERNAL_IP_JEXL_EXP = "$s.getIpValidationResult().isExternalIp()";
   private static final String INTERNAL_IP_JEXL_EXP =
       JexlUtils.getNotJexlExpression(EXTERNAL_IP_JEXL_EXP);
-  private static final MatchCondition EXTERNAL_IP_MATCH_CONDITION =
-      JexlUtils.getMatchCondition(EXTERNAL_IP_JEXL_EXP);
-  private static final MatchCondition INTERNAL_IP_MATCH_CONDITION =
-      JexlUtils.getMatchCondition(INTERNAL_IP_JEXL_EXP);
+  private static final MatchConditionDetails EXTERNAL_IP_MATCH_CONDITION =
+      new MatchConditionDetails(
+          JexlUtils.getMatchCondition(EXTERNAL_IP_JEXL_EXP),
+          Collections.emptyList(),
+          Collections.emptyList());
+  private static final MatchConditionDetails INTERNAL_IP_MATCH_CONDITION =
+      new MatchConditionDetails(
+          JexlUtils.getMatchCondition(INTERNAL_IP_JEXL_EXP),
+          Collections.emptyList(),
+          Collections.emptyList());
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, LeafCondition leafCondition) {
     IpAddressCondition ipAddressCondition = leafCondition.getIpAddressCondition();
     switch (ipAddressCondition.getIpAddressConditionType()) {
@@ -43,7 +50,10 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
       case IP_ADDRESS_CONDITION_TYPE_ALL_INTERNAL:
         return INTERNAL_IP_MATCH_CONDITION;
       default:
-        return getIpAddressAndIpRangeMatchCondition(ipAddressCondition);
+        return new MatchConditionDetails(
+            getIpAddressAndIpRangeMatchCondition(ipAddressCondition),
+            Collections.emptyList(),
+            Collections.emptyList());
     }
   }
 

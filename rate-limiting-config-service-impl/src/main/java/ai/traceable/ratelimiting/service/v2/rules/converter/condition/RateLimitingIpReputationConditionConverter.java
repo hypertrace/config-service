@@ -18,6 +18,7 @@ import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -27,7 +28,7 @@ public class RateLimitingIpReputationConditionConverter implements RateLimitingC
       "$s.getIpIntelligenceData().getIpReputationLevel()";
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     IpReputationCondition ipReputationCondition = leafCondition.getIpReputationCondition();
 
@@ -55,9 +56,10 @@ public class RateLimitingIpReputationConditionConverter implements RateLimitingC
                     .setMatchOperator(MatchOperator.MATCH_OPERATOR_IN)
                     .setListValue(applicableIpReputationSeverities))
             .build();
-    return MatchCondition.newBuilder()
-        .setStructuredMatchCondition(structuredMatchCondition)
-        .build();
+    return new MatchConditionDetails(
+        MatchCondition.newBuilder().setStructuredMatchCondition(structuredMatchCondition).build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   /**

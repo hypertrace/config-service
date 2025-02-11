@@ -11,13 +11,14 @@ import ai.traceable.ratelimiting.config.service.v2.EmailDomainCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingEmailDomainConditionConverter implements RateLimitingConditionConverter {
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, final LeafCondition leafCondition) {
     final EmailDomainCondition emailDomainCondition = leafCondition.getEmailDomainCondition();
     List<MatchCondition.Builder> childMatchConditions = new ArrayList<>();
@@ -31,7 +32,10 @@ public class RateLimitingEmailDomainConditionConverter implements RateLimitingCo
           buildLikeOperatorMatchCondition(
               USER_ID_VALUE_LHS, emailDomainCondition.getEmailRegexesList()));
     }
-    return joinChildConditions(childMatchConditions, emailDomainCondition.getExclude());
+    return new MatchConditionDetails(
+        joinChildConditions(childMatchConditions, emailDomainCondition.getExclude()),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   @Override

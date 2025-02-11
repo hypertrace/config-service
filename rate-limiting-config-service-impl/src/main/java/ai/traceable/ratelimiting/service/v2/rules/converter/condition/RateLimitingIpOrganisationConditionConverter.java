@@ -7,9 +7,9 @@ import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationM
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.IpOrganisationCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
+import java.util.Collections;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpOrganisationConditionConverter
@@ -19,7 +19,7 @@ public class RateLimitingIpOrganisationConditionConverter
       "$s.getIpIntelligenceData().getIspData().getOrganization()";
 
   @Override
-  public MatchCondition buildMatchCondition(
+  public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     IpOrganisationCondition ipOrganisationCondition = leafCondition.getIpOrganisationCondition();
 
@@ -37,10 +37,13 @@ public class RateLimitingIpOrganisationConditionConverter
                                     .setJexlExpression(IP_ORGANISATION_JEXL_EXP))))
             .build();
 
-    return buildLikeOperatorMatchCondition(
-            attributeDerivationMapping, ipOrganisationCondition.getIpOrganisationRegexesList())
-        .setNegate(ipOrganisationCondition.getExclude())
-        .build();
+    return new MatchConditionDetails(
+        buildLikeOperatorMatchCondition(
+                attributeDerivationMapping, ipOrganisationCondition.getIpOrganisationRegexesList())
+            .setNegate(ipOrganisationCondition.getExclude())
+            .build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   @Override

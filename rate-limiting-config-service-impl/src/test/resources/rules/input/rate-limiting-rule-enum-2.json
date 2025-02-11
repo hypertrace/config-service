@@ -1,0 +1,61 @@
+{
+    "id": "rate-limiting-rule-id",
+    "data": {
+      "category": "CATEGORY_ENUMERATION",
+      "name": "test-policy",
+      "enabled": true,
+      "condition": {
+        "compositeCondition": {
+          "operator": "LOGICAL_OPERATOR_AND",
+          "children": [
+            {
+              "leafCondition": {
+                "scopeCondition": {
+                  "entityScope": {
+                    "entityType": "ENTITY_TYPE_API",
+                    "entityIds": [
+                      "apiId2",
+                      "apiId3"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "thresholdActionConfigs": [
+        {
+          "resourceAccessThresholdConfigs": [
+            {
+              "userAggregateType": "USER_AGGREGATE_TYPE_PER_USER",
+              "apiAggregateType": "API_AGGREGATE_TYPE_PER_ENDPOINT",
+              "valueBasedThresholdConfig": {
+                "uniqueValuesAllowed": "3",
+                "durationIso": "PT1M",
+                "valueType": "VALUE_TYPE_PATH_PARAMS"
+              }
+            }
+          ],
+          "actions": [
+            {
+              "block": {
+                "eventSeverity": "EVENT_SEVERITY_LOW",
+                "useThresholdDuration": true
+              }
+            }
+          ]
+        }
+      ],
+      "ruleConfigScope": {
+        "environmentScope": {
+          "environmentIds": [
+            "test-env"
+          ]
+        }
+      },
+      "ruleStatus": {
+        "ruleCreationSource": "RULE_SOURCE_TRACEABLE"
+      }
+    }
+  }
