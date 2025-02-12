@@ -44,6 +44,7 @@ public class SavedFilterStoreManager {
             .setVisibility(request.getVisibility())
             .setFilterCriteria(request.getFilterCriteria())
             .setCreatedByUserId(requestContext.getUserId().orElseThrow())
+            .setCategory(request.getCategory())
             .build();
     ContextualConfigObject<SavedFilter> configObject =
         savedFilterConfigStore.upsertObject(requestContext, newSavedFilter);
