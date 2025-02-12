@@ -7,6 +7,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingP
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.RegionRuleEffectConverter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import ai.traceable.region.config.service.v1.Country;
@@ -74,6 +75,7 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                             .map(Country::getIsoCode)
                             .collect(Collectors.toUnmodifiableList()))
                     .build())
+            .action(RegionRuleEffectConverter.convert(regionRule.getEffectsList()))
             .ruleId(regionRule.getId())
             .build());
   }
@@ -86,7 +88,7 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
       case REGION_RULE_ACTION_TYPE_BLOCK_ALL_EXCEPT:
         return Optional.of(BlockingPolicyDataBucket.REGION_BLOCK_ALL_EXCEPT_VIOLATIONS);
       case REGION_RULE_ACTION_TYPE_ALERT:
-        return Optional.empty();
+        return Optional.of(BlockingPolicyDataBucket.REGION_ANALYTICS);
       default:
         log.info(
             "No bucket type exist for rule with rule type : {} and rule id {}", actionType, id);
@@ -102,7 +104,7 @@ class RegionBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
       case REGION_RULE_ACTION_TYPE_BLOCK:
         return Optional.of(BlockingPolicyData.RuleType.BLOCK);
       case REGION_RULE_ACTION_TYPE_ALERT:
-        return Optional.empty();
+        return Optional.of(BlockingPolicyData.RuleType.ANALYTICS);
       default:
         log.error("Invalid rule action type: {} for rule with rule id: {}", actionType, id);
         return Optional.empty();
