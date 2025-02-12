@@ -1,9 +1,11 @@
 package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 
+import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALERT;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_ALLOW;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK;
 import static ai.traceable.iprange.config.service.v1.RuleAction.RULE_ACTION_BLOCK_ALL_EXCEPT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -14,14 +16,23 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockin
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
+import ai.traceable.blocking.config.service.v2.AttributeScope;
+import ai.traceable.blocking.config.service.v2.InlineModification;
+import ai.traceable.blocking.config.service.v2.RuleAction;
+import ai.traceable.iprange.config.service.v1.AgentModification;
+import ai.traceable.iprange.config.service.v1.AgentRuleEffect;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.ExpirationDetails;
+import ai.traceable.iprange.config.service.v1.FieldValue;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesResponse;
 import ai.traceable.iprange.config.service.v1.GetRulesFilter;
+import ai.traceable.iprange.config.service.v1.HeaderInjection;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
 import ai.traceable.iprange.config.service.v1.IpRangeRuleDetails;
+import ai.traceable.iprange.config.service.v1.PredicateLocation;
+import ai.traceable.iprange.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.iprange.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
@@ -113,7 +124,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                 mock(BlockingRulesSupplier.class))
             .getBlockingPolicyList();
 
-    assertEquals(4, customIpBasedRuleList.size());
+    assertEquals(5, customIpBasedRuleList.size());
     assertEquals(
         IpBlockingDetails.builder().ipAddresses(List.of("1.2.3.4", "11.22.33.44")).build(),
         customIpBasedRuleList.get(0).getBlockingDetails());
@@ -156,6 +167,30 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
         ViolationInfoEncoder.getEncodedCustomIpRuleViolationInfo("rule-id-7", "rule-name-7"),
         customIpBasedRuleList.get(3).getInfo());
     assertEquals("rule-id-7", customIpBasedRuleList.get(3).getRuleId());
+
+    assertEquals(
+        IpBlockingDetails.builder().ipRange("5.6.7.8").build(),
+        customIpBasedRuleList.get(4).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_IP_RULE, customIpBasedRuleList.get(4).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.ANALYTICS, customIpBasedRuleList.get(4).getRuleType());
+    assertNull(customIpBasedRuleList.get(4).getStatus());
+    assertEquals(activeTimestamp, customIpBasedRuleList.get(4).getTimestamp());
+    assertEquals("Rule has some non-blocking agent action", customIpBasedRuleList.get(4).getInfo());
+    assertEquals("rule-id-8", customIpBasedRuleList.get(4).getRuleId());
+    RuleAction expectedRuleAction =
+        RuleAction.newBuilder()
+            .addInlineModifications(
+                InlineModification.newBuilder()
+                    .setHeaderInjection(
+                        ai.traceable.blocking.config.service.v2.HeaderInjection.newBuilder()
+                            .setScope(AttributeScope.ATTRIBUTE_SCOPE_REQUEST)
+                            .setHeaderName("test-header")
+                            .setValue(
+                                ai.traceable.blocking.config.service.v2.FieldValue.newBuilder()
+                                    .setStaticValue("test-value"))))
+            .build();
+    assertEquals(expectedRuleAction, customIpBasedRuleList.get(4).getAction());
   }
 
   @Test
@@ -183,7 +218,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                     .build(),
                 mock(BlockingRulesSupplier.class))
             .getBlockingPolicyList();
-    assertEquals(5, customIpBasedRuleList.size());
+    assertEquals(6, customIpBasedRuleList.size());
 
     // Without environment
     assertThrows(
@@ -309,6 +344,35 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                           .build())
                   .addIpAddresses("1.2.3.4")
                   .addIpAddresses("11.22.33.44")
+                  .build())
+          .addRules(
+              IpRangeRule.newBuilder()
+                  .setId("rule-id-8")
+                  .setRuleDetails(
+                      IpRangeRuleDetails.newBuilder()
+                          .setName("rule-name-8")
+                          .setRuleAction(RULE_ACTION_ALERT)
+                          .addEffects(
+                              RuleEffectWithModifications.newBuilder()
+                                  .setAgentRuleEffect(
+                                      AgentRuleEffect.newBuilder()
+                                          .addAgentModifications(
+                                              AgentModification.newBuilder()
+                                                  .setHeaderInjection(
+                                                      HeaderInjection.newBuilder()
+                                                          .setHeaderLocation(
+                                                              PredicateLocation
+                                                                  .PREDICATE_LOCATION_REQUEST)
+                                                          .setHeaderName("test-header")
+                                                          .setValue(
+                                                              FieldValue.newBuilder()
+                                                                  .setStaticValue("test-value"))))))
+                          .setExpirationDetails(
+                              ExpirationDetails.newBuilder()
+                                  .setExpirationTimestampMillis(activeTimestamp)
+                                  .build())
+                          .build())
+                  .addIpRanges("5.6.7.8")
                   .build())
           .build();
 

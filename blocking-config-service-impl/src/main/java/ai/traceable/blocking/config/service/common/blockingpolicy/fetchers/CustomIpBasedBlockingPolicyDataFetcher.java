@@ -12,6 +12,7 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicy
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
+import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.CustomIpBasedRuleEffectConverter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
 import ai.traceable.iprange.config.service.v1.EnvironmentScope;
 import ai.traceable.iprange.config.service.v1.GetIpRangeRulesRequest;
@@ -92,6 +93,8 @@ class CustomIpBasedBlockingPolicyDataFetcher implements BlockingPolicyDataFetche
                 blockingRulesUtils.generateBlockingStatus(
                     ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis(),
                     ruleType.get()))
+            .action(
+                CustomIpBasedRuleEffectConverter.convert(ipRule.getRuleDetails().getEffectsList()))
             .timestamp(
                 ipRule.getRuleDetails().getExpirationDetails().getExpirationTimestampMillis())
             .blockingDetails(
