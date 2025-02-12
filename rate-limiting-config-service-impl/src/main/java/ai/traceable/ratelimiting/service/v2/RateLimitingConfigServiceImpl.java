@@ -25,6 +25,7 @@ import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRespons
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.converter.RateLimitingEdgeDecisionConverter;
+import ai.traceable.ratelimiting.service.v2.rules.migration.RateLimitingMigrationManager;
 import ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
@@ -49,6 +50,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
   private final boolean shouldPublishActivityEvents;
   private final RateLimitingEdgeDecisionConverter translator;
   private final FeatureCachingClient featureCachingClient;
+  private final RateLimitingMigrationManager migrationManager;
 
   @Inject
   public RateLimitingConfigServiceImpl(
@@ -57,13 +59,15 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       ActivityEventProducer activityEventProducer,
       RateLimitingConfigServiceConfig config,
       RateLimitingEdgeDecisionConverter translator,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      RateLimitingMigrationManager migrationManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.activityEventProducer = activityEventProducer;
     this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
     this.translator = translator;
     this.featureCachingClient = featureCachingClient;
+    this.migrationManager = migrationManager;
   }
 
   @Override
@@ -73,6 +77,8 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
+
+      migrationManager.migrateFromChangeLog1IfApplicable(context);
 
       if (request.hasFilter()) { // backward compatibility
         request.toBuilder()

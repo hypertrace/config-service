@@ -299,6 +299,9 @@ data:
         {{- .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules | nindent 8 }}
       {{- end }}
     }
+    rate.limiting.config.service {
+      changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.changeLog1.migrationDisabled }}
+    }
     ast.config.service = {
       defaultPurgeDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultPurgeDuration }}
       defaultAstFeatureConfig = {

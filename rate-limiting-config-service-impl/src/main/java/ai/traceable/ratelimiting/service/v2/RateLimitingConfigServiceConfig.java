@@ -27,7 +27,11 @@ public class RateLimitingConfigServiceConfig {
   private static final String ENUMERATION_RULES_PATH = "enumerationRules";
   private static final String DATA_ACCESS_RULES_PATH = "dataAccessRules";
   private static final String RATE_LIMITING_RULES_PATH = "rateLimitingRules";
+  private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
+  private static final String CHANGE_LOG_1_MIGRATION_DISABLED_KEY =
+      "changeLog1." + MIGRATION_DISABLED_KEY;
   private final List<RateLimitingRule> defaultRateLimitingRules;
+  private final boolean changeLog1MigrationDisabled;
 
   public RateLimitingConfigServiceConfig(Config config) {
     this.config = config.getConfig(RATE_LIMITING_CONFIG_SERVICE);
@@ -44,6 +48,9 @@ public class RateLimitingConfigServiceConfig {
                         .getConfigList(RATE_LIMITING_RULES_PATH)))
             .flatMap(Collection::stream)
             .collect(Collectors.toUnmodifiableList());
+    changeLog1MigrationDisabled =
+        config.hasPath(CHANGE_LOG_1_MIGRATION_DISABLED_KEY)
+            && config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
   }
 
   public boolean shouldPublishActivityEvents() {
@@ -53,6 +60,10 @@ public class RateLimitingConfigServiceConfig {
 
   public List<RateLimitingRule> getDefaultRateLimitingRules() {
     return defaultRateLimitingRules;
+  }
+
+  public boolean isChangeLog1MigrationDisabled() {
+    return changeLog1MigrationDisabled;
   }
 
   private List<RateLimitingRule> convert(List<? extends Config> configList) {

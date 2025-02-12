@@ -21,6 +21,7 @@ import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.converter.RateLimitingEdgeDecisionConverter;
+import ai.traceable.ratelimiting.service.v2.rules.migration.RateLimitingMigrationManager;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
@@ -48,8 +49,11 @@ public class RateLimitingConfigServiceImplTest {
     // existingRules = Collections.emptyList();
     RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
     RateLimitingEdgeDecisionConverter translator = mock(RateLimitingEdgeDecisionConverter.class);
+    RateLimitingMigrationManager migrationManager = mock(RateLimitingMigrationManager.class);
+
     when(config.shouldPublishActivityEvents()).thenReturn(true);
     when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
+
     configService =
         new RateLimitingConfigServiceImpl(
             rulesValidator,
@@ -57,7 +61,8 @@ public class RateLimitingConfigServiceImplTest {
             activityEventProducer,
             config,
             translator,
-            featureCachingClient);
+            featureCachingClient,
+            migrationManager);
   }
 
   @Test

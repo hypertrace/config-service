@@ -8,6 +8,7 @@ import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimitingConditionModule;
+import ai.traceable.ratelimiting.service.v2.rules.migration.RateLimitingMigrationModule;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.RateLimitingModsecRulesModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -63,6 +64,7 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
         new CachedServiceMappingProviderModule(
             grpcChannelRegistry, config, CACHED_SERVICE_MAPPING_NAME));
     install(new RateLimitingConditionModule());
+    install(new RateLimitingMigrationModule());
   }
 
   @Provides

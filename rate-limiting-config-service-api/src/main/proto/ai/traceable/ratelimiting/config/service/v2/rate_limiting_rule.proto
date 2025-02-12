@@ -19,6 +19,11 @@ message RateLimitingModsecRule {
   repeated ModsecRuleIdInfo associated_modsec_rule_ids = 3;
 }
 
+message RateLimitingMigrationConfig {
+  // marking existing internal rules as hidden
+  bool change_log_1_migration_completed = 1;
+}
+
 message ModsecRuleIdInfo {
   // Implicit OR within the list
   repeated MatchCondition match_conditions = 1;
@@ -51,9 +56,9 @@ message RateLimitingRuleData {
 
 message RuleStatus {
   optional bool hidden = 1;
-  optional bool generate_internal_events = 2;
+  optional bool generate_internal_events = 2 [deprecated = true];
   RuleSource rule_creation_source = 3;
-  bool internal = 4 [deprecated = true];
+  bool internal = 4;
 
   enum RuleSource {
     RULE_SOURCE_UNSPECIFIED = 0;

@@ -311,6 +311,9 @@ traceableConfigServiceConfig:
       migrationDisabled: true
     changeLog4:
       migrationDisabled: true
+  rateLimitingConfigService:
+    changeLog1:
+      migrationDisabled: true
   astConfigService:
     defaultPurgeDuration: 30d
     defaultAstFeatureConfig:
