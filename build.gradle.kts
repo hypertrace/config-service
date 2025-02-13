@@ -3,6 +3,7 @@ plugins {
   alias(commonLibs.plugins.hypertrace.codestyle) apply false
   alias(commonLibs.plugins.owasp.dependencycheck)
   alias(commonLibs.plugins.sonarqube)
+  alias(commonLibs.plugins.hypertrace.java.convention)
 }
 
 subprojects {
