@@ -52,14 +52,14 @@ class RateLimitingEdgeDecisionConverterTest {
     ApiIdentifierEntity api2 =
         new ApiIdentifierEntity(
             "apiId2",
-            "apiName2",
+            "/apiId2/{apiId2-id}",
             "/apiId2/{apiId2-id}",
             List.of("/apiId2/.*"),
             Collections.emptyList());
     ApiIdentifierEntity api3 =
         new ApiIdentifierEntity(
             "apiId3",
-            "apiName2",
+            "/apiId3/abc/{apiId3-id}",
             "/apiId3/abc/{apiId3-id}",
             List.of("/apiId3/abc/.*"),
             Collections.emptyList());

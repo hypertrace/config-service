@@ -618,7 +618,7 @@ public class RateLimitingEdgeDecisionConverter {
   private static Map<String, Integer> getPathParamIndexesMap(
       ApiIdentifierEntity apiIdentifierEntity) {
     Map<String, Integer> pathParamIndexes = new HashMap<>();
-    String apiUrlPattern = apiIdentifierEntity.getApiUrlPattern();
+    String apiUrlPattern = apiIdentifierEntity.getApiName();
     String[] splitApiUrlPatterns = apiUrlPattern.split("/");
     for (int i = 1; i < splitApiUrlPatterns.length; i++) {
       String splitApiUrlPattern = splitApiUrlPatterns[i];
