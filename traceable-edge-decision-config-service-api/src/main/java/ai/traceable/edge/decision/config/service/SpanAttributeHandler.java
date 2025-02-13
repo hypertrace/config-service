@@ -15,13 +15,15 @@ public class SpanAttributeHandler {
   private static final String CATEGORY_SUFFIX = ".category";
   private static final String INFO_SUFFIX = ".info";
   private static final String THRESHOLD_DETAILS_SUFFIX = ".thresholdDetails";
+  private static final String MATCHED_ATTRIBUTE_SUFFIX = ".matched_attribute";
 
   public static List<SpanAttributeDecoration> getSpanAttributeDecorations(
       String id,
       boolean isExemption,
       EdgeDecisionRuleCategory edgeDecisionRuleCategory,
       String info,
-      String thresholdDetails) {
+      String thresholdDetails,
+      String matchedAttribute) {
     List<SpanAttributeDecoration> spanAttributeDecorations =
         new ArrayList<>(
             getSpanAttributeDecorations(id, isExemption, edgeDecisionRuleCategory, info));
@@ -40,6 +42,21 @@ public class SpanAttributeHandler {
                     .setOutputType(FieldType.FIELD_TYPE_STR))
             .build();
     spanAttributeDecorations.add(thresholdDetailsAttribute);
+    if (matchedAttribute != null && !matchedAttribute.isBlank()) {
+      SpanAttributeDecoration spanMatchedAttribute =
+          SpanAttributeDecoration.newBuilder()
+              .setSpanAttributeKey(
+                  DataTransformationConfig.newBuilder()
+                      .setStaticValue(
+                          Value.newBuilder().setStringValue(getSpanMatchedAttribute(id)))
+                      .setOutputType(FieldType.FIELD_TYPE_STR))
+              .setSpanAttributeValue(
+                  DataTransformationConfig.newBuilder()
+                      .setStaticValue(Value.newBuilder().setStringValue(matchedAttribute))
+                      .setOutputType(FieldType.FIELD_TYPE_STR))
+              .build();
+      spanAttributeDecorations.add(spanMatchedAttribute);
+    }
 
     return spanAttributeDecorations;
   }
@@ -99,5 +116,9 @@ public class SpanAttributeHandler {
         + (isExemption ? EXEMPTIONS_KEYWORD : VIOLATIONS_KEYWORD)
         + id
         + THRESHOLD_DETAILS_SUFFIX;
+  }
+
+  private static String getSpanMatchedAttribute(String id) {
+    return TRACEABLEAI_PREFIX + VIOLATIONS_KEYWORD + id + MATCHED_ATTRIBUTE_SUFFIX;
   }
 }

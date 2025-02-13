@@ -94,7 +94,35 @@
       }
     },
     "rule_decision": {
-      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK"
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAE\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "span_attribute_value": {
+          "static_value": "CAEQARoICGQSBFBUMU0\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     }
   }]
 }

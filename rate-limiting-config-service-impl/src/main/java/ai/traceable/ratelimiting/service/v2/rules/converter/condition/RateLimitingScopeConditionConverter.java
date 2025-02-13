@@ -25,6 +25,7 @@ import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -75,8 +76,6 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
 
   private List<ApiIdentifierEntity> getApiIdentifierEntities(
       RequestContext requestContext, ScopeCondition scopeCondition) {
-    final List<DerivationRule> derivationRules = new ArrayList<>();
-    final List<ApiIdentifierEntity> apiIdentifierEntityList = new ArrayList<>();
     switch (scopeCondition.getScopeCase()) {
       case ENTITY_SCOPE:
         ScopeCondition.EntityScope entityScope = scopeCondition.getEntityScope();
@@ -89,6 +88,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
                 requestContext, Set.copyOf(entityScope.getEntityIdsList()));
         return apiIdentifierEntities.values().stream()
             .flatMap(Optional::stream)
+            .sorted(Comparator.comparing(ApiIdentifierEntity::getApiId))
             .collect(Collectors.toUnmodifiableList());
       case LABEL_SCOPE:
         ScopeCondition.LabelScope labelScope = scopeCondition.getLabelScope();
@@ -102,6 +102,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
         return apiIdentifierEntitiesMap.values().stream()
             .flatMap(Collection::stream)
             .distinct()
+            .sorted(Comparator.comparing(ApiIdentifierEntity::getApiId))
             .collect(Collectors.toUnmodifiableList());
       default:
         return Collections.emptyList();

@@ -51,6 +51,7 @@ import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierE
 import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.AgentRuleEffect;
+import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
@@ -71,7 +72,8 @@ import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -88,6 +90,9 @@ public class RateLimitingEdgeDecisionConverter {
       DataTransformationConfig.newBuilder()
           .setJexlExpression(JexlExpressionConfig.newBuilder().setJexlExpression("$s.getPath()"))
           .build();
+  private static final String REQUEST_BODY_MATCHED_ATTRIBUTE = "http.request.body";
+  private static final String PATH_PARAM_MATCHED_ATTRIBUTE_PREFIX = "http.path.param.";
+
   private final Map<ConditionCase, RateLimitingConditionConverter> conditionConverterMap;
 
   @Inject
@@ -114,8 +119,15 @@ public class RateLimitingEdgeDecisionConverter {
       final RequestContext requestContext, final RateLimitingRule rateLimitingRule) {
     try {
       final RateLimitingRuleData data = rateLimitingRule.getData();
-      final EdgeDecisionRuleStatus edgeDecisionRuleStatus = buildRuleStatus(data);
-      final Optional<EdgeDecisionRuleScope> maybeEdgeDecisionRuleScope = buildRuleScope(data);
+      final EdgeDecisionRuleMetadata edgeDecisionRuleMetadata =
+          EdgeDecisionRuleMetadata.builder()
+              .ruleId(rateLimitingRule.getId())
+              .ruleName(data.getName())
+              .edgeDecisionRuleStatus(buildRuleStatus(data))
+              .maybeEdgeDecisionRuleScope(buildRuleScope(data))
+              .category(data.getCategory())
+              .labelsMap(data.getLabelsMap())
+              .build();
       final Optional<MatchConditionDetails> mayBeMatchCondition =
           data.hasCondition()
               ? Optional.of(buildMatchCondition(requestContext, data.getCondition()))
@@ -125,29 +137,12 @@ public class RateLimitingEdgeDecisionConverter {
               action ->
                   getResourceAccessThresholdConfigsList(action)
                       .flatMap(
-                          resourceAccessThresholdConfig -> {
-                            EdgeDecision edgeDecision =
-                                buildEdgeDecision(
-                                    rateLimitingRule, action, resourceAccessThresholdConfig);
-                            List<EdgeDecisionRuleDefinition> ruleDefinitions =
-                                buildRuleDefinitions(
-                                    resourceAccessThresholdConfig, mayBeMatchCondition);
-                            return ruleDefinitions.stream()
-                                .map(
-                                    ruleDefinition -> {
-                                      EdgeDecisionRule.Builder builder =
-                                          EdgeDecisionRule.newBuilder();
-                                      builder.setId(rateLimitingRule.getId());
-                                      builder.setName(data.getName());
-                                      builder.setRuleStatus(edgeDecisionRuleStatus);
-                                      builder.setRuleCategory(
-                                          EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
-                                      maybeEdgeDecisionRuleScope.ifPresent(builder::setRuleScope);
-                                      builder.setRuleDecision(edgeDecision);
-                                      builder.setRuleDefinition(ruleDefinition);
-                                      return builder.build();
-                                    });
-                          }))
+                          resourceAccessThresholdConfig ->
+                              buildEdgeDecisionRules(
+                                  edgeDecisionRuleMetadata,
+                                  action,
+                                  resourceAccessThresholdConfig,
+                                  mayBeMatchCondition)))
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception ex) {
       log.warn("Unable to convert rate limiting rule: {}", rateLimitingRule, ex);
@@ -156,9 +151,10 @@ public class RateLimitingEdgeDecisionConverter {
   }
 
   private EdgeDecision buildEdgeDecision(
-      final RateLimitingRule rateLimitingRule,
+      final EdgeDecisionRuleMetadata edgeDecisionRuleMetadata,
       ThresholdActionConfig thresholdActionConfig,
-      ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
+      ResourceAccessThresholdConfig resourceAccessThresholdConfig,
+      ValueAggregateThresholdDetails valueAggregateThresholdDetails) {
     Optional<Action> mayBeAction = findAnyMatchingEdgeDecisionAction(thresholdActionConfig);
     if (mayBeAction.isEmpty()) {
       // should never happen
@@ -176,16 +172,17 @@ public class RateLimitingEdgeDecisionConverter {
     }
     builder.addAllSpanAttributes(
         SpanAttributeHandler.getSpanAttributeDecorations(
-            rateLimitingRule.getId(),
+            edgeDecisionRuleMetadata.getRuleId(),
             false,
             EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT,
             getEncodedRateLimitViolationInfo(
                 "",
-                rateLimitingRule.getId(),
-                rateLimitingRule.getData().getName(),
-                RateLimitCategory.forNumber(rateLimitingRule.getData().getCategory().getNumber()),
-                rateLimitingRule.getData().getLabelsMap()),
-            Base64.getEncoder().encodeToString(resourceAccessThresholdConfig.toByteArray())));
+                edgeDecisionRuleMetadata.getRuleId(),
+                edgeDecisionRuleMetadata.getRuleName(),
+                RateLimitCategory.forNumber(edgeDecisionRuleMetadata.getCategory().getNumber()),
+                edgeDecisionRuleMetadata.getLabelsMap()),
+            Base64.getEncoder().encodeToString(resourceAccessThresholdConfig.toByteArray()),
+            valueAggregateThresholdDetails.getMatchedAttribute()));
     return builder.build();
   }
 
@@ -275,7 +272,9 @@ public class RateLimitingEdgeDecisionConverter {
         : Optional.of(builder.build());
   }
 
-  private List<EdgeDecisionRuleDefinition> buildRuleDefinitions(
+  private Stream<EdgeDecisionRule> buildEdgeDecisionRules(
+      final EdgeDecisionRuleMetadata edgeDecisionRuleMetadata,
+      final ThresholdActionConfig action,
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
       final Optional<MatchConditionDetails> mayBeMatchCondition) {
     final List<ValueAggregateThresholdDetails> valueAggregateThresholdDetailsList =
@@ -287,7 +286,7 @@ public class RateLimitingEdgeDecisionConverter {
       durationIso =
           resourceAccessThresholdConfig.getRollingWindowThresholdConfig().getDurationIso();
     } else {
-      return Collections.emptyList();
+      return Stream.empty();
     }
     final java.time.Duration duration = java.time.Duration.parse(durationIso);
     final Duration timeWindow =
@@ -298,15 +297,18 @@ public class RateLimitingEdgeDecisionConverter {
     return valueAggregateThresholdDetailsList.stream()
         .map(
             valueAggregateThresholdDetails ->
-                buildEdgeDecisionRuleDefinition(
+                buildEdgeDecisionRule(
+                    edgeDecisionRuleMetadata,
+                    action,
                     resourceAccessThresholdConfig,
                     mayBeMatchCondition,
                     timeWindow,
-                    valueAggregateThresholdDetails))
-        .collect(Collectors.toList());
+                    valueAggregateThresholdDetails));
   }
 
-  private EdgeDecisionRuleDefinition buildEdgeDecisionRuleDefinition(
+  private EdgeDecisionRule buildEdgeDecisionRule(
+      EdgeDecisionRuleMetadata metadata,
+      ThresholdActionConfig action,
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
       final Optional<MatchConditionDetails> mayBeMatchCondition,
       final Duration timeWindow,
@@ -323,12 +325,29 @@ public class RateLimitingEdgeDecisionConverter {
         valueAggregateThresholdDetails.getValueAggregateThreshold());
     aggregateThresholdRuleBuilder.setTimeWindow(timeWindow);
 
-    final EdgeDecisionRuleDefinition.Builder builder = EdgeDecisionRuleDefinition.newBuilder();
-    builder.setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
-    builder.setAggregateThresholdRule(aggregateThresholdRuleBuilder);
+    final EdgeDecisionRuleDefinition.Builder edgeDecisionRuleDefinitionBuilder =
+        EdgeDecisionRuleDefinition.newBuilder();
+    edgeDecisionRuleDefinitionBuilder.setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST);
+    edgeDecisionRuleDefinitionBuilder.setAggregateThresholdRule(aggregateThresholdRuleBuilder);
     mayBeMatchCondition.ifPresent(
-        tuple -> builder.addAllRuleVariables(tuple.getVariableDerivationMappings()));
-    builder.addAllRuleVariables(valueAggregateThresholdDetails.getVariableDerivationMappings());
+        tuple ->
+            edgeDecisionRuleDefinitionBuilder.addAllRuleVariables(
+                tuple.getVariableDerivationMappings()));
+    edgeDecisionRuleDefinitionBuilder.addAllRuleVariables(
+        valueAggregateThresholdDetails.getVariableDerivationMappings());
+
+    EdgeDecision edgeDecision =
+        buildEdgeDecision(
+            metadata, action, resourceAccessThresholdConfig, valueAggregateThresholdDetails);
+
+    EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
+    builder.setId(metadata.getRuleId());
+    builder.setName(metadata.getRuleName());
+    builder.setRuleStatus(metadata.getEdgeDecisionRuleStatus());
+    builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
+    metadata.getMaybeEdgeDecisionRuleScope().ifPresent(builder::setRuleScope);
+    builder.setRuleDecision(edgeDecision);
+    builder.setRuleDefinition(edgeDecisionRuleDefinitionBuilder);
     return builder.build();
   }
 
@@ -382,7 +401,10 @@ public class RateLimitingEdgeDecisionConverter {
         return new MatchConditionDetails(
             compostiveMatchCondition,
             compositeConditionVariableDerivationMappings,
-            childApiIdentifierEntities);
+            childApiIdentifierEntities.stream()
+                .distinct()
+                .sorted(Comparator.comparing(ApiIdentifierEntity::getApiId))
+                .collect(Collectors.toUnmodifiableList()));
       default:
         throw new IllegalArgumentException(
             "Unknown condition case: " + condition.getConditionCase());
@@ -508,6 +530,7 @@ public class RateLimitingEdgeDecisionConverter {
                 .valueAggregateThreshold(
                     buildValueAggregateThreshold(valueBasedThresholdConfig, "$s.getRequestBody()"))
                 .variableDerivationMappings(buildVariableDerivationMappings(mayBeMatchCondition))
+                .matchedAttribute(REQUEST_BODY_MATCHED_ATTRIBUTE)
                 .build());
       case VALUE_TYPE_SENSITIVE_PARAMS:
         // we don't support conversion of sensitive params condition yet.
@@ -525,13 +548,14 @@ public class RateLimitingEdgeDecisionConverter {
                         RateLimitingScopeConditionConverter.buildVariableDerivationMapping(
                                 List.of(apiIdentifierEntity))
                             .get();
-                    Set<Integer> pathParamIndexes = getPathParamIndexes(apiIdentifierEntity);
-                    return pathParamIndexes.stream()
+                    Map<String, Integer> pathParamIndexes =
+                        getPathParamIndexesMap(apiIdentifierEntity);
+                    return pathParamIndexes.entrySet().stream()
                         .map(
-                            pathParamIndex -> {
+                            pathParamIndexEntry -> {
                               VariableDerivationMapping pathParamVariable =
                                   VariableDerivationMapping.newBuilder()
-                                      .setName("PATH_PARAM_INDEX_" + pathParamIndex)
+                                      .setName("PATH_PARAM_INDEX_" + pathParamIndexEntry.getValue())
                                       .addRules(
                                           DerivationRule.newBuilder()
                                               .addAllTransformationConfigs(
@@ -541,7 +565,9 @@ public class RateLimitingEdgeDecisionConverter {
                                                           .setRegex(
                                                               RegexConfig.newBuilder()
                                                                   .setSplitRegex("/")
-                                                                  .addGroupIndices(pathParamIndex)
+                                                                  .addGroupIndices(
+                                                                      pathParamIndexEntry
+                                                                          .getValue())
                                                                   .setJoinDelimiter("0"))
                                                           .build())))
                                       .build();
@@ -549,9 +575,12 @@ public class RateLimitingEdgeDecisionConverter {
                                   .valueAggregateThreshold(
                                       buildValueAggregateThreshold(
                                           valueBasedThresholdConfig,
-                                          "PATH_PARAM_INDEX_" + pathParamIndex))
+                                          "PATH_PARAM_INDEX_" + pathParamIndexEntry.getValue()))
                                   .variableDerivationMappings(
                                       List.of(endPointVariable, pathParamVariable))
+                                  .matchedAttribute(
+                                      PATH_PARAM_MATCHED_ATTRIBUTE_PREFIX
+                                          + pathParamIndexEntry.getKey())
                                   .build();
                             });
                   })
@@ -586,14 +615,16 @@ public class RateLimitingEdgeDecisionConverter {
     return valueBasedBuilder.build();
   }
 
-  private static Set<Integer> getPathParamIndexes(ApiIdentifierEntity apiIdentifierEntity) {
-    Set<Integer> pathParamIndexes = new HashSet<>();
+  private static Map<String, Integer> getPathParamIndexesMap(
+      ApiIdentifierEntity apiIdentifierEntity) {
+    Map<String, Integer> pathParamIndexes = new HashMap<>();
     String apiUrlPattern = apiIdentifierEntity.getApiUrlPattern();
     String[] splitApiUrlPatterns = apiUrlPattern.split("/");
     for (int i = 1; i < splitApiUrlPatterns.length; i++) {
       String splitApiUrlPattern = splitApiUrlPatterns[i];
       if (splitApiUrlPattern.startsWith("{") && splitApiUrlPattern.endsWith("}")) {
-        pathParamIndexes.add(i + 1);
+        pathParamIndexes.put(
+            splitApiUrlPattern.substring(1, splitApiUrlPattern.length() - 1), i + 1);
       }
     }
     if (pathParamIndexes.isEmpty()) {
@@ -608,5 +639,17 @@ public class RateLimitingEdgeDecisionConverter {
   private static class ValueAggregateThresholdDetails {
     ValueAggregateThreshold valueAggregateThreshold;
     List<VariableDerivationMapping> variableDerivationMappings;
+    String matchedAttribute;
+  }
+
+  @lombok.Value
+  @Builder
+  private static class EdgeDecisionRuleMetadata {
+    String ruleId;
+    String ruleName;
+    EdgeDecisionRuleStatus edgeDecisionRuleStatus;
+    Optional<EdgeDecisionRuleScope> maybeEdgeDecisionRuleScope;
+    Category category;
+    Map<String, String> labelsMap;
   }
 }
