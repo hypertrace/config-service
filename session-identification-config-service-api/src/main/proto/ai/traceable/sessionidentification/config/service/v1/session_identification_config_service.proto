@@ -19,6 +19,7 @@ message GetSessionIdentificationRulesRequest {
   message GetSessionIdentificationRulesFilter {
     optional bool disabled = 1;
     EnvironmentFilter environment_filter = 2;
+    repeated string rule_ids = 3;
 
     message EnvironmentFilter {
       repeated string environment_names = 1;

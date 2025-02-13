@@ -64,6 +64,9 @@ public class SessionIdentificationRuleStore
       GetSessionIdentificationRulesRequest.GetSessionIdentificationRulesFilter filter) {
     return Optional.of(data)
         .filter(
+            rule ->
+                filter.getRuleIdsList().isEmpty() || filter.getRuleIdsList().contains(rule.getId()))
+        .filter(
             rule -> !filter.hasDisabled() || rule.getStatus().getDisabled() == filter.getDisabled())
         .filter(rule -> filterRuleOnScope(data, filter));
   }
