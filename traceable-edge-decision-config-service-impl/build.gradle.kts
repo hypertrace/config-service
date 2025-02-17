@@ -12,6 +12,7 @@ dependencies {
   implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.rateLimitingConfigServiceApi)
   implementation(projects.detectionExclusionConfigServiceApi)
+  implementation(projects.customSignatureConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
