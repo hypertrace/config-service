@@ -72,6 +72,7 @@ class GithubIntegrationConfigServiceValidator {
             Suspended.GITHUB_INSTALLATION_TARGET_NAME_FIELD_NUMBER);
         validateNonDefaultPresenceOrThrow(
             request.getStatus().getSuspended(), Suspended.GITHUB_INSTALLATION_URL_FIELD_NUMBER);
+        return;
       case AWAITING_REQUEST: // Not updatable, this is the initial state
       default:
         throw io.grpc.Status.INVALID_ARGUMENT
