@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ai.traceable.bot.categorized.config.service.v1;
+
+import "ai/traceable/bot/categorized/config/service/v1/categorized_bot_config.proto";
+
+option java_multiple_files = true;
+
+service CategorizedBotConfigService {
+  rpc GetCategorizedBotConfigs(GetCategorizedBotConfigsRequest) returns (GetCategorizedBotConfigsResponse) {}
+}
+
+message GetCategorizedBotConfigsRequest {
+  optional CategorizedBotRequestFilter bot_request_filter = 1;
+}
+message GetCategorizedBotConfigsResponse {
+  repeated CategorizedBotConfig bot_configs = 1;
+}
+
+message CategorizedBotRequestFilter {
+  // if none specified all traceable-categorized (pre defined) bots to be sent
+  repeated string category = 1;
+  repeated string bot_ids = 2;
+}

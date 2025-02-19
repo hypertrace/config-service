@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ai.traceable.bot.categorized.policy.service.v1;
+
+option java_multiple_files = true;
+
+message CategorizedBotConfigPolicy {
+  string id = 1;
+  CategorizedBotConfigPolicyDetails categorized_bot_policy_details = 2;
+}
+
+message CategorizedBotConfigPolicyDetails {
+  string name = 1;
+  optional string description = 2;
+  bool enabled = 3;
+  CategorizedBotPolicyScope categorized_bot_policy_scope = 4;
+  repeated CategorizedBotActionConfig categorized_bot_action_configs = 6;
+}
+
+message CategorizedBotPolicyScope {
+  oneof scope {
+    // if no option selected, default is customer scope (all environments)
+    // Do we need more scopes here? Service scope or Domain scope?
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
+}
+
+message CategorizedBotActionConfig {
+  string bot_id = 1;
+  CategorizedBotAction bot_action = 2;
+  optional string duration_iso = 3;
+  bool disabled = 4;
+}
+
+enum CategorizedBotAction {
+  CATEGORIZED_BOT_ACTION_UNSPECIFIED = 0;
+  CATEGORIZED_BOT_ACTION_BLOCK = 1;
+  CATEGORIZED_BOT_ACTION_MONITOR = 2;
+  CATEGORIZED_BOT_ACTION_ALLOW = 3;
+}

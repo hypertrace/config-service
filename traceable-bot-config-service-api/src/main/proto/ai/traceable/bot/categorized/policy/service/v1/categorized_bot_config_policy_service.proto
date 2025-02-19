@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ai.traceable.bot.categorized.policy.service.v1;
+
+import "ai/traceable/bot/categorized/policy/service/v1/categorized_bot_config_policy.proto";
+
+option java_multiple_files = true;
+
+service CategorizedBotConfigPolicyService {
+  rpc CreateCategorizedBotConfigPolicy(CreateCategorizedBotConfigPolicyRequest) returns (CreateCategorizedBotConfigPolicyResponse) {}
+  rpc UpdateCategorizedBotConfigPolicy(UpdateCategorizedBotConfigPolicyRequest) returns (UpdateCategorizedBotConfigPolicyResponse) {}
+  rpc GetCategorizedBotConfigPolicies(GetCategorizedBotConfigPoliciesRequest) returns (GetCategorizedBotConfigPoliciesResponse) {}
+  rpc DeleteCategorizedBotConfigPolicy(DeleteCategorizedBotConfigPolicyRequest) returns (DeleteCategorizedBotConfigPolicyResponse) {}
+}
+
+message CreateCategorizedBotConfigPolicyRequest {
+  CategorizedBotConfigPolicyDetails categorized_bot_config_policy_details = 1;
+}
+message CreateCategorizedBotConfigPolicyResponse {
+  CategorizedBotConfigPolicy categorized_bot_config_policy = 1;
+}
+
+message UpdateCategorizedBotConfigPolicyRequest {
+  CategorizedBotConfigPolicy categorized_bot_config_policy = 1;
+}
+message UpdateCategorizedBotConfigPolicyResponse {
+  CategorizedBotConfigPolicy categorized_bot_config_policy = 1;
+}
+
+message GetCategorizedBotConfigPoliciesRequest {
+  CategorizedBotConfigPolicyFilter categorized_bot_config_policy_filter = 1;
+}
+message GetCategorizedBotConfigPoliciesResponse {
+  repeated CategorizedBotConfigPolicy categorized_bot_config_policies = 1;
+}
+
+message DeleteCategorizedBotConfigPolicyRequest {
+  string categorized_bot_config_policy_id = 1;
+}
+message DeleteCategorizedBotConfigPolicyResponse {
+  CategorizedBotConfigPolicy categorized_bot_config_policy = 1;
+}
+
+message CategorizedBotConfigPolicyFilter {
+  repeated string bot_config_policy_ids = 1;
+}

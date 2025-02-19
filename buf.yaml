@@ -61,6 +61,7 @@ modules:
   - path: threat-management-config-service-api/src/main/proto
   - path: threat-scoring-config-service-api/src/main/proto
   - path: traceable-alerting-config-service-api/src/main/proto
+  - path: traceable-bot-config-service-api/src/main/proto
   - path: traceable-config-service-rest/src/main/proto
   - path: traceable-datamodel-config-service-api/src/main/proto
   - path: traceable-edge-bot-config-service-api/src/main/proto

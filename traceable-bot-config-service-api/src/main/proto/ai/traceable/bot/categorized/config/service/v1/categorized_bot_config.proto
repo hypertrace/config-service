@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package ai.traceable.bot.categorized.config.service.v1;
+
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+message CategorizedBotConfig {
+  string id = 1;
+  CategorizedBotDetails categorized_bot_details = 2;
+}
+
+message CategorizedBotDetails {
+  string name = 1;
+  optional string description = 2;
+  CategorizedBotSignatureRule categorized_bot_signature_rule = 3;
+  string bot_category = 4;
+  string bot_sub_category = 5;
+}
+
+message CategorizedBotSignatureRule {
+  repeated MatchCondition match_conditions = 1;
+}
+
+// we may consider using ai.traceable.datamodel.data.transformation.config.v1.MatchCondition as that
+// appears to be more comprehensive albeit complex for matching use case, keeping it simple for now
+message MatchCondition {
+  oneof condition {
+    // to express any signature
+    GenericMatchCondition generic_match_condition = 1;
+    // Logical match condition can be introduced in future
+    IpMetadataMatchConditon ip_metadata_match_condition = 2;
+  }
+}
+
+message IpMetadataMatchConditon {
+  oneof ip_metadata_condition {
+    IpAddressCondition ip_address_condition = 1;
+  }
+}
+
+message IpAddressCondition {
+  repeated string ipv4_cidr_ip_ranges = 1;
+  repeated string ipv6_cidr_ip_ranges = 2;
+}
+
+message GenericMatchCondition {
+  KeyCondition key_condition = 1;
+  MatchOperatorCondition value_match_condition = 2;
+}
+
+message KeyCondition {
+  KeyType key_type = 1;
+  MatchOperatorCondition key_match_operator = 3;
+}
+
+message MatchOperatorCondition {
+  MatchOperator match_operator = 1;
+  oneof value {
+    google.protobuf.Value match_value = 2;
+  }
+}
+
+enum MatchOperator {
+  MATCH_OPERATOR_UNSPECIFIED = 0;
+  MATCH_OPERATOR_EQUALS = 1;
+  MATCH_OPERATOR_NOT_EQUAL = 2;
+  MATCH_OPERATOR_MATCHES_REGEX = 3;
+  MATCH_OPERATOR_NOT_MATCH_REGEX = 4;
+  MATCH_OPERATOR_CONTAINS = 5;
+  MATCH_OPERATOR_NOT_CONTAINS = 6;
+}
+
+enum KeyType {
+  KEY_TYPE_UNSPECIFIED = 0;
+  KEY_TYPE_HEADER = 1;
+}
