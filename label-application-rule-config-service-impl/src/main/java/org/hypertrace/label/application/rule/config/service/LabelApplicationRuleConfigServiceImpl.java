@@ -89,11 +89,25 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      List<LabelApplicationRule> allLabelApplicationRules =
-          getAllLabelApplicationRules(requestContext);
+      List<LabelApplicationRule> labelApplicationRules =
+          this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+              .map(ConfigObject::getData)
+              .collect(Collectors.toUnmodifiableList());
+      Set<String> labelApplicationRuleIds =
+          labelApplicationRules.stream()
+              .map(LabelApplicationRule::getId)
+              .collect(Collectors.toUnmodifiableSet());
+      Set<String> deletedSystemLabelApplicationRuleIds =
+          getDeletedSystemLabelApplicationRuleIds(requestContext);
+      List<LabelApplicationRule> filteredSystemLabelApplicationRules =
+          this.labelApplicationRuleConfig.getSystemLabelApplicationRules().stream()
+              .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
+              .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
+              .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
-              .addAllLabelApplicationRules(allLabelApplicationRules)
+              .addAllLabelApplicationRules(labelApplicationRules)
+              .addAllLabelApplicationRules(filteredSystemLabelApplicationRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -107,15 +121,13 @@ public class LabelApplicationRuleConfigServiceImpl
       StreamObserver<GetLabelApplicationRuleResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
-      LabelApplicationRule labelApplicationRule =
-          getAllLabelApplicationRules(requestContext).stream()
-              .filter(rule -> rule.getId().equals(request.getId()))
-              .findFirst()
+      LabelApplicationRule rule =
+          this.labelApplicationRuleStore
+              .getData(requestContext, request.getId())
+              .or(() -> getSystemLabelApplicationRule(requestContext, request.getId()))
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
-          GetLabelApplicationRuleResponse.newBuilder()
-              .setLabelApplicationRule(labelApplicationRule)
-              .build());
+          GetLabelApplicationRuleResponse.newBuilder().setLabelApplicationRule(rule).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(e);
@@ -209,26 +221,5 @@ public class LabelApplicationRuleConfigServiceImpl
         .filter(
             unused ->
                 this.deletedSystemLabelApplicationRuleStore.getData(requestContext, id).isEmpty());
-  }
-
-  private List<LabelApplicationRule> getAllLabelApplicationRules(RequestContext requestContext) {
-    List<LabelApplicationRule> labelApplicationRules =
-        new java.util.ArrayList<>(
-            this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
-                .map(ConfigObject::getData)
-                .collect(Collectors.toUnmodifiableList()));
-    Set<String> labelApplicationRuleIds =
-        labelApplicationRules.stream()
-            .map(LabelApplicationRule::getId)
-            .collect(Collectors.toUnmodifiableSet());
-    Set<String> deletedSystemLabelApplicationRuleIds =
-        getDeletedSystemLabelApplicationRuleIds(requestContext);
-    List<LabelApplicationRule> filteredSystemLabelApplicationRules =
-        this.labelApplicationRuleConfig.getSystemLabelApplicationRules().stream()
-            .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
-            .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
-            .collect(Collectors.toUnmodifiableList());
-    labelApplicationRules.addAll(filteredSystemLabelApplicationRules);
-    return labelApplicationRules;
   }
 }
