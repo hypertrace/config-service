@@ -89,26 +89,11 @@ public class LabelApplicationRuleConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
-      List<LabelApplicationRule> labelApplicationRules =
-          this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
-              .map(ConfigObject::getData)
-              .collect(Collectors.toUnmodifiableList());
-      Set<String> labelApplicationRuleIds =
-          labelApplicationRules.stream()
-              .map(LabelApplicationRule::getId)
-              .collect(Collectors.toUnmodifiableSet());
-      Set<String> deletedSystemLabelApplicationRuleIds =
-          getDeletedSystemLabelApplicationRuleIds(requestContext);
-      List<LabelApplicationRule> filteredSystemLabelApplicationRules =
-          this.labelApplicationRuleConfig.getSystemLabelApplicationRules().stream()
-              .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
-              .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
-              .collect(Collectors.toUnmodifiableList());
-
+      List<LabelApplicationRule> allLabelApplicationRules =
+          getAllLabelApplicationRules(requestContext);
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
-              .addAllLabelApplicationRules(labelApplicationRules)
-              .addAllLabelApplicationRules(filteredSystemLabelApplicationRules)
+              .addAllLabelApplicationRules(allLabelApplicationRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
