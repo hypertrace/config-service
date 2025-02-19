@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
@@ -205,10 +206,11 @@ public class JiraIntegrationConfigServiceValidator {
       RequestContext requestContext, Set<String> allowedJiraIntegrationIds) {
     if (containsOtherJiraIntegrations(
         jiraIntegrationStore.getAllConfigData(requestContext), allowedJiraIntegrationIds)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              "Cannot persist an unscoped integration as it will conflict with one or more existing integrations.")
-          .asRuntimeException();
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT.withDescription(
+                  "Unscoped integration cannot be persisted due to conflicts with existing integrations."))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
@@ -218,10 +220,11 @@ public class JiraIntegrationConfigServiceValidator {
     JiraIntegrationFilter filter = JiraIntegrationFilter.newBuilder().setFilterScope(scope).build();
     if (containsOtherJiraIntegrations(
         jiraIntegrationStore.getAllConfigData(requestContext, filter), allowedJiraIntegrationIds)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              "Given scope is not suitable for mutation as it conflicts with existing integrations.")
-          .asRuntimeException();
+      throw ContextualStatusExceptionBuilder.from(
+              Status.ALREADY_EXISTS.withDescription(
+                  "Given scope is not suitable for mutation as it conflicts with existing integrations."))
+          .withExternalMessage("Environment scope conflicts with existing integrations.")
+          .buildRuntimeException();
     }
   }
 
@@ -255,14 +258,19 @@ public class JiraIntegrationConfigServiceValidator {
     switch (scope.getScopeTypeCase()) {
       case ENVIRONMENT_IDS:
         if (scope.getEnvironmentIds().getValuesList().isEmpty()) {
-          throw Status.INVALID_ARGUMENT
-              .withDescription("Environment-ids in Scope cannot be an empty list")
-              .asRuntimeException();
+          throw ContextualStatusExceptionBuilder.from(
+                  Status.INVALID_ARGUMENT.withDescription(
+                      "Environment-ids in Scope cannot be an empty list."))
+              .withExternalMessage("Please provide at least one environment ID in the scope")
+              .buildRuntimeException();
         }
         break;
       case SCOPETYPE_NOT_SET:
       default:
-        throw Status.INVALID_ARGUMENT.withDescription("Invalid Scope").asRuntimeException();
+        throw ContextualStatusExceptionBuilder.from(
+                Status.INVALID_ARGUMENT.withDescription("Invalid Scope"))
+            .useStatusDescriptionAsExternalMessage()
+            .buildRuntimeException();
     }
   }
 
@@ -305,8 +313,10 @@ public class JiraIntegrationConfigServiceValidator {
   }
 
   private StatusRuntimeException getDuplicateNameStatusRuntimeException() {
-    return Status.INVALID_ARGUMENT
-        .withDescription("Already an existing jira integration with the same name")
-        .asRuntimeException();
+    return ContextualStatusExceptionBuilder.from(
+            Status.ALREADY_EXISTS.withDescription(
+                "Already an existing jira integration with the same name"))
+        .useStatusDescriptionAsExternalMessage()
+        .buildRuntimeException();
   }
 }

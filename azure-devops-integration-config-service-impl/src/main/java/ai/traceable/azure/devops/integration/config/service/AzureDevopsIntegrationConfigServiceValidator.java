@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.hypertrace.core.grpcutils.context.ContextualStatusExceptionBuilder;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @AllArgsConstructor(onConstructor_ = {@Inject})
@@ -119,9 +120,11 @@ public class AzureDevopsIntegrationConfigServiceValidator {
   }
 
   private StatusRuntimeException getDuplicateNameStatusRuntimeException() {
-    return Status.INVALID_ARGUMENT
-        .withDescription("Already an existing azure devops integration with the same name")
-        .asRuntimeException();
+    throw ContextualStatusExceptionBuilder.from(
+            Status.ALREADY_EXISTS.withDescription(
+                "Already an existing azure devops integration with the same name"))
+        .useStatusDescriptionAsExternalMessage()
+        .buildRuntimeException();
   }
 
   private StatusRuntimeException getInvalidIntegrationIdRuntimeException() {
@@ -140,10 +143,11 @@ public class AzureDevopsIntegrationConfigServiceValidator {
     if (containsOtherAzureDevopsIntegration(
         azureDevopsIntegrationStore.getAllConfigData(requestContext, filter),
         allowedAzureDevopsIntegrationIds)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              "Given scope is not suitable for mutation as it conflicts with existing integrations.")
-          .asRuntimeException();
+      throw ContextualStatusExceptionBuilder.from(
+              Status.ALREADY_EXISTS.withDescription(
+                  "Environment scope conflicts with existing integrations."))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
@@ -158,10 +162,11 @@ public class AzureDevopsIntegrationConfigServiceValidator {
     if (containsOtherAzureDevopsIntegration(
         azureDevopsIntegrationStore.getAllConfigData(requestContext),
         allowedAzureDevopsIntegrationIds)) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription(
-              "Cannot persist an unscoped integration as it will conflict with one or more existing integrations.")
-          .asRuntimeException();
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INVALID_ARGUMENT.withDescription(
+                  "Unscoped integration cannot be persisted due to conflicts with existing integrations."))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
     }
   }
 
@@ -178,14 +183,19 @@ public class AzureDevopsIntegrationConfigServiceValidator {
     switch (scope.getScopeCase()) {
       case ENVIRONMENT_IDS:
         if (scope.getEnvironmentIds().getValuesList().isEmpty()) {
-          throw Status.INVALID_ARGUMENT
-              .withDescription("Environment-ids in Scope cannot be an empty list")
-              .asRuntimeException();
+          throw ContextualStatusExceptionBuilder.from(
+                  Status.INVALID_ARGUMENT.withDescription(
+                      "Environment-ids in Scope cannot be an empty list."))
+              .withExternalMessage("Please provide at least one environment ID in the scope")
+              .buildRuntimeException();
         }
         break;
       case SCOPE_NOT_SET:
       default:
-        throw Status.INVALID_ARGUMENT.withDescription("Invalid Scope").asRuntimeException();
+        throw ContextualStatusExceptionBuilder.from(
+                Status.INVALID_ARGUMENT.withDescription("Invalid Scope"))
+            .useStatusDescriptionAsExternalMessage()
+            .buildRuntimeException();
     }
   }
 }
