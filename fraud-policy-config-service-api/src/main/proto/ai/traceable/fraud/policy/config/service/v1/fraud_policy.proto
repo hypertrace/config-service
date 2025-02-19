@@ -30,6 +30,7 @@ enum PolicyGroup {
   POLICY_GROUP_WAF = 2;
   POLICY_GROUP_MODSEC = 3;
   POLICY_GROUP_CUSTOM = 4;
+  POLICY_GROUP_FRAUD = 5;
 }
 
 enum FraudRuleLogicalOperator {
