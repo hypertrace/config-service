@@ -20,6 +20,8 @@ import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplic
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleResponse;
+import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleRequest;
+import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesRequest;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesResponse;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
@@ -102,10 +104,32 @@ public class LabelApplicationRuleConfigServiceImpl
               .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
               .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
               .collect(Collectors.toUnmodifiableList());
+
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
               .addAllLabelApplicationRules(labelApplicationRules)
               .addAllLabelApplicationRules(filteredSystemLabelApplicationRules)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getLabelApplicationRule(
+      GetLabelApplicationRuleRequest request,
+      StreamObserver<GetLabelApplicationRuleResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      LabelApplicationRule labelApplicationRule =
+          getAllLabelApplicationRules(requestContext).stream()
+              .filter(rule -> rule.getId().equals(request.getId()))
+              .findFirst()
+              .orElseThrow(Status.NOT_FOUND::asRuntimeException);
+      responseObserver.onNext(
+          GetLabelApplicationRuleResponse.newBuilder()
+              .setLabelApplicationRule(labelApplicationRule)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -200,5 +224,26 @@ public class LabelApplicationRuleConfigServiceImpl
         .filter(
             unused ->
                 this.deletedSystemLabelApplicationRuleStore.getData(requestContext, id).isEmpty());
+  }
+
+  private List<LabelApplicationRule> getAllLabelApplicationRules(RequestContext requestContext) {
+    List<LabelApplicationRule> labelApplicationRules =
+        new java.util.ArrayList<>(
+            this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+                .map(ConfigObject::getData)
+                .collect(Collectors.toUnmodifiableList()));
+    Set<String> labelApplicationRuleIds =
+        labelApplicationRules.stream()
+            .map(LabelApplicationRule::getId)
+            .collect(Collectors.toUnmodifiableSet());
+    Set<String> deletedSystemLabelApplicationRuleIds =
+        getDeletedSystemLabelApplicationRuleIds(requestContext);
+    List<LabelApplicationRule> filteredSystemLabelApplicationRules =
+        this.labelApplicationRuleConfig.getSystemLabelApplicationRules().stream()
+            .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
+            .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
+            .collect(Collectors.toUnmodifiableList());
+    labelApplicationRules.addAll(filteredSystemLabelApplicationRules);
+    return labelApplicationRules;
   }
 }

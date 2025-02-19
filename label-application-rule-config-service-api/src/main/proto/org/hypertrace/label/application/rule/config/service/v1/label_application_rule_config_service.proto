@@ -13,6 +13,9 @@ service LabelApplicationRuleConfigService {
   // get all label application rules
   rpc GetLabelApplicationRules(GetLabelApplicationRulesRequest) returns (GetLabelApplicationRulesResponse) {}
 
+  // get label application rules
+  rpc GetLabelApplicationRule(GetLabelApplicationRuleRequest) returns (GetLabelApplicationRuleResponse) {}
+
   // update label application rule
   rpc UpdateLabelApplicationRule(UpdateLabelApplicationRuleRequest) returns (UpdateLabelApplicationRuleResponse) {}
 
