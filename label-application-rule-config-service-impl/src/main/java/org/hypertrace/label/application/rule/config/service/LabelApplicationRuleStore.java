@@ -47,14 +47,14 @@ class LabelApplicationRuleStore
     }
   }
 
-  @Override
   @SneakyThrows
-  protected Value buildValueFromData(LabelApplicationRule data) {
-    return ConfigProtoConverter.convertToValue(data);
+  @Override
+  protected Value buildValueFromData(LabelApplicationRule object) {
+    return ConfigProtoConverter.convertToValue(object);
   }
 
   @Override
-  protected String getContextFromData(LabelApplicationRule data) {
-    return data.getId();
+  protected String getContextFromData(LabelApplicationRule object) {
+    return object.getId();
   }
 }
