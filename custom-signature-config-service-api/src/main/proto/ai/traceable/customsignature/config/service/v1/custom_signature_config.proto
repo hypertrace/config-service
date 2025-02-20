@@ -50,12 +50,14 @@ message GetCustomSignatureModsecRulesRequest {
 
 message GetCustomSignatureModsecRulesResponse {
   string modsec_rules_blob = 1;
-  repeated CustomSignatureRuleDetails rules = 2;
+  repeated CustomSignatureRuleDetails rules = 2 [deprecated = true];
+  repeated CustomSignatureInlineRule inline_rules = 3;
 }
 
 message GetCustomSignatureEdgeDecisionRulesRequest {
   GetRulesFilter rules_filter = 1;
 }
+
 message GetCustomSignatureEdgeDecisionRulesResponse {
   ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
 }
@@ -86,6 +88,9 @@ message CustomSignatureRule {
 }
 
 message CustomSignatureRuleDetails {
+  // entire message is deprecated
+  option deprecated = true;
+
   string id = 1;
   string name = 2;
   RuleEffect effect = 3;
@@ -94,6 +99,10 @@ message CustomSignatureRuleDetails {
   ExpiryDetails blocking_expiry_details = 8;
   RuleScope rule_scope = 9;
   map<string, string> labels = 10;
+}
+
+message CustomSignatureInlineRule {
+  CustomSignatureRule rule = 1;
 }
 
 message RuleScope {
