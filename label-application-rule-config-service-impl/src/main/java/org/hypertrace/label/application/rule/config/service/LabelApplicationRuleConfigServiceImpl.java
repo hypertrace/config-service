@@ -8,9 +8,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -21,6 +21,7 @@ import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplic
 import org.hypertrace.label.application.rule.config.service.v1.CreateLabelApplicationRuleResponse;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleRequest;
 import org.hypertrace.label.application.rule.config.service.v1.DeleteLabelApplicationRuleResponse;
+import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRuleFilter;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesRequest;
 import org.hypertrace.label.application.rule.config.service.v1.GetLabelApplicationRulesResponse;
 import org.hypertrace.label.application.rule.config.service.v1.LabelApplicationRule;
@@ -30,7 +31,8 @@ import org.hypertrace.label.application.rule.config.service.v1.UpdateLabelApplic
 
 public class LabelApplicationRuleConfigServiceImpl
     extends LabelApplicationRuleConfigServiceGrpc.LabelApplicationRuleConfigServiceImplBase {
-  private final IdentifiedObjectStore<LabelApplicationRule> labelApplicationRuleStore;
+  private final IdentifiedObjectStoreWithFilter<LabelApplicationRule, GetLabelApplicationRuleFilter>
+      labelApplicationRuleStore;
   private final IdentifiedObjectStore<DeletedSystemLabelApplicationRule>
       deletedSystemLabelApplicationRuleStore;
   private final LabelApplicationRuleValidator requestValidator;
@@ -89,7 +91,7 @@ public class LabelApplicationRuleConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.requestValidator.validateOrThrow(requestContext, request);
       List<LabelApplicationRule> labelApplicationRules =
-          this.labelApplicationRuleStore.getAllObjects(requestContext).stream()
+          this.labelApplicationRuleStore.getAllObjects(requestContext, request.getFilter()).stream()
               .map(ConfigObject::getData)
               .collect(Collectors.toUnmodifiableList());
       Set<String> labelApplicationRuleIds =
@@ -103,17 +105,10 @@ public class LabelApplicationRuleConfigServiceImpl
               .filter(rule -> !labelApplicationRuleIds.contains(rule.getId()))
               .filter(rule -> !deletedSystemLabelApplicationRuleIds.contains(rule.getId()))
               .collect(Collectors.toUnmodifiableList());
-      List<LabelApplicationRule> allLabelApplicationRules =
-          Stream.concat(
-                  labelApplicationRules.stream(), filteredSystemLabelApplicationRules.stream())
-              .filter(
-                  rule ->
-                      !request.hasFilter()
-                          || request.getFilter().getIdsList().contains(rule.getId()))
-              .collect(Collectors.toUnmodifiableList());
       responseObserver.onNext(
           GetLabelApplicationRulesResponse.newBuilder()
-              .addAllLabelApplicationRules(allLabelApplicationRules)
+              .addAllLabelApplicationRules(labelApplicationRules)
+              .addAllLabelApplicationRules(filteredSystemLabelApplicationRules)
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
