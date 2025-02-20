@@ -211,6 +211,7 @@ message DomainDiscoveryConfig {
 message ApiDiscoveryConfig {
   oneof config {
     StaticApiDiscoveryConfig static_api_discovery_config = 1;
+    StaticApiDiscoveryAction static_api_discovery_action = 2;
   }
 }
 
@@ -760,7 +761,7 @@ message DomainFilterConfig {
 }
 
 message StaticApiDiscoveryConfig {
-  StaticApiDiscoveryAction static_api_discovery_action = 1;
+  StaticApiDiscoveryAction static_api_discovery_action = 1 [deprecated = true];
   Filter discovery_filter = 2;
 }
 
