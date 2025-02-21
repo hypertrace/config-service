@@ -5,10 +5,14 @@ import ai.traceable.localprocessing.config.service.v1.LocalProcessingConfigServi
 import com.google.protobuf.util.JsonFormat;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServiceImplBase {
+
+  private static final String DEFAULT_ENV = "default";
 
   @Override
   public void getLocalProcessingConfig(
@@ -17,7 +21,14 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
     try {
       GetLocalProcessingConfigResponse.Builder builder =
           GetLocalProcessingConfigResponse.newBuilder();
-      String resourceName = "config-svc-data/get-local-processing-config-rule.json";
+      String environmentName = request.hasEnvironment() ? request.getEnvironment() : DEFAULT_ENV;
+      // Set to "default" if environmentName is not "envA" or "envB" -> required for MATS
+      List<String> allowedEnvironments = Arrays.asList("envA", "envB");
+      if (!allowedEnvironments.contains(environmentName)) {
+        environmentName = DEFAULT_ENV;
+      }
+      log.debug("Returning Local Processing Configs from environment: {}", environmentName);
+      String resourceName = environmentName + "/get-local-processing-config-rule.json";
       Utils util = new Utils();
       String json = util.readJson(resourceName);
       JsonFormat.parser().merge(json, builder);
@@ -35,7 +46,14 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       StreamObserver<GetApiNamingModelResponse> responseObserver) {
     try {
       GetApiNamingModelResponse.Builder builder = GetApiNamingModelResponse.newBuilder();
-      String resourceName = "config-svc-data/get-api-naming-rule.json";
+      String environmentName = request.hasEnvironment() ? request.getEnvironment() : DEFAULT_ENV;
+      // Set to "default" if environmentName is not "envA" or "envB" -> required for MATS
+      List<String> allowedEnvironments = Arrays.asList("envA", "envB");
+      if (!allowedEnvironments.contains(environmentName)) {
+        environmentName = DEFAULT_ENV;
+      }
+      log.debug("Returning Api Naming Model from environment: {}", environmentName);
+      String resourceName = environmentName + "/get-api-naming-rule.json";
       Utils util = new Utils();
       String json = util.readJson(resourceName);
       JsonFormat.parser().merge(json, builder);
@@ -53,7 +71,14 @@ public class LocalProcessingConfigServiceImpl extends LocalProcessingConfigServi
       StreamObserver<GetSpanProcessingRulesResponse> responseObserver) {
     try {
       GetSpanProcessingRulesResponse.Builder builder = GetSpanProcessingRulesResponse.newBuilder();
-      String resourceName = "config-svc-data/get-span-processing-rule.json";
+      String environmentName = request.hasEnvironment() ? request.getEnvironment() : DEFAULT_ENV;
+      // Set to "default" if environmentName is not "envA" or "envB" -> required for MATS
+      List<String> allowedEnvironments = Arrays.asList("envA", "envB");
+      if (!allowedEnvironments.contains(environmentName)) {
+        environmentName = DEFAULT_ENV;
+      }
+      log.debug("Returning Span Processing Configs from environment: {}", environmentName);
+      String resourceName = environmentName + "/get-span-processing-rule.json";
       Utils util = new Utils();
       String json = util.readJson(resourceName);
       JsonFormat.parser().merge(json, builder);
