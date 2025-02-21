@@ -114,6 +114,29 @@
         references: |
           - https://cwe.mitre.org/data/definitions/918.html
           - https://www.owasp.org/index.php/Server_Side_Request_Forgery
+    - ruleId: crs_1010200
+      eventDetails:
+        description: |
+          A pattern indicative of Server Side Request Forgery (SSRF) is detected.
+          - SSRF occurs when an attacker is able to make arbitrary requests from the server-side application to internal resources, such as internal services or cloud provider metadata endpoints, through a vulnerable URL or API.
+          - When SSRF targets cloud provider metadata endpoints (e.g., AWS, Azure, Google Cloud), it can allow attackers to gain access to sensitive metadata like instance credentials, internal service data, or configuration details.
+          - These metadata endpoints are often not protected by firewalls or access control, making them a common target for exploitation.
+          - Example: In AWS, accessing the metadata URL `http://169.254.169.254/latest/meta-data/` can reveal sensitive instance metadata, including security credentials, IAM roles, and other configuration details.
+        mitigation: |
+          - Restrict access to cloud provider metadata endpoints from untrusted sources by either blocking access to the metadata service or implementing strict whitelisting.
+          - Use IAM roles with the least privilege principle to limit the permissions of cloud instances.
+          - Perform input validation on URLs or API calls to prevent attackers from injecting malicious URLs that could be used for SSRF attacks.
+          - Monitor and log requests made to internal services and metadata endpoints to detect and respond to suspicious activity.
+          - Use network segmentation or Virtual Private Cloud (VPC) configurations to isolate metadata services from the public network and limit server-side access.
+        impact: |
+          - Information Disclosure: Accessing cloud metadata endpoints can leak sensitive information such as instance credentials, IAM roles, and configuration data.
+          - Privilege Escalation: Attackers could obtain privileged credentials or access to cloud resources, leading to further exploitation.
+          - Denial of Service: By abusing SSRF to flood internal services or metadata endpoints with excessive requests, attackers can cause resource exhaustion and service disruption.
+          - Compromise of Cloud Infrastructure: Attackers may use stolen cloud credentials to escalate privileges, gain unauthorized access, or manipulate cloud environments.
+        references: |
+          - https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/
+          - https://cwe.mitre.org/data/definitions/918.html
+          - https://www.owasp.org/index.php/Server_Side_Request_Forgery
 
 - ruleId: crs_913
   ruleName: Scanner Detection
@@ -2598,6 +2621,26 @@
           - CWE-98: Improper Control of Filename for Include/Require Statement in PHP Program - https://cwe.mitre.org/data/definitions/98.html
           - CAPEC-193: PHP Remote File Inclusion - https://capec.mitre.org/data/definitions/193.html
 
+    - ruleId: crs_9310100
+      eventDetails:
+        description: |
+          A pattern indicative of a Remote File Inclusion (RFI) attack is detected. This attack involves the use of a URL parameter containing an IP address to include remote files in the application.  
+          Attackers may use IP-based URLs to bypass domain-based filtering and execute malicious code within the web application.
+        mitigation: |
+          - Restrict the inclusion of user-provided files or URLs in the web application.
+          - Implement strict input validation and allowlist only trusted URLs and IP addresses.
+          - Ensure all application processes are executed with minimal privileges and drop unnecessary privileges promptly.
+        impact: |
+          Attackers could include arbitrary files using IP-based URLs, which may lead to:
+            - Execution of malicious code within the web application.
+            - Unauthorized access to sensitive server files or configurations.
+            - Facilitation of other attacks, such as cross-site scripting (XSS) or denial of service (DoS).
+        references: |
+          - OWASP API Top 10 - 2019 - API8: Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+          - Common Weakness Enumeration (CWE) - CWE-98: Improper Control of Filename for Include/Require Statement in PHP Program - https://cwe.mitre.org/data/definitions/98.html
+          - MITRE ATT&CK - T1190: Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
+          - Web Application Security Consortium - WASC-5: Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
+          
 - ruleId: crs_933
   ruleName: PHP Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_KNOWN_VULNERABILITIES
