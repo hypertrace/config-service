@@ -15,7 +15,9 @@ import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsReque
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import com.google.protobuf.Timestamp;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -70,13 +72,26 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
         .orElseGet(EdgeDecisionEngineConfig::getDefaultInstance);
   }
 
-  private List<EdgeDecisionRule> getStoredRules(RequestContext requestContext) {
+  public List<EdgeDecisionRule> getStoredRules(RequestContext requestContext) {
     GetAllEdgeDecisionRulesResponse response =
         requestContext.call(
             () ->
                 ruleStoreManager.getAll(
                     requestContext, GetAllEdgeDecisionRulesRequest.getDefaultInstance()));
-    return response.getEdgeDecisionRulesList();
+    return response.getEdgeDecisionRulesList().stream()
+        .filter(this::checkExpiration)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private Boolean checkExpiration(EdgeDecisionRule rule) {
+    if (!rule.hasRuleStatus()) return true;
+    if (rule.getRuleStatus().getDisabled()) return false;
+    if (!rule.getRuleStatus().hasTtl()) return true;
+    if (!rule.getRuleStatus().getTtl().hasExpiresAt()) return true;
+
+    Timestamp expiresAt = rule.getRuleStatus().getTtl().getExpiresAt();
+    Instant expiryTime = Instant.ofEpochSecond(expiresAt.getSeconds(), expiresAt.getNanos());
+    return expiryTime.isAfter(Instant.now());
   }
 
   private List<EdgeDecisionSpec> getStoredSpecs(RequestContext requestContext) {
