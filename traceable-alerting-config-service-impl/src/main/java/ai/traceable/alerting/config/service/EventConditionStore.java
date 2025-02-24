@@ -31,7 +31,7 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
 import org.hypertrace.core.grpcutils.context.ContextualKey;
 import org.hypertrace.core.grpcutils.context.RequestContext;
-import org.hypertrace.notification.config.service.NotificationRuleStore;
+import org.hypertrace.notification.config.service.NotificationRuleFilteredStore;
 import org.hypertrace.notification.config.service.v1.NotificationRule;
 import org.hypertrace.notification.config.service.v1.NotificationRuleMutableData;
 
@@ -45,7 +45,7 @@ public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
   public static final String ALERTING_CONFIG_NAMESPACE = "alerting-v1";
 
   private final UuidGenerator uuidGenerator;
-  private final NotificationRuleStore notificationRuleStore;
+  private final NotificationRuleFilteredStore notificationRuleStore;
   private final FeatureCachingClient featureCachingClient;
   private static final Set<ContextualKey<Void>> PROCESSED_RULE_TENANT_IDS = new HashSet<>();
 
@@ -61,7 +61,7 @@ public class EventConditionStore extends IdentifiedObjectStore<EventCondition> {
         ALERTING_EVENT_CONDITION_CONFIG_RESOURCE_NAME);
     this.uuidGenerator = new UuidGenerator();
     this.notificationRuleStore =
-        new NotificationRuleStore(configChannel, configChangeEventGenerator);
+        new NotificationRuleFilteredStore(configChannel, configChangeEventGenerator);
     this.featureCachingClient = featureCachingClient;
   }
 
