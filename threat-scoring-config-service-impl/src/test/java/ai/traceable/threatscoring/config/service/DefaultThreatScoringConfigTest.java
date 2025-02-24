@@ -77,8 +77,8 @@ class DefaultThreatScoringConfigTest {
                                     .build())
                             .setLevelConfig(
                                 ScoringLevelConfig.newBuilder()
-                                    .setMediumLevelMinScore(61)
-                                    .setHighLevelMinScore(81)
+                                    .setMediumLevelMinScore(41)
+                                    .setHighLevelMinScore(71)
                                     .setMaxNormalizedScore(7)
                                     .build())
                             .build())
