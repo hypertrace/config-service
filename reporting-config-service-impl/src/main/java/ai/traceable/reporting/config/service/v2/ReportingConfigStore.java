@@ -57,7 +57,10 @@ public class ReportingConfigStore
       ReportConfiguration reportConfiguration, GetReportsFilter reportsFilter) {
     return Optional.of(reportConfiguration)
         .filter(report -> filterById(report, reportsFilter))
-        .filter(report -> filterByEnvironmentId(report, reportsFilter))
+        .filter(
+            report ->
+                filterByEnvironmentId(report, reportsFilter)
+                    || filterByEnvironmentIds(reportConfiguration, reportsFilter))
         .filter(report -> filterByName(report, reportsFilter))
         .filter(report -> filterByCreator(report, reportsFilter));
   }
@@ -79,6 +82,16 @@ public class ReportingConfigStore
         || filter
             .getEnvironmentId()
             .equals(reportConfiguration.getCommonConfigurationDetails().getEnvironmentId());
+  }
+
+  private boolean filterByEnvironmentIds(
+      ReportConfiguration reportConfiguration, GetReportsFilter filter) {
+    if (filter.getEnvironmentIdsList().isEmpty()) {
+      return true;
+    }
+    return filter.getEnvironmentIdsList().stream()
+        .anyMatch(
+            reportConfiguration.getCommonConfigurationDetails().getEnvironmentIdsList()::contains);
   }
 
   private boolean filterByName(ReportConfiguration reportConfiguration, GetReportsFilter filter) {

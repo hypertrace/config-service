@@ -34,9 +34,10 @@ message NotificationDetails {
 
 message GetReportsFilter {
   optional string id = 1;
-  optional string environment_id = 2;
+  optional string environment_id = 2 [deprecated = true];
   repeated string names = 3;
   repeated string creators = 4;
+  repeated string environment_ids = 5;
 }
 
 enum Format {

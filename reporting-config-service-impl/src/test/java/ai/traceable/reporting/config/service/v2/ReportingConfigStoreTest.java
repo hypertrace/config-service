@@ -80,7 +80,11 @@ public class ReportingConfigStoreTest {
     // different environment in filter
     {
       ReportConfiguration reportConfiguration = createReportConfiguration();
-      GetReportsFilter filter = GetReportsFilter.newBuilder().setEnvironmentId("env2").build();
+      GetReportsFilter filter =
+          GetReportsFilter.newBuilder()
+              .setEnvironmentId("env2")
+              .addAllEnvironmentIds(List.of("env2"))
+              .build();
       Optional<ReportConfiguration> maBeReportConfig =
           reportingConfigStore.filterConfigData(reportConfiguration, filter);
       assertFalse(maBeReportConfig.isPresent());
@@ -112,7 +116,11 @@ public class ReportingConfigStoreTest {
     // environment in filter is not present within report environment list
     {
       ReportConfiguration reportConfiguration = createReportConfigurationWithEnvList();
-      GetReportsFilter filter = GetReportsFilter.newBuilder().setEnvironmentId("env1").build();
+      GetReportsFilter filter =
+          GetReportsFilter.newBuilder()
+              .setEnvironmentId("env1")
+              .addAllEnvironmentIds(List.of("env1"))
+              .build();
       Optional<ReportConfiguration> maBeReportConfig =
           reportingConfigStore.filterConfigData(reportConfiguration, filter);
       assertFalse(maBeReportConfig.isPresent());
