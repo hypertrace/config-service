@@ -36,7 +36,13 @@ message GetLabelApplicationRuleResponse {
   LabelApplicationRule label_application_rule = 1;
 }
 
-message GetLabelApplicationRulesRequest {}
+message GetLabelApplicationRulesRequest {
+    GetLabelApplicationRuleFilter filter = 1;
+}
+
+message GetLabelApplicationRuleFilter {
+  repeated string ids = 1;
+}
 
 message GetLabelApplicationRulesResponse {
   repeated LabelApplicationRule label_application_rules = 1;
