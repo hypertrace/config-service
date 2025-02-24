@@ -5,6 +5,7 @@ import ai.traceable.userattribution.config.service.v2.UserAttributionRuleData;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -22,6 +23,7 @@ public class CachedUserAttributionJexlGenerator {
   private static final String USER_ATTRIBUTION_JEXL_GENERATOR_CACHE =
       "UserAttributionJexlGeneratorCache";
   private static final int MAX_CACHE_SIZE = 10000;
+  private static final RateLimiter LOG_RATE_LIMITER = RateLimiter.create(0.01);
 
   // Cached on hash of user-attribution
   private final LoadingCache<ContextualKey<UserAttributionRuleData>, Optional<DerivationRule>>
@@ -62,11 +64,13 @@ public class CachedUserAttributionJexlGenerator {
       }
       return Optional.of(userAttributionJexlGenerator.convert(contextualKey.getData()));
     } catch (Exception e) {
-      log.warn(
-          "Error converting user attribution to jexl for tenant {} : {}",
-          contextualKey.getContext().getTenantId(),
-          ruleData.getName(),
-          e);
+      if (LOG_RATE_LIMITER.tryAcquire()) {
+        log.warn(
+            "Error converting user attribution to jexl for tenant {} : {}",
+            contextualKey.getContext().getTenantId(),
+            ruleData.getName(),
+            e);
+      }
       return Optional.empty();
     }
   }

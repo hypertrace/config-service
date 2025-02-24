@@ -296,10 +296,7 @@ class CustomIpBasedBlockingPolicyDataFetcherTest {
                           .setRuleAction(RULE_ACTION_BLOCK)
                           .setExpirationDetails(
                               ExpirationDetails.newBuilder()
-                                  .setExpirationTimestampMillis(activeTimestamp)
-                                  .build())
-                          .build())
-                  .build())
+                                  .setExpirationTimestampMillis(activeTimestamp))))
           .addRules(
               IpRangeRule.newBuilder()
                   .setId("rule-id-5")
