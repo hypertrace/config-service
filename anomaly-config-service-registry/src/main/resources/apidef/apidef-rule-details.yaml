@@ -239,7 +239,7 @@
       - OWASP API Security Top 10 - 2023 - API8:2023 - Denial of Service - https://owasp.org/API-Security/editions/2023/en/0xa8-denial-of-service/
 
 - ruleId: ssrf
-  ruleName: Server-Side Request Forgery (SSRF)
+  ruleName: Server Side Request Forgery (SSRF) Anomaly
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SSRF
   severityLevel: ANOMALY_SEVERITY_LEVEL_MEDIUM
   eventLabels:
@@ -249,7 +249,7 @@
     MITRE_TECHNIQUE: T1552.005
   eventDetails:
     description: |
-      A SSRF attack is flagged when an attacker exploits a non properly validated parameter that receives a URL. The attacker might inject a malicious URL pointing to internal services, including other protocols, ports and services.
+      An SSRF (Server-Side Request Forgery) anomaly is triggered when a parameter that accepts a URL is observed to contain a host that has not been previously identified or learned by the system, potentially indicating an attempt to exploit the server by initiating unauthorized requests to internal or external resources.
     mitigation: |
       Validate the input URL and prevent internal services from reaching internet applications:
       - Use regular expressions to validate possible URLs, avoiding unwanted domain names, ports, and protocols
