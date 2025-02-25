@@ -198,13 +198,18 @@ public class CustomSignatureConfigServiceIntegrationTest
                                 .build())
                         .build()));
 
-    assertEquals(1, rulesResponse.getRulesCount());
+    assertEquals(1, rulesResponse.getInlineRulesCount());
     assertEquals(
         EventType.EVENT_TYPE_NORMAL_DETECTION,
-        rulesResponse.getRules(0).getEffect().getEventType());
-    assertEquals(createdRules.get(1).getId(), rulesResponse.getRules(0).getId());
+        rulesResponse.getInlineRules(0).getRule().getEffect().getEventType());
+    assertEquals(createdRules.get(1).getId(), rulesResponse.getInlineRules(0).getRule().getId());
     assertEquals(
-        0, rulesResponse.getRules(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+        0,
+        rulesResponse
+            .getInlineRules(0)
+            .getRule()
+            .getBlockingExpiryDetails()
+            .getExpiryTimestampMillis());
     assertEquals(
         modsecDirectives
             + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'rule-2',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"
@@ -221,7 +226,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                     GetCustomSignatureModsecRulesRequest.newBuilder()
                         .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
                         .build()));
-    assertTrue(rulesResponse.getRulesList().isEmpty());
+    assertTrue(rulesResponse.getInlineRulesList().isEmpty());
     assertTrue(rulesResponse.getModsecRulesBlob().isEmpty());
 
     disableRule(createdRules.get(0));
@@ -233,11 +238,16 @@ public class CustomSignatureConfigServiceIntegrationTest
                     GetCustomSignatureModsecRulesRequest.newBuilder()
                         .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
                         .build()));
-    assertEquals(1, rulesResponse.getRulesCount());
-    assertTrue(rulesResponse.getRules(0).getDisabled());
-    assertEquals(createdRules.get(0).getId(), rulesResponse.getRules(0).getId());
+    assertEquals(1, rulesResponse.getInlineRulesCount());
+    assertTrue(rulesResponse.getInlineRules(0).getRule().getDisabled());
+    assertEquals(createdRules.get(0).getId(), rulesResponse.getInlineRules(0).getRule().getId());
     assertEquals(
-        0, rulesResponse.getRules(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+        0,
+        rulesResponse
+            .getInlineRules(0)
+            .getRule()
+            .getBlockingExpiryDetails()
+            .getExpiryTimestampMillis());
     assertEquals(
         modsecDirectives
             + "SecRule REQUEST_HEADERS:Host|REQUEST_HEADERS:x-forwarded-host|REQUEST_HEADERS:forwarded \"@streq 127.0.0.1\" \"id:10000001,phase:2,capture,t:none,msg:'rule-1',logdata:'Matched Data: %{TX.0} found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}',tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/"

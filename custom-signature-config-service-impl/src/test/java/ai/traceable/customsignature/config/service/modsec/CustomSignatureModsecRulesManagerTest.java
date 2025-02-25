@@ -69,6 +69,19 @@ public class CustomSignatureModsecRulesManagerTest {
   private static final int EXPIRY_TIMESTAMP_MILLIS = 12345678;
   private static final String EXPIRY_DURATION = "P3M";
   private static final String TENANT_ID = "id";
+  private static final CustomSignatureRule ruleWithModsecConvertibleClause =
+      CustomSignatureRule.newBuilder()
+          .setDefinition(
+              RuleDefinition.newBuilder()
+                  .setClauseGroup(
+                      ClauseGroup.newBuilder()
+                          .addClauses(
+                              Clause.newBuilder()
+                                  .setMatchExpression(MatchExpression.newBuilder().build())
+                                  .build())
+                          .build())
+                  .build())
+          .build();
 
   @Test
   public void testConvertRulesException() throws Exception {
@@ -82,25 +95,18 @@ public class CustomSignatureModsecRulesManagerTest {
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
-            List.of(CustomSignatureRule.newBuilder().build()),
+            List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED);
     assertTrue(response.getModsecRulesBlob().isEmpty());
-    assertTrue(response.getRulesList().isEmpty());
+    assertTrue(response.getInlineRulesList().isEmpty());
 
     response =
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
-            List.of(
-                CustomSignatureRule.newBuilder()
-                    .setDefinition(
-                        RuleDefinition.newBuilder()
-                            .setClauseGroup(
-                                ClauseGroup.newBuilder()
-                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
-                    .build()),
+            List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
     assertTrue(response.getModsecRulesBlob().isEmpty());
-    assertTrue(response.getRulesList().isEmpty());
+    assertTrue(response.getInlineRulesList().isEmpty());
 
     when(customModsecRuleConverter.getValidatedModsecRule(
             anyLong(), anyString(), anyString(), anyList()))
@@ -108,18 +114,10 @@ public class CustomSignatureModsecRulesManagerTest {
     response =
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
-            List.of(
-                CustomSignatureRule.newBuilder()
-                    .setDefinition(
-                        RuleDefinition.newBuilder()
-                            .setClauseGroup(
-                                ClauseGroup.newBuilder()
-                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                                    .addClauses(Clause.getDefaultInstance())))
-                    .build()),
+            List.of(ruleWithModsecConvertibleClause),
             CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
     assertTrue(response.getModsecRulesBlob().isEmpty());
-    assertTrue(response.getRulesList().isEmpty());
+    assertTrue(response.getInlineRulesList().isEmpty());
     verify(customModsecRuleConverter, times(3))
         .getValidatedModsecRule(anyLong(), anyString(), anyString(), anyList());
   }
@@ -141,9 +139,9 @@ public class CustomSignatureModsecRulesManagerTest {
                         MatchExpression.newBuilder().setMatchKey(MatchKey.MATCH_KEY_BODY)))
             .build();
 
-    assertTrue(modsecRulesManager.isModsecRuleMappingSupported(clauseGroup));
+    assertTrue(modsecRulesManager.isInlineRuleMappingSupported(clauseGroup));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -151,7 +149,7 @@ public class CustomSignatureModsecRulesManagerTest {
                             AttributeKeyValueExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -161,7 +159,7 @@ public class CustomSignatureModsecRulesManagerTest {
                                 .setTag(KeyValueTag.KEY_VALUE_TAG_COOKIE)))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -170,28 +168,28 @@ public class CustomSignatureModsecRulesManagerTest {
                                 .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
                                 .setMatchKey(MatchKey.MATCH_KEY_COOKIE_VALUE)))
                 .build()));
-    assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+    assertTrue(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpAddressExpression(IpAddressExpression.getDefaultInstance()))
                 .build()));
-    assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+    assertTrue(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setIpTypeExpression(IpTypeExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpReputationExpression(IpReputationExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -199,54 +197,54 @@ public class CustomSignatureModsecRulesManagerTest {
                             IpConnectionTypeExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpOrganisationExpression(IpOrganisationExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setIpAsnExpression(IpAsnExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpAbuseVelocityExpression(
                             IpAbuseVelocityExpression.getDefaultInstance()))
                 .build()));
-    assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+    assertTrue(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setRegionExpression(RegionExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setUserIdExpression(UserIdExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setEmailDomainExpression(EmailDomainExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setUserAgentExpression(UserAgentExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isModsecRuleMappingSupported(
+        modsecRulesManager.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -403,12 +401,23 @@ public class CustomSignatureModsecRulesManagerTest {
               + 4
               + 23, /* 4 extra chained rules for NOT_CONTAIN rules, 6 extra chained rules for REGEX with PIPE KeyValue rules, 3+1 extra chained rules and 23 lines of modsec directives */
           response.getModsecRulesBlob().split("\r\n|\n\n|\r|\n").length);
-      assertEquals(rules.size(), response.getRulesCount());
+      assertEquals(rules.size(), response.getInlineRulesCount());
       assertEquals(
           EXPIRY_TIMESTAMP_MILLIS,
-          response.getRulesList().get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
+          response
+              .getInlineRulesList()
+              .get(0)
+              .getRule()
+              .getBlockingExpiryDetails()
+              .getExpiryTimestampMillis());
       assertEquals(
-          "dev", response.getRules(0).getRuleScope().getEnvironmentScope().getEnvironmentIds(0));
+          "dev",
+          response
+              .getInlineRules(0)
+              .getRule()
+              .getRuleScope()
+              .getEnvironmentScope()
+              .getEnvironmentIds(0));
       String fileRules =
           Resources.toString(
               CustomSignatureModsecRulesManagerTest.class

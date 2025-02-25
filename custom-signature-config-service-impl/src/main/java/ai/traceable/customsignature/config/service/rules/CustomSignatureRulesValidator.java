@@ -86,7 +86,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (modsecRulesManager.isModsecRuleMappingSupported(clauseGroup)) {
+    if (modsecRulesManager.isInlineRuleMappingSupported(clauseGroup)
+        && modsecRulesManager.containsModsecConvertibleClauses(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
     }
     return Status.OK;
@@ -139,7 +140,9 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(rule.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (modsecRulesManager.isModsecRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
+    ClauseGroup clauseGroup = rule.getDefinition().getClauseGroup();
+    if (modsecRulesManager.isInlineRuleMappingSupported(clauseGroup)
+        && modsecRulesManager.containsModsecConvertibleClauses(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
     }
     return Status.OK;

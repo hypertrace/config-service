@@ -46,7 +46,8 @@ public class CustomSignatureRulesValidatorTest {
     this.modsecRulesManager = mock(ModsecRulesManager.class);
     this.clauseValidator = new ClauseValidator();
     when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
-    when(modsecRulesManager.isModsecRuleMappingSupported(any())).thenReturn(true);
+    when(modsecRulesManager.isInlineRuleMappingSupported(any())).thenReturn(true);
+    when(modsecRulesManager.containsModsecConvertibleClauses(any())).thenReturn(true);
     this.rulesValidator = new CustomSignatureRulesValidator(modsecRulesManager, clauseValidator);
   }
 

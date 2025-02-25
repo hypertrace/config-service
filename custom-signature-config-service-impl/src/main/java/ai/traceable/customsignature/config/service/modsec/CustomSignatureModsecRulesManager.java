@@ -5,8 +5,8 @@ import ai.traceable.customsignature.config.service.modsec.directives.ModsecDirec
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
-import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
@@ -44,29 +44,33 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       RequestContext requestContext,
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion) {
-    List<CustomSignatureRuleDetails> ruleDetailsList = new ArrayList<>();
+    List<CustomSignatureInlineRule> inlineRuleList = new ArrayList<>();
     List<String> allowModsecRules = new ArrayList<>();
     List<String> violationModsecRules = new ArrayList<>();
 
     long modsecIdAssignment = MODSEC_ID_SEED;
 
     for (CustomSignatureRule rule : customSignatureRules) {
-      if (!isModsecRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
+      if (!isInlineRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
         log.debug(
-            "Modsec rule mapping is not supported for rule - rule ID: {} tenant ID: {}",
+            "Inline rule mapping is not supported for rule - rule ID: {} tenant ID: {}",
             rule,
             requestContext.getTenantId().orElse("Unknown"));
         continue;
       }
+      List<Clause> modsecConvertibleClauses =
+          getModsecConvertibleClauses(rule.getDefinition().getClauseGroup());
+      if (modsecConvertibleClauses.isEmpty()) {
+        inlineRuleList.add(CustomSignatureInlineRule.newBuilder().setRule(rule).build());
+        continue;
+      }
+
       String modsecRule;
       modsecIdAssignment++;
       try {
         modsecRule =
             customModsecRuleConverter.getValidatedModsecRule(
-                modsecIdAssignment,
-                rule.getId(),
-                rule.getName(),
-                rule.getDefinition().getClauseGroup().getClausesList());
+                modsecIdAssignment, rule.getId(), rule.getName(), modsecConvertibleClauses);
       } catch (Exception ex) {
         log.warn(
             "For tenant id - {} Modsec rule could not be created for rule: {}, exception: {}",
@@ -83,62 +87,39 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       } else {
         violationModsecRules.add(modsecRule);
       }
-      ruleDetailsList.add(
-          CustomSignatureRuleDetails.newBuilder()
-              .setId(rule.getId())
-              .setName(rule.getName())
-              .setEffect(rule.getEffect())
-              .setDisabled(rule.getDisabled())
-              .setInternal(rule.getInternal())
-              .setBlockingExpiryDetails(rule.getBlockingExpiryDetails())
-              .setRuleScope(rule.getRuleScope())
-              .putAllLabels(rule.getDefinition().getLabelsMap())
-              .build());
+      inlineRuleList.add(CustomSignatureInlineRule.newBuilder().setRule(rule).build());
     }
 
-    if (ruleDetailsList.isEmpty()) {
+    if (inlineRuleList.isEmpty()) {
       return GetCustomSignatureModsecRulesResponse.getDefaultInstance();
     }
-    List<String> modsecRules =
-        Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
-            .collect(Collectors.toList());
+    if (allowModsecRules.isEmpty() && violationModsecRules.isEmpty()) {
+      return GetCustomSignatureModsecRulesResponse.newBuilder()
+          .addAllInlineRules(inlineRuleList)
+          .build();
+    }
+    String modsecRulesBlob =
+        getModsecDirective(customModsecRuleVersion)
+            + String.join(
+                NEW_LINES_DELIMITER,
+                Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
+                    .collect(Collectors.toList()));
     return GetCustomSignatureModsecRulesResponse.newBuilder()
-        .setModsecRulesBlob(
-            getModsecDirective(customModsecRuleVersion)
-                + String.join(NEW_LINES_DELIMITER, modsecRules))
-        .addAllRules(ruleDetailsList)
+        .setModsecRulesBlob(modsecRulesBlob)
+        .addAllInlineRules(inlineRuleList)
         .build();
   }
 
-  public Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition) {
-    try {
-      customModsecRuleConverter.getValidatedModsecRule(
-          MODSEC_ID_SEED,
-          RANDOM_RULE_ID,
-          ruleName,
-          ruleDefinition.getClauseGroup().getClausesList());
-      return Status.OK;
-    } catch (Exception ex) {
-      return Status.INTERNAL
-          .withCause(ex)
-          .withDescription(
-              String.format("Modsec rule could not be created for rule: [%s]", ruleName));
-    }
-  }
-
   @Override
-  public boolean isModsecRuleMappingSupported(ClauseGroup clauseGroup) {
+  public boolean isInlineRuleMappingSupported(ClauseGroup clauseGroup) {
     for (Clause clause : clauseGroup.getClausesList()) {
-      // following clauses can not be converted to modsec
+      // following clauses can not be converted to inline rule.
       if (clause.hasAttributeKeyValueExpression()
-          || clause.hasIpAddressExpression()
-          || clause.hasIpTypeExpression()
           || clause.hasIpReputationExpression()
           || clause.hasIpConnectionTypeExpression()
           || clause.hasIpOrganisationExpression()
           || clause.hasIpAsnExpression()
           || clause.hasIpAbuseVelocityExpression()
-          || clause.hasRegionExpression()
           || clause.hasUserIdExpression()
           || clause.hasEmailDomainExpression()
           || clause.hasUserAgentExpression()
@@ -162,6 +143,37 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
       }
     }
     return true;
+  }
+
+  @Override
+  public Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition) {
+    try {
+      List<Clause> modsecConvertibleClauses =
+          getModsecConvertibleClauses(ruleDefinition.getClauseGroup());
+      customModsecRuleConverter.getValidatedModsecRule(
+          MODSEC_ID_SEED, RANDOM_RULE_ID, ruleName, modsecConvertibleClauses);
+      return Status.OK;
+    } catch (Exception ex) {
+      return Status.INTERNAL
+          .withCause(ex)
+          .withDescription(
+              String.format("Modsec rule could not be created for rule: [%s]", ruleName));
+    }
+  }
+
+  @Override
+  public boolean containsModsecConvertibleClauses(ClauseGroup clauseGroup) {
+    return !getModsecConvertibleClauses(clauseGroup).isEmpty();
+  }
+
+  private List<Clause> getModsecConvertibleClauses(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream()
+        .filter(
+            clause ->
+                clause.hasCustomSecRule()
+                    || clause.hasMatchExpression()
+                    || clause.hasKeyValueExpression())
+        .collect(Collectors.toList());
   }
 
   private String getModsecDirective(CustomModsecRuleVersion customModsecRuleVersion) {

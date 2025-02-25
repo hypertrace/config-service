@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
-import ai.traceable.customsignature.config.service.v1.CustomSignatureRuleDetails;
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
@@ -19,7 +18,6 @@ import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.localprocessing.config.service.utils.UuidGenerator;
 import ai.traceable.localprocessing.config.service.v1.CustomModsecDetectionRules;
-import java.util.List;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +48,6 @@ class DefaultCustomModsecDetectionManagerTest {
     GetCustomSignatureModsecRulesResponse stubResponse =
         GetCustomSignatureModsecRulesResponse.newBuilder()
             .setModsecRulesBlob("Tester rule blob")
-            .addAllRules(List.of(CustomSignatureRuleDetails.getDefaultInstance()))
             .build();
 
     CustomModsecDetectionRules expectedModsecDetectionRules =
@@ -84,7 +81,6 @@ class DefaultCustomModsecDetectionManagerTest {
     GetCustomSignatureModsecRulesResponse stubResponse =
         GetCustomSignatureModsecRulesResponse.newBuilder()
             .setModsecRulesBlob("Tester rule blob")
-            .addAllRules(List.of(CustomSignatureRuleDetails.getDefaultInstance()))
             .build();
 
     CustomModsecDetectionRules expectedModsecDetectionRules =
