@@ -127,5 +127,3 @@ crs_9440950 :: PAN-OS GlobalProtect Portal: RCE Exploitation (CVE-2024-3400) :: 
 crs_9330111 :: PHP CGI argument Injection: (CVE-2024-4577) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'CWE:78' , 'OWASP_API_2019:API8' , 'CVE:2024-4577' ]
 crs_9300150 :: Possible Information Disclosure in ownCloud Graph API: (CVE-2023-49103) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A9' , 'OWASP_2021:A7' , 'OWASP_API_2019:API7' , 'CWE:94' , 'CVE:2023-49103' ]
 crs_9440960 :: Apache Struts path traversal to RCE vulnerability: (CVE-2024-53677) :: ANOMALY_SEVERITY_LEVEL_CRITICAL :: [ 'CWE:552' , 'OWASP_API:API8' , 'CVE:2024-53677' ]
-crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100) :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:98' , 'OWASP_API_2019:API8' ]
-crs_1010200 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint (T200) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' ]

@@ -1,11 +1,9 @@
-crs_1010200 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint (T200)
 crs_9210110 :: HTTP Request Smuggling Attack (Request Splitting)
 crs_9210150 :: HTTP Header Injection Attack via payload (CR/LF) (T150)
 crs_921120 :: HTTP Response Splitting Attack (120)
 crs_921130 :: HTTP Response Splitting Attack (130)
 crs_921160 :: HTTP Header Injection Attack via payload (CR/LF and header-name)
 crs_930120 :: OS File Access Attempt (120)
-crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)
 crs_931100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using IP Address
 crs_931110 :: Possible Remote File Inclusion (RFI) Attack: Common RFI Vulnerable Parameter Name used w/URL Payload
 crs_932100 :: Remote Command Execution: Unix Command Injection (100)
