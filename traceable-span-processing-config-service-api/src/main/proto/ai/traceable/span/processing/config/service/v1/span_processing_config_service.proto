@@ -293,6 +293,17 @@ message ApiNamingRulesFilter {
   repeated string api_spec_ids = 2;
   optional bool disabled = 3;
   repeated ApiNamingRuleConfigType rule_config_types = 4;
+  ScopeFilter scope_filter = 5;
+}
+
+message ScopeFilter {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+
+  message EnvironmentScope {
+    repeated string environment_ids = 1;
+  }
 }
 
 message SegmentMatchingBasedConfig {

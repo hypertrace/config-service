@@ -6,6 +6,7 @@ import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.R
 import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_DO_NOT_PERSIST;
 import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP;
 import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_CONTAINS;
+import static ai.traceable.span.processing.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,7 @@ import ai.traceable.span.processing.config.service.v1.ApiNamingRule;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleConfig;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ApiNamingRuleInfo;
+import ai.traceable.span.processing.config.service.v1.ApiNamingRulesFilter;
 import ai.traceable.span.processing.config.service.v1.ApiSpecBasedConfig;
 import ai.traceable.span.processing.config.service.v1.AstScanBasedConfig;
 import ai.traceable.span.processing.config.service.v1.CreateApiNamingRuleRequest;
@@ -54,7 +56,11 @@ import ai.traceable.span.processing.config.service.v1.GetAllProtectionSpanRulesR
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedProtectionSpanRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.GetAllSamplingConfigsRequest;
+import ai.traceable.span.processing.config.service.v1.GetApiNamingRulesRequest;
 import ai.traceable.span.processing.config.service.v1.GetDefaultProtectionSpanRuleEvaluationStatusRequest;
+import ai.traceable.span.processing.config.service.v1.ListValue;
+import ai.traceable.span.processing.config.service.v1.LogicalOperator;
+import ai.traceable.span.processing.config.service.v1.LogicalSpanFilterExpression;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRule;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleDetails;
 import ai.traceable.span.processing.config.service.v1.ProtectionSpanRuleInfo;
@@ -64,6 +70,8 @@ import ai.traceable.span.processing.config.service.v1.RelationalSpanFilterExpres
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigDetails;
 import ai.traceable.span.processing.config.service.v1.SamplingConfigInfo;
+import ai.traceable.span.processing.config.service.v1.ScopeFilter;
+import ai.traceable.span.processing.config.service.v1.ScopeFilter.EnvironmentScope;
 import ai.traceable.span.processing.config.service.v1.SegmentMatchingBasedConfig;
 import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanFilterValue;
@@ -630,7 +638,13 @@ class SpanProcessingConfigServiceImplTest {
                             .setDisabled(true)
                             .setRuleConfig(
                                 buildSegmentMatchingBasedConfig(List.of("regex"), List.of("value")))
-                            .setFilter(buildTestFilter()))
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setLogicalSpanFilter(
+                                        LogicalSpanFilterExpression.newBuilder()
+                                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                                            .addOperands(buildTestFilter())
+                                            .addOperands(buildEnvironmentFilter("env1")))))
                     .build())
             .getRuleDetails();
     ApiNamingRule firstCreatedApiNamingRule = firstCreatedApiNamingRuleDetails.getRule();
@@ -651,7 +665,13 @@ class SpanProcessingConfigServiceImplTest {
                             .setDisabled(true)
                             .setRuleConfig(
                                 buildSegmentMatchingBasedConfig(List.of("regex"), List.of("value")))
-                            .setFilter(buildTestFilter()))
+                            .setFilter(
+                                SpanFilter.newBuilder()
+                                    .setLogicalSpanFilter(
+                                        LogicalSpanFilterExpression.newBuilder()
+                                            .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
+                                            .addOperands(buildTestFilter())
+                                            .addOperands(buildEnvironmentFilter("env2")))))
                     .build())
             .getRuleDetails()
             .getRule();
@@ -660,6 +680,18 @@ class SpanProcessingConfigServiceImplTest {
     assertEquals(2, apiNamingRules.size());
     assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
     assertTrue(apiNamingRules.contains(secondCreatedApiNamingRule));
+
+    apiNamingRules =
+        getApiNamingRules(
+            ApiNamingRulesFilter.newBuilder()
+                .setScopeFilter(
+                    ScopeFilter.newBuilder()
+                        .setEnvironmentScope(
+                            EnvironmentScope.newBuilder()
+                                .addAllEnvironmentIds(List.of("env1", "env3"))))
+                .build());
+    assertEquals(1, apiNamingRules.size());
+    assertTrue(apiNamingRules.contains(firstCreatedApiNamingRule));
 
     ApiNamingRule updatedFirstApiNamingRule =
         this.spanProcessingConfigServiceStub
@@ -1376,6 +1408,18 @@ class SpanProcessingConfigServiceImplTest {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  private List<ApiNamingRule> getApiNamingRules(ApiNamingRulesFilter apiNamingRulesFilter) {
+    return this.spanProcessingConfigServiceStub
+        .getApiNamingRules(
+            GetApiNamingRulesRequest.newBuilder()
+                .setApiNamingRulesFilter(apiNamingRulesFilter)
+                .build())
+        .getRuleDetailsList()
+        .stream()
+        .map(ApiNamingRuleDetails::getRule)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   private SpanFilter buildTestFilter() {
     return SpanFilter.newBuilder()
         .setRelationalSpanFilter(
@@ -1383,6 +1427,21 @@ class SpanProcessingConfigServiceImplTest {
                 .setField(Field.FIELD_SERVICE_NAME)
                 .setOperator(RELATIONAL_OPERATOR_CONTAINS)
                 .setRightOperand(SpanFilterValue.newBuilder().setStringValue("a")))
+        .build();
+  }
+
+  private SpanFilter buildEnvironmentFilter(String environment) {
+    return SpanFilter.newBuilder()
+        .setRelationalSpanFilter(
+            RelationalSpanFilterExpression.newBuilder()
+                .setField(Field.FIELD_ENVIRONMENT_NAME)
+                .setOperator(RELATIONAL_OPERATOR_IN)
+                .setRightOperand(
+                    SpanFilterValue.newBuilder()
+                        .setListValue(
+                            ListValue.newBuilder()
+                                .addValues(
+                                    SpanFilterValue.newBuilder().setStringValue(environment)))))
         .build();
   }
 
