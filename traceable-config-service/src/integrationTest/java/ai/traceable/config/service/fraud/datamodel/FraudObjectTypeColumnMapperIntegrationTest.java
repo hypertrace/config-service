@@ -1,6 +1,7 @@
 package ai.traceable.config.service.fraud.datamodel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.config.service.fraud.ResourceUtils;
@@ -187,7 +188,6 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
             .get("ip_address")
             .getColumnId()
             .startsWith("idx"));
-
     // upsert the same type again, verify mappings don't change.
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -197,7 +197,7 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     assertEquals(createdColumnMappings, updatedColumnMappings);
 
     // upsert another metric type. for columns of same name (As those in the previous type),
-    // we should get the same mappings for this type
+    // we should not get the same mappings for this type
     MetricType metricType2 =
         ResourceUtils.readProto("fraud/datamodel/test_metric_type_2.json", MetricType.newBuilder())
             .build();
@@ -227,37 +227,22 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     Assertions.assertFalse(
         createdColumnMappings.getColumnMappingMap().containsKey("start_time_millis_ts"));
     ColumnMappingMeta columnMappingsForMetric2 = response.getMetricType().getColumnMappingMeta();
-    // verify that additional fields of metric2 have mappings.
+    // verify that additional fields of metric2 have different mappings.
+    boolean isSame = true;
     for (Map.Entry<String, ColumnMapping> entryForMetric2 :
         columnMappingsForMetric2.getColumnMappingMap().entrySet()) {
       if (columnMappingsForMetric1.getColumnMappingMap().containsKey(entryForMetric2.getKey())) {
-        assertEquals(
-            columnMappingsForMetric1.getColumnMappingMap().get(entryForMetric2.getKey()),
-            entryForMetric2.getValue(),
-            entryForMetric2.getKey());
+        isSame =
+            isSame
+                && columnMappingsForMetric1
+                    .getColumnMappingMap()
+                    .get(entryForMetric2.getKey())
+                    .equals(entryForMetric2.getValue());
       } else {
         Assertions.assertNotNull(entryForMetric2.getValue());
       }
     }
-
-    // upsert metric type1 again
-    // upsert the same type again, verify mappings don't change.
-    response =
-        RequestContext.forTenantId(TENANT_ID)
-            .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
-    Assertions.assertNotNull(response.getMetricType());
-    updatedColumnMappings = response.getMetricType().getColumnMappingMeta();
-    assertEquals(createdColumnMappings, updatedColumnMappings);
-    assertEquals(
-        response.getMetricType().getFieldsMetaMap().values().stream()
-            .filter(fieldMetadata -> !fieldMetadata.getReserved())
-            .count(),
-        response.getMetricType().getColumnMappingMeta().getRevColumnMappingCount());
-    assertEquals(
-        response.getMetricType().getFieldsMetaMap().values().stream()
-            .filter(fieldMetadata -> !fieldMetadata.getReserved())
-            .count(),
-        response.getMetricType().getColumnMappingMeta().getColumnMappingCount());
+    assertFalse(isSame);
   }
 
   @Test

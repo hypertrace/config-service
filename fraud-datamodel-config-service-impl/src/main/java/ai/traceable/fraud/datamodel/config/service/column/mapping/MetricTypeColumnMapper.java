@@ -12,10 +12,6 @@ import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
-  // todo: deprecate this, use typeid level mappings just like other types. otherwise these are
-  // tenant level mappings
-  private static final String METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID = "metric_column_mappings";
-
   private final ColumnMapperDelegate delegate;
 
   @Inject
@@ -37,10 +33,7 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
     MetricType.Builder newTypeBldr = inputType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            requestContext,
-            ObjectKind.OBJECT_KIND_METRIC,
-            METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID,
-            createColumnMapping(inputType));
+            requestContext, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(inputType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
@@ -52,10 +45,7 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
     MetricType.Builder newTypeBldr = newType.toBuilder();
     List<ColumnMappingsDocument> mappings =
         delegate.mapProperties(
-            requestContext,
-            ObjectKind.OBJECT_KIND_METRIC,
-            METRIC_COLUMN_MAPPINGS_DOC_TYPE_ID,
-            createColumnMapping(newType));
+            requestContext, ObjectKind.OBJECT_KIND_METRIC, typeId, createColumnMapping(newType));
     return populateFieldMappings(newTypeBldr.build(), mappings);
   }
 
@@ -74,6 +64,7 @@ public class MetricTypeColumnMapper implements ColumnMapper<MetricType> {
   @Override
   public void deleteColumnMappings(RequestContext requestContext, MetricType objectType)
       throws IOException {
-    // no op until we make mappings type specific
+    delegate.deleteColumnMappings(
+        requestContext, ObjectKind.OBJECT_KIND_METRIC, objectType.getId());
   }
 }
