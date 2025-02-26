@@ -1,5 +1,6 @@
 package ai.traceable.external.data.classification.config.service.userattributionv2;
 
+import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.CUSTOM_ATTRIBUTE_PREFIX;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ID_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ROLE_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_SCOPE_ATTRIBUTE_KEY;
@@ -135,8 +136,10 @@ class UserAttributionRulesTranslatorTest {
             .build();
     List<DataType> dataTypes =
         translator.translateUserAttributionRules(List.of(userIdRule1, userIdRule2));
-    DataType expectedDataType1 = buildExpectedDataType("test.1", "rule-id-1");
-    DataType expectedDataType2 = buildExpectedDataType("test.4", "rule-id-2");
+    DataType expectedDataType1 =
+        buildExpectedDataType(CUSTOM_ATTRIBUTE_PREFIX + "test.1", "rule-id-1");
+    DataType expectedDataType2 =
+        buildExpectedDataType(CUSTOM_ATTRIBUTE_PREFIX + "test.4", "rule-id-2");
     assertEquals(2, dataTypes.size());
     assertEquals(expectedDataType1, dataTypes.get(0));
     assertEquals(expectedDataType2, dataTypes.get(1));

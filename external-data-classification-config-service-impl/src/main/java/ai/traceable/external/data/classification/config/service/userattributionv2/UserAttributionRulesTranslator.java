@@ -1,5 +1,6 @@
 package ai.traceable.external.data.classification.config.service.userattributionv2;
 
+import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.CUSTOM_ATTRIBUTE_PREFIX;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ID_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_ROLE_ATTRIBUTE_KEY;
 import static ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants.END_USER_SCOPE_ATTRIBUTE_KEY;
@@ -84,7 +85,7 @@ public class UserAttributionRulesTranslator {
         .filter(
             entry ->
                 entry.getValue().getTokenObfuscationStrategy().equals(OBFUSCATION_STRATEGY_HASH))
-        .map(entry -> Map.entry(entry.getKey(), rule.getId()));
+        .map(entry -> Map.entry(CUSTOM_ATTRIBUTE_PREFIX + entry.getKey(), rule.getId()));
   }
 
   private DataType createDataTypeRule(String attributeKey, String ruleId) {
