@@ -16,8 +16,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
 class UserAttributionRuleV2TranslatorImpl implements UserAttributionRuleV2Translator {
+  /**
+   * these attributes need to be in sync with the ones defined in {@link
+   * ai.traceable.external.data.classification.config.service.userattributionv2.UserAttributionConstants}
+   */
   private static final String RULE_SUFFIX = ".rule";
+
   private static final String CUSTOM_ATTRIBUTE_PREFIX = "traceableai.custom.attribute.";
+
   private final AttributeRuleBuilder attributeRuleBuilder;
   private final PredicateTranslator predicateTranslator;
   private final UserAttributionTokenRuleTranslator tokenRuleTranslator;
