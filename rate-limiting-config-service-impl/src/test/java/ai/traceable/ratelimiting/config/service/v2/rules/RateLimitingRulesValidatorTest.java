@@ -1167,7 +1167,9 @@ public class RateLimitingRulesValidatorTest {
                         Action.newBuilder()
                             .setBlock(
                                 Block.newBuilder()
-                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)))
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                                    .setDurationIso("PT12H")
+                                    .setUseThresholdDuration(false)))
                     .addResourceAccessThresholdConfigs(
                         ResourceAccessThresholdConfig.newBuilder()
                             .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)

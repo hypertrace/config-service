@@ -400,7 +400,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
       validatorUtils.throwInvalidArgumentException(
           "Block action unsupported on aggregation across users");
     }
-    if (block.hasDurationIso() && block.hasUseThresholdDuration()) {
+    if (block.hasDurationIso() && block.getUseThresholdDuration()) {
       validatorUtils.throwInvalidArgumentException(
           "Either duration or use threshold duration can be configured. Both of them cannot be configured together");
     }
