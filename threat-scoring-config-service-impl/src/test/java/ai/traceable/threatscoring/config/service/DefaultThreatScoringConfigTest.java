@@ -50,8 +50,8 @@ class DefaultThreatScoringConfigTest {
                         AnomalousEventConfidenceConfig.newBuilder()
                             .setLevelConfig(
                                 ScoringLevelConfig.newBuilder()
-                                    .setMediumLevelMinScore(21)
-                                    .setHighLevelMinScore(71)
+                                    .setMediumLevelMinScore(30)
+                                    .setHighLevelMinScore(50)
                                     .setMaxNormalizedScore(10)
                                     .build())
                             .setMinNumberOfUniqueUnexpectedCharacters(3)
@@ -61,8 +61,8 @@ class DefaultThreatScoringConfigTest {
                         MaliciousSpanConfidenceScoring.newBuilder()
                             .setLevelConfig(
                                 ScoringLevelConfig.newBuilder()
-                                    .setMediumLevelMinScore(21)
-                                    .setHighLevelMinScore(71)
+                                    .setMediumLevelMinScore(50)
+                                    .setHighLevelMinScore(70)
                                     .setMaxNormalizedScore(10)
                                     .build())
                             .build())
@@ -77,8 +77,8 @@ class DefaultThreatScoringConfigTest {
                                     .build())
                             .setLevelConfig(
                                 ScoringLevelConfig.newBuilder()
-                                    .setMediumLevelMinScore(41)
-                                    .setHighLevelMinScore(71)
+                                    .setMediumLevelMinScore(40)
+                                    .setHighLevelMinScore(70)
                                     .setMaxNormalizedScore(7)
                                     .build())
                             .build())
@@ -86,8 +86,8 @@ class DefaultThreatScoringConfigTest {
                         ResponseConfidenceConfig.newBuilder()
                             .setLevelConfig(
                                 ScoringLevelConfig.newBuilder()
-                                    .setMediumLevelMinScore(13)
-                                    .setHighLevelMinScore(26)
+                                    .setMediumLevelMinScore(50)
+                                    .setHighLevelMinScore(75)
                                     .setMaxNormalizedScore(4)
                                     .build())
                             .build())
