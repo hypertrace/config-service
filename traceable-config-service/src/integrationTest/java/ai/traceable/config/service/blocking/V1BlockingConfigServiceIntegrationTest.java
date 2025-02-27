@@ -58,6 +58,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
@@ -142,6 +143,18 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
       maliciousSourcesConfigServiceBlockingStub;
   private static final List<String> actorEntityId = new ArrayList<>();
   private static final List<String> customSignatureRuleId = new ArrayList<>();
+  private static final Clause matchClause =
+      Clause.newBuilder()
+          .setMatchExpression(
+              MatchExpression.newBuilder()
+                  .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                  .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                  .setMatchValue("anomalous"))
+          .build();
+  private static final Clause ipAddressClause =
+      Clause.newBuilder()
+          .setIpAddressExpression(IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4"))
+          .build();
 
   @BeforeAll
   static void init() {
@@ -270,8 +283,9 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(6, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     createRegionRules();
-    customSignatureRuleId.add(createCustomSignatureRule(Optional.empty()));
-    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID)));
+    customSignatureRuleId.add(createCustomSignatureRule(Optional.empty(), matchClause));
+    customSignatureRuleId.add(
+        createCustomSignatureRule(Optional.of(ENVIRONMENT_ID), ipAddressClause));
     createMaliciousSourceRule(
         "test-rule-1",
         Optional.empty(),
@@ -756,7 +770,13 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                         .build()));
   }
 
-  private String createCustomSignatureRule(Optional<String> environmentId) {
+  private String createCustomSignatureRule(Optional<String> environmentId, Clause clause) {
+    Clause.newBuilder()
+        .setMatchExpression(
+            MatchExpression.newBuilder()
+                .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                .setMatchValue("anomalous"));
     CreateCustomSignatureRuleResponse response =
         RequestContext.forTenantId(TENANT_ID)
             .call(
@@ -770,16 +790,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setClauseGroup(
                                         ClauseGroup.newBuilder()
                                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                                            .addClauses(
-                                                Clause.newBuilder()
-                                                    .setMatchExpression(
-                                                        MatchExpression.newBuilder()
-                                                            .setMatchKey(
-                                                                MatchKey.MATCH_KEY_HEADER_VALUE)
-                                                            .setMatchOperator(
-                                                                MatchOperator
-                                                                    .MATCH_OPERATOR_CONTAINS)
-                                                            .setMatchValue("anomalous")))))
+                                            .addClauses(clause)))
                             .setRuleScope(
                                 environmentId
                                     .map(

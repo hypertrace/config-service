@@ -2,6 +2,7 @@ package ai.traceable.blocking.config.service.common.rules;
 
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingModsecRule;
 import ai.traceable.region.config.service.v1.DetailedRegion;
@@ -48,4 +49,7 @@ public interface BlockingRulesSupplier {
 
   /** Returns the list of Exclusion rules keyed by service name */
   Map<String, List<DetectionExclusionModsecRule>> getExclusionRules(Set<String> serviceNames);
+
+  /** Returns the list of custom signature inline rule */
+  List<CustomSignatureInlineRule> getCustomSignatureInlineRules();
 }

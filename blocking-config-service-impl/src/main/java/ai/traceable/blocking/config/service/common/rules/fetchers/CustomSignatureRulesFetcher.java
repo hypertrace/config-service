@@ -36,16 +36,14 @@ public class CustomSignatureRulesFetcher implements RulesFetcher {
         GetCustomSignatureModsecRulesRequest.newBuilder()
             .setRuleVersion(customModsecRuleVersion)
             .setFilter(
-                environmentId
-                    .map(
-                        id ->
-                            (DEFAULT_GET_CUSTOM_SIGNATURE_MODSEC_RULES_FILTER.toBuilder()
-                                .setRuleScope(
-                                    RuleScope.newBuilder()
-                                        .setEnvironmentScope(
-                                            EnvironmentScope.newBuilder().addEnvironmentIds(id)))
-                                .build()))
-                    .orElse(DEFAULT_GET_CUSTOM_SIGNATURE_MODSEC_RULES_FILTER))
+                DEFAULT_GET_CUSTOM_SIGNATURE_MODSEC_RULES_FILTER.toBuilder()
+                    .setRuleScope(
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                environmentId
+                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
+                                    .orElse(EnvironmentScope.newBuilder())))
+                    .build())
             .build();
 
     return requestContext.call(

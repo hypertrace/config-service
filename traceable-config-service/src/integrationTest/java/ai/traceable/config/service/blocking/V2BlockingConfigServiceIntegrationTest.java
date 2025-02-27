@@ -83,6 +83,7 @@ import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
@@ -245,6 +246,18 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
   private static String serviceEntityId;
   private static String lastCreatedDLPRuleId;
+  private static final Clause matchClause =
+      Clause.newBuilder()
+          .setMatchExpression(
+              MatchExpression.newBuilder()
+                  .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
+                  .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                  .setMatchValue("anomalous"))
+          .build();
+  private static final Clause ipAddressClause =
+      Clause.newBuilder()
+          .setIpAddressExpression(IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4"))
+          .build();
 
   @BeforeEach
   void initialize() {
@@ -368,7 +381,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   @Test
   void agentVersioningModsecTest() {
     createCustomSignatureRule(
-        Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+        Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, matchClause);
 
     AgentCapabilities unsetLibtraceableAgentCapability =
         AgentCapabilities.newBuilder()
@@ -515,7 +528,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   @Test
-  // This test is tests the same functionality as v1
+  // This tests the same functionality as v1
   void getBlockingRulesTest() {
     // Need to add actors upfront due to caching
     actorEntityId.add(createActor(STATUS_ALWAYS_DENIED, 0L, "", BLOCKING_CATEGORY_RATE_LIMIT));
@@ -543,7 +556,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     customSignatureRuleId.add(
         createCustomSignatureRule(
-            Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING));
+            Optional.of(ENVIRONMENT_ID), EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, matchClause));
 
     GetBlockingRulesResponse response =
         RequestContext.forTenantId(TENANT_ID)
@@ -612,14 +625,13 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             response.getResponseElementsList(),
             BlockingConfigResponseElement::hasCustomSignatureBlockingRules);
     assertEquals(1, filteredElements.size());
-
-    assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
+    assertEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertTrue(
         filteredElements
             .get(0)
             .getCustomSignatureBlockingRules()
             .getCustomSignatureRulesBlob()
-            .contains(customSignatureRuleId.get(0)));
+            .isEmpty());
     assertEquals(
         Collections.singletonList(sampleOlderAgentCapability),
         filteredElements.get(0).getAgentCapabilitiesList());
@@ -680,7 +692,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
 
     createRegionRules();
     customSignatureRuleId.add(
-        createCustomSignatureRule(Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION));
+        createCustomSignatureRule(
+            Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, ipAddressClause));
     createMaliciousSourceRule(
         "test-rule-ipType-1",
         Optional.empty(),
@@ -791,18 +804,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             BlockingConfigResponseElement::hasCustomSignatureBlockingRules);
     assertEquals(1, filteredElements.size());
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
-    assertTrue(
+    assertFalse(
         filteredElements
             .get(0)
             .getCustomSignatureBlockingRules()
             .getCustomSignatureRulesBlob()
-            .contains(customSignatureRuleId.get(0)));
-    assertTrue(
-        filteredElements
-            .get(0)
-            .getCustomSignatureBlockingRules()
-            .getCustomSignatureRulesBlob()
-            .contains(customSignatureRuleId.get(1)));
+            .isEmpty());
     filteredElements =
         filterElements(
             response.getResponseElementsList(),
@@ -917,6 +924,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCustomSignatureBlockingRules()
             .getCustomSignatureRulesBlob()
             .contains(lastCreatedDLPRuleId));
+    assertTrue(
+        filteredElements
+            .get(0)
+            .getCustomSignatureBlockingRules()
+            .getCustomSignatureRulesBlob()
+            .contains(customSignatureRuleId.get(0)));
 
     filteredElements =
         filterElements(
@@ -1374,7 +1387,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   private static String createCustomSignatureRule(
-      Optional<String> environmentId, EventType eventType) {
+      Optional<String> environmentId, EventType eventType, Clause clause) {
     final RuleEffect ruleEffect;
     if (eventType == EventType.EVENT_TYPE_TESTING_DETECTION) {
       ruleEffect =
@@ -1416,16 +1429,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                                     .setClauseGroup(
                                         ClauseGroup.newBuilder()
                                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                                            .addClauses(
-                                                Clause.newBuilder()
-                                                    .setMatchExpression(
-                                                        MatchExpression.newBuilder()
-                                                            .setMatchKey(
-                                                                MatchKey.MATCH_KEY_HEADER_VALUE)
-                                                            .setMatchOperator(
-                                                                MatchOperator
-                                                                    .MATCH_OPERATOR_CONTAINS)
-                                                            .setMatchValue("anomalous")))))
+                                            .addClauses(clause)))
                             .setRuleScope(
                                 environmentId
                                     .map(

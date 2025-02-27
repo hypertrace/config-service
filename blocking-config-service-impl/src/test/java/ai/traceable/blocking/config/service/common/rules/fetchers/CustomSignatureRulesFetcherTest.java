@@ -47,7 +47,12 @@ public class CustomSignatureRulesFetcherTest {
         .when(customSignatureConfigServiceBlockingStub)
         .getCustomSignatureModsecRules(
             GetCustomSignatureModsecRulesRequest.newBuilder()
-                .setFilter(GetRulesFilter.newBuilder().setDisabled(false))
+                .setFilter(
+                    GetRulesFilter.newBuilder()
+                        .setDisabled(false)
+                        .setRuleScope(
+                            RuleScope.newBuilder()
+                                .setEnvironmentScope(EnvironmentScope.newBuilder())))
                 .setRuleVersion(CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS)
                 .build());
 

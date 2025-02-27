@@ -1,5 +1,7 @@
 package ai.traceable.blocking.config.service.common.rules;
 
+import static ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3;
+
 import ai.traceable.blocking.config.service.common.iptype.IpTypeRuleInfo;
 import ai.traceable.blocking.config.service.common.rules.fetchers.CustomSignatureRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.DlpRulesFetcher;
@@ -9,6 +11,7 @@ import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFet
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
@@ -278,6 +281,20 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                     exclusionRulesMap.getOrDefault(serviceName, new ModsecRulesData<>()).getRules(),
                 (existingList, newList) -> existingList,
                 LinkedHashMap::new));
+  }
+
+  @Override
+  public List<CustomSignatureInlineRule> getCustomSignatureInlineRules() {
+    // we just need to return any value from the map irrespective of the key because inline rules
+    // list is independent of modsec version. If no value is present then we need to compute for
+    // some version & return
+    return customSignatureRulesMap.values().stream()
+        .findFirst()
+        .orElseGet(
+            () ->
+                customSignatureRulesMap.computeIfAbsent(
+                    CUSTOM_MODSEC_RULE_VERSION_V3, customSignatureRulesGetter))
+        .getInlineRulesList();
   }
 
   /** Method to fetch DLP rules for service not present in the map */

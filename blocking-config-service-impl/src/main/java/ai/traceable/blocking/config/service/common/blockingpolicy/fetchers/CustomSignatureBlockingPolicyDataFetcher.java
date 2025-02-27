@@ -5,32 +5,32 @@ import static ai.traceable.blocking.config.service.common.blockingpolicy.Blockin
 import static ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket.CUSTOM_SIGNATURE_VIOLATIONS;
 
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.Category;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData.RuleType;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.CombinationBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.CombinationBlockingDetails.Operator;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.CustomSignatureRuleEffectConverter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
-import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
+import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.ClauseOperator;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
-import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventType;
-import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
-import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
-import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
-import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -38,18 +38,11 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
   private static final String NON_BLOCKING_RULE_INFO = "Rule has some non-blocking agent action";
   private static final List<EventType> BLOCKING_EVENT_TYPES_LIST =
       ImmutableList.of(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING, EventType.EVENT_TYPE_ALLOW);
-  private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final BlockingRulesUtils blockingRulesUtils;
-  private final ClientConfig clientConfig;
 
   @Inject
-  CustomSignatureBlockingPolicyDataFetcher(
-      CustomSignatureConfigServiceBlockingStub configServiceBlockingStub,
-      BlockingRulesUtils blockingRulesUtils,
-      ClientConfig clientConfig) {
-    this.configServiceBlockingStub = configServiceBlockingStub;
+  CustomSignatureBlockingPolicyDataFetcher(BlockingRulesUtils blockingRulesUtils) {
     this.blockingRulesUtils = blockingRulesUtils;
-    this.clientConfig = clientConfig;
   }
 
   @Override
@@ -57,10 +50,12 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
       RequestContext requestContext,
       BlockingPolicyDataFilter filter,
       BlockingRulesSupplier blockingRulesSupplier) {
-    Optional<String> environmentId = filter.getEnvironmentId();
-    List<CustomSignatureRule> ruleList = fetchCustomSignatureRule(requestContext, environmentId);
+    List<CustomSignatureInlineRule> ruleList =
+        blockingRulesSupplier.getCustomSignatureInlineRules();
     return new BlockingPolicyAggregate<>(
         ruleList.stream()
+            .map(CustomSignatureInlineRule::getRule)
+            .filter(this::filterRule)
             .map(this::getBlockingDetails)
             .filter(Optional::isPresent)
             .map(Optional::get)
@@ -91,15 +86,73 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                 blockingRulesUtils.generateBlockingStatus(
                     customSignatureRule.getBlockingExpiryDetails().getExpiryTimestampMillis(),
                     ruleType.get()))
-            .blockingDetails(
-                CustomSignatureBlockingDetails.builder()
-                    .ruleId(customSignatureRule.getId())
-                    .build())
+            .blockingDetails(buildBlockingDetails(customSignatureRule))
             .ruleId(customSignatureRule.getId())
             .action(
                 CustomSignatureRuleEffectConverter.convert(
                     customSignatureRule.getEffect().getEffectsList()))
             .build());
+  }
+
+  private static BlockingDetails buildBlockingDetails(CustomSignatureRule customSignatureRule) {
+    ClauseGroup clauseGroup = customSignatureRule.getDefinition().getClauseGroup();
+    // We shouldn't get any customSignatureRule here that has a clause that's not
+    // supported by agents - ensure this in GetCustomSignatureModsecRulesResponse
+    List<BlockingDetails> blockingDetails =
+        clauseGroup.getClausesList().stream()
+            .map(CustomSignatureBlockingPolicyDataFetcher::buildBlockingDetails)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList());
+    boolean hasModsecConvertibleExpression =
+        clauseGroup.getClausesList().stream()
+            .anyMatch(
+                clause ->
+                    clause.hasMatchExpression()
+                        || clause.hasKeyValueExpression()
+                        || clause.hasCustomSecRule());
+    if (hasModsecConvertibleExpression) {
+      blockingDetails.add(
+          CustomSignatureBlockingDetails.builder().ruleId(customSignatureRule.getId()).build());
+    }
+    if (blockingDetails.size() == 1) {
+      return blockingDetails.get(0);
+    }
+    return CombinationBlockingDetails.builder()
+        .operator(
+            clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_AND)
+                ? Operator.AND
+                : Operator.OR)
+        .blockingDetailsOperands(blockingDetails)
+        .build();
+  }
+
+  private static Optional<BlockingDetails> buildBlockingDetails(Clause clause) {
+    switch (clause.getClauseCase()) {
+      case IP_ADDRESS_EXPRESSION:
+        IpBlockingDetails ipBlockingDetails =
+            IpBlockingDetails.builder()
+                .ipAddresses(clause.getIpAddressExpression().getIpAddressesList())
+                .ipRanges(clause.getIpAddressExpression().getCidrIpRangesList())
+                .build();
+        if (!clause.getIpAddressExpression().getExclude()) {
+          return Optional.of(ipBlockingDetails);
+        }
+        return Optional.of(
+            CombinationBlockingDetails.builder()
+                .operator(Operator.NOT)
+                .blockingDetailsOperands(List.of(ipBlockingDetails))
+                .build());
+      case CUSTOM_SEC_RULE:
+      case MATCH_EXPRESSION:
+      case KEY_VALUE_EXPRESSION:
+        // these are supported by agents, but we will add only one blocking detail per rule for
+        // modsec part of the rule instead of having a blocking detail for each clause.
+        return Optional.empty();
+      default:
+        log.error("Received unsupported clause type: {}", clause.getClauseCase());
+        return Optional.empty();
+    }
   }
 
   private static Optional<String> getInfo(CustomSignatureRule rule) {
@@ -154,34 +207,7 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
     }
   }
 
-  private List<CustomSignatureRule> fetchCustomSignatureRule(
-      RequestContext requestContext, Optional<String> environmentId) {
-    // empty env scope will only return rules with rule-scope as all-envs
-    GetCustomSignatureRulesRequest getCustomSignatureRulesRequest =
-        GetCustomSignatureRulesRequest.newBuilder()
-            .setFilter(
-                GetRulesFilter.newBuilder()
-                    .setDisabled(false)
-                    .setRuleScope(
-                        RuleScope.newBuilder()
-                            .setEnvironmentScope(
-                                environmentId
-                                    .map(id -> EnvironmentScope.newBuilder().addEnvironmentIds(id))
-                                    .orElse(EnvironmentScope.newBuilder()))))
-            .build();
-
-    GetCustomSignatureRulesResponse response =
-        requestContext.call(
-            () ->
-                configServiceBlockingStub
-                    .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
-                    .getCustomSignatureRules(getCustomSignatureRulesRequest));
-    return response.getRulesList().stream()
-        .filter(this::filterRules)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private boolean filterRules(CustomSignatureRule customSignatureRule) {
+  private boolean filterRule(CustomSignatureRule customSignatureRule) {
     // If the rule type is blocking filter
     if (BLOCKING_EVENT_TYPES_LIST.contains(customSignatureRule.getEffect().getEventType())) {
       return true;
