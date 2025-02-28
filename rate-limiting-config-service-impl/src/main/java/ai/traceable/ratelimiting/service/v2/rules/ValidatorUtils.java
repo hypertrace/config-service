@@ -134,26 +134,91 @@ public class ValidatorUtils {
     }
   }
 
+  private void validateLhsRhsCondition(KeyValueCondition.LhsRhsKeysCondition lhsRhsKeysCondition) {
+    if (!lhsRhsKeysCondition.hasLhsKeyCondition() || !lhsRhsKeysCondition.hasRhsKeyCondition()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(lhsRhsKeysCondition), printMessage(lhsRhsKeysCondition)));
+    }
+    validateNonDefaultPresenceOrThrow(
+        lhsRhsKeysCondition,
+        KeyValueCondition.LhsRhsKeysCondition.LHS_RHS_MATCH_OPERATOR_FIELD_NUMBER);
+    validateMatchOperatorCondition(
+        lhsRhsKeysCondition.getLhsKeyCondition().getKeyMatchOperatorCondition());
+    validateMatchOperatorCondition(
+        lhsRhsKeysCondition.getRhsKeyCondition().getKeyMatchOperatorCondition());
+    if (lhsRhsKeysCondition
+            .getLhsKeyCondition()
+            .getKeyType()
+            .equals(lhsRhsKeysCondition.getRhsKeyCondition().getKeyType())
+        && lhsRhsKeysCondition
+            .getLhsKeyCondition()
+            .equals(lhsRhsKeysCondition.getRhsKeyCondition())) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s , LHS key condition and RHS key condition shouldn't be the same.",
+              getName(lhsRhsKeysCondition), printMessage(lhsRhsKeysCondition)));
+    }
+  }
+
+  private void validateStaticValueCondition(
+      KeyValueCondition.StaticValueCondition staticValueCondition) {
+    if (!staticValueCondition.hasKeyCondition()
+        && !staticValueCondition.hasValueMatchOperatorCondition()) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(staticValueCondition), printMessage(staticValueCondition)));
+    }
+    if (KEY_NULL_CONDITION_TYPES.contains(staticValueCondition.getKeyCondition().getKeyType())
+        && (!staticValueCondition.hasValueMatchOperatorCondition()
+            || staticValueCondition.hasKeyCondition())) {
+      throwInvalidArgumentException(
+          String.format(
+              "Invalid condition for type %s:%n %s",
+              getName(staticValueCondition), printMessage(staticValueCondition)));
+    }
+    if (staticValueCondition.hasKeyCondition()) {
+      validateMatchOperatorCondition(
+          staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition());
+    }
+    if (staticValueCondition.hasValueMatchOperatorCondition()) {
+      validateMatchOperatorCondition(staticValueCondition.getValueMatchOperatorCondition());
+    }
+  }
+
   public void validateKeyValueCondition(KeyValueCondition keyValueCondition) {
     validateNonDefaultPresenceOrThrow(keyValueCondition, KeyValueCondition.TYPE_FIELD_NUMBER);
-    if (!keyValueCondition.hasKeyCondition() && !keyValueCondition.hasValueCondition()) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid condition for type %s:%n %s",
-              getName(keyValueCondition), printMessage(keyValueCondition)));
-    }
-    if (KEY_NULL_CONDITION_TYPES.contains(keyValueCondition.getType())
-        && (!keyValueCondition.hasValueCondition() || keyValueCondition.hasKeyCondition())) {
-      throwInvalidArgumentException(
-          String.format(
-              "Invalid condition for type %s:%n %s",
-              getName(keyValueCondition), printMessage(keyValueCondition)));
-    }
-    if (keyValueCondition.hasKeyCondition()) {
-      validateStringCondition(keyValueCondition.getKeyCondition());
-    }
-    if (keyValueCondition.hasValueCondition()) {
-      validateStringCondition(keyValueCondition.getValueCondition());
+    switch (keyValueCondition.getConditionTypeCase()) {
+      case STATIC_VALUE_CONDITION:
+        validateStaticValueCondition(keyValueCondition.getStaticValueCondition());
+        break;
+      case LHS_RHS_CONDITION:
+        validateLhsRhsCondition(keyValueCondition.getLhsRhsCondition());
+        break;
+      case CONDITIONTYPE_NOT_SET:
+        if (!keyValueCondition.hasKeyCondition() && !keyValueCondition.hasValueCondition()) {
+          throwInvalidArgumentException(
+              String.format(
+                  "Invalid condition for type %s:%n %s",
+                  getName(keyValueCondition), printMessage(keyValueCondition)));
+        }
+        if (KEY_NULL_CONDITION_TYPES.contains(keyValueCondition.getType())
+            && (!keyValueCondition.hasValueCondition() || keyValueCondition.hasKeyCondition())) {
+          throwInvalidArgumentException(
+              String.format(
+                  "Invalid condition for type %s:%n %s",
+                  getName(keyValueCondition), printMessage(keyValueCondition)));
+        }
+        if (keyValueCondition.hasKeyCondition()) {
+          validateStringCondition(keyValueCondition.getKeyCondition());
+        }
+        if (keyValueCondition.hasValueCondition()) {
+          validateStringCondition(keyValueCondition.getValueCondition());
+        }
+        break;
+      default:
     }
   }
 
@@ -264,6 +329,30 @@ public class ValidatorUtils {
     }
   }
 
+  public void validateMatchOperatorCondition(
+      KeyValueCondition.MatchOperatorCondition matchOperatorCondition) {
+    validateNonDefaultPresenceOrThrow(
+        matchOperatorCondition, KeyValueCondition.MatchOperatorCondition.OPERATOR_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        matchOperatorCondition, KeyValueCondition.MatchOperatorCondition.VALUE_FIELD_NUMBER);
+    if (isInvalidMathematicalOperation(matchOperatorCondition)) {
+      throwInvalidArgumentException(
+          String.format(
+              "Numerical value should be present for match operator : %s",
+              matchOperatorCondition.getOperator()));
+    }
+    if (matchOperatorCondition.getOperator() == MATCH_OPERATOR_MATCHES_REGEX
+        || matchOperatorCondition.getOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
+      if (!matchOperatorCondition.getValue().hasStringValue()) {
+        throwInvalidArgumentException(
+            String.format(
+                "String value should be present for match operator : %s",
+                matchOperatorCondition.getOperator()));
+      }
+      validateRegex(matchOperatorCondition.getValue().getStringValue());
+    }
+  }
+
   public void validateStringCondition(StringCondition stringCondition) {
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
@@ -277,6 +366,15 @@ public class ValidatorUtils {
         || stringCondition.getOperator() == MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX) {
       validateRegex(stringCondition.getValue());
     }
+  }
+
+  private boolean isInvalidMathematicalOperation(
+      KeyValueCondition.MatchOperatorCondition matchOperatorCondition) {
+    return (matchOperatorCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_GREATER_THAN)
+            || matchOperatorCondition.getOperator().equals(MatchOperator.MATCH_OPERATOR_LESS_THAN))
+        && !(matchOperatorCondition.getValue().hasNumberValue()
+            || (matchOperatorCondition.getValue().hasStringValue()
+                && isNumber(matchOperatorCondition.getValue().getStringValue())));
   }
 
   private boolean isInvalidMathematicalOperation(StringCondition stringCondition) {
