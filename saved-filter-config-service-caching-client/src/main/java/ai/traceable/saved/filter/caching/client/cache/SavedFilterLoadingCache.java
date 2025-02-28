@@ -12,6 +12,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.Status;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -111,29 +112,28 @@ public class SavedFilterLoadingCache implements SavedFilterCache {
             new CacheLoader<ContextualKey<SavedFilterKey>, SavedFilter>() {
               @Nonnull
               @Override
-              public SavedFilter load(@Nonnull ContextualKey<SavedFilterKey> key)
-                  throws NoSuchFieldException {
+              public SavedFilter load(@Nonnull ContextualKey<SavedFilterKey> key) {
                 return loadSavedFilterFromSource(key);
               }
             });
   }
 
-  private SavedFilter loadSavedFilterFromSource(ContextualKey<SavedFilterKey> contextualKey)
-      throws NoSuchFieldException {
+  private SavedFilter loadSavedFilterFromSource(ContextualKey<SavedFilterKey> contextualKey) {
 
     List<SavedFilter> savedFilterSet =
         savedFilterServiceClient.getSavedFilter(
             contextualKey.getContext(), contextualKey.getData());
 
     if (savedFilterSet.isEmpty()) {
-      throw new NoSuchFieldException(
-          String.format("No saved filters found for key %s", contextualKey.getData()));
+      throw Status.NOT_FOUND
+          .withDescription(String.format("No saved filters found for key %s", contextualKey))
+          .asRuntimeException();
     }
     if (savedFilterSet.size() > 1) {
       throw new IllegalStateException(
           String.format(
               "Identifying attributes must produce only one saved filter but for key %s we have %s saved filters in total",
-              contextualKey.getData(), savedFilterSet.size()));
+              contextualKey, savedFilterSet.size()));
     }
 
     return savedFilterSet.get(0);
