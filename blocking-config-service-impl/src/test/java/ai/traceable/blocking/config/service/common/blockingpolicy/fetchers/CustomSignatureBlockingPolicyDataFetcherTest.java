@@ -18,6 +18,8 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.Combinati
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CombinationBlockingDetails.Operator;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpTypeBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.BlockingPolicyDataFetcherBase.BlockingPolicyDataFilter;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
@@ -36,14 +38,19 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesReq
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.IpType;
+import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RegionExpression.Region;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import java.util.ArrayList;
@@ -91,7 +98,16 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                   .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
                   .build())
           .build();
-
+  private static final Clause ipTypeClause =
+      Clause.newBuilder()
+          .setIpTypeExpression(IpTypeExpression.newBuilder().addIpTypes(IpType.IP_TYPE_BOT))
+          .build();
+  private static final Clause regionClause =
+      Clause.newBuilder()
+          .setRegionExpression(
+              RegionExpression.newBuilder()
+                  .addRegionIdentifiers(Region.newBuilder().setCountryIsoCode("isoCode1").build()))
+          .build();
   private CustomSignatureBlockingPolicyDataFetcher customSignatureDataFetcher;
   private BlockingRulesSupplier blockingRulesSupplier;
   private static final long inactiveTimestamp = System.currentTimeMillis() - 10000L;
@@ -152,58 +168,6 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                 blockingRulesSupplier)
             .getBlockingPolicyList();
 
-    assertEquals(2, customSignatureRuleList.size());
-
-    assertEquals(
-        CustomSignatureBlockingDetails.builder().ruleId("rule-id-1").build(),
-        customSignatureRuleList.get(0).getBlockingDetails());
-    assertEquals(
-        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
-        customSignatureRuleList.get(0).getCategory());
-    assertEquals(BlockingPolicyData.RuleType.ALLOW, customSignatureRuleList.get(0).getRuleType());
-    assertEquals(BlockingPolicyData.Status.SNOOZED, customSignatureRuleList.get(0).getStatus());
-    assertEquals(activeTimestamp, customSignatureRuleList.get(0).getTimestamp());
-    assertEquals(
-        ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
-            "rule-id-1", "rule-name-1", EVENT_SEVERITY_HIGH.name()),
-        customSignatureRuleList.get(0).getInfo());
-    assertEquals("rule-id-1", customSignatureRuleList.get(0).getRuleId());
-
-    assertEquals(
-        IpBlockingDetails.builder().ipAddress("1.2.3.4").build(),
-        customSignatureRuleList.get(1).getBlockingDetails());
-    assertEquals(
-        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
-        customSignatureRuleList.get(1).getCategory());
-    assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(1).getRuleType());
-    assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(1).getStatus());
-    assertNull(customSignatureRuleList.get(1).getAction());
-    assertEquals(activeTimestamp, customSignatureRuleList.get(1).getTimestamp());
-    assertEquals(
-        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
-            "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
-        customSignatureRuleList.get(1).getInfo());
-    assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
-  }
-
-  @Test
-  void getCustomSignatureRulesTestWithEnvironment() {
-    List<CustomSignatureInlineRule> inlineRuleListForEnv =
-        new ArrayList<>(sampleCustomSignatureAllEnvRules);
-    inlineRuleListForEnv.addAll(sampleCustomSignatureEnvRules);
-
-    doReturn(inlineRuleListForEnv).when(blockingRulesSupplier).getCustomSignatureInlineRules();
-
-    List<BlockingPolicyData> customSignatureRuleList =
-        customSignatureDataFetcher
-            .getBlockingPolicyData(
-                REQUEST_CONTEXT,
-                BlockingPolicyDataFilter.builder()
-                    .environmentId(Optional.of(ENVIRONMENT_ID))
-                    .build(),
-                blockingRulesSupplier)
-            .getBlockingPolicyList();
-
     assertEquals(3, customSignatureRuleList.size());
 
     assertEquals(
@@ -238,6 +202,90 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
     assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
 
     assertEquals(
+        IpTypeBlockingDetails.builder().ipType(IpLocationType.IP_LOCATION_TYPE_BOT).build(),
+        customSignatureRuleList.get(2).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(2).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(2).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(2).getStatus());
+    assertNull(customSignatureRuleList.get(2).getAction());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(2).getTimestamp());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+            "rule-id-7", "rule-name-7", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
+        customSignatureRuleList.get(2).getInfo());
+    assertEquals("rule-id-7", customSignatureRuleList.get(2).getRuleId());
+  }
+
+  @Test
+  void getCustomSignatureRulesTestWithEnvironment() {
+    List<CustomSignatureInlineRule> inlineRuleListForEnv =
+        new ArrayList<>(sampleCustomSignatureAllEnvRules);
+    inlineRuleListForEnv.addAll(sampleCustomSignatureEnvRules);
+
+    doReturn(inlineRuleListForEnv).when(blockingRulesSupplier).getCustomSignatureInlineRules();
+
+    List<BlockingPolicyData> customSignatureRuleList =
+        customSignatureDataFetcher
+            .getBlockingPolicyData(
+                REQUEST_CONTEXT,
+                BlockingPolicyDataFilter.builder()
+                    .environmentId(Optional.of(ENVIRONMENT_ID))
+                    .build(),
+                blockingRulesSupplier)
+            .getBlockingPolicyList();
+
+    assertEquals(5, customSignatureRuleList.size());
+
+    assertEquals(
+        CustomSignatureBlockingDetails.builder().ruleId("rule-id-1").build(),
+        customSignatureRuleList.get(0).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(0).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.ALLOW, customSignatureRuleList.get(0).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SNOOZED, customSignatureRuleList.get(0).getStatus());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(0).getTimestamp());
+    assertEquals(
+        ExemptionInfoEncoder.getEncodedCustomSignatureRuleExemptionInfo(
+            "rule-id-1", "rule-name-1", EVENT_SEVERITY_HIGH.name()),
+        customSignatureRuleList.get(0).getInfo());
+    assertEquals("rule-id-1", customSignatureRuleList.get(0).getRuleId());
+
+    assertEquals(
+        IpBlockingDetails.builder().ipAddress("1.2.3.4").build(),
+        customSignatureRuleList.get(1).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(1).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(1).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(1).getStatus());
+    assertNull(customSignatureRuleList.get(1).getAction());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(1).getTimestamp());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+            "rule-id-3", "rule-name-3", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
+        customSignatureRuleList.get(1).getInfo());
+    assertEquals("rule-id-3", customSignatureRuleList.get(1).getRuleId());
+
+    assertEquals(
+        IpTypeBlockingDetails.builder().ipType(IpLocationType.IP_LOCATION_TYPE_BOT).build(),
+        customSignatureRuleList.get(2).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(2).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(2).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(2).getStatus());
+    assertNull(customSignatureRuleList.get(2).getAction());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(2).getTimestamp());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+            "rule-id-7", "rule-name-7", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
+        customSignatureRuleList.get(2).getInfo());
+    assertEquals("rule-id-7", customSignatureRuleList.get(2).getRuleId());
+
+    assertEquals(
         CombinationBlockingDetails.builder()
             .blockingDetailsOperands(
                 List.of(
@@ -245,21 +293,21 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                     CustomSignatureBlockingDetails.builder().ruleId("rule-id-5").build()))
             .operator(Operator.AND)
             .build(),
-        customSignatureRuleList.get(2).getBlockingDetails());
+        customSignatureRuleList.get(3).getBlockingDetails());
     assertEquals(
         BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
-        customSignatureRuleList.get(2).getCategory());
+        customSignatureRuleList.get(3).getCategory());
     assertEquals(
         BlockingPolicyDataBucket.CUSTOM_SIGNATURE_ANALYTICS,
-        customSignatureRuleList.get(2).getBucket());
-    assertEquals(RuleType.ANALYTICS, customSignatureRuleList.get(2).getRuleType());
-    assertEquals("rule-id-5", customSignatureRuleList.get(2).getRuleId());
-    assertNotNull(customSignatureRuleList.get(2).getAction());
-    assertEquals(1, customSignatureRuleList.get(2).getAction().getInlineModificationsList().size());
+        customSignatureRuleList.get(3).getBucket());
+    assertEquals(RuleType.ANALYTICS, customSignatureRuleList.get(3).getRuleType());
+    assertEquals("rule-id-5", customSignatureRuleList.get(3).getRuleId());
+    assertNotNull(customSignatureRuleList.get(3).getAction());
+    assertEquals(1, customSignatureRuleList.get(3).getAction().getInlineModificationsList().size());
     assertEquals(
         "header-name",
         customSignatureRuleList
-            .get(2)
+            .get(3)
             .getAction()
             .getInlineModifications(0)
             .getHeaderInjection()
@@ -267,13 +315,29 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
     assertEquals(
         "static-value",
         customSignatureRuleList
-            .get(2)
+            .get(3)
             .getAction()
             .getInlineModifications(0)
             .getHeaderInjection()
             .getValue()
             .getStaticValue());
-    assertEquals(activeTimestamp, customSignatureRuleList.get(2).getTimestamp());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(3).getTimestamp());
+
+    assertEquals(
+        RegionBlockingDetails.builder().region("isoCode1").build(),
+        customSignatureRuleList.get(4).getBlockingDetails());
+    assertEquals(
+        BlockingPolicyData.Category.CUSTOM_SIGNATURE_RULE,
+        customSignatureRuleList.get(4).getCategory());
+    assertEquals(BlockingPolicyData.RuleType.BLOCK, customSignatureRuleList.get(4).getRuleType());
+    assertEquals(BlockingPolicyData.Status.SUSPENDED, customSignatureRuleList.get(4).getStatus());
+    assertNull(customSignatureRuleList.get(4).getAction());
+    assertEquals(activeTimestamp, customSignatureRuleList.get(4).getTimestamp());
+    assertEquals(
+        ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo(
+            "rule-id-8", "rule-name-8", EVENT_SEVERITY_HIGH.name(), Map.of("key", "value")),
+        customSignatureRuleList.get(4).getInfo());
+    assertEquals("rule-id-8", customSignatureRuleList.get(4).getRuleId());
   }
 
   private static final List<CustomSignatureInlineRule> sampleCustomSignatureAllEnvRules =
@@ -353,6 +417,27 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                       .setBlockingExpiryDetails(
                           ExpiryDetails.newBuilder().setExpiryTimestampMillis(inactiveTimestamp))
                       .build())
+              .build(),
+          CustomSignatureInlineRule.newBuilder()
+              .setRule(
+                  CustomSignatureRule.newBuilder()
+                      .setId("rule-id-7")
+                      .setName("rule-name-7")
+                      .setDescription("rule-description-7")
+                      .setDefinition(
+                          RuleDefinition.newBuilder()
+                              .putAllLabels(Map.of("key", "value"))
+                              .setClauseGroup(
+                                  ClauseGroup.newBuilder().addClauses(ipTypeClause).build())
+                              .build())
+                      .setEffect(
+                          RuleEffect.newBuilder()
+                              .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
+                              .setEventSeverity(EVENT_SEVERITY_HIGH))
+                      .setDisabled(false)
+                      .setBlockingExpiryDetails(
+                          ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp))
+                      .build())
               .build());
 
   private static final List<CustomSignatureInlineRule> sampleCustomSignatureEnvRules =
@@ -420,5 +505,26 @@ class CustomSignatureBlockingPolicyDataFetcherTest {
                       .setDisabled(false)
                       .setBlockingExpiryDetails(
                           ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp)))
+              .build(),
+          CustomSignatureInlineRule.newBuilder()
+              .setRule(
+                  CustomSignatureRule.newBuilder()
+                      .setId("rule-id-8")
+                      .setName("rule-name-8")
+                      .setDescription("rule-description-8")
+                      .setDefinition(
+                          RuleDefinition.newBuilder()
+                              .putAllLabels(Map.of("key", "value"))
+                              .setClauseGroup(
+                                  ClauseGroup.newBuilder().addClauses(regionClause).build())
+                              .build())
+                      .setEffect(
+                          RuleEffect.newBuilder()
+                              .setEventType(EVENT_TYPE_DETECTION_AND_BLOCKING)
+                              .setEventSeverity(EVENT_SEVERITY_HIGH))
+                      .setDisabled(false)
+                      .setBlockingExpiryDetails(
+                          ExpiryDetails.newBuilder().setExpiryTimestampMillis(activeTimestamp))
+                      .build())
               .build());
 }

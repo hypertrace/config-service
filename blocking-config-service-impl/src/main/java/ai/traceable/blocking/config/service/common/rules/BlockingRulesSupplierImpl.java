@@ -10,9 +10,12 @@ import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourc
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
+import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.customsignature.config.service.v1.IpType;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition.Region;
@@ -199,6 +202,7 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
                     .flatMap(
                         regionRule -> regionRule.getRegionIdToCountryMapMap().values().stream())
                     .map(Country::getIsoCode),
+                getCustomSignatureRulesCountryIsoCodes().stream(),
                 getDlpRulesCountryIsoCodes(serviceNames).stream(),
                 getExclusionRulesCountryIsoCodes(serviceNames).stream())
             .flatMap(Function.identity())
@@ -228,10 +232,16 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
         blockingRulesSupplierContext.getIpTypeRulesInfoMap();
 
     Stream<IpTypeRuleInfo.IpType> maliciousSourcesIpTypes = getMaliciousSourcesIpTypes();
+    Stream<IpTypeRuleInfo.IpType> customSignatureIpTypes = getCustomSignatureIpTypes();
     if (serviceNames.isEmpty()) {
       // no dlp or exclusion rules would be fetched if service-name is not provided.
       // assumption: agents supporting DLP rules will always send service-name.
-      return convertIpTypeIpMappings(ruleConverter, ipTypesInfoMap, maliciousSourcesIpTypes);
+      return convertIpTypeIpMappings(
+          ruleConverter,
+          ipTypesInfoMap,
+          Stream.of(maliciousSourcesIpTypes, customSignatureIpTypes)
+              .flatMap(Function.identity())
+              .distinct());
     }
 
     Stream<IpTypeRuleInfo.IpType> dlpRulesIpTypes = getDlpRulesIpTypes(serviceNames);
@@ -240,7 +250,11 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
     return convertIpTypeIpMappings(
         ruleConverter,
         ipTypesInfoMap,
-        Stream.of(maliciousSourcesIpTypes, dlpRulesIpTypes, exclusionRulesIpTypes)
+        Stream.of(
+                maliciousSourcesIpTypes,
+                customSignatureIpTypes,
+                dlpRulesIpTypes,
+                exclusionRulesIpTypes)
             .flatMap(Function.identity())
             .distinct());
   }
@@ -351,6 +365,24 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
     return modsecRulesBlobPrefix;
   }
 
+  private Stream<IpTypeRuleInfo.IpType> getCustomSignatureIpTypes() {
+    return getCustomSignatureInlineRules().stream()
+        .flatMap(
+            customSignatureInlineRule ->
+                customSignatureInlineRule
+                    .getRule()
+                    .getDefinition()
+                    .getClauseGroup()
+                    .getClausesList()
+                    .stream()
+                    .filter(Clause::hasIpTypeExpression)
+                    .flatMap(clause -> clause.getIpTypeExpression().getIpTypesList().stream()))
+        .distinct()
+        .filter(Objects::nonNull)
+        .map(BlockingRulesSupplierImpl::convertIpType)
+        .filter(Objects::nonNull);
+  }
+
   private Stream<IpTypeRuleInfo.IpType> getMaliciousSourcesIpTypes() {
     return maliciousSourcesRulesSupplier.get().stream()
         .flatMap(
@@ -411,6 +443,26 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
         .filter(Objects::nonNull)
         .map(BlockingRulesSupplierImpl::convertIpType)
         .filter(Objects::nonNull);
+  }
+
+  private List<String> getCustomSignatureRulesCountryIsoCodes() {
+    return getCustomSignatureInlineRules().stream()
+        .flatMap(
+            customSignatureInlineRule ->
+                customSignatureInlineRule
+                    .getRule()
+                    .getDefinition()
+                    .getClauseGroup()
+                    .getClausesList()
+                    .stream()
+                    .filter(Clause::hasRegionExpression)
+                    .flatMap(
+                        clause ->
+                            clause.getRegionExpression().getRegionIdentifiersList().stream()
+                                .map(RegionExpression.Region::getCountryIsoCode)))
+        .distinct()
+        .filter(Objects::nonNull)
+        .collect(Collectors.toUnmodifiableList());
   }
 
   private List<String> getDlpRulesCountryIsoCodes(Set<String> serviceNames) {
@@ -498,6 +550,24 @@ public class BlockingRulesSupplierImpl implements BlockingRulesSupplier {
 
   private static Stream<IpLocationType> extractDlpIpLocationTypes(LeafCondition condition) {
     return condition.getIpLocationTypeCondition().getIpLocationTypesList().stream();
+  }
+
+  @Nullable
+  private static IpTypeRuleInfo.IpType convertIpType(IpType ipType) {
+    switch (ipType) {
+      case IP_TYPE_BOT:
+        return IpTypeRuleInfo.IpType.BOT;
+      case IP_TYPE_ANONYMOUS_VPN:
+        return IpTypeRuleInfo.IpType.ANONYMOUS_VPN;
+      case IP_TYPE_HOSTING_PROVIDER:
+        return IpTypeRuleInfo.IpType.HOSTING_PROVIDER;
+      case IP_TYPE_PUBLIC_PROXY:
+        return IpTypeRuleInfo.IpType.PUBLIC_PROXY;
+      case IP_TYPE_TOR_EXIT_NODE:
+        return IpTypeRuleInfo.IpType.TOR_EXIT_NODE;
+      default:
+        return null;
+    }
   }
 
   @Nullable

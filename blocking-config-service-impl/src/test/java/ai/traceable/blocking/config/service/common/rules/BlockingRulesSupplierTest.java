@@ -19,8 +19,15 @@ import ai.traceable.blocking.config.service.common.rules.fetchers.MaliciousSourc
 import ai.traceable.blocking.config.service.common.rules.fetchers.RegionRulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher;
 import ai.traceable.blocking.config.service.common.rules.fetchers.RulesFetcher.RulesFetcherType;
+import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomModsecRuleVersion;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
+import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
+import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionModsecRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
@@ -261,6 +268,7 @@ public class BlockingRulesSupplierTest {
     final DetailedRegion detailedRegion3 = getDetailedRegion("id3", "isoCode3");
     final DetailedRegion detailedRegion4 = getDetailedRegion("id4", "isoCode4");
     final DetailedRegion detailedRegion5 = getDetailedRegion("id5", "isoCode5");
+    final DetailedRegion detailedRegion6 = getDetailedRegion("id6", "isoCode6");
 
     when(regionRulesFetcher.fetchRegionRules(REQUEST_CONTEXT, ENVIRONMENT_ID))
         .thenReturn(
@@ -268,40 +276,52 @@ public class BlockingRulesSupplierTest {
                 buildRegionRules("id1", "isoCode1"),
                 buildRegionRules("id2", "isoCode2"),
                 buildRegionRules("id3", "isoCode3")));
-    when(regionRulesFetcher.fetchDetailedRegions(List.of("isoCode1", "isoCode2", "isoCode3")))
-        .thenReturn(List.of(detailedRegion1, detailedRegion2, detailedRegion3));
     when(regionRulesFetcher.fetchDetailedRegions(
-            List.of("isoCode1", "isoCode2", "isoCode3", "isoCode4", "isoCode5")))
+            List.of("isoCode1", "isoCode2", "isoCode3", "isoCode6")))
+        .thenReturn(List.of(detailedRegion1, detailedRegion2, detailedRegion3, detailedRegion6));
+    when(regionRulesFetcher.fetchDetailedRegions(
+            List.of("isoCode1", "isoCode2", "isoCode3", "isoCode6", "isoCode4", "isoCode5")))
         .thenReturn(
             List.of(
                 detailedRegion1,
                 detailedRegion2,
                 detailedRegion3,
+                detailedRegion6,
                 detailedRegion4,
                 detailedRegion5));
+    when(customSignatureRulesFetcher.fetchModsecRules(any(), any(), any()))
+        .thenReturn(getResponseWithRegionAndIpTypeBasedRules());
 
     blockingRulesSupplier =
         new BlockingRulesSupplierImpl(
             blockingRulesSupplierContext, REQUEST_CONTEXT, ENVIRONMENT_ID);
     assertEquals(
-        List.of(detailedRegion1, detailedRegion2, detailedRegion3),
+        List.of(detailedRegion1, detailedRegion2, detailedRegion3, detailedRegion6),
         blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptySet()));
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
+    verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
     assertEquals(
-        List.of(detailedRegion1, detailedRegion2, detailedRegion3),
+        List.of(detailedRegion1, detailedRegion2, detailedRegion3, detailedRegion6),
         blockingRulesSupplier.getRegionIpMappings(Function.identity(), Collections.emptySet()));
     // fetchRules will not be called again..
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
 
     assertEquals(
         List.of(
-            detailedRegion1, detailedRegion2, detailedRegion3, detailedRegion4, detailedRegion5),
+            detailedRegion1,
+            detailedRegion2,
+            detailedRegion3,
+            detailedRegion6,
+            detailedRegion4,
+            detailedRegion5),
         blockingRulesSupplier.getRegionIpMappings(Function.identity(), SERVICE_NAMES));
     // fetchRules will not be called again.
     verify(regionRulesFetcher, times(1)).fetchRegionRules(any(), any());
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
     verify(exclusionRulesFetcher, times(1))
         .fetchExclusionModsecRules(any(), any(), eq(SERVICE_NAMES));
+    // fetchModsecRules will not be called again.
+    verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
   }
 
   private static RegionRule buildRegionRules(String regionId, String isoCode) {
@@ -361,6 +381,8 @@ public class BlockingRulesSupplierTest {
 
     when(maliciousSourcesRulesFetcher.fetchRules(REQUEST_CONTEXT, ENVIRONMENT_ID))
         .thenReturn(List.of(rule1, rule2, rule3));
+    when(customSignatureRulesFetcher.fetchModsecRules(any(), any(), any()))
+        .thenReturn(getResponseWithRegionAndIpTypeBasedRules());
 
     blockingRulesSupplier =
         new BlockingRulesSupplierImpl(
@@ -374,11 +396,13 @@ public class BlockingRulesSupplierTest {
             .map(IpTypeRuleInfo::getIpType)
             .collect(Collectors.toList());
     verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
+    verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
     assertEquals(
         List.of(
             IpTypeRuleInfo.IpType.BOT,
             IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
-            IpTypeRuleInfo.IpType.PUBLIC_PROXY),
+            IpTypeRuleInfo.IpType.PUBLIC_PROXY,
+            IpTypeRuleInfo.IpType.TOR_EXIT_NODE),
         ipTypeRuleInfoList);
 
     ipTypeRuleInfoList =
@@ -393,14 +417,16 @@ public class BlockingRulesSupplierTest {
             IpTypeRuleInfo.IpType.BOT,
             IpTypeRuleInfo.IpType.ANONYMOUS_VPN,
             IpTypeRuleInfo.IpType.PUBLIC_PROXY,
-            IpTypeRuleInfo.IpType.HOSTING_PROVIDER,
-            IpType.TOR_EXIT_NODE),
+            IpType.TOR_EXIT_NODE,
+            IpTypeRuleInfo.IpType.HOSTING_PROVIDER),
         ipTypeRuleInfoList);
     verify(dlpRulesFetcher, times(1)).fetchDlpModsecRules(any(), any(), eq(SERVICE_NAMES));
     verify(exclusionRulesFetcher, times(1))
         .fetchExclusionModsecRules(any(), any(), eq(SERVICE_NAMES));
     // fetchRules will not be called again.
     verify(maliciousSourcesRulesFetcher, times(1)).fetchRules(any(), any());
+    // fetchModsecRules will not be called again.
+    verify(customSignatureRulesFetcher, times(1)).fetchModsecRules(any(), any(), any());
   }
 
   @Test
@@ -564,5 +590,45 @@ public class BlockingRulesSupplierTest {
             .setRule(DetectionExclusionRule.newBuilder().setId("id40"))
             .build());
     return rulesMap;
+  }
+
+  private GetCustomSignatureModsecRulesResponse getResponseWithRegionAndIpTypeBasedRules() {
+    return GetCustomSignatureModsecRulesResponse.newBuilder()
+        .setModsecRulesBlob("")
+        .addInlineRules(
+            CustomSignatureInlineRule.newBuilder()
+                .setRule(
+                    CustomSignatureRule.newBuilder()
+                        .setId("ruleId1")
+                        .setDefinition(
+                            RuleDefinition.newBuilder()
+                                .setClauseGroup(
+                                    ClauseGroup.newBuilder()
+                                        .addClauses(
+                                            Clause.newBuilder()
+                                                .setRegionExpression(
+                                                    RegionExpression.newBuilder()
+                                                        .addRegionIdentifiers(
+                                                            RegionExpression.Region.newBuilder()
+                                                                .setCountryIsoCode(
+                                                                    "isoCode6"))))))))
+        .addInlineRules(
+            CustomSignatureInlineRule.newBuilder()
+                .setRule(
+                    CustomSignatureRule.newBuilder()
+                        .setId("ruleId1")
+                        .setDefinition(
+                            RuleDefinition.newBuilder()
+                                .setClauseGroup(
+                                    ClauseGroup.newBuilder()
+                                        .addClauses(
+                                            Clause.newBuilder()
+                                                .setIpTypeExpression(
+                                                    IpTypeExpression.newBuilder()
+                                                        .addIpTypes(
+                                                            ai.traceable.customsignature.config
+                                                                .service.v1.IpType
+                                                                .IP_TYPE_TOR_EXIT_NODE)))))))
+        .build();
   }
 }

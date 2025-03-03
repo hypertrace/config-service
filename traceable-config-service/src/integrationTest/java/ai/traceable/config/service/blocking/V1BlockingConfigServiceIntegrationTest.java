@@ -42,6 +42,7 @@ import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetect
 import ai.traceable.blocking.config.service.v1.BlockingCategory;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc;
 import ai.traceable.blocking.config.service.v1.BlockingConfigServiceGrpc.BlockingConfigServiceBlockingStub;
+import ai.traceable.blocking.config.service.v1.BlockingDetails;
 import ai.traceable.blocking.config.service.v1.BlockingPolicyConfiguration;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesRequest;
 import ai.traceable.blocking.config.service.v1.GetBlockingRulesResponse;
@@ -59,9 +60,11 @@ import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
@@ -154,6 +157,19 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static final Clause ipAddressClause =
       Clause.newBuilder()
           .setIpAddressExpression(IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4"))
+          .build();
+  private static final Clause ipTypeClause =
+      Clause.newBuilder()
+          .setIpTypeExpression(
+              IpTypeExpression.newBuilder()
+                  .addIpTypes(ai.traceable.customsignature.config.service.v1.IpType.IP_TYPE_BOT))
+          .build();
+  private static final Clause regionClause =
+      Clause.newBuilder()
+          .setRegionExpression(
+              RegionExpression.newBuilder()
+                  .addRegionIdentifiers(
+                      RegionExpression.Region.newBuilder().setCountryIsoCode("IN").build()))
           .build();
 
   @BeforeAll
@@ -286,6 +302,8 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     customSignatureRuleId.add(createCustomSignatureRule(Optional.empty(), matchClause));
     customSignatureRuleId.add(
         createCustomSignatureRule(Optional.of(ENVIRONMENT_ID), ipAddressClause));
+    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID), ipTypeClause));
+    customSignatureRuleId.add(createCustomSignatureRule(Optional.of(ENVIRONMENT_ID), regionClause));
     createMaliciousSourceRule(
         "test-rule-1",
         Optional.empty(),
@@ -390,11 +408,21 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
         response.getSafeCrsBlockingRules().getHash()); // Blobs should be different
     assertFalse(response.getSafeCrsBlockingRules().getSafeCrsRulesBlob().isEmpty());
 
-    // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
+    // 2 modsec + 3 region + 4 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
     // malicious-source) + 3 ip-type
     String blockingPolicyConfigurationHash = response.getBlockingPolicyConfiguration().getHash();
     assertNotEquals(emptyValueUuid, response.getBlockingPolicyConfiguration().getHash());
-    assertEquals(14, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(16, response.getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+    assertEquals(
+        4,
+        response.getBlockingPolicyConfiguration().getBlockingDetailsListList().stream()
+            .filter(BlockingDetails::hasRegionDetails)
+            .count());
+    assertEquals(
+        4,
+        response.getBlockingPolicyConfiguration().getBlockingDetailsListList().stream()
+            .filter(BlockingDetails::hasIpTypeDetails)
+            .count());
 
     response =
         RequestContext.forTenantId(TENANT_ID)
@@ -475,11 +503,11 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
+    // 2 modsec + 3 region + 4 custom-signature rule + (1 threat-actors + 1 rate-limit + 2
     // malicious-source) + 2 custom-ip + 3 ip-type + 3 malicious-sources-rule(1 ipType, 1 ipRange, 1
     // region)
 
-    assertEquals(18, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    assertEquals(20, blockingPolicyConfiguration.getBlockingDetailsListCount());
 
     int index = 0;
 
@@ -552,7 +580,7 @@ class V1BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(
         BLOCKING_STATUS_DENIED,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getStatus());
-    index += 2;
+    index += 4;
     assertEquals(
         BLOCKING_CATEGORY_MODSECURITY,
         blockingPolicyConfiguration.getBlockingDetailsList(index).getCategory());

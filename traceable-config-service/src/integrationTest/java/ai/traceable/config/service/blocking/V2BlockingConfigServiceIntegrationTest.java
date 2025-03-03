@@ -84,10 +84,12 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
@@ -257,6 +259,19 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   private static final Clause ipAddressClause =
       Clause.newBuilder()
           .setIpAddressExpression(IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4"))
+          .build();
+  private static final Clause ipTypeClause =
+      Clause.newBuilder()
+          .setIpTypeExpression(
+              IpTypeExpression.newBuilder()
+                  .addIpTypes(ai.traceable.customsignature.config.service.v1.IpType.IP_TYPE_BOT))
+          .build();
+  private static final Clause regionClause =
+      Clause.newBuilder()
+          .setRegionExpression(
+              RegionExpression.newBuilder()
+                  .addRegionIdentifiers(
+                      RegionExpression.Region.newBuilder().setCountryIsoCode("IN").build()))
           .build();
 
   @BeforeEach
@@ -694,6 +709,12 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     customSignatureRuleId.add(
         createCustomSignatureRule(
             Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, ipAddressClause));
+    customSignatureRuleId.add(
+        createCustomSignatureRule(
+            Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, ipTypeClause));
+    customSignatureRuleId.add(
+        createCustomSignatureRule(
+            Optional.empty(), EventType.EVENT_TYPE_TESTING_DETECTION, regionClause));
     createMaliciousSourceRule(
         "test-rule-ipType-1",
         Optional.empty(),
@@ -796,7 +817,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
     assertEquals(1, filteredElements.size());
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertEquals(
-        2, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
+        3, filteredElements.get(0).getRegionBlockingRules().getRegionIpBlockingRulesCount());
 
     filteredElements =
         filterElements(
@@ -839,15 +860,15 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             .getCrsRulesBlob()
             .isEmpty()); // But rule is empty
 
-    // 1 modsec + 2 region + 1 custom-signature rule +  (1 threat-actors + 2 rate-limit + 2
-    // malicious-source) + 1 ip-type
+    // 1 modsec + 3 region + 1 custom-signature rule +  (1 threat-actors + 2 rate-limit + 2
+    // malicious-source) + 2 ip-type
     filteredElements =
         filterElements(
             response.getResponseElementsList(),
             BlockingConfigResponseElement::hasBlockingPolicyConfiguration);
     assertNotEquals(emptyValueUuid, filteredElements.get(0).getHash());
     assertEquals(
-        10, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
+        12, filteredElements.get(0).getBlockingPolicyConfiguration().getBlockingDetailsListCount());
 
     addIpRangeRule("ip-range-rule-1", Optional.empty(), RULE_ACTION_ALLOW);
     addIpRangeRule("ip-range-rule-2", Optional.of(ENVIRONMENT_ID), RULE_ACTION_BLOCK);
@@ -1018,9 +1039,9 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
   }
 
   void checkBlockingPolicy(BlockingPolicyConfiguration blockingPolicyConfiguration) {
-    // 2 modsec + 3 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 4
-    // malicious-source) + 2 custom-ip + 3 ip-type + 1 DLP
-    assertEquals(19, blockingPolicyConfiguration.getBlockingDetailsListCount());
+    // 2 modsec + 4 region + 2 custom-signature rule + (1 threat-actors + 1 rate-limit + 4
+    // malicious-source) + 2 custom-ip + 4 ip-type + 1 DLP
+    assertEquals(21, blockingPolicyConfiguration.getBlockingDetailsListCount());
     assertEquals(1, blockingPolicyConfiguration.getExclusionRulesCount());
     checkExclusionPolicy(blockingPolicyConfiguration.getExclusionRules(0));
 

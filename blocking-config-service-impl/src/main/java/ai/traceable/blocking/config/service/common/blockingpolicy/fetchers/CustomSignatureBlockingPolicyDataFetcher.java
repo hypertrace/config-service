@@ -13,6 +13,8 @@ import ai.traceable.blocking.config.service.common.blockingpolicy.data.Combinati
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CombinationBlockingDetails.Operator;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.CustomSignatureBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.IpTypeBlockingDetails;
+import ai.traceable.blocking.config.service.common.blockingpolicy.data.RegionBlockingDetails;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.BlockingRulesUtils;
 import ai.traceable.blocking.config.service.common.blockingpolicy.fetchers.utils.CustomSignatureRuleEffectConverter;
 import ai.traceable.blocking.config.service.common.rules.BlockingRulesSupplier;
@@ -22,12 +24,16 @@ import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.IpType;
+import ai.traceable.customsignature.config.service.v1.RegionExpression.Region;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
+import ai.traceable.malicioussources.config.service.v1.IpLocationType;
 import ai.traceable.platform.opa.v1.exemption.ExemptionInfoEncoder;
 import ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder;
 import com.google.common.collect.ImmutableList;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -143,12 +149,45 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
                 .operator(Operator.NOT)
                 .blockingDetailsOperands(List.of(ipBlockingDetails))
                 .build());
+      case IP_TYPE_EXPRESSION:
+        IpTypeBlockingDetails ipTypeBlockingDetails =
+            IpTypeBlockingDetails.builder()
+                .ipTypes(
+                    clause.getIpTypeExpression().getIpTypesList().stream()
+                        .map(CustomSignatureBlockingPolicyDataFetcher::convert)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toUnmodifiableList()))
+                .build();
+        if (!clause.getIpTypeExpression().getExclude()) {
+          return Optional.of(ipTypeBlockingDetails);
+        }
+        return Optional.of(
+            CombinationBlockingDetails.builder()
+                .operator(Operator.NOT)
+                .blockingDetailsOperands(List.of(ipTypeBlockingDetails))
+                .build());
       case CUSTOM_SEC_RULE:
       case MATCH_EXPRESSION:
       case KEY_VALUE_EXPRESSION:
         // these are supported by agents, but we will add only one blocking detail per rule for
         // modsec part of the rule instead of having a blocking detail for each clause.
         return Optional.empty();
+      case REGION_EXPRESSION:
+        RegionBlockingDetails regionBlockingDetails =
+            RegionBlockingDetails.builder()
+                .regions(
+                    clause.getRegionExpression().getRegionIdentifiersList().stream()
+                        .map(Region::getCountryIsoCode)
+                        .collect(Collectors.toUnmodifiableList()))
+                .build();
+        if (!clause.getRegionExpression().getExclude()) {
+          return Optional.of(regionBlockingDetails);
+        }
+        return Optional.of(
+            CombinationBlockingDetails.builder()
+                .operator(Operator.NOT)
+                .blockingDetailsOperands(List.of(regionBlockingDetails))
+                .build());
       default:
         log.error("Received unsupported clause type: {}", clause.getClauseCase());
         return Optional.empty();
@@ -215,5 +254,23 @@ class CustomSignatureBlockingPolicyDataFetcher implements BlockingPolicyDataFetc
     // If there is some agent rule effect then filter
     return customSignatureRule.getEffect().getEffectsList().stream()
         .anyMatch(RuleEffectWithModifications::hasAgentRuleEffect);
+  }
+
+  private static IpLocationType convert(IpType ipType) {
+    switch (ipType) {
+      case IP_TYPE_ANONYMOUS_VPN:
+        return IpLocationType.IP_LOCATION_TYPE_ANONYMOUS_VPN;
+      case IP_TYPE_HOSTING_PROVIDER:
+        return IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
+      case IP_TYPE_PUBLIC_PROXY:
+        return IpLocationType.IP_LOCATION_TYPE_PUBLIC_PROXY;
+      case IP_TYPE_TOR_EXIT_NODE:
+        return IpLocationType.IP_LOCATION_TYPE_TOR_EXIT_NODE;
+      case IP_TYPE_BOT:
+        return IpLocationType.IP_LOCATION_TYPE_BOT;
+      default:
+        log.info("Cannot convert ip type: {}", ipType);
+        return null;
+    }
   }
 }
