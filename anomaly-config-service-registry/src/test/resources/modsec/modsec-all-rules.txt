@@ -28,6 +28,7 @@ crs_930100 :: Path Traversal Attack (/../) (100) :: ANOMALY_SEVERITY_LEVEL_MEDIU
 crs_930110 :: Path Traversal Attack (/../) (110) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A5' , 'OWASP_2021:A1' , 'CWE:23' ]
 crs_930120 :: OS File Access Attempt (120) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A5' , 'OWASP_2021:A1' , 'CWE:22' ]
 crs_930130 :: Restricted File Access Attempt :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A5' , 'OWASP_2021:A1' , 'CWE:22' ]
+crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100) :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:98' , 'OWASP_API_2019:API8' ]
 crs_931100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using IP Address :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:98' , 'OWASP_API_2019:API8' ]
 crs_931110 :: Possible Remote File Inclusion (RFI) Attack: Common RFI Vulnerable Parameter Name used w/URL Payload :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:98' , 'OWASP_API_2019:API8' ]
 crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?) :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:98' , 'OWASP_API_2019:API8' ]

@@ -648,60 +648,96 @@ fraudDataModelDerivationConfigService:
   defaultFraudDataModelDerivations: |-
     []
 
-#defaultModsecDetectionConfigs: |-
-#  [
-#    {
-#      configStatus = {
-#        disabled = true
-#        internal = true
-#      }
-#      modsecurityAnomalyDetectionConfig = {
-#        modsecAnomalyRule = {
-#          anomalyRuleId = "crs_103"
-#        }
-#      }
-#    },
-#    {
-#      modsecurityAnomalyDetectionConfig = {
-#        modsecAllDetection = {
-#          modsecRuleVersion = MODSEC_RULE_VERSION_V3
-#          paramValueTypeModsecExcludes = [
-#            {
-#              paramValueType = PARAM_VALUE_TYPE_HTML
-#              excludedModsecRuleIds = {
-#                values = ["crs_942100","crs_942140","crs_942160","crs_942170","crs_942190",
-#                          "crs_942220","crs_942230","crs_942240","crs_942250","crs_942270","crs_942280","crs_942290",
-#                          "crs_942320","crs_942350","crs_942360","crs_942500",
-#                          "crs_941100","crs_941130","crs_941140","crs_941160","crs_941170","crs_941180","crs_941190",
-#                          "crs_941210","crs_941220","crs_941260","crs_941310","crs_941350","crs_941370", "crs_9410160",
-#                          "crs_932100","crs_932105","crs_932110","crs_932115","crs_932120","crs_932130","crs_932140",
-#                          "crs_932150","crs_932160","crs_932170","crs_932171","crs_932180", "crs_921130", "crs_9210110"]
-#              }
-#            },
-#            {
-#              paramValueType = PARAM_VALUE_TYPE_RICH_TEXT_HTML
-#              excludedModsecRuleIds = {
-#                values = ["crs_942100","crs_942140","crs_942160","crs_942170","crs_942190",
-#                          "crs_942220","crs_942230","crs_942240","crs_942250","crs_942270","crs_942280","crs_942290",
-#                          "crs_942320","crs_942350","crs_942360","crs_942500",
-#                          "crs_941100","crs_941130","crs_941140","crs_941160","crs_941170","crs_941180","crs_941190",
-#                          "crs_941210","crs_941220","crs_941260","crs_941310","crs_941350",
-#                          "crs_932100","crs_932105","crs_932110","crs_932115","crs_932120","crs_932130","crs_932140",
-#                          "crs_932150","crs_932160","crs_932170","crs_932171","crs_932180","crs_921130", "crs_9210110"]
-#              }
-#            },
-#            {
-#              paramValueType = PARAM_VALUE_TYPE_FREE_TEXT
-#              excludedModsecRuleIds = {
-#                values = ["crs_932100","crs_932105","crs_932110","crs_932115",
-#                          "crs_942100","crs_942140","crs_942500"]
-#              }
-#            }
-#          ]
-#        }
-#      }
-#    }
-#  ]
+defaultModsecDetectionConfigs: |-
+  [
+    {
+      configStatus = {
+        disabled = true
+        internal = true
+      }
+      modsecurityAnomalyDetectionConfig = {
+        modsecAnomalyRule = {
+          anomalyRuleId = "crs_103"
+        }
+      }
+    },
+    {
+      modsecurityAnomalyDetectionConfig = {
+        modsecAnomalyRule = {
+          anomalyRuleId = "crs_942"
+          subRuleConfigs = [
+              {
+                  subRuleId = "crs_9420360"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_942360"
+                  configStatus = {
+                      disabled = true
+                  }
+              }
+          ]
+        }
+      }
+    },
+    {
+      modsecurityAnomalyDetectionConfig = {
+        modsecAnomalyRule = {
+          anomalyRuleId = "crs_931"
+          subRuleConfigs = [
+              {
+                  subRuleId = "crs_9310100"
+                  configStatus = {
+                      disabled = true
+                  }
+              }
+          ]
+        }
+      }
+    },
+    {
+      modsecurityAnomalyDetectionConfig = {
+        modsecAllDetection = {
+          modsecRuleVersion = MODSEC_RULE_VERSION_CORAZA_V3_DETECTION_ONLY_MODE
+          paramValueTypeModsecExcludes = [
+            {
+              paramValueType = PARAM_VALUE_TYPE_HTML
+              excludedModsecRuleIds = {
+                values = ["crs_942100","crs_942140","crs_942160","crs_942170","crs_942190",
+                          "crs_942220","crs_942230","crs_942240","crs_942250","crs_942270","crs_942280","crs_942290",
+                          "crs_942320","crs_942350","crs_942360","crs_942500",
+                          "crs_941100","crs_941130","crs_941140","crs_941160","crs_941170","crs_941180","crs_941190",
+                          "crs_941210","crs_941220","crs_941260","crs_941310","crs_941350","crs_941370", "crs_9410160",
+                          "crs_932100","crs_932105","crs_932110","crs_932115","crs_932120","crs_932130","crs_932140",
+                          "crs_932150","crs_932160","crs_932170","crs_932171","crs_932180", "crs_921130", "crs_9210110"]
+              }
+            },
+            {
+              paramValueType = PARAM_VALUE_TYPE_RICH_TEXT_HTML
+              excludedModsecRuleIds = {
+                values = ["crs_942100","crs_942140","crs_942160","crs_942170","crs_942190",
+                          "crs_942220","crs_942230","crs_942240","crs_942250","crs_942270","crs_942280","crs_942290",
+                          "crs_942320","crs_942350","crs_942360","crs_942500",
+                          "crs_941100","crs_941130","crs_941140","crs_941160","crs_941170","crs_941180","crs_941190",
+                          "crs_941210","crs_941220","crs_941260","crs_941310","crs_941350",
+                          "crs_932100","crs_932105","crs_932110","crs_932115","crs_932120","crs_932130","crs_932140",
+                          "crs_932150","crs_932160","crs_932170","crs_932171","crs_932180","crs_921130", "crs_9210110"]
+              }
+            },
+            {
+              paramValueType = PARAM_VALUE_TYPE_FREE_TEXT
+              excludedModsecRuleIds = {
+                values = ["crs_932100","crs_932105","crs_932110","crs_932115",
+                          "crs_942100","crs_942140","crs_942500"]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
 
 #defaultJwtExtractionConfigRules: |-
 #  [

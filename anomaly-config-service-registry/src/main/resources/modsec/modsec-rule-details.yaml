@@ -2541,6 +2541,25 @@
       - Web Application Security Consortium - WASC-5:Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
 
   subRuleInfos:
+    - ruleId: crs_9310100
+      eventDetails:
+        description: |
+          A pattern indicative of a Remote File Inclusion (RFI) attack on the Parameter accepting URL using an Anomalous Domain is detected. This attack involves the use of an anomalous urls to include remote files in the application.  
+        mitigation: |
+          - Restrict the inclusion of user-provided files or URLs in the web application.
+          - Implement strict input validation and allowlist only trusted URLs and IP addresses.
+          - Ensure all application processes are executed with minimal privileges and drop unnecessary privileges promptly.
+        impact: |
+          Attackers could include arbitrary files using IP-based URLs, which may lead to:
+            - Execution of malicious code within the web application.
+            - Unauthorized access to sensitive server files or configurations.
+            - Facilitation of other attacks, such as cross-site scripting (XSS) or denial of service (DoS).
+        references: |
+          - OWASP API Top 10 - 2019 - API8: Injection - https://github.com/OWASP/API-Security/blob/master/editions/2019/en/0xa8-injection.md
+          - Common Weakness Enumeration (CWE) - CWE-98: Improper Control of Filename for Include/Require Statement in PHP Program - https://cwe.mitre.org/data/definitions/98.html
+          - MITRE ATT&CK - T1190: Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190
+          - Web Application Security Consortium - WASC-5: Remote File Inclusion - http://projects.webappsec.org/w/page/13246955/Remote%20File%20Inclusion
+
     - ruleId: crs_931100
       eventDetails:
         description: |
