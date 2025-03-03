@@ -17,9 +17,9 @@ public class CategorizedBotConfigPolicyStore
         CategorizedBotConfigPolicy, CategorizedBotConfigPolicyFilter> {
 
   private static final String CATEGORIZED_BOT_CONFIG_POLICY_RESOURCE_NAME =
-      "categorized_bot_config_policy_resource";
+      "categorized-bot-config-policy-resource";
   private static final String CATEGORIZED_BOT_CONFIG_POLICY_RESOURCE_NAMESPACE =
-      "categorized_bot_config_policy_namespace";
+      "categorized-bot-config-policy-namespace";
 
   @Inject
   public CategorizedBotConfigPolicyStore(
