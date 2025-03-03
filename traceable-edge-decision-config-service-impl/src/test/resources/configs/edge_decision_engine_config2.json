@@ -1,0 +1,564 @@
+{
+  "id": "95cc7e1e-c4cc-495f-a206-60e0432ab002",
+  "name": "",
+  "version": "1",
+  "common_variables": [],
+  "decision_rules": [
+    {
+      "id": "gql_operations_rate_limit",
+      "name": "gql_operations_rate_limit",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": [
+          {
+            "url_scope": {
+              "urls": [
+                "/graphql"
+              ]
+            }
+          }
+        ]
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_ORIGINAL",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+        "rule_variables": [],
+        "attribute_projections": [],
+        "aggregate_threshold_rule": {
+          "group_by_dimensions": [
+            {
+              "name": "gql_operation",
+              "type": "FIELD_TYPE_STR",
+              "rules": [
+                {
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getParsedRequestBodyGql().getSelectionSets()"
+                    },
+                    "output_type": "FIELD_TYPE_STR"
+                  },
+                  "transformation_configs": []
+                }
+              ]
+            }
+          ],
+          "time_window": "60s",
+          "value_aggregate_threshold": {
+            "aggregation_type": "AGGREGATION_TYPE_COUNT",
+            "static_threshold": 100,
+            "disable_estimated_aggregate": false,
+            "threshold_operator": "THRESHOLD_OPERATOR_UNSPECIFIED"
+          }
+        },
+        "custom_fields": {}
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_ALERT",
+        "decorations": [],
+        "threat_type": "Graphql Operation Rate Limit",
+        "span_attributes": [],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_WAF",
+      "description": "Default rate limiting rule to be applied on gql",
+      "template_id": "graphql_rate_limit"
+    },
+    {
+      "id": "api_access_validate_fp",
+      "name": "Verify browser access",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": [
+          {
+            "match_condition_scope": {
+              "generic_match_condition": {
+                "jexl_expression": {
+                  "jexl_expression": "$s.getPath().contains('/validate-fp') || $s.getUrl().startsWith('https://appmini.tracevault.link/') || $s.getUrl().startsWith('https://app4.tracevault.link/')"
+                }
+              },
+              "negate": false
+            }
+          }
+        ]
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_ORIGINAL",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+        "rule_variables": [],
+        "attribute_projections": [],
+        "access_pattern_rule": {
+          "correlation_key": {
+            "attributes": [
+              {
+                "name": "ip_address",
+                "type": "FIELD_TYPE_STR",
+                "rules": [
+                  {
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "$s.getIpAddress()"
+                      },
+                      "output_type": "FIELD_TYPE_STR"
+                    },
+                    "transformation_configs": []
+                  }
+                ]
+              },
+              {
+                "name": "user_agent",
+                "type": "FIELD_TYPE_STR",
+                "rules": [
+                  {
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "$s.getUserAgent()"
+                      },
+                      "output_type": "FIELD_TYPE_STR"
+                    },
+                    "transformation_configs": []
+                  }
+                ]
+              }
+            ]
+          },
+          "target_request": {
+            "generic_match_condition": {
+              "jexl_expression": {
+                "jexl_expression": "!($s.getPath().equals('/validate-fp'))"
+              }
+            },
+            "negate": false
+          },
+          "pre_requests": [
+            {
+              "request_invocation_id": "validate_fp",
+              "match_condition": {
+                "generic_match_condition": {
+                  "jexl_expression": {
+                    "jexl_expression": "$s.getPath().equals('/validate-fp')"
+                  }
+                },
+                "negate": false
+              },
+              "weight": 0,
+              "median_percent": 0
+            }
+          ],
+          "time_window": "300s",
+          "check_for_any_pre_requests": true
+        }
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_ALERT",
+        "decorations": [],
+        "sampling_rate": 1,
+        "threat_type": "Browser Bypass",
+        "span_attributes": [],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_FRAUD_PROTECTION",
+      "description": ""
+    },
+    {
+      "id": "__default_client_fp_puzzle_rate_limiting_eds_rule",
+      "name": "Rate limit on invisible captcha",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": []
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_ORIGINAL",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA",
+        "rule_variables": [
+          {
+            "name": "parsed_fingerprint_payload",
+            "rules": [
+              {
+                "transformation_config": {
+                  "jexl_expression": {
+                    "jexl_expression": "traceable:parseJson($s.getFingerprintData())"
+                  },
+                  "output_type": "FIELD_TYPE_UNSPECIFIED"
+                },
+                "transformation_configs": []
+              }
+            ]
+          }
+        ],
+        "attribute_projections": [],
+        "aggregate_threshold_rule": {
+          "match_condition": {
+            "generic_match_condition": {
+              "jexl_expression": {
+                "jexl_expression": "parsed_fingerprint_payload['puzzle']['signed_token'] != null"
+              }
+            },
+            "negate": false
+          },
+          "group_by_dimensions": [
+            {
+              "name": "puzzle_signed_token",
+              "type": "FIELD_TYPE_STR",
+              "rules": [
+                {
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "parsed_fingerprint_payload['puzzle']['signed_token']"
+                    },
+                    "output_type": "FIELD_TYPE_STR"
+                  },
+                  "transformation_configs": []
+                }
+              ]
+            }
+          ],
+          "time_window": "60s",
+          "value_aggregate_threshold": {
+            "aggregation_type": "AGGREGATION_TYPE_COUNT",
+            "static_threshold": 2,
+            "disable_estimated_aggregate": false,
+            "threshold_operator": "THRESHOLD_OPERATOR_UNSPECIFIED"
+          }
+        },
+        "custom_fields": {}
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+        "decorations": [],
+        "threat_type": "Bot Risk",
+        "span_attributes": [],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_BOT_MITIGATION",
+      "description": "Default rate limiting rule to be applied on bot service for puzzle solution",
+      "template_id": "__default_client_fp_puzzle_rate_limiting_eds_rule"
+    },
+    {
+      "id": "__default__traceable_session_cookie_validation_eds_rule_copy",
+      "name": "Traceable Session Cookie Validation",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": [
+          {
+            "match_condition_scope": {
+              "generic_match_condition": {
+                "jexl_expression": {
+                  "jexl_expression": "($s.getUrl().startsWith('https://appmini.tracevault.link/') || $s.getUrl().startsWith('https://app4.tracevault.link/')) && !($s.getPath().endsWith('/user_new.php') || $s.getPath().endsWith('/login.php') || $s.getPath().endsWith('/login') || $s.getPath().endsWith('/forgot-password') || $s.getPath() == '/')"
+                }
+              },
+              "negate": false
+            }
+          },
+          {
+            "http_method_scope": {
+              "http_methods": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE"
+              ]
+            }
+          }
+        ]
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+        "rule_variables": [
+          {
+            "name": "traceable_session_cookie",
+            "rules": [
+              {
+                "transformation_config": {
+                  "jexl_expression": {
+                    "jexl_expression": "$s.getTraceableSessionCookie()"
+                  },
+                  "output_type": "FIELD_TYPE_UNSPECIFIED"
+                },
+                "transformation_configs": []
+              }
+            ]
+          }
+        ],
+        "attribute_projections": [],
+        "signature_rule": {
+          "match_condition": {
+            "generic_match_condition": {
+              "jexl_expression": {
+                "jexl_expression": "traceable_session_cookie == null || !(traceable_session_cookie.isValid()) || (traceable_session_cookie.getDecodedPayload()['state'] == null) || (!(traceable_session_cookie.getDecodedPayload()['state'].asText().equals('INVISIBLE_PASS')) && !((traceable_session_cookie.getDecodedPayload()['state'].asText().equals('VISUAL_PASS')))) || !(jwt:verifyTraceableSessionSignature(traceable_session_cookie, traceable_session_cookie.getDecodedPayload()['siteKey'].asText()))"
+              }
+            },
+            "negate": false
+          }
+        },
+        "custom_fields": {}
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_ALERT",
+        "decorations": [],
+        "threat_type": "Bot Risk",
+        "span_attributes": [
+          {
+            "span_attribute_key": {
+              "static_value": "traceableai_is_bot",
+              "output_type": "FIELD_TYPE_UNSPECIFIED"
+            },
+            "span_attribute_value": {
+              "static_value": "true",
+              "output_type": "FIELD_TYPE_UNSPECIFIED"
+            }
+          }
+        ],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_BOT_MITIGATION",
+      "description": "Default rule to be applied on EDS for all APIs, to validate that traceable-session is present and valid",
+      "template_id": "__default__traceable_session_cookie_validation_eds_rule"
+    },
+    {
+      "id": "__default__client_visitor_id_rate_limiting_eds_rule",
+      "name": "Rate limit on visitor id and URL",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": [
+          {
+            "match_condition_scope": {
+              "generic_match_condition": {
+                "jexl_expression": {
+                  "jexl_expression": "$s.getUrl().startsWith('https://appmini.tracevault.link/') || $s.getUrl().startsWith('https://app4.tracevault.link/')"
+                }
+              },
+              "negate": false
+            }
+          }
+        ]
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_ORIGINAL",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+        "rule_variables": [],
+        "attribute_projections": [],
+        "aggregate_threshold_rule": {
+          "match_condition": {
+            "negate": false
+          },
+          "group_by_dimensions": [
+            {
+              "name": "api",
+              "type": "FIELD_TYPE_STR",
+              "rules": [
+                {
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
+                    },
+                    "output_type": "FIELD_TYPE_STR"
+                  },
+                  "transformation_configs": []
+                }
+              ]
+            },
+            {
+              "name": "visitor_id",
+              "type": "FIELD_TYPE_STR",
+              "rules": [
+                {
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getTraceableSessionCookie().getDecodedPayload().get('visitor').asText()"
+                    },
+                    "output_type": "FIELD_TYPE_STR"
+                  },
+                  "transformation_configs": []
+                }
+              ]
+            }
+          ],
+          "time_window": "600s",
+          "value_aggregate_threshold": {
+            "aggregation_type": "AGGREGATION_TYPE_COUNT",
+            "static_threshold": 100,
+            "disable_estimated_aggregate": false,
+            "threshold_operator": "THRESHOLD_OPERATOR_UNSPECIFIED"
+          }
+        },
+        "custom_fields": {}
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_CAPTCHA",
+        "decorations": [],
+        "threat_type": "Bot Risk",
+        "span_attributes": [],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_BOT_MITIGATION",
+      "description": "Default rate limiting rule to be applied on EDS for all APIs carrying a certain visitor id, to be enabled for environments where Bot Protection is enabled",
+      "template_id": "__default__client_visitor_id_rate_limiting_eds_rule_template"
+    },
+    {
+      "id": "graphql_validation",
+      "name": "graphql_validation",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": [
+          {
+            "url_scope": {
+              "urls": [
+                "/graphql"
+              ]
+            }
+          }
+        ]
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_ORIGINAL",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+        "rule_variables": [
+          {
+            "name": "parsed_request_gql",
+            "rules": [
+              {
+                "transformation_config": {
+                  "jexl_expression": {
+                    "jexl_expression": "$s.getParsedRequestBodyGql()"
+                  },
+                  "output_type": "FIELD_TYPE_UNSPECIFIED"
+                },
+                "transformation_configs": []
+              }
+            ]
+          }
+        ],
+        "attribute_projections": [],
+        "signature_rule": {
+          "match_condition": {
+            "generic_match_condition": {
+              "jexl_expression": {
+                "jexl_expression": "parsed_request_gql.getNumBatches() > 10 || parsed_request_gql.getDepth() > 10 || parsed_request_gql.getNumDuplicates() > 100 || parsed_request_gql.getNumAliases() > 100 || parsed_request_gql.getQueryComplexity() > 100 || parsed_request_gql.isHasCircularReferences() || (parsed_request_gql.getSelectionSets().contains('systemHealth')) || (parsed_request_gql.getSelectionSets().contains('systemUpdate'))"
+              }
+            },
+            "negate": false
+          }
+        },
+        "custom_fields": {}
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_ALERT",
+        "decorations": [],
+        "threat_type": "Graphql Validation",
+        "span_attributes": [
+          {
+            "span_attribute_key": {
+              "static_value": {
+                "string_value": "traceableai-gql-validation-error"
+              },
+              "output_type": "FIELD_TYPE_UNSPECIFIED"
+            },
+            "span_attribute_value": {
+              "jexl_expression": {
+                "jexl_expression": "$s.getParsedRequestBodyGql().toSummaryString()"
+              },
+              "output_type": "FIELD_TYPE_UNSPECIFIED"
+            }
+          }
+        ],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_WAF",
+      "description": "Default rule to be applied for graphql",
+      "template_id": "Graphql validation rule"
+    },
+    {
+      "id": "__default__client_fp_rate_limiting_eds_rule",
+      "name": "Rate limit on captcha requests",
+      "version": "0",
+      "rule_scope": {
+        "scope_conditions": []
+      },
+      "rule_category": "EDGE_DECISION_RULE_CATEGORY_ORIGINAL",
+      "rule_status": {
+        "disabled": false,
+        "internal": false
+      },
+      "rule_definition": {
+        "edge_input_kind": "EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA",
+        "rule_variables": [],
+        "attribute_projections": [],
+        "aggregate_threshold_rule": {
+          "match_condition": {
+            "negate": false
+          },
+          "group_by_dimensions": [
+            {
+              "name": "ip_address",
+              "type": "FIELD_TYPE_STR",
+              "rules": [
+                {
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.ip_address"
+                    },
+                    "output_type": "FIELD_TYPE_STR"
+                  },
+                  "transformation_configs": []
+                }
+              ]
+            }
+          ],
+          "time_window": "600s",
+          "value_aggregate_threshold": {
+            "aggregation_type": "AGGREGATION_TYPE_COUNT",
+            "static_threshold": 100,
+            "disable_estimated_aggregate": false,
+            "threshold_operator": "THRESHOLD_OPERATOR_UNSPECIFIED"
+          }
+        },
+        "custom_fields": {}
+      },
+      "rule_decision": {
+        "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+        "decorations": [],
+        "threat_type": "Bot Risk",
+        "span_attributes": [],
+        "edge_decision_targets": [],
+        "rule_info_decorations": []
+      },
+      "policy_kind": "POLICY_KIND_BOT_MITIGATION",
+      "description": "Default rate limiting rule to be applied on bot service for fp upload",
+      "template_id": "__default__client_fp_rate_limiting_eds_rule"
+    }
+  ],
+  "decision_specs": [],
+  "disabled": false,
+  "disabled_rule_categories": []
+}

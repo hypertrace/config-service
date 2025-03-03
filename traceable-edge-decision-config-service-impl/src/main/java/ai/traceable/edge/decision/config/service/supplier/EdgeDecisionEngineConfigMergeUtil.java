@@ -4,11 +4,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMa
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
-import com.google.protobuf.ListValue;
-import com.google.protobuf.Struct;
-import com.google.protobuf.Value;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -43,66 +39,6 @@ class EdgeDecisionEngineConfigMergeUtil {
     return merged;
   }
 
-  static Value merge(Value value1, Value value2) {
-    if (value1 == null || value1.getKindCase() == Value.KindCase.NULL_VALUE) {
-      return value2;
-    }
-    if (value2 == null || value2.getKindCase() == Value.KindCase.NULL_VALUE) {
-      return value1;
-    }
-
-    switch (value1.getKindCase()) {
-      case STRUCT_VALUE:
-        if (value2.getKindCase() == Value.KindCase.STRUCT_VALUE) {
-          return mergeStructs(value1.getStructValue(), value2.getStructValue());
-        }
-        break;
-
-      case LIST_VALUE:
-        if (value2.getKindCase() == Value.KindCase.LIST_VALUE) {
-          return mergeLists(value1.getListValue(), value2.getListValue());
-        }
-        break;
-
-      case NUMBER_VALUE:
-      case STRING_VALUE:
-      case BOOL_VALUE:
-        // For primitives, prefer the second value
-        return value2;
-
-      default:
-        break;
-    }
-
-    // Default: prefer value2 if types are incompatible
-    return value2;
-  }
-
-  static Value mergeStructs(Struct struct1, Struct struct2) {
-    Map<String, Value> mergedMap = new HashMap<>(struct1.getFieldsMap());
-
-    struct2
-        .getFieldsMap()
-        .forEach(
-            (key, value2) -> {
-              Value value1 = mergedMap.get(key);
-              mergedMap.put(key, merge(value1, value2));
-            });
-
-    return Value.newBuilder()
-        .setStructValue(Struct.newBuilder().putAllFields(mergedMap).build())
-        .build();
-  }
-
-  static Value mergeLists(ListValue list1, ListValue list2) {
-    List<Value> mergedList = new ArrayList<>(list1.getValuesList());
-    mergedList.addAll(list2.getValuesList());
-
-    return Value.newBuilder()
-        .setListValue(ListValue.newBuilder().addAllValues(mergedList).build())
-        .build();
-  }
-
   static EdgeDecisionEngineConfig merge(
       EdgeDecisionEngineConfig config1, EdgeDecisionEngineConfig config2) {
     if (config1 == null || config1.getDisabled()) {
@@ -131,7 +67,8 @@ class EdgeDecisionEngineConfigMergeUtil {
             config2.getDecisionSpecsList(),
             EdgeDecisionSpec::getId));
     merged.setDisabled(false);
-    merged.setCustomConfig(merge(config1.getCustomConfig(), config2.getCustomConfig()));
+    merged.setCustomConfig(
+        config1.getCustomConfig().toBuilder().mergeFrom(config2.getCustomConfig()).build());
     return merged.build();
   }
 }
