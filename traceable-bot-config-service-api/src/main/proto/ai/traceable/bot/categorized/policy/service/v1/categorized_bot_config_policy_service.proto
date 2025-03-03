@@ -28,7 +28,7 @@ message UpdateCategorizedBotConfigPolicyResponse {
 }
 
 message GetCategorizedBotConfigPoliciesRequest {
-  CategorizedBotConfigPolicyFilter categorized_bot_config_policy_filter = 1;
+  optional CategorizedBotConfigPolicyFilter categorized_bot_config_policy_filter = 1;
 }
 message GetCategorizedBotConfigPoliciesResponse {
   repeated CategorizedBotConfigPolicy categorized_bot_config_policies = 1;

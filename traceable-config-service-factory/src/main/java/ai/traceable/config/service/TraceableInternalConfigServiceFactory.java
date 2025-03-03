@@ -11,6 +11,8 @@ import ai.traceable.ast.hooks.config.service.AstHooksConfigServiceFactory;
 import ai.traceable.ast.scan.profile.config.service.AstScanProfileConfigServiceFactory;
 import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFactory;
 import ai.traceable.azure.devops.integration.config.service.AzureDevopsIntegrationConfigServiceFactory;
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceFactory;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.dashboard.config.service.DashboardConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
@@ -65,6 +67,7 @@ import org.hypertrace.core.serviceframework.grpc.GrpcServiceContainerEnvironment
 
 @RequiredArgsConstructor
 public class TraceableInternalConfigServiceFactory implements GrpcPlatformServiceFactory {
+
   @Nonnull SharedConfigServiceProvidersFactory providersFactory;
 
   private final ConfigServiceFactory hypertraceConfigServiceFactory = new ConfigServiceFactory();
@@ -310,6 +313,10 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getChangeEventGenerator())),
             wrap(
                 TraceablePolicyConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(CategorizedBotConfigServiceFactory.build(providers.getLocalChannel())),
+            wrap(
+                CategorizedBotConfigPolicyServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 GithubIntegrationConfigServiceFactory.build(

@@ -68,6 +68,7 @@ dependencies {
   implementation(projects.vulnerabilityConfigServiceImpl)
   implementation(projects.servicenowItsmIntegrationConfigServiceImpl)
   implementation(projects.azureDevopsIntegrationConfigServiceImpl)
+  implementation(projects.traceableBotConfigServiceImpl)
   implementation(projects.traceableEdgeBotConfigServiceImpl)
   implementation(projects.traceableEdgeConfigServiceImpl)
   implementation(projects.traceableEdgeDecisionConfigServiceImpl)

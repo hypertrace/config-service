@@ -21,4 +21,5 @@ message CategorizedBotRequestFilter {
   // if none specified all traceable-categorized (pre defined) bots to be sent
   repeated string category = 1;
   repeated string bot_ids = 2;
+  repeated string sub_category = 3;
 }
