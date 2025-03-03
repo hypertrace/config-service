@@ -87,6 +87,7 @@ crs_941310 :: US-ASCII Malformed Encoding XSS Filter - Attack :: ANOMALY_SEVERIT
 crs_941350 :: UTF-7 Encoding IE XSS - Attack :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A7' , 'OWASP_2021:A3' , 'CWE:79' , 'OWASP_API_2019:API8' ]
 crs_941360 :: JSFuck / Hieroglyphy obfuscation :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'OWASP_2017:A7' , 'OWASP_2021:A3' , 'CWE:79' , 'OWASP_API_2019:API8' ]
 crs_941370 :: JavaScript global variable :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'OWASP_2017:A7' , 'OWASP_2021:A3' , 'CWE:79' , 'OWASP_API_2019:API8' ]
+crs_941420 :: IE XSS Filters - Attack (A href with a link) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A7' , 'OWASP_2021:A3' , 'CWE:79' , 'OWASP_API_2019:API8' ]
 crs_9420190 :: DB code execution and information gathering attempts :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:89' ]
 crs_9420230 :: Conditional SQL injection attempts (T230) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:89' ]
 crs_9420290 :: Basic MongoDB SQL injection attempts (Relaxed) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:89' ]

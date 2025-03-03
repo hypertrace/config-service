@@ -32,3 +32,4 @@ crs_942350 :: MySQL UDF injection and other data/structure manipulation attempts
 crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No Referer
 crs_942360 :: Concatenated basic SQL injection and SQLLFI attempts (360)
 crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)
+crs_941420 :: IE XSS Filters - Attack (A href with a link)

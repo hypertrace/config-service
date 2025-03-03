@@ -918,6 +918,34 @@
           - JavaScript Security Best Practices - https://developer.mozilla.org/en-US/docs/Web/Security
           - Prototype Pollution Prevention - https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Prototype_Pollution_Prevention_Cheat_Sheet.md
 
+    - ruleId: crs_941420
+      eventDetails:
+        description: |
+          A pattern indicative of an XSS attack targeting Internet Explorer's XSS filters is detected. Key aspects include:
+          - Injection of malicious payloads via `<a href>` tags
+          - Bypassing XSS filters through crafted URLs
+          - Exploitation of legacy XSS filtering mechanisms
+          - URL encoding and obfuscation techniques
+          - Execution of malicious scripts via hyperlinks
+        mitigation: |
+          Implement robust protection against XSS filter attacks:
+          - Disable legacy XSS filters in Internet Explorer
+          - Implement strict Content Security Policy (CSP)
+          - Sanitize and validate all user-supplied links
+          - Encode output to prevent script execution
+          - Deploy modern security frameworks to mitigate XSS
+        impact: |
+          XSS filter attacks can lead to:
+          - Execution of arbitrary JavaScript
+          - Session hijacking and credential theft
+          - Defacement and malicious redirection
+          - Exfiltration of sensitive user data
+          - Bypassing of browser security mechanisms
+        references: |
+          - CWE-116: Improper Encoding or Escaping of Output - https://cwe.mitre.org/data/definitions/116.html
+          - MITRE ATT&CK - T1566.001: Spearphishing via Link - https://attack.mitre.org/techniques/T1566/001/
+          - OWASP XSS Prevention Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/XSS_Prevention_Cheat_Sheet.html
+          - Microsoft Security Advisory on XSS Filters - https://docs.microsoft.com/en-us/security-updates/securitybulletins
 
 - ruleId: crs_943
   ruleName: Session Fixation
