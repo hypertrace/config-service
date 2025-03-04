@@ -2685,6 +2685,236 @@
           - https://nvd.nist.gov/vuln/detail/CVE-2024-4577
           - https://www.cve.org/CVERecord?id=CVE-2024-4577
 
+    - ruleId: crs_933100
+      eventDetails:
+        description: |
+          A pattern indicative of PHP Injection via open tags detected. Key aspects include:
+          - Direct usage of `<?php` or `<?=` in user-supplied input
+          - Attempt to inject and execute arbitrary PHP code
+          - Exploitation of improperly filtered input fields
+          - Manipulation of dynamic PHP execution contexts
+        mitigation: |
+          Implement robust protection against PHP injection:
+          - Disallow raw `<?php` and `<?=` in user input
+          - Use strict input validation and escaping mechanisms
+          - Disable `allow_url_include` and `allow_url_fopen`
+          - Apply Web Application Firewalls (WAF) with PHP injection rules
+        impact: |
+          PHP open tag injection can lead to:
+          - Unauthorized execution of PHP code
+          - Server-side command execution
+          - Application takeover via injected scripts
+        references: |
+          - CWE-94: Improper Control of Code Injection - https://cwe.mitre.org/data/definitions/94.html
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+          - PHP Secure Coding Guidelines - https://www.php.net/manual/en/security.php
+
+    - ruleId: crs_933110
+      eventDetails:
+        description: |
+          PHP script file upload attack detected. Key aspects include:
+          - Uploading `.php`, `.phtml`, `.phar` files for remote execution
+          - Exploiting weak file upload validation mechanisms
+          - Bypassing content type restrictions using crafted payloads
+          - Gaining shell access via uploaded malicious scripts
+        mitigation: |
+          Prevent PHP script file upload attacks by:
+          - Restricting allowed file types and validating file extensions
+          - Storing uploaded files outside web-accessible directories
+          - Disabling execution permissions on uploaded files
+          - Using strong MIME-type validation
+        impact: |
+          PHP script uploads can lead to:
+          - Remote Code Execution (RCE)
+          - Unauthorized access and privilege escalation
+          - Web server and database compromise
+        references: |
+          - CWE-434: Unrestricted File Upload - https://cwe.mitre.org/data/definitions/434.html
+          - OWASP File Upload Security Guide - https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload
+          - PHP File Upload Security - https://www.php.net/manual/en/features.file-upload.php
+
+    - ruleId: crs_933120
+      eventDetails:
+        description: |
+          PHP configuration directive injection detected. Key aspects include:
+          - Manipulation of `php.ini` directives via user input
+          - Exploiting `ini_set()`, `.user.ini`, or `.htaccess` overrides
+          - Altering settings like `display_errors`, `safe_mode`, and `disable_functions`
+        mitigation: |
+          Protect against PHP configuration injection by:
+          - Restricting user-controlled changes to PHP configurations
+          - Disabling `ini_set()` for sensitive directives
+          - Using hardened PHP configurations with restricted overrides
+        impact: |
+          PHP configuration manipulation can lead to:
+          - Exposure of sensitive error messages
+          - Disabling of security restrictions
+          - Unrestricted execution of dangerous PHP functions
+        references: |
+          - CWE-15: External Control of System Configuration - https://cwe.mitre.org/data/definitions/15.html
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+          - PHP INI Configuration Guide - https://www.php.net/manual/en/configuration.php
+
+    - ruleId: crs_933130
+      eventDetails:
+        description: |
+          PHP variable injection attack detected. Key aspects include:
+          - Exploiting superglobals like `$_GET`, `$_POST`, and `$_REQUEST`
+          - Manipulating dynamic variable names using `${}` syntax
+          - Injecting values into unvalidated global variables
+        mitigation: |
+          Prevent PHP variable injection by:
+          - Avoiding use of dynamic variable names
+          - Disabling `register_globals`
+          - Validating and sanitizing all user input
+        impact: |
+          PHP variable injection can lead to:
+          - Arbitrary code execution
+          - Manipulation of application logic
+          - Unauthorized data modification
+        references: |
+          - CWE-471: Modification of Assumed-Immutable Data - https://cwe.mitre.org/data/definitions/471.html
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+          - PHP Variable Scope - https://www.php.net/manual/en/language.variables.scope.php
+
+    - ruleId: crs_933140
+      eventDetails:
+        description: |
+          PHP I/O stream attack detected. Key aspects include:
+          - Usage of `php://input`, `php://filter`, and `php://stdin`
+          - Exploiting input/output wrappers for file reads and command execution
+        mitigation: |
+          Protect against PHP I/O stream abuse by:
+          - Disabling PHP wrappers if not needed
+          - Validating and sanitizing user input before usage
+        impact: |
+          PHP I/O stream exploitation can lead to:
+          - Arbitrary file reads and modification
+          - Remote execution of attacker-controlled payloads
+        references: |
+          - CWE-200: Exposure of Sensitive Information - https://cwe.mitre.org/data/definitions/200.html
+          - PHP Wrappers Guide - https://www.php.net/manual/en/wrappers.php
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+
+    - ruleId: crs_933200
+      eventDetails:
+        description: |
+          PHP wrapper scheme attack detected. Key aspects include:
+          - Abuse of `data://`, `file://`, `zip://`, and `phar://` schemes
+          - Remote file inclusion via insecure wrapper settings
+        mitigation: |
+          Protect against wrapper scheme abuse by:
+          - Disabling `allow_url_fopen`
+          - Restricting file access to trusted locations
+        impact: |
+          Wrapper scheme exploitation can lead to:
+          - Remote Code Execution (RCE)
+          - Unauthorized file access and inclusion
+        references: |
+          - CWE-98: Improper Control of Filename for Include/Require Statements - https://cwe.mitre.org/data/definitions/98.html
+          - PHP Wrappers Guide - https://www.php.net/manual/en/wrappers.php
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+
+    - ruleId: crs_933150
+      eventDetails:
+        description: |
+          PHP high-risk function name attack detected. Key aspects include:
+          - Detection of dangerous PHP function names in input
+          - Potential execution of `exec()`, `system()`, `eval()`, `shell_exec()`
+        mitigation: |
+          Protect against high-risk PHP function usage by:
+          - Disabling `eval()` and command execution functions if not needed
+          - Using allowlist-based function execution
+        impact: |
+          High-risk PHP function usage can lead to:
+          - Code execution vulnerabilities
+          - System compromise via injected commands
+        references: |
+          - CWE-94: Improper Control of Code Injection - https://cwe.mitre.org/data/definitions/94.html
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+          - PHP Security Functions - https://www.php.net/manual/en/security.functions.php
+
+    - ruleId: crs_933160
+      eventDetails:
+        description: |
+          PHP high-risk function call detected. Key aspects include:
+          - Usage of potentially dangerous functions like `exec()`, `system()`, `eval()`, `shell_exec()`, `passthru()`
+          - Indirect function invocation leading to remote code execution (RCE)
+          - Exploitation of user-controlled input passed to critical functions
+        mitigation: |
+          Protect against high-risk function calls by:
+          - Avoiding use of `eval()` and command execution functions
+          - Using safer alternatives for executing system commands
+          - Employing allowlist-based function execution
+        impact: |
+          High-risk function calls can lead to:
+          - Arbitrary code execution
+          - Server and system compromise
+        references: |
+          - CWE-94: Improper Control of Code Injection - https://cwe.mitre.org/data/definitions/94.html
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+          - PHP Security Functions - https://www.php.net/manual/en/security.functions.php
+
+    - ruleId: crs_933170
+      eventDetails:
+        description: |
+          Serialized object injection detected. Key aspects include:
+          - Manipulation of serialized PHP objects
+          - Exploitation of `unserialize()` to execute arbitrary code
+          - Abuse of magic methods like `__wakeup()`, `__destruct()`, and `__toString()`
+        mitigation: |
+          Prevent serialized object injection by:
+          - Avoiding `unserialize()` on untrusted input
+          - Using JSON serialization instead of PHP serialization
+          - Implementing strong class validation
+        impact: |
+          Serialized object injection can lead to:
+          - Remote Code Execution (RCE)
+          - Arbitrary function calls and privilege escalation
+        references: |
+          - CWE-502: Deserialization of Untrusted Data - https://cwe.mitre.org/data/definitions/502.html
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+          - PHP Serialization Security - https://www.php.net/manual/en/security.serialization.php
+
+    - ruleId: crs_933180
+      eventDetails:
+        description: |
+          Variable function call attack detected. Key aspects include:
+          - User-controlled input used to dynamically invoke PHP functions
+          - Abuse of dynamic function execution via `$variable()`
+          - Indirect execution of arbitrary code
+        mitigation: |
+          Protect against variable function calls by:
+          - Disabling dynamic function execution from user input
+          - Using allowlist-based function execution
+          - Validating function names before calling
+        impact: |
+          Variable function calls can lead to:
+          - Arbitrary function execution
+          - Code injection vulnerabilities
+        references: |
+          - CWE-94: Improper Control of Code Injection - https://cwe.mitre.org/data/definitions/94.html
+          - PHP Variable Functions - https://www.php.net/manual/en/functions.variable-functions.php
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
+
+    - ruleId: crs_933210
+      eventDetails:
+        description: |
+          Variable function call attack detected. Key aspects include:
+          - User-controlled function execution using `$func()`
+          - Exploitation of dynamic function resolution
+        mitigation: |
+          Prevent variable function call attacks by:
+          - Validating function names before execution
+          - Using static function mapping instead of dynamic calls
+        impact: |
+          Variable function execution can lead to:
+          - Arbitrary code execution
+          - Application compromise via function abuse
+        references: |
+          - CWE-94: Improper Control of Code Injection - https://cwe.mitre.org/data/definitions/94.html
+          - PHP Variable Functions - https://www.php.net/manual/en/functions.variable-functions.php
+          - OWASP PHP Security Guide - https://cheatsheetseries.owasp.org/cheatsheets/PHP_Security_Cheat_Sheet.html
 
 - ruleId: crs_932
   ruleName: Remote Code Execution

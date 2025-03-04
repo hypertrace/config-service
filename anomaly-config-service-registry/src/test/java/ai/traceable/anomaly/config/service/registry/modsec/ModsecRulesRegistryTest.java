@@ -240,13 +240,15 @@ public class ModsecRulesRegistryTest {
     assertEquals(expectedIdMatches.size(), idMatches.size());
     idMatches.forEach(id -> assertTrue(expectedIdMatches.contains(id)));
 
-    // check for no duplicate names accross both files. Normal and Test.
+    // check for no duplicate names across both files. Normal and Test.
     Set<String> subRuleNames = new HashSet<>();
     anomalyRuleInfos.values().stream()
         .flatMap(rule -> rule.getSubRuleInfosList().stream())
         .forEach(
             anomalySubRuleInfo -> {
-              assertFalse(subRuleNames.contains(anomalySubRuleInfo.getRuleName()));
+              assertFalse(
+                  subRuleNames.contains(anomalySubRuleInfo.getRuleName()),
+                  "Duplicate rule message detected - Rule ID: " + anomalySubRuleInfo.getRuleId());
               subRuleNames.add(anomalySubRuleInfo.getRuleName());
             });
 

@@ -33,3 +33,7 @@ crs_943120 :: Possible Session Fixation Attack: SessionID Parameter Name with No
 crs_942360 :: Concatenated basic SQL injection and SQLLFI attempts (360)
 crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)
 crs_941420 :: IE XSS Filters - Attack (A href with a link)
+crs_933100 :: PHP Injection Attack: PHP Open Tag Found
+crs_933170 :: PHP Injection Attack: Serialized Object Injection
+crs_933180 :: PHP Injection Attack: Variable Function Call Found (180)
+crs_933200 :: PHP Injection Attack: Wrapper scheme detected
