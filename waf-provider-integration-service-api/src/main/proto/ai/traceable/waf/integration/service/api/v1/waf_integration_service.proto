@@ -76,5 +76,6 @@ message GetWafIntegrationsFilter {
     WAF_PROVIDER_TYPE_F5 = 6;
     WAF_PROVIDER_TYPE_AKAMAI = 7;
     WAF_PROVIDER_TYPE_FORTINET = 8;
+    WAF_PROVIDER_TYPE_BARRACUDA = 9;
   }
 }
