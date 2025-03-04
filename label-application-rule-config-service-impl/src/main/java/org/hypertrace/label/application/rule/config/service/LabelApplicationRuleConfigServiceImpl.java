@@ -164,8 +164,9 @@ public class LabelApplicationRuleConfigServiceImpl
       if (customRuleDeleted || systemLabelApplicationRule.isPresent()) {
         responseObserver.onNext(DeleteLabelApplicationRuleResponse.getDefaultInstance());
         responseObserver.onCompleted();
+      } else {
+        throw Status.NOT_FOUND.asRuntimeException();
       }
-      throw Status.NOT_FOUND.asRuntimeException();
     } catch (Exception e) {
       responseObserver.onError(e);
     }
