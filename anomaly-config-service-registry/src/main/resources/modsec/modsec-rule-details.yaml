@@ -1468,6 +1468,38 @@
           - https://capec.mitre.org/data/definitions/52.html
           - https://owasp.org/www-community/attacks/Embedding_Null_Code
 
+    - ruleId: crs_9210330
+      eventDetails:
+        description: |
+          A pattern indicative of Suspicious URL Evasion Attempt is detected.
+          - This attack involves encoding or obfuscating URLs to bypass security controls.
+          - Attackers manipulate URLs to evade filtering mechanisms.
+          - Common evasion techniques include:
+            - URL encoding (%2F, %3F, etc.)
+            - Double encoding
+            - Case manipulation
+            - Use of special characters or non-standard encodings
+          - These techniques aim to circumvent security policies and access restricted resources.
+
+        mitigation: |
+          - Strict URL Decoding: Normalize and decode URLs before processing.
+          - Input Sanitization: Reject malformed or overly encoded URLs.
+          - Strong Filtering Rules: Implement security rules to detect evasive patterns.
+          - Logging and Monitoring: Track and analyze access logs for suspicious behavior.
+          - Web Application Firewall (WAF): Use WAF rules to detect and block obfuscated URLs.
+          - Updated Security Policies: Ensure security configurations are up to date.
+
+        impact: |
+          - Security Filter Bypass: Circumvention of security checks.
+          - Unauthorized Access: Gaining access to restricted resources.
+          - Phishing and Malware Delivery: Concealing malicious URLs.
+          - Application Misuse: Exploiting encoding weaknesses to manipulate web application behavior.
+          - Data Exfiltration: Extracting sensitive data through obfuscated requests.
+
+        references: |
+          - https://owasp.org/www-community/attacks/URL_Encoding
+          - https://cwe.mitre.org/data/definitions/177.html
+          - https://capec.mitre.org/data/definitions/170.html
 
     - ruleId: crs_9210400
       eventDetails:

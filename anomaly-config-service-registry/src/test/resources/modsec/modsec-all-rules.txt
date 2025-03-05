@@ -16,6 +16,7 @@ crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion) :: ANOMA
 crs_9210150 :: HTTP Header Injection Attack via payload (CR/LF) (T150) :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:644' , 'OWASP_API_2019:API8' ]
 crs_9210300 :: URL Encoding Abuse Attack Attempt :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:177' , 'OWASP_API_2019:API8' ]
 crs_9210305 :: Null Byte Injection :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'OWASP_2017:A5' , 'OWASP_2021:A1' , 'CWE:22' , 'OWASP_API_2019:API8' ]
+crs_9210330 :: Suspicious URL Evasion Attempt: Possible encoding or obfuscation :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'CWE:601' , 'OWASP_API_2019:API8' ]
 crs_921120 :: HTTP Response Splitting Attack (120) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'CWE:113' , 'OWASP_API_2019:API8' ]
 crs_921130 :: HTTP Response Splitting Attack (130) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'CWE:113' , 'OWASP_API_2019:API8' ]
 crs_921140 :: HTTP Header Injection Attack via headers :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'CWE:644' , 'OWASP_API_2019:API8' ]

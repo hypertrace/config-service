@@ -37,3 +37,4 @@ crs_933100 :: PHP Injection Attack: PHP Open Tag Found
 crs_933170 :: PHP Injection Attack: Serialized Object Injection
 crs_933180 :: PHP Injection Attack: Variable Function Call Found (180)
 crs_933200 :: PHP Injection Attack: Wrapper scheme detected
+crs_9210330 :: Suspicious URL Evasion Attempt: Possible encoding or obfuscation
