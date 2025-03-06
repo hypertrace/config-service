@@ -320,6 +320,7 @@ message MissingParamAnomalyConfig {
   StringList thresholds_families_excluded = 5;
   StringList severe_regex_strings = 6;
   StringList auth_regex_strings = 7;
+  StringList csrf_regex_strings = 8;
 }
 
 message UnknownParamAnomalyConfig {
