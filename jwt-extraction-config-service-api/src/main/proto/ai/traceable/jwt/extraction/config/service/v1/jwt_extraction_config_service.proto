@@ -11,4 +11,5 @@ service JwtExtractionConfigService {
   rpc CreateJwtExtractionRule(CreateJwtExtractionRuleRequest) returns (CreateJwtExtractionRuleResponse) {}
   rpc UpdateJwtExtractionRule(UpdateJwtExtractionRuleRequest) returns (UpdateJwtExtractionRuleResponse) {}
   rpc DeleteJwtExtractionRule(DeleteJwtExtractionRuleRequest) returns (DeleteJwtExtractionRuleResponse) {}
+  rpc GetJwtExtractionEdgeDecisionRules(GetJwtExtractionEdgeDecisionRulesRequest) returns (GetJwtExtractionEdgeDecisionRulesResponse) {}
 }

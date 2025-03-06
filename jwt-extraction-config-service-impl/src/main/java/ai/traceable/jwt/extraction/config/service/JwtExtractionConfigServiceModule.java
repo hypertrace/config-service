@@ -1,5 +1,6 @@
 package ai.traceable.jwt.extraction.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -15,12 +16,17 @@ class JwtExtractionConfigServiceModule extends AbstractModule {
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final Config config;
+  private final FeatureCachingClient featureCachingClient;
 
   JwtExtractionConfigServiceModule(
-      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator, Config config) {
+      Channel channel,
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      Config config,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.config = config;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -30,6 +36,7 @@ class JwtExtractionConfigServiceModule extends AbstractModule {
     bind(DefaultJwtExtractionRuleConfig.class)
         .toInstance(
             new DefaultJwtExtractionRuleConfig(config.getConfig(JWT_EXTRACTION_CONFIG_KEY_PATH)));
+    bind(FeatureCachingClient.class).toInstance(featureCachingClient);
   }
 
   @Provides

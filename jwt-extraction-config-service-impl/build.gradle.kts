@@ -22,6 +22,7 @@ dependencies {
   implementation(commonLibs.guava)
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
+  implementation(projects.featureCachingClient)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

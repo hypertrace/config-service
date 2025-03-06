@@ -6,6 +6,7 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateReques
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.jwt.extraction.config.service.v1.CreateJwtExtractionRuleRequest;
 import ai.traceable.jwt.extraction.config.service.v1.DeleteJwtExtractionRuleRequest;
+import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionEdgeDecisionRulesRequest;
 import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesRequest;
 import ai.traceable.jwt.extraction.config.service.v1.JwtLocation;
 import ai.traceable.jwt.extraction.config.service.v1.JwtProcessingInstruction;
@@ -25,6 +26,11 @@ class JwtExtractionConfigRequestValidator {
   private final JwtExtractionRuleManager ruleManager;
 
   void validateOrThrow(RequestContext requestContext, GetJwtExtractionRulesRequest request) {
+    validateRequestContextOrThrow(requestContext);
+  }
+
+  void validateOrThrow(
+      RequestContext requestContext, GetJwtExtractionEdgeDecisionRulesRequest request) {
     validateRequestContextOrThrow(requestContext);
   }
 

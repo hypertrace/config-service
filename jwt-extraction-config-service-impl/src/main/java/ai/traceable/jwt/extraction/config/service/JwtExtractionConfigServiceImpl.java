@@ -1,9 +1,14 @@
 package ai.traceable.jwt.extraction.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.jwt.extraction.config.service.converter.JwtExtractionEdgeDecisionConverter;
 import ai.traceable.jwt.extraction.config.service.v1.CreateJwtExtractionRuleRequest;
 import ai.traceable.jwt.extraction.config.service.v1.CreateJwtExtractionRuleResponse;
 import ai.traceable.jwt.extraction.config.service.v1.DeleteJwtExtractionRuleRequest;
 import ai.traceable.jwt.extraction.config.service.v1.DeleteJwtExtractionRuleResponse;
+import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionEdgeDecisionRulesRequest;
+import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionEdgeDecisionRulesResponse;
 import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesRequest;
 import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesResponse;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceImplBase;
@@ -22,6 +27,8 @@ class JwtExtractionConfigServiceImpl extends JwtExtractionConfigServiceImplBase 
   private final JwtExtractionConfigRequestValidator validator;
   private final JwtExtractionRuleManager ruleManager;
   private final JwtExtractionConfigRuleBuilder ruleBuilder;
+  private final FeatureCachingClient featureCachingClient;
+  private final JwtExtractionEdgeDecisionConverter converter;
 
   @Override
   public void getJwtExtractionRules(
@@ -107,6 +114,31 @@ class JwtExtractionConfigServiceImpl extends JwtExtractionConfigServiceImplBase 
               requestContext, request),
           throwable);
       responseObserver.onError(throwable);
+    }
+  }
+
+  @Override
+  public void getJwtExtractionEdgeDecisionRules(
+      GetJwtExtractionEdgeDecisionRulesRequest request,
+      StreamObserver<GetJwtExtractionEdgeDecisionRulesResponse> responseObserver) {
+    try {
+      RequestContext context = RequestContext.CURRENT.get();
+      validator.validateOrThrow(context, request);
+
+      EdgeDecisionEngineConfig edgeDecisionEngineConfig =
+          featureCachingClient.isEdgeDecisionEnabledForTenant(context)
+              ? converter.convert(context, ruleManager.getAll(context, request.getFilter()))
+              : EdgeDecisionEngineConfig.getDefaultInstance();
+      GetJwtExtractionEdgeDecisionRulesResponse response =
+          GetJwtExtractionEdgeDecisionRulesResponse.newBuilder()
+              .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
+              .build();
+
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
     }
   }
 }

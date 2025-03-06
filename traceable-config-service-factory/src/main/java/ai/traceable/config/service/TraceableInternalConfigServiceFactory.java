@@ -236,7 +236,8 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 JwtExtractionConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getChangeEventGenerator(),
-                    providers.getConfig())),
+                    providers.getConfig(),
+                    providers.getFeatureCachingClient())),
             wrap(
                 AstScanProfileConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getConfig())),

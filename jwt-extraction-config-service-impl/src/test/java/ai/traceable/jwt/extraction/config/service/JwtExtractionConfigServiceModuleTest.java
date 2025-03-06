@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import io.grpc.Channel;
@@ -19,6 +20,7 @@ class JwtExtractionConfigServiceModuleTest {
   @Mock ConfigChangeEventGenerator mockChangeEventGenerator;
   @Mock Channel mockChannel;
   @Mock Config mockConfig;
+  @Mock FeatureCachingClient mockFeatureCachingClient;
 
   @Test
   void testResolveBindings() {
@@ -27,7 +29,10 @@ class JwtExtractionConfigServiceModuleTest {
         () ->
             Guice.createInjector(
                     new JwtExtractionConfigServiceModule(
-                        mockChannel, mockChangeEventGenerator, mockConfig))
+                        mockChannel,
+                        mockChangeEventGenerator,
+                        mockConfig,
+                        mockFeatureCachingClient))
                 .getAllBindings());
   }
 }

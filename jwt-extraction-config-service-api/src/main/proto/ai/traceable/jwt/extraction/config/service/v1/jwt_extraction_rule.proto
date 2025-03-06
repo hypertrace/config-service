@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.jwt.extraction.config.service.v1;
 
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
+
 option java_multiple_files = true;
 
 message JwtExtractionRuleScope {
@@ -142,3 +144,11 @@ message DeleteJwtExtractionRuleRequest {
 }
 
 message DeleteJwtExtractionRuleResponse {}
+
+message GetJwtExtractionEdgeDecisionRulesRequest {
+  JwtExtractionRuleFilter filter = 1;
+}
+
+message GetJwtExtractionEdgeDecisionRulesResponse {
+  ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+}

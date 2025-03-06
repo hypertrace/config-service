@@ -5,7 +5,9 @@ import static ai.traceable.jwt.extraction.config.service.DefaultJwtExtractionRul
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.jwt.extraction.config.service.converter.JwtExtractionEdgeDecisionConverter;
 import ai.traceable.jwt.extraction.config.service.v1.CreateJwtExtractionRuleRequest;
 import ai.traceable.jwt.extraction.config.service.v1.DeleteJwtExtractionRuleRequest;
 import ai.traceable.jwt.extraction.config.service.v1.GetJwtExtractionRulesRequest;
@@ -38,6 +40,7 @@ class JwtExtractionConfigServiceImplTest {
   @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
   @Mock JwtExtractionConfigRequestValidator mockValidator;
   @Mock UuidGenerator mockUuidGenerator;
+  @Mock FeatureCachingClient mockFeatureCachingClient;
 
   JwtExtractionConfigServiceBlockingStub stub;
 
@@ -138,7 +141,9 @@ class JwtExtractionConfigServiceImplTest {
                     new DeletedDefaultJwtExtractionRuleStore(
                         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel()),
                         mockConfigChangeEventGenerator)),
-                new JwtExtractionConfigRuleBuilder(mockUuidGenerator)))
+                new JwtExtractionConfigRuleBuilder(mockUuidGenerator),
+                mockFeatureCachingClient,
+                new JwtExtractionEdgeDecisionConverter()))
         .start();
     stub = JwtExtractionConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
   }
