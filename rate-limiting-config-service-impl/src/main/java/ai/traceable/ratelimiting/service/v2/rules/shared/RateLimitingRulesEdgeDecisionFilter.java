@@ -38,6 +38,15 @@ public class RateLimitingRulesEdgeDecisionFilter {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  // Rules that can be converted to edge decision rules
+  public static List<RateLimitingRule> getConvertibleRules(List<RateLimitingRule> rules) {
+    return rules.stream()
+        .filter(RateLimitingRulesEdgeDecisionFilter::isCategorySupported)
+        .map(RateLimitingRulesEdgeDecisionFilter::getConvertibleRule)
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   private static Optional<RateLimitingRule> getFilteredRule(RateLimitingRule rule) {
     // check if this category is supported by edge decision rules
     if (isCategorySupported(rule)) {
@@ -69,15 +78,6 @@ public class RateLimitingRulesEdgeDecisionFilter {
       ThresholdActionConfig thresholdActionConfig) {
     // if matching edge decision actions are empty, then return true
     return findAnyMatchingEdgeDecisionAction(thresholdActionConfig).isEmpty();
-  }
-
-  // Rules that be converted to edge decision rules
-  public static List<RateLimitingRule> getConvertibleRules(List<RateLimitingRule> rules) {
-    return rules.stream()
-        .filter(RateLimitingRulesEdgeDecisionFilter::isCategorySupported)
-        .map(RateLimitingRulesEdgeDecisionFilter::getConvertibleRule)
-        .flatMap(Optional::stream)
-        .collect(Collectors.toUnmodifiableList());
   }
 
   private static Optional<RateLimitingRule> getConvertibleRule(RateLimitingRule rule) {

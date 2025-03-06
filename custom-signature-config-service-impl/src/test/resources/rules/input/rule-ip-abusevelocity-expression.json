@@ -1,0 +1,18 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "ipAbuseVelocityExpression": {
+          "minIpAbuseVelocity": "IP_ABUSE_VELOCITY_MEDIUM"
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM"
+  }
+}

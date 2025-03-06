@@ -3,6 +3,7 @@ package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.c
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.detection.exclusion.config.service.v1.EntityType.ENTITY_TYPE_API;
 import static ai.traceable.detection.exclusion.config.service.v1.LabelType.LABEL_TYPE_API;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -13,6 +14,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCond
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
 import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
 import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
+import ai.traceable.edge.decision.converter.utils.ConverterUtils;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
@@ -33,7 +35,7 @@ class DetectionExclusionRuleScopeConditionConverter
   private static final String PATH_JEXL_EXP = "$s.getPath()";
   private static final AttributeDerivationMapping PATH_ATTRIBUTE =
       AttributeDerivationMapping.newBuilder()
-          .setName("lhs")
+          .setName(ATTRIBUTE_NAME_LHS)
           .setType(FIELD_TYPE_STR)
           .addRules(
               DerivationRule.newBuilder()
@@ -45,7 +47,7 @@ class DetectionExclusionRuleScopeConditionConverter
   private static final String SERVICE_JEXL_EXP = "$s.getServiceName()";
   private static final AttributeDerivationMapping SERVICE_ATTRIBUTE =
       AttributeDerivationMapping.newBuilder()
-          .setName("lhs")
+          .setName(ATTRIBUTE_NAME_LHS)
           .setType(FIELD_TYPE_STR)
           .addRules(
               DerivationRule.newBuilder()
@@ -94,7 +96,7 @@ class DetectionExclusionRuleScopeConditionConverter
                     .map(ServiceIdentifierEntity::getServiceName)
                     .distinct()
                     .collect(Collectors.toUnmodifiableList());
-            return JexlUtils.buildInOperatorMatchCondition(SERVICE_ATTRIBUTE, serviceNames)
+            return ConverterUtils.buildInOperatorMatchCondition(SERVICE_ATTRIBUTE, serviceNames)
                 .setNegate(scopeCondition.getExclude())
                 .build();
           default:
@@ -131,7 +133,7 @@ class DetectionExclusionRuleScopeConditionConverter
   }
 
   private MatchCondition buildPathMatchCondition(List<String> urlRegexes, boolean exclude) {
-    return JexlUtils.buildLikeOperatorMatchCondition(PATH_ATTRIBUTE, urlRegexes)
+    return ConverterUtils.buildLikeOperatorMatchCondition(PATH_ATTRIBUTE, urlRegexes)
         .setNegate(exclude)
         .build();
   }

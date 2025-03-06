@@ -1,8 +1,11 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
+import static ai.traceable.edge.decision.converter.utils.Constants.IP_TYPE_COMPARISON_JEXL_EXP;
+
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.edge.decision.converter.utils.JexlUtils;
 import ai.traceable.platform.traceenricher.constants.EnrichedSpanConstants;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationType;
 import ai.traceable.ratelimiting.config.service.v2.IpLocationTypeCondition;
@@ -13,9 +16,6 @@ import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpTypeConditionConverter implements RateLimitingConditionConverter {
-
-  private static final String IP_TYPE_COMPARISON_JEXL_EXP =
-      "$s.getIpIntelligenceData().getTraits().getIpTypes().contains(IPType.%s)";
 
   @Override
   public MatchConditionDetails buildMatchCondition(

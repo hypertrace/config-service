@@ -1,0 +1,21 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "matchExpression": {
+          "matchKey": "MATCH_KEY_PARAMETER_NAME",
+          "matchOperator": "MATCH_OPERATOR_CONTAINS",
+          "matchValue": "param",
+          "matchCategory": "MATCH_CATEGORY_REQUEST"
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM"
+  }
+}

@@ -17,6 +17,7 @@ dependencies {
   implementation(projects.entityFetcherCache)
   implementation(projects.modsecurityUtils)
   implementation(projects.traceableDatamodelConfigServiceApi)
+  implementation(projects.traceableEdgeDecisionConverterUtils)
 
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)

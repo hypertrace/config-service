@@ -1,9 +1,13 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition;
 
+import static ai.traceable.edge.decision.converter.utils.Constants.IP_TYPE_COMPARISON_JEXL_EXP;
+
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationType;
 import ai.traceable.detection.exclusion.config.service.v1.IpLocationTypeCondition;
+import ai.traceable.edge.decision.converter.utils.ConverterUtils;
+import ai.traceable.edge.decision.converter.utils.JexlUtils;
 import ai.traceable.platform.traceenricher.constants.EnrichedSpanConstants;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,9 +15,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 class DetectionExclusionRuleIpTypeConditionConverter
     implements DetectionExclusionRuleConditionConverter {
-
-  private static final String IP_TYPE_COMPARISON_JEXL_EXP =
-      "$s.getIpIntelligenceData().getTraits().getIpTypes().contains(IPType.%s)";
 
   @Override
   public MatchCondition buildMatchCondition(
@@ -26,7 +27,7 @@ class DetectionExclusionRuleIpTypeConditionConverter
             .map(JexlUtils::getMatchCondition)
             .collect(Collectors.toUnmodifiableList());
 
-    return JexlUtils.buildOrMatchConditions(matchConditions)
+    return ConverterUtils.buildOrMatchConditions(matchConditions)
         .setNegate(ipLocationTypeCondition.getExclude())
         .build();
   }

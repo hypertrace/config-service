@@ -1,6 +1,8 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
+import static ai.traceable.edge.decision.converter.utils.Constants.COUNTRY_ISO_CODE_JEXL_EXP;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
@@ -19,9 +21,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRegionConditionConverter implements RateLimitingConditionConverter {
 
-  private static final String COUNTRY_ISO_CODE_JEXL_EXP =
-      "$s.getIpIntelligenceData().getCountry().getIsoCode()";
-
   @Override
   public MatchConditionDetails buildMatchCondition(
       final RequestContext requestContext, LeafCondition leafCondition) {
@@ -36,7 +35,7 @@ public class RateLimitingRegionConditionConverter implements RateLimitingConditi
         StructuredMatchCondition.newBuilder()
             .setLhs(
                 AttributeDerivationMapping.newBuilder()
-                    .setName("lhs")
+                    .setName(ATTRIBUTE_NAME_LHS)
                     .setType(FIELD_TYPE_STR)
                     .addRules(
                         DerivationRule.newBuilder()

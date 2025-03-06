@@ -9,10 +9,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
-import ai.traceable.customsignature.config.service.rules.CustomSignatureEdgeDecisionConverter;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
+import ai.traceable.customsignature.config.service.rules.converter.CustomSignatureEdgeDecisionConverter;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -42,6 +43,7 @@ public class CustomSignatureConfigServiceImplTest {
   private CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
 
   private CustomSignatureConfigServiceImpl configService;
+  private FeatureCachingClient featureCachingClient;
 
   @BeforeEach
   public void setup() {
@@ -49,9 +51,15 @@ public class CustomSignatureConfigServiceImplTest {
     rulesManager = mock(RulesManager.class);
     modsecRulesManager = mock(ModsecRulesManager.class);
     edgeDecisionConverter = mock(CustomSignatureEdgeDecisionConverter.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
     configService =
         new CustomSignatureConfigServiceImpl(
-            rulesValidator, rulesManager, modsecRulesManager, edgeDecisionConverter);
+            rulesValidator,
+            rulesManager,
+            modsecRulesManager,
+            edgeDecisionConverter,
+            featureCachingClient);
   }
 
   @Test

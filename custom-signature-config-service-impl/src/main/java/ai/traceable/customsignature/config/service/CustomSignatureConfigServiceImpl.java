@@ -1,9 +1,11 @@
 package ai.traceable.customsignature.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
-import ai.traceable.customsignature.config.service.rules.CustomSignatureEdgeDecisionConverter;
+import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdgeDecisionFilter;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
+import ai.traceable.customsignature.config.service.rules.converter.CustomSignatureEdgeDecisionConverter;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
@@ -18,6 +20,7 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesReq
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
@@ -34,17 +37,20 @@ public class CustomSignatureConfigServiceImpl
   private final RulesManager rulesManager;
   private final ModsecRulesManager modsecRulesManager;
   private final CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       ModsecRulesManager modsecRulesManager,
-      CustomSignatureEdgeDecisionConverter edgeDecisionConverter) {
+      CustomSignatureEdgeDecisionConverter edgeDecisionConverter,
+      FeatureCachingClient featureCachingClient) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
     this.edgeDecisionConverter = edgeDecisionConverter;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -52,8 +58,13 @@ public class CustomSignatureConfigServiceImpl
       GetCustomSignatureRulesRequest request,
       StreamObserver<GetCustomSignatureRulesResponse> responseObserver) {
     try {
+      rulesValidator.validate(request);
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(RequestContext.CURRENT.get(), request.getFilter());
+      if (request.getFilter().hasFilterEdgeDecisionRules()
+          && request.getFilter().getFilterEdgeDecisionRules()) {
+        rules = CustomSignatureRulesEdgeDecisionFilter.getFilteredRules(rules);
+      }
       responseObserver.onNext(
           GetCustomSignatureRulesResponse.newBuilder().addAllRules(rules).build());
       responseObserver.onCompleted();
@@ -157,6 +168,7 @@ public class CustomSignatureConfigServiceImpl
       GetCustomSignatureModsecRulesRequest request,
       StreamObserver<GetCustomSignatureModsecRulesResponse> responseObserver) {
     try {
+      rulesValidator.validate(request);
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(RequestContext.CURRENT.get(), request.getFilter());
       GetCustomSignatureModsecRulesResponse response =
@@ -177,13 +189,20 @@ public class CustomSignatureConfigServiceImpl
       GetCustomSignatureEdgeDecisionRulesRequest request,
       StreamObserver<GetCustomSignatureEdgeDecisionRulesResponse> responseObserver) {
     try {
+      RequestContext context = RequestContext.CURRENT.get();
+      rulesValidator.validate(request);
+
+      EdgeDecisionEngineConfig edgeDecisionEngineConfig =
+          featureCachingClient.isEdgeDecisionEnabledForTenant(context)
+              ? edgeDecisionConverter.convert(
+                  CustomSignatureRulesEdgeDecisionFilter.getConvertibleRules(
+                      rulesManager.getCustomSignatureRules(context, request.getRulesFilter())))
+              : EdgeDecisionEngineConfig.getDefaultInstance();
       GetCustomSignatureEdgeDecisionRulesResponse response =
           GetCustomSignatureEdgeDecisionRulesResponse.newBuilder()
-              .setEdgeDecisionEngineConfig(
-                  edgeDecisionConverter.convert(
-                      rulesManager.getCustomSignatureRules(
-                          RequestContext.CURRENT.get(), request.getRulesFilter())))
+              .setEdgeDecisionEngineConfig(edgeDecisionEngineConfig)
               .build();
+
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

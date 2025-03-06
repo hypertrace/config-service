@@ -1,5 +1,11 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
+import static ai.traceable.edge.decision.converter.utils.Constants.EXTERNAL_IP_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.INTERNAL_IP_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.IP_ADDRESS_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.IS_IP_IN_RANGE_JEXL_EXP;
+
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -11,6 +17,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
+import ai.traceable.edge.decision.converter.utils.JexlUtils;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;
 import com.google.protobuf.ListValue;
@@ -23,12 +30,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpAddressConditionConverter implements RateLimitingConditionConverter {
 
-  private static final String IP_ADDRESS_JEXL_EXP = "$s.getIpAddress()";
-  private static final String IS_IP_IN_RANGE_JEXL_EXP =
-      "ipValidation:isIpAddressInRange('%s', $s.getIpAddress())";
-  private static final String EXTERNAL_IP_JEXL_EXP = "$s.getIpValidationResult().isExternalIp()";
-  private static final String INTERNAL_IP_JEXL_EXP =
-      JexlUtils.getNotJexlExpression(EXTERNAL_IP_JEXL_EXP);
   private static final MatchConditionDetails EXTERNAL_IP_MATCH_CONDITION =
       new MatchConditionDetails(
           JexlUtils.getMatchCondition(EXTERNAL_IP_JEXL_EXP),
@@ -67,7 +68,7 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
       matchConditions.addAll(getIpRangeMatchConditions(ipAddressCondition));
     }
 
-    if (matchConditions.size() == 0) {
+    if (matchConditions.isEmpty()) {
       throw new IllegalArgumentException(
           "No ip addresses or ranges present in ip address condition");
     } else if (matchConditions.size() == 1) {
@@ -105,7 +106,7 @@ public class RateLimitingIpAddressConditionConverter implements RateLimitingCond
             StructuredMatchCondition.newBuilder()
                 .setLhs(
                     AttributeDerivationMapping.newBuilder()
-                        .setName("lhs")
+                        .setName(ATTRIBUTE_NAME_LHS)
                         .setType(FieldType.FIELD_TYPE_STR)
                         .addRules(
                             DerivationRule.newBuilder()

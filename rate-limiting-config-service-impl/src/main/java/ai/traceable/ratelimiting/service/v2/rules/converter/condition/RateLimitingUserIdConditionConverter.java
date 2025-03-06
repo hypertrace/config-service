@@ -1,10 +1,10 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.USER_ID_VALUE_LHS;
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.buildInOperatorMatchCondition;
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.buildLikeOperatorMatchCondition;
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.joinChildConditions;
 import static ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase.USER_ID_CONDITION;
-import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.USER_ID_VALUE_LHS;
-import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.buildInOperatorMatchCondition;
-import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.buildLikeOperatorMatchCondition;
-import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.joinChildConditions;
 
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.ratelimiting.config.service.v2.LeafCondition;

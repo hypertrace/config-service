@@ -18,6 +18,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.modsecurityUtils)
   implementation(projects.featureCachingClient)
+  implementation(projects.traceableEdgeDecisionConverterUtils)
 
   implementation(commonLibs.traceable.actorservice.api)
   implementation(commonLibs.traceable.opadistributor.api)

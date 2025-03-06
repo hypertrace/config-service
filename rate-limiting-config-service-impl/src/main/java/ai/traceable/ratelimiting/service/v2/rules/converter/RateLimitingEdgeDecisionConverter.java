@@ -396,10 +396,10 @@ public class RateLimitingEdgeDecisionConverter {
         final LogicalMatchCondition.Builder builder = LogicalMatchCondition.newBuilder();
         builder.addAllConditions(childMatchConditions);
         builder.setOperator(convertOperator(compositeCondition.getOperator()));
-        final MatchCondition compostiveMatchCondition =
+        final MatchCondition compositeMatchCondition =
             MatchCondition.newBuilder().setLogicalMatchCondition(builder).build();
         return new MatchConditionDetails(
-            compostiveMatchCondition,
+            compositeMatchCondition,
             compositeConditionVariableDerivationMappings,
             childApiIdentifierEntities.stream()
                 .distinct()
@@ -411,7 +411,7 @@ public class RateLimitingEdgeDecisionConverter {
     }
   }
 
-  public LogicalMatchOperator convertOperator(final CompositeCondition.LogicalOperator operator) {
+  private LogicalMatchOperator convertOperator(final CompositeCondition.LogicalOperator operator) {
     switch (operator) {
       case LOGICAL_OPERATOR_AND:
         return LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND;

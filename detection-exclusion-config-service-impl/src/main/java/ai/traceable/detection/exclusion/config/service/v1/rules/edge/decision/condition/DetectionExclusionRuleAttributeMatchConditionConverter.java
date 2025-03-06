@@ -7,6 +7,7 @@ import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_STATUS_CODE;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_URL;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_USER_AGENT;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
@@ -52,12 +53,16 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
               ai.traceable.detection.exclusion.config.service.v1.MatchOperator
                   .MATCH_OPERATOR_NOT_MATCH_REGEX);
   private static final Set<ai.traceable.detection.exclusion.config.service.v1.MatchOperator>
-      NEGATE_OPERATORS =
+      ALL_MATCH_OPERATORS =
           Set.of(
               ai.traceable.detection.exclusion.config.service.v1.MatchOperator
                   .MATCH_OPERATOR_NOT_EQUAL,
               ai.traceable.detection.exclusion.config.service.v1.MatchOperator
-                  .MATCH_OPERATOR_NOT_MATCH_REGEX);
+                  .MATCH_OPERATOR_NOT_MATCH_REGEX,
+              ai.traceable.detection.exclusion.config.service.v1.MatchOperator
+                  .MATCH_OPERATOR_GREATER_THAN,
+              ai.traceable.detection.exclusion.config.service.v1.MatchOperator
+                  .MATCH_OPERATOR_LESS_THAN);
 
   @Override
   public MatchCondition buildMatchCondition(
@@ -83,7 +88,7 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
           StructuredMatchCondition.newBuilder()
               .setLhs(
                   AttributeDerivationMapping.newBuilder()
-                      .setName("lhs")
+                      .setName(ATTRIBUTE_NAME_LHS)
                       .setType(fieldType)
                       .addRules(
                           DerivationRule.newBuilder()
@@ -111,7 +116,7 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
                     getPredicateJexlExp(
                         attributeMatchCondition.getKeyMatchCondition().getMatchCondition()),
                     getPredicateJexlExp(attributeMatchCondition.getValueMatchCondition()),
-                    NEGATE_OPERATORS.contains(
+                    ALL_MATCH_OPERATORS.contains(
                         attributeMatchCondition.getValueMatchCondition().getOperator()))
                 : String.format(
                     "map:match(%s, %s, %s)",
@@ -126,7 +131,7 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
                 getJexlExp(keyMetadata),
                 getPredicateJexlExp(
                     attributeMatchCondition.getKeyMatchCondition().getMatchCondition()),
-                NEGATE_OPERATORS.contains(
+                ALL_MATCH_OPERATORS.contains(
                     attributeMatchCondition
                         .getKeyMatchCondition()
                         .getMatchCondition()

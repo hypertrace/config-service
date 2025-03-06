@@ -1,0 +1,49 @@
+{
+  "decisionRules": [{
+    "id": "rule-id",
+    "name": "rule-name",
+    "ruleCategory": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+    "ruleStatus": {
+    },
+    "ruleDefinition": {
+      "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signatureRule": {
+        "matchCondition": {
+          "logicalMatchCondition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "genericMatchCondition": {
+                "jexlExpression": {
+                  "jexlExpression": "ipValidation:isIpAddressInRange(\u00271.2.3.4/24\u0027, $s.getIpAddress())"
+                }
+              },
+              "negate": true
+            }]
+          }
+        }
+      }
+    },
+    "ruleDecision": {
+      "edgeDecisionType": "EDGE_DECISION_TYPE_BLOCK",
+      "spanAttributes": [{
+        "spanAttributeKey": {
+          "staticValue": "traceableai.blocked.violations_rule-id.category",
+          "outputType": "FIELD_TYPE_STR"
+        },
+        "spanAttributeValue": {
+          "staticValue": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+          "outputType": "FIELD_TYPE_STR"
+        }
+      }, {
+        "spanAttributeKey": {
+          "staticValue": "traceableai.blocked.violations_rule-id.info",
+          "outputType": "FIELD_TYPE_STR"
+        },
+        "spanAttributeValue": {
+          "staticValue": "CgdydWxlLWlkEglydWxlLW5hbWUaFUVWRU5UX1NFVkVSSVRZX01FRElVTQ\u003d\u003d",
+          "outputType": "FIELD_TYPE_STR"
+        }
+      }]
+    }
+  }]
+}

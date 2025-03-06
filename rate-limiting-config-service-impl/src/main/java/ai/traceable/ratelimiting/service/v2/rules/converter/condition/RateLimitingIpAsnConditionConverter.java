@@ -1,7 +1,9 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
-import static ai.traceable.ratelimiting.service.v2.rules.converter.condition.ConverterUtils.buildLikeOperatorMatchCondition;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
+import static ai.traceable.edge.decision.converter.utils.Constants.IP_ASN_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.buildLikeOperatorMatchCondition;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -14,8 +16,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingIpAsnConditionConverter implements RateLimitingConditionConverter {
 
-  private static final String IP_ASN_JEXL_EXP = "$s.getIpIntelligenceData().getNetwork().getAsn()";
-
   @Override
   public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
@@ -23,7 +23,7 @@ public class RateLimitingIpAsnConditionConverter implements RateLimitingConditio
 
     AttributeDerivationMapping attributeDerivationMapping =
         AttributeDerivationMapping.newBuilder()
-            .setName("lhs")
+            .setName(ATTRIBUTE_NAME_LHS)
             .setType(FIELD_TYPE_STR)
             .addRules(
                 DerivationRule.newBuilder()

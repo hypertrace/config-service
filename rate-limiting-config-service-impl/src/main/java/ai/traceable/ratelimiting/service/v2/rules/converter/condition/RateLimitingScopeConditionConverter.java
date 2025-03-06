@@ -2,6 +2,7 @@ package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_LIKE;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
 import static ai.traceable.ratelimiting.config.service.v2.LeafCondition.ConditionCase.SCOPE_CONDITION;
 import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API;
 import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.LabelType.LABEL_TYPE_API;
@@ -41,7 +42,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
       StructuredMatchCondition.newBuilder()
           .setLhs(
               AttributeDerivationMapping.newBuilder()
-                  .setName("lhs")
+                  .setName(ATTRIBUTE_NAME_LHS)
                   .setType(FIELD_TYPE_STR)
                   .addRules(
                       DerivationRule.newBuilder()
@@ -56,7 +57,7 @@ public class RateLimitingScopeConditionConverter implements RateLimitingConditio
       StructuredMatchCondition.newBuilder()
           .setLhs(
               AttributeDerivationMapping.newBuilder()
-                  .setName("lhs")
+                  .setName(ATTRIBUTE_NAME_LHS)
                   .setType(FIELD_TYPE_STR)
                   .addRules(
                       DerivationRule.newBuilder()

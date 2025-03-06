@@ -1,15 +1,19 @@
-package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
+package ai.traceable.edge.decision.converter.utils;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_CONTAINS;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_IN;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_LIKE;
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
+import static ai.traceable.edge.decision.converter.utils.Constants.IP_ADDRESS_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.USER_AGENT_JEXL_EXP;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
+import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
@@ -20,10 +24,15 @@ import com.google.protobuf.Value;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class ConverterUtils {
-  static final AttributeDerivationMapping USER_ID_VALUE_LHS =
+public class ConverterUtils {
+
+  private ConverterUtils() {
+    // utility classes shouldn't have public constructor
+  }
+
+  public static final AttributeDerivationMapping USER_ID_VALUE_LHS =
       AttributeDerivationMapping.newBuilder()
-          .setName("lhs")
+          .setName(ATTRIBUTE_NAME_LHS)
           .setType(FIELD_TYPE_STR)
           .addRules(
               DerivationRule.newBuilder()
@@ -35,11 +44,38 @@ class ConverterUtils {
                                   .setJexlExpression(USER_ATTRIBUTION_VARIABLE_NAME.getValue()))))
           .build();
 
-  static String joinRegexes(List<String> regexList) {
+  public static final AttributeDerivationMapping USER_AGENT_LHS =
+      AttributeDerivationMapping.newBuilder()
+          .setName(ATTRIBUTE_NAME_LHS)
+          .setType(FIELD_TYPE_STR)
+          .addRules(
+              DerivationRule.newBuilder()
+                  .setTransformationConfig(
+                      DataTransformationConfig.newBuilder()
+                          .setOutputType(FIELD_TYPE_STR)
+                          .setJexlExpression(
+                              JexlExpressionConfig.newBuilder()
+                                  .setJexlExpression(USER_AGENT_JEXL_EXP))))
+          .build();
+
+  public static final AttributeDerivationMapping IP_ADDRESS_ATTRIBUTE =
+      AttributeDerivationMapping.newBuilder()
+          .setName(ATTRIBUTE_NAME_LHS)
+          .setType(FieldType.FIELD_TYPE_STR)
+          .addRules(
+              DerivationRule.newBuilder()
+                  .setTransformationConfig(
+                      DataTransformationConfig.newBuilder()
+                          .setJexlExpression(
+                              JexlExpressionConfig.newBuilder()
+                                  .setJexlExpression(IP_ADDRESS_JEXL_EXP))))
+          .build();
+
+  public static String joinRegexes(List<String> regexList) {
     return String.join("|", regexList);
   }
 
-  static MatchCondition joinChildConditions(
+  public static MatchCondition joinChildConditions(
       List<MatchCondition.Builder> childMatchConditions, boolean exclude) {
     MatchCondition.Builder matchCondition;
     if (childMatchConditions.size() == 1) {
@@ -59,7 +95,23 @@ class ConverterUtils {
     return matchCondition.build();
   }
 
-  static List<MatchCondition.Builder> buildContainsOperatorMatchCondition(
+  public static MatchCondition.Builder buildOrMatchConditions(
+      List<MatchCondition> childMatchConditions) {
+    MatchCondition.Builder builder;
+    if (childMatchConditions.size() == 1) {
+      builder = childMatchConditions.get(0).toBuilder();
+    } else {
+      builder =
+          MatchCondition.newBuilder()
+              .setLogicalMatchCondition(
+                  LogicalMatchCondition.newBuilder()
+                      .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
+                      .addAllConditions(childMatchConditions));
+    }
+    return builder;
+  }
+
+  public static List<MatchCondition.Builder> buildContainsOperatorMatchCondition(
       AttributeDerivationMapping attributeDerivationMapping, List<String> values) {
     return values.stream()
         .map(
@@ -75,7 +127,7 @@ class ConverterUtils {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  static MatchCondition.Builder buildInOperatorMatchCondition(
+  public static MatchCondition.Builder buildInOperatorMatchCondition(
       AttributeDerivationMapping attributeDerivationMapping, List<String> values) {
     return MatchCondition.newBuilder()
         .setStructuredMatchCondition(
@@ -87,7 +139,7 @@ class ConverterUtils {
                         .setListValue(convertToListValue(values))));
   }
 
-  static MatchCondition.Builder buildLikeOperatorMatchCondition(
+  public static MatchCondition.Builder buildLikeOperatorMatchCondition(
       AttributeDerivationMapping attributeDerivationMapping, List<String> regexes) {
     return MatchCondition.newBuilder()
         .setStructuredMatchCondition(
@@ -99,7 +151,7 @@ class ConverterUtils {
                         .setRegex(joinRegexes(regexes))));
   }
 
-  static ListValue convertToListValue(List<String> values) {
+  public static ListValue convertToListValue(List<String> values) {
     ListValue.Builder listValue = ListValue.newBuilder();
     values.forEach(value -> listValue.addValues(Value.newBuilder().setStringValue(value)));
     return listValue.build();

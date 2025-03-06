@@ -1,6 +1,8 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
+import static ai.traceable.edge.decision.converter.utils.Constants.COUNTRY_ISO_CODE_JEXL_EXP;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -9,6 +11,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
+import ai.traceable.edge.decision.converter.utils.ConverterUtils;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -16,11 +19,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class DetectionExclusionRuleRegionConditionConverter
     implements DetectionExclusionRuleConditionConverter {
 
-  private static final String COUNTRY_ISO_CODE_JEXL_EXP =
-      "$s.getIpIntelligenceData().getCountry().getIsoCode()";
   private static final AttributeDerivationMapping COUNTRY_ISO_CODE_ATTRIBUTE =
       AttributeDerivationMapping.newBuilder()
-          .setName("lhs")
+          .setName(ATTRIBUTE_NAME_LHS)
           .setType(FIELD_TYPE_STR)
           .addRules(
               DerivationRule.newBuilder()
@@ -39,7 +40,7 @@ class DetectionExclusionRuleRegionConditionConverter
         regionCondition.getRegionsList().stream()
             .map(RegionCondition.Region::getCountryIsoCode)
             .collect(Collectors.toUnmodifiableList());
-    return JexlUtils.buildInOperatorMatchCondition(COUNTRY_ISO_CODE_ATTRIBUTE, countryIsoCodes)
+    return ConverterUtils.buildInOperatorMatchCondition(COUNTRY_ISO_CODE_ATTRIBUTE, countryIsoCodes)
         .setNegate(regionCondition.getExclude())
         .build();
   }

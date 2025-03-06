@@ -2,6 +2,7 @@ package ai.traceable.ratelimiting.service.v2.rules.converter.condition;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_INT;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
 import static ai.traceable.ratelimiting.service.v2.rules.ValidatorUtils.KEY_NULL_CONDITION_TYPES;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
@@ -41,11 +42,13 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
       Set.of(
           KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
           KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX);
-  private static final Set<KeyValueCondition.MatchOperator> NEGATE_OPERATORS =
+  private static final Set<KeyValueCondition.MatchOperator> ALL_MATCH_OPERATORS =
       Set.of(
           KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
           KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
-          KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX);
+          KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX,
+          KeyValueCondition.MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+          KeyValueCondition.MatchOperator.MATCH_OPERATOR_LESS_THAN);
 
   @Override
   public MatchConditionDetails buildMatchCondition(
@@ -70,7 +73,7 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
           StructuredMatchCondition.newBuilder()
               .setLhs(
                   AttributeDerivationMapping.newBuilder()
-                      .setName("lhs")
+                      .setName(ATTRIBUTE_NAME_LHS)
                       .setType(fieldType)
                       .addRules(
                           DerivationRule.newBuilder()
@@ -104,7 +107,8 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
                     getJexlExp(keyValueCondition.getType()),
                     getPredicateJexlExp(keyValueCondition.getKeyCondition()),
                     getPredicateJexlExp(keyValueCondition.getValueCondition()),
-                    NEGATE_OPERATORS.contains(keyValueCondition.getValueCondition().getOperator()))
+                    ALL_MATCH_OPERATORS.contains(
+                        keyValueCondition.getValueCondition().getOperator()))
                 : String.format(
                     "map:match(%s, %s, %s)",
                     getJexlExp(keyValueCondition.getType()),
@@ -116,7 +120,7 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
                 "map:match(%s, %s, %s)",
                 getJexlExp(keyValueCondition.getType()),
                 getPredicateJexlExp(keyValueCondition.getKeyCondition()),
-                NEGATE_OPERATORS.contains(keyValueCondition.getKeyCondition().getOperator()));
+                ALL_MATCH_OPERATORS.contains(keyValueCondition.getKeyCondition().getOperator()));
       }
       return new MatchConditionDetails(
           MatchCondition.newBuilder()

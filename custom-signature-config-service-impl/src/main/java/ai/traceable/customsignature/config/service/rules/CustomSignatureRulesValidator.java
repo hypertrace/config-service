@@ -17,6 +17,10 @@ import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.FieldValue;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.HeaderInjection;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
@@ -156,6 +160,29 @@ class CustomSignatureRulesValidator implements RulesValidator {
           "Delete custom signature rule should have a valid id");
     }
 
+    return Status.OK;
+  }
+
+  @Override
+  public Status validate(GetCustomSignatureEdgeDecisionRulesRequest request) {
+    return validateFilter(request.getRulesFilter());
+  }
+
+  @Override
+  public Status validate(GetCustomSignatureRulesRequest request) {
+    return validateFilter(request.getFilter());
+  }
+
+  @Override
+  public Status validate(GetCustomSignatureModsecRulesRequest request) {
+    return validateFilter(request.getFilter());
+  }
+
+  private Status validateFilter(GetRulesFilter rulesFilter) {
+    if (rulesFilter.hasFilterEdgeDecisionRules() && !rulesFilter.getFilterEdgeDecisionRules()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Use get edge decision rules api and not call this api with filterEdgeDecisionRules set to false");
+    }
     return Status.OK;
   }
 
