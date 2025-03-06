@@ -58,7 +58,7 @@ public class RateLimitingRulesManager implements RulesManager {
 
   @Override
   public RateLimitingRule updateRateLimitingRule(
-      RequestContext requestContext, String ruleId, RateLimitingRuleData ruleData) {
+      RequestContext requestContext, String ruleId, RateLimitingRuleData newRuleData) {
     RateLimitingRule rule =
         rateLimitingRulesStore
             .getData(requestContext, ruleId)
@@ -70,23 +70,26 @@ public class RateLimitingRulesManager implements RulesManager {
                         .orElseThrow(Status.NOT_FOUND::asRuntimeException));
 
     RateLimitingRule modifiedRule =
-        rule.toBuilder()
-            .setData(processRateLimitRuleData(ruleData, rule.getData().getRuleStatus()))
-            .build();
+        rule.toBuilder().setData(mergeRateLimitRuleData(newRuleData, rule.getData())).build();
     return rateLimitingRulesStore.upsertObject(requestContext, modifiedRule).getData();
   }
 
-  private RateLimitingRuleData processRateLimitRuleData(
-      RateLimitingRuleData ruleData, RuleStatus ruleStatus) {
-    RateLimitingRuleData data = processRateLimitRuleData(ruleData);
-    RuleStatus status = data.getRuleStatus();
+  private RateLimitingRuleData mergeRateLimitRuleData(
+      RateLimitingRuleData newRuleData, RateLimitingRuleData oldRuleData) {
+    if (!newRuleData.hasRuleStatus()) {
+      return oldRuleData;
+    }
+    RateLimitingRuleData transformedRateLimitRuleData =
+        applyRateLimitRuleDataTransformations(newRuleData);
+    RuleStatus newRuleStatus = transformedRateLimitRuleData.getRuleStatus();
+    RuleStatus oldRuleStatus = oldRuleData.getRuleStatus();
     RuleStatus mergedRuleStatus =
-        ruleStatus.toBuilder()
-            .mergeFrom(status)
-            .setInternal(status.getInternal())
-            .setRuleCreationSource(ruleStatus.getRuleCreationSource())
+        oldRuleStatus.toBuilder()
+            .mergeFrom(newRuleStatus)
+            .setInternal(newRuleStatus.getInternal())
+            .setRuleCreationSource(oldRuleStatus.getRuleCreationSource())
             .build();
-    return data.toBuilder().setRuleStatus(mergedRuleStatus).build();
+    return transformedRateLimitRuleData.toBuilder().setRuleStatus(mergedRuleStatus).build();
   }
 
   @Override
@@ -95,12 +98,12 @@ public class RateLimitingRulesManager implements RulesManager {
     RateLimitingRule rule =
         RateLimitingRule.newBuilder()
             .setId(uuidGenerator.generateRandomId())
-            .setData(processRateLimitRuleData(ruleData))
+            .setData(applyRateLimitRuleDataTransformations(ruleData))
             .build();
     return rateLimitingRulesStore.upsertObject(requestContext, rule).getData();
   }
 
-  public RateLimitingRuleData processRateLimitRuleData(RateLimitingRuleData data) {
+  public RateLimitingRuleData applyRateLimitRuleDataTransformations(RateLimitingRuleData data) {
     RateLimitingRuleData.Builder builder = data.toBuilder();
     if (data.hasCondition()) {
       builder.setCondition(processCondition(data.getCondition()));

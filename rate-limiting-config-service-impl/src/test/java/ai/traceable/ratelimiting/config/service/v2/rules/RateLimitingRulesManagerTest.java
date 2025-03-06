@@ -126,14 +126,17 @@ public class RateLimitingRulesManagerTest {
             .build();
     RateLimitingRuleData nonIpAddressRuleData =
         buildRateLimitingRuleData("nonip", Category.CATEGORY_RATE_LIMITING, nonIpRuleLeaf);
-    assertEquals(nonIpAddressRuleData, rulesManager.processRateLimitRuleData(nonIpAddressRuleData));
+    assertEquals(
+        nonIpAddressRuleData,
+        rulesManager.applyRateLimitRuleDataTransformations(nonIpAddressRuleData));
     RateLimitingRuleData ipAddressRuleData =
         buildRateLimitingRuleData("iprule", Category.CATEGORY_DATA_EXFILTRATION, ipRuleLeaf);
     RateLimitingRuleData processedIpAddressRuleData =
         buildRateLimitingRuleData(
             "iprule", Category.CATEGORY_DATA_EXFILTRATION, processedIpRuleLeaf);
     assertEquals(
-        processedIpAddressRuleData, rulesManager.processRateLimitRuleData(ipAddressRuleData));
+        processedIpAddressRuleData,
+        rulesManager.applyRateLimitRuleDataTransformations(ipAddressRuleData));
     RateLimitingRuleData compositeRuleData =
         buildRateLimitingRuleData(
             "compositerule",
@@ -146,7 +149,7 @@ public class RateLimitingRulesManagerTest {
                 .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
                 .build());
     RateLimitingRuleData processedCompositeRuleData =
-        rulesManager.processRateLimitRuleData(compositeRuleData);
+        rulesManager.applyRateLimitRuleDataTransformations(compositeRuleData);
     List<Condition> processedChildren =
         processedCompositeRuleData.getCondition().getCompositeCondition().getChildrenList();
     assertEquals(
