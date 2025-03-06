@@ -8,6 +8,7 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import com.typesafe.config.Config;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,13 +26,8 @@ public class DetectorConfigServiceConfig {
   private static final String ACCOUNT_TAKEOVER_DETECTION_CONFIGS_PATH =
       "accountTakeoverDetectionConfigs";
 
-  private final List<AnomalyDetectionConfig> modsecDetectionConfigs;
-  private final List<AnomalyDetectionConfig> apiDefinitionDetectionConfigs;
-  private final List<AnomalyDetectionConfig> sessionDefinitionDetectionConfigs;
-  private final List<AnomalyDetectionConfig> customRulesDetectionConfigs;
-  private final List<AnomalyDetectionConfig> volumetricDetectionConfigs;
-  private final List<AnomalyDetectionConfig> credentialStuffingDetectionConfigs;
-  private final List<AnomalyDetectionConfig> accountTakeoverDetectionConfigs;
+  private final List<AnomalyDetectionConfig> wafDetectionConfigs;
+  private final List<AnomalyDetectionConfig> apiProtectionDetectionConfigs;
 
   private final ConfigConverter configConverter = new ConfigConverter();
 
@@ -42,10 +38,11 @@ public class DetectorConfigServiceConfig {
       VolumetricRulesRegistry volumetricRulesRegistry,
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
       AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
-    this.modsecDetectionConfigs =
+    this.wafDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
-    this.apiDefinitionDetectionConfigs =
+    List<AnomalyDetectionConfig> apiProtectionDetectionConfigs = new ArrayList<>();
+    apiProtectionDetectionConfigs.addAll(
         loadDefaultApiDefinitionDetectionConfigs(
             config,
             apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap().values().stream()
@@ -54,8 +51,8 @@ public class DetectorConfigServiceConfig {
                         AnomalyDetectionConfig.newBuilder()
                             .setApiDefinitionMetadataAnomalyDetectionConfig(detectionConfig)
                             .build())
-                .collect(Collectors.toList()));
-    this.sessionDefinitionDetectionConfigs =
+                .collect(Collectors.toList())));
+    apiProtectionDetectionConfigs.addAll(
         loadDefaultSessionDefinitionDetectionConfigs(
             config,
             sessionDefinitionRegistry.getSessionDefRuleIdToDetectionConfigMap().values().stream()
@@ -64,12 +61,12 @@ public class DetectorConfigServiceConfig {
                         AnomalyDetectionConfig.newBuilder()
                             .setSessionDefinitionMetadataAnomalyDetectionConfig(detectionConfig)
                             .build())
-                .collect(Collectors.toList()));
-    this.customRulesDetectionConfigs =
+                .collect(Collectors.toList())));
+    apiProtectionDetectionConfigs.addAll(
         configConverter.convertToAnomalyDetectionConfigs(
-            config.getConfigList(CUSTOM_RULES_DETECTION_CONFIGS_PATH));
+            config.getConfigList(CUSTOM_RULES_DETECTION_CONFIGS_PATH)));
 
-    this.volumetricDetectionConfigs =
+    apiProtectionDetectionConfigs.addAll(
         loadDefaultVolumetricDetectionConfigs(
             config,
             volumetricRulesRegistry.getVolumetricRuleIdToConfigMap().values().stream()
@@ -78,8 +75,8 @@ public class DetectorConfigServiceConfig {
                         AnomalyDetectionConfig.newBuilder()
                             .setVolumetricAnomalyDetectionConfig(detectionConfig)
                             .build())
-                .collect(Collectors.toList()));
-    this.credentialStuffingDetectionConfigs =
+                .collect(Collectors.toList())));
+    apiProtectionDetectionConfigs.addAll(
         loadDefaultCredentialStuffingDetectionConfigs(
             config,
             credentialStuffingRulesRegistry
@@ -91,8 +88,8 @@ public class DetectorConfigServiceConfig {
                         AnomalyDetectionConfig.newBuilder()
                             .setCredentialAnomalyDetectionConfig(detectionConfig)
                             .build())
-                .collect(Collectors.toList()));
-    this.accountTakeoverDetectionConfigs =
+                .collect(Collectors.toList())));
+    apiProtectionDetectionConfigs.addAll(
         loadDefaultAccountTakeoverDetectionConfigs(
             config,
             accountTakeoverRulesRegistry.getAccountTakeoverRuleIdToConfigMap().values().stream()
@@ -101,35 +98,16 @@ public class DetectorConfigServiceConfig {
                         AnomalyDetectionConfig.newBuilder()
                             .setAccountTakeoverAnomalyDetectionConfig(detectionConfig)
                             .build())
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList())));
+    this.apiProtectionDetectionConfigs = apiProtectionDetectionConfigs;
   }
 
-  public List<AnomalyDetectionConfig> getDefaultModsecDetectionConfigs() {
-    return modsecDetectionConfigs;
+  public List<AnomalyDetectionConfig> getDefaultWafDetectionConfigs() {
+    return wafDetectionConfigs;
   }
 
-  public List<AnomalyDetectionConfig> getDefaultApiDefinitionDetectionConfigs() {
-    return apiDefinitionDetectionConfigs;
-  }
-
-  public List<AnomalyDetectionConfig> getDefaultSessionDefinitionDetectionConfigs() {
-    return sessionDefinitionDetectionConfigs;
-  }
-
-  public List<AnomalyDetectionConfig> getDefaultAccountTakeoverDetectionConfigs() {
-    return accountTakeoverDetectionConfigs;
-  }
-
-  public List<AnomalyDetectionConfig> getDefaultCustomRulesDetectionConfigs() {
-    return customRulesDetectionConfigs;
-  }
-
-  public List<AnomalyDetectionConfig> getDefaultVolumetricDetectionConfigs() {
-    return volumetricDetectionConfigs;
-  }
-
-  public List<AnomalyDetectionConfig> getDefaultCredentialStuffingDetectionConfigs() {
-    return credentialStuffingDetectionConfigs;
+  public List<AnomalyDetectionConfig> getDefaultApiProtectionDetectionConfigs() {
+    return apiProtectionDetectionConfigs;
   }
 
   private List<AnomalyDetectionConfig> loadDefaultApiDefinitionDetectionConfigs(

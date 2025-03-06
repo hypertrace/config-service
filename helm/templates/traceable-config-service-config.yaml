@@ -401,6 +401,12 @@ data:
       disabled = {{ .Values.anomalyConfigServiceConfig.global.disabled }}
       internal = {{ .Values.anomalyConfigServiceConfig.global.internal }}
       licenseTiers = {{- .Values.anomalyConfigServiceConfig.global.licenseTiers | indent 6 }}
+      modsecGlobalConfig {
+        defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.defaultConfigsType }}
+      }
+      apiGlobalConfig {
+        defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.apiGlobalConfig.defaultConfigsType }}
+      }
     }
     trainer.config.service = {
       {{- if .Values.defaultApiNamingTrainerConfigs }}

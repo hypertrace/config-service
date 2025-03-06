@@ -108,11 +108,15 @@ public class GlobalAnomalyConfigStatusManagerImpl
               .setConfigStatus(configStatus)
               .setMinConfidenceLevel(config.getMinConfidenceLevel())
               .setApiGlobalConfig(
-                  ApiGlobalConfig.newBuilder().setDisabled(configStatus.getDisabled()).build())
+                  ApiGlobalConfig.newBuilder()
+                      .setDisabled(configStatus.getDisabled())
+                      .setDefaultConfigsType(config.getApiDefaultConfigsType())
+                      .build())
               .setModsecGlobalConfig(
                   ModsecGlobalConfig.newBuilder()
                       .setDisabled(configStatus.getDisabled())
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
+                      .setDefaultConfigsType(config.getModsecDefaultConfigsType())
                       .build())
               .build());
     }
@@ -193,7 +197,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
     scopedAnomalyConfigBuilder.setConfigScope(configScope);
     return configConverter.convertScopedConfig(
         migrateScopedAnomalyConfigStatusChange(scopedAnomalyConfigBuilder.build()),
-        config.getMinConfidenceLevel(),
+        config,
         configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)));
   }
 

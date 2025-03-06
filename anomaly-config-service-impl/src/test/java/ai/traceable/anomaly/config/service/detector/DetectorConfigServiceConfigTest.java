@@ -179,7 +179,7 @@ public class DetectorConfigServiceConfigTest {
     AnomalyConfigStatusChange configStatus3 =
         AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build();
 
-    List<AnomalyDetectionConfig> modsecConfigs = CONFIG.getDefaultModsecDetectionConfigs();
+    List<AnomalyDetectionConfig> modsecConfigs = CONFIG.getDefaultWafDetectionConfigs();
     List<String> ruleIds =
         modsecConfigs.stream()
             .map(
@@ -209,47 +209,39 @@ public class DetectorConfigServiceConfigTest {
     detectionConfig = getModsecConfig(modsecConfigs, "crs_921");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
 
-    List<AnomalyDetectionConfig> apiDefinitionDetectionConfigs =
-        CONFIG.getDefaultApiDefinitionDetectionConfigs();
+    List<AnomalyDetectionConfig> apiProtectionDetectionConfigs =
+        CONFIG.getDefaultApiProtectionDetectionConfigs();
 
-    detectionConfig = getApiDefDetectionConfig(apiDefinitionDetectionConfigs, "integer");
+    detectionConfig = getApiDefDetectionConfig(apiProtectionDetectionConfigs, "integer");
     assertEquals(configStatus0, detectionConfig.getConfigStatus());
 
-    detectionConfig = getApiDefDetectionConfig(apiDefinitionDetectionConfigs, "missingParam");
+    detectionConfig = getApiDefDetectionConfig(apiProtectionDetectionConfigs, "missingParam");
     assertEquals(configStatus2, detectionConfig.getConfigStatus());
 
-    detectionConfig = getApiDefDetectionConfig(apiDefinitionDetectionConfigs, "enum");
+    detectionConfig = getApiDefDetectionConfig(apiProtectionDetectionConfigs, "enum");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
 
-    List<AnomalyDetectionConfig> sessionDefinitionDetectionConfigs =
-        CONFIG.getDefaultSessionDefinitionDetectionConfigs();
-
-    detectionConfig = getSessionDefDetectionConfig(sessionDefinitionDetectionConfigs, "bola");
+    detectionConfig = getSessionDefDetectionConfig(apiProtectionDetectionConfigs, "bola");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
 
-    detectionConfig = getSessionDefDetectionConfig(sessionDefinitionDetectionConfigs, "userIdBola");
+    detectionConfig = getSessionDefDetectionConfig(apiProtectionDetectionConfigs, "userIdBola");
     assertEquals(configStatus0, detectionConfig.getConfigStatus());
 
-    List<AnomalyDetectionConfig> volumetricDetectionConfigs =
-        CONFIG.getDefaultVolumetricDetectionConfigs();
-
     detectionConfig =
-        getVolumetricDetectionConfig(volumetricDetectionConfigs, "volumetricApiCallSpike");
+        getVolumetricDetectionConfig(apiProtectionDetectionConfigs, "volumetricApiCallSpike");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
 
-    List<AnomalyDetectionConfig> credentialStuffingDetectionConfigs =
-        CONFIG.getDefaultCredentialStuffingDetectionConfigs();
-
     detectionConfig =
-        getCredentialStuffingDetectionConfig(
-            credentialStuffingDetectionConfigs, "credentialStuffing");
+        getCredentialStuffingDetectionConfig(apiProtectionDetectionConfigs, "credentialStuffing");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
   }
 
   @Test
   void testCustomRulesDetectionConfigs() {
     List<AnomalyDetectionConfig> customRulesDetectionConfigs =
-        CONFIG.getDefaultCustomRulesDetectionConfigs();
+        CONFIG.getDefaultApiProtectionDetectionConfigs().stream()
+            .filter(config -> config.hasCustomRulesAnomalyDetectionConfig())
+            .collect(Collectors.toUnmodifiableList());
 
     AnomalyDetectionConfig detectionConfig =
         customRulesDetectionConfigs.stream()

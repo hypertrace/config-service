@@ -636,6 +636,10 @@ anomalyConfigServiceConfig:
   global:
     disabled: false
     internal: false
+    apiGlobalConfig:
+      defaultConfigsType: API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED
+    modsecGlobalConfig:
+      defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD
     licenseTiers: |-
       [
         {

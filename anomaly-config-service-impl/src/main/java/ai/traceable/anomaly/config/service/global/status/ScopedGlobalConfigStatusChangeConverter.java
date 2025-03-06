@@ -1,8 +1,11 @@
 package ai.traceable.anomaly.config.service.global.status;
 
+import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -28,7 +31,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
 
   public ScopedAnomalyConfigStatus convertScopedConfig(
       ScopedAnomalyConfigStatusChange config,
-      AnomalyConfidenceLevel defaultConfidenceLevel,
+      AnomalyGlobalConfigServiceConfig defaultConfig,
       AnomalyConfigStatus configStatus) {
     return ScopedAnomalyConfigStatus.newBuilder()
         .setConfigScope(config.getConfigScope())
@@ -37,17 +40,30 @@ public class ScopedGlobalConfigStatusChangeConverter {
         .setMinConfidenceLevel(
             config.hasMinConfidenceLevel()
                 ? config.getMinConfidenceLevel()
-                : defaultConfidenceLevel)
+                : defaultConfig.getMinConfidenceLevel())
         .setEnabledForExitSpans(config.getEnabledForExitSpans())
         .setModsecGlobalConfig(
             config.toBuilder()
                 .getModsecGlobalConfigBuilder()
+                .setDefaultConfigsType(
+                    config.getModsecGlobalConfig().getDefaultConfigsType()
+                            == ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+                        ? defaultConfig.getModsecDefaultConfigsType()
+                        : config.getModsecGlobalConfig().getDefaultConfigsType())
                 .setMinConfidenceLevel(
                     config.getModsecGlobalConfig().getMinConfidenceLevel()
                             == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED
-                        ? defaultConfidenceLevel
+                        ? defaultConfig.getMinConfidenceLevel()
                         : config.getModsecGlobalConfig().getMinConfidenceLevel()))
-        .setApiGlobalConfig(config.getApiGlobalConfig())
+        .setApiGlobalConfig(
+            config.toBuilder()
+                .getApiGlobalConfigBuilder()
+                .setDefaultConfigsType(
+                    config.getApiGlobalConfig().getDefaultConfigsType()
+                            == ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+                        ? defaultConfig.getApiDefaultConfigsType()
+                        : config.getApiGlobalConfig().getDefaultConfigsType())
+                .build())
         .build();
   }
 

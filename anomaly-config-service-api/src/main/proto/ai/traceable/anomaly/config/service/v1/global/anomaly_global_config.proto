@@ -97,13 +97,17 @@ message ModsecGlobalConfig {
 
 enum ModsecDefaultConfigsType {
   MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED = 0;
-  MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED = 1;
-  MODSEC_DEFAULT_CONFIGS_TYPE_AGGRESSIVE_DISABLED = 2;
+  MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED = 1 [deprecated = true];
+  MODSEC_DEFAULT_CONFIGS_TYPE_AGGRESSIVE_DISABLED = 2 [deprecated = true];
+  MODSEC_DEFAULT_CONFIGS_TYPE_RECOMMENDED = 3; // Aggressive disabled, rest blocking
+  MODSEC_DEFAULT_CONFIGS_TYPE_STRICT = 4; // Aggressive monitor, rest blocking
+  MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD = 5; // Aggressive disabled, rest monitor
+  MODSEC_DEFAULT_CONFIGS_TYPE_ALL_MONITOR = 6;
 }
 
 message ApiGlobalConfig {
   optional bool disabled = 1;
-  optional ApiDefaultConfigsType default_configs_type = 2;
+  ApiDefaultConfigsType default_configs_type = 2;
   optional bool enabled_for_exit_spans = 3;
 }
 

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
@@ -26,7 +27,9 @@ import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRe
 import ai.traceable.anomaly.config.service.v1.*;
 import ai.traceable.anomaly.config.service.v1.detector.*;
 import ai.traceable.anomaly.config.service.v1.detector.CredentialStuffingAnomalyDetectionConfig.ConfigCase;
+import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -75,6 +78,7 @@ public class AnomalyDetectionConfigManagerTest {
           volumetricRulesRegistry,
           credentialStuffingRulesRegistry,
           accountTakeoverRulesRegistry);
+  private WafConfigResolver wafConfigResolver;
   private AnomalyDetectionConfigManager configManager;
   private final AnomalyEnvironmentScope environmentScope =
       AnomalyEnvironmentScope.newBuilder().setEnvironmentId("environment").build();
@@ -118,6 +122,7 @@ public class AnomalyDetectionConfigManagerTest {
   private AnomalyConfigScopeUtils anomalyConfigScopeUtils;
 
   private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
+  private RuleInfoManager ruleInfoManager;
 
   @BeforeEach
   public void setup() throws IOException {
@@ -130,10 +135,24 @@ public class AnomalyDetectionConfigManagerTest {
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     detectorConfigServiceConfig = mock(DetectorConfigServiceConfig.class);
     anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
-    when(detectorConfigServiceConfig.getDefaultModsecDetectionConfigs()).thenReturn(List.of());
-    when(detectorConfigServiceConfig.getDefaultApiDefinitionDetectionConfigs())
+    when(detectorConfigServiceConfig.getDefaultWafDetectionConfigs()).thenReturn(List.of());
+    when(detectorConfigServiceConfig.getDefaultApiProtectionDetectionConfigs())
         .thenReturn(List.of());
     globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
+        .thenReturn(
+            ScopedAnomalyConfigStatus.newBuilder()
+                .setModsecGlobalConfig(
+                    ModsecGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED))
+                .setApiGlobalConfig(
+                    ApiGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
+                .build());
+    ruleInfoManager = mock(RuleInfoManager.class);
+    wafConfigResolver = new WafConfigResolver(ruleInfoManager, detectorConfigServiceConfig);
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
@@ -142,7 +161,8 @@ public class AnomalyDetectionConfigManagerTest {
                 anomalyConfigScopeUtils,
                 detectorConfigServiceConfig,
                 mock(ConfigChangeEventGenerator.class),
-                globalAnomalyConfigStatusManager));
+                globalAnomalyConfigStatusManager,
+                wafConfigResolver));
   }
 
   @AfterEach
@@ -469,6 +489,7 @@ public class AnomalyDetectionConfigManagerTest {
     String tenantId = "tenant";
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
     DetectorConfigServiceConfig config = getDefaultConfig();
+    wafConfigResolver = new WafConfigResolver(ruleInfoManager, config);
     configManager =
         new AnomalyDetectionConfigManagerImpl(
             configServiceBlockingStub,
@@ -476,16 +497,12 @@ public class AnomalyDetectionConfigManagerTest {
             anomalyConfigScopeUtils,
             config,
             mock(ConfigChangeEventGenerator.class),
-            globalAnomalyConfigStatusManager);
+            globalAnomalyConfigStatusManager,
+            wafConfigResolver);
 
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
-    defaultDetectionConfigs.addAll(config.getDefaultModsecDetectionConfigs());
-    defaultDetectionConfigs.addAll(config.getDefaultApiDefinitionDetectionConfigs());
-    defaultDetectionConfigs.addAll(config.getDefaultSessionDefinitionDetectionConfigs());
-    defaultDetectionConfigs.addAll(config.getDefaultCustomRulesDetectionConfigs());
-    defaultDetectionConfigs.addAll(config.getDefaultVolumetricDetectionConfigs());
-    defaultDetectionConfigs.addAll(config.getDefaultCredentialStuffingDetectionConfigs());
-    defaultDetectionConfigs.addAll(config.getDefaultAccountTakeoverDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultWafDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
 
     GetAnomalyDetectionConfigsFilter filter =
         GetAnomalyDetectionConfigsFilter.newBuilder()
@@ -540,6 +557,276 @@ public class AnomalyDetectionConfigManagerTest {
             .getScopedAnomalyDetectionConfig(
                 requestContext,
                 apiConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+  }
+
+  @Test
+  void testDefaultStandardModsecConfig() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    DetectorConfigServiceConfig config = getDefaultConfig();
+    configManager =
+        new AnomalyDetectionConfigManagerImpl(
+            configServiceBlockingStub,
+            detectionConfigConverter,
+            anomalyConfigScopeUtils,
+            config,
+            mock(ConfigChangeEventGenerator.class),
+            globalAnomalyConfigStatusManager,
+            wafConfigResolver);
+    List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule1")
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(true)
+                                            .build()))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(AnomalyDetectionConfig.getDefaultInstance());
+    defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
+        .thenReturn(
+            ScopedAnomalyConfigStatus.newBuilder()
+                .setModsecGlobalConfig(
+                    ModsecGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD))
+                .setApiGlobalConfig(
+                    ApiGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
+                .build());
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+        .thenReturn(
+            List.of(
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("rule1")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule1")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                            .build())
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule2")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
+                            .build())
+                    .build(),
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("rule2")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule2")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+                            .build())
+                    .build()));
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                environmentConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+  }
+
+  @Test
+  void testDefaultRecommmendedModsecConfig() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    DetectorConfigServiceConfig config = getDefaultConfig();
+    configManager =
+        new AnomalyDetectionConfigManagerImpl(
+            configServiceBlockingStub,
+            detectionConfigConverter,
+            anomalyConfigScopeUtils,
+            config,
+            mock(ConfigChangeEventGenerator.class),
+            globalAnomalyConfigStatusManager,
+            wafConfigResolver);
+    List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule1")
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(true)
+                                            .build()))
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(true))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule2")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(true))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(AnomalyDetectionConfig.getDefaultInstance());
+    defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
+        .thenReturn(
+            ScopedAnomalyConfigStatus.newBuilder()
+                .setModsecGlobalConfig(
+                    ModsecGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_RECOMMENDED))
+                .setApiGlobalConfig(
+                    ApiGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
+                .build());
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+        .thenReturn(
+            List.of(
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("rule1")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule1")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                            .build())
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule2")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
+                            .build())
+                    .build(),
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("rule2")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule2")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+                            .build())
+                    .build()));
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                environmentConfigScope,
+                GetAnomalyDetectionConfigsFilter.getDefaultInstance())
+            .getAnomalyDetectionConfigsList();
+    assertEquals(defaultDetectionConfigs, detectionConfigs);
+  }
+
+  @Test
+  void testDefaultStrictModsecConfig() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    DetectorConfigServiceConfig config = getDefaultConfig();
+    configManager =
+        new AnomalyDetectionConfigManagerImpl(
+            configServiceBlockingStub,
+            detectionConfigConverter,
+            anomalyConfigScopeUtils,
+            config,
+            mock(ConfigChangeEventGenerator.class),
+            globalAnomalyConfigStatusManager,
+            wafConfigResolver);
+    List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule1")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(true))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule2")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(true))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(AnomalyDetectionConfig.getDefaultInstance());
+
+    defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
+        .thenReturn(
+            ScopedAnomalyConfigStatus.newBuilder()
+                .setModsecGlobalConfig(
+                    ModsecGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT))
+                .setApiGlobalConfig(
+                    ApiGlobalConfig.newBuilder()
+                        .setDefaultConfigsType(
+                            ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
+                .build());
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+        .thenReturn(
+            List.of(
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("rule1")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule1")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                            .build())
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule2")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)
+                            .build())
+                    .build(),
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("rule2")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("subrule2")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE)
+                            .build())
+                    .build()));
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configManager
+            .getScopedAnomalyDetectionConfig(
+                requestContext,
+                environmentConfigScope,
                 GetAnomalyDetectionConfigsFilter.getDefaultInstance())
             .getAnomalyDetectionConfigsList();
     assertEquals(defaultDetectionConfigs, detectionConfigs);

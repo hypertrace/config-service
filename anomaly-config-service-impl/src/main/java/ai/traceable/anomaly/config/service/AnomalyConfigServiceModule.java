@@ -12,6 +12,8 @@ import ai.traceable.anomaly.config.service.common.license.LicenseMeteringService
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceModule;
 import ai.traceable.anomaly.config.service.exclusion.AnomalyExclusionConfigServiceModule;
 import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceModule;
+import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoModule;
+import ai.traceable.anomaly.config.service.global.status.ConfigStatusModule;
 import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModule;
 import ai.traceable.anomaly.config.service.registry.AnomalyConfigRegistryModule;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
@@ -52,6 +54,8 @@ public class AnomalyConfigServiceModule extends AbstractModule {
         new LicenseMeteringServiceModule(
             config.getConfig(LICENSE_METERING_SERVICE_CONFIG_PATH), channelRegistry));
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+    install(new ConfigStatusModule());
+    install(new RuleInfoModule());
     install(new AnomalyGlobalConfigServiceModule(ANOMALY_GLOBAL_CONFIG_ANNOTATION));
     install(new AnomalyExclusionConfigServiceModule(ANOMALY_EXCLUSION_CONFIG_ANNOTATION));
     install(new AnomalyModsecConfigServiceModule(ANOMALY_MODSEC_CONFIG_ANNOTATION));
