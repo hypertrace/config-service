@@ -137,6 +137,7 @@ data:
         {{- .Values.traceableConfigServiceConfig.customSignatureConfigService.defaultCustomSignatureRules | nindent 8 }}
       {{- end }}
       shouldPublishActivityEvents = true
+      edsConversionEnabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.edsConversionEnabled }}
     }
     actor.service.config {
       host = {{ .Values.traceableConfigServiceConfig.actorService.host }}

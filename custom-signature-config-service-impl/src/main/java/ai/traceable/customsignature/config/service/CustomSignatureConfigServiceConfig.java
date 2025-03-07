@@ -23,6 +23,7 @@ public class CustomSignatureConfigServiceConfig {
       "default-custom-signature-rules.conf";
   private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private static final String MODSEC_RULE_VERSION_CONFIG = "modsecurity.rule.version";
+  private static final String EDS_CONVERSION_ENABLED_CONFIG_PATH = "edsConversionEnabled";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
 
@@ -62,6 +63,10 @@ public class CustomSignatureConfigServiceConfig {
     } catch (ConfigException e) {
       return ModsecRuleVersion.MODSEC_RULE_VERSION_V3;
     }
+  }
+
+  public boolean isEdsConversionEnabled() {
+    return this.config.getBoolean(EDS_CONVERSION_ENABLED_CONFIG_PATH);
   }
 
   private List<CustomSignatureRule> convertToCustomSignatureRules(

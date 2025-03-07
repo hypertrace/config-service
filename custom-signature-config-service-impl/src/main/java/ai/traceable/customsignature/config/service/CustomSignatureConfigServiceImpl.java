@@ -38,6 +38,7 @@ public class CustomSignatureConfigServiceImpl
   private final ModsecRulesManager modsecRulesManager;
   private final CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
   private final FeatureCachingClient featureCachingClient;
+  private final CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
@@ -45,12 +46,14 @@ public class CustomSignatureConfigServiceImpl
       RulesManager rulesManager,
       ModsecRulesManager modsecRulesManager,
       CustomSignatureEdgeDecisionConverter edgeDecisionConverter,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
     this.edgeDecisionConverter = edgeDecisionConverter;
     this.featureCachingClient = featureCachingClient;
+    this.customSignatureConfigServiceConfig = customSignatureConfigServiceConfig;
   }
 
   @Override
@@ -194,6 +197,7 @@ public class CustomSignatureConfigServiceImpl
 
       EdgeDecisionEngineConfig edgeDecisionEngineConfig =
           featureCachingClient.isEdgeDecisionEnabledForTenant(context)
+                  && customSignatureConfigServiceConfig.isEdsConversionEnabled()
               ? edgeDecisionConverter.convert(
                   CustomSignatureRulesEdgeDecisionFilter.getConvertibleRules(
                       rulesManager.getCustomSignatureRules(context, request.getRulesFilter())))

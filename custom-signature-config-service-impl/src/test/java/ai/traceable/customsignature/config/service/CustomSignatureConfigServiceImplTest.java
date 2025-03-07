@@ -44,6 +44,7 @@ public class CustomSignatureConfigServiceImplTest {
 
   private CustomSignatureConfigServiceImpl configService;
   private FeatureCachingClient featureCachingClient;
+  private CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
 
   @BeforeEach
   public void setup() {
@@ -52,14 +53,17 @@ public class CustomSignatureConfigServiceImplTest {
     modsecRulesManager = mock(ModsecRulesManager.class);
     edgeDecisionConverter = mock(CustomSignatureEdgeDecisionConverter.class);
     featureCachingClient = mock(FeatureCachingClient.class);
+    customSignatureConfigServiceConfig = mock(CustomSignatureConfigServiceConfig.class);
     when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
+    when(customSignatureConfigServiceConfig.isEdsConversionEnabled()).thenReturn(true);
     configService =
         new CustomSignatureConfigServiceImpl(
             rulesValidator,
             rulesManager,
             modsecRulesManager,
             edgeDecisionConverter,
-            featureCachingClient);
+            featureCachingClient,
+            customSignatureConfigServiceConfig);
   }
 
   @Test
