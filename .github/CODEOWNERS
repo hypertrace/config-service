@@ -4,6 +4,7 @@
 * @GurtejSohi @aaron-steinfeld @pavan-traceable @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @anujgoyal1 @SrikarMannepalli @sunilgattupalle @surajpuvvada
 
 # module specific owners
+anomaly-config-service-registry/src/test/resources/modsec @piyushroshan @soujanyanmbri
 anomaly-config-service-registry/src/main/resources/modsec/crs @piyushroshan @soujanyanmbri
 anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99
 api-spec-config-service-api/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
