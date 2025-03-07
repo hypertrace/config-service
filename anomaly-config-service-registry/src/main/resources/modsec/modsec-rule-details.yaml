@@ -1088,6 +1088,33 @@
         references: |
           - https://nvd.nist.gov/vuln/detail/CVE-2017-7269
           - https://www.cve.org/CVERecord?id=CVE-2017-7269
+    - ruleId: crs_9210011
+      eventDetails:
+        description: |
+          A pattern indicative of a Potential CORS Misconfiguration Exploitation Attempt with `Origin: *` is detected.
+          - Cross-Origin Resource Sharing (CORS) is a security feature implemented by web browsers to restrict how resources on a web page can be requested from a different domain.
+          - A misconfigured CORS policy can allow unauthorized cross-origin requests, potentially exposing sensitive data.
+          - The wildcard (`*`) value for the `Access-Control-Allow-Origin` header allows any domain to access the resource, which can lead to:
+              - Unauthorized API Access: If sensitive endpoints permit `Origin: *`, any website can make API requests on behalf of a user.
+              - Data Exposure: An attacker may leverage the misconfiguration to extract sensitive user data via JavaScript running on a malicious site.
+              - Credential Leakage: If `Access-Control-Allow-Credentials: true` is also set, attackers may exploit session cookies or authentication tokens.
+              - Cross-Site Scripting (XSS) Amplification: Attackers may chain CORS misconfigurations with XSS vulnerabilities to extract confidential data.
+        mitigation: |
+          - Restrict `Access-Control-Allow-Origin`: Avoid using `*` as the `Access-Control-Allow-Origin` value. Instead, explicitly define trusted origins.
+          - Prevent Credential Leakage: Ensure `Access-Control-Allow-Credentials` is not set to `true` when `Access-Control-Allow-Origin` is `*`.
+          - Validate and Sanitize Origins: Implement strict validation to allow only trusted origins in the `Access-Control-Allow-Origin` header.
+          - Secure API Endpoints: Implement authentication and authorization controls to ensure sensitive endpoints are not exposed via CORS misconfigurations.
+          - Use Content Security Policy (CSP): Enforce a strong CSP policy to mitigate the impact of CORS misconfigurations.
+          - Regular Security Audits: Perform regular security assessments to identify and remediate CORS misconfiguration vulnerabilities.
+        impact: |
+          - Unauthorized Access: Attackers can send requests on behalf of users, accessing sensitive data.
+          - Data Theft: User information may be extracted from APIs due to unrestricted CORS policies.
+          - Credential Exploitation: If misconfigured with `Access-Control-Allow-Credentials: true`, attackers can hijack authenticated sessions.
+          - Security Bypass: CORS misconfigurations may allow malicious websites to interact with internal APIs, leading to further exploits.
+          - Increased Attack Surface: Attackers may chain CORS misconfigurations with other vulnerabilities (e.g., XSS) for broader exploitation.
+        references: |
+          - https://cwe.mitre.org/data/definitions/942.html
+          - https://portswigger.net/web-security/cors
     - ruleId: crs_9210115
       eventDetails:
         description: |

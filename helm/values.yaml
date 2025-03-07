@@ -780,6 +780,12 @@ defaultModsecDetectionConfigs: |-
                   configStatus = {
                       disabled = true
                   }
+              },
+              {
+                  subRuleId = "crs_9210011"
+                  configStatus = {
+                      disabled = true
+                  }
               }
           ]
         }

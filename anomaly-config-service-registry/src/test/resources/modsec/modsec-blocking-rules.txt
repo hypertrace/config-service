@@ -101,3 +101,7 @@ crs_933140 :: PHP Injection Attack: I/O Stream Found
 crs_933150 :: PHP Injection Attack: High-Risk PHP Function Name Found
 crs_933160 :: PHP Injection Attack: High-Risk PHP Function Call Found
 crs_933210 :: PHP Injection Attack: Variable Function Call Found (210)
+crs_9210330 :: Suspicious URL Evasion Attempt: Possible encoding or obfuscation
+crs_941420 :: IE XSS Filters - Attack (A href with a link)
+crs_9210011 :: Potential CORS Misconfiguration Exploitation Attempt
+crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)

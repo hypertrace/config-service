@@ -10,6 +10,7 @@ crs_913100 :: User-Agent associated with security scanner :: ANOMALY_SEVERITY_LE
 crs_913110 :: Request header associated with security scanner :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'CWE:799' ]
 crs_913120 :: Request filename/argument associated with security scanner :: ANOMALY_SEVERITY_LEVEL_LOW :: [ 'CWE:799' ]
 crs_9210010 :: IIS 6.0 WebDAV buffer overflow: (CVE-2017-7269) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'CWE:121' , 'OWASP_API_2019:API8' , 'CVE:2017-7269' ]
+crs_9210011 :: Potential CORS Misconfiguration Exploitation Attempt :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'CWE:942' , 'OWASP_API_2023:API8' , 'OWASP_2021:A5' ]
 crs_9210110 :: HTTP Request Smuggling Attack (Request Splitting) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2021:A4' , 'CWE:444' , 'OWASP_API_2019:API8' , 'OWASP_API_2023:API8' ]
 crs_9210115 :: HTTP Request Smuggling Attack (Content-Length/Transfer-Encoding Confusion) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A4' , 'CWE:444' , 'OWASP_API_2019:API8' , 'OWASP_API_2023:API8' ]
 crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A4' , 'CWE:444' , 'OWASP_API_2019:API8' ]
