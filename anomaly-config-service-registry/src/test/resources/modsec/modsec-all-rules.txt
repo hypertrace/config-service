@@ -49,6 +49,7 @@ crs_9320040 :: Atlassian Confluence SSTI RCE : (CVE-2019-3396) :: ANOMALY_SEVERI
 crs_9320041 :: Confluence Server and Data Center Path Traversal to RCE : (CVE-2019-3398) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'OWASP_API_2023:API9' , 'CWE:78' , 'CVE:2019-3398' ]
 crs_9320050 :: vBulletin RCE : (CVE-2019-16759) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'OWASP_API_2023:API9' , 'CWE:78' , 'CVE:2019-16759' ]
 crs_9320060 :: Adobe ColdFusion RCE: Arbitrary File Upload Vulnerability: (CVE-2018-15961) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'OWASP_API_2023:API9' , 'CWE:78' , 'CVE:2018-15961' ]
+crs_9320090 :: Remote Command Execution: Command or Script Injection (T090) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320100 :: Remote Command Execution: Unix Command Injection (T100) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]

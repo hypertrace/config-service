@@ -105,3 +105,4 @@ crs_9210330 :: Suspicious URL Evasion Attempt: Possible encoding or obfuscation
 crs_941420 :: IE XSS Filters - Attack (A href with a link)
 crs_9210011 :: Potential CORS Misconfiguration Exploitation Attempt
 crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)
+crs_9320090 :: Remote Command Execution: Command or Script Injection (T090)

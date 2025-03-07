@@ -3355,6 +3355,34 @@
           - https://nvd.nist.gov/vuln/detail/CVE-2018-15961
           - https://www.cve.org/CVERecord?id=CVE-2018-15961
 
+    - ruleId: crs_9320090
+      eventDetails:
+        description: |
+          A pattern indicative of Remote Command Execution (RCE) via Command or Script Injection is detected.
+          - Remote Command Execution occurs when an attacker injects malicious commands into an application that executes system-level commands.
+          - Command or Script Injection vulnerabilities arise when user input is improperly sanitized and directly passed to command-line interpreters (e.g., Bash, PowerShell, CMD).
+          - Exploiting this vulnerability can lead to:
+              - Unauthorized Command Execution: Attackers can execute arbitrary system commands, gaining control over the affected server.
+              - Data Theft: Sensitive information stored on the server may be accessed and exfiltrated.
+              - Privilege Escalation: Attackers may leverage RCE vulnerabilities to escalate privileges and gain deeper access to the system.
+              - System Compromise: Malicious commands may be used to install malware, create backdoors, or disrupt system functionality.
+        mitigation: |
+          - Input Validation: Implement strict input validation and sanitization to prevent malicious command injection.
+          - Use Parameterized Commands: Avoid passing user input directly into system commands. Use parameterized APIs where possible.
+          - Least Privilege Principle: Ensure that applications run with the least privileges necessary to limit the potential impact of RCE attacks.
+          - Disable Unnecessary Features: Restrict the execution of system commands where not needed.
+          - Web Application Firewall (WAF): Deploy a WAF to detect and block command injection attempts.
+          - Regular Security Audits: Perform code reviews and penetration testing to identify and fix command injection vulnerabilities.
+        impact: |
+          - Server Takeover: Attackers may gain full control over the system, leading to severe security risks.
+          - Data Exfiltration: Sensitive files and information can be accessed and stolen.
+          - Malware Deployment: Attackers may install ransomware, rootkits, or other malicious payloads.
+          - Business Disruption: RCE attacks can lead to denial-of-service conditions, disrupting critical business operations.
+          - Compliance Violations: Exploiting RCE vulnerabilities may result in legal and regulatory consequences due to data breaches.
+        references: |
+          - https://cwe.mitre.org/data/definitions/78.html
+          - https://owasp.org/www-community/attacks/Command_Injection
+
     - ruleId: crs_93200070
       eventDetails:
         description: |
