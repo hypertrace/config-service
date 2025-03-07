@@ -2744,6 +2744,34 @@
           - https://nvd.nist.gov/vuln/detail/CVE-2024-4577
           - https://www.cve.org/CVERecord?id=CVE-2024-4577
 
+    - ruleId: crs_9330010
+      eventDetails:
+        description: |
+          A pattern indicative of a PHP Injection Attack via WebShell Function Call (T100) is detected.
+          - PHP Injection occurs when an attacker injects malicious PHP code into an application, which is then executed on the server.
+          - WebShells are malicious scripts that allow attackers to execute arbitrary PHP functions, providing unauthorized access to the server.
+          - Exploiting this vulnerability can lead to:
+              - Remote Code Execution: Attackers may execute arbitrary PHP functions, gaining full control over the system.
+              - Data Theft: Sensitive files, credentials, and user information may be accessed and exfiltrated.
+              - Backdoor Installation: WebShells allow attackers to maintain persistent access, bypassing security mechanisms.
+              - System Compromise: Attackers can manipulate server files, execute commands, and escalate privileges.
+        mitigation: |
+          - Disable Dangerous PHP Functions: Restrict the use of functions such as `eval()`, `exec()`, `shell_exec()`, `system()`, `passthru()`, and `popen()`.
+          - Input Validation and Sanitization: Implement strict validation and encoding of user inputs to prevent code injection.
+          - Use Web Application Firewalls (WAFs): Deploy a WAF to detect and block PHP injection attempts.
+          - Restrict File Uploads: Prevent unauthorized file uploads and ensure strict validation of file types and extensions.
+          - Enforce Principle of Least Privilege: Run PHP applications with minimal privileges to limit the impact of successful exploits.
+          - Regular Security Audits: Conduct code reviews and penetration testing to identify and mitigate PHP injection vulnerabilities.
+        impact: |
+          - Full Server Compromise: Attackers may gain control over the web server, executing arbitrary code.
+          - Data Breach: Sensitive user data and credentials can be stolen or manipulated.
+          - Persistent Threat: WebShells enable attackers to maintain persistent access and evade detection.
+          - Malware Deployment: Attackers may deploy ransomware, cryptominers, or other malicious payloads.
+          - Business Disruption: PHP injection attacks can lead to denial-of-service conditions, affecting system availability.
+        references: |
+          - https://cwe.mitre.org/data/definitions/98.html
+          - https://owasp.org/www-community/attacks/PHP_Object_Injection
+
     - ruleId: crs_933100
       eventDetails:
         description: |
