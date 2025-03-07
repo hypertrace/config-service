@@ -9,6 +9,10 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
+import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStore;
+import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStoreManager;
+import ai.traceable.edge.decision.config.service.store.EdgeCustomResponseStore;
+import ai.traceable.edge.decision.config.service.store.EdgeCustomResponseStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStore;
@@ -19,20 +23,64 @@ import ai.traceable.edge.decision.config.service.store.FilterEvaluator;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigResolver;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseRequest;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionSpecRequest;
+import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionSpecResponse;
+import ai.traceable.edge.decision.config.service.v1.CustomResponse;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeAttributionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeAttributionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeCustomResponseRequest;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeCustomResponseResponse;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecRequest;
+import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecResponse;
+import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRuleDefinition;
+import ai.traceable.edge.decision.config.service.v1.EdgeCustomResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpecDirective;
 import ai.traceable.edge.decision.config.service.v1.Filter;
 import ai.traceable.edge.decision.config.service.v1.GenericValueFilter;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeAttributionRulesRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeAttributionRulesResponse;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeCustomResponsesRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeCustomResponsesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeAttributionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeAttributionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeCustomResponseRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeCustomResponseResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecRequest;
+import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import ai.traceable.edge.decision.config.service.v1.LogicalFilter;
 import ai.traceable.edge.decision.config.service.v1.LogicalOperator;
 import ai.traceable.edge.decision.config.service.v1.RelationalOperator;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeAttributionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeAttributionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeCustomResponseRequest;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeCustomResponseResponse;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleRequest;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleResponse;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecRequest;
+import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -74,6 +122,12 @@ class EdgeDecisionConfigServiceTest {
             new EdgeDecisionRuleStore(genericStub, eventGenerator, new FilterEvaluator()));
     EdgeDecisionSpecStoreManager specStoreManager =
         new EdgeDecisionSpecStoreManager(new EdgeDecisionSpecStore(genericStub, eventGenerator));
+    EdgeAttributionRuleStoreManager attributionRuleStoreManager =
+        new EdgeAttributionRuleStoreManager(
+            new EdgeAttributionRuleStore(genericStub, eventGenerator));
+    EdgeCustomResponseStoreManager customResponseStoreManager =
+        new EdgeCustomResponseStoreManager(
+            new EdgeCustomResponseStore(genericStub, eventGenerator));
     EdgeDecisionEngineConfigSupplier configSupplier =
         new StoredEdgeDecisionEngineConfigSupplier(
             storeManager, ruleStoreManager, specStoreManager);
@@ -89,6 +143,8 @@ class EdgeDecisionConfigServiceTest {
                 ruleStoreManager,
                 specStoreManager,
                 storeManager,
+                attributionRuleStoreManager,
+                customResponseStoreManager,
                 storedEdgeDecisionEngineConfigSupplier,
                 resolver,
                 new RequestValidator()))
@@ -227,6 +283,218 @@ class EdgeDecisionConfigServiceTest {
                     .getEdgeDecisionEngineConfig());
 
     assertEquals(modified_config, config);
+  }
+
+  @Test
+  void testCrudForEdgeDecisionRules() {
+    RequestContext requestContext = buildRequestContext();
+    EdgeDecisionRule rule1 = createEdgeDecisionRule(requestContext, "id-1", "policy-1", "api-1");
+    EdgeDecisionRule rule2 = createEdgeDecisionRule(requestContext, "id-2", "policy-1", "api-2");
+
+    GetAllEdgeDecisionRulesRequest getAllRequest =
+        GetAllEdgeDecisionRulesRequest.newBuilder().build();
+    GetAllEdgeDecisionRulesResponse getAllResponse = stub.getAllEdgeDecisionRules(getAllRequest);
+    Assertions.assertEquals(2, getAllResponse.getEdgeDecisionRulesCount());
+
+    GetEdgeDecisionRuleRequest getRequest =
+        GetEdgeDecisionRuleRequest.newBuilder().setId("id-1").build();
+    GetEdgeDecisionRuleResponse getResponse = stub.getEdgeDecisionRule(getRequest);
+    Assertions.assertEquals(rule1, getResponse.getEdgeDecisionRule());
+
+    DeleteEdgeDecisionRuleRequest deleteRequest =
+        DeleteEdgeDecisionRuleRequest.newBuilder().setId("id-1").build();
+    DeleteEdgeDecisionRuleResponse deleteResponse = stub.deleteEdgeDecisionRule(deleteRequest);
+    Assertions.assertEquals(rule1, deleteResponse.getDeletedEdgeDecisionRule());
+
+    CreateEdgeDecisionRuleRequest createRequest =
+        CreateEdgeDecisionRuleRequest.newBuilder().setEdgeDecisionRule(rule1).build();
+    CreateEdgeDecisionRuleResponse createResponse = stub.createEdgeDecisionRule(createRequest);
+    Assertions.assertEquals(rule1, createResponse.getEdgeDecisionRule());
+
+    UpdateEdgeDecisionRuleRequest updateRequest =
+        UpdateEdgeDecisionRuleRequest.newBuilder()
+            .setEdgeDecisionRule(rule2)
+            .setCurrentVersion(0)
+            .build();
+    UpdateEdgeDecisionRuleResponse updateResponse = stub.updateEdgeDecisionRule(updateRequest);
+    Assertions.assertEquals(rule2, updateResponse.getEdgeDecisionRule());
+  }
+
+  @Test
+  void testCrudForEdgeDecisionSpecs() {
+    RequestContext requestContext = buildRequestContext();
+    EdgeDecisionSpec spec1 = createEdgeDecisionSpec(requestContext, "id-1", "policy-1", "api-1");
+    EdgeDecisionSpec spec2 = createEdgeDecisionSpec(requestContext, "id-2", "policy-1", "api-2");
+
+    GetAllEdgeDecisionSpecsRequest getAllRequest =
+        GetAllEdgeDecisionSpecsRequest.newBuilder().build();
+    GetAllEdgeDecisionSpecsResponse getAllResponse = stub.getAllEdgeDecisionSpecs(getAllRequest);
+    Assertions.assertEquals(2, getAllResponse.getEdgeDecisionSpecsCount());
+
+    GetEdgeDecisionSpecRequest getRequest =
+        GetEdgeDecisionSpecRequest.newBuilder().setId("id-1").build();
+    GetEdgeDecisionSpecResponse getResponse = stub.getEdgeDecisionSpec(getRequest);
+    Assertions.assertEquals(spec1, getResponse.getEdgeDecisionSpec());
+
+    DeleteEdgeDecisionSpecRequest deleteRequest =
+        DeleteEdgeDecisionSpecRequest.newBuilder().setId("id-1").build();
+    DeleteEdgeDecisionSpecResponse deleteResponse = stub.deleteEdgeDecisionSpec(deleteRequest);
+    Assertions.assertEquals(spec1, deleteResponse.getDeletedEdgeDecisionSpec());
+
+    CreateEdgeDecisionSpecRequest createRequest =
+        CreateEdgeDecisionSpecRequest.newBuilder().setEdgeDecisionSpec(spec1).build();
+    CreateEdgeDecisionSpecResponse createResponse = stub.createEdgeDecisionSpec(createRequest);
+    Assertions.assertEquals(spec1, createResponse.getEdgeDecisionSpec());
+
+    UpdateEdgeDecisionSpecRequest updateRequest =
+        UpdateEdgeDecisionSpecRequest.newBuilder()
+            .setEdgeDecisionSpec(spec2)
+            .setCurrentVersion(0)
+            .build();
+    UpdateEdgeDecisionSpecResponse updateResponse = stub.updateEdgeDecisionSpec(updateRequest);
+    Assertions.assertEquals(spec2, updateResponse.getEdgeDecisionSpec());
+  }
+
+  @Test
+  void testCrudForEdgeAttributionRules() {
+    RequestContext requestContext = buildRequestContext();
+    EdgeAttributionRule attributionRule1 =
+        createEdgeAttributionRule(requestContext, "id-1", "policy-1", "api-1");
+    EdgeAttributionRule attributionRule2 =
+        createEdgeAttributionRule(requestContext, "id-2", "policy-1", "api-2");
+
+    GetAllEdgeAttributionRulesRequest getAllRequest =
+        GetAllEdgeAttributionRulesRequest.newBuilder().build();
+    GetAllEdgeAttributionRulesResponse getAllResponse =
+        stub.getAllEdgeAttributionRules(getAllRequest);
+    Assertions.assertEquals(2, getAllResponse.getEdgeAttributionRulesCount());
+
+    GetEdgeAttributionRuleRequest getRequest =
+        GetEdgeAttributionRuleRequest.newBuilder().setId("id-1").build();
+    GetEdgeAttributionRuleResponse getResponse = stub.getEdgeAttributionRule(getRequest);
+    Assertions.assertEquals(attributionRule1, getResponse.getEdgeAttributionRule());
+
+    DeleteEdgeAttributionRuleRequest deleteRequest =
+        DeleteEdgeAttributionRuleRequest.newBuilder().setId("id-1").build();
+    DeleteEdgeAttributionRuleResponse deleteResponse =
+        stub.deleteEdgeAttributionRule(deleteRequest);
+    Assertions.assertEquals(attributionRule1, deleteResponse.getDeletedEdgeAttributionRule());
+
+    CreateEdgeAttributionRuleRequest createRequest =
+        CreateEdgeAttributionRuleRequest.newBuilder()
+            .setEdgeAttributionRule(attributionRule1)
+            .build();
+    CreateEdgeAttributionRuleResponse createResponse =
+        stub.createEdgeAttributionRule(createRequest);
+    Assertions.assertEquals(attributionRule1, createResponse.getEdgeAttributionRule());
+
+    UpdateEdgeAttributionRuleRequest updateRequest =
+        UpdateEdgeAttributionRuleRequest.newBuilder()
+            .setEdgeAttributionRule(attributionRule2)
+            .setCurrentVersion(0)
+            .build();
+    UpdateEdgeAttributionRuleResponse updateResponse =
+        stub.updateEdgeAttributionRule(updateRequest);
+    Assertions.assertEquals(attributionRule2, updateResponse.getEdgeAttributionRule());
+  }
+
+  @Test
+  void testCrudForEdgeCustomResponses() {
+    RequestContext requestContext = buildRequestContext();
+    EdgeCustomResponse customResponse1 =
+        createEdgeCustomResponse(requestContext, "id-1", "policy-1", "api-1");
+    EdgeCustomResponse customResponse2 =
+        createEdgeCustomResponse(requestContext, "id-2", "policy-1", "api-2");
+
+    GetAllEdgeCustomResponsesRequest getAllRequest =
+        GetAllEdgeCustomResponsesRequest.newBuilder().build();
+    GetAllEdgeCustomResponsesResponse getAllResponse =
+        stub.getAllEdgeCustomResponses(getAllRequest);
+    Assertions.assertEquals(2, getAllResponse.getEdgeCustomResponsesCount());
+
+    GetEdgeCustomResponseRequest getRequest =
+        GetEdgeCustomResponseRequest.newBuilder().setId("id-1").build();
+    GetEdgeCustomResponseResponse getResponse = stub.getEdgeCustomResponse(getRequest);
+    Assertions.assertEquals(customResponse1, getResponse.getEdgeCustomResponse());
+
+    DeleteEdgeCustomResponseRequest deleteRequest =
+        DeleteEdgeCustomResponseRequest.newBuilder().setId("id-1").build();
+    DeleteEdgeCustomResponseResponse deleteResponse = stub.deleteEdgeCustomResponse(deleteRequest);
+    Assertions.assertEquals(customResponse1, deleteResponse.getDeletedEdgeCustomResponse());
+
+    CreateEdgeCustomResponseRequest createRequest =
+        CreateEdgeCustomResponseRequest.newBuilder().setEdgeCustomResponse(customResponse1).build();
+    CreateEdgeCustomResponseResponse createResponse = stub.createEdgeCustomResponse(createRequest);
+    Assertions.assertEquals(customResponse1, createResponse.getEdgeCustomResponse());
+
+    UpdateEdgeCustomResponseRequest updateRequest =
+        UpdateEdgeCustomResponseRequest.newBuilder()
+            .setEdgeCustomResponse(customResponse2)
+            .setCurrentVersion(0)
+            .build();
+    UpdateEdgeCustomResponseResponse updateResponse = stub.updateEdgeCustomResponse(updateRequest);
+    Assertions.assertEquals(customResponse2, updateResponse.getEdgeCustomResponse());
+  }
+
+  private EdgeDecisionSpec createEdgeDecisionSpec(
+      RequestContext requestContext, String ruleId, String policyId, String apiId) {
+    return requestContext
+        .call(
+            () ->
+                stub.createEdgeDecisionSpec(
+                    CreateEdgeDecisionSpecRequest.newBuilder()
+                        .setEdgeDecisionSpec(buildEdgeDecisionSpec(ruleId, policyId, apiId))
+                        .build()))
+        .getEdgeDecisionSpec();
+  }
+
+  private EdgeDecisionSpec buildEdgeDecisionSpec(String ruleId, String policyId, String apiId) {
+    return EdgeDecisionSpec.newBuilder()
+        .setId(ruleId)
+        .addDecisionSpecDirectives(EdgeDecisionSpecDirective.getDefaultInstance())
+        .build();
+  }
+
+  private EdgeCustomResponse createEdgeCustomResponse(
+      RequestContext requestContext, String ruleId, String policyId, String apiId) {
+    return requestContext
+        .call(
+            () ->
+                stub.createEdgeCustomResponse(
+                    CreateEdgeCustomResponseRequest.newBuilder()
+                        .setEdgeCustomResponse(buildEdgeCustomResponse(ruleId, policyId, apiId))
+                        .build()))
+        .getEdgeCustomResponse();
+  }
+
+  private EdgeCustomResponse buildEdgeCustomResponse(String ruleId, String policyId, String apiId) {
+    return EdgeCustomResponse.newBuilder()
+        .setId(ruleId)
+        .setCustomResponse(CustomResponse.getDefaultInstance())
+        .build();
+  }
+
+  private EdgeAttributionRule createEdgeAttributionRule(
+      RequestContext requestContext, String ruleId, String policyId, String apiId) {
+    return requestContext
+        .call(
+            () ->
+                stub.createEdgeAttributionRule(
+                    CreateEdgeAttributionRuleRequest.newBuilder()
+                        .setEdgeAttributionRule(buildEdgeAttributionRule(ruleId, policyId, apiId))
+                        .build()))
+        .getEdgeAttributionRule();
+  }
+
+  private EdgeAttributionRule buildEdgeAttributionRule(
+      String ruleId, String policyId, String apiId) {
+    return EdgeAttributionRule.newBuilder()
+        .setId(ruleId)
+        .setRuleDefinition(
+            EdgeAttributionRuleDefinition.newBuilder()
+                .setCustomFields(
+                    Structs.of("policyId", Values.of(policyId), "target", Values.of(apiId))))
+        .build();
   }
 
   private EdgeDecisionRule createEdgeDecisionRule(

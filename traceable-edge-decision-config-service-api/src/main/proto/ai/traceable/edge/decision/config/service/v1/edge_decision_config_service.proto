@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.edge.decision.config.service.v1;
 
+import "ai/traceable/edge/decision/config/service/v1/edge_attribution_rule.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_custom_response.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
@@ -39,6 +41,20 @@ service EdgeDecisionConfigService {
   rpc GetAllEdgeDecisionSpecs(GetAllEdgeDecisionSpecsRequest) returns (GetAllEdgeDecisionSpecsResponse) {}
   rpc DeleteEdgeDecisionSpec(DeleteEdgeDecisionSpecRequest) returns (DeleteEdgeDecisionSpecResponse) {}
   rpc GetEdgeDecisionSpec(GetEdgeDecisionSpecRequest) returns (GetEdgeDecisionSpecResponse) {}
+
+  // CRUD for attribution rules
+  rpc CreateEdgeAttributionRule(CreateEdgeAttributionRuleRequest) returns (CreateEdgeAttributionRuleResponse) {}
+  rpc UpdateEdgeAttributionRule(UpdateEdgeAttributionRuleRequest) returns (UpdateEdgeAttributionRuleResponse) {}
+  rpc GetAllEdgeAttributionRules(GetAllEdgeAttributionRulesRequest) returns (GetAllEdgeAttributionRulesResponse) {}
+  rpc DeleteEdgeAttributionRule(DeleteEdgeAttributionRuleRequest) returns (DeleteEdgeAttributionRuleResponse) {}
+  rpc GetEdgeAttributionRule(GetEdgeAttributionRuleRequest) returns (GetEdgeAttributionRuleResponse) {}
+
+  // CRUD for custom responses
+  rpc CreateEdgeCustomResponse(CreateEdgeCustomResponseRequest) returns (CreateEdgeCustomResponseResponse) {}
+  rpc UpdateEdgeCustomResponse(UpdateEdgeCustomResponseRequest) returns (UpdateEdgeCustomResponseResponse) {}
+  rpc GetAllEdgeCustomResponses(GetAllEdgeCustomResponsesRequest) returns (GetAllEdgeCustomResponsesResponse) {}
+  rpc DeleteEdgeCustomResponse(DeleteEdgeCustomResponseRequest) returns (DeleteEdgeCustomResponseResponse) {}
+  rpc GetEdgeCustomResponse(GetEdgeCustomResponseRequest) returns (GetEdgeCustomResponseResponse) {}
 }
 
 message GetResolvedEdgeDecisionEngineConfigsRequest {
@@ -229,4 +245,84 @@ message DeleteEdgeDecisionSpecRequest {
 
 message DeleteEdgeDecisionSpecResponse {
   EdgeDecisionSpec deleted_edge_decision_spec = 1;
+}
+
+message CreateEdgeAttributionRuleRequest {
+  EdgeAttributionRule edge_attribution_rule = 1;
+}
+
+message CreateEdgeAttributionRuleResponse {
+  EdgeAttributionRule edge_attribution_rule = 1;
+}
+
+message UpdateEdgeAttributionRuleRequest {
+  int64 current_version = 1;
+  EdgeAttributionRule edge_attribution_rule = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message UpdateEdgeAttributionRuleResponse {
+  EdgeAttributionRule edge_attribution_rule = 1;
+}
+
+message GetAllEdgeAttributionRulesRequest {}
+
+message GetEdgeAttributionRuleRequest {
+  string id = 1;
+}
+
+message GetEdgeAttributionRuleResponse {
+  EdgeAttributionRule edge_attribution_rule = 1;
+}
+
+message GetAllEdgeAttributionRulesResponse {
+  repeated EdgeAttributionRule edge_attribution_rules = 1;
+}
+
+message DeleteEdgeAttributionRuleRequest {
+  string id = 1;
+}
+
+message DeleteEdgeAttributionRuleResponse {
+  EdgeAttributionRule deleted_edge_attribution_rule = 1;
+}
+
+message CreateEdgeCustomResponseRequest {
+  EdgeCustomResponse edge_custom_response = 1;
+}
+
+message CreateEdgeCustomResponseResponse {
+  EdgeCustomResponse edge_custom_response = 1;
+}
+
+message UpdateEdgeCustomResponseRequest {
+  int64 current_version = 1;
+  EdgeCustomResponse edge_custom_response = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message UpdateEdgeCustomResponseResponse {
+  EdgeCustomResponse edge_custom_response = 1;
+}
+
+message GetAllEdgeCustomResponsesRequest {}
+
+message GetEdgeCustomResponseRequest {
+  string id = 1;
+}
+
+message GetEdgeCustomResponseResponse {
+  EdgeCustomResponse edge_custom_response = 1;
+}
+
+message GetAllEdgeCustomResponsesResponse {
+  repeated EdgeCustomResponse edge_custom_responses = 1;
+}
+
+message DeleteEdgeCustomResponseRequest {
+  string id = 1;
+}
+
+message DeleteEdgeCustomResponseResponse {
+  EdgeCustomResponse deleted_edge_custom_response = 1;
 }

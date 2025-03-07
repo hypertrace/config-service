@@ -34,6 +34,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(commonLibs.hypertrace.framework.metrics)
   implementation(commonLibs.traceable.actorservice.api)
+  implementation(commonLibs.commons.jexl3)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

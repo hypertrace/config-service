@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.edge.decision.config.service.v1;
 
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_custom_response.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 
 option java_multiple_files = true;
@@ -27,6 +28,7 @@ message EdgeDecisionSpecDirective {
     ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig decision_tree_jexl_expression = 6;
     ai.traceable.datamodel.data.transformation.config.v1.JexlScriptConfig decision_tree_jexl_script = 7;
   }
+  EdgeCustomResponse custom_response = 8;
 }
 
 message EdgeDecisionSpec {

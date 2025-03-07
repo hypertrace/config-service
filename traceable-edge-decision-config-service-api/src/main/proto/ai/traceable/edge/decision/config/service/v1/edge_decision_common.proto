@@ -45,6 +45,7 @@ message EdgeDecision {
   // what are the decorations to be added to the span that's exported to traceable platform.
   repeated SpanAttributeDecoration span_attributes = 6;
   // OR of edge decision targets with respect to the edge decision (for eg. targets to apply the EXCLUDE decision on)
+  // todo: provide a better example here? is this applicable only for exclude rules?
   repeated EdgeDecisionTarget edge_decision_targets = 7;
   // when a rule triggers, the rule's information is added to a fixed span attribute called "traceableai.decision.info"
   // the value of this attribute is a base64 string which is an array of all rules triggered with their rule infos
@@ -126,4 +127,49 @@ enum PolicyKind {
   POLICY_KIND_FRAUD_PROTECTION = 3;
   // rules or policies that are CUSTOM for a tenant.
   POLICY_KIND_CUSTOM = 4;
+}
+
+message EdgeDecisionRuleScope {
+  // AND - include if these conditions are met
+  repeated EdgeDecisionRuleScopeCondition scope_conditions = 1;
+  // AND (NOT) - exclude if these conditions are met
+  repeated EdgeDecisionRuleScopeCondition scope_exclusion_conditions = 2;
+}
+
+message EdgeDecisionRuleScopeCondition {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+    ServiceScope service_scope = 2;
+    UrlScope url_scope = 3;
+    UrlRegexScope url_regex_scope = 4;
+    HttpMethodScope http_method_scope = 5;
+    ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition_scope = 6;
+    DomainScope domain_scope = 7;
+  }
+
+  message DomainScope {
+    // OR
+    repeated string domains = 1;
+  }
+
+  message ServiceScope {
+    // OR
+    repeated string service_names = 1;
+  }
+
+  message UrlRegexScope {
+    // OR
+    repeated string url_regexes = 1;
+  }
+
+  message UrlScope {
+    // OR
+    repeated string urls = 1;
+  }
+
+  message HttpMethodScope {
+    // OR
+    // POST / PUT / GET / DELETE, etc
+    repeated string http_methods = 1;
+  }
 }

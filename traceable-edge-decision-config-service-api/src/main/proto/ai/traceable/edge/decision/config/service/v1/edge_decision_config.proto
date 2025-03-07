@@ -3,6 +3,8 @@ syntax = "proto3";
 package ai.traceable.edge.decision.config.service.v1;
 
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_attribution_rule.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_custom_response.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_spec.proto";
@@ -27,6 +29,10 @@ message EdgeDecisionEngineConfig {
   bool disabled = 7;
   // disable only specific rule categories
   repeated EdgeDecisionRuleCategory disabled_rule_categories = 8;
+  // list of all attribution rules
+  repeated EdgeAttributionRule attribution_rules = 9;
+  // default custom response to be sent on DECISION_DENY
+  EdgeCustomResponse default_block_response = 10;
   // allow for customization. mostly to handle hotfix scenarios that won't require change in contract.
   google.protobuf.Value custom_config = 100;
 }

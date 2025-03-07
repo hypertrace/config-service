@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package ai.traceable.edge.decision.config.service.v1;
+
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+// create custom responses for the edge decision engine.
+message EdgeCustomResponse {
+  string id = 1;
+  string name = 2;
+  int64 version = 3;
+  string description = 4;
+  EdgeDecisionRuleScope rule_scope = 5;
+  CustomResponse custom_response = 6;
+  // if this rule is generated from a template / default rule, store the template id
+  optional string template_id = 11;
+  google.protobuf.Struct custom_config = 100;
+}
+
+message CustomResponse {
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
+  // variables that can be used in the response
+  // they can be referred in the response body or headers as ${variable_name}
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping variables = 2;
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig status_code = 3;
+  repeated ResponseHeader response_headers = 4;
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig response_body = 5;
+}
+
+message ResponseHeader {
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig header_key = 1;
+  ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig header_value = 2;
+}

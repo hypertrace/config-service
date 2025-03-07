@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package ai.traceable.edge.decision.config.service.v1;
+
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+// no decision is provided by the rule. the rule is used for attribution (enrichments that can be applied on the span)
+// for example: extract email from the request and add it to the span.
+// these rules will ALWAYS be executed and will not provide a decision.
+message EdgeAttributionRule {
+  string id = 1;
+  string name = 2;
+  int64 version = 3;
+  string description = 4;
+  EdgeDecisionRuleScope rule_scope = 5;
+  EdgeAttributionRuleDefinition rule_definition = 6;
+  // if this rule is generated from a template / default rule, store the template id
+  optional string template_id = 11;
+}
+
+message EdgeAttributionRuleDefinition {
+  EdgeInputKind edge_input_kind = 1;
+  // variables used specifically in this rule
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping rule_variables = 2;
+  ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 3;
+  // what are the attributes to be projected from the input to the span
+  repeated SpanAttributeDecoration span_attributes = 4;
+  repeated PayloadDecoration decorations = 5;
+  google.protobuf.Struct custom_fields = 100;
+}
