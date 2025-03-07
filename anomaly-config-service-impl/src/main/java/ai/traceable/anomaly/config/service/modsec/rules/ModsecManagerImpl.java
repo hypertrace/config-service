@@ -4,7 +4,6 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDete
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
@@ -145,8 +144,7 @@ public class ModsecManagerImpl implements ModsecManager {
   }
 
   private boolean isGlobalConfigDisabled(ScopedAnomalyConfigStatus globalConfig) {
-    AnomalyConfigStatus configStatus = globalConfig.getConfigStatus();
-    return configStatus.getDisabled() && !configStatus.getInternal();
+    return globalConfig.getModsecGlobalConfig().getDisabled();
   }
 
   private Set<String> getDisabledModsecRuleIds(

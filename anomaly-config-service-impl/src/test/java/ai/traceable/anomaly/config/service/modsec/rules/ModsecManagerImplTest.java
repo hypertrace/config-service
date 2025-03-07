@@ -16,7 +16,6 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
@@ -28,6 +27,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
@@ -215,7 +215,7 @@ class ModsecManagerImplTest {
             requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()))
         .thenReturn(
             ScopedAnomalyConfigStatus.newBuilder()
-                .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(true).build())
+                .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true).build())
                 .build());
     subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
     crsRules =
