@@ -30,6 +30,7 @@ dependencies {
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.mockito.junit)
+  testImplementation(commonLibs.commons.io)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 

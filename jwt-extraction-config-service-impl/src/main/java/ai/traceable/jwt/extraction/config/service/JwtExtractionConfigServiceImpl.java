@@ -127,7 +127,7 @@ class JwtExtractionConfigServiceImpl extends JwtExtractionConfigServiceImplBase 
 
       EdgeDecisionEngineConfig edgeDecisionEngineConfig =
           featureCachingClient.isEdgeDecisionEnabledForTenant(context)
-              ? converter.convert(context, ruleManager.getAll(context, request.getFilter()))
+              ? converter.convert(ruleManager.getAll(context, request.getFilter()))
               : EdgeDecisionEngineConfig.getDefaultInstance();
       GetJwtExtractionEdgeDecisionRulesResponse response =
           GetJwtExtractionEdgeDecisionRulesResponse.newBuilder()

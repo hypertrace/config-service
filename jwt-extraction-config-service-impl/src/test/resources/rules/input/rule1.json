@@ -1,0 +1,56 @@
+{
+  "id": "default-jwt-auth-header-extraction",
+  "predicate": {},
+  "locations": [
+    {
+      "regexCaptureGroup": "^(?i)Bearer\\s*:?\\s*(.*)$",
+      "requestHeader": {
+        "operator": "RELATIONAL_OPERATOR_EQUALS",
+        "value": "authorization"
+      }
+    }
+  ],
+  "instructions": [
+    {
+      "valueExtraction": {
+        "payloadClaimName": "iss"
+      },
+      "action": {
+        "addNewAttribute": "iss"
+      }
+    },
+    {
+      "valueExtraction": {
+        "payloadClaimName": "aud"
+      },
+      "action": {
+        "addNewAttribute": "aud"
+      }
+    },
+    {
+      "valueExtraction": {
+        "payloadClaimName": "exp"
+      },
+      "action": {
+        "addNewAttribute": "exp"
+      }
+    },
+    {
+      "valueExtraction": {
+        "payloadClaimName": "nbf"
+      },
+      "action": {
+        "addNewAttribute": "nbf"
+      }
+    },
+    {
+      "valueExtraction": {
+        "headerKey": "alg"
+      },
+      "action": {
+        "addNewAttribute": "alg"
+      }
+    }
+  ],
+  "default": true
+}

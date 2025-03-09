@@ -1,0 +1,79 @@
+{
+  "decision_rules": [{
+    "id": "default-jwt-auth-header-extraction",
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signature_rule": {
+        "match_condition": {
+          "structured_match_condition": {
+            "lhs": {
+              "name": "lhs",
+              "type": "FIELD_TYPE_STR",
+              "rules": [{
+                "transformation_config": {
+                  "jexl_expression": {
+                    "jexl_expression": "$s.getPath()"
+                  },
+                  "output_type": "FIELD_TYPE_STR"
+                }
+              }]
+            },
+            "unary_operator": "UNARY_OPERATOR_IS_NOT_EMPTY"
+          }
+        }
+      }
+    },
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_MARK_FOR_TESTING",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.jwt.default-jwt-auth-header-extraction.1"
+        },
+        "span_attribute_value": {
+          "jexl_expression": {
+            "jexl_expression": "traceableTransformUtils:extractJWTPath($s.getRequestHeaders().get(\u0027authorization\u0027).replaceAll(\"^(?i)Bearer\\s*:?\\s*(.*)$\", \"$1\"), \"iss\", \"PAYLOAD\")"
+          }
+        }
+      }, {
+        "span_attribute_key": {
+          "static_value": "traceableai.jwt.default-jwt-auth-header-extraction.2"
+        },
+        "span_attribute_value": {
+          "jexl_expression": {
+            "jexl_expression": "traceableTransformUtils:extractJWTPath($s.getRequestHeaders().get(\u0027authorization\u0027).replaceAll(\"^(?i)Bearer\\s*:?\\s*(.*)$\", \"$1\"), \"aud\", \"PAYLOAD\")"
+          }
+        }
+      }, {
+        "span_attribute_key": {
+          "static_value": "traceableai.jwt.default-jwt-auth-header-extraction.3"
+        },
+        "span_attribute_value": {
+          "jexl_expression": {
+            "jexl_expression": "traceableTransformUtils:extractJWTPath($s.getRequestHeaders().get(\u0027authorization\u0027).replaceAll(\"^(?i)Bearer\\s*:?\\s*(.*)$\", \"$1\"), \"exp\", \"PAYLOAD\")"
+          }
+        }
+      }, {
+        "span_attribute_key": {
+          "static_value": "traceableai.jwt.default-jwt-auth-header-extraction.4"
+        },
+        "span_attribute_value": {
+          "jexl_expression": {
+            "jexl_expression": "traceableTransformUtils:extractJWTPath($s.getRequestHeaders().get(\u0027authorization\u0027).replaceAll(\"^(?i)Bearer\\s*:?\\s*(.*)$\", \"$1\"), \"nbf\", \"PAYLOAD\")"
+          }
+        }
+      }, {
+        "span_attribute_key": {
+          "static_value": "traceableai.jwt.default-jwt-auth-header-extraction.5"
+        },
+        "span_attribute_value": {
+          "jexl_expression": {
+            "jexl_expression": "traceableTransformUtils:extractJWTPath($s.getRequestHeaders().get(\u0027authorization\u0027).replaceAll(\"^(?i)Bearer\\s*:?\\s*(.*)$\", \"$1\"), \"alg\", \"HEADER\")"
+          }
+        }
+      }]
+    }
+  }]
+}
