@@ -15,7 +15,10 @@ import ai.traceable.edge.decision.config.service.supplier.actor.ActorEdgeDecisio
 import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServiceConfig;
 import ai.traceable.edge.decision.config.service.supplier.customsignature.CustomSignatureEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.detectionexclusion.DetectionExclusionEdgeDecisionConfigSupplier;
+import ai.traceable.edge.decision.config.service.supplier.jwt.JwtExtractionEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.ratelimiting.RateLimitingEdgeDecisionEngineConfigSupplier;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc;
+import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionConfigServiceGrpc.JwtExtractionConfigServiceBlockingStub;
 import ai.traceable.platform.actor.v1.ActorServiceGrpc;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc;
 import ai.traceable.userattribution.config.service.v2.UserAttributionConfigServiceGrpc;
@@ -65,6 +68,7 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     configBinder.addBinding().to(RateLimitingEdgeDecisionEngineConfigSupplier.class);
     configBinder.addBinding().to(DetectionExclusionEdgeDecisionConfigSupplier.class);
     configBinder.addBinding().to(CustomSignatureEdgeDecisionConfigSupplier.class);
+    configBinder.addBinding().to(JwtExtractionEdgeDecisionConfigSupplier.class);
   }
 
   @Provides
@@ -111,6 +115,13 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
   @Provides
   CustomSignatureConfigServiceBlockingStub providesCustomSignatureConfigServiceBlockingStub() {
     return CustomSignatureConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  JwtExtractionConfigServiceBlockingStub providesJwtExtractionConfigServiceBlockingStub() {
+    return JwtExtractionConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

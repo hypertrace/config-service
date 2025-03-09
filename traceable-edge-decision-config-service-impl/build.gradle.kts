@@ -13,6 +13,7 @@ dependencies {
   implementation(projects.rateLimitingConfigServiceApi)
   implementation(projects.detectionExclusionConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
+  implementation(projects.jwtExtractionConfigServiceApi)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
