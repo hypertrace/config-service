@@ -178,7 +178,7 @@ data:
             read.enabled = {{ $sv.readEnabled }}
             read.priority = {{ $sv.readPriority }}
             write.disabled = {{ $sv.writeDisabled }}
-            {{- if eq $sv.deepStoreScheme "file" }}
+            {{- if and (ne $sv.deepStoreScheme "gs") (ne $sv.deepStoreScheme "s3") }}
             directory = {{ printf "%s/%s/customers" $.Values.modelStoreNFSMountPath $.Values.global.env | quote }}
             {{- end }}
             {{- if eq $sv.deepStoreScheme "gs" }}
