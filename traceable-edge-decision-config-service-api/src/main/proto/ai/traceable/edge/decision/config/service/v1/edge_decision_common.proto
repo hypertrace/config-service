@@ -3,7 +3,6 @@ syntax = "proto3";
 package ai.traceable.edge.decision.config.service.v1;
 
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
-import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -26,65 +25,6 @@ enum EdgeInputKind {
   EDGE_INPUT_KIND_UNSPECIFIED = 0;
   EDGE_INPUT_KIND_HTTP_REQUEST = 1;
   EDGE_INPUT_KIND_CLIENT_FINGERPRINT_DATA = 2;
-}
-
-message EdgeDecision {
-  EdgeDecisionType edge_decision_type = 1;
-  // optional - specifies the duration for which the decision would be applied
-  // for subsequent requests once matched
-  google.protobuf.Duration decision_apply_duration = 2;
-  // modifying request/response in live traffic
-  repeated PayloadDecoration decorations = 3;
-  // Specifies the percentage of requests to apply the rule to after the threshold is crossed
-  // a number between 0.0 to 1.0
-  // default: 1.0 (all)
-  // todo: better name for this
-  optional double sampling_rate = 4;
-  // if this rule triggers, what is the threat type that must be added to the payload
-  string threat_type = 5;
-  // what are the decorations to be added to the span that's exported to traceable platform.
-  repeated SpanAttributeDecoration span_attributes = 6;
-  // OR of edge decision targets with respect to the edge decision (for eg. targets to apply the EXCLUDE decision on)
-  // todo: provide a better example here? is this applicable only for exclude rules?
-  repeated EdgeDecisionTarget edge_decision_targets = 7;
-  // when a rule triggers, the rule's information is added to a fixed span attribute called "traceableai.decision.info"
-  // the value of this attribute is a base64 string which is an array of all rules triggered with their rule infos
-  repeated RuleInfoDecoration rule_info_decorations = 8;
-}
-
-message EdgeDecisionTarget {
-  // decision type target for the edge decision
-  EdgeDecisionType edge_decision_type = 1;
-  // OR of rule targets for the edge decision
-  repeated EdgeDecisionRuleTarget edge_decision_rule_targets = 2;
-}
-
-message EdgeDecisionRuleTarget {
-  EdgeDecisionRuleCategory edge_decision_rule_category = 1;
-  repeated string rule_ids = 2;
-  // AND of result attributes from the rules which need to be matched for the decision
-  repeated ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping result_attribute_derivations = 3;
-}
-
-enum EdgeDecisionType {
-  EDGE_DECISION_TYPE_UNSPECIFIED = 0;
-  EDGE_DECISION_TYPE_ALLOW = 1;
-  EDGE_DECISION_TYPE_BLOCK = 2;
-  EDGE_DECISION_TYPE_CAPTCHA = 3;
-  EDGE_DECISION_TYPE_MARK_FOR_TESTING = 4;
-  EDGE_DECISION_TYPE_EXCLUDE = 5;
-  EDGE_DECISION_TYPE_ALERT = 6;
-}
-
-// this is our implementation detail.
-enum EdgeDecisionRuleCategory {
-  EDGE_DECISION_RULE_CATEGORY_UNSPECIFIED = 0;
-  EDGE_DECISION_RULE_CATEGORY_ORIGINAL = 1; // rules stored directly in this format
-  EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE = 2;
-  EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT = 3;
-  EDGE_DECISION_RULE_CATEGORY_MALICIOUS_SOURCES = 4;
-  EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR = 5;
-  EDGE_DECISION_RULE_CATEGORY_DETECTION_EXCLUSION = 6;
 }
 
 message RuleInfoDecoration {
@@ -127,6 +67,13 @@ enum PolicyKind {
   POLICY_KIND_FRAUD_PROTECTION = 3;
   // rules or policies that are CUSTOM for a tenant.
   POLICY_KIND_CUSTOM = 4;
+}
+
+message EdgeDecisionRuleStatus {
+  bool disabled = 1;
+  bool internal = 2;
+  // specifies the TTL for which the rule is active
+  ConfigTtl ttl = 3;
 }
 
 message EdgeDecisionRuleScope {

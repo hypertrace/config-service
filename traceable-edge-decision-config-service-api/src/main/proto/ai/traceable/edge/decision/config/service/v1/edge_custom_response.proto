@@ -16,6 +16,7 @@ message EdgeCustomResponse {
   string description = 4;
   EdgeDecisionRuleScope rule_scope = 5;
   CustomResponse custom_response = 6;
+  EdgeDecisionRuleStatus rule_status = 7;
   // if this rule is generated from a template / default rule, store the template id
   optional string template_id = 11;
   google.protobuf.Struct custom_config = 100;

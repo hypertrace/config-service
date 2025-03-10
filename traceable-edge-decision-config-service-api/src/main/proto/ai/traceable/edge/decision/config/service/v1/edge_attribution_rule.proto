@@ -18,6 +18,7 @@ message EdgeAttributionRule {
   string description = 4;
   EdgeDecisionRuleScope rule_scope = 5;
   EdgeAttributionRuleDefinition rule_definition = 6;
+  EdgeDecisionRuleStatus rule_status = 7;
   // if this rule is generated from a template / default rule, store the template id
   optional string template_id = 11;
 }
