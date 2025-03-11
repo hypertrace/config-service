@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.edge.decision.config.service.v1;
 
 import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
+import "ai/traceable/edge/decision/config/service/v1/edge_custom_response.proto";
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_common.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
@@ -56,6 +57,8 @@ message EdgeDecision {
   // when a rule triggers, the rule's information is added to a fixed span attribute called "traceableai.decision.info"
   // the value of this attribute is a base64 string which is an array of all rules triggered with their rule infos
   repeated RuleInfoDecoration rule_info_decorations = 8;
+  // custom response to be sent. on DECISION_DENY, this response will be sent.
+  EdgeCustomResponse custom_response = 9;
 }
 
 message EdgeDecisionTarget {
