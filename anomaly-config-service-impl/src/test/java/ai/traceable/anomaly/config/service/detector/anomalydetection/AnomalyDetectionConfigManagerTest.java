@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
@@ -152,7 +153,9 @@ public class AnomalyDetectionConfigManagerTest {
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
     ruleInfoManager = mock(RuleInfoManager.class);
-    wafConfigResolver = new WafConfigResolver(ruleInfoManager, detectorConfigServiceConfig);
+    wafConfigResolver =
+        new WafConfigResolver(
+            ruleInfoManager, detectorConfigServiceConfig, new ModsecConfigHandler());
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
@@ -489,7 +492,7 @@ public class AnomalyDetectionConfigManagerTest {
     String tenantId = "tenant";
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
     DetectorConfigServiceConfig config = getDefaultConfig();
-    wafConfigResolver = new WafConfigResolver(ruleInfoManager, config);
+    wafConfigResolver = new WafConfigResolver(ruleInfoManager, config, new ModsecConfigHandler());
     configManager =
         new AnomalyDetectionConfigManagerImpl(
             configServiceBlockingStub,
@@ -575,10 +578,16 @@ public class AnomalyDetectionConfigManagerTest {
             config,
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            wafConfigResolver);
+            new WafConfigResolver(ruleInfoManager, config, new ModsecConfigHandler()));
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
+        config.getDefaultWafDetectionConfigs().get(1).toBuilder()
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
+            .build());
+    defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
@@ -594,7 +603,10 @@ public class AnomalyDetectionConfigManagerTest {
                             .build())
                     .build())
             .build());
-    defaultDetectionConfigs.add(AnomalyDetectionConfig.getDefaultInstance());
+    defaultDetectionConfigs.add(
+        config.getDefaultWafDetectionConfigs().get(0).toBuilder()
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
+            .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
         .thenReturn(
@@ -659,6 +671,8 @@ public class AnomalyDetectionConfigManagerTest {
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
@@ -680,6 +694,8 @@ public class AnomalyDetectionConfigManagerTest {
             .build());
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
@@ -692,7 +708,6 @@ public class AnomalyDetectionConfigManagerTest {
                             .build())
                     .build())
             .build());
-    defaultDetectionConfigs.add(AnomalyDetectionConfig.getDefaultInstance());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
         .thenReturn(
@@ -757,6 +772,8 @@ public class AnomalyDetectionConfigManagerTest {
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
@@ -771,6 +788,8 @@ public class AnomalyDetectionConfigManagerTest {
             .build());
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
             .setModsecurityAnomalyDetectionConfig(
                 ModsecurityAnomalyDetectionConfig.newBuilder()
                     .setModsecAnomalyRule(
@@ -783,7 +802,6 @@ public class AnomalyDetectionConfigManagerTest {
                             .build())
                     .build())
             .build());
-    defaultDetectionConfigs.add(AnomalyDetectionConfig.getDefaultInstance());
 
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
@@ -1119,7 +1137,9 @@ public class AnomalyDetectionConfigManagerTest {
                 + "          internal = false\n"
                 + "        }\n"
                 + "        modsecurityAnomalyDetectionConfig = {\n"
-                + "          anomalyRuleId = \"crs_912\"\n"
+                + "           modsecAnomalyRule = {\n"
+                + "            anomalyRuleId = \"crs_912\"\n"
+                + "          }\n"
                 + "        }\n"
                 + "      },\n"
                 + "      {\n"
@@ -1128,7 +1148,9 @@ public class AnomalyDetectionConfigManagerTest {
                 + "          internal = false\n"
                 + "        }\n"
                 + "        modsecurityAnomalyDetectionConfig = {\n"
-                + "          anomalyRuleId = \"crs_913\"\n"
+                + "           modsecAnomalyRule = {\n"
+                + "            anomalyRuleId = \"crs_913\"\n"
+                + "          }\n"
                 + "        }\n"
                 + "      }\n"
                 + "    ]\n"

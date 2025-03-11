@@ -4,6 +4,7 @@ import static ai.traceable.anomaly.config.service.v1.AnomalySubRuleType.ANOMALY_
 import static ai.traceable.anomaly.config.service.v1.AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE;
 
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
@@ -28,11 +29,16 @@ public class WafConfigResolver {
   private final RuleInfoManager ruleInfoManager;
   private final List<AnomalyDetectionConfig> defaultWafConfigs;
   private final AnomalyDetectionConfig defaultAllModsecDetectionConfig;
+  private final ModsecConfigHandler modsecConfigHandler;
 
   @Inject
-  public WafConfigResolver(RuleInfoManager ruleInfoManager, DetectorConfigServiceConfig config) {
+  public WafConfigResolver(
+      RuleInfoManager ruleInfoManager,
+      DetectorConfigServiceConfig config,
+      ModsecConfigHandler modsecConfigHandler) {
     this.ruleInfoManager = ruleInfoManager;
     this.defaultWafConfigs = config.getDefaultWafDetectionConfigs();
+    this.modsecConfigHandler = modsecConfigHandler;
     this.defaultAllModsecDetectionConfig =
         config.getDefaultWafDetectionConfigs().stream()
             .filter(
@@ -75,8 +81,7 @@ public class WafConfigResolver {
                     })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableList()));
-    anomalyDetectionConfigList.add(defaultAllModsecDetectionConfig);
-    return anomalyDetectionConfigList;
+    return modsecConfigHandler.merge(defaultWafConfigs, anomalyDetectionConfigList);
   }
 
   private ModsecRuleVersion getModsecRuleVersion(

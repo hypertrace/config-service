@@ -9,13 +9,16 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
 
-class ModsecConfigHandler {
+@AllArgsConstructor(onConstructor_ = @Inject)
+public class ModsecConfigHandler {
 
   /**
    * @param preferredConfig
@@ -25,12 +28,18 @@ class ModsecConfigHandler {
    */
   List<AnomalyDetectionConfig> merge(
       ScopedAnomalyDetectionConfig preferredConfig, ScopedAnomalyDetectionConfig fallbackConfig) {
+    return merge(
+        preferredConfig.getAnomalyDetectionConfigsList(),
+        fallbackConfig.getAnomalyDetectionConfigsList());
+  }
 
+  public List<AnomalyDetectionConfig> merge(
+      List<AnomalyDetectionConfig> preferredAnomalyDetectionConfigList,
+      List<AnomalyDetectionConfig> fallbackAnomalyDetectionConfigList) {
     List<AnomalyDetectionConfig> preferredModsecAnomalyRuleConfigs =
-        getModsecRuleConfigs(preferredConfig.getAnomalyDetectionConfigsList());
+        getModsecRuleConfigs(preferredAnomalyDetectionConfigList);
     List<AnomalyDetectionConfig> fallbackModsecAnomalyRuleConfigs =
-        getModsecRuleConfigs(fallbackConfig.getAnomalyDetectionConfigsList());
-
+        getModsecRuleConfigs(fallbackAnomalyDetectionConfigList);
     Map<String, AnomalyConfigStatusChange> configStatusMap =
         preferredModsecAnomalyRuleConfigs.stream()
             .collect(
@@ -91,8 +100,8 @@ class ModsecConfigHandler {
 
     Map<String, Map<String, AnomalySubRuleConfig>> modsecConfigMap =
         mergeSubRuleConfigs(
-            getModsecAnomalyRuleConfigs(preferredConfig),
-            getModsecAnomalyRuleConfigs(fallbackConfig));
+            getModsecAnomalyRuleConfigs(preferredModsecAnomalyRuleConfigs),
+            getModsecAnomalyRuleConfigs(fallbackModsecAnomalyRuleConfigs));
 
     List<AnomalyDetectionConfig> modsecConfigs = new ArrayList<>();
 
@@ -123,8 +132,8 @@ class ModsecConfigHandler {
     AnomalyDetectionConfig modsecurityAllDetectionConfig =
         (AnomalyDetectionConfig)
             mergeConfigs(
-                getModsecAllDetectionConfig(fallbackConfig.getAnomalyDetectionConfigsList()),
-                getModsecAllDetectionConfig(preferredConfig.getAnomalyDetectionConfigsList()));
+                getModsecAllDetectionConfig(fallbackAnomalyDetectionConfigList),
+                getModsecAllDetectionConfig(preferredAnomalyDetectionConfigList));
 
     if (!modsecurityAllDetectionConfig.equals(AnomalyDetectionConfig.getDefaultInstance())) {
       modsecConfigs.add(modsecurityAllDetectionConfig);
@@ -239,9 +248,8 @@ class ModsecConfigHandler {
   }
 
   private List<ModsecurityAnomalyRuleConfig> getModsecAnomalyRuleConfigs(
-      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig) {
-    return scopedAnomalyDetectionConfig.getAnomalyDetectionConfigsList().stream()
-        .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
+      List<AnomalyDetectionConfig> anomalyDetectionConfigList) {
+    return anomalyDetectionConfigList.stream()
         .map(AnomalyDetectionConfig::getModsecurityAnomalyDetectionConfig)
         .filter(ModsecurityAnomalyDetectionConfig::hasModsecAnomalyRule)
         .map(ModsecurityAnomalyDetectionConfig::getModsecAnomalyRule)
