@@ -67,6 +67,10 @@ public class NotificationRuleFilteredStore
                         .contains(
                             notificationRule
                                 .getNotificationRuleMutableData()
-                                .getEventConditionType()));
+                                .getEventConditionType()))
+        .filter(
+            notificationRule ->
+                !notificationRule.getNotificationRuleMutableData().getDisabled()
+                    || !filter.getExcludeDisabled());
   }
 }

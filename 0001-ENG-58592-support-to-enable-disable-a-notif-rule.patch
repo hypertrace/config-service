@@ -1,0 +1,186 @@
+From 86dda8a30f2aa3e612d66e4417bd949a62746a87 Mon Sep 17 00:00:00 2001
+From: Sidharth Jain <32795041+sidharth-jain23@users.noreply.github.com>
+Date: Tue, 11 Mar 2025 12:19:29 +0530
+Subject: [PATCH] ENG-58592 - support to enable/disable a notif rule
+
+---
+ .../config/service/v1/notification_rule.proto |  1 +
+ .../v1/notification_rule_config_service.proto |  1 +
+ .../NotificationRuleFilteredStore.java        |  6 +-
+ ...NotificationRuleConfigServiceImplTest.java | 70 +++++++++++++++++--
+ 4 files changed, 73 insertions(+), 5 deletions(-)
+
+diff --git a/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule.proto b/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule.proto
+index db0a439..c9b9ac3 100644
+--- a/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule.proto
++++ b/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule.proto
+@@ -20,6 +20,7 @@ message NotificationRuleMutableData {
+   string rate_limit_interval_duration = 6;
+ 
+   NotificationIntegrationTarget integration_target = 7;
++  bool disabled = 8;
+ }
+ 
+ message NotificationIntegrationTarget {
+diff --git a/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule_config_service.proto b/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule_config_service.proto
+index df2e54e..c0d2e18 100644
+--- a/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule_config_service.proto
++++ b/notification-rule-config-service-api/src/main/proto/org/hypertrace/notification/config/service/v1/notification_rule_config_service.proto
+@@ -37,6 +37,7 @@ message GetAllNotificationRulesRequest {
+ 
+ message NotificationRuleFilter {
+   repeated string event_condition_type = 1;
++  bool exclude_disabled = 2;
+ }
+ 
+ message GetAllNotificationRulesResponse {
+diff --git a/notification-rule-config-service-impl/src/main/java/org/hypertrace/notification/config/service/NotificationRuleFilteredStore.java b/notification-rule-config-service-impl/src/main/java/org/hypertrace/notification/config/service/NotificationRuleFilteredStore.java
+index d7c8706..9aba1a4 100644
+--- a/notification-rule-config-service-impl/src/main/java/org/hypertrace/notification/config/service/NotificationRuleFilteredStore.java
++++ b/notification-rule-config-service-impl/src/main/java/org/hypertrace/notification/config/service/NotificationRuleFilteredStore.java
+@@ -67,6 +67,10 @@ public class NotificationRuleFilteredStore
+                         .contains(
+                             notificationRule
+                                 .getNotificationRuleMutableData()
+-                                .getEventConditionType()));
++                                .getEventConditionType()))
++        .filter(
++            notificationRule ->
++                !notificationRule.getNotificationRuleMutableData().getDisabled()
++                    || !filter.getExcludeDisabled());
+   }
+ }
+diff --git a/notification-rule-config-service-impl/src/test/java/org/hypertrace/notification/config/service/NotificationRuleConfigServiceImplTest.java b/notification-rule-config-service-impl/src/test/java/org/hypertrace/notification/config/service/NotificationRuleConfigServiceImplTest.java
+index c6d8352..dca0719 100644
+--- a/notification-rule-config-service-impl/src/test/java/org/hypertrace/notification/config/service/NotificationRuleConfigServiceImplTest.java
++++ b/notification-rule-config-service-impl/src/test/java/org/hypertrace/notification/config/service/NotificationRuleConfigServiceImplTest.java
+@@ -46,9 +46,11 @@ class NotificationRuleConfigServiceImplTest {
+   @Test
+   void createReadUpdateDeleteNotificationRules() {
+     NotificationRuleMutableData notificationRuleMutableData1 =
+-        getNotificationRuleMutableData("rule1", "channel1");
++        getNotificationRuleMutableData("rule1", "channel1", false);
+     NotificationRuleMutableData notificationRuleMutableData2 =
+-        getNotificationRuleMutableData("rule2", "channel1");
++        getNotificationRuleMutableData("rule2", "channel1", false);
++    NotificationRuleMutableData notificationRuleMutableData3 =
++        getNotificationRuleMutableData("rule3", "channel1", false);
+     when(notificationRuleStore.getAllObjects(any())).thenReturn(List.of());
+ 
+     NotificationRule notificationRule1 =
+@@ -86,8 +88,25 @@ class NotificationRuleConfigServiceImplTest {
+                     .build())
+             .getNotificationRule());
+ 
++    NotificationRule notificationRule3 =
++        notificationStub
++            .createNotificationRule(
++                CreateNotificationRuleRequest.newBuilder()
++                    .setNotificationRuleMutableData(notificationRuleMutableData3)
++                    .build())
++            .getNotificationRule();
++
+     assertEquals(
+-        List.of(notificationRule2, notificationRule1),
++        notificationRule3,
++        notificationStub
++            .getNotificationRule(
++                GetNotificationRuleRequest.newBuilder()
++                    .setNotificationRuleId(notificationRule3.getId())
++                    .build())
++            .getNotificationRule());
++
++    assertEquals(
++        List.of(notificationRule3, notificationRule2, notificationRule1),
+         notificationStub
+             .getAllNotificationRules(
+                 GetAllNotificationRulesRequest.newBuilder()
+@@ -114,7 +133,35 @@ class NotificationRuleConfigServiceImplTest {
+                     .build())
+             .getNotificationRule();
+     assertEquals(ruleToUpdate, updatedRule);
++    // disable rule
++    NotificationRule ruleToUpdate3 =
++        notificationRule3.toBuilder()
++            .setNotificationRuleMutableData(
++                notificationRule3.getNotificationRuleMutableData().toBuilder()
++                    .setDisabled(true)
++                    .build())
++            .build();
++    NotificationRule updatedRule3 =
++        notificationStub
++            .updateNotificationRule(
++                UpdateNotificationRuleRequest.newBuilder()
++                    .setNotificationRuleMutableData(ruleToUpdate3.getNotificationRuleMutableData())
++                    .setId(ruleToUpdate3.getId())
++                    .build())
++            .getNotificationRule();
++    assertEquals(ruleToUpdate3, updatedRule3);
+ 
++    assertEquals(
++        List.of(updatedRule3, notificationRule2, updatedRule),
++        notificationStub
++            .getAllNotificationRules(
++                GetAllNotificationRulesRequest.newBuilder()
++                    .setFilter(
++                        NotificationRuleFilter.newBuilder()
++                            .addEventConditionType("metricAnomalyEventCondition")
++                            .build())
++                    .build())
++            .getNotificationRulesList());
+     assertEquals(
+         List.of(notificationRule2, updatedRule),
+         notificationStub
+@@ -123,6 +170,7 @@ class NotificationRuleConfigServiceImplTest {
+                     .setFilter(
+                         NotificationRuleFilter.newBuilder()
+                             .addEventConditionType("metricAnomalyEventCondition")
++                            .setExcludeDisabled(true)
+                             .build())
+                     .build())
+             .getNotificationRulesList());
+@@ -131,6 +179,18 @@ class NotificationRuleConfigServiceImplTest {
+         DeleteNotificationRuleRequest.newBuilder()
+             .setNotificationRuleId(notificationRule2.getId())
+             .build());
++    assertEquals(
++        List.of(updatedRule3, updatedRule),
++        notificationStub
++            .getAllNotificationRules(
++                GetAllNotificationRulesRequest.newBuilder()
++                    .setFilter(
++                        NotificationRuleFilter.newBuilder()
++                            .addEventConditionType("metricAnomalyEventCondition")
++                            .build())
++                    .build())
++            .getNotificationRulesList());
++
+     assertEquals(
+         List.of(updatedRule),
+         notificationStub
+@@ -139,19 +199,21 @@ class NotificationRuleConfigServiceImplTest {
+                     .setFilter(
+                         NotificationRuleFilter.newBuilder()
+                             .addEventConditionType("metricAnomalyEventCondition")
++                            .setExcludeDisabled(true)
+                             .build())
+                     .build())
+             .getNotificationRulesList());
+   }
+ 
+   private NotificationRuleMutableData getNotificationRuleMutableData(
+-      String name, String channelId) {
++      String name, String channelId, boolean disabled) {
+     return NotificationRuleMutableData.newBuilder()
+         .setRuleName(name)
+         .setDescription("sample rule")
+         .setChannelId(channelId)
+         .setEventConditionType("metricAnomalyEventCondition")
+         .setEventConditionId("rule-1")
++        .setDisabled(disabled)
+         .build();
+   }
+ 
+-- 
+2.48.1
+
