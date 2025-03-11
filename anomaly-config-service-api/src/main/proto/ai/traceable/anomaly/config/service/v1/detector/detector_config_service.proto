@@ -8,9 +8,13 @@ import "ai/traceable/anomaly/config/service/v1/detector/anomaly_detection_config
 option java_multiple_files = true;
 
 service DetectorConfigService {
-  rpc GetScopedAnomalyDetectionConfig(GetScopedAnomalyDetectionConfigRequest) returns (GetScopedAnomalyDetectionConfigResponse) {}
+  rpc GetScopedAnomalyDetectionConfig(GetScopedAnomalyDetectionConfigRequest) returns (GetScopedAnomalyDetectionConfigResponse) {
+    option deprecated = true;
+  }
 
-  rpc GetAllScopedAnomalyDetectionConfigs(GetAllScopedAnomalyDetectionConfigsRequest) returns (GetAllScopedAnomalyDetectionConfigsResponse) {}
+  rpc GetAllScopedAnomalyDetectionConfigs(GetAllScopedAnomalyDetectionConfigsRequest) returns (GetAllScopedAnomalyDetectionConfigsResponse) {
+    option deprecated = true;
+  }
 
   rpc GetUnresolvedScopedAnomalyDetectionConfig(GetUnresolvedScopedAnomalyDetectionConfigRequest) returns (GetUnresolvedScopedAnomalyDetectionConfigResponse) {}
 

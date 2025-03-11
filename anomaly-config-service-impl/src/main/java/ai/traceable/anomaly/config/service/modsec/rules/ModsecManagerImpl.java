@@ -78,9 +78,6 @@ public class ModsecManagerImpl implements ModsecManager {
 
     Set<String> disabledModsecRuleIds;
     if (removeDisabledRules) {
-      if (isGlobalConfigDisabled(globalConfig)) {
-        return new ModsecCrsRules(subRuleTypes);
-      }
       boolean checkBlockingStatus =
           rulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING
               || (subRuleTypes.size() == 1
@@ -143,10 +140,6 @@ public class ModsecManagerImpl implements ModsecManager {
     return builder.build();
   }
 
-  private boolean isGlobalConfigDisabled(ScopedAnomalyConfigStatus globalConfig) {
-    return globalConfig.getModsecGlobalConfig().getDisabled();
-  }
-
   private Set<String> getDisabledModsecRuleIds(
       RequestContext requestContext,
       boolean checkBlockingStatus,
@@ -187,7 +180,7 @@ public class ModsecManagerImpl implements ModsecManager {
   private Map<String, AnomalyDetectionConfig> getAnomalyRuleConfigMap(
       RequestContext requestContext, AnomalyConfigScope anomalyConfigScope) {
     return anomalyDetectionConfigManager
-        .getScopedAnomalyDetectionConfig(
+        .getGlobalResolvedScopedAnomalyDetectionConfig(
             requestContext, anomalyConfigScope, ANOMALY_DETECTION_CONFIGS_FILTER)
         .getAnomalyDetectionConfigsList()
         .stream()
