@@ -59,10 +59,8 @@ public class NotificationRuleFilteredStore
   protected Optional<NotificationRule> filterConfigData(
       NotificationRule data, NotificationRuleFilter filter) {
     return Optional.of(data)
-        .filter(
-            notificationRule ->
-                satisfiesEnabledPredicate(notificationRule, filter)
-                    && satisfiesConditionTypePredicate(notificationRule, filter));
+        .filter(rule -> satisfiesEnabledPredicate(rule, filter))
+        .filter(rule -> satisfiesConditionTypePredicate(rule, filter));
   }
 
   private boolean satisfiesEnabledPredicate(

@@ -170,7 +170,7 @@ class NotificationRuleConfigServiceImplTest {
                     .setFilter(
                         NotificationRuleFilter.newBuilder()
                             .addEventConditionType("metricAnomalyEventCondition")
-                            .setExcludeDisabled(true)
+                            .setEnabled(true)
                             .build())
                     .build())
             .getNotificationRulesList());
@@ -199,7 +199,7 @@ class NotificationRuleConfigServiceImplTest {
                     .setFilter(
                         NotificationRuleFilter.newBuilder()
                             .addEventConditionType("metricAnomalyEventCondition")
-                            .setExcludeDisabled(true)
+                            .setEnabled(true)
                             .build())
                     .build())
             .getNotificationRulesList());
