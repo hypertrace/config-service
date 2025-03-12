@@ -46,9 +46,11 @@ class NotificationRuleConfigServiceImplTest {
   @Test
   void createReadUpdateDeleteNotificationRules() {
     NotificationRuleMutableData notificationRuleMutableData1 =
-        getNotificationRuleMutableData("rule1", "channel1");
+        getNotificationRuleMutableData("rule1", "channel1", false);
     NotificationRuleMutableData notificationRuleMutableData2 =
-        getNotificationRuleMutableData("rule2", "channel1");
+        getNotificationRuleMutableData("rule2", "channel1", false);
+    NotificationRuleMutableData notificationRuleMutableData3 =
+        getNotificationRuleMutableData("rule3", "channel1", false);
     when(notificationRuleStore.getAllObjects(any())).thenReturn(List.of());
 
     NotificationRule notificationRule1 =
@@ -86,8 +88,25 @@ class NotificationRuleConfigServiceImplTest {
                     .build())
             .getNotificationRule());
 
+    NotificationRule notificationRule3 =
+        notificationStub
+            .createNotificationRule(
+                CreateNotificationRuleRequest.newBuilder()
+                    .setNotificationRuleMutableData(notificationRuleMutableData3)
+                    .build())
+            .getNotificationRule();
+
     assertEquals(
-        List.of(notificationRule2, notificationRule1),
+        notificationRule3,
+        notificationStub
+            .getNotificationRule(
+                GetNotificationRuleRequest.newBuilder()
+                    .setNotificationRuleId(notificationRule3.getId())
+                    .build())
+            .getNotificationRule());
+
+    assertEquals(
+        List.of(notificationRule3, notificationRule2, notificationRule1),
         notificationStub
             .getAllNotificationRules(
                 GetAllNotificationRulesRequest.newBuilder()
@@ -114,7 +133,35 @@ class NotificationRuleConfigServiceImplTest {
                     .build())
             .getNotificationRule();
     assertEquals(ruleToUpdate, updatedRule);
+    // disable rule
+    NotificationRule ruleToUpdate3 =
+        notificationRule3.toBuilder()
+            .setNotificationRuleMutableData(
+                notificationRule3.getNotificationRuleMutableData().toBuilder()
+                    .setDisabled(true)
+                    .build())
+            .build();
+    NotificationRule updatedRule3 =
+        notificationStub
+            .updateNotificationRule(
+                UpdateNotificationRuleRequest.newBuilder()
+                    .setNotificationRuleMutableData(ruleToUpdate3.getNotificationRuleMutableData())
+                    .setId(ruleToUpdate3.getId())
+                    .build())
+            .getNotificationRule();
+    assertEquals(ruleToUpdate3, updatedRule3);
 
+    assertEquals(
+        List.of(updatedRule3, notificationRule2, updatedRule),
+        notificationStub
+            .getAllNotificationRules(
+                GetAllNotificationRulesRequest.newBuilder()
+                    .setFilter(
+                        NotificationRuleFilter.newBuilder()
+                            .addEventConditionType("metricAnomalyEventCondition")
+                            .build())
+                    .build())
+            .getNotificationRulesList());
     assertEquals(
         List.of(notificationRule2, updatedRule),
         notificationStub
@@ -123,6 +170,7 @@ class NotificationRuleConfigServiceImplTest {
                     .setFilter(
                         NotificationRuleFilter.newBuilder()
                             .addEventConditionType("metricAnomalyEventCondition")
+                            .setEnabled(true)
                             .build())
                     .build())
             .getNotificationRulesList());
@@ -132,7 +180,7 @@ class NotificationRuleConfigServiceImplTest {
             .setNotificationRuleId(notificationRule2.getId())
             .build());
     assertEquals(
-        List.of(updatedRule),
+        List.of(updatedRule3, updatedRule),
         notificationStub
             .getAllNotificationRules(
                 GetAllNotificationRulesRequest.newBuilder()
@@ -142,16 +190,30 @@ class NotificationRuleConfigServiceImplTest {
                             .build())
                     .build())
             .getNotificationRulesList());
+
+    assertEquals(
+        List.of(updatedRule),
+        notificationStub
+            .getAllNotificationRules(
+                GetAllNotificationRulesRequest.newBuilder()
+                    .setFilter(
+                        NotificationRuleFilter.newBuilder()
+                            .addEventConditionType("metricAnomalyEventCondition")
+                            .setEnabled(true)
+                            .build())
+                    .build())
+            .getNotificationRulesList());
   }
 
   private NotificationRuleMutableData getNotificationRuleMutableData(
-      String name, String channelId) {
+      String name, String channelId, boolean disabled) {
     return NotificationRuleMutableData.newBuilder()
         .setRuleName(name)
         .setDescription("sample rule")
         .setChannelId(channelId)
         .setEventConditionType("metricAnomalyEventCondition")
         .setEventConditionId("rule-1")
+        .setDisabled(disabled)
         .build();
   }
 

@@ -37,6 +37,7 @@ message GetAllNotificationRulesRequest {
 
 message NotificationRuleFilter {
   repeated string event_condition_type = 1;
+  optional bool enabled = 2;
 }
 
 message GetAllNotificationRulesResponse {

@@ -20,6 +20,7 @@ message NotificationRuleMutableData {
   string rate_limit_interval_duration = 6;
 
   NotificationIntegrationTarget integration_target = 7;
+  bool disabled = 8;
 }
 
 message NotificationIntegrationTarget {
