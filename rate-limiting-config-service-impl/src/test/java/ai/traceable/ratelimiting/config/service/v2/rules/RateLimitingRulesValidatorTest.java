@@ -2664,6 +2664,16 @@ public class RateLimitingRulesValidatorTest {
                                 RegionCondition.newBuilder()
                                     .addRegionIdentifiers(
                                         Region.newBuilder().setCountryIsoCode("ssfsd")))))
+            .setCondition(
+                Condition.newBuilder()
+                    .setLeafCondition(
+                        LeafCondition.newBuilder()
+                            .setScopeCondition(
+                                ScopeCondition.newBuilder()
+                                    .setEntityScope(
+                                        ScopeCondition.EntityScope.newBuilder()
+                                            .setEntityType(ENTITY_TYPE_API)
+                                            .addEntityIds("apiId")))))
             .addThresholdActionConfigs(
                 ThresholdActionConfig.newBuilder()
                     .addActions(

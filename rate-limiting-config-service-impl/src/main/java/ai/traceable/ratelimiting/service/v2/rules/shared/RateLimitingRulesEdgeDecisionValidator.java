@@ -163,14 +163,27 @@ public class RateLimitingRulesEdgeDecisionValidator {
       boolean perEndPointAggregation,
       boolean hasScopeConditionWithSpecificEntityIds) {
     switch (action.getActionCase()) {
-      case MARK_FOR_TESTING:
-        if (!isCompatibleThresholdActionConfig) {
-          validatorUtils.throwInvalidArgumentException(
-              "Mark for testing action is incompatible with current rule conditions.");
+      case ALERT:
+        if (action.getAlert().hasAgentRuleEffect()) {
+          if (!isCompatibleThresholdActionConfig) {
+            validatorUtils.throwInvalidArgumentException(
+                "Alert action is incompatible with current rule conditions.");
+          }
+          if (perEndPointAggregation && !hasScopeConditionWithSpecificEntityIds) {
+            validatorUtils.throwInvalidArgumentException(
+                "Alert action with per endpoint will work only with scope set of specific endpoints or endpoint labels");
+          }
         }
-        if (perEndPointAggregation && !hasScopeConditionWithSpecificEntityIds) {
-          validatorUtils.throwInvalidArgumentException(
-              "Mark for testing action with per endpoint will work only with scope set of specific endpoints or endpoint labels");
+      case MARK_FOR_TESTING:
+        if (action.getMarkForTesting().hasAgentRuleEffect()) {
+          if (!isCompatibleThresholdActionConfig) {
+            validatorUtils.throwInvalidArgumentException(
+                "Mark for testing action is incompatible with current rule conditions.");
+          }
+          if (perEndPointAggregation && !hasScopeConditionWithSpecificEntityIds) {
+            validatorUtils.throwInvalidArgumentException(
+                "Mark for testing action with per endpoint will work only with scope set of specific endpoints or endpoint labels");
+          }
         }
         break;
       case BLOCK:
@@ -194,8 +207,14 @@ public class RateLimitingRulesEdgeDecisionValidator {
   private static void isCompatibleActionForEnumerationRule(
       Action action, boolean isCompatibleResourceAccessThresholdConfig) {
     switch (action.getActionCase()) {
+      case ALERT:
+        if (action.getAlert().hasAgentRuleEffect() && !isCompatibleResourceAccessThresholdConfig) {
+          validatorUtils.throwInvalidArgumentException(
+              "Alert action is incompatible with current rule conditions.");
+        }
       case MARK_FOR_TESTING:
-        if (!isCompatibleResourceAccessThresholdConfig) {
+        if (action.getMarkForTesting().hasAgentRuleEffect()
+            && !isCompatibleResourceAccessThresholdConfig) {
           validatorUtils.throwInvalidArgumentException(
               "Mark for testing action is incompatible with current rule conditions.");
         }
