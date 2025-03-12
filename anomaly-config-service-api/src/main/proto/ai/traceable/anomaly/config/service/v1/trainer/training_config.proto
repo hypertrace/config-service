@@ -159,8 +159,16 @@ message GetAllUnresolvedScopedTrainingConfigRequest {
   GetTrainingConfigsFilter filter = 1;
 }
 
+message GetAllUnresolvedVulnerabilityScopedTrainingConfigsRequest {
+  VulnerabilityTrainingConfigFilter vulnerability_training_config_filter = 1;
+}
+
 message GetAllUnresolvedScopedTrainingConfigResponse {
   repeated ScopedTrainingConfig scoped_training_configs = 1;
+}
+
+message GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse {
+  repeated ScopedVulnerabilityTrainingConfig scoped_vulnerability_training_configs = 1;
 }
 
 message ScopedTrainingConfig {
@@ -168,12 +176,31 @@ message ScopedTrainingConfig {
   repeated TrainingConfig training_configs = 2;
 }
 
+message ScopedVulnerabilityTrainingConfig {
+  AnomalyConfigScope config_scope = 1;
+  repeated VulnerabilityConfig vulnerability_configs = 2;
+}
+
+message VulnerabilityConfig {
+  optional bool disabled = 1;
+  optional string applicable_scope_filter_id = 2;
+  VulnerabilityTrainingConfig vulnerability_training_config = 3;
+}
+
 message UpdateScopedTrainingConfigRequest {
   ScopedTrainingConfig scoped_training_config = 1;
 }
 
+message UpdateVulnerabilityScopedTrainingConfigRequest {
+  ScopedVulnerabilityTrainingConfig scoped_vulnerability_config = 1;
+}
+
 message UpdateScopedTrainingConfigResponse {
   ScopedTrainingConfig scoped_training_config = 1;
+}
+
+message UpdateVulnerabilityScopedTrainingConfigResponse {
+  ScopedVulnerabilityTrainingConfig scoped_vulnerability_config = 1;
 }
 
 message DeleteScopedTrainingConfigRequest {
