@@ -35,6 +35,8 @@ sourceSets {
 }
 
 dependencies {
+  api(projects.customSignatureConfigServiceApi)
+
   implementation(projects.configUtils)
 
   implementation(commonLibs.protobuf.javautil)

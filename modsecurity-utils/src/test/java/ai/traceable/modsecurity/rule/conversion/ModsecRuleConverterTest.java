@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import org.apache.commons.lang3.SystemUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -31,7 +32,7 @@ public class ModsecRuleConverterTest {
 
   private final ModsecVariableConverter variableConverter = new ModsecVariableConverter();
   private final ModsecOperatorConverter operatorConverter = new ModsecOperatorConverter();
-  private ModsecRuleConverter modsecRuleConverter =
+  private final ModsecRuleConverter modsecRuleConverter =
       new ModsecRuleConverterImpl(
           new CustomModsecValueMatchClauseConverter(variableConverter, operatorConverter),
           new CustomModsecKeyValueMatchClauseConverter(variableConverter, operatorConverter));
@@ -40,9 +41,10 @@ public class ModsecRuleConverterTest {
   public void testConvertedModsecRules() throws Exception {
     String fileRulesBlob =
         Resources.toString(
-            this.getClass()
-                .getClassLoader()
-                .getResource("conversion/sample-custom-modsec-rules.conf"),
+            Objects.requireNonNull(
+                this.getClass()
+                    .getClassLoader()
+                    .getResource("conversion/sample-custom-modsec-rules.conf")),
             StandardCharsets.UTF_8);
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
@@ -344,10 +346,7 @@ public class ModsecRuleConverterTest {
                                           + "        setvar:'tx.unicodeencoded_%{TX.MATCH_NAME}=%{MATCHED_VAR}'\"")))
                   .build());
       assertThrows(
-          StatusRuntimeException.class,
-          () -> {
-            modsecRuleConverter.getModsecRulesBlob(modsecRules);
-          });
+          StatusRuntimeException.class, () -> modsecRuleConverter.getModsecRulesBlob(modsecRules));
     }
   }
 }
