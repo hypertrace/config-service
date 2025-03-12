@@ -14,19 +14,26 @@ import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsReque
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedVulnerabilityScopedTrainingConfigsRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainerConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfigTypeSpecificFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.UpdateVulnerabilityScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.UpdateVulnerabilityScopedTrainingConfigResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.UpsertTrainingActionResponse;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -37,17 +44,20 @@ public class TrainerConfigServiceImpl
   private final TrainingActionValidator trainingActionValidator;
   private final TrainingConfigManager configManager;
   private final TrainingActionManager trainingActionManager;
+  private final ScopedTrainingConfigConverter scopedTrainingConfigConverter;
 
   @Inject
   public TrainerConfigServiceImpl(
       TrainingConfigValidator validator,
       TrainingActionValidator trainingActionValidator,
       TrainingConfigManager configManager,
-      TrainingActionManager trainingActionManager) {
+      TrainingActionManager trainingActionManager,
+      ScopedTrainingConfigConverter scopedTrainingConfigConverter) {
     this.validator = validator;
     this.trainingActionValidator = trainingActionValidator;
     this.configManager = configManager;
     this.trainingActionManager = trainingActionManager;
+    this.scopedTrainingConfigConverter = scopedTrainingConfigConverter;
   }
 
   @Override
@@ -124,6 +134,38 @@ public class TrainerConfigServiceImpl
   }
 
   @Override
+  public void updateVulnerabilityScopedTrainingConfig(
+      UpdateVulnerabilityScopedTrainingConfigRequest request,
+      StreamObserver<UpdateVulnerabilityScopedTrainingConfigResponse> responseObserver) {
+
+    try {
+      UpdateScopedTrainingConfigRequest convertedRequest =
+          scopedTrainingConfigConverter.convert(request);
+      Status status = validator.validate(convertedRequest);
+
+      if (!status.isOk()) {
+        log.error("UpdateScopedTrainingConfigRequest is not valid: {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+
+      ScopedTrainingConfig updatedScopedTrainingConfig =
+          configManager.updateScopedTrainingConfig(
+              RequestContext.CURRENT.get(), convertedRequest.getScopedTrainingConfig());
+      UpdateVulnerabilityScopedTrainingConfigResponse response =
+          UpdateVulnerabilityScopedTrainingConfigResponse.newBuilder()
+              .setScopedVulnerabilityConfig(
+                  scopedTrainingConfigConverter.convert(updatedScopedTrainingConfig))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
   public void getUnresolvedScopedTrainingConfig(
       GetUnresolvedScopedTrainingConfigRequest request,
       StreamObserver<GetUnresolvedScopedTrainingConfigResponse> responseObserver) {
@@ -159,6 +201,34 @@ public class TrainerConfigServiceImpl
               .addAllScopedTrainingConfigs(
                   configManager.getAllUnresolvedTrainingConfig(
                       RequestContext.CURRENT.get(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void getAllUnresolvedVulnerabilityScopedTrainingConfigs(
+      GetAllUnresolvedVulnerabilityScopedTrainingConfigsRequest request,
+      StreamObserver<GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse> responseObserver) {
+    try {
+      List<ScopedTrainingConfig> vulnerabilityUnresolvedTrainingConfig =
+          configManager.getAllUnresolvedTrainingConfig(
+              RequestContext.CURRENT.get(),
+              GetTrainingConfigsFilter.newBuilder()
+                  .addTrainingConfigTypeSpecificFilter(
+                      TrainingConfigTypeSpecificFilter.newBuilder()
+                          .setVulnerabilityTrainingConfigFilter(
+                              request.getVulnerabilityTrainingConfigFilter()))
+                  .build());
+
+      GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse response =
+          GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse.newBuilder()
+              .addAllScopedVulnerabilityTrainingConfigs(
+                  scopedTrainingConfigConverter.convert(vulnerabilityUnresolvedTrainingConfig))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

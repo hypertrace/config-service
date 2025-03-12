@@ -40,8 +40,11 @@ public class TrainerConfigServiceImplTest {
   private final TrainingActionValidator actionValidator = mock(TrainingActionValidator.class);
   private final TrainingConfigManager configManager = mock(TrainingConfigManagerImpl.class);
   private final TrainingActionManager actionManager = mock(TrainingActionManager.class);
+  private final ScopedTrainingConfigConverter scopedTrainingConfigConverter =
+      mock(ScopedTrainingConfigConverter.class);
   private final TrainerConfigServiceImpl trainerConfigService =
-      new TrainerConfigServiceImpl(validator, actionValidator, configManager, actionManager);
+      new TrainerConfigServiceImpl(
+          validator, actionValidator, configManager, actionManager, scopedTrainingConfigConverter);
 
   @Test
   void testGetScopedTrainingConfig() {
