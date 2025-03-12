@@ -94,16 +94,18 @@ crs_9440950 :: PAN-OS GlobalProtect Portal: RCE Exploitation (CVE-2024-3400)
 crs_9330111 :: PHP CGI argument Injection: (CVE-2024-4577)
 crs_9420360 :: Concatenated basic SQL injection and SQLLFI attempts (T360)
 crs_9440960 :: Apache Struts path traversal to RCE vulnerability: (CVE-2024-53677)
-crs_933110 :: PHP Injection Attack: PHP Script File Upload Found
-crs_933120 :: PHP Injection Attack: Configuration Directive Found
-crs_933130 :: PHP Injection Attack: Variables Found
-crs_933140 :: PHP Injection Attack: I/O Stream Found
-crs_933150 :: PHP Injection Attack: High-Risk PHP Function Name Found
-crs_933160 :: PHP Injection Attack: High-Risk PHP Function Call Found
+crs_933110 :: PHP Injection Attack: PHP Script File Upload
+crs_933120 :: PHP Injection Attack: Configuration Directive
+crs_933130 :: PHP Injection Attack: Variables
+crs_933140 :: PHP Injection Attack: I/O Stream
+crs_933150 :: PHP Injection Attack: High-Risk PHP Function Name
+crs_933160 :: PHP Injection Attack: High-Risk PHP Function Call
 crs_933210 :: PHP Injection Attack: Variable Function Call Found (210)
 crs_9210330 :: Suspicious URL Evasion Attempt: Possible encoding or obfuscation
 crs_941420 :: IE XSS Filters - Attack (A href with a link)
 crs_9210011 :: Potential CORS Misconfiguration Exploitation Attempt
 crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)
 crs_9320090 :: Remote Command Execution: Command or Script Injection (T090)
-crs_9330010 :: PHP Injection Attack: WebShell Function Call Found (T100)
+crs_9330010 :: PHP Injection Attack: WebShell Function Call (T100)
+crs_1020120 :: XPath Injection: Malicious XPath Expression (T120)
+crs_9300130 :: Windows OS File Access Attempt (T120)

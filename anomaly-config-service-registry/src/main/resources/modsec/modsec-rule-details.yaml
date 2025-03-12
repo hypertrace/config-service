@@ -1632,6 +1632,34 @@
           - CWE-611: Improper Restriction of XML External Entity Reference - https://cwe.mitre.org/data/definitions/611.html
           - MITRE ATT&CK - T1190: Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
 
+    - ruleId: crs_1020120
+      eventDetails:
+        description: |
+          A pattern indicative of an XPath Injection attack using a malicious XPath expression is detected.
+          - XPath Injection occurs when an attacker manipulates XPath queries used in applications to extract or modify sensitive XML data.
+          - This vulnerability arises when user input is directly incorporated into an XPath query without proper validation or sanitization.
+          - Exploiting this vulnerability can lead to:
+              - Unauthorized Data Access: Attackers can retrieve sensitive XML-based data, bypassing access controls.
+              - Authentication Bypass: If XPath queries are used for authentication, attackers may manipulate queries to gain unauthorized access.
+              - Data Manipulation: Injected XPath expressions can modify or delete XML data stored within the application.
+              - Information Disclosure: Attackers can enumerate database structures and extract confidential information.
+        mitigation: |
+          - Input Validation and Sanitization: Ensure all user inputs are properly validated and sanitized before being used in XPath queries.
+          - Use Parameterized Queries: Avoid direct string concatenation in XPath queries. Instead, use parameterized APIs to safely construct queries.
+          - Restrict XML Processing: Limit access to XML files and enforce strict security policies to prevent unauthorized query execution.
+          - Implement Web Application Firewalls (WAFs): Deploy WAFs to detect and block XPath injection attempts.
+          - Least Privilege Principle: Restrict permissions on XML databases to prevent unauthorized access and modifications.
+          - Regular Security Audits: Perform code reviews and penetration testing to identify and mitigate XPath injection vulnerabilities.
+        impact: |
+          - Data Breach: Attackers can extract sensitive data from XML-based databases or APIs.
+          - Authentication Bypass: Weak XPath-based authentication mechanisms can be exploited to gain unauthorized access.
+          - System Compromise: Injected XPath expressions may manipulate system configurations or leak confidential information.
+          - Compliance Violations: Exploiting XPath injection vulnerabilities may result in legal and regulatory consequences due to data breaches.
+          - Business Disruption: Attacks can disrupt critical applications relying on XML data storage and processing.
+        references: |
+          - https://cwe.mitre.org/data/definitions/643.html
+          - https://owasp.org/www-community/attacks/XPATH_Injection
+
 - ruleId: crs_934
   ruleName: NodeJS Injection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
@@ -2600,7 +2628,33 @@
           - MITRE ATT&CK - T1083: File and Directory Discovery - https://attack.mitre.org/techniques/T1083/
           - OWASP Top 10 - 2021 – A01:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
           - Web Application Security Consortium - WASC-33: Path Traversal - http://projects.webappsec.org/w/page/13246952/Path%20Traversal
-
+    - ruleId: crs_9300130
+      eventDetails:
+        description: |
+          A pattern indicative of a Windows OS File Access Attempt is detected.
+          - This event occurs when an application or user attempts to access system or sensitive files on a Windows operating system.
+          - Uncontrolled file access can lead to various security risks, including unauthorized data exposure and privilege escalation.
+          - Attackers may exploit file access vulnerabilities to:
+              - Read or Modify System Files: Accessing critical OS files such as `C:\Windows\System32\` or configuration files.
+              - Steal Sensitive Data: Extracting passwords, logs, or other confidential information stored in system files.
+              - Execute Arbitrary Code: Exploiting file access to execute malicious scripts or programs.
+              - Bypass Security Mechanisms: Gaining unauthorized access to protected resources by manipulating file permissions.
+        mitigation: |
+          - Enforce Access Controls: Implement strict file access controls to restrict unauthorized access to sensitive system files.
+          - Use Sandboxing: Run applications in sandboxed environments to limit file system interactions.
+          - Implement Logging and Monitoring: Enable logging for file access attempts and monitor for suspicious activity.
+          - Apply Principle of Least Privilege (PoLP): Ensure applications and users only have the necessary permissions to access files.
+          - Secure Configuration: Disable unnecessary file-sharing services and restrict access to critical OS directories.
+          - Regular Security Audits: Perform periodic security assessments to identify and remediate file access vulnerabilities.
+        impact: |
+          - Unauthorized Data Exposure: Attackers may access confidential system files, leading to data leaks.
+          - Privilege Escalation: Exploiting file access vulnerabilities to gain higher privileges within the system.
+          - System Compromise: Malicious modification of OS files can disrupt system operations or install backdoors.
+          - Security Policy Violations: Unauthorized file access may lead to non-compliance with security regulations and policies.
+          - Business Disruption: Attackers manipulating system files may cause operational downtime or system failures.
+        references: |
+          - https://cwe.mitre.org/data/definitions/552.html
+          - https://owasp.org/www-community/vulnerabilities/Insecure_Direct_Object_Reference
 
 - ruleId: crs_931
   ruleName: Remote File Inclusion
