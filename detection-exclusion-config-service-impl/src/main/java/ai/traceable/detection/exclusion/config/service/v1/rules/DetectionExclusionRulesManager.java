@@ -65,7 +65,6 @@ public class DetectionExclusionRulesManager implements RulesManager {
     List<DetectionExclusionRule> rules = new ArrayList<>();
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       rules.addAll(rulesStore.getAllConfigData(requestContext));
-      rules.addAll(thresholdExceededDetectionExclusionRuleStore.getAllConfigData(requestContext));
       return rules;
     }
     rules.addAll(rulesStore.getAllConfigData(requestContext, filter));
