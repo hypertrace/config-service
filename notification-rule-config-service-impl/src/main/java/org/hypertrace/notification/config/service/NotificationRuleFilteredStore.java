@@ -67,8 +67,8 @@ public class NotificationRuleFilteredStore
 
   private boolean satisfiesEnabledPredicate(
       NotificationRule notificationRule, NotificationRuleFilter filter) {
-    return !notificationRule.getNotificationRuleMutableData().getDisabled()
-        || !filter.getExcludeDisabled();
+    return !filter.hasEnabled()
+        || filter.getEnabled() != notificationRule.getNotificationRuleMutableData().getDisabled();
   }
 
   private boolean satisfiesConditionTypePredicate(
