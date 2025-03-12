@@ -61,14 +61,21 @@ public class NotificationRuleFilteredStore
     return Optional.of(data)
         .filter(
             notificationRule ->
-                (!notificationRule.getNotificationRuleMutableData().getDisabled()
-                        || !filter.getExcludeDisabled())
-                    && (filter.getEventConditionTypeList().isEmpty()
-                        || filter
-                            .getEventConditionTypeList()
-                            .contains(
-                                notificationRule
-                                    .getNotificationRuleMutableData()
-                                    .getEventConditionType())));
+                satisfiesEnabledPredicate(notificationRule, filter)
+                    && satisfiesConditionTypePredicate(notificationRule, filter));
+  }
+
+  private boolean satisfiesEnabledPredicate(
+      NotificationRule notificationRule, NotificationRuleFilter filter) {
+    return !notificationRule.getNotificationRuleMutableData().getDisabled()
+        || !filter.getExcludeDisabled();
+  }
+
+  private boolean satisfiesConditionTypePredicate(
+      NotificationRule notificationRule, NotificationRuleFilter filter) {
+    return filter.getEventConditionTypeList().isEmpty()
+        || filter
+            .getEventConditionTypeList()
+            .contains(notificationRule.getNotificationRuleMutableData().getEventConditionType());
   }
 }
