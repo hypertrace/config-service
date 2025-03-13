@@ -21,7 +21,6 @@ import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStore;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
 import ai.traceable.edge.decision.config.service.store.FilterEvaluator;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigResolver;
-import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleResponse;
@@ -128,15 +127,12 @@ class EdgeDecisionConfigServiceTest {
     EdgeCustomResponseStoreManager customResponseStoreManager =
         new EdgeCustomResponseStoreManager(
             new EdgeCustomResponseStore(genericStub, eventGenerator));
-    EdgeDecisionEngineConfigSupplier configSupplier =
-        new StoredEdgeDecisionEngineConfigSupplier(
-            storeManager, ruleStoreManager, specStoreManager);
     StoredEdgeDecisionEngineConfigSupplier storedEdgeDecisionEngineConfigSupplier =
         new StoredEdgeDecisionEngineConfigSupplier(
-            storeManager, ruleStoreManager, specStoreManager);
+            storeManager, ruleStoreManager, specStoreManager, attributionRuleStoreManager);
     EdgeDecisionEngineConfigResolver resolver =
         new EdgeDecisionEngineConfigResolver(
-            Collections.singleton(configSupplier), ruleVariableEnricher);
+            Collections.singleton(storedEdgeDecisionEngineConfigSupplier), ruleVariableEnricher);
     this.mockGenericConfigService
         .addService(
             new EdgeDecisionConfigService(

@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
@@ -30,6 +31,7 @@ public class StoredEdgeDecisionEngineConfigSupplierTest {
   @Mock private EdgeDecisionConfigStoreManager configStoreManager;
   @Mock private EdgeDecisionRuleStoreManager ruleStoreManager;
   @Mock private EdgeDecisionSpecStoreManager specStoreManager;
+  @Mock private EdgeAttributionRuleStoreManager attributionRuleStoreManager;
   private StoredEdgeDecisionEngineConfigSupplier configSupplier;
 
   @BeforeEach
@@ -37,7 +39,7 @@ public class StoredEdgeDecisionEngineConfigSupplierTest {
     MockitoAnnotations.openMocks(this);
     configSupplier =
         new StoredEdgeDecisionEngineConfigSupplier(
-            configStoreManager, ruleStoreManager, specStoreManager);
+            configStoreManager, ruleStoreManager, specStoreManager, attributionRuleStoreManager);
   }
 
   @Test

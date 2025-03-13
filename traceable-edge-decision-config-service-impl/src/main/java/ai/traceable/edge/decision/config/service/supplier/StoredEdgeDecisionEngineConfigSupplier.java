@@ -3,12 +3,17 @@ package ai.traceable.edge.decision.config.service.supplier;
 import static ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigMergeUtil.merge;
 import static ai.traceable.edge.decision.config.service.validation.RequestValidator.validateRequestContext;
 
+import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionConfigStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreManager;
+import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeAttributionRulesRequest;
+import ai.traceable.edge.decision.config.service.v1.GetAllEdgeAttributionRulesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionRulesResponse;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionSpecsRequest;
@@ -31,15 +36,18 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
   private final EdgeDecisionConfigStoreManager configStoreManager;
   private final EdgeDecisionRuleStoreManager ruleStoreManager;
   private final EdgeDecisionSpecStoreManager specStoreManager;
+  private final EdgeAttributionRuleStoreManager attributionRuleStoreManager;
 
   @Inject
   public StoredEdgeDecisionEngineConfigSupplier(
       EdgeDecisionConfigStoreManager configStoreManager,
       EdgeDecisionRuleStoreManager ruleStoreManager,
-      EdgeDecisionSpecStoreManager specStoreManager) {
+      EdgeDecisionSpecStoreManager specStoreManager,
+      EdgeAttributionRuleStoreManager attributionRuleStoreManager) {
     this.configStoreManager = configStoreManager;
     this.ruleStoreManager = ruleStoreManager;
     this.specStoreManager = specStoreManager;
+    this.attributionRuleStoreManager = attributionRuleStoreManager;
   }
 
   @Override
@@ -79,17 +87,41 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
                 ruleStoreManager.getAll(
                     requestContext, GetAllEdgeDecisionRulesRequest.getDefaultInstance()));
     return response.getEdgeDecisionRulesList().stream()
-        .filter(this::checkExpiration)
+        .filter(
+            r -> {
+              if (r.hasRuleStatus()) {
+                return checkExpiration(r.getRuleStatus());
+              } else {
+                return true;
+              }
+            })
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private Boolean checkExpiration(EdgeDecisionRule rule) {
-    if (!rule.hasRuleStatus()) return true;
-    if (rule.getRuleStatus().getDisabled()) return false;
-    if (!rule.getRuleStatus().hasTtl()) return true;
-    if (!rule.getRuleStatus().getTtl().hasExpiresAt()) return true;
+  public List<EdgeAttributionRule> getStoredAttributionRules(RequestContext requestContext) {
+    GetAllEdgeAttributionRulesResponse response =
+        requestContext.call(
+            () ->
+                attributionRuleStoreManager.getAll(
+                    requestContext, GetAllEdgeAttributionRulesRequest.getDefaultInstance()));
+    return response.getEdgeAttributionRulesList().stream()
+        .filter(
+            r -> {
+              if (r.hasRuleStatus()) {
+                return checkExpiration(r.getRuleStatus());
+              } else {
+                return true;
+              }
+            })
+        .collect(Collectors.toUnmodifiableList());
+  }
 
-    Timestamp expiresAt = rule.getRuleStatus().getTtl().getExpiresAt();
+  private Boolean checkExpiration(EdgeDecisionRuleStatus ruleStatus) {
+    if (ruleStatus.getDisabled()) return false;
+    if (!ruleStatus.hasTtl()) return true;
+    if (!ruleStatus.getTtl().hasExpiresAt()) return true;
+
+    Timestamp expiresAt = ruleStatus.getTtl().getExpiresAt();
     Instant expiryTime = Instant.ofEpochSecond(expiresAt.getSeconds(), expiresAt.getNanos());
     return expiryTime.isAfter(Instant.now());
   }
@@ -113,10 +145,16 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
         getStoredEdgeDecisionEngineConfig(requestContext, request);
     List<EdgeDecisionRule> decisionRules = getStoredRules(requestContext);
     var decisionSpecs = getStoredSpecs(requestContext);
+    List<EdgeAttributionRule> attributionRules = getStoredAttributionRules(requestContext);
     List<EdgeDecisionRule> mergedRules =
         merge(decisionEngineConfig.getDecisionRulesList(), decisionRules, EdgeDecisionRule::getId);
     List<EdgeDecisionSpec> mergedSpecs =
         merge(decisionEngineConfig.getDecisionSpecsList(), decisionSpecs, EdgeDecisionSpec::getId);
+    List<EdgeAttributionRule> mergedAttributionRules =
+        merge(
+            decisionEngineConfig.getAttributionRulesList(),
+            attributionRules,
+            EdgeAttributionRule::getId);
     // apply filters.
     if (!isEmpty(filter)) {
       mergedRules =
@@ -126,6 +164,10 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
       mergedSpecs =
           mergedSpecs.stream()
               .filter(spec -> applyFilter(spec, filter))
+              .collect(Collectors.toList());
+      mergedAttributionRules =
+          mergedAttributionRules.stream()
+              .filter(rule -> applyFilter(rule, filter))
               .collect(Collectors.toList());
     }
     return decisionEngineConfig.toBuilder()
@@ -164,5 +206,10 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
   private boolean applyFilter(EdgeDecisionSpec spec, GetEdgeDecisionConfigsFilter filter) {
     var inputKinds = filter.getEdgeInputKindsList();
     return inputKinds.isEmpty() || inputKinds.contains(spec.getEdgeInputKind());
+  }
+
+  private boolean applyFilter(EdgeAttributionRule rule, GetEdgeDecisionConfigsFilter filter) {
+    var inputKinds = filter.getEdgeInputKindsList();
+    return inputKinds.isEmpty() || inputKinds.contains(rule.getRuleDefinition().getEdgeInputKind());
   }
 }
