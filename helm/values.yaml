@@ -684,6 +684,21 @@ defaultModsecDetectionConfigs: |-
     {
       modsecurityAnomalyDetectionConfig = {
         modsecAnomalyRule = {
+          anomalyRuleId = "crs_101"
+          subRuleConfigs = [
+              {
+                  subRuleId = "crs_10100100"
+                  configStatus = {
+                      disabled = true
+                  }
+              }
+          ]
+        }
+      }
+    },
+    {
+      modsecurityAnomalyDetectionConfig = {
+        modsecAnomalyRule = {
           anomalyRuleId = "crs_102"
           subRuleConfigs = [
               {

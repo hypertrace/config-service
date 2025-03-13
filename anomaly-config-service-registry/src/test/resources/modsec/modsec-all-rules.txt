@@ -1,3 +1,4 @@
+crs_10100100 :: Server Side Request Forgery (SSRF): Localhost Domain (T100) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' ]
 crs_1010010 :: Apache HTTP Server SSRF (CVE-2021-40438) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' , 'CVE:2021-40438' ]
 crs_1010020 :: Jira SSRF: plugins/servlet/gadgets/makeRequest: (CVE-2019-8451) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' , 'CVE:2019-8451' ]
 crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' ]

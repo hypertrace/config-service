@@ -115,6 +115,34 @@
           - https://cwe.mitre.org/data/definitions/918.html
           - https://www.owasp.org/index.php/Server_Side_Request_Forgery
 
+    - ruleId: crs_10100100
+      eventDetails:
+        description: |
+          A pattern indicative of a Server-Side Request Forgery (SSRF) attack targeting the localhost domain (T100) is detected.
+          - SSRF occurs when an attacker manipulates a vulnerable web application to send unauthorized requests from the server.
+          - In the case of localhost targeting, attackers attempt to access internal services running on `127.0.0.1`, `localhost`, or private IP ranges.
+          - Exploiting this vulnerability can lead to:
+              - Unauthorized Access to Internal Services: Attackers can interact with services such as databases, cloud metadata APIs, or admin panels.
+              - Data Exfiltration: Sensitive internal data can be retrieved by making forged requests.
+              - Bypassing Network Restrictions: Attackers can exploit SSRF to access restricted systems that are not exposed to the public internet.
+              - Remote Code Execution (RCE): Some internal services may allow command execution through SSRF exploitation.
+        mitigation: |
+          - Enforce Allowlist Validation: Restrict outbound requests to only approved domains and block access to internal IP ranges.
+          - Disable Unnecessary Internal Services: Minimize the attack surface by disabling unused internal services or restricting access.
+          - Implement Network Segmentation: Isolate sensitive services from the public-facing web server to prevent unauthorized access.
+          - Use Web Application Firewalls (WAFs): Deploy WAFs to detect and block SSRF attempts targeting internal resources.
+          - Restrict Metadata API Access: If running in a cloud environment, configure metadata APIs (e.g., AWS IMDSv2) to require authentication.
+          - Regular Security Audits: Perform security testing and monitoring to identify SSRF vulnerabilities before exploitation.
+        impact: |
+          - Internal System Exposure: Attackers can access and manipulate internal services, leading to security breaches.
+          - Data Breach: Sensitive data from internal systems or APIs may be leaked.
+          - Service Disruption: Unauthorized SSRF requests may cause unintended actions or service disruptions.
+          - Remote Exploitation: Attackers may leverage SSRF to escalate privileges or execute malicious commands on internal systems.
+          - Compliance Violations: Unauthorized access to internal resources may result in regulatory and legal repercussions.
+        references: |
+          - https://cwe.mitre.org/data/definitions/918.html
+          - https://owasp.org/www-community/attacks/Server_Side_Request_Forgery
+
 - ruleId: crs_913
   ruleName: Scanner Detection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SCANNER_DETECTED
