@@ -484,6 +484,21 @@ public class AnomalyDetectionConfigHandlerTest {
     assertEquals(
         AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
         detectionConfig.getCategoryConfig().getEventScoreCategory());
+    ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
+        ScopedAnomalyDetectionConfig.newBuilder();
+    deletedConfigBuilder.setConfigScope(config1.getConfigScope());
+
+    List<AnomalyDetectionConfig> detectionConfigsToDelete = new ArrayList<>();
+    detectionConfigsToDelete.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setApiDefinitionMetadataAnomalyDetectionConfig(
+                ApiDefinitionMetadataAnomalyDetectionConfig.getDefaultInstance())
+            .build());
+
+    ScopedAnomalyDetectionConfig deleteConfig =
+        detectionConfigConverter.deleteWholeAnomalyDetectionConfigs(
+            config1, detectionConfigsToDelete, deletedConfigBuilder);
+    assertEquals(0, deleteConfig.getAnomalyDetectionConfigsList().size());
   }
 
   @Test

@@ -54,6 +54,23 @@ public class CustomRulesConfigHandler {
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
 
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasCustomRulesAnomalyDetectionConfig()
+                    && config
+                        .getCustomRulesAnomalyDetectionConfig()
+                        .equals(CustomRulesAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasCustomRulesAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
     Set<CustomRulesAnomalyDetectionConfig.ConfigCase> customRulesConfigCase =
         getCustomRulesConfigs(detectionConfigsToDelete).stream()
             .map(

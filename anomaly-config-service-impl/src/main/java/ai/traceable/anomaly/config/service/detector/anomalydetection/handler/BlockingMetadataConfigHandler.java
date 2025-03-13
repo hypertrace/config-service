@@ -52,8 +52,24 @@ class BlockingMetadataConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasBlockingMetadataAnomalyDetectionConfig()
+                    && config
+                        .getBlockingMetadataAnomalyDetectionConfig()
+                        .equals(BlockingMetadataAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasBlockingMetadataAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
     Set<BlockingMetadataAnomalyDetectionConfig.ConfigCase> blockingMetadataConfigCases =
         getBlockingMetadataConfigs(detectionConfigsToDelete).stream()
             .map(

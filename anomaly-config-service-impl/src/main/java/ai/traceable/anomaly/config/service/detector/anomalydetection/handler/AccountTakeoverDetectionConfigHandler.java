@@ -81,8 +81,25 @@ public class AccountTakeoverDetectionConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasAccountTakeoverAnomalyDetectionConfig()
+                    && config
+                        .getAccountTakeoverAnomalyDetectionConfig()
+                        .equals(AccountTakeoverAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasAccountTakeoverAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
+
     Set<AccountTakeoverAnomalyDetectionConfig.ConfigCase> accountTakeoverConfigCaseSet =
         getAccountTakeoverConfigs(detectionConfigsToDelete).stream()
             .map(

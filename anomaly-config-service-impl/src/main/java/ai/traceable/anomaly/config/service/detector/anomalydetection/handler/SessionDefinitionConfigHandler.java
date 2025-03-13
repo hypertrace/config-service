@@ -95,8 +95,26 @@ class SessionDefinitionConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasSessionDefinitionMetadataAnomalyDetectionConfig()
+                    && config
+                        .getSessionDefinitionMetadataAnomalyDetectionConfig()
+                        .equals(
+                            SessionDefinitionMetadataAnomalyDetectionConfig
+                                .getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasSessionDefinitionMetadataAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
     Set<SessionDefinitionMetadataAnomalyDetectionConfig.ConfigCase> sessionDefConfigCases =
         getSessionDefConfigs(detectionConfigsToDelete).stream()
             .map(

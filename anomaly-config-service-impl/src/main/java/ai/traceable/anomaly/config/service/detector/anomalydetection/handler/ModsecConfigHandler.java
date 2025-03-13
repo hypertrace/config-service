@@ -146,8 +146,25 @@ public class ModsecConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasModsecurityAnomalyDetectionConfig()
+                    && config
+                        .getModsecurityAnomalyDetectionConfig()
+                        .equals(ModsecurityAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasModsecurityAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
+
     Set<String> modsecRuleIds =
         getModsecRuleConfigs(detectionConfigsToDelete).stream()
             .map(

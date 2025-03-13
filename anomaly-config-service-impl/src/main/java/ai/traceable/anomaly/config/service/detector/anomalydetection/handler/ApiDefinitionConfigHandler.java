@@ -98,8 +98,25 @@ class ApiDefinitionConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasApiDefinitionMetadataAnomalyDetectionConfig()
+                    && config
+                        .getApiDefinitionMetadataAnomalyDetectionConfig()
+                        .equals(
+                            ApiDefinitionMetadataAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasApiDefinitionMetadataAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
     Set<ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase> apiDefMetadataConfigCases =
         getApiDefMetadataConfigs(detectionConfigsToDelete).stream()
             .map(

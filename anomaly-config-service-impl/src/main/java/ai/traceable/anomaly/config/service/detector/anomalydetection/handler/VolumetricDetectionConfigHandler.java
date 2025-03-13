@@ -84,8 +84,24 @@ class VolumetricDetectionConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasVolumetricAnomalyDetectionConfig()
+                    && config
+                        .getVolumetricAnomalyDetectionConfig()
+                        .equals(VolumetricAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasVolumetricAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
     Set<VolumetricAnomalyDetectionConfig.ConfigCase> volumetricConfigCase =
         getVolumetricConfigs(detectionConfigsToDelete).stream()
             .map(

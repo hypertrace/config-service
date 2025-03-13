@@ -51,8 +51,24 @@ class ApiStateBasedConfigHandler {
       List<AnomalyDetectionConfig> anomalyDetectionConfigs,
       List<AnomalyDetectionConfig> detectionConfigsToDelete,
       ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder) {
-
     List<AnomalyDetectionConfig> filteredConfigs = new ArrayList<>();
+    if (detectionConfigsToDelete.stream()
+        .anyMatch(
+            config ->
+                config.hasApiStateBasedAnomalyDetectionConfig()
+                    && config
+                        .getApiStateBasedAnomalyDetectionConfig()
+                        .equals(ApiStateBasedAnomalyDetectionConfig.getDefaultInstance()))) {
+      anomalyDetectionConfigs.forEach(
+          anomalyDetectionConfig -> {
+            if (anomalyDetectionConfig.hasApiStateBasedAnomalyDetectionConfig()) {
+              deletedConfigBuilder.addAnomalyDetectionConfigs(anomalyDetectionConfig);
+            } else {
+              filteredConfigs.add(anomalyDetectionConfig);
+            }
+          });
+      return filteredConfigs;
+    }
     Set<ApiStateBasedAnomalyDetectionConfig.ConfigCase> apiStateBasedConfigCases =
         getApiStateBasedConfigs(detectionConfigsToDelete).stream()
             .map(
