@@ -566,7 +566,7 @@ public class TrainerConfigServiceConfigTest {
 
     assertFalse(metadataTrainingConfigs.get(11).getDisabled());
 
-    assertFalse(metadataTrainingConfigs.get(12).getDisabled());
+    assertTrue(metadataTrainingConfigs.get(12).getDisabled());
     UserAttributionTrainingConfig userAttributionTrainingConfig =
         metadataTrainingConfigs.get(12).getMetadataTrainingConfig().getUserAttribution();
     assertEquals(1000, userAttributionTrainingConfig.getRuleLimit());
