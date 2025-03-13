@@ -208,8 +208,16 @@ message DeleteScopedTrainingConfigRequest {
   ScopedTrainingConfig scoped_training_config = 2;
 }
 
+message DeleteScopedVulnerabilityTrainingConfigRequest {
+  ScopedVulnerabilityTrainingConfig scoped_vulnerability_training_config = 1;
+}
+
 message DeleteScopedTrainingConfigResponse {
   ScopedTrainingConfig deleted_scoped_training_config = 1;
+}
+
+message DeleteScopedVulnerabilityTrainingConfigResponse {
+  ScopedVulnerabilityTrainingConfig deleted_scoped_vulnerability_training_config = 1;
 }
 
 message TrainingConfig {

@@ -1,8 +1,11 @@
 package ai.traceable.anomaly.config.service.trainer;
 
+import static ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG;
 import static ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig.TrainingConfigCase.VULNERABILITY_TRAINING_CONFIG;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedVulnerabilityTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedVulnerabilityTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
@@ -47,6 +50,22 @@ public class DefaultScopedTrainingConfigConverter implements ScopedTrainingConfi
     return ScopedVulnerabilityTrainingConfig.newBuilder()
         .setConfigScope(scopedTrainingConfig.getConfigScope())
         .addAllVulnerabilityConfigs(vulnerabilityConfigs)
+        .build();
+  }
+
+  @Override
+  public DeleteScopedTrainingConfigRequest convert(
+      DeleteScopedVulnerabilityTrainingConfigRequest request) {
+    List<TrainingConfig> trainingConfigs =
+        request.getScopedVulnerabilityTrainingConfig().getVulnerabilityConfigsList().stream()
+            .map(this::convert)
+            .collect(toUnmodifiableList());
+    return DeleteScopedTrainingConfigRequest.newBuilder()
+        .setDeleteAnomalyConfigOption(DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG)
+        .setScopedTrainingConfig(
+            ScopedTrainingConfig.newBuilder()
+                .setConfigScope(request.getScopedVulnerabilityTrainingConfig().getConfigScope())
+                .addAllTrainingConfigs(trainingConfigs))
         .build();
   }
 

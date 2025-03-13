@@ -1,11 +1,15 @@
 package ai.traceable.anomaly.config.service.trainer;
 
+import static ai.traceable.anomaly.config.service.v1.trainer.DeleteAnomalyConfigOption.DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG;
+
 import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionManager;
 import ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionValidator;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigManager;
 import ai.traceable.anomaly.config.service.trainer.trainingconfig.TrainingConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedVulnerabilityTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedVulnerabilityTrainingConfigResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteTrainingActionRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.DeleteTrainingActionResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllScopedTrainingConfigsRequest;
@@ -257,6 +261,39 @@ public class TrainerConfigServiceImpl
       responseObserver.onNext(
           DeleteScopedTrainingConfigResponse.newBuilder()
               .setDeletedScopedTrainingConfig(deletedScopedTrainingConfig)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception exception) {
+      log.error(exception.getMessage(), exception);
+      responseObserver.onError(exception);
+    }
+  }
+
+  @Override
+  public void deleteScopedVulnerabilityTrainingConfig(
+      DeleteScopedVulnerabilityTrainingConfigRequest request,
+      StreamObserver<DeleteScopedVulnerabilityTrainingConfigResponse> responseObserver) {
+
+    try {
+
+      DeleteScopedTrainingConfigRequest modifiedRequest =
+          scopedTrainingConfigConverter.convert(request);
+      Status status = validator.validate(modifiedRequest);
+      if (!status.isOk()) {
+        log.error("DeleteScopedTrainingConfigRequest is not valid: {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+
+      ScopedTrainingConfig deletedScopedTrainingConfig =
+          configManager.deleteTrainingConfig(
+              RequestContext.CURRENT.get(),
+              modifiedRequest.getScopedTrainingConfig(),
+              DELETE_ANOMALY_CONFIG_OPTION_WHOLE_TRAINING_CONFIG);
+      responseObserver.onNext(
+          DeleteScopedVulnerabilityTrainingConfigResponse.newBuilder()
+              .setDeletedScopedVulnerabilityTrainingConfig(
+                  scopedTrainingConfigConverter.convert(deletedScopedTrainingConfig))
               .build());
       responseObserver.onCompleted();
     } catch (Exception exception) {

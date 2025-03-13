@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer;
 
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedTrainingConfigRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.DeleteScopedVulnerabilityTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedVulnerabilityTrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UpdateScopedTrainingConfigRequest;
@@ -15,4 +17,7 @@ public interface ScopedTrainingConfigConverter {
   UpdateScopedTrainingConfigRequest convert(UpdateVulnerabilityScopedTrainingConfigRequest request);
 
   ScopedVulnerabilityTrainingConfig convert(ScopedTrainingConfig updatedScopedTrainingConfig);
+
+  DeleteScopedTrainingConfigRequest convert(
+      DeleteScopedVulnerabilityTrainingConfigRequest scopedVulnerabilityTrainingConfig);
 }
