@@ -10,7 +10,7 @@ import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
-// represents a single risk decision rule that can be evaluated by risk decision engine
+// represents a single edge decision rule that can be evaluated by edge decision engine
 // Given a payload, configure how to determine the risk:
 // Check if accepting this payload causes any aggregate threshold to be violated, for example:
 // - Has the dim1,dim2..dimN, count(*) crossed a limit -> Rate limit
@@ -107,6 +107,7 @@ message EdgeDecisionRuleDefinition {
     EntityRule entity_rule = 7;
     AggregateThresholdRule aggregate_threshold_rule = 8;
     AccessPatternRule access_pattern_rule = 9;
+    LogicalRule logical_rule = 10;
   }
   // each rule must provide a score and weight, that are used to compute the final score.
   //  double risk_score = 6;
@@ -116,21 +117,27 @@ message EdgeDecisionRuleDefinition {
   google.protobuf.Value custom_fields = 100;
 }
 
-// "signature rules" that can be evaluated by risk decision engine
+// "logical rules" that can be evaluated by edge decision engine
+message LogicalRule {
+  EdgeRuleLogicalOperator operator = 1;
+  repeated EdgeDecisionRuleDefinition rules = 2;
+}
+
+// "signature rules" that can be evaluated by edge decision engine
 // evaluate a payload to check if it matches the signature
 message SignatureRule {
   ai.traceable.datamodel.data.transformation.config.v1.MatchCondition match_condition = 1;
 }
 
-// entity rules that can be evaluated by risk decision engine
+// entity rules that can be evaluated by edge decision engine
 // this is for any type of entity, like fingerprint, actor/user, etc
 message EntityRule {
   repeated EntityRuleData entity_data = 1;
 }
 
 // Aggregate threshold rules
-// rate limit rules that can be evaluated by risk decision engine
-// enumeration rules that can be evaluated by risk decision engine
+// rate limit rules that can be evaluated by edge decision engine
+// enumeration rules that can be evaluated by edge decision engine
 // <IN FUTURE> evaluate other aggregates, aggregate of attribute values
 // evaluate a payload against rate tracker
 // in a window of time, count(<>) by (<>)
@@ -162,7 +169,7 @@ message AggregateThresholdRule {
   ValueAggregateThreshold value_aggregate_threshold = 4;
 }
 
-// "api access rules" that can be evaluated by risk decision engine
+// "api access rules" that can be evaluated by edge decision engine
 // evaluate a payload against access pattern
 message AccessPatternRule {
   // correlation key to be computed on the request payload(s)
