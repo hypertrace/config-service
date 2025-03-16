@@ -15,7 +15,6 @@ import ai.traceable.jwt.extraction.config.service.v1.StringPredicate;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class AttributeProjection {
@@ -34,25 +33,19 @@ public class AttributeProjection {
 
   public List<SpanAttributeDecoration> getSpanAttributeDecoration() {
     final List<SpanAttributeDecoration> spanAttributeDecorations = new ArrayList<>();
-    final AtomicInteger count = new AtomicInteger(0);
     jwtExtractionRule
         .getLocationsList()
         .forEach(
             jwtLocation ->
                 valueProjectionsList.forEach(
                     valueProjections -> {
-                      count.incrementAndGet();
                       spanAttributeDecorations.add(
                           SpanAttributeDecoration.newBuilder()
                               .setSpanAttributeKey(
                                   DataTransformationConfig.newBuilder()
                                       .setStaticValue(
                                           Value.newBuilder()
-                                              .setStringValue(
-                                                  "traceableai.jwt."
-                                                      + jwtExtractionRule.getId()
-                                                      + "."
-                                                      + count.get())))
+                                              .setStringValue(getKeyName(valueProjections))))
                               .setSpanAttributeValue(
                                   DataTransformationConfig.newBuilder()
                                       .setJexlExpression(
@@ -137,5 +130,9 @@ public class AttributeProjection {
       default:
         throw new IllegalArgumentException("Unsupported operator: " + predicate.getOperator());
     }
+  }
+
+  private String getKeyName(List<ValueProjection> valueProjections) {
+    return valueProjections.stream().map(ValueProjection::getKey).collect(Collectors.joining("."));
   }
 }
