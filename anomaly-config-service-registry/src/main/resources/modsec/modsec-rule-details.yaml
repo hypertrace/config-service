@@ -114,35 +114,25 @@
         references: |
           - https://cwe.mitre.org/data/definitions/918.html
           - https://www.owasp.org/index.php/Server_Side_Request_Forgery
-
     - ruleId: crs_10100100
       eventDetails:
         description: |
-          A pattern indicative of a Server-Side Request Forgery (SSRF) attack targeting the localhost domain (T100) is detected.
-          - SSRF occurs when an attacker manipulates a vulnerable web application to send unauthorized requests from the server.
-          - In the case of localhost targeting, attackers attempt to access internal services running on `127.0.0.1`, `localhost`, or private IP ranges.
-          - Exploiting this vulnerability can lead to:
-              - Unauthorized Access to Internal Services: Attackers can interact with services such as databases, cloud metadata APIs, or admin panels.
-              - Data Exfiltration: Sensitive internal data can be retrieved by making forged requests.
-              - Bypassing Network Restrictions: Attackers can exploit SSRF to access restricted systems that are not exposed to the public internet.
-              - Remote Code Execution (RCE): Some internal services may allow command execution through SSRF exploitation.
+          - A potential Server-Side Request Forgery (SSRF) attack targeting localhost or internal services has been detected. Attackers may exploit vulnerable applications to send crafted requests to internal systems, potentially accessing restricted resources or bypassing security controls.
         mitigation: |
-          - Enforce Allowlist Validation: Restrict outbound requests to only approved domains and block access to internal IP ranges.
-          - Disable Unnecessary Internal Services: Minimize the attack surface by disabling unused internal services or restricting access.
-          - Implement Network Segmentation: Isolate sensitive services from the public-facing web server to prevent unauthorized access.
-          - Use Web Application Firewalls (WAFs): Deploy WAFs to detect and block SSRF attempts targeting internal resources.
-          - Restrict Metadata API Access: If running in a cloud environment, configure metadata APIs (e.g., AWS IMDSv2) to require authentication.
-          - Regular Security Audits: Perform security testing and monitoring to identify SSRF vulnerabilities before exploitation.
+          - Implement strict allowlists for outbound requests and deny access to private IP ranges.
+          - Use URL validation to block requests targeting localhost (127.0.0.1) and internal domains.
+          - Enforce network segmentation and firewall rules to restrict access to internal services.
+          - Use metadata service v2 (for cloud environments) to prevent unauthorized access.
+          - Monitor and log outbound HTTP requests for suspicious activity.
         impact: |
-          - Internal System Exposure: Attackers can access and manipulate internal services, leading to security breaches.
-          - Data Breach: Sensitive data from internal systems or APIs may be leaked.
-          - Service Disruption: Unauthorized SSRF requests may cause unintended actions or service disruptions.
-          - Remote Exploitation: Attackers may leverage SSRF to escalate privileges or execute malicious commands on internal systems.
-          - Compliance Violations: Unauthorized access to internal resources may result in regulatory and legal repercussions.
+          Successful exploitation can allow attackers to:
+          - Access internal services such as databases, admin panels, or cloud metadata endpoints.
+          - Bypass network security restrictions and exploit internal vulnerabilities.
+          - Exfiltrate sensitive data or escalate privileges by interacting with internal APIs.
+          - Conduct port scanning and reconnaissance of internal infrastructure.
         references: |
           - https://cwe.mitre.org/data/definitions/918.html
-          - https://owasp.org/www-community/attacks/Server_Side_Request_Forgery
-
+          - https://www.owasp.org/index.php/Server_Side_Request_Forgery
 - ruleId: crs_913
   ruleName: Scanner Detection
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_SCANNER_DETECTED
@@ -1591,6 +1581,59 @@
           - https://cwe.mitre.org/data/definitions/93.html
           - https://www.acunetix.com/blog/articles/email-header-injection/
 
+    - ruleId: crs_9210210
+      eventDetails:
+        description: |
+          A pattern indicative of suspicious URL evasion attempts using malformed URL patterns is detected.
+          Attackers may manipulate URLs with techniques such as encoding, obfuscation, or fragmentation
+          to bypass security filters and evade detection.
+
+        mitigation: |
+          - Implement strict URL validation and canonicalization to detect and normalize obfuscated URLs.
+          - Enforce security policies that block overly encoded or malformed URLs.
+          - Use Web Application Firewalls (WAFs) with updated rulesets to detect and mitigate evasion techniques.
+          - Regularly audit logs for unusual URL patterns and potential attack attempts.
+          - Monitor and analyze traffic patterns to identify and respond to suspicious requests.
+
+        impact: |
+          Successful exploitation can allow attackers to:
+          - Evade Web Application Firewall (WAF) or security controls.
+          - Conduct phishing attacks or redirect users to malicious websites.
+          - Bypass input validation to exploit vulnerabilities like SQL Injection or XSS.
+          - Mask malicious payloads in URLs to facilitate further exploitation.
+
+        references: |
+          - https://owasp.org/www-community/attacks/URL_Encoding
+          - https://cwe.mitre.org/data/definitions/177.html
+          - https://nvd.nist.gov/vuln/detail/CVE-2022-26134
+
+    - ruleId: crs_9210200
+      eventDetails:
+        description: |
+          A potential Cross-Site Request Forgery (CSRF) attack is detected due to a mismatch between
+          the Host and Origin headers in an HTTP request. This indicates an attempt to force a victim's 
+          browser to execute unauthorized actions on a trusted website without their consent.
+
+        mitigation: |
+          - Implement CSRF protection mechanisms such as anti-CSRF tokens in all state-changing requests.
+          - Enforce the SameSite cookie attribute to restrict unauthorized cross-origin requests.
+          - Validate and enforce strict Host and Origin header checks to detect anomalies.
+          - Use Content Security Policy (CSP) and Referrer Policy to minimize the attack surface.
+          - Regularly audit application logs for suspicious cross-origin requests.
+
+        impact: |
+          Successful exploitation can allow attackers to:
+          - Perform unauthorized actions on behalf of authenticated users.
+          - Modify user account settings, initiate financial transactions, or exfiltrate sensitive data.
+          - Bypass authentication and session controls in poorly secured applications.
+          - Exploit missing or weak CSRF protections to gain unauthorized access.
+
+        references: |
+          - https://owasp.org/www-community/attacks/csrf
+          - https://cwe.mitre.org/data/definitions/352.html
+          - https://nvd.nist.gov/vuln/detail/CVE-2022-30238
+
+
 - ruleId: crs_102
   ruleName: XML External Entity Injection (XXE)
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_INJECTIONS
@@ -2564,6 +2607,27 @@
           - CWE-552: Files or Directories Accessible to External Parties - https://cwe.mitre.org/data/definitions/552.html
           - MITRE ATT&CK - T1070: Indicator Removal on Host - https://attack.mitre.org/techniques/T1070/
 
+    - ruleId: crs_9300140
+      eventDetails:
+        description: |
+          A pattern indicative of a local file access attempt has been detected. This typically involves attempts to read or retrieve local system files via unauthorized HTTP requests, such as trying to access sensitive files like `/etc/passwd`, `boot.ini`, or other critical system files through the application.
+        mitigation: |
+          - Ensure input validation and proper sanitization on all user-supplied input to prevent directory traversal or file inclusion attacks.
+          - Employ a whitelist of allowed file paths and deny access to all others.
+          - Disable unnecessary server features, such as directory listing or file inclusion functionalities, unless absolutely required.
+          - Implement a Web Application Firewall (WAF) to detect and block malicious requests targeting sensitive file paths.
+          - Regularly audit application and web server logs for attempts to access local files.
+        impact: |
+          Successful local file access attempts may:
+          - Lead to disclosure of sensitive system files and configuration details.
+          - Provide attackers with critical information that can assist in further exploitation (e.g., user accounts, credentials, environment variables).
+          - Result in full system compromise if attackers are able to chain this with other vulnerabilities (e.g., LFI to RCE).
+        references: |
+          - OWASP Top 10 - 2021 - A5: Security Misconfiguration - https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+          - CWE-552: Files or Directories Accessible to External Parties - https://cwe.mitre.org/data/definitions/552.html
+          - MITRE ATT&CK - T1005: Data from Local System - https://attack.mitre.org/techniques/T1005/
+          - CWE-200: Exposure of Sensitive Information to an Unauthorized Actor - https://cwe.mitre.org/data/definitions/200.html
+
     - ruleId: crs_9300010
       eventDetails:
         description: |
@@ -2656,33 +2720,27 @@
           - MITRE ATT&CK - T1083: File and Directory Discovery - https://attack.mitre.org/techniques/T1083/
           - OWASP Top 10 - 2021 – A01:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
           - Web Application Security Consortium - WASC-33: Path Traversal - http://projects.webappsec.org/w/page/13246952/Path%20Traversal
+    
     - ruleId: crs_9300130
       eventDetails:
         description: |
-          A pattern indicative of a Windows OS File Access Attempt is detected.
-          - This event occurs when an application or user attempts to access system or sensitive files on a Windows operating system.
-          - Uncontrolled file access can lead to various security risks, including unauthorized data exposure and privilege escalation.
-          - Attackers may exploit file access vulnerabilities to:
-              - Read or Modify System Files: Accessing critical OS files such as `C:\Windows\System32\` or configuration files.
-              - Steal Sensitive Data: Extracting passwords, logs, or other confidential information stored in system files.
-              - Execute Arbitrary Code: Exploiting file access to execute malicious scripts or programs.
-              - Bypass Security Mechanisms: Gaining unauthorized access to protected resources by manipulating file permissions.
+          A pattern indicative of a local file access attempt has been detected. This typically involves attempts to read or retrieve local system files via unauthorized HTTP requests, such as trying to access sensitive files like `/etc/passwd`, `boot.ini`, or other critical system files through the application.
         mitigation: |
-          - Enforce Access Controls: Implement strict file access controls to restrict unauthorized access to sensitive system files.
-          - Use Sandboxing: Run applications in sandboxed environments to limit file system interactions.
-          - Implement Logging and Monitoring: Enable logging for file access attempts and monitor for suspicious activity.
-          - Apply Principle of Least Privilege (PoLP): Ensure applications and users only have the necessary permissions to access files.
-          - Secure Configuration: Disable unnecessary file-sharing services and restrict access to critical OS directories.
-          - Regular Security Audits: Perform periodic security assessments to identify and remediate file access vulnerabilities.
+          - Ensure input validation and proper sanitization on all user-supplied input to prevent directory traversal or file inclusion attacks.
+          - Employ a whitelist of allowed file paths and deny access to all others.
+          - Disable unnecessary server features, such as directory listing or file inclusion functionalities, unless absolutely required.
+          - Implement a Web Application Firewall (WAF) to detect and block malicious requests targeting sensitive file paths.
+          - Regularly audit application and web server logs for attempts to access local files.
         impact: |
-          - Unauthorized Data Exposure: Attackers may access confidential system files, leading to data leaks.
-          - Privilege Escalation: Exploiting file access vulnerabilities to gain higher privileges within the system.
-          - System Compromise: Malicious modification of OS files can disrupt system operations or install backdoors.
-          - Security Policy Violations: Unauthorized file access may lead to non-compliance with security regulations and policies.
-          - Business Disruption: Attackers manipulating system files may cause operational downtime or system failures.
+          Successful local file access attempts may:
+          - Lead to disclosure of sensitive system files and configuration details.
+          - Provide attackers with critical information that can assist in further exploitation (e.g., user accounts, credentials, environment variables).
+          - Result in full system compromise if attackers are able to chain this with other vulnerabilities (e.g., LFI to RCE).
         references: |
-          - https://cwe.mitre.org/data/definitions/552.html
-          - https://owasp.org/www-community/vulnerabilities/Insecure_Direct_Object_Reference
+          - OWASP Top 10 - 2021 - A5: Security Misconfiguration - https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+          - CWE-552: Files or Directories Accessible to External Parties - https://cwe.mitre.org/data/definitions/552.html
+          - MITRE ATT&CK - T1005: Data from Local System - https://attack.mitre.org/techniques/T1005/
+          - CWE-200: Exposure of Sensitive Information to an Unauthorized Actor - https://cwe.mitre.org/data/definitions/200.html
 
 - ruleId: crs_931
   ruleName: Remote File Inclusion
@@ -3124,6 +3182,18 @@
           - MITRE ATT&CK - T1059.004: Command and Scripting Interpreter: Unix Shell - https://attack.mitre.org/techniques/T1059/004/
 
     - ruleId: crs_932110
+      eventDetails:
+        description: "A pattern indicative of Windows Command Injection is detected. This attack occurs when an attacker injects malicious windows commands into vulnerable application inputs, leading to arbitrary command execution on the server."
+        mitigation: "To mitigate Windows Command Injection attacks, always validate and sanitize user inputs to prevent malicious characters or commands. Use parameterized queries or prepared statements for database interactions. Avoid directly passing user input to system commands. Employ application-level firewalls and regularly update and patch software to address known vulnerabilities."
+        impact: "If successful, Windows Command Injection attacks can result in unauthorized access, data breaches, privilege escalation, or complete system compromise, enabling attackers to execute arbitrary commands on the server."
+        references: |
+          - OWASP Command Injection Cheat Sheet - https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+          - OWASP Top 10 - 2021 - A03:Injection - https://owasp.org/Top10/A03_2021-Injection/
+          - Common Weakness Enumeration (CWE) CWE-77: Improper Neutralization of Special Elements used in a Command ('Command Injection') - https://cwe.mitre.org/data/definitions/77.html
+          - PortSwigger Web Security Academy - OS Command Injection - https://portswigger.net/web-security/os-command-injection
+          - MITRE ATT&CK - T1059.001: Command and Scripting Interpreter: PowerShell - https://attack.mitre.org/techniques/T1059/001/
+
+    - ruleId: crs_9320110
       eventDetails:
         description: "A pattern indicative of Windows Command Injection is detected. This attack occurs when an attacker injects malicious windows commands into vulnerable application inputs, leading to arbitrary command execution on the server."
         mitigation: "To mitigate Windows Command Injection attacks, always validate and sanitize user inputs to prevent malicious characters or commands. Use parameterized queries or prepared statements for database interactions. Avoid directly passing user input to system commands. Employ application-level firewalls and regularly update and patch software to address known vulnerabilities."
@@ -3709,6 +3779,28 @@
           - Common Attack Pattern Enumerations and Classifications (CAPEC) - CAPEC-248:Command Injection - https://capec.mitre.org/data/definitions/248.html
           - MITRE Attack - T1190:Exploit Public-Facing Application - https://attack.mitre.org/techniques/T1190/
           - Web Application Security Consortium - WASC-31:OS Commanding - http://projects.webappsec.org/w/page/13246950/OS%20Commanding
+    - ruleId: crs_9320510
+      eventDetails:
+        description: |
+          A pattern indicative of Common Evasions for Shell Injection is detected.
+          Attackers may attempt to bypass input validation by using various encoding techniques, escaping mechanisms, or obfuscation strategies to inject malicious shell commands.
+        mitigation: |
+          - Ensure proper input validation and sanitization by using allowlists where possible.
+          - Implement parameterized queries instead of directly concatenating user input.
+          - Use security-focused libraries and frameworks that automatically handle escaping.
+          - Deploy Web Application Firewalls (WAFs) with up-to-date rulesets to detect and block evasion techniques.
+          - Regularly audit logs for suspicious activity and enforce the principle of least privilege.
+        impact: |
+          Successful exploitation can lead to arbitrary command execution, allowing attackers to:
+          - Gain unauthorized access to the system.
+          - Execute arbitrary OS commands with the privileges of the vulnerable application.
+          - Exfiltrate sensitive data or modify system configurations.
+          - Deploy additional malware or create persistent backdoors.
+        references: |
+          - https://owasp.org/www-community/attacks/Command_Injection
+          - https://cwe.mitre.org/data/definitions/78.html
+          - https://nvd.nist.gov/vuln/detail/CVE-2021-41773
+
 
 - ruleId: crs_944
   ruleName: Java Application Attacks
@@ -4099,6 +4191,26 @@
           - http://projects.webappsec.org/Insufficient%20Transport%20Layer%20Protection
           - https://attack.mitre.org/techniques/T1190/
 
+    - ruleId: crs_1030110
+      eventDetails:
+        description: |
+          Joomla! CMS versions 4.0.0 through 4.2.7 are affected by an improper access control vulnerability (CVE-2023-23752).
+          - The vulnerability allows unauthenticated attackers to gain access to sensitive configuration information, including database credentials, SMTP settings, and other critical details.
+          - The issue is due to improper enforcement of access controls on the Joomla! web service API, exposing sensitive information via unauthenticated requests.
+          - An attacker can exploit this flaw by sending a specially crafted HTTP request to a vulnerable Joomla! instance, retrieving sensitive information without valid credentials.
+          - This exposure could be leveraged to gain full control over the affected Joomla! site.
+        mitigation: |
+          - Upgrade Joomla! to version 4.2.8 or later, which addresses this vulnerability.
+          - Restrict access to the Joomla! web service API endpoints to trusted IP addresses where possible.
+          - Regularly review server logs to detect unauthorized access attempts or suspicious API requests.
+          - Consider applying a web application firewall (WAF) rule to block unauthenticated access to sensitive API endpoints.
+        impact: |
+          - Information Disclosure: Unauthenticated attackers can access sensitive site configuration details.
+          - Potential Full Compromise: Exposed credentials may lead to further attacks, including database compromise or remote code execution.
+        references: |
+          - https://nvd.nist.gov/vuln/detail/CVE-2023-23752
+          - https://developer.joomla.org/security-centre/885-20230201-core-improper-access-check
+          - https://www.cve.org/CVERecord?id=CVE-2023-23752
 - ruleId: crs_104
   ruleName: GraphQL Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS

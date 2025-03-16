@@ -656,11 +656,38 @@ fraudDataModelDerivationConfigService:
 defaultModsecDetectionConfigs: |-
   [
     {
-      configStatus = {
-        disabled = true
-        internal = true
-      }
       modsecurityAnomalyDetectionConfig = {
+        modsecAnomalyRule = {
+          anomalyRuleId = "crs_931"
+          subRuleConfigs = [
+              {
+                  subRuleId = "crs_9310100"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_931100"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_931110"
+                  configStatus = {
+                      disabled = true
+                  }
+              }
+          ]
+        }
+      }
+    },
+    {
+      modsecurityAnomalyDetectionConfig = {
+        configStatus = {
+          disabled = true
+          internal = true
+        }
         modsecAnomalyRule = {
           anomalyRuleId = "crs_103"
         }
@@ -669,10 +696,22 @@ defaultModsecDetectionConfigs: |-
     {
       modsecurityAnomalyDetectionConfig = {
         modsecAnomalyRule = {
-          anomalyRuleId = "crs_931"
+          anomalyRuleId = "crs_930"
           subRuleConfigs = [
               {
-                  subRuleId = "crs_9310100"
+                  subRuleId = "crs_9300120"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_9300130"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_9300140"
                   configStatus = {
                       disabled = true
                   }
@@ -817,6 +856,18 @@ defaultModsecDetectionConfigs: |-
                   configStatus = {
                       disabled = true
                   }
+              },
+              {
+                  subRuleId = "crs_9320510"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_9320110"
+                  configStatus = {
+                      disabled = true
+                  }
               }
           ]
         }
@@ -835,6 +886,18 @@ defaultModsecDetectionConfigs: |-
               },
               {
                   subRuleId = "crs_9210011"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_9210210"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_9210200"
                   configStatus = {
                       disabled = true
                   }

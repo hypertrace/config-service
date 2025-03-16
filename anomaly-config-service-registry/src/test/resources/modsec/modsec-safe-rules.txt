@@ -9,11 +9,9 @@ crs_9210115 :: HTTP Request Smuggling Attack (Content-Length/Transfer-Encoding C
 crs_9210120 :: HTTP Request Smuggling Attack (Content-Length Confusion)
 crs_921140 :: HTTP Header Injection Attack via headers
 crs_9300010 :: Rails Action View LFI: Accept header: (CVE-2019-5418)
-crs_9300120 :: OS File Access Attempt (T120)
 crs_9300150 :: Possible Information Disclosure in ownCloud Graph API: (CVE-2023-49103)
 crs_930100 :: Path Traversal Attack (/../) (100)
 crs_930110 :: Path Traversal Attack (/../) (110)
-crs_930130 :: Restricted File Access Attempt
 crs_931120 :: Possible Remote File Inclusion (RFI) Attack: URL Payload Used w/Trailing Question Mark Character (?)
 crs_9320010 :: Spring Cloud Function RCE: malicious Spring Expression: (CVE-2022-22963)
 crs_9320020 :: Apache Struts RCE: multipart/form-data: (CVE-2017-5638)
@@ -89,7 +87,7 @@ crs_9210300 :: URL Encoding Abuse Attack Attempt
 crs_9210305 :: Null Byte Injection
 crs_941360 :: JSFuck / Hieroglyphy obfuscation
 crs_943110 :: Possible Session Fixation Attack: SessionID Parameter Name with Off-Domain Referer
-crs_9210400 :: Mail Injection Detected
+crs_9210400 :: Mail Injection: Protocol Manipulation
 crs_9440950 :: PAN-OS GlobalProtect Portal: RCE Exploitation (CVE-2024-3400)
 crs_9330111 :: PHP CGI argument Injection: (CVE-2024-4577)
 crs_9420360 :: Concatenated basic SQL injection and SQLLFI attempts (T360)
@@ -101,12 +99,21 @@ crs_933140 :: PHP Injection Attack: I/O Stream
 crs_933150 :: PHP Injection Attack: High-Risk PHP Function Name
 crs_933160 :: PHP Injection Attack: High-Risk PHP Function Call
 crs_933210 :: PHP Injection Attack: Variable Function Call Found (210)
-crs_9210330 :: Suspicious URL Evasion Attempt: Possible encoding or obfuscation
 crs_941420 :: IE XSS Filters - Attack (A href with a link)
 crs_9210011 :: Potential CORS Misconfiguration Exploitation Attempt
 crs_9310100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using Anomalous Domain (T100)
 crs_9320090 :: Remote Command Execution: Command or Script Injection (T090)
 crs_9330010 :: PHP Injection Attack: WebShell Function Call (T100)
-crs_1020120 :: XPath Injection: Malicious XPath Expression (T120)
-crs_9300130 :: Windows OS File Access Attempt (T120)
+crs_931100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using IP Address
+crs_931110 :: Possible Remote File Inclusion (RFI) Attack: Common RFI Vulnerable Parameter Name used w/URL Payload
 crs_10100100 :: Server Side Request Forgery (SSRF): Localhost Domain (T100)
+crs_1020120 :: XPath Injection: Malicious XPath Expression (T120)
+crs_9210200 :: Possible CSRF Attack: Host and Origin Mismatch
+crs_9210210 :: Suspicious URL Evasion Attempt: Malformed URL Patterns (T100)
+crs_9210330 :: Suspicious URL Evasion Attempt: Possible Encoding or Obfuscation (T330)
+crs_9320510 :: Remote Command Execution:: Common Evasions for Shell Injection
+crs_1030110 :: Possible Joomla Unauthenticated Acces: (CVE-2023-23752)
+crs_9300120 :: Local File Access Attempt - S1 (T140)
+crs_9300130 :: Local File Access Attempt - S2 (T140)
+crs_9300140 :: Local File Access Attempt - S3 (T140)
+crs_9320110 :: Remote Command Execution: Windows Command Injection (T110)

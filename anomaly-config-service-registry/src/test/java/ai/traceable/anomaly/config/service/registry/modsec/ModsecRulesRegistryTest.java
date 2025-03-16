@@ -237,6 +237,12 @@ public class ModsecRulesRegistryTest {
             .map(AnomalySubRuleInfo::getRuleId)
             .map(ruleId -> ruleId.substring(4))
             .collect(Collectors.toSet());
+
+    // Diff between expected and actual rule ids
+    Set<String> diff = new HashSet<>(expectedIdMatches);
+    diff.removeAll(idMatches);
+    assertEquals(0, diff.size(), "Missing rule ids: " + diff);
+
     assertEquals(expectedIdMatches.size(), idMatches.size());
     idMatches.forEach(id -> assertTrue(expectedIdMatches.contains(id)));
 

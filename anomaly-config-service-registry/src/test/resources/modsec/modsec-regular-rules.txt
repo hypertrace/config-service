@@ -4,8 +4,6 @@ crs_921120 :: HTTP Response Splitting Attack (120)
 crs_921130 :: HTTP Response Splitting Attack (130)
 crs_921160 :: HTTP Header Injection Attack via payload (CR/LF and header-name)
 crs_930120 :: OS File Access Attempt (120)
-crs_931100 :: Possible Remote File Inclusion (RFI) Attack: URL Parameter using IP Address
-crs_931110 :: Possible Remote File Inclusion (RFI) Attack: Common RFI Vulnerable Parameter Name used w/URL Payload
 crs_932100 :: Remote Command Execution: Unix Command Injection (100)
 crs_932105 :: Remote Command Execution: Unix Command Injection (105)
 crs_932110 :: Remote Command Execution: Windows Command Injection (110)
@@ -35,3 +33,4 @@ crs_933100 :: PHP Injection Attack: PHP Open Tag
 crs_933170 :: PHP Injection Attack: Serialized Object Injection
 crs_933180 :: PHP Injection Attack: Variable Function Call Found (180)
 crs_933200 :: PHP Injection Attack: Wrapper scheme detected
+crs_930130 :: Restricted File Access Attempt
