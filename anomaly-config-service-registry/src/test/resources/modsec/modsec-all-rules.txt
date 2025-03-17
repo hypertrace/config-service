@@ -138,7 +138,7 @@ crs_913100 :: User-Agent associated with security scanner :: ANOMALY_SEVERITY_LE
 crs_1040100 :: GraphQL Introspection Query Detected :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_API_2019:API8' , 'CWE:16' , 'OWASP_2017:A6' , 'OWASP_2021:A5' ]
 crs_1030100 :: Basic Authentication: Missing Password :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A1' , 'CWE:287' , 'OWASP_API_2023:API2' , 'OWASP_API_2019:API2' ]
 crs_1020120 :: XPath Injection: Malicious XPath Expression (T120) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' , 'OWASP_API_2019:API8' ]
-crs_1020110 :: XML External Entity Injection: Entity Tags (T110) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' , 'OWASP_API_2019:API8' ]
+crs_1020110 :: XML External Entity Injection: Entity Tags (110) :: ANOMALY_SEVERITY_LEVEL_MEDIUM :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' , 'OWASP_API_2019:API8' ]
 crs_1020100 :: XML External Entity Injection: Local/Remote Includes (T100) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A4' , 'OWASP_2021:A5' , 'CWE:611' , 'OWASP_API_2019:API8' ]
 crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' ]
 crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpoint :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2021:A10' , 'CWE:918' , 'OWASP_API_2023:API7' ]
