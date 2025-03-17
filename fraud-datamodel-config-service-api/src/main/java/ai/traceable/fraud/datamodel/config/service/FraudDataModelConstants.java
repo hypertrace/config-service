@@ -61,6 +61,9 @@ public abstract class FraudDataModelConstants {
           COL_INDEX_PREFIX,
           25);
 
+  public static final Map<String, Integer> GENERIC_METRICS_FIELD_MAP =
+      Map.of(COL_STR_PREFIX, 25, COL_BOOL_PREFIX, 21, COL_INDEX_PREFIX, 25);
+
   public static String getColumnPrefix() {
     return COL_SEGMENT;
   }

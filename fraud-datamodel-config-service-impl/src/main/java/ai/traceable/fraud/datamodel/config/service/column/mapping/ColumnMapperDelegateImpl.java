@@ -1,6 +1,7 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
 import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.DEFAULT_FIELD_MAP;
+import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.GENERIC_METRICS_FIELD_MAP;
 import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getColumnName;
 import static ai.traceable.fraud.datamodel.config.service.FraudDataModelConstants.getKeyPrefix;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.documentstore.model.exception.DuplicateDocumentException;
@@ -135,12 +137,20 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
       String propName,
       InternalFieldMetadata fieldMeta,
       Map<String, ColumnMappingsDocument> colMap) {
-    String colName = createNewMapping(propName, colMap, fieldMeta, typeId, DEFAULT_FIELD_MAP);
+    Map<String, Integer> columnIndexMap = getColumnIndexMap(objectKind);
+    String colName = createNewMapping(propName, colMap, fieldMeta, typeId, columnIndexMap);
     String tenantId = FraudDataModelUtils.getTenantId(requestContext);
     ColumnMappingsDocument columnMappingsDocument =
         new ColumnMappingsDocument(tenantId, objectKind, typeId, propName, colName, fieldMeta);
     colMap.put(colName, columnMappingsDocument);
     return columnMappingsDocument;
+  }
+
+  private Map<String, Integer> getColumnIndexMap(ObjectKind objectKind) {
+    if (Objects.requireNonNull(objectKind) == ObjectKind.OBJECT_KIND_METRIC) {
+      return GENERIC_METRICS_FIELD_MAP;
+    }
+    return DEFAULT_FIELD_MAP;
   }
 
   private String createNewMapping(
@@ -153,7 +163,22 @@ public class ColumnMapperDelegateImpl implements ColumnMapperDelegate {
       return propName;
     }
     String keyPrefix = getKeyPrefix(fieldMetadata);
-    for (int i = 0; i < fieldCountMap.get(keyPrefix); i++) {
+    Integer indexSize = fieldCountMap.get(keyPrefix);
+    if (indexSize == null) {
+      throw ContextualStatusExceptionBuilder.from(
+              Status.INTERNAL.withDescription(
+                  "No column index size found for field_name: "
+                      + propName
+                      + " for field_type: "
+                      + fieldMetadata.getFieldType()
+                      + " for type_id: "
+                      + typeId
+                      + " for metadata: "
+                      + fieldMetadata))
+          .useStatusDescriptionAsExternalMessage()
+          .buildRuntimeException();
+    }
+    for (int i = 0; i < indexSize; i++) {
       String possibleKey = getColumnName(fieldMetadata, i);
       if (!colMap.containsKey(possibleKey)) {
         return possibleKey;

@@ -2,7 +2,9 @@ package ai.traceable.config.service.fraud.datamodel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import ai.traceable.config.service.fraud.ResourceUtils;
 import ai.traceable.fraud.datamodel.config.service.FraudDataModelTestUtils;
@@ -32,6 +34,7 @@ import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeRequ
 import ai.traceable.fraud.datamodel.config.service.v1.UpsertRelationshipTypeResponse;
 import com.typesafe.config.ConfigFactory;
 import io.grpc.Deadline;
+import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -151,6 +154,32 @@ public class FraudObjectTypeColumnMapperIntegrationTest {
     // verify that the new field has a rev mapping
     String newFieldRevMapping = updatedRevColMappings.get(newFieldMapping.getColumnId());
     assertEquals("updated_field", newFieldRevMapping);
+  }
+
+  @Test
+  public void testUnsupportedMappings_forMetricType() throws IOException {
+    MetricType metricType1 =
+        ResourceUtils.readProto(
+                "fraud/datamodel/test_metric_type_unsupported_col_index.json",
+                MetricType.newBuilder())
+            .build();
+
+    UpsertMetricTypeRequest request =
+        UpsertMetricTypeRequest.newBuilder()
+            .setId(metricType1.getId())
+            .setMetricDataType(MetricDataType.METRIC_DATA_TYPE_COUNTER)
+            .putAllFieldsMeta(metricType1.getFieldsMetaMap())
+            .setTimestampField(metricType1.getTimestampField())
+            .build();
+    try {
+      UpsertMetricTypeResponse response =
+          RequestContext.forTenantId(TENANT_ID)
+              .call(() -> fraudDataModelConfigServiceBlockingStub.upsertMetricType(request));
+      // exception should have being thrown
+      fail();
+    } catch (Exception e) {
+      assertInstanceOf(StatusRuntimeException.class, e);
+    }
   }
 
   @Test

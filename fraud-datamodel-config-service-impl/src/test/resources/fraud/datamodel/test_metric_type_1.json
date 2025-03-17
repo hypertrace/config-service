@@ -1,20 +1,9 @@
 {
-  "id": "pii_spans_count",
-  "name": "pii_spans_count",
-  "description": "pii_spans_count",
+  "id": "total_spans_count",
+  "name": "total_spans_count",
+  "description": "total_spans_count",
   "metricDataType": "METRIC_DATA_TYPE_COUNTER",
   "fieldsMeta": {
-    "another_grouping_field": {
-      "fieldType": "FIELD_TYPE_STR",
-      "versioned": false,
-      "disabled": false
-    },
-    "start_time_millis_ts": {
-      "fieldType": "FIELD_TYPE_TIMESTAMP",
-      "versioned": false,
-      "disabled": false,
-      "reserved": true
-    },
     "api_id": {
       "fieldType": "FIELD_TYPE_STR",
       "versioned": false,
@@ -27,6 +16,12 @@
     },
     "ip_address": {
       "fieldType": "FIELD_TYPE_STR",
+      "versioned": false,
+      "disabled": false,
+      "indexed": true
+    },
+    "start_time_millis_ts": {
+      "fieldType": "FIELD_TYPE_TIMESTAMP",
       "versioned": false,
       "disabled": false
     }

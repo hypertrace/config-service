@@ -1,5 +1,7 @@
 package ai.traceable.fraud.datamodel.config.service.column.mapping;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -7,8 +9,11 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.config.proto.utils.ResourceUtils;
 import ai.traceable.fraud.datamodel.config.service.v1.InternalFieldMetadata;
+import ai.traceable.fraud.datamodel.config.service.v1.MetricType;
 import ai.traceable.fraud.datamodel.config.service.v1.ObjectKind;
+import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -96,5 +101,23 @@ public class ColumnMappingsStoreTest {
         RequestContext.forTenantId(tenantId)
             .call(() -> target.getColumnMappings(requestContext, kind, typeId));
     Assertions.assertEquals(mappings.size(), outputMappings.size());
+  }
+
+  @Test
+  public void testCreateMetricType_WithUnsupportedFields() throws IOException {
+    var tenantId = "tenant1";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    ColumnMapperDelegate columnMapperDelegate = new ColumnMapperDelegateImpl(target);
+    MetricTypeColumnMapper metricTypeColumnMapper =
+        new MetricTypeColumnMapper(columnMapperDelegate);
+    MetricType metricType1 =
+        ResourceUtils.readProto("fraud/datamodel/test_metric_type_1.json", MetricType.newBuilder())
+            .build();
+    try {
+      metricTypeColumnMapper.forCreate(requestContext, metricType1);
+      fail("Exception should have being thrown");
+    } catch (Exception e) {
+      assertInstanceOf(StatusRuntimeException.class, e);
+    }
   }
 }
