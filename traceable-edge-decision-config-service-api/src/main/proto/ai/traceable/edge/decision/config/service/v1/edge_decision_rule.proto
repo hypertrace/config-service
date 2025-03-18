@@ -184,7 +184,19 @@ message AccessPatternRule {
   google.protobuf.Duration time_window = 5;
   // what is the probability of no other api being there in this window?
   // set to "true" to trigger the rule if NO api is seen in this window. Irrespective of pre_requests.
-  bool check_for_any_pre_requests = 6;
+  // deprecate this, it's not being used (and we don't want to)
+  bool check_for_any_pre_requests = 6 [deprecated = true];
+
+  // what is the trigger type for this rule
+  oneof trigger_type {
+    bool trigger_on_all_missing = 7; // trigger only if all pre_requests are missing
+    bool trigger_on_any_missing = 8; // trigger if any of the pre_requests are missing
+    // must be between 0.0 to 1.0
+    // 0.0: no pre_requests are missing
+    // 1.0: all pre_requests are missing
+    // value represents a score that is computed from the pre_requests that are missing and the ones that are present
+    double trigger_on_score = 9; // trigger if the score of the pre_requests is more than this value
+  }
 }
 
 message EntityRuleData {
