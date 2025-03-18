@@ -18,6 +18,7 @@ message AttributeRule {
     oneof action {
       AttributeAddition attribute_addition = 1;
       AttributeArrayAppend attribute_array_append = 2;
+      AttributeStringAppend attribute_string_append = 3;
     }
 
     message AttributeAddition {
@@ -35,6 +36,16 @@ message AttributeRule {
       string attribute_key = 1;
       // rule to get the value to append
       AttributeRule value_projection_rule = 2;
+    }
+
+    // adds or appends value as a string to an attribute value
+    message AttributeStringAppend {
+      // attribute key to append to (will add if not present)
+      string attribute_key = 1;
+      // rule to get the value to append
+      AttributeRule value_projection_rule = 2;
+      // delimiter to add while appending strings
+      string delimiter = 3;
     }
   }
 
@@ -54,6 +65,7 @@ message AttributeRule {
       ConditionalProjector conditional_projector = 12;
       SubstitutionProjector substitution_projector = 13;
       FullKeyAtCurrentLevelProjector full_key_at_current_level_projector = 14;
+      UrlEncodedStringProjector url_encoded_string_projector = 15;
     }
 
     message SubstitutionProjector {
@@ -137,6 +149,8 @@ message AttributeRule {
         ParsedObjectKeysProjector claim_keys_projector = 3;
         // project the list of keys in headers
         ParsedObjectKeysProjector header_keys_projector = 4;
+        // get the full parsed jwt as json, including the claims as json keys
+        ParsedObjectKeyRule json_path_rule = 5;
       }
     }
 
@@ -180,6 +194,13 @@ message AttributeRule {
 
     message StaticValueProjector {
       string value = 1;
+      AttributeRule attribute_rule = 2;
+    }
+
+    // Will decode the urlencoded string and output a decoded string
+    message UrlEncodedStringProjector {
+      // Set to true to decode quote_plus url encoded string
+      bool quote_plus = 1;
       AttributeRule attribute_rule = 2;
     }
 
