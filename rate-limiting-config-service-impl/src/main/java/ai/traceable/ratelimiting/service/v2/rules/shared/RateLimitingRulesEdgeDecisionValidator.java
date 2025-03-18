@@ -33,16 +33,12 @@ public class RateLimitingRulesEdgeDecisionValidator {
                       hasScopeConditionWithSpecificEntityIds));
     } else if (data.getCategory().equals(Category.CATEGORY_ENUMERATION)) {
       final boolean isCompatibleCondition = isCompatibleCondition(data.getCondition());
-      final boolean hasScopeConditionWithSpecificEntityIds =
-          hasScopeConditionWithSpecificEntityIds(data.getCondition());
       data.getThresholdActionConfigsList()
           .forEach(
               thresholdActionConfig ->
                   RateLimitingRulesEdgeDecisionValidator
                       .isCompatibleThresholdActionConfigForEnumerationRule(
-                          thresholdActionConfig,
-                          isCompatibleCondition,
-                          hasScopeConditionWithSpecificEntityIds));
+                          thresholdActionConfig, isCompatibleCondition));
     }
   }
 
@@ -123,16 +119,13 @@ public class RateLimitingRulesEdgeDecisionValidator {
   }
 
   private static void isCompatibleThresholdActionConfigForEnumerationRule(
-      ThresholdActionConfig thresholdActionConfig,
-      boolean isCompatibleEdgeDecisionCondition,
-      boolean hasScopeConditionWithSpecificEntityIds) {
+      ThresholdActionConfig thresholdActionConfig, boolean isCompatibleEdgeDecisionCondition) {
     boolean isCompatibleResourceAccessThresholdConfig =
         isCompatibleEdgeDecisionCondition
             && thresholdActionConfig.getResourceAccessThresholdConfigsList().stream()
                 .allMatch(
-                    resourceAccessThresholdConfig ->
-                        isCompatibleResourceAccessThresholdConfigForEnumerationRule(
-                            resourceAccessThresholdConfig, hasScopeConditionWithSpecificEntityIds));
+                    RateLimitingRulesEdgeDecisionValidator
+                        ::isCompatibleResourceAccessThresholdConfigForEnumerationRule);
     thresholdActionConfig
         .getActionsList()
         .forEach(
@@ -142,17 +135,11 @@ public class RateLimitingRulesEdgeDecisionValidator {
   }
 
   private static boolean isCompatibleResourceAccessThresholdConfigForEnumerationRule(
-      ResourceAccessThresholdConfig resourceAccessThresholdConfig,
-      boolean hasScopeConditionWithSpecificEntityIds) {
+      ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
     ValueType valueType =
         resourceAccessThresholdConfig.getValueBasedThresholdConfig().getValueType();
     if (valueType == ValueType.VALUE_TYPE_SENSITIVE_PARAMS) {
       return false;
-    }
-    if (valueType == ValueType.VALUE_TYPE_PATH_PARAMS) {
-      return hasScopeConditionWithSpecificEntityIds
-          && resourceAccessThresholdConfig.getApiAggregateType()
-              != ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS;
     }
     return true;
   }

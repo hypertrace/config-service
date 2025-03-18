@@ -93,6 +93,30 @@ public class RateLimitingEdgeDecisionConverter {
           .build();
   private static final String REQUEST_BODY_MATCHED_ATTRIBUTE = "http.request.body";
   private static final String PATH_PARAM_MATCHED_ATTRIBUTE_PREFIX = "http.path.param.";
+  private static final Map<Integer, VariableDerivationMapping> PATH_PARAM_VARIABLES =
+      new HashMap<>();
+
+  static {
+    for (int idx = 1; idx <= 10; idx++) {
+      PATH_PARAM_VARIABLES.put(
+          idx,
+          VariableDerivationMapping.newBuilder()
+              .setName("PATH_PARAM_INDEX_" + idx)
+              .addRules(
+                  DerivationRule.newBuilder()
+                      .addAllTransformationConfigs(
+                          List.of(
+                              PATH_DATA_TRANSFORMATION_CONFIG,
+                              DataTransformationConfig.newBuilder()
+                                  .setRegex(
+                                      RegexConfig.newBuilder()
+                                          .setSplitRegex("/")
+                                          .addGroupIndices(idx)
+                                          .setJoinDelimiter("0"))
+                                  .build())))
+              .build());
+    }
+  }
 
   private final Map<ConditionCase, RateLimitingConditionConverter> conditionConverterMap;
 
@@ -535,7 +559,8 @@ public class RateLimitingEdgeDecisionConverter {
         return List.of(
             ValueAggregateThresholdDetails.builder()
                 .valueAggregateThreshold(
-                    buildValueAggregateThreshold(valueBasedThresholdConfig, "$s.getRequestBody()"))
+                    buildValueAggregateThreshold(
+                        valueBasedThresholdConfig, valueType.name(), "$s.getRequestBody()"))
                 .variableDerivationMappings(buildVariableDerivationMappings(mayBeMatchCondition))
                 .matchedAttribute(REQUEST_BODY_MATCHED_ATTRIBUTE)
                 .build());
@@ -544,57 +569,29 @@ public class RateLimitingEdgeDecisionConverter {
         throw new IllegalArgumentException(
             "Cannot convert enumeration rule for which the condition is specified on sensitive param");
       case VALUE_TYPE_PATH_PARAMS:
+        List<ValueAggregateThresholdDetails> valueAggregateThresholdDetailsList = new ArrayList<>();
+        List<VariableDerivationMapping> apiVariableDerivationMappings = new ArrayList<>();
         if (mayBeMatchCondition.isPresent()
             && !mayBeMatchCondition.get().getApiIdentifierEntities().isEmpty()) {
-          List<ApiIdentifierEntity> apiIdentifierEntities =
-              mayBeMatchCondition.get().getApiIdentifierEntities();
-          return apiIdentifierEntities.stream()
-              .flatMap(
-                  apiIdentifierEntity -> {
-                    VariableDerivationMapping endPointVariable =
-                        RateLimitingScopeConditionConverter.buildVariableDerivationMapping(
-                                List.of(apiIdentifierEntity))
-                            .get();
-                    Map<String, Integer> pathParamIndexes =
-                        getPathParamIndexesMap(apiIdentifierEntity);
-                    return pathParamIndexes.entrySet().stream()
-                        .map(
-                            pathParamIndexEntry -> {
-                              VariableDerivationMapping pathParamVariable =
-                                  VariableDerivationMapping.newBuilder()
-                                      .setName("PATH_PARAM_INDEX_" + pathParamIndexEntry.getValue())
-                                      .addRules(
-                                          DerivationRule.newBuilder()
-                                              .addAllTransformationConfigs(
-                                                  List.of(
-                                                      PATH_DATA_TRANSFORMATION_CONFIG,
-                                                      DataTransformationConfig.newBuilder()
-                                                          .setRegex(
-                                                              RegexConfig.newBuilder()
-                                                                  .setSplitRegex("/")
-                                                                  .addGroupIndices(
-                                                                      pathParamIndexEntry
-                                                                          .getValue())
-                                                                  .setJoinDelimiter("0"))
-                                                          .build())))
-                                      .build();
-                              return ValueAggregateThresholdDetails.builder()
-                                  .valueAggregateThreshold(
-                                      buildValueAggregateThreshold(
-                                          valueBasedThresholdConfig,
-                                          "PATH_PARAM_INDEX_" + pathParamIndexEntry.getValue()))
-                                  .variableDerivationMappings(
-                                      List.of(endPointVariable, pathParamVariable))
-                                  .matchedAttribute(
-                                      PATH_PARAM_MATCHED_ATTRIBUTE_PREFIX
-                                          + pathParamIndexEntry.getKey())
-                                  .build();
-                            });
-                  })
-              .collect(Collectors.toUnmodifiableList());
+          apiVariableDerivationMappings.addAll(
+              buildVariableDerivationMappings(mayBeMatchCondition));
         }
-        throw new IllegalArgumentException(
-            "Cannot convert enumeration rule where the path param condition doesn't have any url pattern");
+        for (Map.Entry<Integer, VariableDerivationMapping> entry :
+            PATH_PARAM_VARIABLES.entrySet()) {
+          List<VariableDerivationMapping> variableDerivationMappings =
+              new ArrayList<>(apiVariableDerivationMappings);
+          variableDerivationMappings.add(entry.getValue());
+          String pathParamJexlExp = "PATH_PARAM_INDEX_" + entry.getKey();
+          valueAggregateThresholdDetailsList.add(
+              ValueAggregateThresholdDetails.builder()
+                  .valueAggregateThreshold(
+                      buildValueAggregateThreshold(
+                          valueBasedThresholdConfig, pathParamJexlExp, pathParamJexlExp))
+                  .variableDerivationMappings(variableDerivationMappings)
+                  .matchedAttribute(PATH_PARAM_MATCHED_ATTRIBUTE_PREFIX + entry.getKey())
+                  .build());
+        }
+        return valueAggregateThresholdDetailsList;
       case VALUE_TYPE_UNSPECIFIED:
       default:
         throw new IllegalArgumentException("Unsupported value type: " + valueType);
@@ -603,11 +600,12 @@ public class RateLimitingEdgeDecisionConverter {
 
   private ValueAggregateThreshold buildValueAggregateThreshold(
       final ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig,
+      final String name,
       final String jexlExpression) {
     final ValueAggregateThreshold.Builder valueBasedBuilder = ValueAggregateThreshold.newBuilder();
     valueBasedBuilder.setDimension(
         AttributeDerivationMapping.newBuilder()
-            .setName("DISTINCT_COUNT_" + valueBasedThresholdConfig.getValueType())
+            .setName("DISTINCT_COUNT_" + name)
             .addRules(
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
