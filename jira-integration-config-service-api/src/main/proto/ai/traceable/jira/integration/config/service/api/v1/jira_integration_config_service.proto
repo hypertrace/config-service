@@ -95,12 +95,10 @@ message CreateProjectIssueConfigurationRequest {
   string integration_id = 1;
   string project_id = 2;
   string issue_type = 3;
-
   TraceableEntityType traceable_entity_type = 4 [deprecated = true];
   JiraStatusMappingConfiguration jira_status_mapping_configuration = 5;
   repeated JiraFieldConfiguration field_configurations = 6;
   bool jira_bidirectional_sync_is_enabled = 7;
-  JiraIntegrationFilter jira_integration_filter = 8;
 }
 
 message CreateProjectIssueConfigurationResponse {
@@ -112,7 +110,6 @@ message UpdateProjectIssueConfigurationRequest {
   JiraStatusMappingConfiguration jira_status_mapping_configuration = 2;
   repeated JiraFieldConfiguration field_configurations = 3;
   bool jira_bidirectional_sync_is_enabled = 4;
-  JiraIntegrationFilter jira_integration_filter = 5;
 }
 
 message UpdateProjectIssueConfigurationResponse {
@@ -122,14 +119,12 @@ message UpdateProjectIssueConfigurationResponse {
 message DeleteProjectIssueConfigurationRequest {
   string configuration_id = 1 [deprecated = true];
   repeated string configuration_ids = 2;
-  JiraIntegrationFilter jira_integration_filter = 3;
 }
 
 message DeleteProjectIssueConfigurationResponse {}
 
 message GetProjectIssueConfigurationsRequest {
   GetProjectIssueConfigurationsFilter filter = 1;
-  JiraIntegrationFilter jira_integration_filter = 2;
 }
 
 //AND among all fields
