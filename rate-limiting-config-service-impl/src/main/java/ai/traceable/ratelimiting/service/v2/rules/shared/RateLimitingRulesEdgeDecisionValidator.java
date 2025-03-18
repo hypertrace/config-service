@@ -42,7 +42,7 @@ public class RateLimitingRulesEdgeDecisionValidator {
     }
   }
 
-  private static boolean isCompatibleCondition(Condition condition) {
+  public static boolean isCompatibleCondition(Condition condition) {
     switch (condition.getConditionCase()) {
       case LEAF_CONDITION:
         final LeafCondition leafCondition = condition.getLeafCondition();

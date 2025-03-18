@@ -1,9 +1,5 @@
 package ai.traceable.ratelimiting.service.v2.rules.shared;
 
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.ALERT;
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.BLOCK;
-import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.MARK_FOR_TESTING;
-
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
@@ -20,20 +16,18 @@ public class RateLimitingRulesEdgeDecisionFilter {
     return thresholdActionConfig.getActionsList().stream()
         .filter(
             action ->
-                (action.getActionCase().equals(BLOCK)
-                        && action.getBlock().getUseThresholdDuration())
-                    || (action.getActionCase().equals(MARK_FOR_TESTING)
-                        && action.getMarkForTesting().hasAgentRuleEffect())
-                    || (action.getActionCase().equals(ALERT)
-                        && action.getAlert().hasAgentRuleEffect()))
+                action.hasBlock()
+                    || action.getMarkForTesting().hasAgentRuleEffect()
+                    || action.getAlert().hasAgentRuleEffect())
         .findAny();
   }
 
   // filter out rules that will be evaluated by edge decision service
   // this call will return rules that should be evaluated by the platform
-  public static List<RateLimitingRule> getFilteredRules(List<RateLimitingRule> rules) {
+  public static List<RateLimitingRule> getFilteredRules(
+      List<RateLimitingRule> rules, boolean removeAllEdgeCompatibleBlockRules) {
     return rules.stream()
-        .map(RateLimitingRulesEdgeDecisionFilter::getFilteredRule)
+        .map(rule -> getFilteredRule(rule, removeAllEdgeCompatibleBlockRules))
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
   }
@@ -47,12 +41,18 @@ public class RateLimitingRulesEdgeDecisionFilter {
         .collect(Collectors.toUnmodifiableList());
   }
 
-  private static Optional<RateLimitingRule> getFilteredRule(RateLimitingRule rule) {
+  private static Optional<RateLimitingRule> getFilteredRule(
+      RateLimitingRule rule, boolean removeAllEdgeCompatibleBlockRules) {
     // check if this category is supported by edge decision rules
-    if (isCategorySupported(rule)) {
+    if (isCategorySupported(rule)
+        && RateLimitingRulesEdgeDecisionValidator.isCompatibleCondition(
+            rule.getData().getCondition())) {
       List<ThresholdActionConfig> filteredThresholdActionConfigs =
           rule.getData().getThresholdActionConfigsList().stream()
-              .filter(RateLimitingRulesEdgeDecisionFilter::doesNotContainMatchingEdgeDecisionAction)
+              .filter(
+                  thresholdActionConfig ->
+                      doesNotContainMatchingEdgeDecisionAction(
+                          thresholdActionConfig, removeAllEdgeCompatibleBlockRules))
               .collect(Collectors.toUnmodifiableList());
       if (filteredThresholdActionConfigs.isEmpty()) {
         return Optional.empty();
@@ -74,13 +74,26 @@ public class RateLimitingRulesEdgeDecisionFilter {
         || category.equals(Category.CATEGORY_ENUMERATION);
   }
 
+  // if matching edge decision actions are empty, which includes block for duration,
+  // rest of the block actions (other than block for duration) whose criteria is supported on edge
+  // if removeAllEdgeCompatibleBlockRules is set to true, alert/mark for testing with header
+  // injection, then return true
   private static boolean doesNotContainMatchingEdgeDecisionAction(
-      ThresholdActionConfig thresholdActionConfig) {
-    // if matching edge decision actions are empty, then return true
-    return findAnyMatchingEdgeDecisionAction(thresholdActionConfig).isEmpty();
+      ThresholdActionConfig thresholdActionConfig, boolean removeAllEdgeCompatibleBlockRules) {
+    return thresholdActionConfig.getActionsList().stream()
+        .noneMatch(
+            action ->
+                action.getBlock().getUseThresholdDuration()
+                    || (action.hasBlock() && removeAllEdgeCompatibleBlockRules)
+                    || action.getMarkForTesting().hasAgentRuleEffect()
+                    || action.getAlert().hasAgentRuleEffect());
   }
 
   private static Optional<RateLimitingRule> getConvertibleRule(RateLimitingRule rule) {
+    if (!RateLimitingRulesEdgeDecisionValidator.isCompatibleCondition(
+        rule.getData().getCondition())) {
+      return Optional.empty();
+    }
     List<ThresholdActionConfig> filteredThresholdActionConfigs =
         rule.getData().getThresholdActionConfigsList().stream()
             .filter(

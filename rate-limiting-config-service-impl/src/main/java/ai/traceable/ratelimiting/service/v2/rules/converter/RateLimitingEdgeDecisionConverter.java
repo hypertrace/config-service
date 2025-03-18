@@ -209,7 +209,10 @@ public class RateLimitingEdgeDecisionConverter {
                 RateLimitCategory.forNumber(edgeDecisionRuleMetadata.getCategory().getNumber()),
                 edgeDecisionRuleMetadata.getLabelsMap()),
             Base64.getEncoder().encodeToString(resourceAccessThresholdConfig.toByteArray()),
-            valueAggregateThresholdDetails.getMatchedAttribute()));
+            valueAggregateThresholdDetails.getMatchedAttribute(),
+            action.hasBlock() && !action.getBlock().getUseThresholdDuration()
+                ? Optional.of(Base64.getEncoder().encodeToString(action.getBlock().toByteArray()))
+                : Optional.empty()));
     return builder.build();
   }
 

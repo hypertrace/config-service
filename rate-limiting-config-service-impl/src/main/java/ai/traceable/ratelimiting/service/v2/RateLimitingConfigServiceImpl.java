@@ -91,7 +91,9 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       List<RateLimitingRule> rateLimitingRules =
           rulesManager.getRateLimitingRules(context, rulesFilter);
       if (rulesFilter.hasFilterEdgeDecisionRules() && rulesFilter.getFilterEdgeDecisionRules()) {
-        rateLimitingRules = RateLimitingRulesEdgeDecisionFilter.getFilteredRules(rateLimitingRules);
+        rateLimitingRules =
+            RateLimitingRulesEdgeDecisionFilter.getFilteredRules(
+                rateLimitingRules, featureCachingClient.isEdgeDecisionEnabledForTenant(context));
       }
 
       GetRateLimitingRulesResponse response =

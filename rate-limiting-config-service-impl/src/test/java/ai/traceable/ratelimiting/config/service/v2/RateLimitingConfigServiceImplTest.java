@@ -285,6 +285,16 @@ public class RateLimitingConfigServiceImplTest {
     return RateLimitingRuleData.newBuilder()
         .setName(name)
         .setCategory(category)
+        .setCondition(
+            Condition.newBuilder()
+                .setLeafCondition(
+                    LeafCondition.newBuilder()
+                        .setScopeCondition(
+                            ScopeCondition.newBuilder()
+                                .setEntityScope(
+                                    ScopeCondition.EntityScope.newBuilder()
+                                        .setEntityType(ScopeCondition.EntityType.ENTITY_TYPE_API)
+                                        .addEntityIds("apiId")))))
         .addThresholdActionConfigs(
             ThresholdActionConfig.newBuilder()
                 .addActions(

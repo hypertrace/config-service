@@ -7,6 +7,7 @@ import ai.traceable.edge.decision.config.service.v1.SpanAttributeDecoration;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class SpanAttributeHandler {
   private static final String TRACEABLEAI_PREFIX = "traceableai.blocked.";
@@ -16,6 +17,7 @@ public class SpanAttributeHandler {
   private static final String INFO_SUFFIX = ".info";
   private static final String THRESHOLD_DETAILS_SUFFIX = ".thresholdDetails";
   private static final String MATCHED_ATTRIBUTE_SUFFIX = ".matched_attribute";
+  private static final String BLOCK_ACTION_SUFFIX = ".block_action";
 
   public static List<SpanAttributeDecoration> getSpanAttributeDecorations(
       String id,
@@ -23,7 +25,8 @@ public class SpanAttributeHandler {
       EdgeDecisionRuleCategory edgeDecisionRuleCategory,
       String info,
       String thresholdDetails,
-      String matchedAttribute) {
+      String matchedAttribute,
+      Optional<String> blockAction) {
     List<SpanAttributeDecoration> spanAttributeDecorations =
         new ArrayList<>(
             getSpanAttributeDecorations(id, isExemption, edgeDecisionRuleCategory, info));
@@ -56,6 +59,22 @@ public class SpanAttributeHandler {
                       .setOutputType(FieldType.FIELD_TYPE_STR))
               .build();
       spanAttributeDecorations.add(spanMatchedAttribute);
+    }
+
+    if (blockAction.isPresent()) {
+      SpanAttributeDecoration blockActionAttribute =
+          SpanAttributeDecoration.newBuilder()
+              .setSpanAttributeKey(
+                  DataTransformationConfig.newBuilder()
+                      .setStaticValue(
+                          Value.newBuilder().setStringValue(getBlockActionAttribute(id)))
+                      .setOutputType(FieldType.FIELD_TYPE_STR))
+              .setSpanAttributeValue(
+                  DataTransformationConfig.newBuilder()
+                      .setStaticValue(Value.newBuilder().setStringValue(blockAction.get()))
+                      .setOutputType(FieldType.FIELD_TYPE_STR))
+              .build();
+      spanAttributeDecorations.add(blockActionAttribute);
     }
 
     return spanAttributeDecorations;
@@ -120,5 +139,9 @@ public class SpanAttributeHandler {
 
   private static String getSpanMatchedAttribute(String id) {
     return TRACEABLEAI_PREFIX + VIOLATIONS_KEYWORD + id + MATCHED_ATTRIBUTE_SUFFIX;
+  }
+
+  private static String getBlockActionAttribute(String id) {
+    return TRACEABLEAI_PREFIX + VIOLATIONS_KEYWORD + id + BLOCK_ACTION_SUFFIX;
   }
 }
