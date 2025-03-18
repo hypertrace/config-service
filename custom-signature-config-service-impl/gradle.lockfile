@@ -1,13 +1,13 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.activity.event.service:activity-event-api:10.0.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.521=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.37.329=runtimeClasspath,testRuntimeClasspath
+ai.traceable.activity.event.service:activity-event-api:10.0.5=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.629=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.37.377=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.82=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.82=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.82=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.84=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.84=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.84=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:actor-service-api:0.2.159=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.15=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.15=runtimeClasspath,testRuntimeClasspath
@@ -102,7 +102,7 @@ org.hypertrace.core.kafkastreams.framework:kafka-bom:0.5.4=compileClasspath,runt
 org.hypertrace.core.spannormalizer:raw-span-constants:2.0.34=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:2.0.34=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:2.0.34=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.8.203=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.8.205=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-params:5.10.2=testCompileClasspath,testRuntimeClasspath
