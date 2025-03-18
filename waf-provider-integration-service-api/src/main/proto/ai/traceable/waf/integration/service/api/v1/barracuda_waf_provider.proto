@@ -20,7 +20,7 @@ message BarracudaIntegrationDetails {
 
 message BarracudaPolicyDetails {
   string web_application_name = 1;
-  string content_rule_group_name = 2;
+  string content_rule_group_name = 2 [deprecated = true];
 }
 
 message BarracudaAuthCredentials {

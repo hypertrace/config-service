@@ -17,6 +17,11 @@ import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyType;
+import ai.traceable.waf.integration.service.api.v1.BarracudaAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -2204,6 +2209,153 @@ class WafIntegrationConfigRequestValidatorTest {
   }
 
   @Test
+  void testInvalidCreateBarracudaRequestTest() {
+    // empty Barracuda integration details
+    CreateWafIntegrationRequest request1 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setBarracudaIntegrationParams(BarracudaIntegrationParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing Barracuda URL
+    CreateWafIntegrationRequest request2 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setBarracudaIntegrationParams(
+                        BarracudaIntegrationParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setBarracudaPolicyDetails(
+                                        BarracudaPolicyDetails.newBuilder()
+                                            .setWebApplicationName("webApp")
+                                            .build())
+                                    .setBarracudaAuthCredentials(
+                                        BarracudaAuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request2, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing Barracuda security policy
+    CreateWafIntegrationRequest request3 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setBarracudaIntegrationParams(
+                        BarracudaIntegrationParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setBarracudaAuthCredentials(
+                                        BarracudaAuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request3, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // missing Barracuda auth credentials
+    CreateWafIntegrationRequest request4 =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setBarracudaIntegrationParams(
+                        BarracudaIntegrationParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setBarracudaPolicyDetails(
+                                        BarracudaPolicyDetails.newBuilder()
+                                            .setWebApplicationName("webApp")
+                                            .build())))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request4, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request
+    CreateWafIntegrationRequest validRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setBarracudaIntegrationParams(
+                        BarracudaIntegrationParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setBarracudaPolicyDetails(
+                                        BarracudaPolicyDetails.newBuilder()
+                                            .setWebApplicationName("webApp")
+                                            .build())
+                                    .setBarracudaAuthCredentials(
+                                        BarracudaAuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request creating integration for which the policy-name already exists should throw
+    WafIntegration existingBarracudaWafIntegration = getExistingBarracudaWafIntegration();
+    CreateWafIntegrationRequest invalidRequest =
+        CreateWafIntegrationRequest.newBuilder()
+            .setWafIntegrationDetails(
+                WafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setBarracudaIntegrationParams(
+                        BarracudaIntegrationParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setBarracudaPolicyDetails(
+                                        BarracudaPolicyDetails.newBuilder()
+                                            .setWebApplicationName("webApp")
+                                            .build())
+                                    .setBarracudaAuthCredentials(
+                                        BarracudaAuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id"))))
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingBarracudaWafIntegration)));
+  }
+
+  @Test
   void invalidUpdateAzureRequestTest() {
 
     // empty azure integration params list
@@ -2692,6 +2844,83 @@ class WafIntegrationConfigRequestValidatorTest {
                 validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
   }
 
+  @Test
+  void invalidUpdateBarracudaRequestTest() {
+    // empty Barracuda integration params list
+    UpdateWafIntegrationRequest request1 =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedBarracudaIntegrationParams(
+                        BarracudaIntegrationUpdateParams.getDefaultInstance()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                request1, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // valid request
+    UpdateWafIntegrationRequest validRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedBarracudaIntegrationParams(
+                        BarracudaIntegrationUpdateParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setBarracudaPolicyDetails(
+                                        BarracudaPolicyDetails.newBuilder()
+                                            .setWebApplicationName("webApp")
+                                            .build())
+                                    .setBarracudaAuthCredentials(
+                                        BarracudaAuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id")))
+                            .build()))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                validRequest, REQUEST_CONTEXT, existingWafIntegrations));
+
+    // request updating policy name to an already existing one should throw
+    WafIntegration existingBarracudaWafIntegration = getExistingBarracudaWafIntegration();
+    UpdateWafIntegrationRequest invalidRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId("id")
+            .setUpdatedWafIntegrationDetails(
+                UpdatedWafIntegrationDetails.newBuilder()
+                    .setName("name")
+                    .setUpdatedBarracudaIntegrationParams(
+                        BarracudaIntegrationUpdateParams.newBuilder()
+                            .setBarracudaIntegrationDetails(
+                                BarracudaIntegrationDetails.newBuilder()
+                                    .setUrl("https://localhost:9000")
+                                    .setBarracudaPolicyDetails(
+                                        BarracudaPolicyDetails.newBuilder()
+                                            .setWebApplicationName("webApp")
+                                            .build())
+                                    .setBarracudaAuthCredentials(
+                                        BarracudaAuthCredentials.newBuilder()
+                                            .setEncryptedUserName("user-name")
+                                            .setEncryptedPassword("password")
+                                            .setEncryptionKeyId("key-id")))
+                            .build()))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            wafIntegrationConfigRequestValidator.validateOrThrow(
+                invalidRequest, REQUEST_CONTEXT, List.of(existingBarracudaWafIntegration)));
+  }
+
   private void testWithInvalidAwsResource(CreateWafIntegrationRequest request) {
     AwsResource.Builder awsResourceBuilder =
         AwsResource.newBuilder().setArn("arn").setRegion("region");
@@ -2847,6 +3076,29 @@ class WafIntegrationConfigRequestValidatorTest {
                 .setName("name")
                 .setImpervaIntegrationParams(getImpervaIntegrationParams())
                 .build())
+        .build();
+  }
+
+  private WafIntegration getExistingBarracudaWafIntegration() {
+    return WafIntegration.newBuilder()
+        .setId("existingId")
+        .setWafIntegrationDetails(
+            WafIntegrationDetails.newBuilder()
+                .setName("name")
+                .setBarracudaIntegrationParams(
+                    BarracudaIntegrationParams.newBuilder()
+                        .setBarracudaIntegrationDetails(
+                            BarracudaIntegrationDetails.newBuilder()
+                                .setUrl("https://localhost:9000")
+                                .setBarracudaPolicyDetails(
+                                    BarracudaPolicyDetails.newBuilder()
+                                        .setWebApplicationName("webApp")
+                                        .build())
+                                .setBarracudaAuthCredentials(
+                                    BarracudaAuthCredentials.newBuilder()
+                                        .setEncryptedUserName("user-name")
+                                        .setEncryptedPassword("password")
+                                        .setEncryptionKeyId("key-id")))))
         .build();
   }
 

@@ -3,6 +3,7 @@ package ai.traceable.waf.provider.integration.service;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AKAMAI_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AWS_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.AZURE_INTEGRATION_PARAMS;
+import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.BARRACUDA_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.CLOUDFLARE_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.F5_INTEGRATION_PARAMS;
 import static ai.traceable.waf.integration.service.api.v1.WafIntegrationDetails.IntegrationParamsCase.FORTINET_INTEGRATION_PARAMS;
@@ -26,6 +27,11 @@ import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyDetails;
+import ai.traceable.waf.integration.service.api.v1.BarracudaAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.DeleteWafIntegrationRequest;
@@ -181,6 +187,7 @@ public class WafIntegrationConfigRequestValidator {
       case WAF_PROVIDER_TYPE_F5:
       case WAF_PROVIDER_TYPE_AKAMAI:
       case WAF_PROVIDER_TYPE_FORTINET:
+      case WAF_PROVIDER_TYPE_BARRACUDA:
         break;
       case WAF_PROVIDER_TYPE_UNSPECIFIED:
       case UNRECOGNIZED:
@@ -286,6 +293,18 @@ public class WafIntegrationConfigRequestValidator {
             FORTINET_INTEGRATION_PARAMS);
         validateUpdatedFortinetIntegrationParams(
             updatedWafIntegrationDetails.getUpdatedFortinetIntegrationParams(),
+            existingWafIntegrations);
+        break;
+      case UPDATED_BARRACUDA_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                id, BARRACUDA_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            updatedWafIntegrationDetails.getName(),
+            existingWafIntegrations,
+            BARRACUDA_INTEGRATION_PARAMS);
+        validateUpdatedBarracudaIntegrationParams(
+            updatedWafIntegrationDetails.getUpdatedBarracudaIntegrationParams(),
             existingWafIntegrations);
         break;
       case INTEGRATIONPARAMS_NOT_SET:
@@ -394,6 +413,26 @@ public class WafIntegrationConfigRequestValidator {
     validateUpdatedFortinetIntegrationDetails(fortinetIntegrationDetails);
     validateFortinetIntegrationDetailsNoDuplicatesOrThrow(
         fortinetIntegrationDetails, otherExistingWafIntegrations);
+  }
+
+  private void validateUpdatedBarracudaIntegrationParams(
+      BarracudaIntegrationUpdateParams barracudaIntegrationUpdateParams,
+      List<WafIntegration> otherExistingWafIntegrations) {
+    BarracudaIntegrationDetails barracudaIntegrationDetails =
+        barracudaIntegrationUpdateParams.getBarracudaIntegrationDetails();
+    validateUpdatedBarracudaIntegrationDetails(barracudaIntegrationDetails);
+    validateBarracudaIntegrationDetailsNoDuplicatesOrThrow(
+        barracudaIntegrationDetails, otherExistingWafIntegrations);
+  }
+
+  private void validateUpdatedBarracudaIntegrationDetails(
+      BarracudaIntegrationDetails barracudaIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        barracudaIntegrationDetails, BarracudaIntegrationDetails.URL_FIELD_NUMBER);
+    if (barracudaIntegrationDetails.hasBarracudaAuthCredentials()) {
+      validateBarracudaAuthCredentials(barracudaIntegrationDetails.getBarracudaAuthCredentials());
+    }
+    validateBarracudaPolicyDetails(barracudaIntegrationDetails.getBarracudaPolicyDetails());
   }
 
   private void validateFortinetIntegrationDetails(
@@ -539,6 +578,15 @@ public class WafIntegrationConfigRequestValidator {
         validateFortinetIntegrationParams(
             wafIntegrationDetails.getFortinetIntegrationParams(), existingWafIntegrations);
         break;
+      case BARRACUDA_INTEGRATION_PARAMS:
+        existingWafIntegrations =
+            getOtherWafIntegrationOfSameType(
+                null, BARRACUDA_INTEGRATION_PARAMS, existingWafIntegrations);
+        validateUniqueIntegrationName(
+            wafIntegrationDetails.getName(), existingWafIntegrations, BARRACUDA_INTEGRATION_PARAMS);
+        validateBarracudaIntegrationParams(
+            wafIntegrationDetails.getBarracudaIntegrationParams(), existingWafIntegrations);
+        break;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT
@@ -569,6 +617,64 @@ public class WafIntegrationConfigRequestValidator {
     validateAkamaiIntegrationDetails(akamaiIntegrationParams.getAkamaiIntegrationDetails());
     validateAkamaiIntegrationDetailsNoDuplicatesOrThrow(
         akamaiIntegrationParams.getAkamaiIntegrationDetails(), existingAkamaiWafIntegrations);
+  }
+
+  private void validateBarracudaIntegrationParams(
+      BarracudaIntegrationParams barracudaIntegrationParams,
+      List<WafIntegration> existingBarracudaWafIntegrations) {
+    validateBarracudaIntegrationDetails(
+        barracudaIntegrationParams.getBarracudaIntegrationDetails());
+    validateBarracudaIntegrationDetailsNoDuplicatesOrThrow(
+        barracudaIntegrationParams.getBarracudaIntegrationDetails(),
+        existingBarracudaWafIntegrations);
+  }
+
+  private void validateBarracudaIntegrationDetails(
+      BarracudaIntegrationDetails barracudaIntegrationDetails) {
+    validateNonDefaultPresenceOrThrow(
+        barracudaIntegrationDetails, BarracudaIntegrationDetails.URL_FIELD_NUMBER);
+    validateUrlOrThrow(barracudaIntegrationDetails.getUrl());
+    validateBarracudaAuthCredentials(barracudaIntegrationDetails.getBarracudaAuthCredentials());
+    validateBarracudaPolicyDetails(barracudaIntegrationDetails.getBarracudaPolicyDetails());
+  }
+
+  private void validateBarracudaPolicyDetails(BarracudaPolicyDetails barracudaPolicyDetails) {
+    validateNonDefaultPresenceOrThrow(
+        barracudaPolicyDetails, BarracudaPolicyDetails.WEB_APPLICATION_NAME_FIELD_NUMBER);
+  }
+
+  private void validateBarracudaAuthCredentials(BarracudaAuthCredentials barracudaAuthCredentials) {
+    validateNonDefaultPresenceOrThrow(
+        barracudaAuthCredentials, BarracudaAuthCredentials.ENCRYPTION_KEY_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        barracudaAuthCredentials, BarracudaAuthCredentials.ENCRYPTED_USER_NAME_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        barracudaAuthCredentials, BarracudaAuthCredentials.ENCRYPTED_PASSWORD_FIELD_NUMBER);
+  }
+
+  private void validateBarracudaIntegrationDetailsNoDuplicatesOrThrow(
+      BarracudaIntegrationDetails barracudaIntegrationDetails,
+      List<WafIntegration> otherExistingBarracudaWafIntegrations) {
+    otherExistingBarracudaWafIntegrations.forEach(
+        wafIntegration -> throwIfDuplicateParams(wafIntegration, barracudaIntegrationDetails));
+  }
+
+  private void throwIfDuplicateParams(
+      WafIntegration existingIntegration, BarracudaIntegrationDetails barracudaIntegrationDetails) {
+    BarracudaIntegrationDetails existingDetails =
+        existingIntegration
+            .getWafIntegrationDetails()
+            .getBarracudaIntegrationParams()
+            .getBarracudaIntegrationDetails();
+
+    if (existingDetails.getUrl().equals(barracudaIntegrationDetails.getUrl())) {
+      throw Status.ALREADY_EXISTS
+          .withDescription(
+              "Barracuda server URL "
+                  + barracudaIntegrationDetails.getUrl()
+                  + " is already linked to an existing Barracuda WAF integration.")
+          .asRuntimeException();
+    }
   }
 
   private void validateFortinetIntegrationParams(

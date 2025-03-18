@@ -132,6 +132,8 @@ public class WafIntegrationStore
         return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_AKAMAI;
       case FORTINET_INTEGRATION_PARAMS:
         return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_FORTINET;
+      case BARRACUDA_INTEGRATION_PARAMS:
+        return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_BARRACUDA;
       case INTEGRATIONPARAMS_NOT_SET:
       default:
         return GetWafIntegrationsFilter.WafProviderType.WAF_PROVIDER_TYPE_UNSPECIFIED;

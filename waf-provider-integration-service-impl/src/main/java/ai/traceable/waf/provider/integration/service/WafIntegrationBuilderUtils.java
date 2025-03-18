@@ -10,6 +10,9 @@ import ai.traceable.waf.integration.service.api.v1.AzureAuthCredentials;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.EncryptedData;
 import ai.traceable.waf.integration.service.api.v1.F5IntegrationDetails;
@@ -85,6 +88,9 @@ public class WafIntegrationBuilderUtils {
       case UPDATED_FORTINET_INTEGRATION_PARAMS:
         updateFortinetWafIntegration(request, updatedWafIntegrationDetailsBuilder);
         break;
+      case UPDATED_BARRACUDA_INTEGRATION_PARAMS:
+        updateBarracudaWafIntegration(request, updatedWafIntegrationDetailsBuilder);
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -114,6 +120,15 @@ public class WafIntegrationBuilderUtils {
     detailsBuilder.setAkamaiIntegrationParams(
         getUpdatedAkamaiIntegrationParams(
             updatedAkamaiIntegrationParams, detailsBuilder.getAkamaiIntegrationParams()));
+  }
+
+  private static void updateBarracudaWafIntegration(
+      UpdateWafIntegrationRequest request, Builder detailsBuilder) {
+    BarracudaIntegrationUpdateParams updatedBarracudaIntegrationParams =
+        request.getUpdatedWafIntegrationDetails().getUpdatedBarracudaIntegrationParams();
+    detailsBuilder.setBarracudaIntegrationParams(
+        getUpdatedBarracudaIntegrationParams(
+            updatedBarracudaIntegrationParams, detailsBuilder.getBarracudaIntegrationParams()));
   }
 
   private static GcpIntegrationParams getUpdatedGcpIntegrationParams(
@@ -168,6 +183,25 @@ public class WafIntegrationBuilderUtils {
             .build();
     return AkamaiIntegrationParams.newBuilder()
         .setAkamaiIntegrationDetails(akamaiIntegrationDetails)
+        .build();
+  }
+
+  private static BarracudaIntegrationParams getUpdatedBarracudaIntegrationParams(
+      BarracudaIntegrationUpdateParams updatedBarracudaIntegrationParams,
+      BarracudaIntegrationParams existingBarracudaIntegrationParams) {
+    BarracudaIntegrationDetails updatedBarracudaIntegrationDetails =
+        updatedBarracudaIntegrationParams.getBarracudaIntegrationDetails();
+    BarracudaIntegrationDetails existingBarracudaIntegrationDetails =
+        existingBarracudaIntegrationParams.getBarracudaIntegrationDetails();
+    BarracudaIntegrationDetails barracudaIntegrationDetails =
+        updatedBarracudaIntegrationDetails.toBuilder()
+            .setBarracudaAuthCredentials(
+                updatedBarracudaIntegrationDetails.hasBarracudaAuthCredentials()
+                    ? updatedBarracudaIntegrationDetails.getBarracudaAuthCredentials()
+                    : existingBarracudaIntegrationDetails.getBarracudaAuthCredentials())
+            .build();
+    return BarracudaIntegrationParams.newBuilder()
+        .setBarracudaIntegrationDetails(barracudaIntegrationDetails)
         .build();
   }
 
@@ -558,6 +592,8 @@ public class WafIntegrationBuilderUtils {
         return getAkamaiWafIntegrationWithSecretsStripped(wafIntegration);
       case FORTINET_INTEGRATION_PARAMS:
         return getFortinetWafIntegrationWithSecretsStripped(wafIntegration);
+      case BARRACUDA_INTEGRATION_PARAMS:
+        return getBarracudaWafIntegrationWithSecretsStripped(wafIntegration);
       default:
         return wafIntegration;
     }
@@ -596,6 +632,25 @@ public class WafIntegrationBuilderUtils {
                 .setAkamaiIntegrationParams(
                     akamaiIntegrationParams.toBuilder()
                         .setAkamaiIntegrationDetails(akamaiIntegrationDetailsBuilder)
+                        .build())
+                .build())
+        .build();
+  }
+
+  private static WafIntegration getBarracudaWafIntegrationWithSecretsStripped(
+      WafIntegration wafIntegration) {
+    BarracudaIntegrationParams barracudaIntegrationParams =
+        wafIntegration.getWafIntegrationDetails().getBarracudaIntegrationParams();
+    BarracudaIntegrationDetails.Builder barracudaIntegrationDetailsBuilder =
+        barracudaIntegrationParams.getBarracudaIntegrationDetails().toBuilder();
+    barracudaIntegrationDetailsBuilder.clearBarracudaAuthCredentials();
+    return WafIntegration.newBuilder()
+        .setId(wafIntegration.getId())
+        .setWafIntegrationDetails(
+            wafIntegration.getWafIntegrationDetails().toBuilder()
+                .setBarracudaIntegrationParams(
+                    barracudaIntegrationParams.toBuilder()
+                        .setBarracudaIntegrationDetails(barracudaIntegrationDetailsBuilder)
                         .build())
                 .build())
         .build();

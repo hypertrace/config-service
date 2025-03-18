@@ -20,6 +20,11 @@ import ai.traceable.waf.integration.service.api.v1.AzureIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.AzureIntegrationUpdateParams;
 import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.AzureWafPolicyType;
+import ai.traceable.waf.integration.service.api.v1.BarracudaAuthCredentials;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationDetails;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaIntegrationUpdateParams;
+import ai.traceable.waf.integration.service.api.v1.BarracudaPolicyDetails;
 import ai.traceable.waf.integration.service.api.v1.CloudflareIntegrationParams;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationRequest;
 import ai.traceable.waf.integration.service.api.v1.CreateWafIntegrationResponse;
@@ -277,6 +282,30 @@ class WafIntegrationConfigServiceImplTest {
                 .addIntegrationTargets(
                     WafIntegrationTarget.newBuilder()
                         .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                        .build())
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
+                        .build())
+                .build()),
+        response.getWafIntegration().getWafIntegrationDetails());
+  }
+
+  @Test
+  void createWafIntegrationBarracudaTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.BARRACUDA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest request =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse response =
+        wafProviderServiceBlockingStub.createWafIntegration(request);
+    assertEquals(
+        stripBarracudaSecrets(
+            expectedDetails.toBuilder()
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_IP_RANGE)
                         .build())
                 .addIntegrationTargets(
                     WafIntegrationTarget.newBuilder()
@@ -733,6 +762,32 @@ class WafIntegrationConfigServiceImplTest {
                 GetWafIntegrationsFilter.newBuilder()
                     .addAllIds(List.of(id))
                     .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_FORTINET)
+                    .build())
+            .build();
+    GetWafIntegrationsResponse response =
+        wafProviderServiceBlockingStub.getWafIntegrations(request);
+    WafIntegration expectedWafIntegration = createResponse.getWafIntegration();
+    assertEquals(1, response.getWafIntegrationCount());
+    assertEquals(expectedWafIntegration, response.getWafIntegrationList().get(0));
+  }
+
+  @Test
+  void getWafIntegrationsBarracudaTest() {
+    WafIntegrationDetails expectedDetails =
+        createWafIntegrationDetails(
+            "name1", "email1", IntegrationParamsCase.BARRACUDA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(expectedDetails).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    GetWafIntegrationsRequest request =
+        GetWafIntegrationsRequest.newBuilder()
+            .setFilter(
+                GetWafIntegrationsFilter.newBuilder()
+                    .addAllIds(List.of(id))
+                    .addWafProviderTypes(WafProviderType.WAF_PROVIDER_TYPE_BARRACUDA)
                     .build())
             .build();
     GetWafIntegrationsResponse response =
@@ -1300,6 +1355,80 @@ class WafIntegrationConfigServiceImplTest {
   }
 
   @Test
+  void updateWafIntegrationBarracudaTest() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.BARRACUDA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    UpdatedWafIntegrationDetails updatedDetails =
+        UpdatedWafIntegrationDetails.newBuilder()
+            .setName("name1")
+            .setDescription("des1")
+            .setUpdatedBarracudaIntegrationParams(
+                BarracudaIntegrationUpdateParams.newBuilder()
+                    .setBarracudaIntegrationDetails(
+                        BarracudaIntegrationDetails.newBuilder()
+                            .setUrl("https://localhost:8000")
+                            .setBarracudaAuthCredentials(
+                                BarracudaAuthCredentials.newBuilder()
+                                    .setEncryptedUserName("barracuda-encrypted-user-name")
+                                    .setEncryptedPassword("barracuda-encrypted-password")
+                                    .setEncryptionKeyId("barracuda-encryption-key-id1"))
+                            .setBarracudaPolicyDetails(
+                                BarracudaPolicyDetails.newBuilder()
+                                    .setWebApplicationName("barracuda-updated-web-application-name")
+                                    .setContentRuleGroupName(
+                                        "barracuda-updated-content-rule-group-name"))
+                            .build())
+                    .build())
+            .build();
+
+    UpdateWafIntegrationRequest updateRequest =
+        UpdateWafIntegrationRequest.newBuilder()
+            .setId(id)
+            .setUpdatedWafIntegrationDetails(updatedDetails)
+            .build();
+    UpdateWafIntegrationResponse updateResponse =
+        wafProviderServiceBlockingStub.updateWafIntegration(updateRequest);
+
+    WafIntegrationDetails updatedWafIntegrationDetails =
+        updateResponse.getWafIntegration().getWafIntegrationDetails();
+    BarracudaIntegrationDetails updatedBarracudaIntegrationDetails =
+        updatedWafIntegrationDetails
+            .getBarracudaIntegrationParams()
+            .getBarracudaIntegrationDetails();
+
+    assertEquals("name1", updatedWafIntegrationDetails.getName());
+    assertEquals("des1", updatedWafIntegrationDetails.getDescription());
+    assertEquals(
+        "barracuda-updated-web-application-name",
+        updatedBarracudaIntegrationDetails.getBarracudaPolicyDetails().getWebApplicationName());
+
+    GetWafIntegrationsDetailsResponse wafIntegrationDetails =
+        wafProviderServiceBlockingStub.getWafIntegrationsDetails(
+            GetWafIntegrationsDetailsRequest.newBuilder()
+                .setFilter(
+                    GetWafIntegrationsFilter.newBuilder()
+                        .addIds(updateResponse.getWafIntegration().getId())
+                        .build())
+                .build());
+    BarracudaAuthCredentials barracudaAuthCredentials =
+        wafIntegrationDetails
+            .getWafIntegrationList()
+            .get(0)
+            .getWafIntegrationDetails()
+            .getBarracudaIntegrationParams()
+            .getBarracudaIntegrationDetails()
+            .getBarracudaAuthCredentials();
+    assertEquals("barracuda-encryption-key-id1", barracudaAuthCredentials.getEncryptionKeyId());
+  }
+
+  @Test
   void deleteWafIntegrationCloudflareTest() {
 
     WafIntegrationDetails details =
@@ -1436,6 +1565,29 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
   }
 
+  @Test
+  void deleteWafIntegrationBarracudaTEst() {
+    WafIntegrationDetails details =
+        createWafIntegrationDetails(
+            "name", "email", IntegrationParamsCase.BARRACUDA_INTEGRATION_PARAMS);
+    CreateWafIntegrationRequest createRequest =
+        CreateWafIntegrationRequest.newBuilder().setWafIntegrationDetails(details).build();
+    CreateWafIntegrationResponse createResponse =
+        wafProviderServiceBlockingStub.createWafIntegration(createRequest);
+    String id = createResponse.getWafIntegration().getId();
+
+    DeleteWafIntegrationRequest deleteRequest =
+        DeleteWafIntegrationRequest.newBuilder().setId(id).build();
+    wafProviderServiceBlockingStub.deleteWafIntegration(deleteRequest);
+
+    GetWafIntegrationRequest getRequest = GetWafIntegrationRequest.newBuilder().setId(id).build();
+    Throwable exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> wafProviderServiceBlockingStub.getWafIntegration(getRequest));
+    assertEquals(Status.NOT_FOUND, Status.fromThrowable(exception));
+  }
+
   private WafIntegrationDetails createWebIdentityDetails(
       String name, IntegrationParamsCase paramsCase) {
     switch (paramsCase) {
@@ -1513,6 +1665,20 @@ class WafIntegrationConfigServiceImplTest {
             .build();
     return expectedDetails.toBuilder()
         .setFortinetIntegrationParams(updatedFortinetIntegrationParams)
+        .build();
+  }
+
+  private WafIntegrationDetails stripBarracudaSecrets(WafIntegrationDetails expectedDetails) {
+    BarracudaIntegrationDetails barracudaIntegrationDetails =
+        expectedDetails.getBarracudaIntegrationParams().getBarracudaIntegrationDetails();
+    BarracudaIntegrationDetails.Builder barracudaIntegrationDetailsBuilder =
+        barracudaIntegrationDetails.toBuilder().clearBarracudaAuthCredentials();
+    BarracudaIntegrationParams updatedBarracudaIntegrationParams =
+        expectedDetails.getBarracudaIntegrationParams().toBuilder()
+            .setBarracudaIntegrationDetails(barracudaIntegrationDetailsBuilder.build())
+            .build();
+    return expectedDetails.toBuilder()
+        .setBarracudaIntegrationParams(updatedBarracudaIntegrationParams)
         .build();
   }
 
@@ -1710,6 +1876,27 @@ class WafIntegrationConfigServiceImplTest {
                             .build())
                     .build())
             .build();
+      case BARRACUDA_INTEGRATION_PARAMS:
+        return WafIntegrationDetails.newBuilder()
+            .setName(name)
+            .setDescription("des")
+            .setWafIntegrationScope(wafConfigScope)
+            .setBarracudaIntegrationParams(
+                BarracudaIntegrationParams.newBuilder()
+                    .setBarracudaIntegrationDetails(
+                        BarracudaIntegrationDetails.newBuilder()
+                            .setUrl("https://localhost:9000")
+                            .setBarracudaPolicyDetails(
+                                BarracudaPolicyDetails.newBuilder()
+                                    .setWebApplicationName("web-app-name")
+                                    .setContentRuleGroupName("content-rule-group-name"))
+                            .setBarracudaAuthCredentials(
+                                BarracudaAuthCredentials.newBuilder()
+                                    .setEncryptionKeyId("barracuda-encrypted-key-id")
+                                    .setEncryptedUserName("barracuda-encrypted-user-name")
+                                    .setEncryptedPassword("barracuda-encrypted-password"))))
+            .build();
+
       default:
         throw new RuntimeException();
     }
