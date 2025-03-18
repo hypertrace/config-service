@@ -78,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Builder;
@@ -132,6 +133,7 @@ public class RateLimitingEdgeDecisionConverter {
           data.hasCondition()
               ? Optional.of(buildMatchCondition(requestContext, data.getCondition()))
               : Optional.empty();
+      final AtomicInteger edgeDecisionRuleCount = new AtomicInteger(0);
       return getThresholdActionConfigs(data)
           .flatMap(
               action ->
@@ -142,7 +144,8 @@ public class RateLimitingEdgeDecisionConverter {
                                   edgeDecisionRuleMetadata,
                                   action,
                                   resourceAccessThresholdConfig,
-                                  mayBeMatchCondition)))
+                                  mayBeMatchCondition,
+                                  edgeDecisionRuleCount)))
           .collect(Collectors.toUnmodifiableList());
     } catch (Exception ex) {
       log.warn("Unable to convert rate limiting rule: {}", rateLimitingRule, ex);
@@ -276,7 +279,8 @@ public class RateLimitingEdgeDecisionConverter {
       final EdgeDecisionRuleMetadata edgeDecisionRuleMetadata,
       final ThresholdActionConfig action,
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
-      final Optional<MatchConditionDetails> mayBeMatchCondition) {
+      final Optional<MatchConditionDetails> mayBeMatchCondition,
+      AtomicInteger edgeDecisionRuleCount) {
     final List<ValueAggregateThresholdDetails> valueAggregateThresholdDetailsList =
         buildValueAggregateThresholds(resourceAccessThresholdConfig, mayBeMatchCondition);
     String durationIso = null;
@@ -303,7 +307,8 @@ public class RateLimitingEdgeDecisionConverter {
                     resourceAccessThresholdConfig,
                     mayBeMatchCondition,
                     timeWindow,
-                    valueAggregateThresholdDetails));
+                    valueAggregateThresholdDetails,
+                    edgeDecisionRuleCount));
   }
 
   private EdgeDecisionRule buildEdgeDecisionRule(
@@ -312,7 +317,8 @@ public class RateLimitingEdgeDecisionConverter {
       final ResourceAccessThresholdConfig resourceAccessThresholdConfig,
       final Optional<MatchConditionDetails> mayBeMatchCondition,
       final Duration timeWindow,
-      final ValueAggregateThresholdDetails valueAggregateThresholdDetails) {
+      final ValueAggregateThresholdDetails valueAggregateThresholdDetails,
+      AtomicInteger edgeDecisionRuleCount) {
     final AggregateThresholdRule.Builder aggregateThresholdRuleBuilder =
         AggregateThresholdRule.newBuilder();
     mayBeMatchCondition.ifPresent(
@@ -341,13 +347,14 @@ public class RateLimitingEdgeDecisionConverter {
             metadata, action, resourceAccessThresholdConfig, valueAggregateThresholdDetails);
 
     EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
-    builder.setId(metadata.getRuleId());
+    builder.setId(metadata.getRuleId() + "_" + edgeDecisionRuleCount.incrementAndGet());
     builder.setName(metadata.getRuleName());
     builder.setRuleStatus(metadata.getEdgeDecisionRuleStatus());
     builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
     metadata.getMaybeEdgeDecisionRuleScope().ifPresent(builder::setRuleScope);
     builder.setRuleDecision(edgeDecision);
     builder.setRuleDefinition(edgeDecisionRuleDefinitionBuilder);
+    builder.setPolicyId(metadata.getRuleId());
     return builder.build();
   }
 

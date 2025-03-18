@@ -1,6 +1,6 @@
 {
   "decision_rules": [{
-    "id": "rate-limiting-rule-id",
+    "id": "rate-limiting-rule-id_1",
     "name": "test-policy",
     "rule_scope": {
       "scope_conditions": [{
@@ -110,6 +110,7 @@
           "output_type": "FIELD_TYPE_STR"
         }
       }]
-    }
+    },
+    "policy_id": "rate-limiting-rule-id"
   }]
 }
