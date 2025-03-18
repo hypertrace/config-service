@@ -876,6 +876,12 @@ defaultModsecDetectionConfigs: |-
                   }
               },
               {
+                  subRuleId = "crs_9320200"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
                   subRuleId = "crs_9320105"
                   configStatus = {
                       disabled = true

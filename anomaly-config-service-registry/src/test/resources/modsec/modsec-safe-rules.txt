@@ -59,6 +59,7 @@ crs_1010100 :: Server Side Request Forgery (SSRF): Cloud Provider Metadata Endpo
 crs_1010110 :: Server Side Request Forgery (SSRF): Common Collaborators
 crs_921200 :: LDAP Injection Attack
 crs_9320100 :: Remote Command Execution: Unix Command Injection (T100)
+crs_9320200 :: Remote Command Execution: Unix Command Injection (T200)
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105)
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150)
 crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155)

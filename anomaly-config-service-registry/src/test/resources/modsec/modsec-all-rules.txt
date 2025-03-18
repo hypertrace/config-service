@@ -87,6 +87,7 @@ crs_9320155 :: Remote Command Execution: Direct Unix Command Execution (T155) ::
 crs_9320150 :: Remote Command Execution: Direct Unix Command Execution (T150) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320105 :: Remote Command Execution: Unix Command Injection (T105) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320100 :: Remote Command Execution: Unix Command Injection (T100) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
+crs_9320200 :: Remote Command Execution: Unix Command Injection (T200) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320090 :: Remote Command Execution: Command or Script Injection (T090) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'CWE:78' ]
 crs_9320070 :: ServiceNow RCE: CVE-2024-4879 And CVE-2024-5217 :: ANOMALY_SEVERITY_LEVEL_CRITICAL :: [ 'CWE:1287' , 'OWASP_API_2019:API8' , 'CVE:2024-4879' ]
 crs_9320060 :: Adobe ColdFusion RCE: Arbitrary File Upload Vulnerability: (CVE-2018-15961) :: ANOMALY_SEVERITY_LEVEL_HIGH :: [ 'OWASP_2017:A1' , 'OWASP_2021:A3' , 'OWASP_API_2019:API8' , 'OWASP_API_2023:API9' , 'CWE:78' , 'CVE:2018-15961' ]
