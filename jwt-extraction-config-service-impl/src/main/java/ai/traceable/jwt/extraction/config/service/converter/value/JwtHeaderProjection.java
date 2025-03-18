@@ -2,7 +2,7 @@ package ai.traceable.jwt.extraction.config.service.converter.value;
 
 public class JwtHeaderProjection implements ValueProjection {
   private static final String HTTP_REQUEST_HEADER_TRACEABLEAI_JWT_PREFIX =
-      "http.request.header.traceableai.jwt.";
+      "http.request.header.traceableai_jwt_";
   private final String headerKey;
 
   public JwtHeaderProjection(String headerKey) {

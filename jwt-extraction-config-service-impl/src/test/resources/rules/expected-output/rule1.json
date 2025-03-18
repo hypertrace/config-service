@@ -30,7 +30,7 @@
       "edge_decision_type": "EDGE_DECISION_TYPE_MARK_FOR_TESTING",
       "span_attributes": [{
         "span_attribute_key": {
-          "static_value": "http.request.body.traceableai.jwt.iss"
+          "static_value": "http.request.body.traceableai_jwt_iss"
         },
         "span_attribute_value": {
           "jexl_expression": {
@@ -39,7 +39,7 @@
         }
       }, {
         "span_attribute_key": {
-          "static_value": "http.request.body.traceableai.jwt.aud"
+          "static_value": "http.request.body.traceableai_jwt_aud"
         },
         "span_attribute_value": {
           "jexl_expression": {
@@ -48,7 +48,7 @@
         }
       }, {
         "span_attribute_key": {
-          "static_value": "http.request.body.traceableai.jwt.exp"
+          "static_value": "http.request.body.traceableai_jwt_exp"
         },
         "span_attribute_value": {
           "jexl_expression": {
@@ -57,7 +57,7 @@
         }
       }, {
         "span_attribute_key": {
-          "static_value": "http.request.body.traceableai.jwt.nbf"
+          "static_value": "http.request.body.traceableai_jwt_nbf"
         },
         "span_attribute_value": {
           "jexl_expression": {
@@ -66,7 +66,7 @@
         }
       }, {
         "span_attribute_key": {
-          "static_value": "http.request.header.traceableai.jwt.alg"
+          "static_value": "http.request.header.traceableai_jwt_alg"
         },
         "span_attribute_value": {
           "jexl_expression": {
