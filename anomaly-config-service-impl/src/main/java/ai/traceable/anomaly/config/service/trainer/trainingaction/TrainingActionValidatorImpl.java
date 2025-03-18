@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.trainer.trainingaction;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingActionRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.PauseEntityLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdFamily;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
@@ -42,6 +43,15 @@ public class TrainingActionValidatorImpl implements TrainingActionValidator {
   @Override
   public Status validate(GetAllTrainingActionsRequest request) {
     return Status.OK;
+  }
+
+  @Override
+  public Status validate(GetTrainingActionRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GetTrainingActionRequest should have a valid config scope");
+    }
+    return anomalyConfigValidator.validate(request.getConfigScope());
   }
 
   private Status validateTrainingAction(TrainingAction trainingAction) {

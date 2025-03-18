@@ -78,6 +78,24 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
   }
 
   @Override
+  public ScopedTrainingActionConfig getTrainingAction(
+      RequestContext requestContext, AnomalyConfigScope configScope) {
+    Map<String, ScopedTrainingActionConfig> contextToScopedActionConfigMap =
+        getAllObjects(requestContext).stream()
+            .collect(
+                Collectors.toMap(
+                    ContextualConfigObject::getContext, ContextualConfigObject::getData));
+    List<String> contextsWithIncreasingPriority =
+        anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+            requestContext
+                .getTenantId()
+                .orElseThrow(() -> new IllegalArgumentException("Unable to get tenant ID")),
+            configScope);
+    return getResolvedScopedActionConfig(
+        contextToScopedActionConfigMap, contextsWithIncreasingPriority);
+  }
+
+  @Override
   public void deleteTrainingAction(RequestContext requestContext, AnomalyConfigScope configScope) {
     deleteObject(
         requestContext, anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(configScope));

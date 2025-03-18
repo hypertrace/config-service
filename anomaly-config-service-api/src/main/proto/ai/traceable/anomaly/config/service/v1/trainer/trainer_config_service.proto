@@ -25,6 +25,8 @@ service TrainerConfigService {
 
   rpc GetAllTrainingActions(GetAllTrainingActionsRequest) returns (GetAllTrainingActionsResponse) {}
 
+  rpc GetTrainingAction(GetTrainingActionRequest) returns (GetTrainingActionResponse) {}
+
   rpc DeleteTrainingAction(DeleteTrainingActionRequest) returns (DeleteTrainingActionResponse) {}
 
   rpc GetAllUnresolvedVulnerabilityScopedTrainingConfigs(GetAllUnresolvedVulnerabilityScopedTrainingConfigsRequest) returns (GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse) {}

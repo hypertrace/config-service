@@ -22,6 +22,8 @@ import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedVulnerabil
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllUnresolvedVulnerabilityScopedTrainingConfigsResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetScopedTrainingConfigResponse;
+import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingActionRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingActionResponse;
 import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.GetUnresolvedScopedTrainingConfigResponse;
@@ -340,6 +342,30 @@ public class TrainerConfigServiceImpl
           GetAllTrainingActionsResponse.newBuilder()
               .addAllScopedTrainingActionConfigs(
                   trainingActionManager.getAllTrainingActions(RequestContext.CURRENT.get()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getTrainingAction(
+      GetTrainingActionRequest request,
+      StreamObserver<GetTrainingActionResponse> responseObserver) {
+    try {
+      Status status = trainingActionValidator.validate(request);
+      if (!status.isOk()) {
+        throw status.asException();
+      }
+
+      GetTrainingActionResponse response =
+          GetTrainingActionResponse.newBuilder()
+              .setScopedTrainingActionConfig(
+                  trainingActionManager.getTrainingAction(
+                      RequestContext.CURRENT.get(), request.getConfigScope()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

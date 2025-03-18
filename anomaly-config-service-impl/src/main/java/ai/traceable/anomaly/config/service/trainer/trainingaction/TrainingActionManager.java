@@ -13,5 +13,8 @@ public interface TrainingActionManager {
 
   List<ScopedTrainingActionConfig> getAllTrainingActions(RequestContext requestContext);
 
+  ScopedTrainingActionConfig getTrainingAction(
+      RequestContext requestContext, AnomalyConfigScope configScope);
+
   void deleteTrainingAction(RequestContext requestContext, AnomalyConfigScope configScope);
 }

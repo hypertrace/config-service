@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.trainer.trainingaction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
@@ -12,10 +13,12 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.trainer.PauseEntityLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction.ActionCase;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingActionConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.UserRoleAction;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -108,6 +111,255 @@ public class TrainingActionManagerTest {
   public void teardown() {
     mockConfigService.shutdown();
     mockServer.shutdown();
+  }
+
+  @Test
+  void testGetTrainingActionForNonExistentScope() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              ScopedTrainingActionConfig result =
+                  actionManager.getTrainingAction(requestContext, customerConfigScope);
+              assertEquals(
+                  ScopedTrainingActionConfig.getDefaultInstance(),
+                  result,
+                  "Should return default instance for non-existent scope");
+            });
+  }
+
+  @Test
+  void testGetTrainingActionForDifferentScopes() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    TrainingAction customerTrainingAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(true).build()))
+            .build();
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, customerConfigScope, customerTrainingAction));
+
+    TrainingAction serviceTrainingAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(false).build()))
+            .build();
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, serviceConfigScope, serviceTrainingAction));
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              ScopedTrainingActionConfig customerResult =
+                  actionManager.getTrainingAction(requestContext, customerConfigScope);
+              assertTrue(
+                  customerResult
+                      .getTrainingActionConfigList()
+                      .get(0)
+                      .getTrainingAction()
+                      .getUserRoleAction()
+                      .getPauseEntityLearnAction()
+                      .getDisabledAll());
+
+              ScopedTrainingActionConfig serviceResult =
+                  actionManager.getTrainingAction(requestContext, serviceConfigScope);
+              assertFalse(
+                  serviceResult
+                      .getTrainingActionConfigList()
+                      .get(0)
+                      .getTrainingAction()
+                      .getUserRoleAction()
+                      .getPauseEntityLearnAction()
+                      .getDisabledAll());
+            });
+  }
+
+  @Test
+  void testGetTrainingActionAfterMultipleUpsert() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    TrainingAction firstTrainingAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(true).build()))
+            .build();
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, customerConfigScope, firstTrainingAction));
+
+    TrainingAction secondTrainingAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(false).build()))
+            .build();
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, customerConfigScope, secondTrainingAction));
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              ScopedTrainingActionConfig result =
+                  actionManager.getTrainingAction(requestContext, customerConfigScope);
+              assertFalse(
+                  result
+                      .getTrainingActionConfigList()
+                      .get(0)
+                      .getTrainingAction()
+                      .getUserRoleAction()
+                      .getPauseEntityLearnAction()
+                      .getDisabledAll(),
+                  "Latest upsert should override previous");
+            });
+  }
+
+  @Test
+  void testGetResolvedTrainingActionAcrossMultipleScopes() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    TrainingAction environmentAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(false).build()))
+            .build();
+
+    TrainingAction environmentAction2 =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(true).build()))
+            .build();
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              actionManager.upsertTrainingAction(
+                  requestContext, environmentConfigScope, environmentAction);
+              actionManager.upsertTrainingAction(
+                  requestContext, environmentConfigScope, environmentAction2);
+            });
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              ScopedTrainingActionConfig resolvedConfig =
+                  actionManager.getTrainingAction(requestContext, environmentConfigScope);
+
+              assertTrue(
+                  resolvedConfig
+                      .getTrainingActionConfigList()
+                      .get(0)
+                      .getTrainingAction()
+                      .getUserRoleAction()
+                      .getPauseEntityLearnAction()
+                      .getDisabledAll(),
+                  "The environment scope should have the highest priority");
+            });
+  }
+
+  @Test
+  void testGetTrainingActionAfterPartialUpdate() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    TrainingAction originalAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(true).build()))
+            .build();
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, customerConfigScope, originalAction));
+
+    TrainingAction updatedAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(false).build()))
+            .build();
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, customerConfigScope, updatedAction));
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              ScopedTrainingActionConfig result =
+                  actionManager.getTrainingAction(requestContext, customerConfigScope);
+              assertFalse(
+                  result
+                      .getTrainingActionConfigList()
+                      .get(0)
+                      .getTrainingAction()
+                      .getUserRoleAction()
+                      .getPauseEntityLearnAction()
+                      .getDisabledAll(),
+                  "DisabledAll should be updated to false");
+            });
+  }
+
+  @Test
+  void testGetTrainingActionWithEmptyConfig() {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () -> {
+              ScopedTrainingActionConfig result =
+                  actionManager.getTrainingAction(requestContext, serviceConfigScope);
+              assertEquals(
+                  ScopedTrainingActionConfig.getDefaultInstance(),
+                  result,
+                  "Should return default when no training action exists");
+            });
   }
 
   @Test

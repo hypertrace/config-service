@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.trainer.ForceLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.GetAllTrainingActionsRequest;
+import ai.traceable.anomaly.config.service.v1.trainer.GetTrainingActionRequest;
 import ai.traceable.anomaly.config.service.v1.trainer.PauseEntityLearnAction;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdFamily;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
@@ -212,5 +213,36 @@ public class TrainingActionValidatorTest {
                         .build())
                 .build());
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+  }
+
+  @Test
+  void testGetTrainingActionRequest() {
+    // test empty anomaly config scope
+    Status status = actionValidator.validate(GetTrainingActionRequest.newBuilder().build());
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(status.getDescription().contains("should have a valid config scope"));
+    verify(configValidator, times(0)).validate(any(AnomalyConfigScope.class));
+
+    // test service scope without serviceId
+    status =
+        actionValidator.validate(
+            GetTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().build())
+                        .build())
+                .build());
+    assertTrue(status.getDescription().contains("SERVICE Scope should have valid Service ID"));
+
+    // test valid config scope
+    status =
+        actionValidator.validate(
+            GetTrainingActionRequest.newBuilder()
+                .setConfigScope(
+                    AnomalyConfigScope.newBuilder()
+                        .setServiceScope(AnomalyServiceScope.newBuilder().setId("service1").build())
+                        .build())
+                .build());
+    assertEquals(Status.OK.getCode(), status.getCode());
   }
 }
