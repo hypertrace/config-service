@@ -154,7 +154,7 @@ public abstract class IdentifiedObjectStore<T> {
     return getObject(context, id).map(ConfigObject::getData);
   }
 
-  private ContextualConfigObject<T> upsertObject(
+  protected ContextualConfigObject<T> upsertObject(
       RequestContext context, UpsertConfigRequest request) {
     UpsertConfigResponse response =
         context.call(
@@ -281,7 +281,7 @@ public abstract class IdentifiedObjectStore<T> {
     return optionalResult;
   }
 
-  private Optional<ContextualConfigObject<T>> processUpsertResult(
+  protected Optional<ContextualConfigObject<T>> processUpsertResult(
       RequestContext requestContext, UpsertedConfig upsertedConfig) {
     Optional<ContextualConfigObject<T>> optionalResult =
         ContextualConfigObjectImpl.tryBuild(upsertedConfig, this::buildDataFromValue);
