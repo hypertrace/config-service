@@ -130,12 +130,25 @@ public class AttributeRuleBuilder {
         .build();
   }
 
-  private Action buildAttributeAppendAction(String key, String value) {
+  public Action buildAttributeAppendAction(String key, String value) {
     return Action.newBuilder()
         .setAttributeArrayAppend(
             AttributeArrayAppend.newBuilder()
                 .setAttributeKey(key)
                 .setValueProjectionRule(buildStaticAttributeRule(value)))
+        .build();
+  }
+
+  public Action buildAttributeAppendAction(String key) {
+    return Action.newBuilder()
+        .setAttributeArrayAppend(
+            AttributeArrayAppend.newBuilder()
+                .setAttributeKey(key)
+                .setValueProjectionRule(
+                    AttributeRule.newBuilder()
+                        .setProjector(
+                            Projector.newBuilder()
+                                .setNoOpProjector(NoOpProjector.getDefaultInstance()))))
         .build();
   }
 

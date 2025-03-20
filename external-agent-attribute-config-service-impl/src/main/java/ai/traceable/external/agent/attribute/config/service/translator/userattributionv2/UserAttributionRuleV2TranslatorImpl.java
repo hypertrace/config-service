@@ -152,10 +152,9 @@ class UserAttributionRuleV2TranslatorImpl implements UserAttributionRuleV2Transl
   private AttributeRule buildActionAttributeRuleForAuthType(String ruleId) {
     return AttributeRule.newBuilder()
         .addInitialActions(
-            attributeRuleBuilder.buildAttributeAdditionAction(AUTH_TYPES_ATTRIBUTE_KEY))
+            attributeRuleBuilder.buildAttributeAppendAction(AUTH_TYPES_ATTRIBUTE_KEY))
         .addInitialActions(
-            attributeRuleBuilder.buildAttributeAdditionAction(
-                AUTH_TYPES_RULE_ATTRIBUTE_KEY, ruleId))
+            attributeRuleBuilder.buildAttributeAppendAction(AUTH_TYPES_RULE_ATTRIBUTE_KEY, ruleId))
         .build();
   }
 

@@ -18,7 +18,7 @@
                               "value": "OAuth 2.0",
                               "attributeRule": {
                                 "initialActions": [{
-                                  "attributeAddition": {
+                                  "attributeArrayAppend": {
                                     "attributeKey": "traceableai.auth.types",
                                     "valueProjectionRule": {
                                       "projector": {
@@ -28,7 +28,7 @@
                                     }
                                   }
                                 }, {
-                                  "attributeAddition": {
+                                  "attributeArrayAppend": {
                                     "attributeKey": "traceableai.auth.rules",
                                     "valueProjectionRule": {
                                       "projector": {
