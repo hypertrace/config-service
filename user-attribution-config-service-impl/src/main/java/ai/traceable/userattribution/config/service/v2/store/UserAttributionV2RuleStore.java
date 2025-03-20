@@ -55,9 +55,22 @@ public class UserAttributionV2RuleStore
   }
 
   @Override
+  public List<UserAttributionRule> getAllConfigData(RequestContext requestContext) {
+    return super.getAllConfigData(requestContext).stream()
+        .map(this::setSourceIfNotSet)
+        .collect(toUnmodifiableList());
+  }
+
+  @Override
+  public Optional<UserAttributionRule> getData(RequestContext context, String id) {
+    return super.getData(context, id).map(this::setSourceIfNotSet);
+  }
+
+  @Override
   public ContextualConfigObject<UserAttributionRule> upsertObject(
       RequestContext context, UserAttributionRule rule) {
-    return super.upsertObject(context, setSourceIfNotSet(rule));
+    UserAttributionRule ruleWithSource = setSourceIfNotSet(rule);
+    return super.upsertObject(context, ruleWithSource);
   }
 
   @Override
@@ -125,12 +138,9 @@ public class UserAttributionV2RuleStore
   }
 
   private UserAttributionRule setSourceIfNotSet(UserAttributionRule rule) {
+    // For backward compatibility
     if (SOURCE_UNSPECIFIED.equals(rule.getData().getSource())) {
-      return rule.toBuilder()
-          .setData(
-              rule.getData().toBuilder().setSource(SOURCE_USER) // For backward compatibility
-              )
-          .build();
+      return rule.toBuilder().setData(rule.getData().toBuilder().setSource(SOURCE_USER)).build();
     }
     return rule;
   }

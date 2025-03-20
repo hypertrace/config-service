@@ -25,7 +25,9 @@ public class UserAttributionV2RuleGenerator {
 
   public UserAttributionRule generateUpdatedRule(
       UpdateUserAttributionRuleRequest request, UserAttributionRule existingRule) {
-    UserAttributionRule.Builder builder = existingRule.toBuilder().setData(request.getData());
+    UserAttributionRule.Builder builder =
+        existingRule.toBuilder()
+            .setData(request.getData().toBuilder().setSource(existingRule.getData().getSource()));
     return builder.build();
   }
 }
