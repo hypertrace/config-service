@@ -56,7 +56,9 @@ public class WafConfigResolver {
     if (modsecDefaultConfigsType.equals(
             ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED)
         || modsecDefaultConfigsType.equals(
-            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_MONITOR)) {
+            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_MONITOR)
+        || modsecDefaultConfigsType.equals(
+            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING)) {
       return defaultWafConfigs;
     }
     List<AnomalyDetectionConfig> anomalyDetectionConfigList =
@@ -116,14 +118,17 @@ public class WafConfigResolver {
     switch (modsecDefaultConfigsType) {
       case MODSEC_DEFAULT_CONFIGS_TYPE_AGGRESSIVE_DISABLED:
       case MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD: // Aggressive disabled, rest monitor
+      case MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING:
         return isRuleAggressive(subRuleInfo.getSubRuleTypesList())
             ? buildDisabledAnomalySubRuleConfig(subRuleInfo)
             : null;
       case MODSEC_DEFAULT_CONFIGS_TYPE_RECOMMENDED: // Aggressive disabled, rest blocking
+      case MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING:
         return isRuleAggressive(subRuleInfo.getSubRuleTypesList())
             ? buildDisabledAnomalySubRuleConfig(subRuleInfo)
             : buildBlockingAnomalySubRule(subRuleInfo);
       case MODSEC_DEFAULT_CONFIGS_TYPE_STRICT: // Aggressive monitor, rest blocking
+      case MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING:
         return isRuleAggressive(subRuleInfo.getSubRuleTypesList())
             ? null
             : buildBlockingAnomalySubRule(subRuleInfo);

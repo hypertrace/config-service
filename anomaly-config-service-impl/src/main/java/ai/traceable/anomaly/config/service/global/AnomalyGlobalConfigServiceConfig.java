@@ -34,7 +34,7 @@ public class AnomalyGlobalConfigServiceConfig {
     this.modsecDefaultConfigsType =
         config.hasPath(MODSEC_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ModsecDefaultConfigsType.class, MODSEC_DEFAULT_CONFIG_TYPE)
-            : ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD;
+            : ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING;
     this.apiDefaultConfigsType =
         config.hasPath(API_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ApiDefaultConfigsType.class, API_DEFAULT_CONFIG_TYPE)
