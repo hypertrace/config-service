@@ -20,6 +20,7 @@ message AstHookTestDetails {
     AdvancedMode advanced_mode = 2;
   }
   Role role = 3;
+  HookScope scope = 4;
 }
 
 message AstHookTestResult {

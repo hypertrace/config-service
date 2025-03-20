@@ -23,6 +23,7 @@ message AstHookDetails {
   Role role = 8;
   HookCategory hook_category = 10;
   bool is_draft = 11;
+  HookScope scope = 12;
 }
 
 enum HookCategory {
@@ -278,4 +279,14 @@ message EncryptedText {
 message ApiKey {
   EncryptedText api_key_value = 1;
   RequestTokenInfo token_info = 2;
+}
+
+message HookScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  repeated string environment_ids = 1;
 }
