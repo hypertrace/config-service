@@ -76,19 +76,18 @@ public class RateLimitingRulesManager implements RulesManager {
 
   private RateLimitingRuleData mergeRateLimitRuleData(
       RateLimitingRuleData newRuleData, RateLimitingRuleData oldRuleData) {
-    if (!newRuleData.hasRuleStatus()) {
-      return oldRuleData;
-    }
     RateLimitingRuleData transformedRateLimitRuleData =
         applyRateLimitRuleDataTransformations(newRuleData);
     RuleStatus newRuleStatus = transformedRateLimitRuleData.getRuleStatus();
     RuleStatus oldRuleStatus = oldRuleData.getRuleStatus();
     RuleStatus mergedRuleStatus =
-        oldRuleStatus.toBuilder()
-            .mergeFrom(newRuleStatus)
-            .setInternal(newRuleStatus.getInternal())
-            .setRuleCreationSource(oldRuleStatus.getRuleCreationSource())
-            .build();
+        transformedRateLimitRuleData.hasRuleStatus()
+            ? oldRuleStatus.toBuilder()
+                .mergeFrom(newRuleStatus)
+                .setInternal(newRuleStatus.getInternal())
+                .setRuleCreationSource(oldRuleStatus.getRuleCreationSource())
+                .build()
+            : oldRuleStatus;
     return transformedRateLimitRuleData.toBuilder().setRuleStatus(mergedRuleStatus).build();
   }
 
