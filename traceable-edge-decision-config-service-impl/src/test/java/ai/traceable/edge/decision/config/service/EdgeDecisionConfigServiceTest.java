@@ -3,6 +3,7 @@ package ai.traceable.edge.decision.config.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -26,7 +27,6 @@ import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleReq
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseResponse;
-import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionSpecRequest;
@@ -80,6 +80,7 @@ import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleReques
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecResponse;
+import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -170,29 +171,23 @@ class EdgeDecisionConfigServiceTest {
         requestContext
             .call(
                 () ->
-                    stub.createEdgeDecisionEngineConfig(
-                        CreateEdgeDecisionEngineConfigRequest.newBuilder()
-                            .setEdgeDecisionEngineConfig(new_config())
-                            .build()))
+                    stub.upsertEdgeDecisionEngineConfig(
+                        upsertEdgeDecisionEngineConfigRequest(UUID_1, "test", 1)))
             .getEdgeDecisionEngineConfig();
 
     assertNotNull(created.getId());
     assertEquals(UUID_1, created.getId());
     String id = created.getId();
 
-    EdgeDecisionEngineConfig toUpdate = update_config(id);
-
     EdgeDecisionEngineConfig updated =
         requestContext.call(
             () ->
-                stub.createEdgeDecisionEngineConfig(
-                        CreateEdgeDecisionEngineConfigRequest.newBuilder()
-                            .setEdgeDecisionEngineConfig(toUpdate)
-                            .build())
+                stub.upsertEdgeDecisionEngineConfig(
+                        upsertEdgeDecisionEngineConfigRequest(id, "test", 2))
                     .getEdgeDecisionEngineConfig());
 
     assertEquals(id, updated.getId());
-    assertEquals(toUpdate.getVersion(), updated.getVersion());
+    assertEquals(2, updated.getVersion());
 
     var config =
         requestContext.call(
@@ -206,6 +201,15 @@ class EdgeDecisionConfigServiceTest {
 
   private EdgeDecisionEngineConfig new_config() {
     return EdgeDecisionEngineConfig.newBuilder().setId("t1").setVersion(1).build();
+  }
+
+  private UpsertEdgeDecisionEngineConfigRequest upsertEdgeDecisionEngineConfigRequest(
+      String id, String name, long version) {
+    return UpsertEdgeDecisionEngineConfigRequest.newBuilder()
+        .setId(id)
+        .setName(name)
+        .setVersion(version)
+        .build();
   }
 
   private EdgeDecisionEngineConfig update_config(String id) {
@@ -259,16 +263,14 @@ class EdgeDecisionConfigServiceTest {
             .build();
 
     // Send the original edge decision rule as is
-    when(ruleVariableEnricher.enrichRule(requestContext, new_config())).thenReturn(modified_config);
+    doReturn(modified_config).when(ruleVariableEnricher).enrichRule(any(), any());
 
     EdgeDecisionEngineConfig created =
         requestContext
             .call(
                 () ->
-                    stub.createEdgeDecisionEngineConfig(
-                        CreateEdgeDecisionEngineConfigRequest.newBuilder()
-                            .setEdgeDecisionEngineConfig(new_config())
-                            .build()))
+                    stub.upsertEdgeDecisionEngineConfig(
+                        upsertEdgeDecisionEngineConfigRequest(UUID_1, "test", 1)))
             .getEdgeDecisionEngineConfig();
 
     var config =

@@ -1,21 +1,16 @@
 package ai.traceable.edge.decision.config.service.store;
 
-import static ai.traceable.config.proto.utils.FieldMaskUtils.applyFieldMask;
-
-import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
-import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigResponse;
-import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConfigRequest;
-import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConfigResponse;
+import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigResponse;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -49,45 +44,29 @@ public class EdgeDecisionConfigStoreManager {
         .build();
   }
 
-  public CreateEdgeDecisionEngineConfigResponse create(
-      RequestContext requestContext, CreateEdgeDecisionEngineConfigRequest request) {
-    EdgeDecisionEngineConfig config = request.getEdgeDecisionEngineConfig();
-    if (config.getId().isBlank()) {
-      config = config.toBuilder().setId(getTenantId(requestContext)).build();
-    }
-    if (config.getVersion() <= 0) {
+  public UpsertEdgeDecisionEngineConfigResponse upsert(
+      RequestContext requestContext, UpsertEdgeDecisionEngineConfigRequest request) {
+    if (request.getVersion() <= 0) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Missing version on the config")
           .asRuntimeException(requestContext.buildTrailers());
     }
-    ContextualConfigObject<EdgeDecisionEngineConfig> configObject =
-        edgeDecisionConfigStore.upsertObject(requestContext, config);
-    return CreateEdgeDecisionEngineConfigResponse.newBuilder()
-        .setEdgeDecisionEngineConfig(configObject.getData())
-        .build();
-  }
-
-  @SneakyThrows
-  public UpdateEdgeDecisionEngineConfigResponse update(
-      RequestContext requestContext, UpdateEdgeDecisionEngineConfigRequest request) {
-    EdgeDecisionEngineConfig existing =
-        edgeDecisionConfigStore.fetchExisting(
-            request.getEdgeDecisionEngineConfig().getId(), requestContext);
-    if (existing.getVersion() != request.getCurrentVersion()) {
-      throw Status.FAILED_PRECONDITION
-          .withDescription(
-              String.format(
-                  "Received current version=%d, Existing policy version=%d. Read latest and update again",
-                  request.getCurrentVersion(), existing.getVersion()))
-          .asException();
+    EdgeDecisionEngineConfig.Builder config = EdgeDecisionEngineConfig.newBuilder();
+    if (request.getId().isBlank()) {
+      config.setId(getTenantId(requestContext)).build();
+    } else {
+      config.setId(request.getId());
     }
-    // Merge the existing object with the new object, using update masks
-    EdgeDecisionEngineConfig updatedResource =
-        applyFieldMask(existing, request.getEdgeDecisionEngineConfig(), request.getUpdateMask());
-
+    config.setName(request.getName());
+    config.setVersion(request.getVersion());
+    config.addAllCommonVariables(request.getCommonVariablesList());
+    config.setDisabled(request.getDisabled());
+    config.addAllDisabledRuleCategories(request.getDisabledRuleCategoriesList());
+    config.setDefaultBlockResponse(request.getDefaultBlockResponse());
+    config.setCustomConfig(request.getCustomConfig());
     ContextualConfigObject<EdgeDecisionEngineConfig> configObject =
-        edgeDecisionConfigStore.upsertObject(requestContext, updatedResource);
-    return UpdateEdgeDecisionEngineConfigResponse.newBuilder()
+        edgeDecisionConfigStore.upsertObject(requestContext, config.build());
+    return UpsertEdgeDecisionEngineConfigResponse.newBuilder()
         .setEdgeDecisionEngineConfig(configObject.getData())
         .build();
   }

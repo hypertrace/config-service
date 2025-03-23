@@ -11,8 +11,6 @@ import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleReq
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseResponse;
-import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigRequest;
-import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeDecisionSpecRequest;
@@ -41,7 +39,6 @@ import ai.traceable.edge.decision.config.service.v1.GetEdgeAttributionRuleReques
 import ai.traceable.edge.decision.config.service.v1.GetEdgeAttributionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeCustomResponseRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeCustomResponseResponse;
-import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionConfigsFilter;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionRuleRequest;
@@ -50,18 +47,16 @@ import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsResponse;
-import ai.traceable.edge.decision.config.service.v1.GetScopedResolvedEdgeDecisionConfigRequest;
-import ai.traceable.edge.decision.config.service.v1.GetScopedResolvedEdgeDecisionConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeAttributionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeAttributionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeCustomResponseRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeCustomResponseResponse;
-import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConfigRequest;
-import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecResponse;
+import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
+import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigResponse;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
 import com.google.protobuf.Message;
 import io.grpc.Status;
@@ -121,41 +116,17 @@ class EdgeDecisionConfigService
   }
 
   @Override
-  public void getScopedResolvedEdgeDecisionConfig(
-      GetScopedResolvedEdgeDecisionConfigRequest request,
-      StreamObserver<GetScopedResolvedEdgeDecisionConfigResponse> responseObserver) {
-    super.getScopedResolvedEdgeDecisionConfig(request, responseObserver);
-  }
-
-  @Override
-  public void createEdgeDecisionEngineConfig(
-      CreateEdgeDecisionEngineConfigRequest request,
-      StreamObserver<CreateEdgeDecisionEngineConfigResponse> responseObserver) {
-    handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::create);
-  }
-
-  @Override
-  public void updateEdgeDecisionEngineConfig(
-      UpdateEdgeDecisionEngineConfigRequest request,
-      StreamObserver<UpdateEdgeDecisionEngineConfigResponse> responseObserver) {
-    handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::update);
+  public void upsertEdgeDecisionEngineConfig(
+      UpsertEdgeDecisionEngineConfigRequest request,
+      StreamObserver<UpsertEdgeDecisionEngineConfigResponse> responseObserver) {
+    handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::upsert);
   }
 
   @Override
   public void getEdgeDecisionEngineConfig(
       GetEdgeDecisionEngineConfigRequest request,
       StreamObserver<GetEdgeDecisionEngineConfigResponse> responseObserver) {
-    handleConfigOperation(
-        request,
-        responseObserver,
-        (requestContext, request1) -> {
-          EdgeDecisionEngineConfig config =
-              storedEdgeDecisionEngineConfigSupplier.get(
-                  requestContext, GetEdgeDecisionConfigsFilter.getDefaultInstance());
-          return GetEdgeDecisionEngineConfigResponse.newBuilder()
-              .setEdgeDecisionEngineConfig(config)
-              .build();
-        });
+    handleConfigOperation(request, responseObserver, edgeDecisionConfigStoreManager::get);
   }
 
   @Override

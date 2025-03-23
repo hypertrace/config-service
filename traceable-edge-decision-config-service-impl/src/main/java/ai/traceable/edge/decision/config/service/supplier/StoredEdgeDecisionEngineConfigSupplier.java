@@ -176,6 +176,7 @@ public class StoredEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngin
         .clearDecisionSpecs()
         .addAllDecisionRules(mergedRules)
         .addAllDecisionSpecs(mergedSpecs)
+        .addAllAttributionRules(mergedAttributionRules)
         .build();
   }
 
