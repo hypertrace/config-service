@@ -105,14 +105,8 @@ public class AnomalyDetectionConfigValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "DeleteScopedAnomalyDetectionConfigRequest should have a valid delete option.");
     }
-    Status status =
-        anomalyConfigValidator.validate(
-            request.getScopedAnomalyDetectionConfig().getConfigScope(), true);
-    if (!status.isOk()) {
-      return status;
-    }
-
-    return validate(request.getScopedAnomalyDetectionConfig().getAnomalyDetectionConfigsList());
+    return anomalyConfigValidator.validate(
+        request.getScopedAnomalyDetectionConfig().getConfigScope(), true);
   }
 
   public Status validate(UpdateScopedAnomalyDetectionConfigRequest request) {
