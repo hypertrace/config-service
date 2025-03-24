@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
+public class DefaultUserAttributionRuleFetcher implements UserAttributionRuleFetcher {
   private final Map<String, List<DerivationRule>> tenantUserAttributionConfigs;
   static final String TRACEABLE_EDGE_CONFIG_SERVICE_NAME = "traceable.edge.config.service";
   private static final String DEFAULT_USER_ATTRIBUTION_CONFIG_PATH =
@@ -29,7 +29,7 @@ public class DefaultUserAttributionFetcher implements UserAttributionFetcher {
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
 
   @Inject
-  public DefaultUserAttributionFetcher(Config config) {
+  public DefaultUserAttributionRuleFetcher(Config config) {
     this.tenantUserAttributionConfigs = loadTenantConfigs(config);
   }
 

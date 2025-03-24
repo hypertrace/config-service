@@ -1,4 +1,4 @@
-package ai.traceable.edge.decision.config.service.aggregator.attributes;
+package ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

@@ -2,6 +2,7 @@ package ai.traceable.bot.categorized.policy.service.v1;
 
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceGrpc.CategorizedBotConfigPolicyServiceImplBase;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
+import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
 import ai.traceable.bot.categorized.policy.service.v1.validation.CategorizedBotConfigPolicyRequestValidator;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -13,9 +14,11 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = {@Inject})
-class CategorizedBotConfigPolicyService extends CategorizedBotConfigPolicyServiceImplBase {
+public final class CategorizedBotConfigPolicyService
+    extends CategorizedBotConfigPolicyServiceImplBase {
 
   private final CategorizedBotConfigPolicyStoreManager categorizedBotConfigPolicyStoreManager;
+  private final CategorizedBotConfigPolicyToEdgeDecisionTranslator translator;
 
   private Exception decorateException(
       final RequestContext requestContext, final Exception exception) {
@@ -53,6 +56,14 @@ class CategorizedBotConfigPolicyService extends CategorizedBotConfigPolicyServic
       final StreamObserver<DeleteCategorizedBotConfigPolicyResponse> responseObserver) {
     handleConfigOperation(
         request, responseObserver, categorizedBotConfigPolicyStoreManager::delete);
+  }
+
+  @Override
+  public void getCategorizedBotConfigPolicyEdgeDecisionRules(
+      final GetCategorizedBotConfigPolicyEdgeDecisionRulesRequest request,
+      final StreamObserver<GetCategorizedBotConfigPolicyEdgeDecisionRulesResponse>
+          responseObserver) {
+    handleConfigOperation(request, responseObserver, translator::translate);
   }
 
   // Define a common method to handle requests

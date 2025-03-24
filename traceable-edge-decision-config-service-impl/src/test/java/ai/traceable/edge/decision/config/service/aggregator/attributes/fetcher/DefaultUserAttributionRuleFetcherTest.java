@@ -12,7 +12,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DefaultUserAttributionFetcherTest {
+class DefaultUserAttributionRuleFetcherTest {
 
   private Config config;
 
@@ -24,7 +24,7 @@ class DefaultUserAttributionFetcherTest {
 
   @Test
   void testGetConfigsForTenant_validTenant() {
-    DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(config);
+    DefaultUserAttributionRuleFetcher fetchers = new DefaultUserAttributionRuleFetcher(config);
 
     List<DerivationRule> tenant1Configs =
         fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant1"));
@@ -40,7 +40,7 @@ class DefaultUserAttributionFetcherTest {
 
   @Test
   void testGetConfigsForTenant_missingTenant() {
-    DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(config);
+    DefaultUserAttributionRuleFetcher fetchers = new DefaultUserAttributionRuleFetcher(config);
 
     List<DerivationRule> missingTenantConfigs =
         fetchers.getUserAttributionRules(RequestContext.forTenantId("missingTenant"));
@@ -62,7 +62,8 @@ class DefaultUserAttributionFetcherTest {
                 + "          ]\n"
                 + "        }}");
 
-    DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(invalidConfig);
+    DefaultUserAttributionRuleFetcher fetchers =
+        new DefaultUserAttributionRuleFetcher(invalidConfig);
     List<DerivationRule> tenant1Configs =
         fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant1"));
     // Tenant1 should skip invalid rules and only return valid configs
@@ -72,7 +73,7 @@ class DefaultUserAttributionFetcherTest {
   @Test
   void testNoConfigPath() {
     Config emptyConfig = ConfigFactory.empty();
-    DefaultUserAttributionFetcher fetchers = new DefaultUserAttributionFetcher(emptyConfig);
+    DefaultUserAttributionRuleFetcher fetchers = new DefaultUserAttributionRuleFetcher(emptyConfig);
     List<DerivationRule> tenantConfigs =
         fetchers.getUserAttributionRules(RequestContext.forTenantId("tenant1"));
     assertTrue(tenantConfigs.isEmpty(), "No configurations should return an empty list");

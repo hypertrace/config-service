@@ -77,10 +77,20 @@ public class CategorizedBotConfigPolicyStoreManager {
   public GetCategorizedBotConfigPoliciesResponse get(
       final RequestContext requestContext,
       final GetCategorizedBotConfigPoliciesRequest getCategorizedBotConfigPoliciesRequest) {
-    final List<CategorizedBotConfigPolicy> categorizedBotConfigPolicies =
-        categorizedBotConfigPolicyStore.getAllConfigData(
-            requestContext,
-            getCategorizedBotConfigPoliciesRequest.getCategorizedBotConfigPolicyFilter());
+    List<CategorizedBotConfigPolicy> categorizedBotConfigPolicies;
+    if (getCategorizedBotConfigPoliciesRequest.hasCategorizedBotConfigPolicyFilter()
+        && !getCategorizedBotConfigPoliciesRequest
+            .getCategorizedBotConfigPolicyFilter()
+            .getCategorizedBotConfigPolicyIdsList()
+            .isEmpty()) {
+      categorizedBotConfigPolicies =
+          categorizedBotConfigPolicyStore.getAllConfigData(
+              requestContext,
+              getCategorizedBotConfigPoliciesRequest.getCategorizedBotConfigPolicyFilter());
+    } else {
+      categorizedBotConfigPolicies =
+          categorizedBotConfigPolicyStore.getAllConfigData(requestContext);
+    }
     return GetCategorizedBotConfigPoliciesResponse.newBuilder()
         .addAllCategorizedBotConfigPolicies(categorizedBotConfigPolicies)
         .build();

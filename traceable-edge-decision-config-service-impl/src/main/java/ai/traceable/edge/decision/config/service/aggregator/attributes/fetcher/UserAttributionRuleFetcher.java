@@ -4,6 +4,6 @@ import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public interface UserAttributionFetcher {
+public interface UserAttributionRuleFetcher {
   List<DerivationRule> getUserAttributionRules(RequestContext requestContext);
 }

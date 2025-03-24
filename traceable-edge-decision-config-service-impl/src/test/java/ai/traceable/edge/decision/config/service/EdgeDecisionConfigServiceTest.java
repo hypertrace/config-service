@@ -2,14 +2,46 @@ package ai.traceable.edge.decision.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigService;
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceGrpc;
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceGrpc.CategorizedBotConfigServiceBlockingStub;
+import ai.traceable.bot.categorized.policy.service.v1.BotScope;
+import ai.traceable.bot.categorized.policy.service.v1.BotScope.BotList;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotAction;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicy;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyDetails;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyService;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceGrpc;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceGrpc.CategorizedBotConfigPolicyServiceBlockingStub;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotPolicyActionConfig;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotPolicyScope;
+import ai.traceable.bot.categorized.policy.service.v1.CreateCategorizedBotConfigPolicyRequest;
+import ai.traceable.bot.categorized.policy.service.v1.EnvironmentScope;
+import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStore;
+import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
+import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
+import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
+import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
+import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.CheckAndAddVariableToRule;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.RuleVariableEnricher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.CategorizedBotVariableEnricher;
 import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStore;
 import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeCustomResponseStore;
@@ -23,6 +55,7 @@ import ai.traceable.edge.decision.config.service.store.EdgeDecisionSpecStoreMana
 import ai.traceable.edge.decision.config.service.store.FilterEvaluator;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigResolver;
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
+import ai.traceable.edge.decision.config.service.supplier.categorized.bots.CategorizedBotsEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeAttributionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.CreateEdgeCustomResponseRequest;
@@ -43,12 +76,19 @@ import ai.traceable.edge.decision.config.service.v1.DeleteEdgeDecisionSpecRespon
 import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.EdgeCustomResponse;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpecDirective;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
+import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
 import ai.traceable.edge.decision.config.service.v1.Filter;
 import ai.traceable.edge.decision.config.service.v1.GenericValueFilter;
 import ai.traceable.edge.decision.config.service.v1.GetAllEdgeAttributionRulesRequest;
@@ -71,7 +111,10 @@ import ai.traceable.edge.decision.config.service.v1.GetEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import ai.traceable.edge.decision.config.service.v1.LogicalFilter;
 import ai.traceable.edge.decision.config.service.v1.LogicalOperator;
+import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.RelationalOperator;
+import ai.traceable.edge.decision.config.service.v1.RuleInfoDecoration;
+import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeAttributionRuleRequest;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeAttributionRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeCustomResponseRequest;
@@ -82,10 +125,11 @@ import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecReques
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
+import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.test.MockGenericConfigService;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -95,6 +139,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 class EdgeDecisionConfigServiceTest {
@@ -102,10 +147,14 @@ class EdgeDecisionConfigServiceTest {
   private static final String UUID_1 = "t1";
 
   private EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub stub;
+  private CategorizedBotConfigPolicyServiceBlockingStub
+      categorizedBotConfigPolicyServiceBlockingStub;
   private MockGenericConfigService mockGenericConfigService;
   @Mock private ConfigChangeEventGenerator eventGenerator;
   @Mock private UuidGenerator uuidGenerator;
   @Mock private RuleVariableEnricher ruleVariableEnricher;
+  @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
+  private CategorizedBotConfigServiceBlockingStub categorizedBotConfigServiceBlockingStub;
 
   @BeforeEach
   void beforeEach() {
@@ -131,9 +180,35 @@ class EdgeDecisionConfigServiceTest {
     StoredEdgeDecisionEngineConfigSupplier storedEdgeDecisionEngineConfigSupplier =
         new StoredEdgeDecisionEngineConfigSupplier(
             storeManager, ruleStoreManager, specStoreManager, attributionRuleStoreManager);
+    categorizedBotConfigPolicyServiceBlockingStub =
+        CategorizedBotConfigPolicyServiceGrpc.newBlockingStub(mockGenericConfigService.channel())
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    categorizedBotConfigServiceBlockingStub =
+        CategorizedBotConfigServiceGrpc.newBlockingStub(mockGenericConfigService.channel())
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+    CategorizedBotsEdgeDecisionEngineConfigSupplier
+        categorizedBotsEdgeDecisionEngineConfigSupplier =
+            new CategorizedBotsEdgeDecisionEngineConfigSupplier(
+                categorizedBotConfigPolicyServiceBlockingStub);
     EdgeDecisionEngineConfigResolver resolver =
         new EdgeDecisionEngineConfigResolver(
-            Collections.singleton(storedEdgeDecisionEngineConfigSupplier), ruleVariableEnricher);
+            Set.of(
+                storedEdgeDecisionEngineConfigSupplier,
+                categorizedBotsEdgeDecisionEngineConfigSupplier),
+            ruleVariableEnricher);
+    final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
+        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    final CategorizedBotConfigPolicyStoreManager categorizedBotConfigPolicyStoreManager =
+        new CategorizedBotConfigPolicyStoreManager(
+            new CategorizedBotConfigPolicyStore(
+                configServiceBlockingStub, mockConfigChangeEventGenerator),
+            uuidGenerator);
+    final CategorizedBotConfigPolicyToEdgeDecisionTranslator
+        categorizedBotConfigPolicyToEdgeDecisionTranslator =
+            new CategorizedBotConfigPolicyToEdgeDecisionTranslator(
+                categorizedBotConfigPolicyStoreManager);
     this.mockGenericConfigService
         .addService(
             new EdgeDecisionConfigService(
@@ -145,6 +220,11 @@ class EdgeDecisionConfigServiceTest {
                 storedEdgeDecisionEngineConfigSupplier,
                 resolver,
                 new RequestValidator()))
+        .addService(
+            new CategorizedBotConfigPolicyService(
+                categorizedBotConfigPolicyStoreManager,
+                categorizedBotConfigPolicyToEdgeDecisionTranslator))
+        .addService(new CategorizedBotConfigService())
         .start();
 
     this.stub =
@@ -281,6 +361,284 @@ class EdgeDecisionConfigServiceTest {
                     .getEdgeDecisionEngineConfig());
 
     assertEquals(modified_config, config);
+  }
+
+  @Test
+  void testCategorizedBotPolicy() {
+    RequestContext requestContext = buildRequestContext();
+    RuleVariableEnricher variableEnricher =
+        new RuleVariableEnricher(
+            Set.of(
+                new CategorizedBotVariableEnricher(
+                    new CheckAndAddVariableToRule(), categorizedBotConfigServiceBlockingStub)));
+
+    ArgumentCaptor<RequestContext> requestContextCaptor =
+        ArgumentCaptor.forClass(RequestContext.class);
+    ArgumentCaptor<EdgeDecisionEngineConfig> configCaptor =
+        ArgumentCaptor.forClass(EdgeDecisionEngineConfig.class);
+    when(ruleVariableEnricher.enrichRule(requestContextCaptor.capture(), configCaptor.capture()))
+        .thenAnswer(
+            invocation ->
+                variableEnricher.enrichRule(
+                    requestContextCaptor.getValue(), configCaptor.getValue()));
+
+    final CategorizedBotConfigPolicy createdPolicy =
+        requestContext
+            .call(
+                () ->
+                    categorizedBotConfigPolicyServiceBlockingStub.createCategorizedBotConfigPolicy(
+                        CreateCategorizedBotConfigPolicyRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyDetails(
+                                CategorizedBotConfigPolicyDetails.newBuilder()
+                                    .setName("Test")
+                                    .setDescription("Test")
+                                    .setEnabled(true)
+                                    .setCategorizedBotPolicyActionConfig(
+                                        CategorizedBotPolicyActionConfig.newBuilder()
+                                            .setBotAction(
+                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
+                                            .build())
+                                    .setCategorizedBotPolicyScope(
+                                        CategorizedBotPolicyScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                EnvironmentScope.newBuilder()
+                                                    .addEnvironmentIds("test")
+                                                    .build())
+                                            .build())
+                                    .addBotScopes(
+                                        BotScope.newBuilder()
+                                            .setBotList(
+                                                BotList.newBuilder()
+                                                    .addBotIds(
+                                                        "550e8400-e29b-41d4-a716-446655440000")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build()))
+            .getCategorizedBotConfigPolicy();
+    assertTrue(createdPolicy.getCategorizedBotPolicyDetails().getEnabled());
+
+    var config =
+        requestContext.call(
+            () ->
+                stub.getResolvedEdgeDecisionEngineConfigs(
+                        GetResolvedEdgeDecisionEngineConfigsRequest.getDefaultInstance())
+                    .getEdgeDecisionEngineConfig());
+    final VariableDerivationMapping expectedVariableDerivation =
+        VariableDerivationMapping.newBuilder()
+            .setName("TRACEABLEAI_BOT_bing_bot_550e8400-e29b-41d4-a716-446655440000")
+            .addRules(
+                DerivationRule.newBuilder()
+                    .setTransformationConfig(
+                        DataTransformationConfig.newBuilder()
+                            .setStaticValue(Value.newBuilder().setBoolValue(true))
+                            .setOutputType(FieldType.FIELD_TYPE_BOOL))
+                    .setMatchCondition(
+                        MatchCondition.newBuilder()
+                            .setLogicalMatchCondition(
+                                LogicalMatchCondition.newBuilder()
+                                    .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND)
+                                    .addConditions(
+                                        MatchCondition.newBuilder()
+                                            .setLogicalMatchCondition(
+                                                LogicalMatchCondition.newBuilder()
+                                                    .setOperator(
+                                                        LogicalMatchOperator
+                                                            .LOGICAL_MATCH_OPERATOR_OR)
+                                                    .addConditions(
+                                                        MatchCondition.newBuilder()
+                                                            .setGenericMatchCondition(
+                                                                ai.traceable.datamodel.data
+                                                                    .transformation.config.v1
+                                                                    .GenericMatchCondition
+                                                                    .newBuilder()
+                                                                    .setJexlExpression(
+                                                                        JexlExpressionConfig
+                                                                            .newBuilder()
+                                                                            .setJexlExpression(
+                                                                                "ipValidation:isIpAddressInRange('13.66.139.0/24', $s.getIpAddress())")
+                                                                            .build()))
+                                                            .build())
+                                                    .addConditions(
+                                                        MatchCondition.newBuilder()
+                                                            .setGenericMatchCondition(
+                                                                ai.traceable.datamodel.data
+                                                                    .transformation.config.v1
+                                                                    .GenericMatchCondition
+                                                                    .newBuilder()
+                                                                    .setJexlExpression(
+                                                                        JexlExpressionConfig
+                                                                            .newBuilder()
+                                                                            .setJexlExpression(
+                                                                                "ipValidation:isIpAddressInRange('40.77.167.0/24', $s.getIpAddress())")
+                                                                            .build())
+                                                                    .build()))
+                                                    .build())
+                                            .build())
+                                    .addConditions(
+                                        MatchCondition.newBuilder()
+                                            .setStructuredMatchCondition(
+                                                StructuredMatchCondition.newBuilder()
+                                                    .setLhs(
+                                                        AttributeDerivationMapping.newBuilder()
+                                                            .setName("lhs")
+                                                            .setType(FieldType.FIELD_TYPE_STR)
+                                                            .addRules(
+                                                                DerivationRule.newBuilder()
+                                                                    .setTransformationConfig(
+                                                                        DataTransformationConfig
+                                                                            .newBuilder()
+                                                                            .setOutputType(
+                                                                                FieldType
+                                                                                    .FIELD_TYPE_STR)
+                                                                            .setJexlExpression(
+                                                                                JexlExpressionConfig
+                                                                                    .newBuilder()
+                                                                                    .setJexlExpression(
+                                                                                        "request.headers['user-agent']")))))
+                                                    .setBinaryOperator(
+                                                        BinaryOperator.newBuilder()
+                                                            .setStringValue(
+                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
+                                                            .setMatchOperator(
+                                                                ai.traceable.datamodel.data
+                                                                    .transformation.config.v1
+                                                                    .MatchOperator
+                                                                    .MATCH_OPERATOR_EQ)))))
+                            .build())
+                    .build())
+            .build();
+    assertEquals(
+        expectedVariableDerivation,
+        config.getCommonVariablesList().stream()
+            .filter(
+                variableDerivationMapping ->
+                    variableDerivationMapping
+                        .getName()
+                        .equals("TRACEABLEAI_BOT_bing_bot_550e8400-e29b-41d4-a716-446655440000"))
+            .findFirst()
+            .get());
+
+    assertEquals(
+        EdgeDecisionRule.newBuilder()
+            .setId("550e8400-e29b-41d4-a716-446655440000_t1")
+            .setName("Test")
+            .setRuleCategory(
+                EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS)
+            .setRuleStatus(EdgeDecisionRuleStatus.getDefaultInstance())
+            .setPolicyId("t1")
+            .setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION)
+            .setRuleScope(
+                EdgeDecisionRuleScope.newBuilder()
+                    .addScopeConditions(
+                        EdgeDecisionRuleScopeCondition.newBuilder()
+                            .setEnvironmentScope(
+                                ai.traceable.edge.decision.config.service.v1.EnvironmentScope
+                                    .newBuilder()
+                                    .addEnvironments("test")
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleDefinition(
+                EdgeDecisionRuleDefinition.newBuilder()
+                    .setEdgeInputKind(EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST)
+                    .setCustomFields(
+                        Values.of(Structs.of("policyId", Values.of(createdPolicy.getId()))))
+                    .setSignatureRule(
+                        SignatureRule.newBuilder()
+                            .setMatchCondition(
+                                MatchCondition.newBuilder()
+                                    .setGenericMatchCondition(
+                                        GenericMatchCondition.newBuilder()
+                                            .setJexlExpression(
+                                                JexlExpressionConfig.newBuilder()
+                                                    .setJexlExpression(
+                                                        "TRACEABLEAI_BOT_bing_bot_550e8400-e29b-41d4-a716-446655440000 == true")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleDecision(
+                EdgeDecision.newBuilder()
+                    .setThreatType("TRACEABLE_CATEGORIZED_BOTS")
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_name").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("Bing bot").build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_id").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue("550e8400-e29b-41d4-a716-446655440000")
+                                            .build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_category").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("CRAWLERS").build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue("bot_sub_category")
+                                            .build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("SEARCH_BOTS").build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_policy_id").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(Value.newBuilder().setStringValue("t1").build())
+                                    .build())
+                            .build())
+                    .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
+                    .build())
+            .build(),
+        config.getDecisionRulesList().stream()
+            .filter(
+                edgeDecisionRule ->
+                    edgeDecisionRule.getId().contains("550e8400-e29b-41d4-a716-446655440000"))
+            .findFirst()
+            .get());
   }
 
   @Test

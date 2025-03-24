@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-public class StoredUserAttributionFetcher implements UserAttributionFetcher {
+public class StoredUserAttributionRuleFetcher implements UserAttributionRuleFetcher {
   private static final GetUserAttributionRulesRequest USER_ATTRIBUTION_RULES_REQUEST =
       GetUserAttributionRulesRequest.newBuilder()
           .setFilter(GetUserAttributionRulesFilter.newBuilder().setDisabled(false))
@@ -27,7 +27,7 @@ public class StoredUserAttributionFetcher implements UserAttributionFetcher {
   private final ClientConfig clientConfig;
 
   @Inject
-  public StoredUserAttributionFetcher(
+  public StoredUserAttributionRuleFetcher(
       CachedUserAttributionJexlGenerator userAttributionJexlGenerator,
       UserAttributionConfigServiceBlockingStub configServiceBlockingStub) {
     this.userAttributionJexlGenerator = userAttributionJexlGenerator;

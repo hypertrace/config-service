@@ -39,7 +39,7 @@ public class CategorizedBotConfigPolicyStore
         .filter(
             policy ->
                 Optional.ofNullable(filter)
-                    .map(CategorizedBotConfigPolicyFilter::getBotConfigPolicyIdsList)
+                    .map(CategorizedBotConfigPolicyFilter::getCategorizedBotConfigPolicyIdsList)
                     .filter(ids -> !ids.isEmpty())
                     .map(ids -> ids.contains(policy.getId()))
                     .orElse(true));

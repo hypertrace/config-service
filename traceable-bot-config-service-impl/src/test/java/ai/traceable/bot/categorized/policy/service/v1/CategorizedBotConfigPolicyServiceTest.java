@@ -4,10 +4,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.quality.Strictness.LENIENT;
 
+import ai.traceable.bot.categorized.policy.service.v1.BotScope.BotList;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStore;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
+import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
+import ai.traceable.bot.categorized.utils.CategorizedBotStringUtil;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
+import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
+import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
+import ai.traceable.edge.decision.config.service.v1.PolicyKind;
+import ai.traceable.edge.decision.config.service.v1.RuleInfoDecoration;
+import ai.traceable.edge.decision.config.service.v1.SignatureRule;
+import com.google.protobuf.Value;
+import com.google.protobuf.util.Structs;
+import com.google.protobuf.util.Values;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -21,8 +45,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = LENIENT)
 class CategorizedBotConfigPolicyServiceTest {
 
   private CategorizedBotConfigPolicyServiceGrpc.CategorizedBotConfigPolicyServiceBlockingStub stub;
@@ -41,8 +67,15 @@ class CategorizedBotConfigPolicyServiceTest {
             new CategorizedBotConfigPolicyStore(
                 configServiceBlockingStub, mockConfigChangeEventGenerator),
             uuidGenerator);
+    final CategorizedBotConfigPolicyToEdgeDecisionTranslator
+        categorizedBotConfigPolicyToEdgeDecisionTranslator =
+            new CategorizedBotConfigPolicyToEdgeDecisionTranslator(
+                categorizedBotConfigPolicyStoreManager);
     mockGenericConfigService
-        .addService(new CategorizedBotConfigPolicyService(categorizedBotConfigPolicyStoreManager))
+        .addService(
+            new CategorizedBotConfigPolicyService(
+                categorizedBotConfigPolicyStoreManager,
+                categorizedBotConfigPolicyToEdgeDecisionTranslator))
         .start();
     this.stub =
         CategorizedBotConfigPolicyServiceGrpc.newBlockingStub(mockGenericConfigService.channel())
@@ -71,6 +104,11 @@ class CategorizedBotConfigPolicyServiceTest {
                                     .setName("Test")
                                     .setDescription("Test")
                                     .setEnabled(false)
+                                    .setCategorizedBotPolicyActionConfig(
+                                        CategorizedBotPolicyActionConfig.newBuilder()
+                                            .setBotAction(
+                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
+                                            .build())
                                     .setCategorizedBotPolicyScope(
                                         CategorizedBotPolicyScope.newBuilder()
                                             .setEnvironmentScope(
@@ -78,12 +116,10 @@ class CategorizedBotConfigPolicyServiceTest {
                                                     .addEnvironmentIds("Test")
                                                     .build())
                                             .build())
-                                    .addCategorizedBotActionConfigs(
-                                        CategorizedBotActionConfig.newBuilder()
-                                            .setBotId("Test")
-                                            .setBotAction(
-                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
-                                            .setDisabled(false)
+                                    .addBotScopes(
+                                        BotScope.newBuilder()
+                                            .setBotList(
+                                                BotList.newBuilder().addBotIds("Test").build())
                                             .build())
                                     .build())
                             .build()))
@@ -99,7 +135,7 @@ class CategorizedBotConfigPolicyServiceTest {
                         GetCategorizedBotConfigPoliciesRequest.newBuilder()
                             .setCategorizedBotConfigPolicyFilter(
                                 CategorizedBotConfigPolicyFilter.newBuilder()
-                                    .addBotConfigPolicyIds(createdPolicy.getId())
+                                    .addCategorizedBotConfigPolicyIds(createdPolicy.getId())
                                     .build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
@@ -187,7 +223,7 @@ class CategorizedBotConfigPolicyServiceTest {
             .getCategorizedBotConfigPoliciesList();
     assertEquals(0, allPolicies.size());
 
-    // Test delete policy no policy id
+    // Test delete policy without providing policy id - noop
     final CategorizedBotConfigPolicy secondCreatedPolicy =
         requestContext
             .call(
@@ -198,7 +234,12 @@ class CategorizedBotConfigPolicyServiceTest {
                                 CategorizedBotConfigPolicyDetails.newBuilder()
                                     .setName("Test")
                                     .setDescription("Test")
-                                    .setEnabled(false)
+                                    .setEnabled(true)
+                                    .setCategorizedBotPolicyActionConfig(
+                                        CategorizedBotPolicyActionConfig.newBuilder()
+                                            .setBotAction(
+                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
+                                            .build())
                                     .setCategorizedBotPolicyScope(
                                         CategorizedBotPolicyScope.newBuilder()
                                             .setEnvironmentScope(
@@ -206,12 +247,10 @@ class CategorizedBotConfigPolicyServiceTest {
                                                     .addEnvironmentIds("Test")
                                                     .build())
                                             .build())
-                                    .addCategorizedBotActionConfigs(
-                                        CategorizedBotActionConfig.newBuilder()
-                                            .setBotId("Test")
-                                            .setBotAction(
-                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
-                                            .setDisabled(false)
+                                    .addBotScopes(
+                                        BotScope.newBuilder()
+                                            .setBotList(
+                                                BotList.newBuilder().addBotIds("Test").build())
                                             .build())
                                     .build())
                             .build()))
@@ -237,5 +276,240 @@ class CategorizedBotConfigPolicyServiceTest {
                             .build()))
             .getCategorizedBotConfigPoliciesList();
     assertEquals(1, allCurrentPolicies.size());
+  }
+
+  @Test
+  void testGetCategorizedBotConfigPolicyEdgeDecisionRules() {
+    final RequestContext requestContext = RequestContext.forTenantId("t1");
+
+    final CategorizedBotConfigPolicy createdPolicy =
+        requestContext
+            .call(
+                () ->
+                    stub.createCategorizedBotConfigPolicy(
+                        CreateCategorizedBotConfigPolicyRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyDetails(
+                                CategorizedBotConfigPolicyDetails.newBuilder()
+                                    .setName("Test")
+                                    .setDescription("Test")
+                                    .setEnabled(true)
+                                    .setCategorizedBotPolicyActionConfig(
+                                        CategorizedBotPolicyActionConfig.newBuilder()
+                                            .setBotAction(
+                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
+                                            .build())
+                                    .setCategorizedBotPolicyScope(
+                                        CategorizedBotPolicyScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                EnvironmentScope.newBuilder()
+                                                    .addEnvironmentIds("Test")
+                                                    .build())
+                                            .build())
+                                    .addBotScopes(
+                                        BotScope.newBuilder()
+                                            .setBotList(
+                                                BotList.newBuilder()
+                                                    .addBotIds(
+                                                        "550e8400-e29b-41d4-a716-446655440000")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build()))
+            .getCategorizedBotConfigPolicy();
+
+    // Test Get policy edge decision rules
+    final GetCategorizedBotConfigPolicyEdgeDecisionRulesResponse
+        categorizedBotConfigPolicyEdgeDecisionRulesResponse =
+            requestContext.call(
+                () ->
+                    stub.getCategorizedBotConfigPolicyEdgeDecisionRules(
+                        GetCategorizedBotConfigPolicyEdgeDecisionRulesRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyEdgeDecisionRulesFilter(
+                                CategorizedBotConfigPolicyEdgeDecisionRulesFilter.newBuilder()
+                                    .addCategorizedBotConfigPolicyIds(createdPolicy.getId())
+                                    .build())
+                            .build()));
+
+    final EdgeDecisionRule expectedRule =
+        EdgeDecisionRule.newBuilder()
+            .setId(
+                CategorizedBotStringUtil.joinStrings(
+                    "550e8400-e29b-41d4-a716-446655440000", createdPolicy.getId()))
+            .setName(String.format(createdPolicy.getCategorizedBotPolicyDetails().getName()))
+            .setRuleScope(
+                EdgeDecisionRuleScope.newBuilder()
+                    .addScopeConditions(
+                        EdgeDecisionRuleScopeCondition.newBuilder()
+                            .setEnvironmentScope(
+                                ai.traceable.edge.decision.config.service.v1.EnvironmentScope
+                                    .newBuilder()
+                                    .addEnvironments("Test")
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleCategory(
+                EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS)
+            .setRuleStatus(
+                EdgeDecisionRuleStatus.newBuilder().setDisabled(false).setInternal(false).build())
+            .setPolicyId(createdPolicy.getId())
+            .setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION)
+            .setRuleDefinition(
+                EdgeDecisionRuleDefinition.newBuilder()
+                    .setEdgeInputKind(EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST)
+                    .setCustomFields(
+                        Values.of(Structs.of("policyId", Values.of(createdPolicy.getId()))))
+                    .setSignatureRule(
+                        SignatureRule.newBuilder()
+                            .setMatchCondition(
+                                MatchCondition.newBuilder()
+                                    .setGenericMatchCondition(
+                                        GenericMatchCondition.newBuilder()
+                                            .setJexlExpression(
+                                                JexlExpressionConfig.newBuilder()
+                                                    .setJexlExpression(
+                                                        "TRACEABLEAI_BOT_bing_bot_550e8400-e29b-41d4-a716-446655440000 == true")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .setRuleDecision(
+                EdgeDecision.newBuilder()
+                    .setThreatType("TRACEABLE_CATEGORIZED_BOTS")
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_name").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("Bing bot").build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_id").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue("550e8400-e29b-41d4-a716-446655440000")
+                                            .build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_category").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("CRAWLERS").build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue("bot_sub_category")
+                                            .build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("SEARCH_BOTS").build())
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("bot_policy_id").build())
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue(createdPolicy.getId())
+                                            .build())
+                                    .build())
+                            .build())
+                    .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)
+                    .build())
+            .build();
+
+    assertEquals(
+        expectedRule,
+        categorizedBotConfigPolicyEdgeDecisionRulesResponse
+            .getEdgeDecisionEngineConfig()
+            .getDecisionRulesList()
+            .get(0));
+  }
+
+  @Test
+  void testGetCategorizedBotConfigPolicyEdgeDecisionRulesInvalidBotIds() {
+    final RequestContext requestContext = RequestContext.forTenantId("t1");
+
+    final CategorizedBotConfigPolicy createdPolicy =
+        requestContext
+            .call(
+                () ->
+                    stub.createCategorizedBotConfigPolicy(
+                        CreateCategorizedBotConfigPolicyRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyDetails(
+                                CategorizedBotConfigPolicyDetails.newBuilder()
+                                    .setName("Test")
+                                    .setDescription("Test")
+                                    .setEnabled(true)
+                                    .setCategorizedBotPolicyActionConfig(
+                                        CategorizedBotPolicyActionConfig.newBuilder()
+                                            .setBotAction(
+                                                CategorizedBotAction.CATEGORIZED_BOT_ACTION_BLOCK)
+                                            .build())
+                                    .setCategorizedBotPolicyScope(
+                                        CategorizedBotPolicyScope.newBuilder()
+                                            .setEnvironmentScope(
+                                                EnvironmentScope.newBuilder()
+                                                    .addEnvironmentIds("Test")
+                                                    .build())
+                                            .build())
+                                    .addBotScopes(
+                                        BotScope.newBuilder()
+                                            .setBotList(
+                                                BotList.newBuilder().addBotIds("Test").build())
+                                            .build())
+                                    .build())
+                            .build()))
+            .getCategorizedBotConfigPolicy();
+
+    // Test Get policy edge decision rules
+    final GetCategorizedBotConfigPolicyEdgeDecisionRulesResponse
+        categorizedBotConfigPolicyEdgeDecisionRulesResponse =
+            requestContext.call(
+                () ->
+                    stub.getCategorizedBotConfigPolicyEdgeDecisionRules(
+                        GetCategorizedBotConfigPolicyEdgeDecisionRulesRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyEdgeDecisionRulesFilter(
+                                CategorizedBotConfigPolicyEdgeDecisionRulesFilter.newBuilder()
+                                    .addCategorizedBotConfigPolicyIds(createdPolicy.getId())
+                                    .build())
+                            .build()));
+
+    assertEquals(
+        EdgeDecisionEngineConfig.getDefaultInstance(),
+        categorizedBotConfigPolicyEdgeDecisionRulesResponse.getEdgeDecisionEngineConfig());
   }
 }

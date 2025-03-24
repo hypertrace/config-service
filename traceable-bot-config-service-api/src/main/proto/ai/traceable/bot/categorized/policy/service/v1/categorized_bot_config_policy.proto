@@ -14,7 +14,8 @@ message CategorizedBotConfigPolicyDetails {
   optional string description = 2;
   bool enabled = 3;
   CategorizedBotPolicyScope categorized_bot_policy_scope = 4;
-  repeated CategorizedBotActionConfig categorized_bot_action_configs = 6;
+  repeated BotScope bot_scopes = 5;
+  CategorizedBotPolicyActionConfig categorized_bot_policy_action_config = 6;
 }
 
 message CategorizedBotPolicyScope {
@@ -25,15 +26,44 @@ message CategorizedBotPolicyScope {
   }
 }
 
+/**
+   If a Bot Category and a bot ID in the same category are provided,
+   or if a sub-category in the same category are provided,
+   the results will merge into a single EDS rule per bot.
+
+   The order of bot IDs or classifications does not matter.
+   The hierarchy of bot scope coverage is Category > Sub Category > Bot ID.
+
+   Do not provide additional entries for sub-categories or bot IDs
+   if the top-level category is provided.
+
+   Do not provide additional entries for bot IDs
+   if the top-level classification (category and subcategory) is provided.
+
+   Provide bot IDs only if a subset of bots is needed for a given classification.
+*/
+message BotScope {
+  oneof bot_scope {
+    BotList bot_list = 1;
+    BotClassification bot_classification = 2;
+  }
+
+  message BotClassification {
+    string category = 1;
+    repeated string sub_category = 2;
+  }
+
+  message BotList {
+    repeated string bot_ids = 1;
+  }
+}
+
 message EnvironmentScope {
   repeated string environment_ids = 1;
 }
 
-message CategorizedBotActionConfig {
-  string bot_id = 1;
-  CategorizedBotAction bot_action = 2;
-  optional string duration_iso = 3;
-  bool disabled = 4;
+message CategorizedBotPolicyActionConfig {
+  CategorizedBotAction bot_action = 1;
 }
 
 enum CategorizedBotAction {

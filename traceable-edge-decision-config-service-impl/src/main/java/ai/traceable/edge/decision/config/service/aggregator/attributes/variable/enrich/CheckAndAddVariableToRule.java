@@ -1,4 +1,4 @@
-package ai.traceable.edge.decision.config.service.aggregator.attributes;
+package ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich;
 
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;

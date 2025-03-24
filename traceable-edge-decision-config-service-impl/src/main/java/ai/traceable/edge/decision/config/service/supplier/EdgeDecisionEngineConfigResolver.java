@@ -2,7 +2,7 @@ package ai.traceable.edge.decision.config.service.supplier;
 
 import static ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigMergeUtil.merge;
 
-import ai.traceable.edge.decision.config.service.aggregator.attributes.RuleVariableEnricher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.RuleVariableEnricher;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.GetResolvedEdgeDecisionEngineConfigsRequest;
 import jakarta.inject.Inject;

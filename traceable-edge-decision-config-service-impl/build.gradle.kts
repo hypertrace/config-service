@@ -11,6 +11,7 @@ dependencies {
   implementation(projects.externalAgentAttributeConfigServiceApi)
   implementation(projects.userAttributionConfigServiceApi)
   implementation(projects.rateLimitingConfigServiceApi)
+  implementation(projects.traceableBotConfigServiceApi)
   implementation(projects.detectionExclusionConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
   implementation(projects.jwtExtractionConfigServiceApi)
@@ -46,6 +47,7 @@ dependencies {
   testImplementation(commonLibs.grpc.core)
   testRuntimeOnly(commonLibs.grpc.netty)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
+  testImplementation(projects.traceableBotConfigServiceImpl)
   testImplementation(commonLibs.commons.io)
 }
 

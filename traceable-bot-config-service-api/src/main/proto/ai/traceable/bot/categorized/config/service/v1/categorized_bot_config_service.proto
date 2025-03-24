@@ -3,11 +3,13 @@ syntax = "proto3";
 package ai.traceable.bot.categorized.config.service.v1;
 
 import "ai/traceable/bot/categorized/config/service/v1/categorized_bot_config.proto";
+import "ai/traceable/datamodel/data/transformation/config/v1/transformation.proto";
 
 option java_multiple_files = true;
 
 service CategorizedBotConfigService {
   rpc GetCategorizedBotConfigs(GetCategorizedBotConfigsRequest) returns (GetCategorizedBotConfigsResponse) {}
+  rpc GetCategorizedBotConfigEdgeDecisionVariables(GetCategorizedBotConfigEdgeDecisionVariablesRequest) returns (GetCategorizedBotConfigEdgeDecisionVariablesResponse) {}
 }
 
 message GetCategorizedBotConfigsRequest {
@@ -19,7 +21,13 @@ message GetCategorizedBotConfigsResponse {
 
 message CategorizedBotRequestFilter {
   // if none specified all traceable-categorized (pre defined) bots to be sent
-  repeated string category = 1;
-  repeated string bot_ids = 2;
+  repeated string bot_ids = 1;
+  repeated string category = 2;
   repeated string sub_category = 3;
+}
+
+message GetCategorizedBotConfigEdgeDecisionVariablesRequest {}
+
+message GetCategorizedBotConfigEdgeDecisionVariablesResponse {
+  repeated ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping variable_derivation_mappings = 1;
 }

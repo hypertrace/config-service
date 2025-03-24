@@ -2,17 +2,23 @@ package ai.traceable.edge.decision.config.service;
 
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceGrpc;
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServiceGrpc.CustomSignatureConfigServiceBlockingStub;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.UserAttributionVariableEnricher;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.VariableEnricherBase;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.StoredUserAttributionFetcher;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.UserAttributionFetcher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.StoredUserAttributionRuleFetcher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.UserAttributionRuleFetcher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.CategorizedBotVariableEnricher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.VariableConstantRuleEnricher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.VariableEnricher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.fetcher.UserAttributionVariableFetcher;
+import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.fetcher.VariableFetcher;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.StoredEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.actor.ActorEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.actor.config.ActorServiceConfig;
+import ai.traceable.edge.decision.config.service.supplier.categorized.bots.CategorizedBotsEdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.customsignature.CustomSignatureEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.detectionexclusion.DetectionExclusionEdgeDecisionConfigSupplier;
 import ai.traceable.edge.decision.config.service.supplier.jwt.JwtExtractionEdgeDecisionConfigSupplier;
@@ -54,12 +60,12 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     bind(Config.class).toInstance(config);
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
     bind(BindableService.class).to(EdgeDecisionConfigService.class);
-    bind(UserAttributionFetcher.class).to(StoredUserAttributionFetcher.class);
+    bind(UserAttributionRuleFetcher.class).to(StoredUserAttributionRuleFetcher.class);
     bind(ActorServiceConfig.class).toInstance(new ActorServiceConfig(config));
 
-    MapBinder<VariableConstants, VariableEnricherBase> mapBinder =
-        MapBinder.newMapBinder(binder(), VariableConstants.class, VariableEnricherBase.class);
-    mapBinder.addBinding(USER_ATTRIBUTION_VARIABLE_NAME).to(UserAttributionVariableEnricher.class);
+    MapBinder<VariableConstants, VariableFetcher> mapBinder =
+        MapBinder.newMapBinder(binder(), VariableConstants.class, VariableFetcher.class);
+    mapBinder.addBinding(USER_ATTRIBUTION_VARIABLE_NAME).to(UserAttributionVariableFetcher.class);
 
     Multibinder<EdgeDecisionEngineConfigSupplier> configBinder =
         Multibinder.newSetBinder(binder(), EdgeDecisionEngineConfigSupplier.class);
@@ -68,6 +74,12 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     configBinder.addBinding().to(RateLimitingEdgeDecisionEngineConfigSupplier.class);
     configBinder.addBinding().to(DetectionExclusionEdgeDecisionConfigSupplier.class);
     configBinder.addBinding().to(CustomSignatureEdgeDecisionConfigSupplier.class);
+    configBinder.addBinding().to(CategorizedBotsEdgeDecisionEngineConfigSupplier.class);
+
+    Multibinder<VariableEnricher> variableEnricherMultibinder =
+        Multibinder.newSetBinder(binder(), VariableEnricher.class);
+    variableEnricherMultibinder.addBinding().to(VariableConstantRuleEnricher.class);
+    variableEnricherMultibinder.addBinding().to(CategorizedBotVariableEnricher.class);
     configBinder.addBinding().to(JwtExtractionEdgeDecisionConfigSupplier.class);
   }
 
@@ -92,6 +104,22 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
   RateLimitingConfigServiceGrpc.RateLimitingConfigServiceBlockingStub
       providesRateLimitingConfigServiceBlockingStub() {
     return RateLimitingConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  CategorizedBotConfigPolicyServiceGrpc.CategorizedBotConfigPolicyServiceBlockingStub
+      providesCategorizedBotConfigPolicyServiceBlockingStub() {
+    return CategorizedBotConfigPolicyServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  CategorizedBotConfigServiceGrpc.CategorizedBotConfigServiceBlockingStub
+      providesCategorizedBotConfigServiceBlockingStub() {
+    return CategorizedBotConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

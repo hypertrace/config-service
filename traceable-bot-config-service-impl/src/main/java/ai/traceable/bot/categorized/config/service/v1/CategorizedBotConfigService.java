@@ -1,6 +1,7 @@
 package ai.traceable.bot.categorized.config.service.v1;
 
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceGrpc.CategorizedBotConfigServiceImplBase;
+import ai.traceable.bot.categorized.config.service.v1.translator.CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator;
 import ai.traceable.bot.categorized.config.service.v1.validation.CategorizedBotConfigRequestValidator;
 import com.google.inject.Inject;
 import com.google.protobuf.ProtocolStringList;
@@ -9,14 +10,10 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-@Slf4j
-@RequiredArgsConstructor(onConstructor_ = {@Inject})
-class CategorizedBotConfigService extends CategorizedBotConfigServiceImplBase {
-
-  private final CategorizedBotDetailsConfig categorizedBotDetailsConfig;
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+public class CategorizedBotConfigService extends CategorizedBotConfigServiceImplBase {
 
   @Override
   public void getCategorizedBotConfigs(
@@ -27,7 +24,7 @@ class CategorizedBotConfigService extends CategorizedBotConfigServiceImplBase {
     CategorizedBotConfigRequestValidator.validateRequestContext(requestContext);
 
     final List<CategorizedBotConfig> filteredBotList =
-        categorizedBotDetailsConfig.getAllTraceableCategorizedBots().stream()
+        CategorizedBotDetailsConfig.INSTANCE.getAllTraceableCategorizedBots().stream()
             .filter(
                 bot ->
                     matchesFilter(request, CategorizedBotRequestFilter::getBotIdsList, bot.getId()))
@@ -46,6 +43,21 @@ class CategorizedBotConfigService extends CategorizedBotConfigServiceImplBase {
             .collect(Collectors.toUnmodifiableList());
     responseObserver.onNext(
         GetCategorizedBotConfigsResponse.newBuilder().addAllBotConfigs(filteredBotList).build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getCategorizedBotConfigEdgeDecisionVariables(
+      final GetCategorizedBotConfigEdgeDecisionVariablesRequest request,
+      final StreamObserver<GetCategorizedBotConfigEdgeDecisionVariablesResponse> responseObserver) {
+    // validate request
+    final RequestContext requestContext = RequestContext.CURRENT.get();
+    CategorizedBotConfigRequestValidator.validateRequestContext(requestContext);
+    responseObserver.onNext(
+        GetCategorizedBotConfigEdgeDecisionVariablesResponse.newBuilder()
+            .addAllVariableDerivationMappings(
+                CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator.INSTANCE.translate())
+            .build());
     responseObserver.onCompleted();
   }
 

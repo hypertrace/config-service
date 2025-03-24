@@ -20,7 +20,7 @@ message CategorizedBotDetails {
 }
 
 message CategorizedBotSignatureRule {
-  repeated MatchCondition match_conditions = 1;
+  MatchCondition match_condition = 1;
 }
 
 // we may consider using ai.traceable.datamodel.data.transformation.config.v1.MatchCondition as that
@@ -31,7 +31,20 @@ message MatchCondition {
     GenericMatchCondition generic_match_condition = 1;
     // Logical match condition can be introduced in future
     IpMetadataMatchConditon ip_metadata_match_condition = 2;
+    LogicalMatchCondition logical_match_condition = 3;
   }
+}
+
+message LogicalMatchCondition {
+  LogicalMatchOperator operator = 1;
+  MatchCondition left_operand = 2;
+  optional MatchCondition right_operand = 3;
+}
+
+enum LogicalMatchOperator {
+  LOGICAL_MATCH_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_MATCH_OPERATOR_AND = 1;
+  LOGICAL_MATCH_OPERATOR_OR = 2;
 }
 
 message IpMetadataMatchConditon {

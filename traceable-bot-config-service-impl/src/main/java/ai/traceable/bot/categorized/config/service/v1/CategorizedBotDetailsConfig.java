@@ -11,15 +11,16 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 
 public class CategorizedBotDetailsConfig {
-
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
   private static final String DEFAULT_TRACEABLE_CATEGORIZED_BOTS_FILE_PATH =
       "default-traceable-categorized-bots.conf";
   private static final String TRACEABLE_CATEGORIZED_BOTS_PATH = "traceableCategorizedBots";
+  public static final CategorizedBotDetailsConfig INSTANCE = new CategorizedBotDetailsConfig();
+
   private final Collection<CategorizedBotConfig> categorizedBotConfigs;
 
-  public CategorizedBotDetailsConfig() {
+  private CategorizedBotDetailsConfig() {
     this.categorizedBotConfigs =
         ConfigFactory.parseResources(DEFAULT_TRACEABLE_CATEGORIZED_BOTS_FILE_PATH)
             .getConfigList(TRACEABLE_CATEGORIZED_BOTS_PATH)
