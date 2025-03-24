@@ -600,7 +600,7 @@ class EdgeDecisionConfigServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("CRAWLERS").build())
+                                        Value.newBuilder().setStringValue("Crawlers").build())
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -615,7 +615,7 @@ class EdgeDecisionConfigServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("SEARCH_BOTS").build())
+                                        Value.newBuilder().setStringValue("Search bots").build())
                                     .build())
                             .build())
                     .addRuleInfoDecorations(

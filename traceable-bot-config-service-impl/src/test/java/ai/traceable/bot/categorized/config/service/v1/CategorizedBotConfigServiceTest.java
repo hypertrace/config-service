@@ -131,8 +131,8 @@ class CategorizedBotConfigServiceTest {
                                                     .build())
                                             .build())
                                     .build()))
-                    .setBotCategory("CRAWLERS")
-                    .setBotSubCategory("SEARCH_BOTS")
+                    .setBotCategory("Crawlers")
+                    .setBotSubCategory("Search bots")
                     .build())
             .build();
     assertEquals(
@@ -205,7 +205,7 @@ class CategorizedBotConfigServiceTest {
   void testGetValidCategoryFilterBots() {
     final RequestContext requestContext = RequestContext.forTenantId("t1");
     assertEquals(
-        1,
+        10,
         requestContext
             .call(
                 () ->
@@ -213,7 +213,7 @@ class CategorizedBotConfigServiceTest {
                         GetCategorizedBotConfigsRequest.newBuilder()
                             .setBotRequestFilter(
                                 CategorizedBotRequestFilter.newBuilder()
-                                    .addCategory("CRAWLERS")
+                                    .addCategory("Crawlers")
                                     .build())
                             .build()))
             .getBotConfigsCount());
@@ -241,7 +241,7 @@ class CategorizedBotConfigServiceTest {
   void testGetValidSubCategoryFilterBots() {
     final RequestContext requestContext = RequestContext.forTenantId("t1");
     assertEquals(
-        1,
+        3,
         requestContext
             .call(
                 () ->
@@ -249,7 +249,7 @@ class CategorizedBotConfigServiceTest {
                         GetCategorizedBotConfigsRequest.newBuilder()
                             .setBotRequestFilter(
                                 CategorizedBotRequestFilter.newBuilder()
-                                    .addSubCategory("SEARCH_BOTS")
+                                    .addSubCategory("Search bots")
                                     .build())
                             .build()))
             .getBotConfigsCount());
