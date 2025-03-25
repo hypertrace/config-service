@@ -744,6 +744,7 @@ public class WafIntegrationBuilderUtils {
                         .build()))
             .build();
       case AKAMAI_INTEGRATION_PARAMS:
+      case IMPERVA_INTEGRATION_PARAMS:
       case FORTINET_INTEGRATION_PARAMS:
         return wafIntegration.toBuilder()
             .setWafIntegrationDetails(
