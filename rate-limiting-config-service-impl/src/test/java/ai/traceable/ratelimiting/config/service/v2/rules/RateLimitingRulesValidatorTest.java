@@ -1151,6 +1151,20 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request29, List.of()));
     status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    CreateRateLimitingRuleRequest request30 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setRuleStatus(RuleStatus.newBuilder().build())
+                    .build())
+            .build();
+    throwable =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> rulesValidator.validateOrThrow(requestContext, request30, List.of()));
+    status = Status.fromThrowable(throwable);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
   }
 
   @Test
@@ -1516,8 +1530,8 @@ public class RateLimitingRulesValidatorTest {
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(
-        status.getDescription(),
-        "Update request does not allow to update rule creation source for rule with id: id-2");
+        "Update request does not allow to update rule creation source for rule with id: id-2",
+        status.getDescription());
   }
 
   @Test
@@ -1892,7 +1906,7 @@ public class RateLimitingRulesValidatorTest {
             () -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
     Status status = Status.fromThrowable(throwable);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
-    assertEquals(status.getDescription(), "Environment id should not be empty string.");
+    assertEquals("Environment id should not be empty string.", status.getDescription());
   }
 
   @Test
@@ -2775,7 +2789,7 @@ public class RateLimitingRulesValidatorTest {
             rulesValidator.validateOrThrow(
                 requestContext, createRateLimitingRuleRequest, List.of()));
 
-    // aggregation per apis without api scope not supported for block action using threshold
+    // aggregation per apis without api scope isn't supported for block action using threshold
     // duration
     ruleData =
         RateLimitingRuleData.newBuilder()

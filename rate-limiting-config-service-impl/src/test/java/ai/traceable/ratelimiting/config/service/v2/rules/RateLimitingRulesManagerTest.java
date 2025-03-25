@@ -2,7 +2,9 @@ package ai.traceable.ratelimiting.config.service.v2.rules;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -334,8 +336,8 @@ public class RateLimitingRulesManagerTest {
   }
 
   @Test
-  void testMergedStatusOnUpdateRateLimitingRule() {
-    RateLimitingRule rule =
+  void testMergeRateLimitRuleData() {
+    RateLimitingRule oldRule =
         RateLimitingRule.newBuilder()
             .setId("id-1")
             .setData(
@@ -349,23 +351,31 @@ public class RateLimitingRulesManagerTest {
                             .build())
                     .build())
             .build();
-    when(rateLimitingConfigServiceConfig.getDefaultRateLimitingRules()).thenReturn(List.of(rule));
-    RateLimitingRule updatedRule =
-        rulesManager.updateRateLimitingRule(
-            requestContext,
-            "id-1",
-            RateLimitingRuleData.newBuilder()
-                .setRuleStatus(
-                    RuleStatus.newBuilder()
-                        .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED)
-                        .setHidden(true)
-                        .build())
-                .build());
+    when(rateLimitingConfigServiceConfig.getDefaultRateLimitingRules())
+        .thenReturn(List.of(oldRule));
+
+    // Update case where RuleStatus is absent
+    RateLimitingRuleData newRuleData1 = RateLimitingRuleData.newBuilder().build();
+    RateLimitingRule updatedRule1 =
+        rulesManager.updateRateLimitingRule(requestContext, "id-1", newRuleData1);
     assertEquals(
-        updatedRule.getData().getRuleStatus().getRuleCreationSource(),
-        RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER);
-    assertEquals(updatedRule.getData().getRuleStatus().getHidden(), true);
-    assertEquals(updatedRule.getData().getRuleStatus().getGenerateInternalEvents(), true);
+        RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER,
+        updatedRule1.getData().getRuleStatus().getRuleCreationSource());
+    assertFalse(updatedRule1.getData().getRuleStatus().getHidden());
+    assertTrue(updatedRule1.getData().getRuleStatus().getGenerateInternalEvents());
+
+    // Update case where RuleStatus is present
+    RateLimitingRuleData newRuleData2 =
+        RateLimitingRuleData.newBuilder()
+            .setRuleStatus(RuleStatus.newBuilder().setHidden(true).build())
+            .build();
+    RateLimitingRule updatedRule2 =
+        rulesManager.updateRateLimitingRule(requestContext, "id-1", newRuleData2);
+    assertEquals(
+        RuleStatus.RuleSource.RULE_SOURCE_CUSTOMER,
+        updatedRule2.getData().getRuleStatus().getRuleCreationSource());
+    assertTrue(updatedRule2.getData().getRuleStatus().getHidden());
+    assertTrue(updatedRule2.getData().getRuleStatus().getGenerateInternalEvents());
   }
 
   @Test
@@ -509,7 +519,7 @@ public class RateLimitingRulesManagerTest {
     return RateLimitingRuleData.newBuilder()
         .setName(name)
         .setCategory(category)
-        .setRuleStatus(RuleStatus.newBuilder().build())
+        .setRuleStatus(RuleStatus.newBuilder().setInternal(true).build())
         .setEnabled(false)
         .setTransactionActionConfig(transactionActionConfigBuilder)
         .build();
@@ -547,7 +557,7 @@ public class RateLimitingRulesManagerTest {
         .setName(name)
         .setCategory(category)
         .setRuleConfigScope(scope)
-        .setRuleStatus(RuleStatus.newBuilder().build())
+        .setRuleStatus(RuleStatus.newBuilder().setInternal(true).build())
         .setEnabled(true)
         .setTransactionActionConfig(
             TransactionActionConfig.newBuilder()
