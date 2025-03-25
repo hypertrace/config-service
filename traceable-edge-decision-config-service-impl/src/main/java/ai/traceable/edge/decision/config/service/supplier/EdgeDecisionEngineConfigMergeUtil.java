@@ -1,6 +1,7 @@
 package ai.traceable.edge.decision.config.service.supplier;
 
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
+import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
@@ -61,6 +62,11 @@ class EdgeDecisionEngineConfigMergeUtil {
             config1.getDecisionRulesList(),
             config2.getDecisionRulesList(),
             EdgeDecisionRule::getId));
+    merged.addAllAttributionRules(
+        merge(
+            config1.getAttributionRulesList(),
+            config2.getAttributionRulesList(),
+            EdgeAttributionRule::getId));
     merged.addAllDecisionSpecs(
         merge(
             config1.getDecisionSpecsList(),
