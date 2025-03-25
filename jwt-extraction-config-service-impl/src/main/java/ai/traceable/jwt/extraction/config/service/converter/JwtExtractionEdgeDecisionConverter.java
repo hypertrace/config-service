@@ -7,8 +7,6 @@ import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_LIKE;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_NOT_EQ;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_NOT_LIKE;
-import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
-import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_MARK_FOR_TESTING;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
@@ -21,21 +19,18 @@ import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.UnaryOperator;
-import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
+import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRule;
+import ai.traceable.edge.decision.config.service.v1.EdgeAttributionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
-import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import ai.traceable.edge.decision.config.service.v1.SpanAttributeDecoration;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRule;
 import ai.traceable.jwt.extraction.config.service.v1.JwtExtractionRuleScope;
 import ai.traceable.jwt.extraction.config.service.v1.Predicate;
 import ai.traceable.jwt.extraction.config.service.v1.StringPredicate;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -71,25 +66,24 @@ public class JwtExtractionEdgeDecisionConverter {
     final EdgeDecisionEngineConfig.Builder builder = EdgeDecisionEngineConfig.newBuilder();
     jwtExtractionRules.stream()
         .map(this::convertJwtExtractionRule)
-        .forEach(builder::addAllDecisionRules);
+        .flatMap(Optional::stream)
+        .forEach(builder::addAttributionRules);
     return builder.build();
   }
 
-  private List<EdgeDecisionRule> convertJwtExtractionRule(
+  private Optional<EdgeAttributionRule> convertJwtExtractionRule(
       final JwtExtractionRule jwtExtractionRule) {
     try {
-      final EdgeDecisionRule.Builder builder = EdgeDecisionRule.newBuilder();
+      final EdgeAttributionRule.Builder builder = EdgeAttributionRule.newBuilder();
       builder.setId(jwtExtractionRule.getId());
       builder.setName(jwtExtractionRule.getName());
       builder.setRuleStatus(buildRuleStatus(jwtExtractionRule));
-      builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT);
       buildRuleScope(jwtExtractionRule).ifPresent(builder::setRuleScope);
-      builder.setRuleDecision(buildEdgeDecision(jwtExtractionRule));
       builder.setRuleDefinition(buildRuleDefinition(jwtExtractionRule));
-      return List.of(builder.build());
+      return Optional.of(builder.build());
     } catch (Exception ex) {
       log.warn("Unable to convert jwt extraction rule: {}", jwtExtractionRule, ex);
-      return Collections.emptyList();
+      return Optional.empty();
     }
   }
 
@@ -115,25 +109,17 @@ public class JwtExtractionEdgeDecisionConverter {
         : Optional.of(builder.build());
   }
 
-  private EdgeDecision buildEdgeDecision(final JwtExtractionRule jwtExtractionRule) {
-    EdgeDecision.Builder builder = EdgeDecision.newBuilder();
-    builder.setEdgeDecisionType(EDGE_DECISION_TYPE_MARK_FOR_TESTING);
-    builder.addAllSpanAttributes(buildSpanAttributeDecorations(jwtExtractionRule));
-    return builder.build();
-  }
-
   private List<SpanAttributeDecoration> buildSpanAttributeDecorations(
       JwtExtractionRule jwtExtractionRule) {
     return new AttributeProjection(jwtExtractionRule).getSpanAttributeDecoration();
   }
 
-  private EdgeDecisionRuleDefinition.Builder buildRuleDefinition(
+  private EdgeAttributionRuleDefinition.Builder buildRuleDefinition(
       JwtExtractionRule jwtExtractionRule) {
-    return EdgeDecisionRuleDefinition.newBuilder()
+    return EdgeAttributionRuleDefinition.newBuilder()
         .setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST)
-        .setSignatureRule(
-            SignatureRule.newBuilder()
-                .setMatchCondition(buildMatchCondition(jwtExtractionRule.getPredicate())));
+        .setMatchCondition(buildMatchCondition(jwtExtractionRule.getPredicate()))
+        .addAllSpanAttributes(buildSpanAttributeDecorations(jwtExtractionRule));
   }
 
   private MatchCondition buildMatchCondition(Predicate predicate) {
