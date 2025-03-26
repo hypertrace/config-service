@@ -176,7 +176,7 @@ public class LocalProcessingConfigServiceIntegrationTest
         GrpcClientRequestContextUtil.executeInTenantContext(
             TENANT_ID, () -> localProcessingConfigStub.getLocalProcessingConfig(request));
 
-    String expectedVal = readModsecRules(Set.of("crs_1030100", "crs_1030110"));
+    String expectedVal = readModsecRules(Set.of("crs_1030100", "crs_1030110", "crs_1030120"));
     assertEquals(
         expectedVal,
         response.getRegularModsecDetectionRules().getRegularModsecDetectionRulesBlob());

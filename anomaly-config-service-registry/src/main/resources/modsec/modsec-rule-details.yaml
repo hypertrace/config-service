@@ -4221,6 +4221,29 @@
           - https://nvd.nist.gov/vuln/detail/CVE-2023-23752
           - https://developer.joomla.org/security-centre/885-20230201-core-improper-access-check
           - https://www.cve.org/CVERecord?id=CVE-2023-23752
+    - ruleId: crs_1030120
+      eventDetails:
+        description: |
+          Next.js versions prior to 15.2.3 are affected by a security vulnerability (CVE-2025-29927) related to improper handling of the `x-middleware-subrequest` header.
+          - The vulnerability allows attackers to bypass Middleware execution by manipulating the internal `x-middleware-subrequest` header.
+          - This could enable attackers to skip crucial security checks such as authentication and authorization validation.
+          - Exploiting this flaw may allow unauthorized access to restricted routes and protected resources, potentially leading to data exposure or unauthorized actions.
+        mitigation: |
+          - Upgrade Next.js to version 15.2.3 or later to address this vulnerability.
+          - Backported patches are available for older versions:
+              - 14.x: Update to 14.2.25
+              - 13.x: Update to 13.5.9
+              - 12.x: Update to 12.3.5
+          - Restrict external requests containing the `x-middleware-subrequest` header to prevent exploitation.
+          - Implement Web Application Firewall (WAF) rules to detect and block unauthorized bypass attempts.
+        impact: |
+          - Security Bypass: Attackers can circumvent Middleware-based security mechanisms, accessing protected routes without proper authorization.
+          - Data Exposure: Unauthorized access to sensitive data or administrative functionality may occur.
+          - Unauthorized Actions: Attackers may interact with APIs or perform operations that should require authentication.
+        references: |
+          - https://nextjs.org/blog/cve-2025-29927
+          - https://nvd.nist.gov/vuln/detail/CVE-2025-29927
+
 - ruleId: crs_104
   ruleName: GraphQL Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS

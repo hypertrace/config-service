@@ -684,17 +684,6 @@ defaultModsecDetectionConfigs: |-
     },
     {
       modsecurityAnomalyDetectionConfig = {
-        configStatus = {
-          disabled = true
-          internal = true
-        }
-        modsecAnomalyRule = {
-          anomalyRuleId = "crs_103"
-        }
-      }
-    },
-    {
-      modsecurityAnomalyDetectionConfig = {
         modsecAnomalyRule = {
           anomalyRuleId = "crs_930"
           subRuleConfigs = [
@@ -937,6 +926,33 @@ defaultModsecDetectionConfigs: |-
               },
               {
                   subRuleId = "crs_942360"
+                  configStatus = {
+                      disabled = true
+                  }
+              }
+          ]
+        }
+      }
+    },
+    {
+      modsecurityAnomalyDetectionConfig = {
+        modsecAnomalyRule = {
+          anomalyRuleId = "crs_103"
+          subRuleConfigs = [
+              {
+                  subRuleId = "crs_1030100"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_1030110"
+                  configStatus = {
+                      disabled = true
+                  }
+              },
+              {
+                  subRuleId = "crs_1030120"
                   configStatus = {
                       disabled = true
                   }
