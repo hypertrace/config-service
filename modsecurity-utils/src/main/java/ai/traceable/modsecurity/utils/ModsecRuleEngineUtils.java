@@ -45,7 +45,7 @@ public class ModsecRuleEngineUtils {
   }
 
   public static Status modsecValidate(String modsecRuleBlob) {
-    if (loadNativeLibrarySuccess == false) {
+    if (!loadNativeLibrarySuccess) {
       log.warn("Skipping modsec SecRule validation.. Native libraries for rule engine not loaded!");
       return Status.UNKNOWN;
     }
@@ -79,7 +79,7 @@ public class ModsecRuleEngineUtils {
 
   public static List<RuleMatch> getModsecRuleMatches(
       String modsecRuleBlob, Map<String, String> attributesMap) {
-    if (loadNativeLibrarySuccess == false) {
+    if (!loadNativeLibrarySuccess) {
       log.warn("Skipping modsec SecRule evaluation.. Native libraries for rule engine not loaded!");
       return Collections.emptyList();
     }
@@ -92,7 +92,7 @@ public class ModsecRuleEngineUtils {
   }
 
   public static RuleEngine createRuleEngine(String modsecRuleBlob) {
-    if (loadNativeLibrarySuccess == false) {
+    if (!loadNativeLibrarySuccess) {
       log.warn("Skipping modsec SecRule evaluation.. Native libraries for rule engine not loaded!");
       return null;
     }
@@ -113,7 +113,6 @@ public class ModsecRuleEngineUtils {
         attributesMap.entrySet().stream()
             .map(entry -> new Attribute(entry.getKey(), entry.getValue()))
             .collect(Collectors.toCollection(ArrayList::new));
-    List<RuleMatch> matches = ruleEngine.process(attributes);
-    return matches;
+    return ruleEngine.process(attributes);
   }
 }
