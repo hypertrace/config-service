@@ -145,6 +145,28 @@ public class MetricTypeToAttributeMetadataAdapter {
                 .setInternal(false)
                 .build());
       }
+    } else if (metricType.getMetricDataType() == MetricDataType.METRIC_DATA_TYPE_HISTO) {
+      String fqn = getScopeForMetricType(metricType) + DOT + "histo_metric_value";
+      if (fqns.add(fqn)) {
+        builder.addAttributes(
+            AttributeMetadata.newBuilder()
+                .setValueKind(AttributeKind.TYPE_BYTES)
+                .setScopeString(getScopeForMetricType(metricType))
+                .addSources(AttributeSource.QS)
+                .setType(AttributeType.ATTRIBUTE)
+                .setGroupable(true)
+                .setFqn(fqn)
+                .setKey("histo_metric_value")
+                .setDisplayName("histo_metric_value")
+                .setDefinition(
+                    AttributeDefinition.newBuilder()
+                        .setProjection(
+                            Projection.newBuilder()
+                                .setAttributeId(GENERIC_METRIC + DOT + "histo_metric_value")
+                                .build()))
+                .setInternal(false)
+                .build());
+      }
     }
 
     String fqn = getScopeForMetricType(metricType) + DOT + "startTime";
