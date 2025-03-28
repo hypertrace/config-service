@@ -15,7 +15,7 @@ public class SpanAttributeHandler {
   private static final String EXEMPTIONS_KEYWORD = "exemptions_";
   private static final String CATEGORY_SUFFIX = ".category";
   private static final String INFO_SUFFIX = ".info";
-  private static final String THRESHOLD_DETAILS_SUFFIX = ".thresholdDetails";
+  private static final String THRESHOLD_DETAILS_SUFFIX = ".threshold_details";
   private static final String MATCHED_ATTRIBUTE_SUFFIX = ".matched_attribute";
   private static final String BLOCK_ACTION_SUFFIX = ".block_action";
 

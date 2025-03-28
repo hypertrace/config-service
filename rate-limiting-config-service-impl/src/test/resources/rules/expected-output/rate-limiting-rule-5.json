@@ -86,7 +86,7 @@
         }
       }, {
         "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.threshold_details",
           "output_type": "FIELD_TYPE_STR"
         },
         "span_attribute_value": {
