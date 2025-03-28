@@ -4,6 +4,7 @@ syntax = "proto3";
 package ai.traceable.anomaly.config.service.v1.global;
 
 import "ai/traceable/anomaly/config/service/v1/anomaly_config.proto";
+import "ai/traceable/anomaly/config/service/v1/enum_extension.proto";
 import "ai/traceable/anomaly/config/service/v1/modsec/anomaly_modsec_config.proto";
 
 option java_multiple_files = true;
@@ -103,10 +104,10 @@ enum ModsecDefaultConfigsType {
   MODSEC_DEFAULT_CONFIGS_TYPE_STRICT = 4 [deprecated = true]; // Aggressive monitor, rest blocking
   MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD = 5 [deprecated = true]; // Aggressive disabled, rest monitor
   MODSEC_DEFAULT_CONFIGS_TYPE_ALL_MONITOR = 6 [deprecated = true];
-  MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING = 7; // Aggressive disabled, rest monitor
-  MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING = 8; // Aggressive disabled, rest blocking
-  MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING = 9; // Aggressive monitor, rest monitor
-  MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING = 10; // Aggressive monitor, rest blocking
+  MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING = 7 [(string_value) = "Standard Profile - Monitoring Mode"]; // Aggressive disabled, rest monitor
+  MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING = 8 [(string_value) = "Standard Profile - Blocking Mode"]; // Aggressive disabled, rest blocking
+  MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING = 9 [(string_value) = "Strict Profile - Monitoring Mode"]; // Aggressive monitor, rest monitor
+  MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING = 10 [(string_value) = "Strict Profile - Blocking Mode"]; // Aggressive monitor, rest blocking
 }
 
 message ApiGlobalConfig {
