@@ -150,7 +150,7 @@ public class MetricTypeToAttributeMetadataAdapter {
       if (fqns.add(fqn)) {
         builder.addAttributes(
             AttributeMetadata.newBuilder()
-                .setValueKind(AttributeKind.TYPE_BYTES)
+                .setValueKind(AttributeKind.TYPE_INT64)
                 .setScopeString(getScopeForMetricType(metricType))
                 .addSources(AttributeSource.QS)
                 .setType(AttributeType.ATTRIBUTE)
