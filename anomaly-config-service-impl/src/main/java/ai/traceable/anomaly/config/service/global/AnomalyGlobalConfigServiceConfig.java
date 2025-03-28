@@ -19,6 +19,8 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String LICENSE_TIERS_CONFIG_PATH = "licenseTiers";
   private static final String TIER_CONFIG_PATH = "tier";
   private static final String MODSEC_DEFAULT_CONFIG_TYPE = "modsecGlobalConfig.defaultConfigsType";
+  private static final String ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE =
+      "modsecGlobalConfig.environmentDefaultConfigType";
   private static final String API_DEFAULT_CONFIG_TYPE = "apiGlobalConfig.defaultConfigsType";
 
   private final boolean disabled;
@@ -26,6 +28,7 @@ public class AnomalyGlobalConfigServiceConfig {
   private final AnomalyConfidenceLevel minConfidenceLevel;
   private final Map<LicenseInfo.Tier, Boolean> licenseTiersConfigStatusMap;
   @Getter private final ModsecDefaultConfigsType modsecDefaultConfigsType;
+  @Getter private final ModsecDefaultConfigsType envScopeModsecDefaultConfigsType;
   @Getter private final ApiDefaultConfigsType apiDefaultConfigsType;
 
   public AnomalyGlobalConfigServiceConfig(Config config) {
@@ -35,6 +38,11 @@ public class AnomalyGlobalConfigServiceConfig {
         config.hasPath(MODSEC_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ModsecDefaultConfigsType.class, MODSEC_DEFAULT_CONFIG_TYPE)
             : ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING;
+    this.envScopeModsecDefaultConfigsType =
+        config.hasPath(ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE)
+            ? config.getEnum(
+                ModsecDefaultConfigsType.class, ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE)
+            : ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT;
     this.apiDefaultConfigsType =
         config.hasPath(API_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ApiDefaultConfigsType.class, API_DEFAULT_CONFIG_TYPE)

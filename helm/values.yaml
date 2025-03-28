@@ -641,6 +641,7 @@ anomalyConfigServiceConfig:
       defaultConfigsType: API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED
     modsecGlobalConfig:
       defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING
+      environmentDefaultConfigType: MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT
     licenseTiers: |-
       [
         {

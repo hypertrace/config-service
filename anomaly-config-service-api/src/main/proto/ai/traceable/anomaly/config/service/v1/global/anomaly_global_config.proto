@@ -108,6 +108,7 @@ enum ModsecDefaultConfigsType {
   MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING = 8 [(string_value) = "Standard Profile - Blocking Mode"]; // Aggressive disabled, rest blocking
   MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING = 9 [(string_value) = "Strict Profile - Monitoring Mode"]; // Aggressive monitor, rest monitor
   MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING = 10 [(string_value) = "Strict Profile - Blocking Mode"]; // Aggressive monitor, rest blocking
+  MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT = 11 [(string_value) = "Inherit Policy from All Environments"];
 }
 
 message ApiGlobalConfig {

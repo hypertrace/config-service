@@ -45,11 +45,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
         .setModsecGlobalConfig(
             config.toBuilder()
                 .getModsecGlobalConfigBuilder()
-                .setDefaultConfigsType(
-                    config.getModsecGlobalConfig().getDefaultConfigsType()
-                            == ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
-                        ? defaultConfig.getModsecDefaultConfigsType()
-                        : config.getModsecGlobalConfig().getDefaultConfigsType())
+                .setDefaultConfigsType(getModsecDefaultConfigsType(config, defaultConfig))
                 .setMinConfidenceLevel(
                     config.getModsecGlobalConfig().getMinConfidenceLevel()
                             == AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_UNSPECIFIED
@@ -65,6 +61,18 @@ public class ScopedGlobalConfigStatusChangeConverter {
                         : config.getApiGlobalConfig().getDefaultConfigsType())
                 .build())
         .build();
+  }
+
+  private static ModsecDefaultConfigsType getModsecDefaultConfigsType(
+      ScopedAnomalyConfigStatusChange config, AnomalyGlobalConfigServiceConfig defaultConfig) {
+    ModsecDefaultConfigsType modsecDefaultConfigsType =
+        config.getConfigScope().hasEnvironmentScope()
+            ? defaultConfig.getEnvScopeModsecDefaultConfigsType()
+            : defaultConfig.getModsecDefaultConfigsType();
+    return config.getModsecGlobalConfig().getDefaultConfigsType()
+            == ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED
+        ? modsecDefaultConfigsType
+        : config.getModsecGlobalConfig().getDefaultConfigsType();
   }
 
   public ScopedAnomalyConfigStatusChange merge(

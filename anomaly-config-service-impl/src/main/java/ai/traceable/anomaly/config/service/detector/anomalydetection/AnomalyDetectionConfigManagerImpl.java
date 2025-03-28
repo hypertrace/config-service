@@ -15,6 +15,7 @@ import ai.traceable.anomaly.config.service.v1.detector.DeleteAnomalyConfigOption
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -82,9 +83,7 @@ public class AnomalyDetectionConfigManagerImpl
         configScope,
         anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
             getTenantId(requestContext), configScope),
-        filter,
-        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE));
+        filter);
   }
 
   @Override
@@ -100,9 +99,7 @@ public class AnomalyDetectionConfigManagerImpl
             configScope,
             anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
                 getTenantId(requestContext), configScope),
-            filter,
-            globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-                requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE));
+            filter);
 
     Optional<ScopedAnomalyConfigStatus> globalConfigStatus =
         Optional.ofNullable(
@@ -123,13 +120,7 @@ public class AnomalyDetectionConfigManagerImpl
             .collect(
                 Collectors.toMap(ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
 
-    return getResolvedConfigs(
-            requestContext,
-            fetchConfigMap(requestContext),
-            filter,
-            globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-                requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE))
-        .stream()
+    return getResolvedConfigs(requestContext, fetchConfigMap(requestContext), filter).stream()
         .map(
             resolvedConfig ->
                 getResolvedConfig(
@@ -157,12 +148,7 @@ public class AnomalyDetectionConfigManagerImpl
     Map<String, ScopedAnomalyDetectionConfig> anomalyDetectionConfigMap =
         fetchConfigMap(requestContext);
 
-    return getResolvedConfigs(
-        requestContext,
-        anomalyDetectionConfigMap,
-        filter,
-        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE));
+    return getResolvedConfigs(requestContext, anomalyDetectionConfigMap, filter);
   }
 
   @Override
@@ -293,8 +279,7 @@ public class AnomalyDetectionConfigManagerImpl
   private List<ScopedAnomalyDetectionConfig> getResolvedConfigs(
       RequestContext requestContext,
       Map<String, ScopedAnomalyDetectionConfig> configMap,
-      GetAnomalyDetectionConfigsFilter filter,
-      ScopedAnomalyConfigStatus scopedAnomalyConfigStatus) {
+      GetAnomalyDetectionConfigsFilter filter) {
 
     List<ScopedAnomalyDetectionConfig> resolvedConfigs = new ArrayList<>();
     String tenantId = requestContext.getTenantId().orElseThrow();
@@ -307,8 +292,7 @@ public class AnomalyDetectionConfigManagerImpl
               anomalyConfigScope,
               anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
                   tenantId, anomalyConfigScope),
-              filter,
-              scopedAnomalyConfigStatus));
+              filter));
     }
 
     if (!configMap.containsKey(tenantId)) {
@@ -320,8 +304,7 @@ public class AnomalyDetectionConfigManagerImpl
                   .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                   .build(),
               List.of(),
-              filter,
-              scopedAnomalyConfigStatus));
+              filter));
     }
     return resolvedConfigs;
   }
@@ -338,21 +321,11 @@ public class AnomalyDetectionConfigManagerImpl
       Map<String, ScopedAnomalyDetectionConfig> configMap,
       AnomalyConfigScope configScope,
       List<String> contextsWithIncreasingPriority,
-      GetAnomalyDetectionConfigsFilter filter,
-      ScopedAnomalyConfigStatus scopedAnomalyConfigStatus) {
+      GetAnomalyDetectionConfigsFilter filter) {
+
     ScopedAnomalyDetectionConfig anomalyDetectionConfig =
-        ScopedAnomalyDetectionConfig.newBuilder()
-            .setConfigScope(configScope)
-            .addAllAnomalyDetectionConfigs(
-                wafConfigResolver.resolve(
-                    requestContext,
-                    scopedAnomalyConfigStatus.getModsecGlobalConfig().getDefaultConfigsType(),
-                    configMap,
-                    contextsWithIncreasingPriority))
-            .addAllAnomalyDetectionConfigs(
-                getDefaultApiProtectionDetectionConfigs(
-                    scopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
-            .build();
+        getResolvedScopedAnomalyDetectionConfig(
+            requestContext, configMap, configScope, contextsWithIncreasingPriority);
     for (String context : contextsWithIncreasingPriority) {
       anomalyDetectionConfig =
           configMap.containsKey(context)
@@ -360,6 +333,65 @@ public class AnomalyDetectionConfigManagerImpl
               : anomalyDetectionConfig;
     }
     return filterConfigs(anomalyDetectionConfig, filter);
+  }
+
+  /**
+   * for all envs: modsecDefaultConfigType (profile) < config from helm < manual overrides and for
+   * specific env, if profile is all-envs, then modsecDefaultConfigType (all-env-profile) < config
+   * from helm < manual overrides in all env < manual overrides in specific env if profile is
+   * something else, then modsecDefaultConfigType (specific-env-profile) < config from helm < manual
+   * overrides in specific env *
+   */
+  private ScopedAnomalyDetectionConfig getResolvedScopedAnomalyDetectionConfig(
+      RequestContext requestContext,
+      Map<String, ScopedAnomalyDetectionConfig> configMap,
+      AnomalyConfigScope configScope,
+      List<String> contextsWithIncreasingPriority) {
+    ScopedAnomalyDetectionConfig anomalyDetectionConfig;
+    ScopedAnomalyConfigStatus scopedAnomalyConfigStatus =
+        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(requestContext, configScope);
+    ScopedAnomalyConfigStatus globalScopedAnomalyConfigStatus =
+        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE);
+    String tenantId = requestContext.getTenantId().orElseThrow();
+    if (configScope.hasEnvironmentScope()
+        && !scopedAnomalyConfigStatus
+            .getModsecGlobalConfig()
+            .getDefaultConfigsType()
+            .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT)) {
+      anomalyDetectionConfig =
+          ScopedAnomalyDetectionConfig.newBuilder()
+              .setConfigScope(configScope)
+              .addAllAnomalyDetectionConfigs(
+                  wafConfigResolver.resolve(
+                      requestContext,
+                      scopedAnomalyConfigStatus.getModsecGlobalConfig().getDefaultConfigsType(),
+                      configMap,
+                      Collections.emptyList()))
+              .addAllAnomalyDetectionConfigs(
+                  getDefaultApiProtectionDetectionConfigs(
+                      globalScopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+              .build();
+      // tenant resolution not needed as env profile is at higher precedence
+      contextsWithIncreasingPriority.remove(tenantId);
+    } else {
+      anomalyDetectionConfig =
+          ScopedAnomalyDetectionConfig.newBuilder()
+              .setConfigScope(configScope)
+              .addAllAnomalyDetectionConfigs(
+                  wafConfigResolver.resolve(
+                      requestContext,
+                      globalScopedAnomalyConfigStatus
+                          .getModsecGlobalConfig()
+                          .getDefaultConfigsType(),
+                      configMap,
+                      contextsWithIncreasingPriority))
+              .addAllAnomalyDetectionConfigs(
+                  getDefaultApiProtectionDetectionConfigs(
+                      globalScopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+              .build();
+    }
+    return anomalyDetectionConfig;
   }
 
   private List<AnomalyDetectionConfig> getDefaultApiProtectionDetectionConfigs(
