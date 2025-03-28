@@ -1,11 +1,13 @@
 package ai.traceable.edge.decision.config.service.supplier.actor;
 
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.ACTOR_ENTITY_ID;
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedThreatActorViolationInfo;
 
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
 import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.decision.config.service.v1.ConfigTtl;
@@ -25,6 +27,7 @@ import ai.traceable.platform.actor.v1.Status;
 import com.google.protobuf.Timestamp;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -119,7 +122,10 @@ public class ActorEdgeDecisionEngineConfigSupplier implements EdgeDecisionEngine
                         actorData.getEntityId(),
                         isExemption,
                         EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR,
-                        getEncodedThreatActorViolationInfo(actorData.getEntityId()))))
+                        getEncodedThreatActorViolationInfo(actorData.getEntityId())))
+                .addAllRuleInfoDecorations(
+                    RuleInfoDecorationsHandler.getRuleInfoDecorations(
+                        Map.of(ACTOR_ENTITY_ID, actorData.getEntityId()))))
         .setPolicyKind(PolicyKind.POLICY_KIND_WAF)
         .build();
   }

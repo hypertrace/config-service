@@ -95,6 +95,19 @@
     },
     "rule_decision": {
       "edge_decision_type": "EDGE_DECISION_TYPE_MARK_FOR_TESTING",
+      "decorations": [{
+        "request_header_injection": {
+          "header_key": {
+            "static_value": "test-header",
+            "output_type": "FIELD_TYPE_STR"
+          },
+          "header_value": {
+            "static_value": "test-header-value",
+            "output_type": "FIELD_TYPE_STR"
+          }
+        }
+      }],
+      "threat_type": "Rate Limiting",
       "span_attributes": [{
         "span_attribute_key": {
           "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
@@ -110,7 +123,7 @@
           "output_type": "FIELD_TYPE_STR"
         },
         "span_attribute_value": {
-          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAE=",
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAE\u003d",
           "output_type": "FIELD_TYPE_STR"
         }
       }, {
@@ -119,20 +132,27 @@
           "output_type": "FIELD_TYPE_STR"
         },
         "span_attribute_value": {
-          "static_value": "CAEQARoICGQSBFBUMU0=",
+          "static_value": "CAEQARoICGQSBFBUMU0\u003d",
           "output_type": "FIELD_TYPE_STR"
         }
       }],
-      "decorations": [{
-        "request_header_injection": {
-          "header_key": {
-            "static_value": "test-header",
-            "output_type": "FIELD_TYPE_STR"
-          },
-          "header_value": {
-            "static_value": "test-header-value",
-            "output_type": "FIELD_TYPE_STR"
-          }
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQARoICGQSBFBUMU0\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }]
     },

@@ -1,1853 +1,2153 @@
 {
-  "decision_rules" : [ {
-    "id" : "rate-limiting-rule-id_1",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+  "decision_rules": [{
+    "id": "rate-limiting-rule-id_1",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_1",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_1",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 1 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [1],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_1",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_1"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_1",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_1"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.1",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.1",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.1",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_2",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_2",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_2",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_2",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 2 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [2],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_2",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_2"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_2",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_2"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.2",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.2",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.2",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_3",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_3",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_3",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_3",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 3 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [3],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_3",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_3"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_3",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_3"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.3",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.3",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.3",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_4",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_4",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_4",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_4",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 4 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [4],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_4",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_4"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_4",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_4"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.4",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.4",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.4",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_5",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_5",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_5",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_5",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 5 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [5],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_5",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_5"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_5",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_5"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.5",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.5",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.5",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_6",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_6",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_6",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_6",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 6 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [6],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_6",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_6"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_6",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_6"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.6",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.6",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.6",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_7",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_7",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_7",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_7",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 7 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [7],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_7",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_7"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_7",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_7"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.7",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.7",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.7",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_8",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_8",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_8",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_8",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 8 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [8],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_8",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_8"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_8",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_8"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.8",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.8",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.8",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_9",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_9",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_9",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_9",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 9 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [9],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_9",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_9"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_9",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_9"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.9",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.9",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.9",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
+    "policy_id": "rate-limiting-rule-id"
   }, {
-    "id" : "rate-limiting-rule-id_10",
-    "name" : "test-policy",
-    "rule_scope" : {
-      "scope_conditions" : [ {
-        "environment_scope" : {
-          "environments" : [ "test-env" ]
+    "id": "rate-limiting-rule-id_10",
+    "name": "test-policy",
+    "rule_scope": {
+      "scope_conditions": [{
+        "environment_scope": {
+          "environments": ["test-env"]
         }
-      } ]
+      }]
     },
-    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-    "rule_status" : { },
-    "rule_definition" : {
-      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "rule_variables" : [ {
-        "name" : "TRACEABLE_ENDPOINT_ID",
-        "rules" : [ {
-          "transformation_config" : {
-            "static_value" : "apiId2"
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+    "rule_status": {
+    },
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "rule_variables": [{
+        "name": "TRACEABLE_ENDPOINT_ID",
+        "rules": [{
+          "transformation_config": {
+            "static_value": "apiId2"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId2/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId2/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
         }, {
-          "transformation_config" : {
-            "static_value" : "apiId3"
+          "transformation_config": {
+            "static_value": "apiId3"
           },
-          "match_condition" : {
-            "structured_match_condition" : {
-              "lhs" : {
-                "name" : "lhs",
-                "type" : "FIELD_TYPE_STR",
-                "rules" : [ {
-                  "transformation_config" : {
-                    "jexl_expression" : {
-                      "jexl_expression" : "$s.getPath()"
+          "match_condition": {
+            "structured_match_condition": {
+              "lhs": {
+                "name": "lhs",
+                "type": "FIELD_TYPE_STR",
+                "rules": [{
+                  "transformation_config": {
+                    "jexl_expression": {
+                      "jexl_expression": "$s.getPath()"
                     },
-                    "output_type" : "FIELD_TYPE_STR"
+                    "output_type": "FIELD_TYPE_STR"
                   }
-                } ]
+                }]
               },
-              "binary_operator" : {
-                "regex" : "/apiId3/abc/.*",
-                "match_operator" : "MATCH_OPERATOR_LIKE"
+              "binary_operator": {
+                "regex": "/apiId3/abc/.*",
+                "match_operator": "MATCH_OPERATOR_LIKE"
               }
             }
           }
-        } ]
+        }]
       }, {
-        "name" : "PATH_PARAM_INDEX_10",
-        "rules" : [ {
-          "transformation_configs" : [ {
-            "jexl_expression" : {
-              "jexl_expression" : "$s.getPath()"
+        "name": "PATH_PARAM_INDEX_10",
+        "rules": [{
+          "transformation_configs": [{
+            "jexl_expression": {
+              "jexl_expression": "$s.getPath()"
             }
           }, {
-            "regex" : {
-              "split_regex" : "/",
-              "group_indices" : [ 10 ],
-              "join_delimiter" : "0"
+            "regex": {
+              "split_regex": "/",
+              "group_indices": [10],
+              "join_delimiter": "0"
             }
-          } ]
-        } ]
-      } ],
-      "aggregate_threshold_rule" : {
-        "match_condition" : {
-          "logical_match_condition" : {
-            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
-            "conditions" : [ {
-              "structured_match_condition" : {
-                "lhs" : {
-                  "name" : "lhs",
-                  "type" : "FIELD_TYPE_STR",
-                  "rules" : [ {
-                    "transformation_config" : {
-                      "jexl_expression" : {
-                        "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          }]
+        }]
+      }],
+      "aggregate_threshold_rule": {
+        "match_condition": {
+          "logical_match_condition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structured_match_condition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_ENDPOINT_ID"
                       },
-                      "output_type" : "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
-                  } ]
+                  }]
                 },
-                "unary_operator" : "UNARY_OPERATOR_IS_NOT_NULL"
+                "unary_operator": "UNARY_OPERATOR_IS_NOT_NULL"
               }
-            } ]
+            }]
           }
         },
-        "group_by_dimensions" : [ {
-          "name" : "AGGREGATE_PER_USER",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_USER_ID"
+        "group_by_dimensions": [{
+          "name": "AGGREGATE_PER_USER",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_USER_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
+          }]
         }, {
-          "name" : "AGGREGATE_PER_API",
-          "rules" : [ {
-            "transformation_config" : {
-              "jexl_expression" : {
-                "jexl_expression" : "TRACEABLE_ENDPOINT_ID"
+          "name": "AGGREGATE_PER_API",
+          "rules": [{
+            "transformation_config": {
+              "jexl_expression": {
+                "jexl_expression": "TRACEABLE_ENDPOINT_ID"
               },
-              "output_type" : "FIELD_TYPE_STR"
+              "output_type": "FIELD_TYPE_STR"
             }
-          } ]
-        } ],
-        "time_window" : "60s",
-        "value_aggregate_threshold" : {
-          "dimension" : {
-            "name" : "DISTINCT_COUNT_PATH_PARAM_INDEX_10",
-            "rules" : [ {
-              "transformation_config" : {
-                "jexl_expression" : {
-                  "jexl_expression" : "PATH_PARAM_INDEX_10"
+          }]
+        }],
+        "time_window": "60s",
+        "value_aggregate_threshold": {
+          "dimension": {
+            "name": "DISTINCT_COUNT_PATH_PARAM_INDEX_10",
+            "rules": [{
+              "transformation_config": {
+                "jexl_expression": {
+                  "jexl_expression": "PATH_PARAM_INDEX_10"
                 },
-                "output_type" : "FIELD_TYPE_STR"
+                "output_type": "FIELD_TYPE_STR"
               }
-            } ]
+            }]
           },
-          "aggregation_type" : "AGGREGATION_TYPE_DISTINCT_COUNT",
-          "static_threshold" : 3.0,
-          "threshold_operator" : "THRESHOLD_OPERATOR_ABOVE"
+          "aggregation_type": "AGGREGATION_TYPE_DISTINCT_COUNT",
+          "static_threshold": 3.0,
+          "threshold_operator": "THRESHOLD_OPERATOR_ABOVE"
         }
       }
     },
-    "rule_decision" : {
-      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes" : [ {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type" : "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "threat_type": "Enumeration",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM=",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.thresholdDetails",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "CAEQASIKCAMSBFBUMU0YAw==",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "span_attribute_key" : {
-          "static_value" : "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "span_attribute_value" : {
-          "static_value" : "http.path.param.10",
-          "output_type" : "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "http.path.param.10",
+          "output_type": "FIELD_TYPE_STR"
         }
-      } ]
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_LOW",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "matched_attribute",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "http.path.param.10",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "threshold_details",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "CAEQASIKCAMSBFBUMU0YAw\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }]
     },
-    "policy_id" : "rate-limiting-rule-id"
-  } ]
+    "policy_id": "rate-limiting-rule-id"
+  }]
 }

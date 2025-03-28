@@ -3,6 +3,8 @@ package ai.traceable.customsignature.config.service.rules.converter;
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_RESPONSE;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.LABELS;
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.SEVERITY;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_ALERT;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
@@ -27,6 +29,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationCo
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
 import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -40,9 +43,12 @@ import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
 import ai.traceable.edge.decision.config.service.v1.PayloadDecoration;
 import ai.traceable.edge.decision.config.service.v1.RequestHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ResponseHeaderInjection;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CustomSignatureEdgeDecisionConverter {
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private final Map<Clause.ClauseCase, CustomSignatureExpressionConverter> expressionConverters;
 
   @Inject
@@ -182,6 +189,23 @@ public class CustomSignatureEdgeDecisionConverter {
                 customSignatureRule.getName(),
                 customSignatureRule.getEffect().getEventSeverity().name(),
                 customSignatureRule.getDefinition().getLabelsMap())));
+
+    Map<String, String> ruleInfoDecorations = new HashMap<>();
+    ruleInfoDecorations.put(SEVERITY, customSignatureRule.getEffect().getEventSeverity().name());
+    try {
+      ruleInfoDecorations.put(
+          LABELS,
+          OBJECT_MAPPER.writeValueAsString(customSignatureRule.getDefinition().getLabelsMap()));
+    } catch (JsonProcessingException e) {
+      log.error(
+          "Error in converting custom signature labels : {} with ruleId : {} to json string",
+          customSignatureRule.getDefinition().getLabelsMap(),
+          customSignatureRule.getId());
+    }
+
+    builder.addAllRuleInfoDecorations(
+        RuleInfoDecorationsHandler.getRuleInfoDecorations(ruleInfoDecorations));
+
     return builder.build();
   }
 

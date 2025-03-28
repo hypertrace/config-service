@@ -1,6 +1,13 @@
 package ai.traceable.ratelimiting.service.v2.rules.converter;
 
+import static ai.traceable.anomaly.config.service.v1.AnomalyCustomType.ANOMALY_CUSTOM_TYPE_DATA_LOSS_PREVENTION;
+import static ai.traceable.anomaly.config.service.v1.AnomalyCustomType.ANOMALY_CUSTOM_TYPE_ENUMERATION;
+import static ai.traceable.anomaly.config.service.v1.AnomalyCustomType.ANOMALY_CUSTOM_TYPE_RATE_LIMITING;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.BLOCK_ACTION;
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.MATCHED_ATTRIBUTE;
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.SEVERITY;
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.THRESHOLD_DETAILS;
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_ALERT;
@@ -21,6 +28,7 @@ import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toMap;
 
+import ai.traceable.anomaly.config.service.v1.EnumExtension;
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
@@ -30,6 +38,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.RegexConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
+import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
 import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.v1.AggregateThresholdRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
@@ -68,6 +77,7 @@ import ai.traceable.ratelimiting.service.v2.rules.converter.condition.RateLimiti
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.protobuf.Duration;
+import com.google.protobuf.ProtocolMessageEnum;
 import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -83,6 +93,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
@@ -197,6 +208,13 @@ public class RateLimitingEdgeDecisionConverter {
     } else if (action.getAlert().hasAgentRuleEffect()) {
       builder.addAllDecorations(buildPayloadDecorations(action.getAlert().getAgentRuleEffect()));
     }
+
+    String encodedResourceAccessThresholdConfig =
+        Base64.getEncoder().encodeToString(resourceAccessThresholdConfig.toByteArray());
+    Optional<String> encodedBlockAction =
+        action.hasBlock() && !action.getBlock().getUseThresholdDuration()
+            ? Optional.of(Base64.getEncoder().encodeToString(action.getBlock().toByteArray()))
+            : Optional.empty();
     builder.addAllSpanAttributes(
         SpanAttributeHandler.getSpanAttributeDecorations(
             edgeDecisionRuleMetadata.getRuleId(),
@@ -208,12 +226,55 @@ public class RateLimitingEdgeDecisionConverter {
                 edgeDecisionRuleMetadata.getRuleName(),
                 RateLimitCategory.forNumber(edgeDecisionRuleMetadata.getCategory().getNumber()),
                 edgeDecisionRuleMetadata.getLabelsMap()),
-            Base64.getEncoder().encodeToString(resourceAccessThresholdConfig.toByteArray()),
+            encodedResourceAccessThresholdConfig,
             valueAggregateThresholdDetails.getMatchedAttribute(),
-            action.hasBlock() && !action.getBlock().getUseThresholdDuration()
-                ? Optional.of(Base64.getEncoder().encodeToString(action.getBlock().toByteArray()))
-                : Optional.empty()));
+            encodedBlockAction));
+
+    Map<String, String> ruleInfoDecorations = new HashMap<>();
+    ruleInfoDecorations.put(THRESHOLD_DETAILS, encodedResourceAccessThresholdConfig);
+    ruleInfoDecorations.put(SEVERITY, getEventSeverity(action).name());
+    encodedBlockAction.ifPresent(blockAction -> ruleInfoDecorations.put(BLOCK_ACTION, blockAction));
+    if (!StringUtils.isEmpty(valueAggregateThresholdDetails.getMatchedAttribute())) {
+      ruleInfoDecorations.put(
+          MATCHED_ATTRIBUTE, valueAggregateThresholdDetails.getMatchedAttribute());
+    }
+
+    builder.addAllRuleInfoDecorations(
+        RuleInfoDecorationsHandler.getRuleInfoDecorations(ruleInfoDecorations));
+
+    builder.setThreatType(getThreatType(edgeDecisionRuleMetadata.getCategory()));
+
     return builder.build();
+  }
+
+  private String getThreatType(Category category) {
+    switch (category) {
+      case CATEGORY_RATE_LIMITING:
+        return getValue(ANOMALY_CUSTOM_TYPE_RATE_LIMITING);
+      case CATEGORY_DATA_EXFILTRATION:
+        return getValue(ANOMALY_CUSTOM_TYPE_DATA_LOSS_PREVENTION);
+      case CATEGORY_ENUMERATION:
+        return getValue(ANOMALY_CUSTOM_TYPE_ENUMERATION);
+      default:
+        throw new IllegalArgumentException("Unknown category: " + category);
+    }
+  }
+
+  private String getValue(ProtocolMessageEnum key) {
+    return key.getValueDescriptor().getOptions().getExtension(EnumExtension.stringValue);
+  }
+
+  private Action.EventSeverity getEventSeverity(Action action) {
+    switch (action.getActionCase()) {
+      case BLOCK:
+        return action.getBlock().getEventSeverity();
+      case ALERT:
+        return action.getAlert().getEventSeverity();
+      case MARK_FOR_TESTING:
+        return action.getMarkForTesting().getEventSeverity();
+      default:
+        throw new IllegalArgumentException("Unknown action case: " + action.getActionCase());
+    }
   }
 
   private EdgeDecisionType convertAction(Action action) {

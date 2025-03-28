@@ -1,33 +1,33 @@
 {
-  "decisionRules": [{
+  "decision_rules": [{
     "id": "rule-id",
     "name": "rule-name",
-    "ruleCategory": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
-    "ruleStatus": {
+    "rule_category": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+    "rule_status": {
     },
-    "ruleDefinition": {
-      "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
-      "signatureRule": {
-        "matchCondition": {
-          "logicalMatchCondition": {
+    "rule_definition": {
+      "edge_input_kind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signature_rule": {
+        "match_condition": {
+          "logical_match_condition": {
             "operator": "LOGICAL_MATCH_OPERATOR_AND",
             "conditions": [{
-              "structuredMatchCondition": {
+              "structured_match_condition": {
                 "lhs": {
                   "name": "lhs",
                   "type": "FIELD_TYPE_STR",
                   "rules": [{
-                    "transformationConfig": {
-                      "jexlExpression": {
-                        "jexlExpression": "TRACEABLE_USER_ID"
+                    "transformation_config": {
+                      "jexl_expression": {
+                        "jexl_expression": "TRACEABLE_USER_ID"
                       },
-                      "outputType": "FIELD_TYPE_STR"
+                      "output_type": "FIELD_TYPE_STR"
                     }
                   }]
                 },
-                "binaryOperator": {
+                "binary_operator": {
                   "regex": "*gma.|.aho*",
-                  "matchOperator": "MATCH_OPERATOR_LIKE"
+                  "match_operator": "MATCH_OPERATOR_LIKE"
                 }
               }
             }]
@@ -35,25 +35,44 @@
         }
       }
     },
-    "ruleDecision": {
-      "edgeDecisionType": "EDGE_DECISION_TYPE_BLOCK",
-      "spanAttributes": [{
-        "spanAttributeKey": {
-          "staticValue": "traceableai.blocked.violations_rule-id.category",
-          "outputType": "FIELD_TYPE_STR"
+    "rule_decision": {
+      "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
+      "span_attributes": [{
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rule-id.category",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "spanAttributeValue": {
-          "staticValue": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
-          "outputType": "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+          "output_type": "FIELD_TYPE_STR"
         }
       }, {
-        "spanAttributeKey": {
-          "staticValue": "traceableai.blocked.violations_rule-id.info",
-          "outputType": "FIELD_TYPE_STR"
+        "span_attribute_key": {
+          "static_value": "traceableai.blocked.violations_rule-id.info",
+          "output_type": "FIELD_TYPE_STR"
         },
-        "spanAttributeValue": {
-          "staticValue": "CgdydWxlLWlkEglydWxlLW5hbWUaFUVWRU5UX1NFVkVSSVRZX01FRElVTQ\u003d\u003d",
-          "outputType": "FIELD_TYPE_STR"
+        "span_attribute_value": {
+          "static_value": "CgdydWxlLWlkEglydWxlLW5hbWUaFUVWRU5UX1NFVkVSSVRZX01FRElVTQ\u003d\u003d",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }],
+      "rule_info_decorations": [{
+        "rule_info_key": {
+          "static_value": "severity",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "EVENT_SEVERITY_MEDIUM",
+          "output_type": "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key": {
+          "static_value": "labels",
+          "output_type": "FIELD_TYPE_STR"
+        },
+        "rule_info_value": {
+          "static_value": "{}",
+          "output_type": "FIELD_TYPE_STR"
         }
       }]
     }

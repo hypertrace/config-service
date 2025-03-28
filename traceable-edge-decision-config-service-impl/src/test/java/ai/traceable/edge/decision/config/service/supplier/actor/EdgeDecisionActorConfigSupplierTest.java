@@ -1,5 +1,6 @@
 package ai.traceable.edge.decision.config.service.supplier.actor;
 
+import static ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler.ACTOR_ENTITY_ID;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_THREAT_ACTOR;
 import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedThreatActorViolationInfo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,6 +116,23 @@ class ActorEdgeDecisionEngineConfigSupplierTest {
             .getSpanAttributesList()
             .get(1)
             .getSpanAttributeValue()
+            .getStaticValue()
+            .getStringValue());
+
+    assertEquals(
+        ACTOR_ENTITY_ID,
+        rule1
+            .getRuleDecision()
+            .getRuleInfoDecorations(0)
+            .getRuleInfoKey()
+            .getStaticValue()
+            .getStringValue());
+    assertEquals(
+        "actor-1",
+        rule1
+            .getRuleDecision()
+            .getRuleInfoDecorations(0)
+            .getRuleInfoValue()
             .getStaticValue()
             .getStringValue());
 
