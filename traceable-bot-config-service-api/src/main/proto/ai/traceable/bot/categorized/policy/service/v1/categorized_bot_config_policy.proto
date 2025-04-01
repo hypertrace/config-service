@@ -16,6 +16,7 @@ message CategorizedBotConfigPolicyDetails {
   CategorizedBotPolicyScope categorized_bot_policy_scope = 4;
   repeated BotScope bot_scopes = 5;
   CategorizedBotPolicyActionConfig categorized_bot_policy_action_config = 6;
+  optional CategorizedBotPolicyTargetScope categorized_bot_policy_target_scope = 7;
 }
 
 message CategorizedBotPolicyScope {
@@ -23,6 +24,12 @@ message CategorizedBotPolicyScope {
     // if no option selected, default is customer scope (all environments)
     // Do we need more scopes here? Service scope or Domain scope?
     EnvironmentScope environment_scope = 1;
+  }
+}
+
+message CategorizedBotPolicyTargetScope {
+  oneof scope {
+    EntityScope entity_scope = 2;
   }
 }
 
@@ -60,6 +67,17 @@ message BotScope {
 
 message EnvironmentScope {
   repeated string environment_ids = 1;
+}
+
+message EntityScope {
+  EntityType entity_type = 1;
+  repeated string entity_ids = 2;
+}
+
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_API = 1;
+  ENTITY_TYPE_SERVICE = 2;
 }
 
 message CategorizedBotPolicyActionConfig {

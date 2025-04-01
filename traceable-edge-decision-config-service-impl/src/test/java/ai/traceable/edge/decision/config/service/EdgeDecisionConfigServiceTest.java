@@ -1,5 +1,6 @@
 package ai.traceable.edge.decision.config.service;
 
+import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -125,6 +126,7 @@ import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecReques
 import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecResponse;
 import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -154,6 +156,7 @@ class EdgeDecisionConfigServiceTest {
   @Mock private UuidGenerator uuidGenerator;
   @Mock private RuleVariableEnricher ruleVariableEnricher;
   @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
+  @Mock CachedApiMappingProvider cachedApiMappingProvider;
   private CategorizedBotConfigServiceBlockingStub categorizedBotConfigServiceBlockingStub;
 
   @BeforeEach
@@ -208,7 +211,7 @@ class EdgeDecisionConfigServiceTest {
     final CategorizedBotConfigPolicyToEdgeDecisionTranslator
         categorizedBotConfigPolicyToEdgeDecisionTranslator =
             new CategorizedBotConfigPolicyToEdgeDecisionTranslator(
-                categorizedBotConfigPolicyStoreManager);
+                categorizedBotConfigPolicyStoreManager, cachedApiMappingProvider);
     this.mockGenericConfigService
         .addService(
             new EdgeDecisionConfigService(
@@ -482,15 +485,14 @@ class EdgeDecisionConfigServiceTest {
                                                     .setLhs(
                                                         AttributeDerivationMapping.newBuilder()
                                                             .setName("lhs")
-                                                            .setType(FieldType.FIELD_TYPE_STR)
+                                                            .setType(FIELD_TYPE_STR)
                                                             .addRules(
                                                                 DerivationRule.newBuilder()
                                                                     .setTransformationConfig(
                                                                         DataTransformationConfig
                                                                             .newBuilder()
                                                                             .setOutputType(
-                                                                                FieldType
-                                                                                    .FIELD_TYPE_STR)
+                                                                                FIELD_TYPE_STR)
                                                                             .setJexlExpression(
                                                                                 JexlExpressionConfig
                                                                                     .newBuilder()
@@ -561,18 +563,20 @@ class EdgeDecisionConfigServiceTest {
                     .build())
             .setRuleDecision(
                 EdgeDecision.newBuilder()
-                    .setThreatType("TRACEABLE_CATEGORIZED_BOTS")
+                    .setThreatType("Crawlers")
                     .addRuleInfoDecorations(
                         RuleInfoDecoration.newBuilder()
                             .setRuleInfoKey(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_name").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("Bing bot").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -581,6 +585,7 @@ class EdgeDecisionConfigServiceTest {
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_id").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
@@ -588,6 +593,7 @@ class EdgeDecisionConfigServiceTest {
                                         Value.newBuilder()
                                             .setStringValue("550e8400-e29b-41d4-a716-446655440000")
                                             .build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -596,11 +602,13 @@ class EdgeDecisionConfigServiceTest {
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_category").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("Crawlers").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -611,11 +619,13 @@ class EdgeDecisionConfigServiceTest {
                                         Value.newBuilder()
                                             .setStringValue("bot_sub_category")
                                             .build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("Search bots").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -624,10 +634,12 @@ class EdgeDecisionConfigServiceTest {
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_policy_id").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(Value.newBuilder().setStringValue("t1").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)

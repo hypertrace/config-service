@@ -7,6 +7,7 @@ plugins {
 dependencies {
   implementation(projects.configUtils)
   implementation(projects.traceableBotConfigServiceApi)
+  implementation(projects.entityFetcherCache)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)

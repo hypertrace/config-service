@@ -15,6 +15,7 @@ dependencies {
   implementation(projects.detectionExclusionConfigServiceApi)
   implementation(projects.customSignatureConfigServiceApi)
   implementation(projects.jwtExtractionConfigServiceApi)
+  implementation(projects.entityFetcherCache)
 
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)

@@ -5,6 +5,7 @@ import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicy
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyFilter;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import java.util.Collections;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
@@ -37,12 +38,28 @@ public class CategorizedBotConfigPolicyStore
       final CategorizedBotConfigPolicy data, final CategorizedBotConfigPolicyFilter filter) {
     return Optional.of(data)
         .filter(
-            policy ->
-                Optional.ofNullable(filter)
-                    .map(CategorizedBotConfigPolicyFilter::getCategorizedBotConfigPolicyIdsList)
-                    .filter(ids -> !ids.isEmpty())
-                    .map(ids -> ids.contains(policy.getId()))
-                    .orElse(true));
+            policy -> {
+              if (filter == null) {
+                return true;
+              }
+
+              final var policyIds = filter.getCategorizedBotConfigPolicyIdsList();
+              final var envIds = filter.getEnvironmentIdsList();
+
+              final boolean matchesPolicyId =
+                  policyIds.isEmpty() || policyIds.contains(policy.getId());
+              final boolean matchesEnvId =
+                  envIds.isEmpty()
+                      || !Collections.disjoint(
+                          envIds,
+                          policy
+                              .getCategorizedBotPolicyDetails()
+                              .getCategorizedBotPolicyScope()
+                              .getEnvironmentScope()
+                              .getEnvironmentIdsList());
+
+              return matchesPolicyId && matchesEnvId;
+            });
   }
 
   @Override

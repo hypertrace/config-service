@@ -45,6 +45,7 @@ message DeleteCategorizedBotConfigPolicyResponse {
 
 message CategorizedBotConfigPolicyFilter {
   repeated string categorized_bot_config_policy_ids = 1;
+  repeated string environment_ids = 2;
 }
 
 message GetCategorizedBotConfigPolicyEdgeDecisionRulesResponse {

@@ -319,7 +319,10 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
             wrap(CategorizedBotConfigServiceFactory.build(providers.getLocalChannel())),
             wrap(
                 CategorizedBotConfigPolicyServiceFactory.build(
-                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    environment.getChannelRegistry(),
+                    providers.getConfig())),
             wrap(
                 GithubIntegrationConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())))

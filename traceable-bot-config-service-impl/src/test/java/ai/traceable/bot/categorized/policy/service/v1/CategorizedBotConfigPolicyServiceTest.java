@@ -1,5 +1,6 @@
 package ai.traceable.bot.categorized.policy.service.v1;
 
+import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,6 +30,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeInputKind;
 import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.RuleInfoDecoration;
 import ai.traceable.edge.decision.config.service.v1.SignatureRule;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -54,6 +56,7 @@ class CategorizedBotConfigPolicyServiceTest {
   private CategorizedBotConfigPolicyServiceGrpc.CategorizedBotConfigPolicyServiceBlockingStub stub;
   private MockGenericConfigService mockGenericConfigService;
   @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
+  @Mock CachedApiMappingProvider cachedApiMappingProvider;
 
   @BeforeEach
   void beforeEach() {
@@ -70,7 +73,7 @@ class CategorizedBotConfigPolicyServiceTest {
     final CategorizedBotConfigPolicyToEdgeDecisionTranslator
         categorizedBotConfigPolicyToEdgeDecisionTranslator =
             new CategorizedBotConfigPolicyToEdgeDecisionTranslator(
-                categorizedBotConfigPolicyStoreManager);
+                categorizedBotConfigPolicyStoreManager, cachedApiMappingProvider);
     mockGenericConfigService
         .addService(
             new CategorizedBotConfigPolicyService(
@@ -141,6 +144,57 @@ class CategorizedBotConfigPolicyServiceTest {
             .getCategorizedBotConfigPoliciesList();
     assertEquals(1, expectedPolicies.size());
     assertEquals(createdPolicy, expectedPolicies.get(0));
+
+    // Test Get policy by invalid policy id
+    final List<CategorizedBotConfigPolicy> expectedPoliciesInvalidPolicyId =
+        requestContext
+            .call(
+                () ->
+                    stub.getCategorizedBotConfigPolicies(
+                        GetCategorizedBotConfigPoliciesRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyFilter(
+                                CategorizedBotConfigPolicyFilter.newBuilder()
+                                    .addCategorizedBotConfigPolicyIds("DUMMY")
+                                    .build())
+                            .build()))
+            .getCategorizedBotConfigPoliciesList();
+    assertEquals(0, expectedPoliciesInvalidPolicyId.size());
+
+    // Test Get policy by environment
+    final List<CategorizedBotConfigPolicy> expectedPoliciesForEnv =
+        requestContext
+            .call(
+                () ->
+                    stub.getCategorizedBotConfigPolicies(
+                        GetCategorizedBotConfigPoliciesRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyFilter(
+                                CategorizedBotConfigPolicyFilter.newBuilder()
+                                    .addEnvironmentIds(
+                                        createdPolicy
+                                            .getCategorizedBotPolicyDetails()
+                                            .getCategorizedBotPolicyScope()
+                                            .getEnvironmentScope()
+                                            .getEnvironmentIds(0))
+                                    .build())
+                            .build()))
+            .getCategorizedBotConfigPoliciesList();
+    assertEquals(1, expectedPoliciesForEnv.size());
+    assertEquals(createdPolicy, expectedPoliciesForEnv.get(0));
+
+    // Test Get policy by invalid environmentIDs
+    final List<CategorizedBotConfigPolicy> expectedPoliciesInvalidEnv =
+        requestContext
+            .call(
+                () ->
+                    stub.getCategorizedBotConfigPolicies(
+                        GetCategorizedBotConfigPoliciesRequest.newBuilder()
+                            .setCategorizedBotConfigPolicyFilter(
+                                CategorizedBotConfigPolicyFilter.newBuilder()
+                                    .addEnvironmentIds("DUMMY")
+                                    .build())
+                            .build()))
+            .getCategorizedBotConfigPoliciesList();
+    assertEquals(0, expectedPoliciesInvalidEnv.size());
 
     // Test Get policy all policies with empty filter
     final List<CategorizedBotConfigPolicy> totalPoliciesEmptyFilter =
@@ -375,18 +429,20 @@ class CategorizedBotConfigPolicyServiceTest {
                     .build())
             .setRuleDecision(
                 EdgeDecision.newBuilder()
-                    .setThreatType("TRACEABLE_CATEGORIZED_BOTS")
+                    .setThreatType("Crawlers")
                     .addRuleInfoDecorations(
                         RuleInfoDecoration.newBuilder()
                             .setRuleInfoKey(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_name").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("Bing bot").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -395,6 +451,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_id").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
@@ -402,6 +459,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                         Value.newBuilder()
                                             .setStringValue("550e8400-e29b-41d4-a716-446655440000")
                                             .build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -410,11 +468,13 @@ class CategorizedBotConfigPolicyServiceTest {
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_category").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("Crawlers").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -425,11 +485,13 @@ class CategorizedBotConfigPolicyServiceTest {
                                         Value.newBuilder()
                                             .setStringValue("bot_sub_category")
                                             .build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("Search bots").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .addRuleInfoDecorations(
@@ -438,6 +500,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
                                         Value.newBuilder().setStringValue("bot_policy_id").build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
@@ -445,6 +508,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                         Value.newBuilder()
                                             .setStringValue(createdPolicy.getId())
                                             .build())
+                                    .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
                     .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)

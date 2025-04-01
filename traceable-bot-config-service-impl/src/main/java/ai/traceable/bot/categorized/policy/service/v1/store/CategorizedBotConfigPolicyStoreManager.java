@@ -79,10 +79,14 @@ public class CategorizedBotConfigPolicyStoreManager {
       final GetCategorizedBotConfigPoliciesRequest getCategorizedBotConfigPoliciesRequest) {
     List<CategorizedBotConfigPolicy> categorizedBotConfigPolicies;
     if (getCategorizedBotConfigPoliciesRequest.hasCategorizedBotConfigPolicyFilter()
-        && !getCategorizedBotConfigPoliciesRequest
-            .getCategorizedBotConfigPolicyFilter()
-            .getCategorizedBotConfigPolicyIdsList()
-            .isEmpty()) {
+        && !(getCategorizedBotConfigPoliciesRequest
+                .getCategorizedBotConfigPolicyFilter()
+                .getCategorizedBotConfigPolicyIdsList()
+                .isEmpty()
+            && getCategorizedBotConfigPoliciesRequest
+                .getCategorizedBotConfigPolicyFilter()
+                .getEnvironmentIdsList()
+                .isEmpty())) {
       categorizedBotConfigPolicies =
           categorizedBotConfigPolicyStore.getAllConfigData(
               requestContext,
