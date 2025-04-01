@@ -17,14 +17,17 @@ import ai.traceable.ast.hooks.config.service.v1.AstHookTestDetails;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestFilter;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestRequest;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookTestsRequest;
+import ai.traceable.ast.hooks.config.service.v1.EnvironmentScope;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
+import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import ai.traceable.ast.hooks.config.service.v1.Role;
 import ai.traceable.ast.hooks.config.service.v1.RunnerInfo;
 import ai.traceable.ast.hooks.config.service.v1.TestStatusFilter;
 import ai.traceable.ast.hooks.config.service.v1.UpdateAstHookTestRequest;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -96,6 +99,36 @@ class RequestValidatorTest {
                             .build())
                     .build()));
 
+    assertInvalidArgStatusContaining(
+        "Empty environment found in scope",
+        () ->
+            requestValidator.validateOrThrow(
+                mockRequestContext,
+                CreateAstHookTestRequest.newBuilder()
+                    .setHookTestDetails(
+                        AstHookTestDetails.newBuilder()
+                            .setAdvancedMode(
+                                AdvancedMode.newBuilder()
+                                    .setCodeSnippet("codeSnippet")
+                                    .setAuthMechanism(AUTH_MECHANISM_AUTH0_CLIENT_CREDENTIALS)
+                                    .build())
+                            .setRole(Role.ROLE_ADMIN)
+                            .setScope(
+                                HookScope.newBuilder()
+                                    .setEnvironmentScope(
+                                        EnvironmentScope.newBuilder()
+                                            .addAllEnvironmentIds(List.of(""))
+                                            .build())
+                                    .build())
+                            .build())
+                    .setAllowedRunners(
+                        AllowedRunners.newBuilder()
+                            .setRunnersInfo(
+                                AllowedRunnersInfo.newBuilder()
+                                    .addRunnersInfo(RunnerInfo.newBuilder().setId("id")))
+                            .build())
+                    .build()));
+
     assertDoesNotThrow(
         () ->
             requestValidator.validateOrThrow(
@@ -109,6 +142,13 @@ class RequestValidatorTest {
                                     .setAuthMechanism(AUTH_MECHANISM_AUTH0_CLIENT_CREDENTIALS)
                                     .build())
                             .setRole(Role.ROLE_ADMIN)
+                            .setScope(
+                                HookScope.newBuilder()
+                                    .setEnvironmentScope(
+                                        EnvironmentScope.newBuilder()
+                                            .addAllEnvironmentIds(List.of("env1"))
+                                            .build())
+                                    .build())
                             .build())
                     .setAllowedRunners(
                         AllowedRunners.newBuilder()

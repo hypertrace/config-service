@@ -19,6 +19,7 @@ import ai.traceable.ast.hooks.config.service.v1.GetAstHookFilter;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultRequest;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestsRequest;
 import ai.traceable.ast.hooks.config.service.v1.HookConfig;
+import ai.traceable.ast.hooks.config.service.v1.HookScope;
 import ai.traceable.ast.hooks.config.service.v1.Role;
 import ai.traceable.ast.hooks.config.service.v1.TestStatus;
 import ai.traceable.ast.hooks.config.service.v1.TestStatusFilter;
@@ -122,6 +123,10 @@ public class RequestValidator extends ValidatorBase {
     validateStringNotBlank(
         astHookDetails.getName(), "name not found while trying to create ast hooks config");
     //    validateRole(astHookDetails.getRole());
+
+    if (astHookDetails.hasScope()) {
+      validateHookScope(requestContext, astHookDetails.getScope());
+    }
   }
 
   private void validateUniqueHookName(RequestContext requestContext, String name) {
@@ -224,6 +229,10 @@ public class RequestValidator extends ValidatorBase {
         break;
     }
     validateRole(requestContext, hookTestDetails.getRole());
+
+    if (hookTestDetails.hasScope()) {
+      validateHookScope(requestContext, hookTestDetails.getScope());
+    }
   }
 
   public void validateOrThrow(RequestContext requestContext, UpdateAstHookTestRequest request) {
@@ -272,6 +281,15 @@ public class RequestValidator extends ValidatorBase {
     if (isBlank(logs)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Empty Log while trying to update ast hooks test config")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateHookScope(RequestContext requestContext, HookScope scope) {
+    if (scope.hasEnvironmentScope()
+        && scope.getEnvironmentScope().getEnvironmentIdsList().stream().anyMatch(String::isBlank)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Empty environment found in scope")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }

@@ -71,7 +71,9 @@ public class AstHookTestManager {
   private AstHookTestDetails resolveHookTestDetails(
       AstHookTestDetails hookTestDetails, HookConfig oldHookConfig) {
     AstHookTestDetails.Builder astHookTestDetailsBuilder =
-        AstHookTestDetails.newBuilder().setRole(hookTestDetails.getRole());
+        AstHookTestDetails.newBuilder()
+            .setRole(hookTestDetails.getRole())
+            .setScope(hookTestDetails.getScope());
     if (hookTestDetails.hasHookConfig()) {
       astHookTestDetailsBuilder.setHookConfig(
           updateAstHookConfigHandler.applyHookConfigUpdate(

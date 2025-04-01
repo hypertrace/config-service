@@ -41,7 +41,8 @@ public class UpdateAstHookHandler {
     AstHookDetails.Builder astHookDetailsBuilder =
         AstHookDetails.newBuilder()
             .setName(newHookDetails.getName())
-            .setDescription(newHookDetails.getDescription());
+            .setDescription(newHookDetails.getDescription())
+            .setScope(newHookDetails.getScope());
     if (newHookDetails.hasHookConfig()) {
       astHookDetailsBuilder.setHookConfig(
           updateAstHookConfigHandler.applyHookConfigUpdate(
