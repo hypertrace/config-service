@@ -12,20 +12,27 @@ import ai.traceable.jira.integration.config.service.api.v1.DeleteJiraTemplateRes
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.DeleteProjectIssueConfigurationResponse;
 import ai.traceable.jira.integration.config.service.api.v1.GetJiraIntegrationsRequest;
+import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsFilter;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsRequest;
 import ai.traceable.jira.integration.config.service.api.v1.GetProjectIssueConfigurationsResponse;
 import ai.traceable.jira.integration.config.service.api.v1.JiraIntegration;
+import ai.traceable.jira.integration.config.service.api.v1.JiraIntegrationFilter;
 import ai.traceable.jira.integration.config.service.api.v1.JiraProjectIssueConfiguration;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraIntegrationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateJiraTemplateResponse;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationRequest;
 import ai.traceable.jira.integration.config.service.api.v1.UpdateProjectIssueConfigurationResponse;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.grpc.Status;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -166,10 +173,55 @@ public class JiraIntegrationCoordinator {
 
   public GetProjectIssueConfigurationsResponse getProjectIssueConfigurations(
       RequestContext requestContext, GetProjectIssueConfigurationsRequest request) {
+    List<JiraProjectIssueConfiguration> issueConfigurations =
+        normalizeFilter(requestContext, request.getFilter())
+            .map(
+                normalizedFilter ->
+                    this.jiraAdditionalConfigurationCoordinator.getJiraAdditionalConfiguration(
+                        requestContext, normalizedFilter))
+            .orElse(List.of());
     return GetProjectIssueConfigurationsResponse.newBuilder()
-        .addAllJiraProjectConfigurations(
-            this.jiraAdditionalConfigurationCoordinator.getJiraAdditionalConfiguration(
-                requestContext, request.getFilter()))
+        .addAllJiraProjectConfigurations(issueConfigurations)
         .build();
+  }
+
+  private Optional<GetProjectIssueConfigurationsFilter> normalizeFilter(
+      RequestContext requestContext, GetProjectIssueConfigurationsFilter filter) {
+    Set<Set<String>> idRestrictions = new HashSet<>();
+
+    if (filter.hasIntegrationId()) {
+      idRestrictions.add(Set.of(filter.getIntegrationId()));
+    }
+
+    if (!filter.getIntegrationIdsList().isEmpty()) {
+      idRestrictions.add(Set.copyOf(filter.getIntegrationIdsList()));
+    }
+
+    if (filter.hasScope()) {
+      Set<String> integrationIdsInScope =
+          this.jiraIntegrationStore
+              .getAllConfigData(
+                  requestContext,
+                  JiraIntegrationFilter.newBuilder().setFilterScope(filter.getScope()).build())
+              .stream()
+              .map(JiraIntegration::getId)
+              .collect(Collectors.toUnmodifiableSet());
+      idRestrictions.add(integrationIdsInScope);
+    }
+
+    // None of these clauses were in the original filter,
+    // the filter is already in a normalized state
+    if (idRestrictions.isEmpty()) {
+      return Optional.of(filter);
+    }
+
+    GetProjectIssueConfigurationsFilter.Builder builder =
+        filter.toBuilder().clearIntegrationIds().clearIntegrationId().clearScope();
+
+    return idRestrictions.stream()
+        .reduce(Sets::intersection)
+        .filter(Predicate.not(java.util.Collection::isEmpty))
+        .map(builder::addAllIntegrationIds)
+        .map(GetProjectIssueConfigurationsFilter.Builder::build);
   }
 }

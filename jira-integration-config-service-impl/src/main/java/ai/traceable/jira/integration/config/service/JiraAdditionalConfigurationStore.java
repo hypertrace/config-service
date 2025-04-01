@@ -54,13 +54,12 @@ class JiraAdditionalConfigurationStore
       JiraProjectIssueConfiguration data, GetProjectIssueConfigurationsFilter filter) {
     List<Function<JiraProjectIssueConfiguration, Boolean>> filters = new ArrayList<>();
 
-    if (filter.hasIntegrationId()) {
+    if (!filter.getIntegrationIdsList().isEmpty()) {
       filters.add(
           config ->
-              config
-                  .getJiraProjectIssueConfigurationDetails()
-                  .getIntegrationId()
-                  .equals(filter.getIntegrationId()));
+              filter
+                  .getIntegrationIdsList()
+                  .contains(config.getJiraProjectIssueConfigurationDetails().getIntegrationId()));
     }
 
     if (filter.hasProjectId()) {

@@ -129,10 +129,12 @@ message GetProjectIssueConfigurationsRequest {
 
 //AND among all fields
 message GetProjectIssueConfigurationsFilter {
-  optional string integration_id = 1;
+  optional string integration_id = 1 [deprecated = true];
   optional string project_id = 2;
   optional string issue_type = 3;
   repeated TraceableEntityType supported_entity_types = 4; // empty means no-matching for this
+  Scope scope = 5; // adding this for RBAC scoping
+  repeated string integration_ids = 6;
 }
 
 message GetProjectIssueConfigurationsResponse {
