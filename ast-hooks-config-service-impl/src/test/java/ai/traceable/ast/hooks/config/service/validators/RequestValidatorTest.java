@@ -16,6 +16,7 @@ import ai.traceable.ast.hooks.config.service.v1.AllowedRunnersInfo;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestDetails;
 import ai.traceable.ast.hooks.config.service.v1.AstHookTestFilter;
 import ai.traceable.ast.hooks.config.service.v1.CreateAstHookTestRequest;
+import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookRequest;
 import ai.traceable.ast.hooks.config.service.v1.DeleteAstHookTestsRequest;
 import ai.traceable.ast.hooks.config.service.v1.EnvironmentScope;
 import ai.traceable.ast.hooks.config.service.v1.GetAstHookTestResultRequest;
@@ -276,6 +277,27 @@ class RequestValidatorTest {
         () ->
             requestValidator.validateOrThrow(
                 mockRequestContext, DeleteAstHookTestsRequest.newBuilder().addIds("id").build()));
+  }
+
+  @Test
+  void testValidateDeleteAstHookRequest() {
+    DeleteAstHookRequest request1 = DeleteAstHookRequest.newBuilder().setId("").build();
+    assertInvalidArgStatusContaining(
+        "Id not found while trying to delete ast hooks config",
+        () -> requestValidator.validate(mockRequestContext, request1));
+
+    DeleteAstHookRequest request2 = DeleteAstHookRequest.newBuilder().setId("id1").build();
+    assertDoesNotThrow(() -> requestValidator.validate(mockRequestContext, request2));
+
+    DeleteAstHookRequest request3 =
+        DeleteAstHookRequest.newBuilder().addAllIds(List.of("id1", "")).build();
+    assertInvalidArgStatusContaining(
+        "Id not found while trying to delete ast hooks config",
+        () -> requestValidator.validate(mockRequestContext, request3));
+
+    DeleteAstHookRequest request4 =
+        DeleteAstHookRequest.newBuilder().addAllIds(List.of("id1", "id2")).build();
+    assertDoesNotThrow(() -> requestValidator.validate(mockRequestContext, request4));
   }
 
   private void assertInvalidArgStatusContaining(String text, Executable executable) {

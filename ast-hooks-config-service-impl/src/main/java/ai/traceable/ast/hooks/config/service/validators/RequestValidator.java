@@ -91,10 +91,10 @@ public class RequestValidator extends ValidatorBase {
   }
 
   public void validate(RequestContext requestContext, DeleteAstHookRequest request) {
-    if (isBlank(request.getId())) {
-      throw Status.INVALID_ARGUMENT
-          .withDescription("Id not found while trying to delete ast hooks config")
-          .asRuntimeException(requestContext.buildTrailers());
+    if (request.getIdsList().isEmpty()) {
+      validateId(requestContext, request.getId());
+    } else {
+      request.getIdsList().forEach(hookId -> validateId(requestContext, hookId));
     }
   }
 
@@ -290,6 +290,14 @@ public class RequestValidator extends ValidatorBase {
         && scope.getEnvironmentScope().getEnvironmentIdsList().stream().anyMatch(String::isBlank)) {
       throw Status.INVALID_ARGUMENT
           .withDescription("Empty environment found in scope")
+          .asRuntimeException(requestContext.buildTrailers());
+    }
+  }
+
+  private void validateId(RequestContext requestContext, String id) {
+    if (isBlank(id)) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription("Id not found while trying to delete ast hooks config")
           .asRuntimeException(requestContext.buildTrailers());
     }
   }
