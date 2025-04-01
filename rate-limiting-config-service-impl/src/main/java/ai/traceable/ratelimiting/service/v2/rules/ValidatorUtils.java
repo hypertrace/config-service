@@ -47,6 +47,7 @@ import ai.traceable.ratelimiting.config.service.v2.ScopeCondition.LabelScope;
 import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import com.google.protobuf.Message;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.List;
 
@@ -173,13 +174,13 @@ public class ValidatorUtils {
     }
     if (KEY_NULL_CONDITION_TYPES.contains(staticValueCondition.getKeyCondition().getKeyType())
         && (!staticValueCondition.hasValueMatchOperatorCondition()
-            || staticValueCondition.hasKeyCondition())) {
+            || staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition())) {
       throwInvalidArgumentException(
           String.format(
               "Invalid condition for type %s:%n %s",
               getName(staticValueCondition), printMessage(staticValueCondition)));
     }
-    if (staticValueCondition.hasKeyCondition()) {
+    if (staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition()) {
       validateMatchOperatorCondition(
           staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition());
     }
@@ -189,15 +190,15 @@ public class ValidatorUtils {
   }
 
   public void validateKeyValueCondition(KeyValueCondition keyValueCondition) {
-    validateNonDefaultPresenceOrThrow(keyValueCondition, KeyValueCondition.TYPE_FIELD_NUMBER);
     switch (keyValueCondition.getConditionTypeCase()) {
-      case STATIC_VALUE_CONDITION:
-        validateStaticValueCondition(keyValueCondition.getStaticValueCondition());
-        break;
       case LHS_RHS_CONDITION:
         validateLhsRhsCondition(keyValueCondition.getLhsRhsCondition());
         break;
+      case STATIC_VALUE_CONDITION:
+        validateStaticValueCondition(keyValueCondition.getStaticValueCondition());
+        break;
       case CONDITIONTYPE_NOT_SET:
+        validateNonDefaultPresenceOrThrow(keyValueCondition, KeyValueCondition.TYPE_FIELD_NUMBER);
         if (!keyValueCondition.hasKeyCondition() && !keyValueCondition.hasValueCondition()) {
           throwInvalidArgumentException(
               String.format(
@@ -333,8 +334,12 @@ public class ValidatorUtils {
       KeyValueCondition.MatchOperatorCondition matchOperatorCondition) {
     validateNonDefaultPresenceOrThrow(
         matchOperatorCondition, KeyValueCondition.MatchOperatorCondition.OPERATOR_FIELD_NUMBER);
-    validateNonDefaultPresenceOrThrow(
-        matchOperatorCondition, KeyValueCondition.MatchOperatorCondition.VALUE_FIELD_NUMBER);
+    if (matchOperatorCondition.getValue().equals(Value.getDefaultInstance())) {
+      throwInvalidArgumentException(
+          String.format(
+              "Value should be set in matchOperatorCondition: %s",
+              matchOperatorCondition.getOperator()));
+    }
     if (isInvalidMathematicalOperation(matchOperatorCondition)) {
       throwInvalidArgumentException(
           String.format(

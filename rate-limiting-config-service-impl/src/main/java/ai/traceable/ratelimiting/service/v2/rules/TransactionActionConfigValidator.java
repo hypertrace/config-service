@@ -188,20 +188,40 @@ public class TransactionActionConfigValidator {
 
   private void validateCustomMatchingLocationKeyValueCondition(
       KeyValueCondition keyValueCondition) {
-    validateNonDefaultPresenceOrThrow(keyValueCondition, KeyValueCondition.TYPE_FIELD_NUMBER);
-    if (keyValueCondition.hasValueCondition()) {
+    boolean hasStaticValueCondition = keyValueCondition.hasStaticValueCondition();
+    KeyValueCondition.StaticValueCondition staticValueCondition =
+        keyValueCondition.getStaticValueCondition();
+    KeyValueCondition.Type type =
+        hasStaticValueCondition
+            ? keyValueCondition.getStaticValueCondition().getKeyCondition().getKeyType()
+            : keyValueCondition.getType();
+    if (type.equals(KeyValueCondition.Type.TYPE_UNSPECIFIED)) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "KeyCondition : %s should have type specified",
+              staticValueCondition.getKeyCondition()));
+    }
+    boolean hasKeyCondition =
+        keyValueCondition.hasKeyCondition()
+            || (hasStaticValueCondition
+                && staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition());
+    boolean hasValueCondtion =
+        keyValueCondition.hasValueCondition()
+            || (hasStaticValueCondition && staticValueCondition.hasValueMatchOperatorCondition());
+    if (hasValueCondtion) {
       validatorUtils.throwInvalidArgumentException(
           String.format(
               "Value condition should not be present in custom location matching : %s",
               keyValueCondition));
     }
-    switch (keyValueCondition.getType()) {
+
+    switch (type) {
       case TYPE_REQUEST_BODY:
-        if (keyValueCondition.hasKeyCondition() || keyValueCondition.hasValueCondition()) {
+        if (hasKeyCondition) {
           validatorUtils.throwInvalidArgumentException(
               String.format(
                   "For type : %s%n key condition should not be present in custom location matching: %s%n",
-                  keyValueCondition.getType(), keyValueCondition));
+                  type, keyValueCondition));
         }
         break;
       case TYPE_HOST:
@@ -210,20 +230,24 @@ public class TransactionActionConfigValidator {
       case TYPE_REQUEST_COOKIE:
       case TYPE_QUERY_PARAMETER:
       case TYPE_REQUEST_BODY_PARAMETER:
-        if (!keyValueCondition.hasKeyCondition()) {
+        if (!hasKeyCondition) {
           validatorUtils.throwInvalidArgumentException(
               String.format(
                   "For type : %s%n key condition should be present in custom location matching: %s%n",
-                  keyValueCondition.getType(), keyValueCondition));
+                  type, keyValueCondition));
         }
-        validatorUtils.validateStringCondition(keyValueCondition.getKeyCondition());
+        if (hasStaticValueCondition) {
+          validatorUtils.validateMatchOperatorCondition(
+              staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition());
+        } else {
+          validatorUtils.validateStringCondition(keyValueCondition.getKeyCondition());
+        }
         break;
       default:
-        if (keyValueCondition.hasKeyCondition()) {
+        if (hasKeyCondition) {
           validatorUtils.throwInvalidArgumentException(
               String.format(
-                  "Invalid type : %s%n for custom location matching: %s",
-                  keyValueCondition.getType(), keyValueCondition));
+                  "Invalid type : %s%n for custom location matching: %s", type, keyValueCondition));
         }
     }
   }
