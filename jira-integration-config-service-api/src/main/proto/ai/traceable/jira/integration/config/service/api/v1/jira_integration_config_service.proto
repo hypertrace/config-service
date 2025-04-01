@@ -135,6 +135,7 @@ message GetProjectIssueConfigurationsFilter {
   repeated TraceableEntityType supported_entity_types = 4; // empty means no-matching for this
   Scope scope = 5; // adding this for RBAC scoping
   repeated string integration_ids = 6;
+  repeated string issue_configuration_ids = 7;
 }
 
 message GetProjectIssueConfigurationsResponse {
