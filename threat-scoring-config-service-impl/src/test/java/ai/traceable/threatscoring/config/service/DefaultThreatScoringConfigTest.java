@@ -61,7 +61,7 @@ class DefaultThreatScoringConfigTest {
                         MaliciousSpanConfidenceScoring.newBuilder()
                             .setLevelConfig(
                                 ScoringLevelConfig.newBuilder()
-                                    .setMediumLevelMinScore(50)
+                                    .setMediumLevelMinScore(40)
                                     .setHighLevelMinScore(70)
                                     .setMaxNormalizedScore(10)
                                     .build())
