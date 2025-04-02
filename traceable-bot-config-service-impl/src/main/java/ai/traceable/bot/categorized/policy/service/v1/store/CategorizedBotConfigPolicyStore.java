@@ -36,30 +36,30 @@ public class CategorizedBotConfigPolicyStore
   @Override
   protected Optional<CategorizedBotConfigPolicy> filterConfigData(
       final CategorizedBotConfigPolicy data, final CategorizedBotConfigPolicyFilter filter) {
-    return Optional.of(data)
-        .filter(
-            policy -> {
-              if (filter == null) {
-                return true;
-              }
+    return Optional.of(data).filter(policy -> botPolicyFilterMatch(policy, filter));
+  }
 
-              final var policyIds = filter.getCategorizedBotConfigPolicyIdsList();
-              final var envIds = filter.getEnvironmentIdsList();
+  public boolean botPolicyFilterMatch(
+      final CategorizedBotConfigPolicy policy, final CategorizedBotConfigPolicyFilter filter) {
+    if (filter == null) {
+      return true;
+    }
 
-              final boolean matchesPolicyId =
-                  policyIds.isEmpty() || policyIds.contains(policy.getId());
-              final boolean matchesEnvId =
-                  envIds.isEmpty()
-                      || !Collections.disjoint(
-                          envIds,
-                          policy
-                              .getCategorizedBotPolicyDetails()
-                              .getCategorizedBotPolicyScope()
-                              .getEnvironmentScope()
-                              .getEnvironmentIdsList());
+    final var policyIds = filter.getCategorizedBotConfigPolicyIdsList();
+    final var envIds = filter.getEnvironmentIdsList();
 
-              return matchesPolicyId && matchesEnvId;
-            });
+    final boolean matchesPolicyId = policyIds.isEmpty() || policyIds.contains(policy.getId());
+    final boolean matchesEnvId =
+        envIds.isEmpty()
+            || !Collections.disjoint(
+                envIds,
+                policy
+                    .getCategorizedBotPolicyDetails()
+                    .getCategorizedBotPolicyScope()
+                    .getEnvironmentScope()
+                    .getEnvironmentIdsList());
+
+    return matchesPolicyId && matchesEnvId;
   }
 
   @Override

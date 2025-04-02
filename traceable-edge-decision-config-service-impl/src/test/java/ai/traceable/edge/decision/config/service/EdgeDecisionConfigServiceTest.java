@@ -26,6 +26,7 @@ import ai.traceable.bot.categorized.policy.service.v1.CreateCategorizedBotConfig
 import ai.traceable.bot.categorized.policy.service.v1.EnvironmentScope;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStore;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
+import ai.traceable.bot.categorized.policy.service.v1.store.DefaultPolicyConfig;
 import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
@@ -130,6 +131,8 @@ import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.util.List;
 import java.util.Set;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -157,6 +160,7 @@ class EdgeDecisionConfigServiceTest {
   @Mock private RuleVariableEnricher ruleVariableEnricher;
   @Mock ConfigChangeEventGenerator mockConfigChangeEventGenerator;
   @Mock CachedApiMappingProvider cachedApiMappingProvider;
+  @Mock private Config mockConfig;
   private CategorizedBotConfigServiceBlockingStub categorizedBotConfigServiceBlockingStub;
 
   @BeforeEach
@@ -203,11 +207,14 @@ class EdgeDecisionConfigServiceTest {
             ruleVariableEnricher);
     final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
+    when(mockConfig.getConfig("bot.config.service"))
+        .thenReturn(ConfigFactory.parseString("default.policies = [" + "]"));
     final CategorizedBotConfigPolicyStoreManager categorizedBotConfigPolicyStoreManager =
         new CategorizedBotConfigPolicyStoreManager(
             new CategorizedBotConfigPolicyStore(
                 configServiceBlockingStub, mockConfigChangeEventGenerator),
-            uuidGenerator);
+            uuidGenerator,
+            new DefaultPolicyConfig(mockConfig));
     final CategorizedBotConfigPolicyToEdgeDecisionTranslator
         categorizedBotConfigPolicyToEdgeDecisionTranslator =
             new CategorizedBotConfigPolicyToEdgeDecisionTranslator(

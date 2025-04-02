@@ -24,6 +24,7 @@ public class CategorizedBotConfigPolicyServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(ConfigChangeEventGenerator.class).toInstance(changeEventGenerator);
+    bind(Config.class).toInstance(config);
     bind(BindableService.class).to(CategorizedBotConfigPolicyService.class);
     install(
         new CachedServiceMappingProviderModule(

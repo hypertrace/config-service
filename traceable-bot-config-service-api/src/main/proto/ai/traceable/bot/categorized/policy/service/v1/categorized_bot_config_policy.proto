@@ -17,6 +17,7 @@ message CategorizedBotConfigPolicyDetails {
   repeated BotScope bot_scopes = 5;
   CategorizedBotPolicyActionConfig categorized_bot_policy_action_config = 6;
   optional CategorizedBotPolicyTargetScope categorized_bot_policy_target_scope = 7;
+  bool is_default_policy = 8;
 }
 
 message CategorizedBotPolicyScope {
