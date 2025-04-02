@@ -37,25 +37,6 @@
     },
     "rule_decision": {
       "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
-      "span_attributes": [{
-        "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rule-id.category",
-          "output_type": "FIELD_TYPE_STR"
-        },
-        "span_attribute_value": {
-          "static_value": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
-          "output_type": "FIELD_TYPE_STR"
-        }
-      }, {
-        "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rule-id.info",
-          "output_type": "FIELD_TYPE_STR"
-        },
-        "span_attribute_value": {
-          "static_value": "CgdydWxlLWlkEglydWxlLW5hbWUaFUVWRU5UX1NFVkVSSVRZX01FRElVTQ\u003d\u003d",
-          "output_type": "FIELD_TYPE_STR"
-        }
-      }],
       "rule_info_decorations": [{
         "rule_info_key": {
           "static_value": "severity",
@@ -75,6 +56,8 @@
           "output_type": "FIELD_TYPE_STR"
         }
       }]
-    }
+    },
+    "policy_kind": "POLICY_KIND_WAF",
+    "policy_id": "rule-id"
   }]
 }

@@ -127,43 +127,6 @@
     "rule_decision": {
       "edge_decision_type": "EDGE_DECISION_TYPE_BLOCK",
       "threat_type": "Enumeration",
-      "span_attributes": [{
-        "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.category",
-          "output_type": "FIELD_TYPE_STR"
-        },
-        "span_attribute_value": {
-          "static_value": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT",
-          "output_type": "FIELD_TYPE_STR"
-        }
-      }, {
-        "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.info",
-          "output_type": "FIELD_TYPE_STR"
-        },
-        "span_attribute_value": {
-          "static_value": "EhVyYXRlLWxpbWl0aW5nLXJ1bGUtaWQaC3Rlc3QtcG9saWN5IAM\u003d",
-          "output_type": "FIELD_TYPE_STR"
-        }
-      }, {
-        "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.threshold_details",
-          "output_type": "FIELD_TYPE_STR"
-        },
-        "span_attribute_value": {
-          "static_value": "CAEQASIKCAMSBFBUMU0YAQ\u003d\u003d",
-          "output_type": "FIELD_TYPE_STR"
-        }
-      }, {
-        "span_attribute_key": {
-          "static_value": "traceableai.blocked.violations_rate-limiting-rule-id.matched_attribute",
-          "output_type": "FIELD_TYPE_STR"
-        },
-        "span_attribute_value": {
-          "static_value": "http.request.body",
-          "output_type": "FIELD_TYPE_STR"
-        }
-      }],
       "rule_info_decorations": [{
         "rule_info_key": {
           "static_value": "severity",
@@ -193,6 +156,7 @@
         }
       }]
     },
+    "policy_kind": "POLICY_KIND_WAF",
     "policy_id": "rate-limiting-rule-id"
   }]
 }

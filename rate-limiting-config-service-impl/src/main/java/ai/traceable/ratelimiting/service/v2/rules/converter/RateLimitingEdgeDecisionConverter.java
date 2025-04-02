@@ -15,7 +15,6 @@ import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_MARK_FOR_TESTING;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
 import static ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType.AGGREGATION_TYPE_COUNT;
-import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedRateLimitViolationInfo;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_RESPONSE;
 import static ai.traceable.ratelimiting.config.service.v2.ApiAggregateType.API_AGGREGATE_TYPE_ACROSS_ENDPOINTS;
@@ -39,7 +38,6 @@ import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.RegexConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
-import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.v1.AggregateThresholdRule;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -51,13 +49,13 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
 import ai.traceable.edge.decision.config.service.v1.PayloadDecoration;
+import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.RequestHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ResponseHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.AggregationType;
 import ai.traceable.edge.decision.config.service.v1.ValueAggregateThreshold.ThresholdOperator;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
-import ai.traceable.platform.actor.v1.RateLimitCategory;
 import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.Action.AgentRuleEffect;
 import ai.traceable.ratelimiting.config.service.v2.Category;
@@ -215,20 +213,6 @@ public class RateLimitingEdgeDecisionConverter {
         action.hasBlock() && !action.getBlock().getUseThresholdDuration()
             ? Optional.of(Base64.getEncoder().encodeToString(action.getBlock().toByteArray()))
             : Optional.empty();
-    builder.addAllSpanAttributes(
-        SpanAttributeHandler.getSpanAttributeDecorations(
-            edgeDecisionRuleMetadata.getRuleId(),
-            false,
-            EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT,
-            getEncodedRateLimitViolationInfo(
-                "",
-                edgeDecisionRuleMetadata.getRuleId(),
-                edgeDecisionRuleMetadata.getRuleName(),
-                RateLimitCategory.forNumber(edgeDecisionRuleMetadata.getCategory().getNumber()),
-                edgeDecisionRuleMetadata.getLabelsMap()),
-            encodedResourceAccessThresholdConfig,
-            valueAggregateThresholdDetails.getMatchedAttribute(),
-            encodedBlockAction));
 
     Map<String, String> ruleInfoDecorations = new HashMap<>();
     ruleInfoDecorations.put(THRESHOLD_DETAILS, encodedResourceAccessThresholdConfig);
@@ -443,6 +427,7 @@ public class RateLimitingEdgeDecisionConverter {
     builder.setRuleDecision(edgeDecision);
     builder.setRuleDefinition(edgeDecisionRuleDefinitionBuilder);
     builder.setPolicyId(metadata.getRuleId());
+    builder.setPolicyKind(PolicyKind.POLICY_KIND_WAF);
     return builder.build();
   }
 

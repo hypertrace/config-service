@@ -10,7 +10,6 @@ import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionType.EDGE_DECISION_TYPE_MARK_FOR_TESTING;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
-import static ai.traceable.platform.opa.v1.violation.ViolationInfoEncoder.getEncodedCustomSignatureRuleViolationInfo;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toMap;
@@ -30,7 +29,6 @@ import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchConditio
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.edge.decision.config.service.RuleInfoDecorationsHandler;
-import ai.traceable.edge.decision.config.service.SpanAttributeHandler;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
@@ -41,6 +39,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
 import ai.traceable.edge.decision.config.service.v1.EnvironmentScope;
 import ai.traceable.edge.decision.config.service.v1.PayloadDecoration;
+import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.RequestHeaderInjection;
 import ai.traceable.edge.decision.config.service.v1.ResponseHeaderInjection;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -92,6 +91,8 @@ public class CustomSignatureEdgeDecisionConverter {
       final Optional<MatchCondition> mayBeMatchCondition =
           buildMatchCondition(customSignatureRule.getDefinition().getClauseGroup());
       builder.setId(customSignatureRule.getId());
+      builder.setPolicyId(customSignatureRule.getId());
+      builder.setPolicyKind(PolicyKind.POLICY_KIND_WAF);
       builder.setName(customSignatureRule.getName());
       builder.setRuleStatus(buildRuleStatus(customSignatureRule));
       builder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE);
@@ -179,16 +180,6 @@ public class CustomSignatureEdgeDecisionConverter {
     builder.setEdgeDecisionType(convertEventType(customSignatureRule.getEffect().getEventType()));
     builder.addAllDecorations(
         buildPayloadDecorations(customSignatureRule.getEffect().getEffectsList()));
-    builder.addAllSpanAttributes(
-        SpanAttributeHandler.getSpanAttributeDecorations(
-            customSignatureRule.getId(),
-            false,
-            EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE,
-            getEncodedCustomSignatureRuleViolationInfo(
-                customSignatureRule.getId(),
-                customSignatureRule.getName(),
-                customSignatureRule.getEffect().getEventSeverity().name(),
-                customSignatureRule.getDefinition().getLabelsMap())));
 
     Map<String, String> ruleInfoDecorations = new HashMap<>();
     ruleInfoDecorations.put(SEVERITY, customSignatureRule.getEffect().getEventSeverity().name());
