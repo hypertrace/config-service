@@ -41,6 +41,11 @@ class ValueProjectionsTranslator {
               attributeRuleBuilder.buildRuleForJwtClaim(
                   valueProjection.getJwtPayloadClaim().getClaimKey(), prevAttributeRule);
           break;
+        case URL_DECODE_STRING:
+          prevAttributeRule =
+              attributeRuleBuilder.buildRuleForUrlEncodedString(
+                  valueProjection.getUrlDecodeString().getQuotePlus(), prevAttributeRule);
+          break;
         default:
           throw Status.INTERNAL
               .withDescription(

@@ -6,6 +6,6 @@ public class ExternalAgentAttributeConfigServiceConstants {
   // AttributeAddition Action will be no-op if ValueProjection fails.
 
   public static final String KEY_PREDICATE_SUPPORT_MIN_TPA_VERSION =
-      "1.43.0-rc.0"; // key predicate support for cooki and url projector
+      "1.43.0-rc.0"; // key predicate support for cookie and url projector
   // https://traceableai.atlassian.net/browse/ENG-40200
 }

@@ -13,6 +13,8 @@ public class ValueProjectionFactory {
         return new JwtClaimProjection(valueProjection.getJwtPayloadClaim().getClaimKey());
       case BASE64:
         return new Base64Projection();
+      case URL_DECODE_STRING:
+        return new UrlDecodeStringProjection(valueProjection.getUrlDecodeString().getQuotePlus());
       default:
         throw new IllegalArgumentException("Unsupported projection type");
     }

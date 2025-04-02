@@ -38,4 +38,16 @@ class ValueProjectionTest {
         "traceableTransformUtils:extractJsonPathValue(" + input + ", \"apple.mango\")";
     assertEquals(jexlExpression, projector.apply(input));
   }
+
+  @Test
+  void urlDecodeProjectorTest() {
+    String input = "$s.getHeaders().get('authorization')";
+    ValueProjection projector = new UrlDecodeStringProjection(true);
+    String jexlExpression = "traceableTransformUtils:urlDecode(" + input + ", true)";
+    assertEquals(jexlExpression, projector.apply(input));
+
+    projector = new UrlDecodeStringProjection(false);
+    jexlExpression = "traceableTransformUtils:urlDecode(" + input + ", false)";
+    assertEquals(jexlExpression, projector.apply(input));
+  }
 }

@@ -221,6 +221,17 @@ public class AttributeRuleBuilder {
         .build();
   }
 
+  public AttributeRule buildRuleForUrlEncodedString(boolean quotePlus, AttributeRule childRule) {
+    return AttributeRule.newBuilder()
+        .setProjector(
+            Projector.newBuilder()
+                .setUrlEncodedStringProjector(
+                    Projector.UrlEncodedStringProjector.newBuilder()
+                        .setQuotePlus(quotePlus)
+                        .setAttributeRule(childRule)))
+        .build();
+  }
+
   public AttributeRule buildRuleForParsingJwt(List<Action> beforeChildrenActions) {
     return AttributeRule.newBuilder()
         .addAllBeforeChildrenActions(beforeChildrenActions)

@@ -190,6 +190,7 @@ message ValueProjection {
     JsonPathProjection json_path = 2;
     JwtPayloadClaimProjection jwt_payload_claim = 3;
     Base64Projection base64 = 4;
+    UrlDecodeStringProjection url_decode_string = 5;
   }
 
   message RegexCaptureGroupProjection {
@@ -205,4 +206,9 @@ message ValueProjection {
   }
 
   message Base64Projection {}
+
+  message UrlDecodeStringProjection {
+    // Set to true to decode quote_plus url encoded string
+    bool quote_plus = 1;
+  }
 }
