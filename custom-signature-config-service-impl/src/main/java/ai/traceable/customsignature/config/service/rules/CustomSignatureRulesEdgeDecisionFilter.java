@@ -16,8 +16,7 @@ public class CustomSignatureRulesEdgeDecisionFilter {
     // utility classes shouldn't have public constructor
   }
 
-  // filter out rules that will be evaluated by edge decision service
-  // returns rules that should be evaluated by the platform
+  // filters out rules that will be evaluated by edge decision service
   public static List<CustomSignatureRule> getFilteredRules(List<CustomSignatureRule> rules) {
     return rules.stream()
         .map(CustomSignatureRulesEdgeDecisionFilter::getFilteredRule)

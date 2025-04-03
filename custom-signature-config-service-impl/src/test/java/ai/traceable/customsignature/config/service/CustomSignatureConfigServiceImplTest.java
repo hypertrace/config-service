@@ -14,15 +14,23 @@ import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
 import ai.traceable.customsignature.config.service.rules.converter.CustomSignatureEdgeDecisionConverter;
+import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleResponse;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleResponse;
+import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -45,6 +53,34 @@ public class CustomSignatureConfigServiceImplTest {
   private CustomSignatureConfigServiceImpl configService;
   private FeatureCachingClient featureCachingClient;
   private CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
+  private final CustomSignatureRule ruleNotSupportOnEdge =
+      CustomSignatureRule.newBuilder()
+          .setId("id1")
+          .setEffect(
+              RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
+          .setDefinition(
+              RuleDefinition.newBuilder()
+                  .setClauseGroup(
+                      ClauseGroup.newBuilder()
+                          .addClauses(
+                              Clause.newBuilder()
+                                  .setRequestScannerTypeExpression(
+                                      RequestScannerTypeExpression.getDefaultInstance()))))
+          .build();
+  private final CustomSignatureRule ruleSupportedOnEdge =
+      CustomSignatureRule.newBuilder()
+          .setId("id1")
+          .setEffect(
+              RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
+          .setDefinition(
+              RuleDefinition.newBuilder()
+                  .setClauseGroup(
+                      ClauseGroup.newBuilder()
+                          .addClauses(
+                              Clause.newBuilder()
+                                  .setIpAddressExpression(
+                                      IpAddressExpression.getDefaultInstance()))))
+          .build();
 
   @BeforeEach
   public void setup() {
@@ -89,6 +125,25 @@ public class CustomSignatureConfigServiceImplTest {
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onNext(GetCustomSignatureRulesResponse.newBuilder().addAllRules(rules).build());
+    verify(responseObserver, times(1)).onCompleted();
+
+    reset(responseObserver);
+    rules = List.of(ruleNotSupportOnEdge, ruleSupportedOnEdge);
+    when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(rules);
+
+    runnable =
+        () ->
+            configService.getCustomSignatureRules(
+                GetCustomSignatureRulesRequest.newBuilder()
+                    .setFilter(GetRulesFilter.newBuilder().setFilterEdgeDecisionRules(true))
+                    .build(),
+                responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(responseObserver, times(1))
+        .onNext(
+            GetCustomSignatureRulesResponse.newBuilder()
+                .addAllRules(List.of(ruleNotSupportOnEdge))
+                .build());
     verify(responseObserver, times(1)).onCompleted();
   }
 
@@ -203,5 +258,19 @@ public class CustomSignatureConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(GetCustomSignatureModsecRulesResponse.newBuilder().build());
     verify(responseObserver, times(1)).onCompleted();
+
+    reset(responseObserver);
+    when(rulesManager.getCustomSignatureRules(any(), any()))
+        .thenReturn(List.of(ruleSupportedOnEdge, ruleNotSupportOnEdge));
+    runnable =
+        () ->
+            configService.getCustomSignatureModsecRules(
+                GetCustomSignatureModsecRulesRequest.newBuilder()
+                    .setFilter(GetRulesFilter.newBuilder().setFilterEdgeDecisionRules(true))
+                    .build(),
+                responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(modsecRulesManager, times(1))
+        .getModsecRules(any(), eq(List.of(ruleNotSupportOnEdge)), any());
   }
 }
