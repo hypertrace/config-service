@@ -50,6 +50,7 @@ public class CustomSignatureRulesFetcherTest {
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .setDisabled(false)
+                        .setFilterEdgeDecisionRules(true)
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(EnvironmentScope.newBuilder())))
@@ -70,6 +71,7 @@ public class CustomSignatureRulesFetcherTest {
                 .setFilter(
                     GetRulesFilter.newBuilder()
                         .setDisabled(false)
+                        .setFilterEdgeDecisionRules(true)
                         .setRuleScope(
                             RuleScope.newBuilder()
                                 .setEnvironmentScope(
