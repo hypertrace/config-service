@@ -11,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
@@ -195,10 +196,29 @@ public class GlobalAnomalyConfigStatusManagerImpl
       }
     }
     scopedAnomalyConfigBuilder.setConfigScope(configScope);
-    return configConverter.convertScopedConfig(
-        migrateScopedAnomalyConfigStatusChange(scopedAnomalyConfigBuilder.build()),
-        config,
-        configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)));
+    ScopedAnomalyConfigStatus.Builder builder =
+        configConverter
+            .convertScopedConfig(
+                migrateScopedAnomalyConfigStatusChange(scopedAnomalyConfigBuilder.build()),
+                config,
+                configConverter.merge(configStatusChange, getDefaultTierConfig(requestContext)))
+            .toBuilder();
+    // default profile should not fallback to tenant level for an env, it should always use env
+    // level value if present or the default value
+    if (configScope.hasEnvironmentScope()
+        && Optional.ofNullable(configMap.get(configScope.getEnvironmentScope().getEnvironmentId()))
+            .map(
+                configStatus ->
+                    configStatus
+                        .getModsecGlobalConfig()
+                        .getDefaultConfigsType()
+                        .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED))
+            .orElse(true)) {
+      builder
+          .getModsecGlobalConfigBuilder()
+          .setDefaultConfigsType(config.getEnvScopeModsecDefaultConfigsType());
+    }
+    return builder.build();
   }
 
   private Map<String, ScopedAnomalyConfigStatusChange> fetchConfigMap(
