@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
+import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -53,6 +55,11 @@ class DefaultThreatScoreManagerTest {
           .setLowScoreUpperBound(100)
           .setMediumScoreUpperBound(200)
           .setHighScoreUpperBound(300)
+          .setScope(
+              ScopeConfig.newBuilder()
+                  .setEnvironmentScope(
+                      EnvironmentScope.newBuilder().setEnvironmentId("environment-id").build())
+                  .build())
           .build();
 
   private static final Value THREAT_BOUND_CONFIG_2_VALUE =
@@ -62,7 +69,26 @@ class DefaultThreatScoreManagerTest {
                   .putFields("lowScoreUpperBound", Value.newBuilder().setNumberValue(100).build())
                   .putFields(
                       "mediumScoreUpperBound", Value.newBuilder().setNumberValue(200).build())
-                  .putFields("highScoreUpperBound", Value.newBuilder().setNumberValue(300).build()))
+                  .putFields("highScoreUpperBound", Value.newBuilder().setNumberValue(300).build())
+                  .putFields(
+                      "scope",
+                      Value.newBuilder()
+                          .setStructValue(
+                              Struct.newBuilder()
+                                  .putFields(
+                                      "environmentScope",
+                                      Value.newBuilder()
+                                          .setStructValue(
+                                              Struct.newBuilder()
+                                                  .putFields(
+                                                      "environmentId",
+                                                      Value.newBuilder()
+                                                          .setStringValue("environment-id")
+                                                          .build())
+                                                  .build())
+                                          .build())
+                                  .build())
+                          .build()))
           .build();
 
   @Mock(answer = Answers.RETURNS_SELF)
@@ -103,7 +129,7 @@ class DefaultThreatScoreManagerTest {
             .setMediumScoreUpperBound(DEFAULT_UPPER_BOUND_MEDIUM_THREAT_SCORE)
             .setHighScoreUpperBound(DEFAULT_UPPER_BOUND_HIGH_THREAT_SCORE)
             .build(),
-        threatScoreManager.getThreatScoreBound(REQUEST_CONTEXT));
+        threatScoreManager.getThreatScoreBound(REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -117,7 +143,9 @@ class DefaultThreatScoreManagerTest {
     when(configServiceStub.getConfig(request))
         .thenReturn(GetConfigResponse.newBuilder().setConfig(THREAT_BOUND_CONFIG_1_VALUE).build());
 
-    assertEquals(THREAT_SCORE_BOUND_1, threatScoreManager.getThreatScoreBound(REQUEST_CONTEXT));
+    assertEquals(
+        THREAT_SCORE_BOUND_1,
+        threatScoreManager.getThreatScoreBound(REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -127,7 +155,7 @@ class DefaultThreatScoreManagerTest {
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
             .setResourceName(THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME)
             .setConfig(THREAT_BOUND_CONFIG_2_VALUE)
-            .setContext(TENANT_ID)
+            .setContext("environment-id")
             .build();
 
     when(configServiceStub.upsertConfig(request))

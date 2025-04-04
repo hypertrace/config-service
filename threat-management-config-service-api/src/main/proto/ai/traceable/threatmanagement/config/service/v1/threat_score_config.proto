@@ -4,6 +4,7 @@ package ai.traceable.threatmanagement.config.service.v1;
 
 import "ai/traceable/threatmanagement/config/service/v1/anomaly_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/ip_reputation_score_contribution.proto";
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
 import "ai/traceable/threatmanagement/config/service/v1/security_event_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/security_event_type_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/status_code_score_contribution.proto";
@@ -11,7 +12,9 @@ import "ai/traceable/threatmanagement/config/service/v1/threat_score_bound.proto
 
 option java_multiple_files = true;
 
-message GetThreatScoreConfigRequest {}
+message GetThreatScoreConfigRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetThreatScoreConfigResponse {
   ThreatScoreConfig threat_score_config = 1;

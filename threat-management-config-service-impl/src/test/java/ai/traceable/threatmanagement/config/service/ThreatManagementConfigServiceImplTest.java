@@ -35,6 +35,7 @@ import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigReque
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.Protocol;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
@@ -245,7 +246,8 @@ class ThreatManagementConfigServiceImplTest {
   class ThreatScoreBounds {
     @Test
     void getThreatScoreBound() {
-      when(threatScoreManager.getThreatScoreBound(any(RequestContext.class)))
+      when(threatScoreManager.getThreatScoreBound(
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(THREAT_SCORE_BOUND_1);
 
       StreamObserver<GetThreatScoreBoundResponse> responseObserver = mock(StreamObserver.class);
@@ -786,7 +788,8 @@ class ThreatManagementConfigServiceImplTest {
       when(ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
               any(RequestContext.class)))
           .thenReturn(IP_REPUTATION_THREAT_SCORE_CONFIG_1);
-      when(threatScoreManager.getThreatScoreBound(any(RequestContext.class)))
+      when(threatScoreManager.getThreatScoreBound(
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(THREAT_SCORE_BOUND_1);
       when(statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
               any(RequestContext.class)))

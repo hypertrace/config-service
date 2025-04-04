@@ -90,7 +90,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       RequestContext requestContext = RequestContext.CURRENT.get();
       requestValidator.validateOrThrow(requestContext, request);
 
-      ThreatScoreBound threatScoreBound = threatScoreManager.getThreatScoreBound(requestContext);
+      ThreatScoreBound threatScoreBound =
+          threatScoreManager.getThreatScoreBound(requestContext, request.getScope());
       ThreatScoreBound defaultThreatScoreBound = threatScoreManager.getDefaultThreatScoreBound();
 
       responseObserver.onNext(
@@ -442,7 +443,9 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                       .setStatusCodeThreatScoreConfigs(
                           statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
                               requestContext))
-                      .setThreatScoreBound(threatScoreManager.getThreatScoreBound(requestContext))
+                      .setThreatScoreBound(
+                          threatScoreManager.getThreatScoreBound(
+                              requestContext, request.getScope()))
                       .build())
               .build());
       responseObserver.onCompleted();

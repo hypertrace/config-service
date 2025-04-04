@@ -4,6 +4,7 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_SCORE_BOUND_CONFIG_RESOURCE_NAME;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
@@ -11,13 +12,13 @@ import io.grpc.Status;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class DefaultThreatScoreManager extends ContextuallyIdentifiedObjectStore<ThreatScoreBound>
+class DefaultThreatScoreManager extends IdentifiedObjectStore<ThreatScoreBound>
     implements ThreatScoreManager {
   private final ThreatManagementConfigServiceConfig config;
   private final ThreatScoreBoundConverter threatScoreBoundConverter;
@@ -38,8 +39,13 @@ class DefaultThreatScoreManager extends ContextuallyIdentifiedObjectStore<Threat
   }
 
   @Override
-  public ThreatScoreBound getThreatScoreBound(RequestContext requestContext) {
-    return getData(requestContext).orElseGet(this::getDefaultThreatScoreBound);
+  public ThreatScoreBound getThreatScoreBound(
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId).orElseGet(this::getDefaultThreatScoreBound);
   }
 
   @Override
@@ -74,8 +80,14 @@ class DefaultThreatScoreManager extends ContextuallyIdentifiedObjectStore<Threat
   }
 
   @Override
-  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
-    return requestContext
+  protected String getContextFromData(ThreatScoreBound threatScoreBound) {
+    return threatScoreBound.getScope().hasEnvironmentScope()
+        ? threatScoreBound.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
+  }
+
+  private String getTenantId(RequestContext context) {
+    return context
         .getTenantId()
         .orElseThrow(
             () ->

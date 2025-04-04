@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+
 option java_multiple_files = true;
 
-message GetThreatScoreBoundRequest {}
+message GetThreatScoreBoundRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetThreatScoreBoundResponse {
   ThreatScoreBound threat_score_bound = 1;
@@ -24,4 +28,5 @@ message ThreatScoreBound {
   int32 medium_score_upper_bound = 1;
   int32 high_score_upper_bound = 2;
   int32 low_score_upper_bound = 3;
+  ScopeConfig scope = 4;
 }
