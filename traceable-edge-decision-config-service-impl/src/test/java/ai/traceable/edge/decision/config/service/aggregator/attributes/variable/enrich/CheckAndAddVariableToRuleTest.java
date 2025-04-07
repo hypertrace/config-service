@@ -24,7 +24,7 @@ class CheckAndAddVariableToRuleTest {
   }
 
   @Test
-  void testCheckAndAddVariableToRule_VariableFound() {
+  void testCheckAndAddVariableToRule_Common_VariableFound() {
     String variableName = "USER";
     EdgeDecisionRule edgeDecisionRule =
         EdgeDecisionRule.newBuilder()
@@ -62,7 +62,7 @@ class CheckAndAddVariableToRuleTest {
             .build();
 
     edgeDecisionEngineConfig =
-        checkAndAddVariableToRule.checkAndAddVariableToRule(
+        checkAndAddVariableToRule.checkAndAddCommonVariableToConfig(
             edgeDecisionEngineConfig, variableName, variableMapping);
 
     assertEquals(2, edgeDecisionEngineConfig.getCommonVariablesCount());
@@ -72,7 +72,7 @@ class CheckAndAddVariableToRuleTest {
         VariableDerivationMapping.newBuilder().setName("existingVariable").build();
 
     edgeDecisionEngineConfig =
-        checkAndAddVariableToRule.checkAndAddVariableToRule(
+        checkAndAddVariableToRule.checkAndAddCommonVariableToConfig(
             edgeDecisionEngineConfig, "existingVariable", variableMapping2);
     // Test existing variable has no effect
     assertEquals(2, edgeDecisionEngineConfig.getCommonVariablesCount());
@@ -82,7 +82,7 @@ class CheckAndAddVariableToRuleTest {
     variableMapping = VariableDerivationMapping.newBuilder().setName(variableName).build();
 
     edgeDecisionEngineConfig =
-        checkAndAddVariableToRule.checkAndAddVariableToRule(
+        checkAndAddVariableToRule.checkAndAddCommonVariableToConfig(
             edgeDecisionEngineConfig, variableName, variableMapping);
 
     assertEquals(2, edgeDecisionEngineConfig.getCommonVariablesCount());

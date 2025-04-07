@@ -531,16 +531,6 @@ class EdgeDecisionConfigServiceTest {
                             .build())
                     .build())
             .build();
-    assertEquals(
-        expectedVariableDerivation,
-        config.getCommonVariablesList().stream()
-            .filter(
-                variableDerivationMapping ->
-                    variableDerivationMapping
-                        .getName()
-                        .equals("TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000"))
-            .findFirst()
-            .get());
 
     assertEquals(
         EdgeDecisionRule.newBuilder()
@@ -564,6 +554,7 @@ class EdgeDecisionConfigServiceTest {
                     .build())
             .setRuleDefinition(
                 EdgeDecisionRuleDefinition.newBuilder()
+                    .addRuleVariables(expectedVariableDerivation)
                     .setEdgeInputKind(EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST)
                     .setCustomFields(
                         Values.of(Structs.of("policyId", Values.of(createdPolicy.getId()))))

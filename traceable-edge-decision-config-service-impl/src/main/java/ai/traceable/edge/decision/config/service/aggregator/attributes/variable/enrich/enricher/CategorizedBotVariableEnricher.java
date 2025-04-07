@@ -35,7 +35,7 @@ public class CategorizedBotVariableEnricher implements VariableEnricher {
             .orElse(List.of());
     for (var variableDerivationMapping : variableDerivationMappings) {
       edgeDecisionEngineConfig =
-          variableChecker.checkAndAddVariableToRule(
+          variableChecker.addVariableToRulesInConfig(
               edgeDecisionEngineConfig,
               variableDerivationMapping.getName(),
               variableDerivationMapping);

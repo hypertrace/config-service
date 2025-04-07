@@ -21,7 +21,7 @@ public class VariableConstantRuleEnricher implements VariableEnricher {
       RequestContext requestContext, EdgeDecisionEngineConfig edgeDecisionEngineConfig) {
     for (Entry<VariableConstants, VariableFetcher> enricherEntry : variableFetcherMap.entrySet()) {
       edgeDecisionEngineConfig =
-          variableChecker.checkAndAddVariableToRule(
+          variableChecker.checkAndAddCommonVariableToConfig(
               edgeDecisionEngineConfig,
               enricherEntry.getKey().getValue(),
               enricherEntry.getValue().getVariable(requestContext));
