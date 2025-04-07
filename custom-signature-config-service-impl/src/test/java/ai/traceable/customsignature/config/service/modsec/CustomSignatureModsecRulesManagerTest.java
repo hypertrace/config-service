@@ -420,9 +420,10 @@ public class CustomSignatureModsecRulesManagerTest {
               .getEnvironmentIds(0));
       String fileRules =
           Resources.toString(
-              CustomSignatureModsecRulesManagerTest.class
-                  .getClassLoader()
-                  .getResource("sample-custom-modsec-rules.conf"),
+              Objects.requireNonNull(
+                  CustomSignatureModsecRulesManagerTest.class
+                      .getClassLoader()
+                      .getResource("sample-custom-modsec-rules.conf")),
               StandardCharsets.UTF_8);
       assertEquals(fileRules, response.getModsecRulesBlob());
       if (SystemUtils.IS_OS_LINUX) {
@@ -650,7 +651,7 @@ public class CustomSignatureModsecRulesManagerTest {
     return UuidCreator.getNameBasedSha1(ruleUuidSeed, value).toString();
   }
 
-  private class MatchCombination {
+  private static class MatchCombination {
     private final MatchKey matchKey;
     private final String matchValue;
 
@@ -668,7 +669,7 @@ public class CustomSignatureModsecRulesManagerTest {
     }
   }
 
-  private class KeyValueCombination {
+  private static class KeyValueCombination {
     private final KeyValueTag keyValueTag;
     private final String matchKey;
     private final String matchValue;

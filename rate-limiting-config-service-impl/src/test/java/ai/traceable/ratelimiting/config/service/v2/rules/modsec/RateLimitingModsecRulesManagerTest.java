@@ -345,9 +345,10 @@ class RateLimitingModsecRulesManagerTest {
                               .setCompositeCondition(
                                   CompositeCondition.newBuilder()
                                       .setOperator(LogicalOperator.LOGICAL_OPERATOR_AND)
-                                      .addChildren(buildRegionCondition("Nepal"))
+                                      .addChildren(buildRegionCondition())
                                       .addChildren(
                                           buildKeyValueCondition(Type.TYPE_QUERY_PARAMETER))
+                                      .addChildren(buildCountBasedKeyValueCondition())
                                       .addChildren(buildDataTypeCondition(true))
                                       .addChildren(
                                           buildUrlCondition(List.of("/order/.*", "/pastOrders")))))
@@ -441,13 +442,27 @@ class RateLimitingModsecRulesManagerTest {
         .build();
   }
 
-  private static Condition buildRegionCondition(String region) {
+  private static Condition buildCountBasedKeyValueCondition() {
+    return Condition.newBuilder()
+        .setLeafCondition(
+            LeafCondition.newBuilder()
+                .setKeyValueCondition(
+                    KeyValueCondition.newBuilder()
+                        .setType(Type.TYPE_QUERY_PARAMS_COUNT)
+                        .setValueCondition(
+                            StringCondition.newBuilder()
+                                .setValue("10")
+                                .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS))))
+        .build();
+  }
+
+  private static Condition buildRegionCondition() {
     return Condition.newBuilder()
         .setLeafCondition(
             LeafCondition.newBuilder()
                 .setRegionCondition(
                     RegionCondition.newBuilder()
-                        .addRegionIdentifiers(Region.newBuilder().setCountryIsoCode(region))))
+                        .addRegionIdentifiers(Region.newBuilder().setCountryIsoCode("Nepal"))))
         .build();
   }
 
@@ -467,7 +482,7 @@ class RateLimitingModsecRulesManagerTest {
         .build();
   }
 
-  private static ScopedPattern ignoreScopePattern =
+  private static final ScopedPattern ignoreScopePattern =
       ScopedPattern.newBuilder()
           .setGlobalScope(GlobalScope.getDefaultInstance())
           .addLocations(Location.LOCATION_REQUEST_HEADER)
@@ -524,7 +539,7 @@ class RateLimitingModsecRulesManagerTest {
               + "msg:'URL Regex and key-value conditions corresponding to DLP Rule - rule-id-4',"
               + "logdata:'Matched URL and request criteria corresponding to DLP Rule',"
               + "tag:'CUSTOM_SIGNATURE',tag:'paranoia-level/1',tag:'rule-uuid/rule-id-4',severity:'CRITICAL',chain\"\n"
-              + "SecRule ARGS_GET:orderId \"@rx 123.*\" \"capture,block,t:none\"");
+              + "SecRule ARGS_GET:orderId \"@rx 123.*\" \"capture,t:none,chain\"\nSecRule &ARGS \"@streq 10\" \"capture,block,t:none\"");
 
   private static final List<String> expectedCreditCardWithoutCustomLocation =
       List.of(

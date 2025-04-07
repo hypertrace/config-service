@@ -20,6 +20,7 @@ import ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata;
 import ai.traceable.modsecurity.rule.conversion.ModsecRuleConverter;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -93,20 +94,27 @@ public class CustomModsecRuleConverter {
     CustomModsecMatchExpression matchExpression =
         convert(expression.getMatchOperator(), expression.getMatchValue());
 
-    Optional<CustomModsecValueMatchClause> valueMatchClause =
-        getRequestValueMatchMetadata(expression.getMatchCategory(), expression.getMatchKey())
-            .map(
-                metadata ->
-                    CustomModsecValueMatchClause.newBuilder().setRequestValueMetadata(metadata))
-            .or(
-                () ->
-                    getResponseValueMatchMetadata(
-                            expression.getMatchCategory(), expression.getMatchKey())
-                        .map(
-                            metadata ->
-                                CustomModsecValueMatchClause.newBuilder()
-                                    .setResponseValueMetadata(metadata)))
-            .map(builder -> builder.setValueMatchExpression(matchExpression).build());
+    Optional<CustomModsecValueMatchClause> valueMatchClause = Optional.empty();
+    Optional<RequestValueMatchMetadata> requestMetadata =
+        this.getRequestValueMatchMetadata(expression.getMatchKey());
+    if (requestMetadata.isPresent()) {
+      valueMatchClause =
+          Optional.of(
+              CustomModsecValueMatchClause.newBuilder()
+                  .setRequestValueMetadata(requestMetadata.get())
+                  .setValueMatchExpression(matchExpression)
+                  .build());
+    }
+    if (valueMatchClause.isEmpty()) {
+      valueMatchClause =
+          this.getResponseValueMatchMetadata(expression.getMatchKey())
+              .map(
+                  responseValueMatchMetadata ->
+                      CustomModsecValueMatchClause.newBuilder()
+                          .setResponseValueMetadata(responseValueMatchMetadata)
+                          .setValueMatchExpression(matchExpression)
+                          .build());
+    }
 
     if (valueMatchClause.isPresent()) {
       return clauseBuilder.setValueMatchClause(valueMatchClause.get()).build();
@@ -122,14 +130,11 @@ public class CustomModsecRuleConverter {
           String.format("Unsupported match key: %s", expression.getMatchKey()));
     }
 
-    switch (expression.getMatchCategory()) {
-      case MATCH_CATEGORY_RESPONSE:
-        builder.setResponseMetadata(getResponseKeyValueMatchMetadata(expression.getMatchKey()));
-        break;
-      default: // request
-        builder.setRequestMetadata(getRequestKeyValueMatchMetadata(expression.getMatchKey()));
+    if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
+      builder.setResponseMetadata(getResponseKeyValueMatchMetadata(expression.getMatchKey()));
+    } else { // request
+      builder.setRequestMetadata(getRequestKeyValueMatchMetadata(expression.getMatchKey()));
     }
-
     return clauseBuilder.setKeyValueMatchClause(builder).build();
   }
 
@@ -141,12 +146,10 @@ public class CustomModsecRuleConverter {
             .setValueMatchExpression(
                 convert(expression.getValueMatchOperator(), expression.getMatchValue()));
 
-    switch (expression.getMatchCategory()) {
-      case MATCH_CATEGORY_RESPONSE:
-        builder.setResponseMetadata(getResponseKeyValueMatchMetadata(expression.getTag()));
-        break;
-      default: // request
-        builder.setRequestMetadata(getRequestKeyValueMatchMetadata(expression.getTag()));
+    if (expression.getMatchCategory() == MatchCategory.MATCH_CATEGORY_RESPONSE) {
+      builder.setResponseMetadata(getResponseKeyValueMatchMetadata(expression.getTag()));
+    } else { // request
+      builder.setRequestMetadata(getRequestKeyValueMatchMetadata(expression.getTag()));
     }
     return CustomModsecRuleClause.newBuilder().setKeyValueMatchClause(builder).build();
   }
@@ -181,8 +184,7 @@ public class CustomModsecRuleConverter {
     }
   }
 
-  private Optional<RequestValueMatchMetadata> getRequestValueMatchMetadata(
-      MatchCategory category, MatchKey key) {
+  private Optional<RequestValueMatchMetadata> getRequestValueMatchMetadata(MatchKey key) {
     switch (key) {
       case MATCH_KEY_URL:
         return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_URL);
@@ -193,13 +195,16 @@ public class CustomModsecRuleConverter {
       case MATCH_KEY_USER_AGENT:
         return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_USER_AGENT);
       case MATCH_KEY_BODY:
-        if (!category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
-          return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY);
-        }
+        return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY);
       case MATCH_KEY_BODY_SIZE:
-        if (!category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
-          return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY_SIZE);
-        }
+        return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY_SIZE);
+      case MATCH_KEY_QUERY_PARAMS_COUNT:
+        return Optional.of(
+            RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_QUERY_PARAMS_COUNT);
+      case MATCH_KEY_HEADERS_COUNT:
+        return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HEADERS_COUNT);
+      case MATCH_KEY_COOKIES_COUNT:
+        return Optional.of(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_COOKIES_COUNT);
       default:
         return Optional.empty();
     }
@@ -246,19 +251,16 @@ public class CustomModsecRuleConverter {
     }
   }
 
-  private Optional<ResponseValueMatchMetadata> getResponseValueMatchMetadata(
-      MatchCategory category, MatchKey key) {
+  private Optional<ResponseValueMatchMetadata> getResponseValueMatchMetadata(MatchKey key) {
     switch (key) {
       case MATCH_KEY_STATUS_CODE:
         return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE);
       case MATCH_KEY_BODY:
-        if (category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
-          return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY);
-        }
+        return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY);
       case MATCH_KEY_BODY_SIZE:
-        if (category.equals(MatchCategory.MATCH_CATEGORY_RESPONSE)) {
-          return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE);
-        }
+        return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE);
+      case MATCH_KEY_HEADERS_COUNT:
+        return Optional.of(ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_HEADERS_COUNT);
       default:
         return Optional.empty();
     }
@@ -276,12 +278,10 @@ public class CustomModsecRuleConverter {
   }
 
   private ResponseKeyValueMatchMetadata getResponseKeyValueMatchMetadata(KeyValueTag keyValueTag) {
-    switch (keyValueTag) {
-      case KEY_VALUE_TAG_HEADER:
-        return ResponseKeyValueMatchMetadata.RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER;
-      default:
-        throw new IllegalArgumentException(
-            String.format("Unsupported tag: %s for response key-value match", keyValueTag));
+    if (Objects.requireNonNull(keyValueTag) == KeyValueTag.KEY_VALUE_TAG_HEADER) {
+      return ResponseKeyValueMatchMetadata.RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER;
     }
+    throw new IllegalArgumentException(
+        String.format("Unsupported tag: %s for response key-value match", keyValueTag));
   }
 }

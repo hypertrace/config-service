@@ -7,8 +7,10 @@ import ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariable;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariableMetadata;
 import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariableMetadataKey;
+import ai.traceable.modsecurity.rule.secrule.variables.ModsecVariableMetadataOperator;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class ModsecVariableConverter {
   private static final String HOST_HEADER = "Host";
@@ -36,6 +38,17 @@ public class ModsecVariableConverter {
       case REQUEST_VALUE_MATCH_METADATA_BODY_SIZE:
         return Collections.singletonList(
             new ModsecVariable(ModsecVariableMetadata.REQUEST_BODY_LENGTH));
+      case REQUEST_VALUE_MATCH_METADATA_QUERY_PARAMS_COUNT:
+        return Collections.singletonList(
+            new ModsecVariable(ModsecVariableMetadata.ARGS, ModsecVariableMetadataOperator.COUNT));
+      case REQUEST_VALUE_MATCH_METADATA_HEADERS_COUNT:
+        return Collections.singletonList(
+            new ModsecVariable(
+                ModsecVariableMetadata.REQUEST_HEADERS, ModsecVariableMetadataOperator.COUNT));
+      case REQUEST_VALUE_MATCH_METADATA_COOKIES_COUNT:
+        return Collections.singletonList(
+            new ModsecVariable(
+                ModsecVariableMetadata.REQUEST_COOKIES, ModsecVariableMetadataOperator.COUNT));
       default:
         throw new IllegalArgumentException(
             String.format("Unsupported RequestValueMatchMetadata: %s", metadata));
@@ -52,6 +65,10 @@ public class ModsecVariableConverter {
       case RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE:
         return Collections.singletonList(
             new ModsecVariable(ModsecVariableMetadata.RESPONSE_CONTENT_LENGTH));
+      case RESPONSE_VALUE_MATCH_METADATA_HEADERS_COUNT:
+        return Collections.singletonList(
+            new ModsecVariable(
+                ModsecVariableMetadata.RESPONSE_HEADERS, ModsecVariableMetadataOperator.COUNT));
       default:
         throw new IllegalArgumentException(
             String.format("Unsupported ResponseValueMatchMetadata: %s", metadata));
@@ -77,13 +94,12 @@ public class ModsecVariableConverter {
   }
 
   ModsecVariableMetadata getModsecKeyVariableMetadata(ResponseKeyValueMatchMetadata metadata) {
-    switch (metadata) {
-      case RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER:
-        return ModsecVariableMetadata.RESPONSE_HEADERS_NAMES;
-      default:
-        throw new IllegalArgumentException(
-            String.format("Unknown ResponseKeyValueMatchMetadata: %s", metadata));
+    if (Objects.requireNonNull(metadata)
+        == ResponseKeyValueMatchMetadata.RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER) {
+      return ModsecVariableMetadata.RESPONSE_HEADERS_NAMES;
     }
+    throw new IllegalArgumentException(
+        String.format("Unknown ResponseKeyValueMatchMetadata: %s", metadata));
   }
 
   ModsecVariableMetadata getModsecValueVariableMetadata(RequestKeyValueMatchMetadata metadata) {
@@ -105,13 +121,12 @@ public class ModsecVariableConverter {
   }
 
   ModsecVariableMetadata getModsecValueVariableMetadata(ResponseKeyValueMatchMetadata metadata) {
-    switch (metadata) {
-      case RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER:
-        return ModsecVariableMetadata.RESPONSE_HEADERS;
-      default:
-        throw new IllegalArgumentException(
-            String.format("Unknown ResponseKeyValueMatchMetadata: %s", metadata));
+    if (Objects.requireNonNull(metadata)
+        == ResponseKeyValueMatchMetadata.RESPONSE_KEY_VALUE_MATCH_METADATA_HEADER) {
+      return ModsecVariableMetadata.RESPONSE_HEADERS;
     }
+    throw new IllegalArgumentException(
+        String.format("Unknown ResponseKeyValueMatchMetadata: %s", metadata));
   }
 
   private ModsecVariable createModsecVariable(ModsecVariableMetadata metadata, String key) {

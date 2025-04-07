@@ -128,7 +128,6 @@ public class RateLimitingModsecRulesManager {
     if (ruleActions.isEmpty()) {
       return true;
     }
-
     Action actionConfig = rule.getData().getTransactionActionConfig().getAction();
     if (actionConfig.hasBlock()) {
       return ruleActions.contains(RuleAction.RULE_ACTION_TRANSACTION_BLOCKED);

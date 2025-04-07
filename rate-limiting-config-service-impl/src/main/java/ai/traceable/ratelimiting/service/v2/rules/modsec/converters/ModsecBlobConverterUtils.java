@@ -43,12 +43,10 @@ public class ModsecBlobConverterUtils {
       String message,
       String logMessage,
       AtomicLong modsecIdAssignment) {
-
     try {
       List<Clause> clauses = new ArrayList<>();
       clauses.add(urlRegexesClauseWrapper);
       clauses.addAll(ANDClausesList);
-
       return customModsecRuleConverter.getJNIValidatedModsecRuleWithCustomLogMsg(
           modsecIdAssignment.getAndIncrement(), ruleIdentifier, message, clauses, logMessage);
     } catch (Exception e) {
@@ -212,6 +210,48 @@ public class ModsecBlobConverterUtils {
             MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE,
             Optional.of(KeyValueTag.KEY_VALUE_TAG_BODY_PARAMETER),
             MatchCategory.MATCH_CATEGORY_RESPONSE);
+      case TYPE_TAG:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_UNSPECIFIED,
+            Optional.of(KeyValueTag.KEY_VALUE_TAG_PARAMETER),
+            MatchCategory.MATCH_CATEGORY_REQUEST);
+      case TYPE_RESPONSE_BODY_SIZE:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_BODY_SIZE,
+            Optional.empty(),
+            MatchCategory.MATCH_CATEGORY_RESPONSE);
+      case TYPE_REQUEST_BODY_SIZE:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_BODY_SIZE,
+            Optional.empty(),
+            MatchCategory.MATCH_CATEGORY_REQUEST);
+      case TYPE_QUERY_PARAMS_COUNT:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT,
+            Optional.empty(),
+            MatchCategory.MATCH_CATEGORY_REQUEST);
+      case TYPE_REQUEST_HEADERS_COUNT:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_HEADERS_COUNT,
+            Optional.empty(),
+            MatchCategory.MATCH_CATEGORY_REQUEST);
+      case TYPE_RESPONSE_HEADERS_COUNT:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_HEADERS_COUNT,
+            Optional.empty(),
+            MatchCategory.MATCH_CATEGORY_RESPONSE);
+      case TYPE_REQUEST_COOKIES_COUNT:
+        return new ClauseDetails(
+            Optional.empty(),
+            MatchKey.MATCH_KEY_COOKIES_COUNT,
+            Optional.empty(),
+            MatchCategory.MATCH_CATEGORY_REQUEST);
       default:
         throw new UnsupportedOperationException(
             String.format("Cannot convert a condition of type:%s into modsec rule", type));
