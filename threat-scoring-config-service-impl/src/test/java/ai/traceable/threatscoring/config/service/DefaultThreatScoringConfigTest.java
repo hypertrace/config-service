@@ -19,7 +19,7 @@ class DefaultThreatScoringConfigTest {
   @Test
   void test_event_confidence_mapping() {
     Assertions.assertEquals(
-        425,
+        576,
         defaultThreatScoringConfig
             .getDefaultConfig()
             .getConfigs()
