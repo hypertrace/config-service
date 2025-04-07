@@ -13,7 +13,7 @@ public class CategorizedBotStringUtil {
   }
 
   public String getFormattedBotVariableName(final String botName, final String botId) {
-    return joinStrings(TC_BOTS_PREFIX, joinStrings(botName, botId));
+    return joinStrings(TC_BOTS_PREFIX, joinStrings(botName, botId.replace("-", "_")));
   }
 
   public static String joinStrings(final String first, final String second) {

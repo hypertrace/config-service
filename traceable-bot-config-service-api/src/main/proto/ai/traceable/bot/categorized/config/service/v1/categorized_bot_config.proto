@@ -32,7 +32,13 @@ message MatchCondition {
     // Logical match condition can be introduced in future
     IpMetadataMatchConditon ip_metadata_match_condition = 2;
     LogicalMatchCondition logical_match_condition = 3;
+    UserAgentCondition user_agent_match_condition = 4;
   }
+}
+
+message UserAgentCondition {
+  repeated string user_agents = 1;
+  repeated string user_agent_regexes = 2;
 }
 
 message LogicalMatchCondition {

@@ -7,12 +7,15 @@ import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
 import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
+import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import java.util.List;
 import org.hypertrace.config.service.test.MockGenericConfigService;
@@ -88,31 +91,10 @@ class CategorizedBotConfigServiceTest {
                                             .setRightOperand(
                                                 ai.traceable.bot.categorized.config.service.v1
                                                     .MatchCondition.newBuilder()
-                                                    .setGenericMatchCondition(
-                                                        GenericMatchCondition.newBuilder()
-                                                            .setKeyCondition(
-                                                                KeyCondition.newBuilder()
-                                                                    .setKeyType(
-                                                                        KeyType.KEY_TYPE_HEADER)
-                                                                    .setKeyMatchOperator(
-                                                                        MatchOperatorCondition
-                                                                            .newBuilder()
-                                                                            .setMatchOperator(
-                                                                                MatchOperator
-                                                                                    .MATCH_OPERATOR_EQUALS)
-                                                                            .setMatchValue(
-                                                                                Value.newBuilder()
-                                                                                    .setStringValue(
-                                                                                        "User-Agent"))))
-                                                            .setValueMatchCondition(
-                                                                MatchOperatorCondition.newBuilder()
-                                                                    .setMatchOperator(
-                                                                        MatchOperator
-                                                                            .MATCH_OPERATOR_EQUALS)
-                                                                    .setMatchValue(
-                                                                        Value.newBuilder()
-                                                                            .setStringValue(
-                                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")))
+                                                    .setUserAgentMatchCondition(
+                                                        UserAgentCondition.newBuilder()
+                                                            .addUserAgents(
+                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
                                                             .build())
                                                     .build())
                                             .setLeftOperand(
@@ -259,7 +241,7 @@ class CategorizedBotConfigServiceTest {
   void testGetCategorizedBotConfigEdgeDecisionVariables() {
     final VariableDerivationMapping expectedVariableDerivation =
         VariableDerivationMapping.newBuilder()
-            .setName("TRACEABLEAI_BOT_bing_bot_550e8400-e29b-41d4-a716-446655440000")
+            .setName("TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000")
             .addRules(
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
@@ -281,10 +263,7 @@ class CategorizedBotConfigServiceTest {
                                                     .addConditions(
                                                         MatchCondition.newBuilder()
                                                             .setGenericMatchCondition(
-                                                                ai.traceable.datamodel.data
-                                                                    .transformation.config.v1
-                                                                    .GenericMatchCondition
-                                                                    .newBuilder()
+                                                                GenericMatchCondition.newBuilder()
                                                                     .setJexlExpression(
                                                                         JexlExpressionConfig
                                                                             .newBuilder()
@@ -295,10 +274,7 @@ class CategorizedBotConfigServiceTest {
                                                     .addConditions(
                                                         MatchCondition.newBuilder()
                                                             .setGenericMatchCondition(
-                                                                ai.traceable.datamodel.data
-                                                                    .transformation.config.v1
-                                                                    .GenericMatchCondition
-                                                                    .newBuilder()
+                                                                GenericMatchCondition.newBuilder()
                                                                     .setJexlExpression(
                                                                         JexlExpressionConfig
                                                                             .newBuilder()
@@ -310,34 +286,54 @@ class CategorizedBotConfigServiceTest {
                                             .build())
                                     .addConditions(
                                         MatchCondition.newBuilder()
-                                            .setStructuredMatchCondition(
-                                                StructuredMatchCondition.newBuilder()
-                                                    .setLhs(
-                                                        AttributeDerivationMapping.newBuilder()
-                                                            .setName("lhs")
-                                                            .setType(FieldType.FIELD_TYPE_STR)
-                                                            .addRules(
-                                                                DerivationRule.newBuilder()
-                                                                    .setTransformationConfig(
-                                                                        DataTransformationConfig
+                                            .setLogicalMatchCondition(
+                                                LogicalMatchCondition.newBuilder()
+                                                    .setOperator(
+                                                        LogicalMatchOperator
+                                                            .LOGICAL_MATCH_OPERATOR_OR)
+                                                    .addConditions(
+                                                        MatchCondition.newBuilder()
+                                                            .setStructuredMatchCondition(
+                                                                StructuredMatchCondition
+                                                                    .newBuilder()
+                                                                    .setLhs(
+                                                                        AttributeDerivationMapping
                                                                             .newBuilder()
-                                                                            .setOutputType(
+                                                                            .setName("lhs")
+                                                                            .setType(
                                                                                 FieldType
                                                                                     .FIELD_TYPE_STR)
-                                                                            .setJexlExpression(
-                                                                                JexlExpressionConfig
+                                                                            .addRules(
+                                                                                DerivationRule
                                                                                     .newBuilder()
-                                                                                    .setJexlExpression(
-                                                                                        "request.headers['user-agent']")))))
-                                                    .setBinaryOperator(
-                                                        BinaryOperator.newBuilder()
-                                                            .setStringValue(
-                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
-                                                            .setMatchOperator(
-                                                                ai.traceable.datamodel.data
-                                                                    .transformation.config.v1
-                                                                    .MatchOperator
-                                                                    .MATCH_OPERATOR_EQ)))))
+                                                                                    .setTransformationConfig(
+                                                                                        DataTransformationConfig
+                                                                                            .newBuilder()
+                                                                                            .setOutputType(
+                                                                                                FieldType
+                                                                                                    .FIELD_TYPE_STR)
+                                                                                            .setJexlExpression(
+                                                                                                JexlExpressionConfig
+                                                                                                    .newBuilder()
+                                                                                                    .setJexlExpression(
+                                                                                                        "$s.getUserAgent()")))))
+                                                                    .setBinaryOperator(
+                                                                        BinaryOperator.newBuilder()
+                                                                            .setListValue(
+                                                                                ListValue
+                                                                                    .newBuilder()
+                                                                                    .addValues(
+                                                                                        Value
+                                                                                            .newBuilder()
+                                                                                            .setStringValue(
+                                                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
+                                                                                            .build())
+                                                                                    .build())
+                                                                            .setMatchOperator(
+                                                                                MatchOperator
+                                                                                    .MATCH_OPERATOR_IN))))
+                                                    .build())
+                                            .build()))
                             .build())
                     .build())
             .build();

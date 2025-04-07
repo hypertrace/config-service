@@ -82,6 +82,10 @@ public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
       return IpMetadataMatchConditionToEdgeMatchConditionTranslator.buildMatchCondition(
           categorizedBotMatchCondition.getIpMetadataMatchCondition());
     }
+    if (categorizedBotMatchCondition.hasUserAgentMatchCondition()) {
+      return UserAgentMatchConditionToEdgeMatchConditionTranslator.buildMatchCondition(
+          categorizedBotMatchCondition.getUserAgentMatchCondition());
+    }
     if (categorizedBotMatchCondition.hasLogicalMatchCondition()) {
       final ai.traceable.bot.categorized.config.service.v1.LogicalMatchCondition
           logicalMatchCondition = categorizedBotMatchCondition.getLogicalMatchCondition();
