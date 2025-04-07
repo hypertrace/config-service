@@ -226,4 +226,36 @@ public class ModsecClauseConverterImplTest {
     assertEquals(
         MatchCategory.MATCH_CATEGORY_REQUEST, clause.getMatchExpression().getMatchCategory());
   }
+
+  @Test
+  void testConvert_SimpleUrlValueMatchCondition() {
+    DetectionExclusionRule rule =
+        DetectionExclusionRule.newBuilder()
+            .setRuleInfo(
+                DetectionExclusionRuleInfo.newBuilder()
+                    .addConditions(
+                        DetectionExclusionCondition.newBuilder()
+                            .setAttributeMatchCondition(
+                                SpanAttributeMatchCondition.newBuilder()
+                                    .setKeyMatchCondition(
+                                        KeyMetadataMatchCondition.newBuilder()
+                                            .setMetadata(KeyMetadata.KEY_METADATA_URL))
+                                    .setValueMatchCondition(
+                                        MatchCondition.newBuilder()
+                                            .setOperator(
+                                                ai.traceable.detection.exclusion.config.service.v1
+                                                    .MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                            .setValue(
+                                                Value.newBuilder().setStringValue(".*sf.*"))))))
+            .build();
+
+    List<Clause> result = modsecClauseConverter.convert(requestContext, rule).getClauses();
+
+    assertEquals(1, result.size());
+    Clause clause = result.get(0);
+    assertEquals(MatchKey.MATCH_KEY_URL, clause.getMatchExpression().getMatchKey());
+    assertEquals(".*sf.*", clause.getMatchExpression().getMatchValue());
+    assertEquals(
+        MatchOperator.MATCH_OPERATOR_MATCHES_REGEX, clause.getMatchExpression().getMatchOperator());
+  }
 }

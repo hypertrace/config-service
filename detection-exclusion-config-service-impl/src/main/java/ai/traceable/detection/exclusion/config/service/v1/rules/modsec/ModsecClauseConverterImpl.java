@@ -129,60 +129,69 @@ public class ModsecClauseConverterImpl implements ModsecClauseConverter {
     ClauseDetails extractedClauseDetails =
         convertMetadata(spanAttributeCondition.getKeyMatchCondition().getMetadata());
 
-    // Handle both key and value match conditions
-    if (spanAttributeCondition.getKeyMatchCondition().hasMatchCondition()
-        && spanAttributeCondition.hasValueMatchCondition()) {
-      return Clause.newBuilder()
-          .setKeyValueExpression(
-              KeyValueExpression.newBuilder()
-                  .setTag(
-                      extractedClauseDetails
-                          .getKeyValueTagOptional()
-                          .orElse(KEY_VALUE_TAG_UNSPECIFIED))
-                  .setMatchCategory(extractedClauseDetails.getCategory())
-                  .setMatchKey(
-                      spanAttributeCondition
-                          .getKeyMatchCondition()
-                          .getMatchCondition()
-                          .getValue()
-                          .getStringValue())
-                  .setKeyMatchOperator(
-                      convertOperator(
-                          spanAttributeCondition
-                              .getKeyMatchCondition()
-                              .getMatchCondition()
-                              .getOperator()))
-                  .setMatchValue(
-                      spanAttributeCondition.getValueMatchCondition().getValue().getStringValue())
-                  .setValueMatchOperator(
-                      convertOperator(
-                          spanAttributeCondition.getValueMatchCondition().getOperator())))
-          .build();
-    } else if (spanAttributeCondition.getKeyMatchCondition().hasMatchCondition()) {
-      // Only key match condition provided
-      return Clause.newBuilder()
-          .setMatchExpression(
-              MatchExpression.newBuilder()
-                  .setMatchCategory(extractedClauseDetails.getCategory())
-                  .setMatchKey(extractedClauseDetails.getKeyType())
-                  .setMatchOperator(
-                      convertOperator(
-                          spanAttributeCondition
-                              .getKeyMatchCondition()
-                              .getMatchCondition()
-                              .getOperator()))
-                  .setMatchValue(
-                      spanAttributeCondition
-                          .getKeyMatchCondition()
-                          .getMatchCondition()
-                          .getValue()
-                          .getStringValue()))
-          .build();
+    boolean hasKeyMatch = spanAttributeCondition.getKeyMatchCondition().hasMatchCondition();
+    boolean hasValueMatch = spanAttributeCondition.hasValueMatchCondition();
+
+    if (hasKeyMatch && hasValueMatch) {
+      return buildKeyValueClause(spanAttributeCondition, extractedClauseDetails);
+    } else if (hasKeyMatch || hasValueMatch) {
+      return buildMatchExpressionClause(spanAttributeCondition, extractedClauseDetails);
     }
 
     throw new UnsupportedOperationException(
         String.format(
             "Cannot convert span attribute condition - %s, into clause", spanAttributeCondition));
+  }
+
+  private Clause buildKeyValueClause(
+      SpanAttributeMatchCondition spanAttributeCondition, ClauseDetails extractedClauseDetails) {
+    return Clause.newBuilder()
+        .setKeyValueExpression(
+            KeyValueExpression.newBuilder()
+                .setTag(
+                    extractedClauseDetails
+                        .getKeyValueTagOptional()
+                        .orElse(KEY_VALUE_TAG_UNSPECIFIED))
+                .setMatchCategory(extractedClauseDetails.getCategory())
+                .setMatchKey(
+                    spanAttributeCondition
+                        .getKeyMatchCondition()
+                        .getMatchCondition()
+                        .getValue()
+                        .getStringValue())
+                .setKeyMatchOperator(
+                    convertOperator(
+                        spanAttributeCondition
+                            .getKeyMatchCondition()
+                            .getMatchCondition()
+                            .getOperator()))
+                .setMatchValue(
+                    spanAttributeCondition.getValueMatchCondition().getValue().getStringValue())
+                .setValueMatchOperator(
+                    convertOperator(spanAttributeCondition.getValueMatchCondition().getOperator())))
+        .build();
+  }
+
+  private Clause buildMatchExpressionClause(
+      SpanAttributeMatchCondition spanAttributeCondition, ClauseDetails extractedClauseDetails) {
+    MatchExpression.Builder expressionBuilder =
+        MatchExpression.newBuilder()
+            .setMatchCategory(extractedClauseDetails.getCategory())
+            .setMatchKey(extractedClauseDetails.getKeyType());
+
+    if (spanAttributeCondition.getKeyMatchCondition().hasMatchCondition()) {
+      var keyMatch = spanAttributeCondition.getKeyMatchCondition().getMatchCondition();
+      expressionBuilder
+          .setMatchOperator(convertOperator(keyMatch.getOperator()))
+          .setMatchValue(keyMatch.getValue().getStringValue());
+    } else {
+      var valueMatch = spanAttributeCondition.getValueMatchCondition();
+      expressionBuilder
+          .setMatchOperator(convertOperator(valueMatch.getOperator()))
+          .setMatchValue(valueMatch.getValue().getStringValue());
+    }
+
+    return Clause.newBuilder().setMatchExpression(expressionBuilder).build();
   }
 
   private Clause buildUrlClause(

@@ -31,7 +31,7 @@ public class ModsecBlobConverter {
       if (ANDClausesList.isEmpty()) {
         return new ModsecBlobResult(EMPTY_BLOB, ruleIdentifier);
       }
-      //      Exclusions do not require verification by Coraza, as we rely on ModSecurity to handle
+      // Exclusions do not require verification by Coraza, as we rely on ModSecurity to handle
       // exclusions.
       return new ModsecBlobResult(
           customModsecRuleConverter.getJNIValidatedModsecRuleWithCustomLogMsg(
