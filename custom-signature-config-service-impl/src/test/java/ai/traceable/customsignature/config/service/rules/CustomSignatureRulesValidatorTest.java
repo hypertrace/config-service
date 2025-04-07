@@ -26,6 +26,7 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import io.grpc.Status;
 import io.grpc.Status.Code;
@@ -1336,5 +1337,135 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(DeleteCustomSignatureRuleRequest.newBuilder().setId("id").build());
     assertEquals(Code.OK, status.getCode());
+  }
+
+  @Test
+  void testValidateCreateRuleForAggregateConfigParams() {
+    RuleEffect ruleEffect =
+        RuleEffect.newBuilder()
+            .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .build();
+    ExpiryDetails expiryDetails =
+        ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build();
+    RuleScope ruleScope =
+        RuleScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev").build())
+            .build();
+
+    CreateCustomSignatureRuleRequest validCreateRequest1 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("CreateCustomSignatureRule-Request-QueryParamsCount-Equals")
+            .setDescription("rule-description")
+            .setDefinition(
+                getRuleDefinitionForAggregateConfigParams(
+                    MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_EQUALS,
+                    "10",
+                    MatchCategory.MATCH_CATEGORY_REQUEST))
+            .setEffect(ruleEffect)
+            .setBlockingExpiryDetails(expiryDetails)
+            .setRuleScope(ruleScope)
+            .setInternal(true)
+            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    Status status = rulesValidator.validate(validCreateRequest1);
+    assertEquals(Code.OK, status.getCode());
+
+    CreateCustomSignatureRuleRequest validCreateRequest2 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("CreateCustomSignatureRule-Request-HeadersCount-NotEqual")
+            .setDescription("rule-description")
+            .setDefinition(
+                getRuleDefinitionForAggregateConfigParams(
+                    MatchKey.MATCH_KEY_HEADERS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+                    "5",
+                    MatchCategory.MATCH_CATEGORY_REQUEST))
+            .setEffect(ruleEffect)
+            .setBlockingExpiryDetails(expiryDetails)
+            .setRuleScope(ruleScope)
+            .setInternal(true)
+            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    status = rulesValidator.validate(validCreateRequest2);
+    assertEquals(Code.OK, status.getCode());
+
+    CreateCustomSignatureRuleRequest validCreateRequest3 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("CreateCustomSignatureRule-Request-CookiesCount-GreaterThan")
+            .setDescription("rule-description")
+            .setDefinition(
+                getRuleDefinitionForAggregateConfigParams(
+                    MatchKey.MATCH_KEY_COOKIES_COUNT,
+                    MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+                    "3",
+                    MatchCategory.MATCH_CATEGORY_REQUEST))
+            .setEffect(ruleEffect)
+            .setBlockingExpiryDetails(expiryDetails)
+            .setRuleScope(ruleScope)
+            .setInternal(true)
+            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    status = rulesValidator.validate(validCreateRequest3);
+    assertEquals(Code.OK, status.getCode());
+
+    CreateCustomSignatureRuleRequest validCreateRequest4 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("CreateCustomSignatureRule-Response-HeadersCount-LessThan")
+            .setDescription("rule-description")
+            .setDefinition(
+                getRuleDefinitionForAggregateConfigParams(
+                    MatchKey.MATCH_KEY_HEADERS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_LESS_THAN,
+                    "7",
+                    MatchCategory.MATCH_CATEGORY_RESPONSE))
+            .setEffect(ruleEffect)
+            .setBlockingExpiryDetails(expiryDetails)
+            .setRuleScope(ruleScope)
+            .setInternal(true)
+            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    status = rulesValidator.validate(validCreateRequest4);
+    assertEquals(Code.OK, status.getCode());
+
+    CreateCustomSignatureRuleRequest invalidCreateRequest1 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("CreateCustomSignatureRule-Response-QueryParamsCount-Equals")
+            .setDescription("rule-description")
+            .setDefinition(
+                getRuleDefinitionForAggregateConfigParams(
+                    MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_EQUALS,
+                    "7",
+                    MatchCategory.MATCH_CATEGORY_RESPONSE))
+            .setEffect(ruleEffect)
+            .setBlockingExpiryDetails(expiryDetails)
+            .setRuleScope(ruleScope)
+            .setInternal(true)
+            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    status = rulesValidator.validate(invalidCreateRequest1);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+  }
+
+  private RuleDefinition getRuleDefinitionForAggregateConfigParams(
+      MatchKey matchKey,
+      MatchOperator matchOperator,
+      String matchValue,
+      MatchCategory matchCategory) {
+    return RuleDefinition.newBuilder()
+        .setClauseGroup(
+            ClauseGroup.newBuilder()
+                .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                .addClauses(
+                    Clause.newBuilder()
+                        .setMatchExpression(
+                            MatchExpression.newBuilder()
+                                .setMatchKey(matchKey)
+                                .setMatchOperator(matchOperator)
+                                .setMatchValue(matchValue)
+                                .setMatchCategory(matchCategory))))
+        .build();
   }
 }

@@ -1,10 +1,5 @@
 package ai.traceable.modsecurity.rule.conversion;
 
-import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
-import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_RESPONSE;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_COOKIES_COUNT;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HEADERS_COUNT;
-import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
 import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_CONTAINS;
 import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_EQUALS;
 import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
@@ -15,12 +10,16 @@ import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.M
 import static ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_BODY_SIZE;
+import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_COOKIES_COUNT;
+import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HEADERS_COUNT;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HOST;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_HTTP_METHOD;
+import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_QUERY_PARAMS_COUNT;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_URL;
 import static ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_USER_AGENT;
 import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY;
 import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_BODY_SIZE;
+import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_HEADERS_COUNT;
 import static ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata.RESPONSE_VALUE_MATCH_METADATA_STATUS_CODE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,15 +27,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.customsignature.config.service.v1.MatchCategory;
-import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.modsecurity.RuleEngine;
 import ai.traceable.modsecurity.RuleMatch;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRule;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRuleClause;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecValueMatchClause;
-import ai.traceable.modsecurity.rule.api.v1.CustomSecRuleClause;
 import ai.traceable.modsecurity.rule.api.v1.RequestValueMatchMetadata;
 import ai.traceable.modsecurity.rule.api.v1.ResponseValueMatchMetadata;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatchClauseConverter;
@@ -134,7 +130,7 @@ public class ModsecValueMatchConverterTest {
           ModsecRuleEngineUtils.getModsecRuleMatches(ruleEngine, attributesMap).stream()
               .map(RuleMatchInfo::new)
               .collect(Collectors.toUnmodifiableSet());
-      assertEquals(35, ruleMatchInfos.size());
+      assertEquals(39, ruleMatchInfos.size());
       verifyRuleMatches(
           ruleMatchInfos,
           List.of(
@@ -309,12 +305,11 @@ public class ModsecValueMatchConverterTest {
             List.of(MATCH_OPERATOR_MATCHES_REGEX, MATCH_OPERATOR_NOT_MATCH_REGEX)));
 
     customModsecRules.addAll(
-        createCustomModsecValueMatchRulesForCountMatchKeys(
-            MATCH_CATEGORY_REQUEST,
+        createCustomModsecRequestValueMatchRules(
             Map.of(
-                MATCH_KEY_QUERY_PARAMS_COUNT, "5",
-                MATCH_KEY_HEADERS_COUNT, "2",
-                MATCH_KEY_COOKIES_COUNT, "3"),
+                REQUEST_VALUE_MATCH_METADATA_QUERY_PARAMS_COUNT, "5",
+                REQUEST_VALUE_MATCH_METADATA_HEADERS_COUNT, "2",
+                REQUEST_VALUE_MATCH_METADATA_COOKIES_COUNT, "3"),
             List.of(
                 MATCH_OPERATOR_EQUALS,
                 MATCH_OPERATOR_NOT_EQUAL,
@@ -322,9 +317,8 @@ public class ModsecValueMatchConverterTest {
                 MATCH_OPERATOR_LESS_THAN)));
 
     customModsecRules.addAll(
-        createCustomModsecValueMatchRulesForCountMatchKeys(
-            MATCH_CATEGORY_RESPONSE,
-            Map.of(MATCH_KEY_HEADERS_COUNT, "4"),
+        createCustomModsecResponseValueMatchRules(
+            Map.of(RESPONSE_VALUE_MATCH_METADATA_HEADERS_COUNT, "4"),
             List.of(
                 MATCH_OPERATOR_EQUALS,
                 MATCH_OPERATOR_NOT_EQUAL,
@@ -336,144 +330,6 @@ public class ModsecValueMatchConverterTest {
     return customModsecRules.stream()
         .map(rule -> rule.toBuilder().setRuleId(ruleId.getAndIncrement()).build())
         .collect(Collectors.toList());
-  }
-
-  private static List<CustomModsecRule> createCustomModsecValueMatchRulesForCountMatchKeys(
-      MatchCategory matchCategory,
-      Map<MatchKey, String> matchKeyToValueMap,
-      List<CustomModsecMatchExpression.MatchOperator> operators) {
-
-    return matchKeyToValueMap.entrySet().stream()
-        .flatMap(
-            entry -> {
-              MatchKey matchKey = entry.getKey();
-              String value = entry.getValue();
-              return operators.stream()
-                  .map(
-                      operator -> {
-                        String ruleMsg = matchKey.name() + ":" + operator.name();
-                        String ruleUuid = uuidGenerator.generateId(ruleMsg);
-                        String modsecRule =
-                            (matchCategory.equals(MATCH_CATEGORY_REQUEST))
-                                ? generateModsecCountRule("", matchKey, value, operator, ruleUuid)
-                                : generateModsecCountRule(
-                                    "&RESPONSE_HEADERS", matchKey, value, operator, ruleUuid);
-                        return CustomModsecRule.newBuilder()
-                            .setRuleUuid(ruleUuid)
-                            .setRuleMsg(ruleMsg)
-                            .addAndClauses(
-                                CustomModsecRuleClause.newBuilder()
-                                    .setCustomSecRuleClause(
-                                        CustomSecRuleClause.newBuilder()
-                                            .setInputSecRule(modsecRule)
-                                            .build())
-                                    .build())
-                            .build();
-                      });
-            })
-        .collect(Collectors.toList());
-  }
-
-  private static String generateModsecCountRule(
-      String modsecVariable,
-      MatchKey matchKey,
-      String value,
-      CustomModsecMatchExpression.MatchOperator operator,
-      String ruleUuid) {
-    String messageForMatchKeyType;
-    if (modsecVariable.isEmpty()) {
-      modsecVariable = getModsecVariableForMatchKeyType(matchKey);
-      messageForMatchKeyType = getMessageForMatchKeyType(matchKey);
-    } else {
-      messageForMatchKeyType = "Response contains %{tx.headers_count} headers";
-    }
-    String modsecOperator = getModsecOperator(operator);
-    return String.format(
-        "SecRule %s \"%s %s\" \\\n"
-            + "    \"id:9000000,\\\n"
-            + "    phase:%d,\\\n"
-            + "    pass,\\\n"
-            + "    t:none,\\\n"
-            + "    setvar:'tx.%s=%%{MATCHED_VAR}',\\\n"
-            + "    msg:'%s',\\\n"
-            + "    tag:'%s',\\\n"
-            + "    tag:'paranoia-level/1',\\\n"
-            + "    tag:'rule-uuid/%s',\\\n"
-            + "    severity:'%s'\"",
-        modsecVariable,
-        modsecOperator,
-        value,
-        getPhaseForMatchKeyType(matchKey),
-        matchKey.name().toLowerCase(),
-        messageForMatchKeyType,
-        getTagForMatchKeyType(matchKey),
-        ruleUuid,
-        "INFO");
-  }
-
-  private static String getModsecOperator(CustomModsecMatchExpression.MatchOperator operator) {
-    switch (operator) {
-      case MATCH_OPERATOR_EQUALS:
-        return "eq";
-      case MATCH_OPERATOR_NOT_EQUAL:
-        return "!eq";
-      case MATCH_OPERATOR_GREATER_THAN:
-        return "gt";
-      case MATCH_OPERATOR_LESS_THAN:
-        return "lt";
-      default:
-        throw new IllegalArgumentException("Unsupported operator: " + operator);
-    }
-  }
-
-  private static String getMessageForMatchKeyType(MatchKey matchKey) {
-    switch (matchKey) {
-      case MATCH_KEY_QUERY_PARAMS_COUNT:
-        return "Request contains %{tx.query_params_count} query parameters";
-      case MATCH_KEY_HEADERS_COUNT:
-        return "Request contains %{tx.headers_count} headers";
-      case MATCH_KEY_COOKIES_COUNT:
-        return "Request contains %{tx.cookies_count} cookies";
-      default:
-        throw new IllegalArgumentException("Unsupported matchKey: " + matchKey);
-    }
-  }
-
-  private static String getTagForMatchKeyType(MatchKey matchKey) {
-    switch (matchKey) {
-      case MATCH_KEY_QUERY_PARAMS_COUNT:
-        return "QUERY_PARAM_COUNTER";
-      case MATCH_KEY_HEADERS_COUNT:
-        return "HEADER_COUNTER";
-      case MATCH_KEY_COOKIES_COUNT:
-        return "COOKIE_COUNTER";
-      default:
-        throw new IllegalArgumentException("Unsupported matchKey: " + matchKey);
-    }
-  }
-
-  private static String getModsecVariableForMatchKeyType(MatchKey matchKey) {
-    switch (matchKey) {
-      case MATCH_KEY_QUERY_PARAMS_COUNT:
-        return "&ARGS";
-      case MATCH_KEY_HEADERS_COUNT:
-        return "&REQUEST_HEADERS";
-      case MATCH_KEY_COOKIES_COUNT:
-        return "&REQUEST_COOKIES";
-      default:
-        throw new IllegalArgumentException("Unsupported matchKey: " + matchKey);
-    }
-  }
-
-  private static int getPhaseForMatchKeyType(MatchKey matchKey) {
-    switch (matchKey) {
-      case MATCH_KEY_QUERY_PARAMS_COUNT:
-      case MATCH_KEY_HEADERS_COUNT:
-      case MATCH_KEY_COOKIES_COUNT:
-        return 1;
-      default:
-        throw new IllegalArgumentException("Unsupported matchKey: " + matchKey);
-    }
   }
 
   private static List<CustomModsecRule> createCustomModsecRequestValueMatchRules(
