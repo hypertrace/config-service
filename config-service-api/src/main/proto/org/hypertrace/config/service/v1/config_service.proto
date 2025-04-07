@@ -91,7 +91,7 @@ message GetAllConfigsRequest {
 
   // optional - filtering criteria to narrow down the configs.
   // Supports relational and logical operators on config fields.
-  optional Filter filter = 3;
+  Filter filter = 3;
 
   // optional - list of sorting conditions to order the results.
   // Multiple SortBy entries are applied in the specified order of priority.
@@ -99,18 +99,18 @@ message GetAllConfigsRequest {
 
   // optional - pagination parameters to limit and offset the result set.
   // Useful for retrieving configs in pages when total count is large.
-  optional Pagination pagination = 5;
+  Pagination pagination = 5;
+
+  // optional - include total count in the response
+  bool include_total = 6;
 }
 
 message GetAllConfigsResponse {
   // list of config values along with the associated contexts, sorted in the descending order of their creation time
   repeated ContextSpecificConfig context_specific_configs = 1;
 
-  // Total number of records matching the filter before pagination
+  // Total number of records matching the filter before pagination if include_total is true.
   int32 total_count = 2;
-
-  // next offset to use for pagination
-  int32 next_offset = 3;
 }
 
 message ContextSpecificConfig {
