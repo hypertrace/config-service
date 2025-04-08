@@ -285,7 +285,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                     .build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(1, expectedPoliciesForEnv.size());
+    assertEquals(7, expectedPoliciesForEnv.size());
     assertEquals(createdPolicy, expectedPoliciesForEnv.get(0));
 
     // Test Get policy by invalid environmentIDs
@@ -301,7 +301,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                     .build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(0, expectedPoliciesInvalidEnv.size());
+    assertEquals(6, expectedPoliciesInvalidEnv.size());
 
     // Test Get policy all policies with empty filter
     final List<CategorizedBotConfigPolicy> totalPoliciesEmptyFilter =

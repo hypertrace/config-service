@@ -51,6 +51,12 @@ public class CategorizedBotConfigPolicyStore
     final boolean matchesPolicyId = policyIds.isEmpty() || policyIds.contains(policy.getId());
     final boolean matchesEnvId =
         envIds.isEmpty()
+            || policy
+                .getCategorizedBotPolicyDetails()
+                .getCategorizedBotPolicyScope()
+                .getEnvironmentScope()
+                .getEnvironmentIdsList()
+                .isEmpty()
             || !Collections.disjoint(
                 envIds,
                 policy
