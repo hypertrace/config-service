@@ -110,7 +110,7 @@ message GetAllConfigsResponse {
   repeated ContextSpecificConfig context_specific_configs = 1;
 
   // Total number of records matching the filter before pagination if include_total is true.
-  int32 total_count = 2;
+  optional int32 total_count = 2;
 }
 
 message ContextSpecificConfig {
