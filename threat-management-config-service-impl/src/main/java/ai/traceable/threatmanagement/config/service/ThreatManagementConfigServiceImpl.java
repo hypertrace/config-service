@@ -332,7 +332,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       requestValidator.validateRequestContext(requestContext);
 
       IpReputationThreatScoreConfig ipReputationThreatScoreConfig =
-          ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(requestContext);
+          ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
+              requestContext, request.getScope());
 
       responseObserver.onNext(
           GetIpReputationThreatScoreConfigResponse.newBuilder()
@@ -441,7 +442,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                               requestContext))
                       .setIpReputationThreatScoreConfig(
                           ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
-                              requestContext))
+                              requestContext, request.getScope()))
                       .setStatusCodeThreatScoreConfigs(
                           statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
                               requestContext, request.getScope()))

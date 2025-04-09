@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+
 option java_multiple_files = true;
 
-message GetIpReputationThreatScoreConfigRequest {}
+message GetIpReputationThreatScoreConfigRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetIpReputationThreatScoreConfigResponse {
   IpReputationThreatScoreConfig ip_reputation_threat_score_config = 1;
@@ -25,4 +29,5 @@ message IpReputationThreatScoreConfig {
   int32 high_ip_reputation_threat_score_increment = 2;
   int32 medium_ip_reputation_threat_score_increment = 3;
   int32 low_ip_reputation_threat_score_increment = 4;
+  ScopeConfig scope = 5;
 }

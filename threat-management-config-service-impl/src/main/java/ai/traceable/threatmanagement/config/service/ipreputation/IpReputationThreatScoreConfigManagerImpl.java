@@ -5,6 +5,7 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
@@ -37,8 +38,12 @@ class IpReputationThreatScoreConfigManagerImpl
 
   @Override
   public IpReputationThreatScoreConfig getIpReputationThreatScoreConfig(
-      RequestContext requestContext) {
-    return getData(requestContext, getTenantId()).orElse(getDefaultIpReputationThreatScoreConfig());
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId).orElse(getDefaultIpReputationThreatScoreConfig());
   }
 
   @Override
@@ -83,12 +88,13 @@ class IpReputationThreatScoreConfigManagerImpl
 
   @Override
   protected String getContextFromData(IpReputationThreatScoreConfig data) {
-    return getTenantId();
+    return data.getScope().hasEnvironmentScope()
+        ? data.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
   }
 
-  private String getTenantId() {
-    return RequestContext.CURRENT
-        .get()
+  private String getTenantId(RequestContext requestContext) {
+    return requestContext
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get tenant id from request context"));

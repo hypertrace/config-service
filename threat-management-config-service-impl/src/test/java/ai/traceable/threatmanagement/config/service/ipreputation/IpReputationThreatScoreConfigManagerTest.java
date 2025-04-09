@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import io.grpc.Channel;
 import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -76,7 +77,7 @@ class IpReputationThreatScoreConfigManagerTest {
         REQUEST_CONTEXT.call(
             () ->
                 ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
-                    REQUEST_CONTEXT));
+                    REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
     assertEquals(defaultIpReputationThreatScoreConfig, ipReputationThreatScoreConfig);
 
     IpReputationThreatScoreConfig configToUpsert1 =
@@ -97,7 +98,7 @@ class IpReputationThreatScoreConfigManagerTest {
         REQUEST_CONTEXT.call(
             () ->
                 ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
-                    REQUEST_CONTEXT));
+                    REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
     assertEquals(configToUpsert1, ipReputationThreatScoreConfig);
 
     // update request config replaces existing one
@@ -119,7 +120,7 @@ class IpReputationThreatScoreConfigManagerTest {
         REQUEST_CONTEXT.call(
             () ->
                 ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
-                    REQUEST_CONTEXT));
+                    REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
     assertEquals(configToUpsert2, ipReputationThreatScoreConfig);
 
     ipReputationThreatScoreConfig =
