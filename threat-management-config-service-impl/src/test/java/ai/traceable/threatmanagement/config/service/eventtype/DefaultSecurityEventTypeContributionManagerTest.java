@@ -5,6 +5,8 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import com.google.protobuf.Struct;
@@ -54,6 +56,10 @@ class DefaultSecurityEventTypeContributionManagerTest {
           .setSecurityEventTypeContributionKind(
               SecurityEventTypeContributionKind
                   .SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_HIGH_RISK_APIS)
+          .setScope(
+              ScopeConfig.newBuilder()
+                  .setEnvironmentScope(
+                      EnvironmentScope.newBuilder().setEnvironmentId("environment-id").build()))
           .build();
 
   private static final Value SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_2_VALUE =
@@ -67,6 +73,25 @@ class DefaultSecurityEventTypeContributionManagerTest {
                               SecurityEventTypeContributionKind
                                   .SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_HIGH_RISK_APIS
                                   .name())
+                          .build())
+                  .putFields(
+                      "scope",
+                      Value.newBuilder()
+                          .setStructValue(
+                              Struct.newBuilder()
+                                  .putFields(
+                                      "environmentScope",
+                                      Value.newBuilder()
+                                          .setStructValue(
+                                              Struct.newBuilder()
+                                                  .putFields(
+                                                      "environmentId",
+                                                      Value.newBuilder()
+                                                          .setStringValue("environment-id")
+                                                          .build())
+                                                  .build())
+                                          .build())
+                                  .build())
                           .build())
                   .build())
           .build();
@@ -103,7 +128,8 @@ class DefaultSecurityEventTypeContributionManagerTest {
             .setSecurityEventTypeContributionKind(
                 SecurityEventTypeContributionKind.SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_ALL)
             .build(),
-        securityEventTypeContributionManager.getSecurityEventTypeContribution(REQUEST_CONTEXT));
+        securityEventTypeContributionManager.getSecurityEventTypeContribution(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -122,7 +148,8 @@ class DefaultSecurityEventTypeContributionManagerTest {
 
     assertEquals(
         SECURITY_EVENT_TYPE_CONTRIBUTION_1,
-        securityEventTypeContributionManager.getSecurityEventTypeContribution(REQUEST_CONTEXT));
+        securityEventTypeContributionManager.getSecurityEventTypeContribution(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -132,7 +159,7 @@ class DefaultSecurityEventTypeContributionManagerTest {
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
             .setResourceName(SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
             .setConfig(SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_2_VALUE)
-            .setContext(TENANT_ID)
+            .setContext("environment-id")
             .build();
 
     when(configServiceStub.upsertConfig(request))

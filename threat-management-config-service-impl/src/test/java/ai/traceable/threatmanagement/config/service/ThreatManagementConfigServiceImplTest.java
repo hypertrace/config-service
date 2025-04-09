@@ -474,7 +474,7 @@ class ThreatManagementConfigServiceImplTest {
     @Test
     void getSecurityEventTypeContribution() {
       when(securityEventTypeContributionManager.getSecurityEventTypeContribution(
-              any(RequestContext.class)))
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_1);
 
       StreamObserver<GetSecurityEventTypeContributionResponse> responseObserver =
@@ -785,7 +785,7 @@ class ThreatManagementConfigServiceImplTest {
               any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(SECURITY_EVENT_SCORE_CONTRIBUTION_1);
       when(securityEventTypeContributionManager.getSecurityEventTypeContribution(
-              any(RequestContext.class)))
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_1);
       when(ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
               any(RequestContext.class), any(ScopeConfig.class)))

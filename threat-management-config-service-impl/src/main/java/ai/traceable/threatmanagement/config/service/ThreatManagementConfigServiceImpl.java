@@ -243,7 +243,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       requestValidator.validateOrThrow(requestContext, request);
 
       SecurityEventTypeContribution securityEventTypeContribution =
-          securityEventTypeContributionManager.getSecurityEventTypeContribution(requestContext);
+          securityEventTypeContributionManager.getSecurityEventTypeContribution(
+              requestContext, request.getScope());
 
       responseObserver.onNext(
           GetSecurityEventTypeContributionResponse.newBuilder()
@@ -440,7 +441,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                               requestContext, request.getScope()))
                       .setSecurityEventTypeContribution(
                           securityEventTypeContributionManager.getSecurityEventTypeContribution(
-                              requestContext))
+                              requestContext, request.getScope()))
                       .setIpReputationThreatScoreConfig(
                           ipReputationThreatScoreConfigManager.getIpReputationThreatScoreConfig(
                               requestContext, request.getScope()))

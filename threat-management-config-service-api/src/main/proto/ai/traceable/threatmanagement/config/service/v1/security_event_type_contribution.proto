@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+
 option java_multiple_files = true;
 
-message GetSecurityEventTypeContributionRequest {}
+message GetSecurityEventTypeContributionRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetSecurityEventTypeContributionResponse {
   SecurityEventTypeContribution security_event_type_contribution = 1;
@@ -20,6 +24,7 @@ message UpdateSecurityEventTypeContributionResponse {
 
 message SecurityEventTypeContribution {
   SecurityEventTypeContributionKind security_event_type_contribution_kind = 1;
+  ScopeConfig scope = 2;
 
   enum SecurityEventTypeContributionKind {
     SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_UNSPECIFIED = 0;

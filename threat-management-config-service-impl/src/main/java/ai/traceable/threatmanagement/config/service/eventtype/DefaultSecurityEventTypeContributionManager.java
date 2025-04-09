@@ -3,6 +3,7 @@ package ai.traceable.threatmanagement.config.service.eventtype;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.SECURITY_EVENT_TYPE_CONTRIBUTION_CONFIG_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution.SecurityEventTypeContributionKind;
 import com.google.inject.Inject;
@@ -11,14 +12,14 @@ import io.grpc.Status;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class DefaultSecurityEventTypeContributionManager
-    extends ContextuallyIdentifiedObjectStore<SecurityEventTypeContribution>
+    extends IdentifiedObjectStore<SecurityEventTypeContribution>
     implements SecurityEventTypeContributionManager {
   private final SecurityEventTypeContributionConverter securityEventTypeContributionConverter;
 
@@ -37,8 +38,13 @@ class DefaultSecurityEventTypeContributionManager
 
   @Override
   public SecurityEventTypeContribution getSecurityEventTypeContribution(
-      RequestContext requestContext) {
-    return getData(requestContext).orElseGet(this::getDefaultSecurityEventTypeContribution);
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId)
+        .orElseGet(this::getDefaultSecurityEventTypeContribution);
   }
 
   @Override
@@ -71,8 +77,14 @@ class DefaultSecurityEventTypeContributionManager
   }
 
   @Override
-  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
-    return requestContext
+  protected String getContextFromData(SecurityEventTypeContribution eventType) {
+    return eventType.getScope().hasEnvironmentScope()
+        ? eventType.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
+  }
+
+  private String getTenantId(RequestContext context) {
+    return context
         .getTenantId()
         .orElseThrow(
             () ->
