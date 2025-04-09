@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+
 option java_multiple_files = true;
 
-message GetStatusCodeThreatScoreConfigsRequest {}
+message GetStatusCodeThreatScoreConfigsRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetStatusCodeThreatScoreConfigsResponse {
   StatusCodeThreatScoreConfigs status_code_threat_score_configs = 1;
@@ -33,6 +37,7 @@ enum Protocol {
 
 message StatusCodeThreatScoreConfigs {
   repeated StatusCodeThreatScoreConfig configs = 1;
+  ScopeConfig scope = 2;
 }
 
 message StatusCodeThreatScoreConfig {

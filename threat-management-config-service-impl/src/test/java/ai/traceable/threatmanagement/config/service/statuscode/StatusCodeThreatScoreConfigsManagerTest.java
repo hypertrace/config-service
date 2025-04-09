@@ -3,7 +3,9 @@ package ai.traceable.threatmanagement.config.service.statuscode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
 import ai.traceable.threatmanagement.config.service.v1.Protocol;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SeverityDowngradePolicy;
 import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfigs;
@@ -64,7 +66,7 @@ class StatusCodeThreatScoreConfigsManagerTest {
         REQUEST_CONTEXT.call(
             () ->
                 statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
-                    REQUEST_CONTEXT));
+                    REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
     assertEquals(List.of(), statusCodeThreatScoreConfigs.getConfigsList());
 
     StatusCodeThreatScoreConfigs configsToUpsert1 =
@@ -91,7 +93,7 @@ class StatusCodeThreatScoreConfigsManagerTest {
         REQUEST_CONTEXT.call(
             () ->
                 statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
-                    REQUEST_CONTEXT));
+                    REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
     assertEquals(configsToUpsert1, statusCodeThreatScoreConfigs);
 
     // update request config replaces existing one
@@ -103,6 +105,11 @@ class StatusCodeThreatScoreConfigsManagerTest {
                         Protocol.PROTOCOL_HTTP,
                         "400",
                         SeverityDowngradePolicy.SEVERITY_DOWNGRADE_POLICY_TWO_STEPS)))
+            .setScope(
+                ScopeConfig.newBuilder()
+                    .setEnvironmentScope(
+                        EnvironmentScope.newBuilder().setEnvironmentId("environment-id").build())
+                    .build())
             .build();
     statusCodeThreatScoreConfigs =
         REQUEST_CONTEXT.call(
@@ -115,7 +122,13 @@ class StatusCodeThreatScoreConfigsManagerTest {
         REQUEST_CONTEXT.call(
             () ->
                 statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
-                    REQUEST_CONTEXT));
+                    REQUEST_CONTEXT,
+                    ScopeConfig.newBuilder()
+                        .setEnvironmentScope(
+                            EnvironmentScope.newBuilder()
+                                .setEnvironmentId("environment-id")
+                                .build())
+                        .build()));
     assertEquals(configsToUpsert2, statusCodeThreatScoreConfigs);
   }
 

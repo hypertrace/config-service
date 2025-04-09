@@ -3,6 +3,7 @@ package ai.traceable.threatmanagement.config.service.statuscode;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.STATUS_CODE_THREAT_SCORE_CONFIGS_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfigs;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -32,8 +33,12 @@ class StatusCodeThreatScoreConfigsManagerImpl
 
   @Override
   public StatusCodeThreatScoreConfigs getStatusCodeThreatScoreConfigs(
-      RequestContext requestContext) {
-    return getData(requestContext, getTenantId())
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId)
         .orElse(StatusCodeThreatScoreConfigs.getDefaultInstance());
   }
 
@@ -64,13 +69,14 @@ class StatusCodeThreatScoreConfigsManagerImpl
   }
 
   @Override
-  protected String getContextFromData(StatusCodeThreatScoreConfigs data) {
-    return getTenantId();
+  protected String getContextFromData(StatusCodeThreatScoreConfigs statusCodeThreatScoreConfigs) {
+    return statusCodeThreatScoreConfigs.getScope().hasEnvironmentScope()
+        ? statusCodeThreatScoreConfigs.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
   }
 
-  private String getTenantId() {
-    return RequestContext.CURRENT
-        .get()
+  private String getTenantId(RequestContext context) {
+    return context
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get tenant id from request context"));

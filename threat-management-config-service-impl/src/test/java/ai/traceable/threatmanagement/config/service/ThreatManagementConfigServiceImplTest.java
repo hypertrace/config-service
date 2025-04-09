@@ -704,7 +704,7 @@ class ThreatManagementConfigServiceImplTest {
     @Test
     void getStatusCodeThreatScoreConfigs() {
       when(statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
-              any(RequestContext.class)))
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(STATUS_CODE_THREAT_SCORE_CONFIGS);
 
       StreamObserver<GetStatusCodeThreatScoreConfigsResponse> responseObserver =
@@ -792,7 +792,7 @@ class ThreatManagementConfigServiceImplTest {
               any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(THREAT_SCORE_BOUND_1);
       when(statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
-              any(RequestContext.class)))
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(STATUS_CODE_THREAT_SCORE_CONFIGS);
 
       StreamObserver<GetThreatScoreConfigResponse> responseObserver = mock(StreamObserver.class);

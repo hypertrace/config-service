@@ -380,7 +380,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       requestValidator.validateRequestContext(requestContext);
 
       StatusCodeThreatScoreConfigs statusCodeThreatScoreConfigs =
-          statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(requestContext);
+          statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
+              requestContext, request.getScope());
 
       responseObserver.onNext(
           GetStatusCodeThreatScoreConfigsResponse.newBuilder()
@@ -442,7 +443,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                               requestContext))
                       .setStatusCodeThreatScoreConfigs(
                           statusCodeThreatScoreConfigsManager.getStatusCodeThreatScoreConfigs(
-                              requestContext))
+                              requestContext, request.getScope()))
                       .setThreatScoreBound(
                           threatScoreManager.getThreatScoreBound(
                               requestContext, request.getScope()))
