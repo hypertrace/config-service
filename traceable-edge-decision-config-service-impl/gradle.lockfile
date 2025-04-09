@@ -1,11 +1,11 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.764=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.37.403=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:cache-provider:0.8.85=testRuntimeClasspath
-ai.traceable.platform-gateway:event-invalidation-cache:0.8.85=testRuntimeClasspath
-ai.traceable.platform:actor-service-api:0.2.159=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.899=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.37.436=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:cache-provider:0.8.86=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:event-invalidation-cache:0.8.86=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:actor-service-api:0.2.161=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:opa-aggregator-api:0.2.53=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
@@ -112,7 +112,7 @@ org.hypertrace.core.grpcutils:grpc-client-utils:0.13.11=compileClasspath,runtime
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.11=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.5.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.serviceframework:platform-metrics:0.1.87=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.8.214=testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.8.214=runtimeClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:5.10.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:5.10.2=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-params:5.10.2=testCompileClasspath,testRuntimeClasspath

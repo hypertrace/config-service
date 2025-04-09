@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.modsec.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -68,22 +69,26 @@ class ModsecManagerImplTest {
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            Set.of()))
+            Set.of(),
+            false))
         .thenReturn("regular");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            Set.of()))
+            Set.of(),
+            false))
         .thenReturn("safe");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            Set.of()))
+            Set.of(),
+            false))
         .thenReturn("block");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             argThat(list -> list.size() > 1),
             eq(ModsecRuleVersion.MODSEC_RULE_VERSION_V3),
-            eq(Set.of())))
+            eq(Set.of()),
+            anyBoolean()))
         .thenReturn("combined");
 
     {
@@ -156,18 +161,21 @@ class ModsecManagerImplTest {
             requestContext, AnomalyConfigScopeUtils.getDefaultCustomerConfigScope()))
         .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
 
-    when(modsecRulesRegistry.getModsecRuleInfos(any())).thenReturn(getModsecRuleInfoMap());
+    when(modsecRulesRegistry.getModsecRuleInfos(any(), anyBoolean()))
+        .thenReturn(getModsecRuleInfoMap());
     // config status for subRule1 and subRule4 is disabled, subRule2 is blockingDisabled
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            Set.of("subRule1", "subRule2", "subRule4")))
+            Set.of("subRule1", "subRule2", "subRule4"),
+            false))
         .thenReturn("excluded_blocked");
 
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-            Set.of("subRule1", "subRule4")))
+            Set.of("subRule1", "subRule4"),
+            false))
         .thenReturn("excluded_safe");
 
     List<AnomalySubRuleType> subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);

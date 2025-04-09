@@ -181,7 +181,8 @@ public class AnomalyGlobalConfigServiceImpl
                   ruleInfoManager.getAnomalyRuleInfos(
                       RequestContext.CURRENT.get(),
                       request.getEventFamiliesList(),
-                      request.getModsecRuleVersion()))
+                      request.getModsecRuleVersion(),
+                      request.getUseTestModsecRules()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

@@ -1,14 +1,14 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.activity.event.service:activity-event-api:11.0.6=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.791=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:malicious-sources-config-service-api:0.37.407=runtimeClasspath,testRuntimeClasspath
+ai.traceable.activity.event.service:activity-event-api:13.0.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.899=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:malicious-sources-config-service-api:0.37.436=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:data-model:0.8.85=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:ip-utils:0.8.85=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.85=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.platform:actor-service-api:0.2.159=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:data-model:0.8.86=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:ip-utils:0.8.86=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.86=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:actor-service-api:0.2.161=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.15=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.15=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.199=runtimeClasspath,testRuntimeClasspath

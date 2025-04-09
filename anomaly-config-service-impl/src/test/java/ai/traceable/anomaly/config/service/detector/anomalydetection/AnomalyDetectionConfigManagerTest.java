@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -674,7 +675,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -775,7 +776,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -870,7 +871,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -939,7 +940,7 @@ public class AnomalyDetectionConfigManagerTest {
                     .build())
             .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()

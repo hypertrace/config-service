@@ -46,7 +46,7 @@ public class ModsecRulesRegistryTest {
 
   private void testModsecCrsRules(ModsecRuleVersion version) throws IOException {
     Collection<AnomalyRuleInfo> anomalyRules =
-        modsecRulesRegistry.getModsecRuleInfos(version).values();
+        modsecRulesRegistry.getModsecRuleInfos(version, false).values();
     anomalyRules.forEach(
         rule -> {
           assertFalse(rule.getEventDetails().getDescription().isBlank());
@@ -78,7 +78,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR), version, Set.of());
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR), version, Set.of(), false);
       if (regularRulesCount == 0) {
         assertTrue(crsRulesBlob.isEmpty(), "Regular rules empty for version " + version);
       } else {
@@ -91,7 +91,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE), version, Set.of());
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE), version, Set.of(), false);
       assertEquals(
           allRulesCount - safeRulesCount,
           crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
@@ -100,7 +100,7 @@ public class ModsecRulesRegistryTest {
     {
       String crsRulesBlob =
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK), version, Set.of());
+              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK), version, Set.of(), false);
       // few rules in file not marked safe
       assertEquals(
           allRulesCount - blockingRulesCount,
@@ -139,7 +139,8 @@ public class ModsecRulesRegistryTest {
           modsecRulesRegistry.getModsecCrsRulesBlob(
               List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
               ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-              Set.of());
+              Set.of(),
+              false);
       assertEquals(-1, crsRulesBlob.indexOf("SecArgumentsLimit 1000"));
     }
     {
@@ -147,7 +148,8 @@ public class ModsecRulesRegistryTest {
           modsecRulesRegistry.getModsecCrsRulesBlob(
               List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
               ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
-              Set.of());
+              Set.of(),
+              false);
       assertNotEquals(-1, crsRulesBlob.indexOf("SecArgumentsLimit 1000"));
     }
   }
@@ -155,7 +157,8 @@ public class ModsecRulesRegistryTest {
   @Test
   public void testRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos =
-        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+        modsecRulesRegistry.getModsecRuleInfos(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED, false);
     assertEquals(15, anomalyRuleInfos.size());
     assertEquals(
         "crs_101 :: Server Side Request Forgery (SSRF) Signatures\n"
@@ -212,11 +215,12 @@ public class ModsecRulesRegistryTest {
   @Test
   public void testSubRules() {
     Map<String, AnomalyRuleInfo> anomalyRuleInfos =
-        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3);
+        modsecRulesRegistry.getModsecRuleInfos(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3, false);
 
     Map<String, AnomalyRuleInfo> testAnomalyRuleInfos =
         modsecRulesRegistry.getModsecRuleInfos(
-            ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3, false);
 
     // check correctness of sub-rules..
     anomalyRuleInfos.forEach(
@@ -408,24 +412,44 @@ public class ModsecRulesRegistryTest {
     Map<String, AnomalySubRuleInfo> anomalySubRuleInfos = new HashMap<>();
     for (ModsecRuleVersion version : ModsecRuleVersion.values()) {
       if (version.equals(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
-          || version.equals(ModsecRuleVersion.UNRECOGNIZED)) {
+          || version.equals(ModsecRuleVersion.UNRECOGNIZED)
+          || version.name().contains("TEST_")) {
         continue;
       }
-      Collection<AnomalyRuleInfo> rules = modsecRulesRegistry.getModsecRuleInfos(version).values();
-      assertFalse(rules.isEmpty());
-      for (AnomalyRuleInfo ruleInfo : rules) {
-        for (AnomalySubRuleInfo subRuleInfo : ruleInfo.getSubRuleInfosList()) {
-          if (anomalySubRuleInfos.containsKey(subRuleInfo.getRuleId())) {
-            assertEquals(anomalySubRuleInfos.get(subRuleInfo.getRuleId()), subRuleInfo);
+      Collection<AnomalyRuleInfo> rules;
+      {
+        rules = modsecRulesRegistry.getModsecRuleInfos(version, false).values();
+        assertFalse(rules.isEmpty());
+        for (AnomalyRuleInfo ruleInfo : rules) {
+          for (AnomalySubRuleInfo subRuleInfo : ruleInfo.getSubRuleInfosList()) {
+            if (anomalySubRuleInfos.containsKey(subRuleInfo.getRuleId())) {
+              verifySubRuleInfosSansRuleTypes(
+                  anomalySubRuleInfos.get(subRuleInfo.getRuleId()), subRuleInfo);
+            } else {
+              anomalySubRuleInfos.put(subRuleInfo.getRuleId(), subRuleInfo);
+            }
           }
-          anomalySubRuleInfos.put(subRuleInfo.getRuleId(), subRuleInfo);
+        }
+      }
+      { // test rules
+        rules = modsecRulesRegistry.getModsecRuleInfos(version, true).values();
+        assertFalse(rules.isEmpty());
+        for (AnomalyRuleInfo ruleInfo : rules) {
+          for (AnomalySubRuleInfo subRuleInfo : ruleInfo.getSubRuleInfosList()) {
+            if (anomalySubRuleInfos.containsKey(subRuleInfo.getRuleId())) {
+              verifySubRuleInfosSansRuleTypes(
+                  anomalySubRuleInfos.get(subRuleInfo.getRuleId()), subRuleInfo);
+            } else {
+              anomalySubRuleInfos.put(subRuleInfo.getRuleId(), subRuleInfo);
+            }
+          }
         }
       }
     }
 
     Map<String, AnomalySubRuleInfo> allMergedSubRules =
         modsecRulesRegistry
-            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
+            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED, false)
             .values()
             .stream()
             .map(AnomalyRuleInfo::getSubRuleInfosList)
@@ -436,11 +460,17 @@ public class ModsecRulesRegistryTest {
 
   @Test
   public void testModsecCrsSensitiveAgentRules() {
-    String[] modsecCrsAllRules =
-        loadModsecFileContents("modsec/crs/modsec-crs-rules.conf").split("\n\n");
-    String[] modsecCrsSensitiveAgentRules =
-        loadModsecFileContents("modsec/crs/modsec-crs-sensitive-agent-rules.conf").split("\n\n");
+    verifyRulesConsistency(
+        loadModsecFileContents("modsec/crs/modsec-crs-rules.conf").split("\n\n"),
+        loadModsecFileContents("modsec/crs/modsec-crs-sensitive-agent-rules.conf").split("\n\n"));
+    verifyRulesConsistency(
+        loadModsecFileContents("modsec/crs/test-modsec-crs-rules.conf").split("\n\n"),
+        loadModsecFileContents("modsec/crs/test-modsec-crs-sensitive-agent-rules.conf")
+            .split("\n\n"));
+  }
 
+  private void verifyRulesConsistency(
+      String[] modsecCrsAllRules, String[] modsecCrsSensitiveAgentRules) {
     int j = 0;
     for (int i = 0; i < modsecCrsAllRules.length; i++) {
       if (modsecCrsAllRules[i].startsWith("SecRuleUpdateTargetById")) {
@@ -460,34 +490,6 @@ public class ModsecRulesRegistryTest {
       }
     }
     assertEquals(modsecCrsSensitiveAgentRules.length, j);
-  }
-
-  @Test
-  public void testModsecTestRules() {
-    // Check if the number of safe rules in test file match with the original file.
-    List<String> testSubRules =
-        modsecRulesRegistry
-            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_TEST_CORAZA_V3)
-            .values()
-            .stream()
-            .map(
-                anomalySubRuleInfo ->
-                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
-            .sorted()
-            .collect(Collectors.toList());
-
-    List<String> subRules =
-        modsecRulesRegistry
-            .getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3)
-            .values()
-            .stream()
-            .map(
-                anomalySubRuleInfo ->
-                    anomalySubRuleInfo.getRuleId() + " :: " + anomalySubRuleInfo.getRuleName())
-            .sorted()
-            .collect(Collectors.toList());
-
-    assertEquals(testSubRules, subRules);
   }
 
   private Set<String> getIdMatches(String text) {
@@ -524,5 +526,12 @@ public class ModsecRulesRegistryTest {
     return subRules.stream()
         .filter(subRule -> subRule.getSubRuleTypesList().contains(anomalySubRuleType))
         .count();
+  }
+
+  private void verifySubRuleInfosSansRuleTypes(
+      AnomalySubRuleInfo expected, AnomalySubRuleInfo actual) {
+    assertEquals(
+        expected.toBuilder().clearSubRuleTypes().build(),
+        actual.toBuilder().clearSubRuleTypes().build());
   }
 }

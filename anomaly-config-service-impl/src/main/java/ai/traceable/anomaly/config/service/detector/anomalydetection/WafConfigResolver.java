@@ -16,6 +16,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -50,21 +51,26 @@ public class WafConfigResolver {
 
   public List<AnomalyDetectionConfig> resolve(
       RequestContext requestContext,
-      ModsecDefaultConfigsType modsecDefaultConfigsType,
+      ModsecGlobalConfig modsecGlobalConfig,
       Map<String, ScopedAnomalyDetectionConfig> configMap,
       List<String> contextsWithIncreasingPriority) {
-    if (modsecDefaultConfigsType.equals(
-            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED)
-        || modsecDefaultConfigsType.equals(
-            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_MONITOR)
-        || modsecDefaultConfigsType.equals(
-            ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING)) {
+    if (modsecGlobalConfig
+            .getDefaultConfigsType()
+            .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_DEFAULT_ENABLED)
+        || modsecGlobalConfig
+            .getDefaultConfigsType()
+            .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_MONITOR)
+        || modsecGlobalConfig
+            .getDefaultConfigsType()
+            .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING)) {
       return defaultWafConfigs;
     }
     List<AnomalyDetectionConfig> anomalyDetectionConfigList =
         new ArrayList<>(
             getModsecAnomalyRuleInfos(
-                    requestContext, getModsecRuleVersion(configMap, contextsWithIncreasingPriority))
+                    requestContext,
+                    getModsecRuleVersion(configMap, contextsWithIncreasingPriority),
+                    modsecGlobalConfig.getUseTestRules())
                 .stream()
                 .map(
                     ruleInfo -> {
@@ -72,7 +78,8 @@ public class WafConfigResolver {
                           ruleInfo.getSubRuleInfosList().stream()
                               .map(
                                   subRuleInfo ->
-                                      getSubRuleConfig(subRuleInfo, modsecDefaultConfigsType))
+                                      getSubRuleConfig(
+                                          subRuleInfo, modsecGlobalConfig.getDefaultConfigsType()))
                               .filter(Objects::nonNull)
                               .collect(Collectors.toUnmodifiableList());
                       if (!anomalySubRuleConfigList.isEmpty()) {
@@ -151,9 +158,12 @@ public class WafConfigResolver {
   }
 
   private List<AnomalyRuleInfo> getModsecAnomalyRuleInfos(
-      RequestContext requestContext, ModsecRuleVersion modsecRuleVersion) {
+      RequestContext requestContext, ModsecRuleVersion modsecRuleVersion, boolean useTestRules) {
     return ruleInfoManager.getAnomalyRuleInfos(
-        requestContext, List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC), modsecRuleVersion);
+        requestContext,
+        List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
+        modsecRuleVersion,
+        useTestRules);
   }
 
   private AnomalySubRuleConfig buildDisabledAnomalySubRuleConfig(AnomalySubRuleInfo subRuleInfo) {

@@ -56,6 +56,7 @@ message IpRangeRule {
   repeated string ip_ranges = 5;
   repeated string ip_addresses = 6;
   RuleScope rule_scope = 7;
+  bool hidden = 8;
 }
 
 message RuleScope {

@@ -195,7 +195,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(
                 wafConfigResolver.resolve(
                     requestContext,
-                    scopedAnomalyConfigStatus.getModsecGlobalConfig().getDefaultConfigsType(),
+                    scopedAnomalyConfigStatus.getModsecGlobalConfig(),
                     anomalyDetectionConfigMap,
                     Collections.emptyList()))
             .addAllAnomalyDetectionConfigs(
@@ -365,7 +365,7 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   wafConfigResolver.resolve(
                       requestContext,
-                      scopedAnomalyConfigStatus.getModsecGlobalConfig().getDefaultConfigsType(),
+                      scopedAnomalyConfigStatus.getModsecGlobalConfig(),
                       configMap,
                       Collections.emptyList()))
               .addAllAnomalyDetectionConfigs(
@@ -381,9 +381,7 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   wafConfigResolver.resolve(
                       requestContext,
-                      globalScopedAnomalyConfigStatus
-                          .getModsecGlobalConfig()
-                          .getDefaultConfigsType(),
+                      globalScopedAnomalyConfigStatus.getModsecGlobalConfig(),
                       configMap,
                       contextsWithIncreasingPriority))
               .addAllAnomalyDetectionConfigs(

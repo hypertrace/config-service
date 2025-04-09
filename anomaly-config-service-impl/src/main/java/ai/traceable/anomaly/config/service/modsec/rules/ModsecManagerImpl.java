@@ -76,6 +76,7 @@ public class ModsecManagerImpl implements ModsecManager {
       return new ModsecCrsRules(subRuleTypes);
     }
 
+    boolean useTestRules = globalConfig.getModsecGlobalConfig().getUseTestRules();
     Set<String> disabledModsecRuleIds;
     if (removeDisabledRules) {
       boolean checkBlockingStatus =
@@ -84,7 +85,11 @@ public class ModsecManagerImpl implements ModsecManager {
                   && subRuleTypes.get(0).equals(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK));
       disabledModsecRuleIds =
           getDisabledModsecRuleIds(
-              requestContext, checkBlockingStatus, anomalyConfigScope, modsecRuleVersion);
+              requestContext,
+              checkBlockingStatus,
+              anomalyConfigScope,
+              modsecRuleVersion,
+              useTestRules);
     } else {
       disabledModsecRuleIds = Set.of();
     }
@@ -97,14 +102,17 @@ public class ModsecManagerImpl implements ModsecManager {
                     Function.identity(),
                     subRuleType ->
                         modsecRulesRegistry.getModsecCrsRulesBlob(
-                            List.of(subRuleType), modsecRuleVersion, disabledModsecRuleIds)));
+                            List.of(subRuleType),
+                            modsecRuleVersion,
+                            disabledModsecRuleIds,
+                            useTestRules)));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
     if (subRuleTypes.size() == 1) {
       builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
     } else {
       builder.aggregatedModsecBlob(
           modsecRulesRegistry.getModsecCrsRulesBlob(
-              subRuleTypes, modsecRuleVersion, disabledModsecRuleIds));
+              subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, useTestRules));
     }
 
     return builder.build();
@@ -128,13 +136,17 @@ public class ModsecManagerImpl implements ModsecManager {
                     Function.identity(),
                     subRuleType ->
                         modsecRulesRegistry.getModsecCrsRulesBlob(
-                            List.of(subRuleType), modsecRuleVersion, Set.of())));
+                            List.of(subRuleType),
+                            modsecRuleVersion,
+                            Set.of(),
+                            useTestModsecRules)));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
     if (subRuleTypes.size() == 1) {
       builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
     } else {
       builder.aggregatedModsecBlob(
-          modsecRulesRegistry.getModsecCrsRulesBlob(subRuleTypes, modsecRuleVersion, Set.of()));
+          modsecRulesRegistry.getModsecCrsRulesBlob(
+              subRuleTypes, modsecRuleVersion, Set.of(), useTestModsecRules));
     }
 
     return builder.build();
@@ -144,11 +156,12 @@ public class ModsecManagerImpl implements ModsecManager {
       RequestContext requestContext,
       boolean checkBlockingStatus,
       AnomalyConfigScope anomalyConfigScope,
-      ModsecRuleVersion modsecRuleVersion) {
+      ModsecRuleVersion modsecRuleVersion,
+      boolean useTestRules) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
         getAnomalyRuleConfigMap(requestContext, anomalyConfigScope);
     Map<String, AnomalyRuleInfo> ruleInfoMap =
-        modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion);
+        modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
 
     // The disabled modsec rule ids should be ordered to ensure that
     // the blob doesn't keep changing on repeated calls

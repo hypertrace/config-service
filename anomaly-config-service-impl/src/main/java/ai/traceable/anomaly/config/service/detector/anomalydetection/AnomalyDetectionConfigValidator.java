@@ -24,7 +24,6 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
-import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.EnumMap;
@@ -43,7 +42,6 @@ public class AnomalyDetectionConfigValidator {
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> apiDefRuleIdToConfigMap;
   private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
       sessionDefRuleIdToConfigMap;
-  private final Map<String, AnomalyRuleInfo> modsecRuleInfoMap;
 
   @Inject
   public AnomalyDetectionConfigValidator(
@@ -57,8 +55,6 @@ public class AnomalyDetectionConfigValidator {
     this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
     this.sessionDefRuleIdToConfigMap =
         sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
-    this.modsecRuleInfoMap =
-        modsecRulesRegistry.getModsecRuleInfos(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
   }
 
   public Status validate(GetScopedAnomalyDetectionConfigRequest request) {
@@ -346,13 +342,8 @@ public class AnomalyDetectionConfigValidator {
               String.format(
                   "UpdateScopedAnomalyDetectionConfigRequest should have only one modsec config with ruleId: %s",
                   ruleId));
-        } else if (!modsecRuleInfoMap.containsKey(ruleId)) {
-          return Status.INVALID_ARGUMENT.withDescription(
-              String.format("Invalid modsec ruleId: %s", ruleId));
         } else {
-          AnomalyRuleInfo ruleInfo = modsecRuleInfoMap.get(ruleId);
-          Status status =
-              validateSubRuleConfigs(modsecRuleConfig.getSubRuleConfigsList(), ruleInfo, ruleId);
+          Status status = validateSubRuleConfigs(modsecRuleConfig.getSubRuleConfigsList(), ruleId);
           if (!status.isOk()) {
             return status;
           }
@@ -459,19 +450,11 @@ public class AnomalyDetectionConfigValidator {
         : Status.OK;
   }
 
-  private Status validateSubRuleConfigs(
-      List<AnomalySubRuleConfig> subRuleConfigs, AnomalyRuleInfo ruleInfo, String ruleId) {
+  private Status validateSubRuleConfigs(List<AnomalySubRuleConfig> subRuleConfigs, String ruleId) {
     Set<String> subRuleIds = new HashSet<>();
-    Map<String, List<AnomalySubRuleType>> subRuleInfoMap = getSubRuleInfoMap(ruleInfo);
 
     for (AnomalySubRuleConfig subRuleConfig : subRuleConfigs) {
       String subRuleId = subRuleConfig.getSubRuleId();
-
-      if (!subRuleInfoMap.containsKey(subRuleId)) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            String.format("Invalid subRuleId: %s for modsec ruleId: %s", subRuleId, ruleId));
-      }
-
       if (subRuleIds.contains(subRuleId)) {
         return Status.INVALID_ARGUMENT.withDescription(
             String.format(

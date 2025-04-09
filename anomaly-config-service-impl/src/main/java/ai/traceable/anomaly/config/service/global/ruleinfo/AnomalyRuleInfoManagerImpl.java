@@ -43,8 +43,9 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   public List<AnomalyRuleInfo> getAnomalyRuleInfos(
       RequestContext requestContext,
       List<AnomalyEventFamily> eventFamilies,
-      ModsecRuleVersion ruleVersion) {
-    // Duplicate entires in both request and response are removed
+      ModsecRuleVersion ruleVersion,
+      boolean useTestModsecRules) {
+    // Duplicate entries in both request and response are removed
     HashSet<AnomalyRuleInfo> ruleInfos = new HashSet<>();
     new HashSet<>(eventFamilies)
         .forEach(
@@ -54,7 +55,10 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                   ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
                   break;
                 case ANOMALY_EVENT_FAMILY_MODSEC:
-                  ruleInfos.addAll(modsecRulesRegistry.getModsecRuleInfos(ruleVersion).values());
+                  ruleInfos.addAll(
+                      modsecRulesRegistry
+                          .getModsecRuleInfos(ruleVersion, useTestModsecRules)
+                          .values());
                   break;
                 case ANOMALY_EVENT_FAMILY_SESSION:
                   ruleInfos.addAll(sessionRulesRegistry.getSessionRuleInfos().values());

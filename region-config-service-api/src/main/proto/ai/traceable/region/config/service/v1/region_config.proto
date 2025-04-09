@@ -115,6 +115,7 @@ message UpdateRegionRuleRequest {
   bool internal = 10;
   string description = 11;
   repeated RuleEffectWithModifications effects = 12;
+  bool hidden = 13;
 }
 
 message UpdateRegionRuleResponse {
@@ -149,6 +150,7 @@ message RegionRule {
   map<string, string> region_id_to_name_map = 12 [deprecated = true];
   map<string, Country> region_id_to_country_map = 13;
   repeated RuleEffectWithModifications effects = 14;
+  bool hidden = 15;
 
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.

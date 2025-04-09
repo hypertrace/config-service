@@ -15,6 +15,7 @@ message CreateCustomSignatureRuleRequest {
   RuleScope rule_scope = 6;
   bool internal = 7;
   RuleSource rule_source = 8;
+  bool hidden = 9;
 }
 
 message CreateCustomSignatureRuleResponse {
@@ -86,6 +87,7 @@ message CustomSignatureRule {
   ExpiryDetails blocking_expiry_details = 8;
   RuleScope rule_scope = 9;
   RuleSource rule_source = 10;
+  bool hidden = 11;
 }
 
 message CustomSignatureRuleDetails {

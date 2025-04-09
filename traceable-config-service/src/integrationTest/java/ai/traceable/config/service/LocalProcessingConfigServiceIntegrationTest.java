@@ -301,7 +301,8 @@ public class LocalProcessingConfigServiceIntegrationTest
     return registry.getModsecCrsRulesBlob(
         List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
         ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
-        disabledRuleIds);
+        disabledRuleIds,
+        false);
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {

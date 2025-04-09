@@ -284,17 +284,6 @@ public class AnomalyDetectionConfigValidatorTest {
 
     assertEquals(Status.OK.getCode(), status.getCode());
 
-    anomalyDetectionConfig2 = buildModSecConfig("rule", Optional.empty());
-    updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig2));
-    status = validator.validate(updateRequest);
-    assertTrue(status.getDescription().contains("Invalid modsec ruleId: rule"));
-
-    anomalyDetectionConfig2 = buildModSecConfig("crs_931", Optional.of("subRule"));
-    updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig2));
-    status = validator.validate(updateRequest);
-    assertTrue(
-        status.getDescription().contains("Invalid subRuleId: subRule for modsec ruleId: crs_931"));
-
     subRuleConfig1 =
         AnomalySubRuleConfig.newBuilder()
             .setSubRuleId("crs_9440900")

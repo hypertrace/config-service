@@ -29,6 +29,7 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
   private final ModsecCrsRulesHandler modsecCrsRulesHandler;
 
   private Map<ModsecRuleVersion, Map<String, AnomalyRuleInfo>> versionedModsecRules;
+  private Map<ModsecRuleVersion, Map<String, AnomalyRuleInfo>> versionedTestModsecRules;
 
   @Inject
   public ModsecRulesRegistryImpl(
@@ -39,21 +40,30 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
   }
 
   @Override
-  public Map<String, AnomalyRuleInfo> getModsecRuleInfos(ModsecRuleVersion modsecRuleVersion) {
-    return versionedModsecRules.get(modsecRuleVersion);
+  public Map<String, AnomalyRuleInfo> getModsecRuleInfos(
+      ModsecRuleVersion modsecRuleVersion, boolean useTestRules) {
+    ModsecRuleVersion ruleVersion = getTestStrippedVersion(modsecRuleVersion);
+    // handle deprecated enums
+    useTestRules = useTestRules || isModsecTestRuleVersion(modsecRuleVersion);
+    return useTestRules
+        ? versionedTestModsecRules.get(ruleVersion)
+        : versionedModsecRules.get(ruleVersion);
   }
 
   @Override
   public String getModsecCrsRulesBlob(
       List<AnomalySubRuleType> subRuleTypes,
       ModsecRuleVersion ruleVersion,
-      Set<String> disabledModsecRuleIds) {
+      Set<String> disabledModsecRuleIds,
+      boolean useTestRules) {
     ModsecCrsConfig modsecCrsConfig = getModsecCrsConfig(ruleVersion);
+    // handle deprecated enums
+    useTestRules = useTestRules || isModsecTestRuleVersion(ruleVersion);
     return modsecCrsRulesHandler.getModsecCrsBlob(
         modsecCrsConfig.getDirectivesFilePath(),
         modsecCrsConfig.getInitializationRulesFilePath(),
-        modsecCrsConfig.getRulesFilePath(),
-        versionedModsecRules.get(ruleVersion),
+        useTestRules ? modsecCrsConfig.getTestRulesFilePath() : modsecCrsConfig.getRulesFilePath(),
+        getModsecRuleInfos(ruleVersion, useTestRules),
         subRuleTypes,
         disabledModsecRuleIds);
   }
@@ -69,7 +79,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
   }
 
   private ModsecCrsConfig getModsecCrsConfig(ModsecRuleVersion ruleVersion) {
-    ModsecCrsConfig crsConfig = ModsecCrsConfig.ruleVersionToConfigMap.get(ruleVersion);
+    ModsecCrsConfig crsConfig =
+        ModsecCrsConfig.ruleVersionToConfigMap.get(getTestStrippedVersion(ruleVersion));
     if (crsConfig == null) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(
@@ -88,23 +99,37 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
 
     Map<String, AnomalyRuleInfo> allMergedModsecRules = new HashMap<>(anomalyRulesInfoMap);
     versionedModsecRules = new HashMap<>();
+    versionedTestModsecRules = new HashMap<>();
 
     for (ModsecRuleVersion ruleVersion : ModsecRuleVersion.values()) {
       if (ruleVersion.equals(ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
-          || ruleVersion.equals(ModsecRuleVersion.UNRECOGNIZED)) {
+          || ruleVersion.equals(ModsecRuleVersion.UNRECOGNIZED)
+          || isModsecTestRuleVersion(ruleVersion)) {
         continue;
       }
       if (!ModsecCrsConfig.ruleVersionToConfigMap.containsKey(ruleVersion)) {
         throw new IllegalArgumentException(
             String.format("Cannot get modsec rule files for: %s", ruleVersion));
       } else {
-        Map<String, List<AnomalySubRuleInfo>> modsecRulesMap =
-            modsecCrsRulesHandler.parseModsecCrsRules(
-                modsecCrsRulesHandler.loadModsecCrsFileContents(
-                    getModsecCrsConfig(ruleVersion).rulesFilePath));
-        versionedModsecRules.put(
-            ruleVersion, mergeAnomalyRuleInfos(anomalyRulesInfoMap, modsecRulesMap, false));
-        allMergedModsecRules = mergeAnomalyRuleInfos(allMergedModsecRules, modsecRulesMap, true);
+        ModsecCrsConfig crsConfig = getModsecCrsConfig(ruleVersion);
+        Map<String, List<AnomalySubRuleInfo>> modsecRulesMap;
+        {
+          modsecRulesMap =
+              modsecCrsRulesHandler.parseModsecCrsRules(
+                  modsecCrsRulesHandler.loadModsecCrsFileContents(crsConfig.getRulesFilePath()));
+          versionedModsecRules.put(
+              ruleVersion, mergeAnomalyRuleInfos(anomalyRulesInfoMap, modsecRulesMap, false));
+          allMergedModsecRules = mergeAnomalyRuleInfos(allMergedModsecRules, modsecRulesMap, true);
+        }
+        { // test rules
+          modsecRulesMap =
+              modsecCrsRulesHandler.parseModsecCrsRules(
+                  modsecCrsRulesHandler.loadModsecCrsFileContents(
+                      crsConfig.getTestRulesFilePath()));
+          versionedTestModsecRules.put(
+              ruleVersion, mergeAnomalyRuleInfos(anomalyRulesInfoMap, modsecRulesMap, false));
+          allMergedModsecRules = mergeAnomalyRuleInfos(allMergedModsecRules, modsecRulesMap, true);
+        }
       }
     }
     versionedModsecRules.put(

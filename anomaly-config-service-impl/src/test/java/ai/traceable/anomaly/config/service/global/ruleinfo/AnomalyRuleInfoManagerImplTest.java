@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.global.ruleinfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,7 +64,7 @@ class AnomalyRuleInfoManagerImplTest {
     when(apiDefinitionRegistry.getApiDefRuleInfos())
         .thenReturn(
             Map.of("id-0", buildAnomalyRuleInfo("id-0"), "id-00", buildAnomalyRuleInfo("id-0")));
-    when(modsecRulesRegistry.getModsecRuleInfos(any()))
+    when(modsecRulesRegistry.getModsecRuleInfos(any(), anyBoolean()))
         .thenReturn(Map.of("id-1", buildAnomalyRuleInfo("id-1")));
     when(sessionRulesRegistry.getSessionRuleInfos())
         .thenReturn(
@@ -79,26 +80,30 @@ class AnomalyRuleInfoManagerImplTest {
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     // As two are repeated
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
@@ -106,7 +111,8 @@ class AnomalyRuleInfoManagerImplTest {
             List.of(
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     assertEquals(2, response.size());
 
     response =
@@ -118,7 +124,8 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     // Common rules are not duplicated
     assertEquals(5, response.size());
 
@@ -130,7 +137,8 @@ class AnomalyRuleInfoManagerImplTest {
                 List.of(
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE,
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
-                ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED));
+                ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+                false));
   }
 
   @Test
@@ -155,7 +163,8 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_SESSION,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
-            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)) {
+            ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            false)) {
 
       assertFalse(
           ruleInfo.getEventDetails().getDescription().isBlank(),

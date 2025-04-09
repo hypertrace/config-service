@@ -10,5 +10,6 @@ public interface RuleInfoManager {
   List<AnomalyRuleInfo> getAnomalyRuleInfos(
       RequestContext requestContext,
       List<AnomalyEventFamily> eventFamilies,
-      ModsecRuleVersion ruleVersion);
+      ModsecRuleVersion ruleVersion,
+      boolean useTestModsecRules);
 }

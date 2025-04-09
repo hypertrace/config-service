@@ -1,6 +1,7 @@
 package ai.traceable.anomaly.config.service.global;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -222,7 +223,7 @@ public class AnomalyGlobalConfigServiceImplTest {
 
     reset(responseStreamObserver);
 
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
         .thenReturn(List.of(AnomalyRuleInfo.getDefaultInstance()));
 
     globalConfigService.getAnomalyRuleInfos(

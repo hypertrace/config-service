@@ -27,6 +27,7 @@ message EnvironmentScope {
 message MaliciousSourcesRuleStatus {
   bool disabled = 1;
   bool internal = 2;
+  bool hidden = 3;
 }
 
 message MaliciousSourcesRuleInfo {
