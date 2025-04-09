@@ -320,7 +320,7 @@ class ThreatManagementConfigServiceImplTest {
     @Test
     void getSecurityEventScoreContribution() {
       when(securityEventScoreContributionManager.getSecurityEventScoreContribution(
-              any(RequestContext.class)))
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(SECURITY_EVENT_SCORE_CONTRIBUTION_1);
 
       StreamObserver<GetSecurityEventScoreContributionResponse> responseObserver =
@@ -782,7 +782,7 @@ class ThreatManagementConfigServiceImplTest {
               any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(ANOMALY_SCORE_CONTRIBUTION_1);
       when(securityEventScoreContributionManager.getSecurityEventScoreContribution(
-              any(RequestContext.class)))
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(SECURITY_EVENT_SCORE_CONTRIBUTION_1);
       when(securityEventTypeContributionManager.getSecurityEventTypeContribution(
               any(RequestContext.class)))

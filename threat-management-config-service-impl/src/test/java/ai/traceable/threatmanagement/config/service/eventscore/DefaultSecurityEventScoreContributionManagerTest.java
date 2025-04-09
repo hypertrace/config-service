@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
+import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -49,7 +51,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
                   .putFields("lowScore", Value.newBuilder().setNumberValue(10).build())
                   .putFields("mediumScore", Value.newBuilder().setNumberValue(20).build())
                   .putFields("highScore", Value.newBuilder().setNumberValue(30).build())
-                  .putFields("criticalScore", Value.newBuilder().setNumberValue(100).build()))
+                  .putFields("criticalScore", Value.newBuilder().setNumberValue(100).build())
+                  .build())
           .build();
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_2 =
@@ -58,6 +61,11 @@ class DefaultSecurityEventScoreContributionManagerTest {
           .setMediumScore(200)
           .setHighScore(300)
           .setCriticalScore(1000)
+          .setScope(
+              ScopeConfig.newBuilder()
+                  .setEnvironmentScope(
+                      EnvironmentScope.newBuilder().setEnvironmentId("environment-id").build())
+                  .build())
           .build();
 
   private static final Value SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_2_VALUE =
@@ -67,7 +75,27 @@ class DefaultSecurityEventScoreContributionManagerTest {
                   .putFields("lowScore", Value.newBuilder().setNumberValue(100).build())
                   .putFields("mediumScore", Value.newBuilder().setNumberValue(200).build())
                   .putFields("highScore", Value.newBuilder().setNumberValue(300).build())
-                  .putFields("criticalScore", Value.newBuilder().setNumberValue(1000).build()))
+                  .putFields("criticalScore", Value.newBuilder().setNumberValue(1000).build())
+                  .putFields(
+                      "scope",
+                      Value.newBuilder()
+                          .setStructValue(
+                              Struct.newBuilder()
+                                  .putFields(
+                                      "environmentScope",
+                                      Value.newBuilder()
+                                          .setStructValue(
+                                              Struct.newBuilder()
+                                                  .putFields(
+                                                      "environmentId",
+                                                      Value.newBuilder()
+                                                          .setStringValue("environment-id")
+                                                          .build())
+                                                  .build())
+                                          .build())
+                                  .build())
+                          .build())
+                  .build())
           .build();
 
   @Mock(answer = Answers.RETURNS_SELF)
@@ -114,7 +142,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
             .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
             .setCriticalScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE)
             .build(),
-        securityEventScoreContributionManager.getSecurityEventScoreContribution(REQUEST_CONTEXT));
+        securityEventScoreContributionManager.getSecurityEventScoreContribution(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -133,7 +162,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
 
     assertEquals(
         SECURITY_EVENT_SCORE_CONTRIBUTION_1,
-        securityEventScoreContributionManager.getSecurityEventScoreContribution(REQUEST_CONTEXT));
+        securityEventScoreContributionManager.getSecurityEventScoreContribution(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -143,7 +173,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
             .setResourceName(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
             .setConfig(SECURITY_EVENT_SCORE_CONTRIBUTION_CONFIG_2_VALUE)
-            .setContext(TENANT_ID)
+            .setContext("environment-id")
             .build();
 
     when(configServiceStub.upsertConfig(request))

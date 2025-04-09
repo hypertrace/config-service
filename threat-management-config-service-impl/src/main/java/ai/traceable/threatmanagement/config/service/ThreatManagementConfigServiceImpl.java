@@ -139,7 +139,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       requestValidator.validateOrThrow(requestContext, request);
 
       SecurityEventScoreContribution securityEventScoreContribution =
-          securityEventScoreContributionManager.getSecurityEventScoreContribution(requestContext);
+          securityEventScoreContributionManager.getSecurityEventScoreContribution(
+              requestContext, request.getScope());
       SecurityEventScoreContribution defaultSecurityEventScoreContribution =
           securityEventScoreContributionManager.getDefaultSecurityEventScoreContribution();
 
@@ -436,7 +437,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                               requestContext, request.getScope()))
                       .setSecurityEventScoreContribution(
                           securityEventScoreContributionManager.getSecurityEventScoreContribution(
-                              requestContext))
+                              requestContext, request.getScope()))
                       .setSecurityEventTypeContribution(
                           securityEventTypeContributionManager.getSecurityEventTypeContribution(
                               requestContext))

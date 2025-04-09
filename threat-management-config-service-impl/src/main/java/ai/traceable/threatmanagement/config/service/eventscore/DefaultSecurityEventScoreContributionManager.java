@@ -4,20 +4,22 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 class DefaultSecurityEventScoreContributionManager
-    extends ContextuallyIdentifiedObjectStore<SecurityEventScoreContribution>
+    extends IdentifiedObjectStore<SecurityEventScoreContribution>
     implements SecurityEventScoreContributionManager {
   private final ThreatManagementConfigServiceConfig config;
   private final SecurityEventScoreContributionConverter securityEventScoreContributionConverter;
@@ -39,8 +41,13 @@ class DefaultSecurityEventScoreContributionManager
 
   @Override
   public SecurityEventScoreContribution getSecurityEventScoreContribution(
-      RequestContext requestContext) {
-    return getData(requestContext).orElseGet(this::getDefaultSecurityEventScoreContribution);
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId)
+        .orElseGet(this::getDefaultSecurityEventScoreContribution);
   }
 
   @Override
@@ -74,10 +81,20 @@ class DefaultSecurityEventScoreContributionManager
   }
 
   @Override
-  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
-    return requestContext
+  protected String getContextFromData(
+      SecurityEventScoreContribution securityEventScoreContribution) {
+    return securityEventScoreContribution.getScope().hasEnvironmentScope()
+        ? securityEventScoreContribution.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
+  }
+
+  private String getTenantId(RequestContext context) {
+    return context
         .getTenantId()
         .orElseThrow(
-            () -> new IllegalArgumentException("Unable to get config id from request context"));
+            () ->
+                Status.INVALID_ARGUMENT
+                    .withDescription("Unable to get tenant id from request context")
+                    .asRuntimeException());
   }
 }
