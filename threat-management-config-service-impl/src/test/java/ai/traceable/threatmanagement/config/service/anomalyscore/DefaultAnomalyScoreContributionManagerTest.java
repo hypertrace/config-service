@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -42,13 +44,39 @@ class DefaultAnomalyScoreContributionManagerTest {
           .build();
 
   private static final AnomalyScoreContribution ANOMALY_SCORE_CONTRIBUTION_2 =
-      AnomalyScoreContribution.newBuilder().setAnomalyScore(100).build();
+      AnomalyScoreContribution.newBuilder()
+          .setAnomalyScore(100)
+          .setScope(
+              ScopeConfig.newBuilder()
+                  .setEnvironmentScope(
+                      EnvironmentScope.newBuilder().setEnvironmentId("environment-id").build())
+                  .build())
+          .build();
 
   private static final Value ANOMALY_SCORE_CONTRIBUTION_CONFIG_2_VALUE =
       Value.newBuilder()
           .setStructValue(
               Struct.newBuilder()
-                  .putFields("anomalyScore", Value.newBuilder().setNumberValue(100).build()))
+                  .putFields("anomalyScore", Value.newBuilder().setNumberValue(100).build())
+                  .putFields(
+                      "scope",
+                      Value.newBuilder()
+                          .setStructValue(
+                              Struct.newBuilder()
+                                  .putFields(
+                                      "environmentScope",
+                                      Value.newBuilder()
+                                          .setStructValue(
+                                              Struct.newBuilder()
+                                                  .putFields(
+                                                      "environmentId",
+                                                      Value.newBuilder()
+                                                          .setStringValue("environment-id")
+                                                          .build())
+                                                  .build())
+                                          .build())
+                                  .build())
+                          .build()))
           .build();
 
   @Mock(answer = Answers.RETURNS_SELF)
@@ -86,7 +114,8 @@ class DefaultAnomalyScoreContributionManagerTest {
         AnomalyScoreContribution.newBuilder()
             .setAnomalyScore(DEFAULT_ANOMALY_CONTRIBUTION_SCORE)
             .build(),
-        anomalyScoreContributionManager.getAnomalyScoreContribution(REQUEST_CONTEXT));
+        anomalyScoreContributionManager.getAnomalyScoreContribution(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -105,7 +134,8 @@ class DefaultAnomalyScoreContributionManagerTest {
 
     assertEquals(
         ANOMALY_SCORE_CONTRIBUTION_1,
-        anomalyScoreContributionManager.getAnomalyScoreContribution(REQUEST_CONTEXT));
+        anomalyScoreContributionManager.getAnomalyScoreContribution(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -115,7 +145,7 @@ class DefaultAnomalyScoreContributionManagerTest {
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
             .setResourceName(ANOMALY_SCORE_CONTRIBUTION_CONFIG_RESOURCE_NAME)
             .setConfig(ANOMALY_SCORE_CONTRIBUTION_CONFIG_2_VALUE)
-            .setContext(TENANT_ID)
+            .setContext("environment-id")
             .build();
 
     when(configServiceStub.upsertConfig(request))

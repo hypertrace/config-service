@@ -397,7 +397,8 @@ class ThreatManagementConfigServiceImplTest {
   class AnomalyScoreContributions {
     @Test
     void getAnomalyScoreContribution() {
-      when(anomalyScoreContributionManager.getAnomalyScoreContribution(any(RequestContext.class)))
+      when(anomalyScoreContributionManager.getAnomalyScoreContribution(
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(ANOMALY_SCORE_CONTRIBUTION_1);
 
       StreamObserver<GetAnomalyScoreContributionResponse> responseObserver =
@@ -777,7 +778,8 @@ class ThreatManagementConfigServiceImplTest {
   class ThreatScoreConfigTest {
     @Test
     void getThreatScoreConfig() {
-      when(anomalyScoreContributionManager.getAnomalyScoreContribution(any(RequestContext.class)))
+      when(anomalyScoreContributionManager.getAnomalyScoreContribution(
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(ANOMALY_SCORE_CONTRIBUTION_1);
       when(securityEventScoreContributionManager.getSecurityEventScoreContribution(
               any(RequestContext.class)))

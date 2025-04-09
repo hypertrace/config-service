@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+
 option java_multiple_files = true;
 
-message GetAnomalyScoreContributionRequest {}
+message GetAnomalyScoreContributionRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetAnomalyScoreContributionResponse {
   AnomalyScoreContribution anomaly_score_contribution = 1;
@@ -22,4 +26,5 @@ message UpdateAnomalyScoreContributionResponse {
 
 message AnomalyScoreContribution {
   int32 anomaly_score = 1;
+  ScopeConfig scope = 2;
 }

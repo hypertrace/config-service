@@ -190,7 +190,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       requestValidator.validateOrThrow(requestContext, request);
 
       AnomalyScoreContribution anomalyScoreContribution =
-          anomalyScoreContributionManager.getAnomalyScoreContribution(requestContext);
+          anomalyScoreContributionManager.getAnomalyScoreContribution(
+              requestContext, request.getScope());
       AnomalyScoreContribution defaultAnomalyScoreContribution =
           anomalyScoreContributionManager.getDefaultAnomalyScoreContribution();
 
@@ -431,7 +432,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
                   ThreatScoreConfig.newBuilder()
                       .setAnomalyScoreContribution(
                           anomalyScoreContributionManager.getAnomalyScoreContribution(
-                              requestContext))
+                              requestContext, request.getScope()))
                       .setSecurityEventScoreContribution(
                           securityEventScoreContributionManager.getSecurityEventScoreContribution(
                               requestContext))

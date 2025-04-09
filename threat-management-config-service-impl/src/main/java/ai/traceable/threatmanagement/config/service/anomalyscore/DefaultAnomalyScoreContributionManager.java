@@ -5,19 +5,20 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class DefaultAnomalyScoreContributionManager
-    extends ContextuallyIdentifiedObjectStore<AnomalyScoreContribution>
+class DefaultAnomalyScoreContributionManager extends IdentifiedObjectStore<AnomalyScoreContribution>
     implements AnomalyScoreContributionManager {
   private final ThreatManagementConfigServiceConfig config;
   private final AnomalyScoreContributionConverter anomalyScoreContributionConverter;
@@ -38,8 +39,13 @@ class DefaultAnomalyScoreContributionManager
   }
 
   @Override
-  public AnomalyScoreContribution getAnomalyScoreContribution(RequestContext requestContext) {
-    return getData(requestContext).orElseGet(this::getDefaultAnomalyScoreContribution);
+  public AnomalyScoreContribution getAnomalyScoreContribution(
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId).orElseGet(this::getDefaultAnomalyScoreContribution);
   }
 
   @Override
@@ -68,10 +74,19 @@ class DefaultAnomalyScoreContributionManager
   }
 
   @Override
-  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
-    return requestContext
+  protected String getContextFromData(AnomalyScoreContribution anomalyScoreContribution) {
+    return anomalyScoreContribution.getScope().hasEnvironmentScope()
+        ? anomalyScoreContribution.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
+  }
+
+  private String getTenantId(RequestContext context) {
+    return context
         .getTenantId()
         .orElseThrow(
-            () -> new IllegalArgumentException("Unable to get config id from request context"));
+            () ->
+                Status.INVALID_ARGUMENT
+                    .withDescription("Unable to get tenant id from request context")
+                    .asRuntimeException());
   }
 }
