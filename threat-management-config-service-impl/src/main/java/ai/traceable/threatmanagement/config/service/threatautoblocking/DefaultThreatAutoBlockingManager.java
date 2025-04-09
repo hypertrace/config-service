@@ -3,11 +3,13 @@ package ai.traceable.threatmanagement.config.service.threatautoblocking;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME;
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_MANAGEMENT_CONFIG_NAMESPACE;
 
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -17,15 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextuallyIdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
-class DefaultThreatAutoBlockingManager
-    extends ContextuallyIdentifiedObjectStore<ThreatAutoBlockingActionConfig>
+class DefaultThreatAutoBlockingManager extends IdentifiedObjectStore<ThreatAutoBlockingActionConfig>
     implements ThreatAutoBlockingManager {
 
   private static final String THREAT_AUTO_BLOCKING_ACTION_CONFIG_TIMER =
@@ -56,14 +57,21 @@ class DefaultThreatAutoBlockingManager
   }
 
   @Override
-  public ThreatAutoBlockingActionConfig getThreatAutoBlockingAction(RequestContext requestContext) {
-    return getData(requestContext).orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
+  public ThreatAutoBlockingActionConfig getThreatAutoBlockingAction(
+      RequestContext requestContext, ScopeConfig scopeConfig) {
+    String contextId =
+        scopeConfig.hasEnvironmentScope()
+            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
+            : getTenantId(requestContext);
+    return getData(requestContext, contextId)
+        .orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
   }
 
   @Override
   public ThreatAutoBlockingActionConfig upsertThreatAutoBlockingAction(
       RequestContext requestContext, UpdateThreatAutoBlockingConfigRequest request) {
-    ThreatAutoBlockingActionConfig existingConfig = getThreatAutoBlockingAction(requestContext);
+    ThreatAutoBlockingActionConfig existingConfig =
+        getThreatAutoBlockingAction(requestContext, request.getScope());
     String tenantId = requestContext.getTenantId().get();
 
     String operation;
@@ -94,6 +102,7 @@ class DefaultThreatAutoBlockingManager
   }
 
   private ThreatAutoBlockingActionConfig getDefaultThreatAutoBlockingActionConfig() {
+
     return ThreatAutoBlockingActionConfig.newBuilder()
         .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION)
         .build();
@@ -113,12 +122,11 @@ class DefaultThreatAutoBlockingManager
   }
 
   @Override
-  protected String getConfigContextFromRequestContext(RequestContext requestContext) {
-    // Using tenant id as threat auto blocking action config id, since it's tenant scoped
-    return requestContext
-        .getTenantId()
-        .orElseThrow(
-            () -> new IllegalArgumentException("Unable to get config id from request context"));
+  protected String getContextFromData(
+      ThreatAutoBlockingActionConfig threatAutoBlockingActionConfig) {
+    return threatAutoBlockingActionConfig.getScope().hasEnvironmentScope()
+        ? threatAutoBlockingActionConfig.getScope().getEnvironmentScope().getEnvironmentId()
+        : getTenantId(RequestContext.CURRENT.get());
   }
 
   private Timer getTimer(String tenantId, String operation) {
@@ -129,5 +137,15 @@ class DefaultThreatAutoBlockingManager
             PlatformMetricsRegistry.registerTimer(
                 THREAT_AUTO_BLOCKING_ACTION_CONFIG_TIMER,
                 metricTags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue))));
+  }
+
+  private String getTenantId(RequestContext context) {
+    return context
+        .getTenantId()
+        .orElseThrow(
+            () ->
+                Status.INVALID_ARGUMENT
+                    .withDescription("Unable to get tenant id from request context")
+                    .asRuntimeException());
   }
 }

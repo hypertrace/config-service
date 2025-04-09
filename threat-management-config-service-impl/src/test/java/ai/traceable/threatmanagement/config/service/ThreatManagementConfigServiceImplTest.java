@@ -547,7 +547,8 @@ class ThreatManagementConfigServiceImplTest {
   class ThreatAutoBlocking {
     @Test
     void getThreatAutoBlockingActionConfig() {
-      when(threatAutoBlockingManager.getThreatAutoBlockingAction(any(RequestContext.class)))
+      when(threatAutoBlockingManager.getThreatAutoBlockingAction(
+              any(RequestContext.class), any(ScopeConfig.class)))
           .thenReturn(THREAT_AUTO_BLOCKING_ACTION_CONFIG_1);
 
       StreamObserver<GetThreatAutoBlockingConfigResponse> responseObserver =

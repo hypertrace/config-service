@@ -289,7 +289,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       requestValidator.validateOrThrow(requestContext, request);
 
       ThreatAutoBlockingActionConfig threatAutoBlockingActionConfig =
-          threatAutoBlockingManager.getThreatAutoBlockingAction(requestContext);
+          threatAutoBlockingManager.getThreatAutoBlockingAction(requestContext, request.getScope());
 
       responseObserver.onNext(
           GetThreatAutoBlockingConfigResponse.newBuilder()

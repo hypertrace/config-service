@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
 import ai.traceable.threatmanagement.config.service.v1.ExcludeAutoBlockingConfig;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
@@ -59,6 +61,11 @@ class DefaultThreatAutoBlockingManagerTest {
           .addExcludeConfigs(ExcludeAutoBlockingConfig.newBuilder().addUserIdRegexes("^a").build())
           .setExpirationDetails(
               ExpirationDetails.newBuilder().setDuration("PT1H2M34S").setTimestampMillis(3754000))
+          .setScope(
+              ScopeConfig.newBuilder()
+                  .setEnvironmentScope(
+                      EnvironmentScope.newBuilder().setEnvironmentId("environment-id").build())
+                  .build())
           .build();
 
   private static final Value THREAT_AUTO_BLOCKING_ACTION_CONFIG_2_VALUE =
@@ -103,6 +110,25 @@ class DefaultThreatAutoBlockingManagerTest {
                                       "timestampMillis",
                                       Value.newBuilder().setStringValue("3754000").build())
                                   .build())
+                          .build())
+                  .putFields(
+                      "scope",
+                      Value.newBuilder()
+                          .setStructValue(
+                              Struct.newBuilder()
+                                  .putFields(
+                                      "environmentScope",
+                                      Value.newBuilder()
+                                          .setStructValue(
+                                              Struct.newBuilder()
+                                                  .putFields(
+                                                      "environmentId",
+                                                      Value.newBuilder()
+                                                          .setStringValue("environment-id")
+                                                          .build())
+                                                  .build())
+                                          .build())
+                                  .build())
                           .build()))
           .build();
 
@@ -138,7 +164,8 @@ class DefaultThreatAutoBlockingManagerTest {
         ThreatAutoBlockingActionConfig.newBuilder()
             .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION)
             .build(),
-        threatAutoBlockingManager.getThreatAutoBlockingAction(REQUEST_CONTEXT));
+        threatAutoBlockingManager.getThreatAutoBlockingAction(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -157,7 +184,8 @@ class DefaultThreatAutoBlockingManagerTest {
 
     assertEquals(
         THREAT_AUTO_BLOCKING_ACTION_CONFIG_1,
-        threatAutoBlockingManager.getThreatAutoBlockingAction(REQUEST_CONTEXT));
+        threatAutoBlockingManager.getThreatAutoBlockingAction(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -176,7 +204,8 @@ class DefaultThreatAutoBlockingManagerTest {
 
     assertEquals(
         THREAT_AUTO_BLOCKING_ACTION_CONFIG_2,
-        threatAutoBlockingManager.getThreatAutoBlockingAction(REQUEST_CONTEXT));
+        threatAutoBlockingManager.getThreatAutoBlockingAction(
+            REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));
   }
 
   @Test
@@ -186,7 +215,7 @@ class DefaultThreatAutoBlockingManagerTest {
             .setResourceNamespace(THREAT_MANAGEMENT_CONFIG_NAMESPACE)
             .setResourceName(THREAT_AUTO_BLOCKING_CONFIG_RESOURCE_NAME)
             .setConfig(THREAT_AUTO_BLOCKING_ACTION_CONFIG_2_VALUE)
-            .setContext(TENANT_ID)
+            .setContext("environment-id")
             .build();
 
     when(configServiceStub.upsertConfig(request))

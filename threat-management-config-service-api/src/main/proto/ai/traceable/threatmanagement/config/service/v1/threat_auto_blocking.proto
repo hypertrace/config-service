@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package ai.traceable.threatmanagement.config.service.v1;
 
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+
 option java_multiple_files = true;
 
-message GetThreatAutoBlockingConfigRequest {}
+message GetThreatAutoBlockingConfigRequest {
+  ScopeConfig scope = 1;
+}
 
 message GetThreatAutoBlockingConfigResponse {
   ThreatAutoBlockingActionConfig auto_blocking_action_config = 1;
@@ -18,7 +22,7 @@ message UpdateThreatAutoBlockingConfigRequest {
   ThreatAutoBlockingActionType action_type = 1;
   ExpirationDetails expiration_details = 2;
   repeated ExcludeAutoBlockingConfig exclude_configs = 3;
-
+  ScopeConfig scope = 4;
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.
     optional string duration = 1;
@@ -33,7 +37,7 @@ message ThreatAutoBlockingActionConfig {
   ThreatAutoBlockingActionType action_type = 1;
   ExpirationDetails expiration_details = 2;
   repeated ExcludeAutoBlockingConfig exclude_configs = 3;
-
+  ScopeConfig scope = 4;
   message ExpirationDetails {
     // Duration represented in ISO 8601 duration format.
     string duration = 1;
