@@ -20,6 +20,7 @@ import ai.traceable.data.classification.config.service.v1.CreateDataTypeRequest;
 import ai.traceable.data.classification.config.service.v1.CreateDataTypeResponse;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc;
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceBlockingStub;
+import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideFilter;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataClassificationOverrideScope;
@@ -524,22 +525,74 @@ class DataClassificationConfigServiceImplTest {
             CreateDataClassificationOverrideRequest.newBuilder()
                 .setDataClassificationOverrideRule(rule2)
                 .build());
-    GetDataClassificationOverridesResponse response =
-        dataClassificationConfigServiceBlockingStub.getDataClassificationOverrides(
-            GetDataClassificationOverridesRequest.newBuilder()
-                .setFilter(
-                    DataClassificationOverrideFilter.newBuilder()
-                        .setScopeFilter(
-                            ScopeFilter.newBuilder()
-                                .addAllScopes(List.of(rule1.getScope(), rule2.getScope()))
-                                .build())
-                        .build())
+
+    List<DataClassificationOverride> expectedResponse =
+        List.of(
+            dco2.getCreatedDataClassificationOverride(),
+            dco1.getCreatedDataClassificationOverride());
+
+    assertEquals(
+        expectedResponse,
+        dataClassificationConfigServiceBlockingStub
+            .getDataClassificationOverrides(
+                GetDataClassificationOverridesRequest.newBuilder()
+                    .setFilter(
+                        DataClassificationOverrideFilter.newBuilder()
+                            .setScopeFilter(
+                                ScopeFilter.newBuilder()
+                                    .addAllScopes(List.of(rule1.getScope(), rule2.getScope()))))
+                    .build())
+            .getDataClassificationOverridesList());
+
+    assertEquals(
+        expectedResponse,
+        dataClassificationConfigServiceBlockingStub
+            .getDataClassificationOverrides(
+                GetDataClassificationOverridesRequest.newBuilder().build())
+            .getDataClassificationOverridesList());
+
+    DataClassificationOverrideRule unscopedRule =
+        getDataClassificationOverrideRule().toBuilder().clearScope().build();
+
+    CreateDataClassificationOverrideResponse unscopedOverride =
+        dataClassificationConfigServiceBlockingStub.createDataClassificationOverride(
+            CreateDataClassificationOverrideRequest.newBuilder()
+                .setDataClassificationOverrideRule(unscopedRule)
                 .build());
-    assertEquals(2, response.getDataClassificationOverridesCount());
+
+    // If partial matches allowed, include unscoped
+    expectedResponse =
+        List.of(
+            unscopedOverride.getCreatedDataClassificationOverride(),
+            dco1.getCreatedDataClassificationOverride());
+
     assertEquals(
-        dco2.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(0));
+        expectedResponse,
+        dataClassificationConfigServiceBlockingStub
+            .getDataClassificationOverrides(
+                GetDataClassificationOverridesRequest.newBuilder()
+                    .setFilter(
+                        DataClassificationOverrideFilter.newBuilder()
+                            .setScopeFilter(
+                                ScopeFilter.newBuilder()
+                                    .setIncludePartialMatches(true)
+                                    .addAllScopes(List.of(rule1.getScope()))))
+                    .build())
+            .getDataClassificationOverridesList());
+
+    // By default, no partial matches and exclude unscoped
+    expectedResponse = List.of(dco1.getCreatedDataClassificationOverride());
     assertEquals(
-        dco1.getCreatedDataClassificationOverride(), response.getDataClassificationOverrides(1));
+        expectedResponse,
+        dataClassificationConfigServiceBlockingStub
+            .getDataClassificationOverrides(
+                GetDataClassificationOverridesRequest.newBuilder()
+                    .setFilter(
+                        DataClassificationOverrideFilter.newBuilder()
+                            .setScopeFilter(
+                                ScopeFilter.newBuilder().addAllScopes(List.of(rule1.getScope()))))
+                    .build())
+            .getDataClassificationOverridesList());
   }
 
   @Test

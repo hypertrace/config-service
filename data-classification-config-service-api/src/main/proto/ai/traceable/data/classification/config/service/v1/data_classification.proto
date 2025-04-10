@@ -175,6 +175,7 @@ message IdFilter {
 
 message ScopeFilter {
   repeated DataClassificationOverrideRule.DataClassificationOverrideScope scopes = 1;
+  bool include_partial_matches = 2;
 }
 
 message SpanFilter {

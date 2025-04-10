@@ -94,6 +94,7 @@ class DataClassificationRulesDao {
                                 DataClassificationOverrideFilter.newBuilder()
                                     .setScopeFilter(
                                         ScopeFilter.newBuilder()
+                                            .setIncludePartialMatches(true)
                                             .addScopes(
                                                 DataClassificationOverrideScope.newBuilder()
                                                     .setEnvironmentScope(

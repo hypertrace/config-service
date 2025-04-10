@@ -14,7 +14,6 @@ import ai.traceable.data.classification.config.service.v1.CreateDataTypeResponse
 import ai.traceable.data.classification.config.service.v1.DataClassificationConfigServiceGrpc.DataClassificationConfigServiceImplBase;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverride;
 import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideFilter;
-import ai.traceable.data.classification.config.service.v1.DataClassificationOverrideRule.DataClassificationOverrideScope;
 import ai.traceable.data.classification.config.service.v1.DataSet;
 import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesRequest;
 import ai.traceable.data.classification.config.service.v1.DeleteDataClassificationOverridesResponse;
@@ -39,18 +38,16 @@ import ai.traceable.data.classification.config.service.v1.UpdateDataTypeResponse
 import com.google.inject.Inject;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStore;
+import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -58,7 +55,9 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 class DataClassificationConfigServiceImpl extends DataClassificationConfigServiceImplBase {
   private final IdentifiedObjectStore<DataSet> dataSetStore;
   private final IdentifiedObjectStore<DeletedSystemDataSet> deletedSystemDatasetStore;
-  private final IdentifiedObjectStore<DataClassificationOverride> dataClassificationOverrideStore;
+  private final IdentifiedObjectStoreWithFilter<
+          DataClassificationOverride, DataClassificationOverrideFilter>
+      dataClassificationOverrideStore;
   private final DataSetConfigRequestValidator dataSetConfigRequestValidator;
   private final DataTypeConfigRequestValidator dataTypeConfigRequestValidator;
   private final DataClassificationOverrideConfigRequestValidator
@@ -343,11 +342,11 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
           requestContext, request);
-      List<DataClassificationOverride> tenantDataClassificationOverrides =
-          this.dataClassificationOverrideStore.getAllConfigData(requestContext);
       List<DataClassificationOverride> dataClassificationOverrides =
-          getDataClassificationOverridesListByFilter(
-              tenantDataClassificationOverrides, request.getFilter());
+          request.hasFilter()
+              ? this.dataClassificationOverrideStore.getAllConfigData(
+                  requestContext, request.getFilter())
+              : this.dataClassificationOverrideStore.getAllConfigData(requestContext);
       responseObserver.onNext(
           GetDataClassificationOverridesResponse.newBuilder()
               .addAllDataClassificationOverrides(dataClassificationOverrides)
@@ -399,11 +398,12 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
       this.dataClassificationOverrideConfigRequestValidator.validateOrThrow(
           requestContext, request);
       List<DataClassificationOverride> tenantDataClassificationOverrides =
-          this.dataClassificationOverrideStore.getAllConfigData(requestContext);
+          request.hasFilter()
+              ? this.dataClassificationOverrideStore.getAllConfigData(
+                  requestContext, request.getFilter())
+              : this.dataClassificationOverrideStore.getAllConfigData(requestContext);
       List<String> dataClassificationOverrideIds =
-          getDataClassificationOverridesListByFilter(
-                  tenantDataClassificationOverrides, request.getFilter())
-              .stream()
+          tenantDataClassificationOverrides.stream()
               .map(DataClassificationOverride::getId)
               .collect(Collectors.toUnmodifiableList());
       List<DataClassificationOverride> deletedDataClassificationOverrides =
@@ -456,51 +456,5 @@ class DataClassificationConfigServiceImpl extends DataClassificationConfigServic
     return this.deletedSystemDatasetStore.getAllConfigData(requestContext).stream()
         .map(DeletedSystemDataSet::getId)
         .collect(Collectors.toList());
-  }
-
-  private List<DataClassificationOverride> getDataClassificationOverridesListByFilter(
-      List<DataClassificationOverride> tenantDataClassificationOverrides,
-      DataClassificationOverrideFilter filter) {
-    switch (filter.getFilterCase()) {
-      case ID_FILTER:
-        {
-          Set<String> filterSet = Set.copyOf(filter.getIdFilter().getIdsList());
-          return tenantDataClassificationOverrides.stream()
-              .filter(
-                  tenantDataClassificationOverride ->
-                      filterSet.contains(tenantDataClassificationOverride.getId()))
-              .collect(Collectors.toUnmodifiableList());
-        }
-      case SCOPE_FILTER:
-        {
-          List<DataClassificationOverrideScope> scopesList =
-              filter.getScopeFilter().getScopesList();
-          Set<String> environmentFilterSet =
-              scopesList.stream()
-                  .filter(DataClassificationOverrideScope::hasEnvironmentScope)
-                  .map(scope -> scope.getEnvironmentScope().getEnvironmentId())
-                  .collect(Collectors.toUnmodifiableSet());
-          return tenantDataClassificationOverrides.stream()
-              .filter(
-                  tenantDataClassificationOverride ->
-                      environmentFilterSet.contains(
-                          tenantDataClassificationOverride
-                              .getDataClassificationOverrideRule()
-                              .getScope()
-                              .getEnvironmentScope()
-                              .getEnvironmentId()))
-              .collect(Collectors.toUnmodifiableList());
-        }
-      case LOGICAL_AND_FILTER:
-        List<DataClassificationOverride> filteredList =
-            new ArrayList<>(tenantDataClassificationOverrides);
-        for (DataClassificationOverrideFilter innerFilter :
-            filter.getLogicalAndFilter().getFiltersList()) {
-          filteredList = getDataClassificationOverridesListByFilter(filteredList, innerFilter);
-        }
-        return Collections.unmodifiableList(filteredList);
-      default:
-        return tenantDataClassificationOverrides;
-    }
   }
 }
