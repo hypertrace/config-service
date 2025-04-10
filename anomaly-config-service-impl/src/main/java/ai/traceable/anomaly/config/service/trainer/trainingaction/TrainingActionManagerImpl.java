@@ -92,7 +92,7 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
                 .orElseThrow(() -> new IllegalArgumentException("Unable to get tenant ID")),
             configScope);
     return getResolvedScopedActionConfig(
-        contextToScopedActionConfigMap, contextsWithIncreasingPriority);
+        contextToScopedActionConfigMap, contextsWithIncreasingPriority, configScope);
   }
 
   @Override
@@ -111,7 +111,7 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
           anomalyConfigScopeUtils.getContextsWithIncreasingPriority(tenantId, anomalyConfigScope);
       resolvedScopedActionConfigs.add(
           getResolvedScopedActionConfig(
-              contextToScopedActionConfigMap, contextsWithIncreasingPriority));
+              contextToScopedActionConfigMap, contextsWithIncreasingPriority, anomalyConfigScope));
     }
 
     return resolvedScopedActionConfigs;
@@ -119,8 +119,10 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
 
   private ScopedTrainingActionConfig getResolvedScopedActionConfig(
       Map<String, ScopedTrainingActionConfig> contextToScopedActionConfigMap,
-      List<String> contextsWithIncreasingPriority) {
-    ScopedTrainingActionConfig scopedActionConfig = ScopedTrainingActionConfig.getDefaultInstance();
+      List<String> contextsWithIncreasingPriority,
+      AnomalyConfigScope configScope) {
+    ScopedTrainingActionConfig scopedActionConfig =
+        ScopedTrainingActionConfig.newBuilder().setConfigScope(configScope).build();
     for (String context : contextsWithIncreasingPriority) {
       scopedActionConfig =
           contextToScopedActionConfigMap.containsKey(context)

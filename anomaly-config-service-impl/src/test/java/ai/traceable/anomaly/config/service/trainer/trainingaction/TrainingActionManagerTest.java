@@ -125,9 +125,14 @@ public class TrainingActionManagerTest {
               ScopedTrainingActionConfig result =
                   actionManager.getTrainingAction(requestContext, customerConfigScope);
               assertEquals(
-                  ScopedTrainingActionConfig.getDefaultInstance(),
+                  ScopedTrainingActionConfig.newBuilder()
+                      .setConfigScope(
+                          AnomalyConfigScope.newBuilder()
+                              .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+                              .build())
+                      .build(),
                   result,
-                  "Should return default instance for non-existent scope");
+                  "Should return customer scope with empty TrainingActionConfig");
             });
   }
 
@@ -356,9 +361,15 @@ public class TrainingActionManagerTest {
               ScopedTrainingActionConfig result =
                   actionManager.getTrainingAction(requestContext, serviceConfigScope);
               assertEquals(
-                  ScopedTrainingActionConfig.getDefaultInstance(),
+                  ScopedTrainingActionConfig.newBuilder()
+                      .setConfigScope(
+                          AnomalyConfigScope.newBuilder()
+                              .setServiceScope(
+                                  AnomalyServiceScope.newBuilder().setId("service").build())
+                              .build())
+                      .build(),
                   result,
-                  "Should return default when no training action exists");
+                  "Should return service scope with empty TrainingActionConfig");
             });
   }
 
