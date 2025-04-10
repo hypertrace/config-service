@@ -32,5 +32,6 @@ traceable-edge-decision-config-service-impl/src @sunilgattupalle @surajpuvvada @
 traceable-edge-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz
 traceable-edge-config-service-impl/src @sunilgattupalle @surajpuvvada @avinashkolluru @singhalprerana @vinaysrini @PrajwalKrishna @saxenakshitiz
 traceable-config-service-rest/src @sunilgattupalle @surajpuvvada @avinashkolluru @aaron-steinfeld @vinaysrini
+threat-scoring-config-service-impl/src/main/resources @piyushroshan @soujanyanmbri @singhalprerana @avinashkolluru
 user-attribution-config-service-api/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
 user-attribution-config-service-impl/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld

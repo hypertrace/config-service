@@ -9,6 +9,8 @@ import ai.traceable.threatscoring.config.service.v1.MaliciousSpanConfidenceScori
 import ai.traceable.threatscoring.config.service.v1.ResponseConfidenceConfig;
 import ai.traceable.threatscoring.config.service.v1.ScoringLevelConfig;
 import ai.traceable.threatscoring.config.service.v1.ThreatScoringConfigs;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +20,7 @@ class DefaultThreatScoringConfigTest {
 
   @Test
   void test_event_confidence_mapping() {
+    // Assert the expected count
     Assertions.assertEquals(
         564,
         defaultThreatScoringConfig
@@ -26,6 +29,31 @@ class DefaultThreatScoringConfigTest {
             .getEventConfidenceScoringConfig()
             .getEventConfidenceMatrixConfig()
             .getEventConfidenceMappingCount());
+
+    // Fetch the actual mapping
+    var mappingList =
+        defaultThreatScoringConfig
+            .getDefaultConfig()
+            .getConfigs()
+            .getEventConfidenceScoringConfig()
+            .getEventConfidenceMatrixConfig()
+            .getEventConfidenceMappingList();
+    Set<String> uniqueSubConfidences =
+        mappingList.stream()
+            .map(
+                mapping ->
+                    String.join(
+                        ",",
+                        mapping.getActorConfidence().toString(),
+                        mapping.getMaliciousSpanConfidence().toString(),
+                        mapping.getAnomalousConfidence().toString(),
+                        mapping.getTrendConfidence().toString(),
+                        mapping.getResponseConfidence().toString()))
+            .collect(Collectors.toSet());
+    Assertions.assertEquals(
+        mappingList.size(),
+        uniqueSubConfidences.size(),
+        "Duplicate entries found for the confidence fields (BadActor, Malicious, Anomalous, Trend, Response)");
   }
 
   @Test
