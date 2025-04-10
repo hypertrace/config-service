@@ -126,7 +126,7 @@ public class UserAttributionV2ConfigRequestValidator {
       validateUserAttributionTokenRule(ruleData.getUserRoleRule(), hasRootTokenRule);
     }
     if (ruleData.hasUserScopeRule()) {
-      validateUserAttributionTokenRule(ruleData.getUserRoleRule(), hasRootTokenRule);
+      validateUserAttributionTokenRule(ruleData.getUserScopeRule(), hasRootTokenRule);
     }
     if (ruleData.hasAuthTypeRule()) {
       validateUserAttributionTokenRule(ruleData.getAuthTypeRule(), hasRootTokenRule);
