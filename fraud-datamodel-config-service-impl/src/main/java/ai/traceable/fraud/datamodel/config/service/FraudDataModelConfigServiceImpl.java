@@ -248,6 +248,8 @@ public class FraudDataModelConfigServiceImpl
           response.addEventTypes(type.getEventType());
         } else if (type.hasMetricType()) {
           response.addMetricTypes(type.getMetricType());
+        } else if (type.hasBaselineType()) {
+          response.addBaselineTypes(type.getBaselineType());
         }
       }
       responseObserver.onNext(response.build());
