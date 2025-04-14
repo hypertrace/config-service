@@ -1,14 +1,10 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition;
 
-import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.detection.exclusion.config.service.v1.EntityType.ENTITY_TYPE_API;
 import static ai.traceable.detection.exclusion.config.service.v1.LabelType.LABEL_TYPE_API;
-import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.PATH_ATTRIBUTE;
+import static ai.traceable.edge.decision.converter.utils.ConverterUtils.SERVICE_ATTRIBUTE;
 
-import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
-import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
-import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
-import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.EntityScope;
@@ -31,32 +27,6 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = @Inject)
 class DetectionExclusionRuleScopeConditionConverter
     implements DetectionExclusionRuleConditionConverter {
-
-  private static final String PATH_JEXL_EXP = "$s.getPath()";
-  private static final AttributeDerivationMapping PATH_ATTRIBUTE =
-      AttributeDerivationMapping.newBuilder()
-          .setName(ATTRIBUTE_NAME_LHS)
-          .setType(FIELD_TYPE_STR)
-          .addRules(
-              DerivationRule.newBuilder()
-                  .setTransformationConfig(
-                      DataTransformationConfig.newBuilder()
-                          .setJexlExpression(
-                              JexlExpressionConfig.newBuilder().setJexlExpression(PATH_JEXL_EXP))))
-          .build();
-  private static final String SERVICE_JEXL_EXP = "$s.getServiceName()";
-  private static final AttributeDerivationMapping SERVICE_ATTRIBUTE =
-      AttributeDerivationMapping.newBuilder()
-          .setName(ATTRIBUTE_NAME_LHS)
-          .setType(FIELD_TYPE_STR)
-          .addRules(
-              DerivationRule.newBuilder()
-                  .setTransformationConfig(
-                      DataTransformationConfig.newBuilder()
-                          .setJexlExpression(
-                              JexlExpressionConfig.newBuilder()
-                                  .setJexlExpression(SERVICE_JEXL_EXP))))
-          .build();
 
   private final CachedServiceMappingProvider cachedServiceMappingProvider;
   private final CachedApiMappingProvider cachedApiMappingProvider;

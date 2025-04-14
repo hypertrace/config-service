@@ -24,5 +24,6 @@ public class ExpressionConverterModule extends AbstractModule {
     multiBinder.addBinding().to(UserAgentExpressionConverter.class);
     multiBinder.addBinding().to(EmailDomainExpressionConverter.class);
     multiBinder.addBinding().to(UserIdExpressionConverter.class);
+    multiBinder.addBinding().to(ScopeExpressionConverter.class);
   }
 }

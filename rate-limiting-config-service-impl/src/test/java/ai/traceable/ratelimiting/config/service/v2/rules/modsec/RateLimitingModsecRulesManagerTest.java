@@ -22,7 +22,6 @@ import ai.traceable.data.classification.config.service.v1.DataTypeRule.Operator;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.ScopedPattern;
 import ai.traceable.data.classification.config.service.v1.DataTypeRule.StringPattern;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
-import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.modsecurity.rule.conversion.ModsecRuleConverterImpl;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecKeyValueMatchClauseConverter;
 import ai.traceable.modsecurity.rule.conversion.clause.CustomModsecValueMatchClauseConverter;
@@ -136,7 +135,10 @@ class RateLimitingModsecRulesManagerTest {
         .when(dataClassificationInfo)
         .getDataTypeRule("PAN");
 
-    doReturn(Optional.of(new ServiceIdentifierEntity("serviceName1", Optional.of(ENVIRONMENT))))
+    doReturn(
+            Optional.of(
+                new CachedServiceMappingProvider.ServiceIdentifierEntity(
+                    "serviceName1", Optional.of(ENVIRONMENT))))
         .when(cachedServiceMappingProvider)
         .getServiceIdentifierEntity(REQUEST_CONTEXT, "serviceId1");
 

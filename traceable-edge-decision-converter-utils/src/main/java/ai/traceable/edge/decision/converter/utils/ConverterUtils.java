@@ -7,6 +7,8 @@ import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
 import static ai.traceable.edge.decision.config.service.VariableConstants.USER_ATTRIBUTION_VARIABLE_NAME;
 import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
 import static ai.traceable.edge.decision.converter.utils.Constants.IP_ADDRESS_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.PATH_JEXL_EXP;
+import static ai.traceable.edge.decision.converter.utils.Constants.SERVICE_JEXL_EXP;
 import static ai.traceable.edge.decision.converter.utils.Constants.USER_AGENT_JEXL_EXP;
 
 import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
@@ -27,7 +29,7 @@ import java.util.stream.Collectors;
 public class ConverterUtils {
 
   private ConverterUtils() {
-    // utility classes shouldn't have public constructor
+    // utility classes shouldn't have a public constructor
   }
 
   public static final AttributeDerivationMapping USER_ID_VALUE_LHS =
@@ -69,6 +71,31 @@ public class ConverterUtils {
                           .setJexlExpression(
                               JexlExpressionConfig.newBuilder()
                                   .setJexlExpression(IP_ADDRESS_JEXL_EXP))))
+          .build();
+
+  public static final AttributeDerivationMapping PATH_ATTRIBUTE =
+      AttributeDerivationMapping.newBuilder()
+          .setName(ATTRIBUTE_NAME_LHS)
+          .setType(FIELD_TYPE_STR)
+          .addRules(
+              DerivationRule.newBuilder()
+                  .setTransformationConfig(
+                      DataTransformationConfig.newBuilder()
+                          .setJexlExpression(
+                              JexlExpressionConfig.newBuilder().setJexlExpression(PATH_JEXL_EXP))))
+          .build();
+
+  public static final AttributeDerivationMapping SERVICE_ATTRIBUTE =
+      AttributeDerivationMapping.newBuilder()
+          .setName(ATTRIBUTE_NAME_LHS)
+          .setType(FIELD_TYPE_STR)
+          .addRules(
+              DerivationRule.newBuilder()
+                  .setTransformationConfig(
+                      DataTransformationConfig.newBuilder()
+                          .setJexlExpression(
+                              JexlExpressionConfig.newBuilder()
+                                  .setJexlExpression(SERVICE_JEXL_EXP))))
           .build();
 
   public static String joinRegexes(List<String> regexList) {

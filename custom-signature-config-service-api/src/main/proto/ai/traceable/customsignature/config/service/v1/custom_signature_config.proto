@@ -91,7 +91,7 @@ message CustomSignatureRule {
 }
 
 message CustomSignatureRuleDetails {
-  // entire message is deprecated
+  // the entire message is deprecated
   option deprecated = true;
 
   string id = 1;
@@ -109,7 +109,7 @@ message CustomSignatureInlineRule {
 }
 
 message RuleScope {
-  oneof scope { // if no option selected, default is customer scope (all environments)
+  oneof scope { // if no option is selected, default is customer scope (all environments)
     EnvironmentScope environment_scope = 1;
   }
 }
@@ -223,6 +223,7 @@ message Clause {
     UserAgentExpression user_agent_expression = 15;
     RequestScannerTypeExpression request_scanner_type_expression = 16;
     ClauseGroup clause_group = 17;
+    ScopeExpression scope_expression = 18;
   }
 }
 
@@ -329,6 +330,41 @@ message RequestScannerTypeExpression {
 message StringCondition {
   MatchOperator operator = 1;
   string value = 2;
+}
+
+message ScopeExpression {
+  oneof scope {
+    EntityScope entity_scope = 1;
+    LabelScope label_scope = 2;
+    UrlScope url_scope = 3;
+  }
+  bool exclude = 4;
+
+  message EntityScope {
+    EntityType entity_type = 1;
+    repeated string entity_ids = 2;
+  }
+
+  message LabelScope {
+    LabelType label_type = 1;
+    repeated string label_ids = 2;
+  }
+
+  message UrlScope {
+    repeated string url_regexes = 1;
+  }
+
+  enum EntityType {
+    ENTITY_TYPE_UNSPECIFIED = 0;
+    ENTITY_TYPE_API = 1;
+    ENTITY_TYPE_SERVICE = 2;
+  }
+
+  enum LabelType {
+    LABEL_TYPE_UNSPECIFIED = 0;
+    LABEL_TYPE_SERVICE = 1;
+    LABEL_TYPE_API = 2;
+  }
 }
 
 message ExpiryDetails {

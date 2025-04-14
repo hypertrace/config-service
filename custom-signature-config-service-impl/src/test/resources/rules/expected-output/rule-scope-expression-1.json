@@ -1,0 +1,63 @@
+{
+  "decisionRules": [{
+    "id": "rule-id",
+    "name": "rule-name",
+    "ruleCategory": "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+    "ruleStatus": {
+    },
+    "ruleDefinition": {
+      "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signatureRule": {
+        "matchCondition": {
+          "logicalMatchCondition": {
+            "operator": "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions": [{
+              "structuredMatchCondition": {
+                "lhs": {
+                  "name": "lhs",
+                  "type": "FIELD_TYPE_STR",
+                  "rules": [{
+                    "transformationConfig": {
+                      "jexlExpression": {
+                        "jexlExpression": "$s.getServiceName()"
+                      }
+                    }
+                  }]
+                },
+                "binaryOperator": {
+                  "listValue": ["service-name"],
+                  "matchOperator": "MATCH_OPERATOR_IN"
+                }
+              },
+              "negate": true
+            }]
+          }
+        }
+      }
+    },
+    "ruleDecision": {
+      "edgeDecisionType": "EDGE_DECISION_TYPE_BLOCK",
+      "ruleInfoDecorations": [{
+        "ruleInfoKey": {
+          "staticValue": "severity",
+          "outputType": "FIELD_TYPE_STR"
+        },
+        "ruleInfoValue": {
+          "staticValue": "EVENT_SEVERITY_MEDIUM",
+          "outputType": "FIELD_TYPE_STR"
+        }
+      }, {
+        "ruleInfoKey": {
+          "staticValue": "labels",
+          "outputType": "FIELD_TYPE_STR"
+        },
+        "ruleInfoValue": {
+          "staticValue": "{}",
+          "outputType": "FIELD_TYPE_STR"
+        }
+      }]
+    },
+    "policyKind": "POLICY_KIND_WAF",
+    "policyId": "rule-id"
+  }]
+}

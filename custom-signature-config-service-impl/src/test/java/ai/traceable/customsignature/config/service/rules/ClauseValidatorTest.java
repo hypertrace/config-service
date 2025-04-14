@@ -17,6 +17,7 @@ import ai.traceable.customsignature.config.service.v1.IpType;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
+import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Collections;
@@ -187,6 +188,109 @@ public class ClauseValidatorTest {
             .build();
     status = clauseValidator.validateClause(validClause);
     assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testScopeClause() {
+    Clause invalidClause1 =
+        Clause.newBuilder().setScopeExpression(ScopeExpression.newBuilder().build()).build();
+    assertEquals(
+        Status.INVALID_ARGUMENT.getCode(),
+        clauseValidator.validateClause(invalidClause1).getCode());
+
+    Clause invalidClause2 =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setEntityScope(
+                        ScopeExpression.EntityScope.newBuilder()
+                            .setEntityType(ScopeExpression.EntityType.ENTITY_TYPE_API)
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> clauseValidator.validateClause(invalidClause2));
+
+    Clause invalidClause3 =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setEntityScope(
+                        ScopeExpression.EntityScope.newBuilder().addEntityIds("entity-id").build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> clauseValidator.validateClause(invalidClause3));
+
+    Clause validEntityScope =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setEntityScope(
+                        ScopeExpression.EntityScope.newBuilder()
+                            .setEntityType(ScopeExpression.EntityType.ENTITY_TYPE_API)
+                            .addEntityIds("entity-id")
+                            .build())
+                    .build())
+            .build();
+    assertEquals(Status.OK.getCode(), clauseValidator.validateClause(validEntityScope).getCode());
+
+    Clause invalidClause4 =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setLabelScope(
+                        ScopeExpression.LabelScope.newBuilder().addLabelIds("label-id").build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> clauseValidator.validateClause(invalidClause4));
+
+    Clause invalidClause5 =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setLabelScope(
+                        ScopeExpression.LabelScope.newBuilder()
+                            .setLabelType(ScopeExpression.LabelType.LABEL_TYPE_API)
+                            .build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> clauseValidator.validateClause(invalidClause5));
+
+    Clause validLabelScope =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setLabelScope(
+                        ScopeExpression.LabelScope.newBuilder()
+                            .setLabelType(ScopeExpression.LabelType.LABEL_TYPE_API)
+                            .addLabelIds("label-id")
+                            .build())
+                    .build())
+            .build();
+    assertEquals(Status.OK.getCode(), clauseValidator.validateClause(validLabelScope).getCode());
+
+    Clause invalidClause6 =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setUrlScope(ScopeExpression.UrlScope.newBuilder().build())
+                    .build())
+            .build();
+    assertThrows(
+        StatusRuntimeException.class, () -> clauseValidator.validateClause(invalidClause6));
+
+    Clause validUrlScope =
+        Clause.newBuilder()
+            .setScopeExpression(
+                ScopeExpression.newBuilder()
+                    .setUrlScope(
+                        ScopeExpression.UrlScope.newBuilder().addUrlRegexes("url-regex-1").build())
+                    .build())
+            .build();
+    assertEquals(Status.OK.getCode(), clauseValidator.validateClause(validUrlScope).getCode());
   }
 
   private Clause getRequestScannerTypeClause(List<String> scannerTypes) {

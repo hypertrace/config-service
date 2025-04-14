@@ -1,0 +1,21 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses": [{
+        "scopeExpression": {
+          "urlScope": {
+            "urlRegexes": ["url-regex-1"]
+          },
+          "exclude": false
+        }
+      }]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM"
+  }
+}

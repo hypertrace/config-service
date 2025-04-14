@@ -40,6 +40,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
+import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
 import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
 import ai.traceable.customsignature.config.service.v1.UserIdExpression;
@@ -98,10 +99,43 @@ class ClauseValidator {
         return validateUserAgentExpression(clause.getUserAgentExpression());
       case REQUEST_SCANNER_TYPE_EXPRESSION:
         return validateRequestScannerTypeExpression(clause.getRequestScannerTypeExpression());
+      case SCOPE_EXPRESSION:
+        return validateScopeExpression(clause.getScopeExpression());
       default:
         return Status.INVALID_ARGUMENT.withDescription(
             String.format("Invalid Custom Signature Rule Clause expression %s ", clause));
     }
+  }
+
+  private Status validateScopeExpression(ScopeExpression scopeExpression) {
+    switch (scopeExpression.getScopeCase()) {
+      case ENTITY_SCOPE:
+        ScopeExpression.EntityScope entityScope = scopeExpression.getEntityScope();
+        validateNonDefaultPresenceOrThrow(
+            entityScope, ScopeExpression.EntityScope.ENTITY_TYPE_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            entityScope, ScopeExpression.EntityScope.ENTITY_IDS_FIELD_NUMBER);
+        break;
+
+      case LABEL_SCOPE:
+        ScopeExpression.LabelScope labelScope = scopeExpression.getLabelScope();
+        validateNonDefaultPresenceOrThrow(
+            labelScope, ScopeExpression.LabelScope.LABEL_TYPE_FIELD_NUMBER);
+        validateNonDefaultPresenceOrThrow(
+            labelScope, ScopeExpression.LabelScope.LABEL_IDS_FIELD_NUMBER);
+        break;
+
+      case URL_SCOPE:
+        ScopeExpression.UrlScope urlScope = scopeExpression.getUrlScope();
+        validateNonDefaultPresenceOrThrow(
+            urlScope, ScopeExpression.UrlScope.URL_REGEXES_FIELD_NUMBER);
+        RegexValidator.validateRegexesWithNonWide(urlScope.getUrlRegexesList());
+        break;
+
+      case SCOPE_NOT_SET:
+        return Status.INVALID_ARGUMENT.withDescription("Scope not set in ScopeExpression");
+    }
+    return Status.OK;
   }
 
   private Status validateRequestScannerTypeExpression(

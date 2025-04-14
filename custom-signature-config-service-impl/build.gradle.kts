@@ -15,6 +15,7 @@ dependencies {
   implementation(projects.featureCachingClient)
   implementation(projects.traceableDatamodelConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConverterUtils)
+  implementation(projects.entityFetcherCache)
 
   implementation(localLibs.hypertrace.configservice.api)
   implementation(commonLibs.guice7)

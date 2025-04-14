@@ -464,6 +464,7 @@ public class CustomSignatureModsecRulesManagerTest {
 
     ModsecVariableConverter modsecVariableConverter = new ModsecVariableConverter();
     ModsecOperatorConverter modsecOperatorConverter = new ModsecOperatorConverter();
+
     return new CustomSignatureModsecRulesManager(
         new CustomModsecRuleConverter(
             new ModsecRuleConverterImpl(

@@ -2,7 +2,7 @@ package ai.traceable.edge.decision.converter.utils;
 
 public class Constants {
   private Constants() {
-    // utility classes shouldn't have public constructor
+    // utility classes shouldn't have a public constructor
   }
 
   public static final String IP_ABUSE_VELOCITY_COMPARISON_JEXL_EXP =
@@ -26,4 +26,6 @@ public class Constants {
       "$s.getIpIntelligenceData().getCountry().getIsoCode()";
   public static final String USER_AGENT_JEXL_EXP = "$s.getUserAgent()";
   public static final String ATTRIBUTE_NAME_LHS = "lhs";
+  public static final String PATH_JEXL_EXP = "$s.getPath()";
+  public static final String SERVICE_JEXL_EXP = "$s.getServiceName()";
 }
