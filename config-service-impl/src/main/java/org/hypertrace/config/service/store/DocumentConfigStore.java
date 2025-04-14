@@ -24,11 +24,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.documentstore.CloseableIterator;
@@ -58,12 +60,14 @@ public class DocumentConfigStore implements ConfigStore {
   private final Datastore datastore;
   private final Collection collection;
   private final FilterBuilder filterBuilder;
+  private final FilterExpressionBuilder filterExpressionBuilder;
 
   public DocumentConfigStore(Clock clock, Datastore datastore) {
     this.clock = clock;
     this.datastore = datastore;
     this.collection = this.datastore.getCollection(CONFIGURATIONS_COLLECTION);
     this.filterBuilder = new FilterBuilder();
+    this.filterExpressionBuilder = new FilterExpressionBuilder();
   }
 
   @Override
@@ -208,30 +212,89 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource)
+  public List<ContextSpecificConfig> getAllConfigs(
+      ConfigResource configResource,
+      org.hypertrace.config.service.v1.Filter filter,
+      org.hypertrace.config.service.v1.Pagination pagination,
+      List<SortBy> sortByList)
       throws IOException {
-    Query query =
-        Query.builder()
-            .addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC)
-            .setFilter(getConfigResourceFilterTypeExpression(configResource))
-            .build();
-    List<ContextSpecificConfig> contextSpecificConfigList = new ArrayList<>();
+
+    Query query = buildQuery(configResource, filter, pagination, sortByList);
+    List<ContextSpecificConfig> configList = new ArrayList<>();
     Set<String> seenContexts = new HashSet<>();
+
     try (CloseableIterator<Document> documentIterator =
         collection.query(query, QueryOptions.DEFAULT_QUERY_OPTIONS)) {
       while (documentIterator.hasNext()) {
-        String documentString = documentIterator.next().toJson();
-        ConfigDocument configDocument = ConfigDocument.fromJson(documentString);
-        String context = configDocument.getContext();
-        if (seenContexts.add(context)) {
-          convertToContextSpecificConfig(configDocument).ifPresent(contextSpecificConfigList::add);
-        }
+        processDocument(documentIterator.next(), seenContexts, configList);
       }
     }
-    Collections.sort(
-        contextSpecificConfigList,
+
+    configList.sort(
         Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
-    return contextSpecificConfigList;
+    return configList;
+  }
+
+  private Query buildQuery(
+      ConfigResource configResource,
+      org.hypertrace.config.service.v1.Filter filter,
+      org.hypertrace.config.service.v1.Pagination pagination,
+      List<SortBy> sortByList) {
+
+    FilterTypeExpression combinedFilter = getCombinedFilter(configResource, filter);
+    Query.QueryBuilder queryBuilder = Query.builder().setFilter(combinedFilter);
+    if (pagination != null
+        && !pagination.equals(org.hypertrace.config.service.v1.Pagination.getDefaultInstance())) {
+      queryBuilder.setPagination(
+          Pagination.builder().offset(pagination.getOffset()).limit(pagination.getLimit()).build());
+    }
+
+    if (sortByList != null) {
+      sortByList.forEach(
+          sortBy ->
+              queryBuilder.addSort(
+                  IdentifierExpression.of(sortBy.getSelection().getConfigJsonPath()),
+                  convertSortOrder(sortBy)));
+    }
+
+    queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
+    return queryBuilder.build();
+  }
+
+  private FilterTypeExpression getCombinedFilter(
+      ConfigResource configResource, org.hypertrace.config.service.v1.Filter additionalFilter) {
+
+    FilterTypeExpression resourceFilter = getConfigResourceFilterTypeExpression(configResource);
+    if (additionalFilter == null
+        || additionalFilter.equals(org.hypertrace.config.service.v1.Filter.getDefaultInstance())) {
+      return resourceFilter;
+    }
+
+    FilterTypeExpression docStoreFilter =
+        filterExpressionBuilder.buildFilterTypeExpression(additionalFilter);
+    return LogicalExpression.and(resourceFilter, docStoreFilter);
+  }
+
+  @SneakyThrows
+  private void processDocument(
+      Document document, Set<String> seenContexts, List<ContextSpecificConfig> configList) {
+
+    ConfigDocument configDocument = ConfigDocument.fromJson(document.toJson());
+    String context = configDocument.getContext();
+
+    if (seenContexts.add(context)) {
+      convertToContextSpecificConfig(configDocument).ifPresent(configList::add);
+    }
+  }
+
+  private static SortOrder convertSortOrder(SortBy sortBy) {
+    switch (sortBy.getSortOrder()) {
+      case SORT_ORDER_DESC:
+        return SortOrder.DESC;
+      case SORT_ORDER_ASC:
+      default:
+        return SortOrder.ASC;
+    }
   }
 
   @Override
