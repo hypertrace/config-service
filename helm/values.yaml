@@ -321,7 +321,7 @@ traceableConfigServiceConfig:
       astEnabled: true
       astReplayConfig:
         enabled: false
-        apiInactivityDuration: 30d
+        apiInactivityDuration: 15d
         maxApiLimit: 10000
         skipNonLearntApis: true
         skipUnderDiscoveryApis: true
