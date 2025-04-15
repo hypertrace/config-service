@@ -23,8 +23,14 @@ public class ConstantExpressionConverter {
           return ConstantExpression.ofStrings(List.of());
         }
 
-        // Infer and cast list element types (assumes homogeneous list)
         Value.KindCase elementType = values.get(0).getKindCase();
+        boolean isHomogeneous = values.stream().allMatch(v -> v.getKindCase() == elementType);
+
+        if (!isHomogeneous) {
+          throw Status.INVALID_ARGUMENT
+              .withDescription("List contains mixed types. All elements must be of the same type.")
+              .asRuntimeException();
+        }
         switch (elementType) {
           case STRING_VALUE:
             return ConstantExpression.ofStrings(
