@@ -118,7 +118,10 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       List<ContextSpecificConfig> contextSpecificConfigList =
           configStore.getAllConfigs(
               new ConfigResource(
-                  request.getResourceName(), request.getResourceNamespace(), getTenantId()));
+                  request.getResourceName(), request.getResourceNamespace(), getTenantId()),
+              request.getFilter(),
+              request.getPagination(),
+              request.getSortByList());
       responseObserver.onNext(
           GetAllConfigsResponse.newBuilder()
               .addAllContextSpecificConfigs(contextSpecificConfigList)

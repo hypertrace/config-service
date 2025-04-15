@@ -28,6 +28,7 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,10 +40,17 @@ import org.hypertrace.config.service.v1.DeleteConfigResponse;
 import org.hypertrace.config.service.v1.DeleteConfigsRequest;
 import org.hypertrace.config.service.v1.DeleteConfigsRequest.ConfigToDelete;
 import org.hypertrace.config.service.v1.DeleteConfigsResponse;
+import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
+import org.hypertrace.config.service.v1.Pagination;
+import org.hypertrace.config.service.v1.RelationalFilter;
+import org.hypertrace.config.service.v1.RelationalOperator;
+import org.hypertrace.config.service.v1.Selection;
+import org.hypertrace.config.service.v1.SortBy;
+import org.hypertrace.config.service.v1.SortOrder;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.config.service.v1.UpsertConfigResponse;
@@ -175,7 +183,10 @@ class ConfigServiceGrpcImplTest {
     contextSpecificConfigList.add(
         ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
     when(configStore.getAllConfigs(
-            new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)))
+            eq(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)),
+            eq(Filter.getDefaultInstance()), // for empty filter
+            eq(Pagination.getDefaultInstance()),
+            eq(Collections.emptyList())))
         .thenReturn(contextSpecificConfigList);
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
@@ -191,6 +202,79 @@ class ConfigServiceGrpcImplTest {
     verify(responseObserver, never()).onError(any(Throwable.class));
 
     GetAllConfigsResponse actualResponse = getAllConfigsResponseCaptor.getValue();
+    assertEquals(contextSpecificConfigList, actualResponse.getContextSpecificConfigsList());
+  }
+
+  @Test
+  void getAllConfigs_withFilterPaginationAndSorting() throws IOException {
+    ConfigStore configStore = mock(ConfigStore.class);
+
+    // Define filter
+    Filter filter =
+        Filter.newBuilder()
+            .setRelationalFilter(
+                RelationalFilter.newBuilder()
+                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+                    .setConfigJsonPath("spec.id")
+                    .setValue(Value.newBuilder().setStringValue("id1").build())
+                    .build())
+            .build();
+
+    // Define pagination
+    Pagination pagination = Pagination.newBuilder().setLimit(5).setOffset(10).build();
+
+    // Define sortBy
+    SortBy sortBy =
+        SortBy.newBuilder()
+            .setSelection(Selection.newBuilder().setConfigJsonPath("spec.id").build())
+            .setSortOrder(SortOrder.SORT_ORDER_ASC)
+            .build();
+
+    // Mocked configs returned from store
+    List<ContextSpecificConfig> contextSpecificConfigList =
+        List.of(
+            ContextSpecificConfig.newBuilder().setConfig(config1).build(),
+            ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
+
+    // Mock behavior
+    when(configStore.getAllConfigs(
+            argThat(
+                resource ->
+                    resource != null
+                        && RESOURCE_NAME.equals(resource.getResourceName())
+                        && RESOURCE_NAMESPACE.equals(resource.getResourceNamespace())
+                        && TENANT_ID.equals(resource.getTenantId())),
+            eq(filter),
+            eq(pagination),
+            eq(List.of(sortBy))))
+        .thenReturn(contextSpecificConfigList);
+
+    ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
+    StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
+
+    // Build request with all fields
+    GetAllConfigsRequest request =
+        GetAllConfigsRequest.newBuilder()
+            .setResourceName(RESOURCE_NAME)
+            .setResourceNamespace(RESOURCE_NAMESPACE)
+            .setFilter(filter)
+            .setPagination(pagination)
+            .addSortBy(sortBy)
+            .build();
+
+    // Execute in tenant context
+    Runnable runnable = () -> configServiceGrpc.getAllConfigs(request, responseObserver);
+    RequestContext.forTenantId(TENANT_ID).run(runnable);
+
+    // Verify response
+    ArgumentCaptor<GetAllConfigsResponse> responseCaptor =
+        ArgumentCaptor.forClass(GetAllConfigsResponse.class);
+
+    verify(responseObserver).onNext(responseCaptor.capture());
+    verify(responseObserver).onCompleted();
+    verify(responseObserver, never()).onError(any());
+
+    GetAllConfigsResponse actualResponse = responseCaptor.getValue();
     assertEquals(contextSpecificConfigList, actualResponse.getContextSpecificConfigsList());
   }
 

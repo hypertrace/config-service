@@ -9,6 +9,9 @@ import java.util.Optional;
 import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.Filter;
+import org.hypertrace.config.service.v1.Pagination;
+import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 
@@ -57,10 +60,15 @@ public interface ConfigStore {
    * specified parameters, sorted in the descending order of their creation time.
    *
    * @param configResource
+   * @param filter
+   * @param pagination
+   * @param sortByList
    * @return
    * @throws IOException
    */
-  List<ContextSpecificConfig> getAllConfigs(ConfigResource configResource) throws IOException;
+  List<ContextSpecificConfig> getAllConfigs(
+      ConfigResource configResource, Filter filter, Pagination pagination, List<SortBy> sortByList)
+      throws IOException;
 
   /**
    * Write each of the provided config value associated with the specified config resource to the

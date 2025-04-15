@@ -88,6 +88,18 @@ message GetAllConfigsRequest {
 
   // required - namespace with which the config resource is associated
   string resource_namespace = 2;
+
+  // optional - filtering criteria to narrow down the configs.
+  // Supports relational and logical operators on config fields.
+  Filter filter = 3;
+
+  // optional - list of sorting conditions to order the results.
+  // Multiple SortBy entries are applied in the specified order of priority.
+  repeated SortBy sort_by = 4;
+
+  // optional - pagination parameters to limit and offset the result set.
+  // Useful for retrieving configs in pages when total count is large.
+  Pagination pagination = 5;
 }
 
 message GetAllConfigsResponse {
@@ -200,4 +212,26 @@ enum LogicalOperator {
   LOGICAL_OPERATOR_UNSPECIFIED = 0;
   LOGICAL_OPERATOR_AND = 1;
   LOGICAL_OPERATOR_OR = 2;
+}
+
+message SortBy {
+  Selection selection = 1;
+  SortOrder sort_order = 2;
+}
+
+message Pagination {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message Selection {
+  oneof type {
+    string config_json_path = 1;
+  }
+}
+
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_ASC = 1;
+  SORT_ORDER_DESC = 2;
 }
