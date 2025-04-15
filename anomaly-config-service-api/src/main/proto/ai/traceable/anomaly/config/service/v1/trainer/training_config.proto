@@ -81,6 +81,11 @@ message VulnerabilityTypeFilter {
     JwtExpiryIssueAtFilter jwt_expiry_and_issue_at_not_set_filter = 18;
     MissingGatewayPoliciesFilter missing_gateway_policies_filter = 19;
     SensitiveDataInErrorMessageFilter sensitive_data_in_error_message_filter = 20;
+    ServerVersionDisclosureFilter server_version_disclosure_filter = 24;
+    JwtMissingAudienceClaimFilter jwt_missing_audience_claim_filter = 25;
+    OAuthClientSecretInQueryParamsFilter oauth_client_secret_in_query_params_filter = 26;
+    OAuthAntiCsrfCheckFilter oauth_anti_csrf_check_filter = 27;
+    OAuthImplicitGrantTypeFilter oauth_implicit_grant_type_filter = 28;
   }
 
   message ParamContainsSensitiveDataFilter {}
@@ -122,6 +127,16 @@ message VulnerabilityTypeFilter {
   message MissingGatewayPoliciesFilter {}
 
   message SensitiveDataInErrorMessageFilter {}
+
+  message ServerVersionDisclosureFilter {}
+
+  message JwtMissingAudienceClaimFilter {}
+
+  message OAuthClientSecretInQueryParamsFilter {}
+
+  message OAuthAntiCsrfCheckFilter {}
+
+  message OAuthImplicitGrantTypeFilter {}
 }
 
 enum DeleteAnomalyConfigOption {
@@ -399,6 +414,11 @@ message VulnerabilityTrainingConfig {
     MissingGatewayPoliciesTrainingConfig missing_gateway_policies = 21;
     SensitiveDataInErrorMessageTrainingConfig sensitive_data_in_error_message = 22;
     LackOfEncryptionExternalApiTrainingConfig lack_of_encryption_external_api = 23;
+    ServerVersionDisclosureTrainingConfig server_version_disclosure = 24;
+    JwtMissingAudienceClaimTrainingConfig jwt_missing_audience_claim = 25;
+    OAuthClientSecretInQueryParamsTrainingConfig oauth_client_secret_in_query_params = 26;
+    OAuthAntiCsrfCheckTrainingConfig oauth_anti_csrf_check = 27;
+    OAuthImplicitGrantTypeTrainingConfig oauth_implicit_grant_type = 28;
   }
 }
 
@@ -693,6 +713,16 @@ message CspSecurityHeaderTrainingConfig {}
 message DirectoryListingTrainingConfig {}
 
 message JavaSerializedObjectTrainingConfig {}
+
+message ServerVersionDisclosureTrainingConfig {}
+
+message JwtMissingAudienceClaimTrainingConfig {}
+
+message OAuthClientSecretInQueryParamsTrainingConfig {}
+
+message OAuthAntiCsrfCheckTrainingConfig {}
+
+message OAuthImplicitGrantTypeTrainingConfig {}
 
 message MultipleApiVersionsTrainingConfig {
   optional int64 max_allowed_api_versions_count = 1;
