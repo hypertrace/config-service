@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.ConfigResource;
@@ -237,36 +238,35 @@ public class DocumentConfigStore implements ConfigStore {
 
   private Query buildQuery(
       ConfigResource configResource,
-      org.hypertrace.config.service.v1.Filter filter,
-      org.hypertrace.config.service.v1.Pagination pagination,
+      @NonNull org.hypertrace.config.service.v1.Filter filter,
+      @NonNull org.hypertrace.config.service.v1.Pagination pagination,
       List<SortBy> sortByList) {
 
     FilterTypeExpression combinedFilter = getCombinedFilter(configResource, filter);
     Query.QueryBuilder queryBuilder = Query.builder().setFilter(combinedFilter);
-    if (pagination != null
-        && !pagination.equals(org.hypertrace.config.service.v1.Pagination.getDefaultInstance())) {
+    if (!pagination.equals(org.hypertrace.config.service.v1.Pagination.getDefaultInstance())) {
       queryBuilder.setPagination(
           Pagination.builder().offset(pagination.getOffset()).limit(pagination.getLimit()).build());
     }
 
-    if (sortByList != null) {
+    if (!sortByList.isEmpty()) {
       sortByList.forEach(
           sortBy ->
               queryBuilder.addSort(
                   IdentifierExpression.of(sortBy.getSelection().getConfigJsonPath()),
                   convertSortOrder(sortBy)));
+    } else {
+      queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
     }
-
-    queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
     return queryBuilder.build();
   }
 
   private FilterTypeExpression getCombinedFilter(
-      ConfigResource configResource, org.hypertrace.config.service.v1.Filter additionalFilter) {
+      ConfigResource configResource,
+      @NonNull org.hypertrace.config.service.v1.Filter additionalFilter) {
 
     FilterTypeExpression resourceFilter = getConfigResourceFilterTypeExpression(configResource);
-    if (additionalFilter == null
-        || additionalFilter.equals(org.hypertrace.config.service.v1.Filter.getDefaultInstance())) {
+    if (additionalFilter.equals(org.hypertrace.config.service.v1.Filter.getDefaultInstance())) {
       return resourceFilter;
     }
 

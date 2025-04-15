@@ -1,6 +1,7 @@
 package org.hypertrace.config.service.store;
 
 import com.google.protobuf.Value;
+import io.grpc.Status;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.documentstore.expression.impl.ConstantExpression;
@@ -17,10 +18,12 @@ public class ConstantExpressionConverter {
         return ConstantExpression.of(value.getBoolValue());
       case LIST_VALUE:
         List<Value> values = value.getListValue().getValuesList();
-        // Infer and cast list element types (assumes homogeneous list)
         if (values.isEmpty()) {
-          throw new IllegalArgumentException("Empty list not supported in ConstantExpression");
+          // Default to empty string list — or change logic based on expected behavior
+          return ConstantExpression.ofStrings(List.of());
         }
+
+        // Infer and cast list element types (assumes homogeneous list)
         Value.KindCase elementType = values.get(0).getKindCase();
         switch (elementType) {
           case STRING_VALUE:
@@ -33,16 +36,20 @@ public class ConstantExpressionConverter {
             return ConstantExpression.ofBooleans(
                 values.stream().map(Value::getBoolValue).collect(Collectors.toList()));
           default:
-            throw new UnsupportedOperationException(
-                "Unsupported list element type: " + elementType);
+            throw Status.UNIMPLEMENTED
+                .withDescription("Unsupported list element type: " + elementType)
+                .asRuntimeException();
         }
-
       case STRUCT_VALUE:
-        throw new UnsupportedOperationException("Struct not supported directly in this context");
+        throw Status.UNIMPLEMENTED
+            .withDescription("Struct not supported directly in ConstantExpression")
+            .asRuntimeException();
       case NULL_VALUE:
       case KIND_NOT_SET:
       default:
-        throw new IllegalArgumentException("Unsupported or null value in ConstantExpression");
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Unsupported or null value in ConstantExpression")
+            .asRuntimeException();
     }
   }
 }

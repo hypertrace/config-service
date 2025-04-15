@@ -183,12 +183,7 @@ class ConfigServiceGrpcImplTest {
     contextSpecificConfigList.add(
         ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
     when(configStore.getAllConfigs(
-            argThat(
-                resource ->
-                    resource != null
-                        && RESOURCE_NAME.equals(resource.getResourceName())
-                        && RESOURCE_NAMESPACE.equals(resource.getResourceNamespace())
-                        && TENANT_ID.equals(resource.getTenantId())),
+            eq(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)),
             eq(Filter.getDefaultInstance()), // for empty filter
             eq(Pagination.getDefaultInstance()),
             eq(Collections.emptyList())))

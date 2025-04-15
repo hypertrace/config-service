@@ -20,16 +20,16 @@ public class FilterExpressionBuilder {
   public FilterTypeExpression buildFilterTypeExpression(Filter filter) {
     switch (filter.getTypeCase()) {
       case LOGICAL_FILTER:
-        return evaluateLogicalExpression(filter.getLogicalFilter());
+        return buildLogicalExpression(filter.getLogicalFilter());
       case RELATIONAL_FILTER:
-        return evaluateRelationalExpression(filter.getRelationalFilter());
+        return buildRelationalExpression(filter.getRelationalFilter());
       case TYPE_NOT_SET:
       default:
         throw Status.INVALID_ARGUMENT.withDescription("Filter type unset").asRuntimeException();
     }
   }
 
-  private FilterTypeExpression evaluateLogicalExpression(LogicalFilter logicalFilter) {
+  private FilterTypeExpression buildLogicalExpression(LogicalFilter logicalFilter) {
     List<FilterTypeExpression> childExpressions =
         logicalFilter.getOperandsList().stream()
             .map(this::buildFilterTypeExpression)
@@ -52,7 +52,7 @@ public class FilterExpressionBuilder {
     return LogicalExpression.builder().operator(operator).operands(childExpressions).build();
   }
 
-  private FilterTypeExpression evaluateRelationalExpression(RelationalFilter relationalFilter) {
+  private FilterTypeExpression buildRelationalExpression(RelationalFilter relationalFilter) {
     RelationalOperator operator;
     switch (relationalFilter.getOperator()) {
       case RELATIONAL_OPERATOR_EQ:
