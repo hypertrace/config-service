@@ -116,7 +116,7 @@ public abstract class IdentifiedObjectStore<T> {
                 Collectors.toUnmodifiableList(), this::orderFetchedObjects));
   }
 
-  public List<ContextualConfigObject<T>> getAllObjectsWithFilter(
+  List<ContextualConfigObject<T>> getMatchingObjectsWithFilter(
       RequestContext context, Filter filter, Pagination pagination, List<SortBy> sortByList) {
     return context
         .call(
