@@ -73,7 +73,7 @@ class CategorizedBotConfigServiceTest {
             .setId("550e8400-e29b-41d4-a716-446655440000")
             .setCategorizedBotDetails(
                 CategorizedBotDetails.newBuilder()
-                    .setName("Bing bot")
+                    .setName("Bingbot")
                     .setDescription(
                         "Bingbot is Microsoft's web crawler responsible for indexing content for Bing Search.")
                     .setCategorizedBotSignatureRule(
@@ -187,7 +187,7 @@ class CategorizedBotConfigServiceTest {
   void testGetValidCategoryFilterBots() {
     final RequestContext requestContext = RequestContext.forTenantId("t1");
     assertEquals(
-        10,
+        25,
         requestContext
             .call(
                 () ->
@@ -223,7 +223,7 @@ class CategorizedBotConfigServiceTest {
   void testGetValidSubCategoryFilterBots() {
     final RequestContext requestContext = RequestContext.forTenantId("t1");
     assertEquals(
-        3,
+        7,
         requestContext
             .call(
                 () ->
@@ -241,7 +241,7 @@ class CategorizedBotConfigServiceTest {
   void testGetCategorizedBotConfigEdgeDecisionVariables() {
     final VariableDerivationMapping expectedVariableDerivation =
         VariableDerivationMapping.newBuilder()
-            .setName("TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000")
+            .setName("TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000")
             .addRules(
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
@@ -347,7 +347,9 @@ class CategorizedBotConfigServiceTest {
                         GetCategorizedBotConfigEdgeDecisionVariablesRequest.getDefaultInstance())
                     .getVariableDerivationMappingsList()
                     .stream()
-                    .filter(variableDerivation -> variableDerivation.getName().contains("bing_bot"))
+                    .filter(
+                        variableDerivation ->
+                            variableDerivation.getName().toLowerCase().contains("bing"))
                     .findFirst()
                     .get()));
   }

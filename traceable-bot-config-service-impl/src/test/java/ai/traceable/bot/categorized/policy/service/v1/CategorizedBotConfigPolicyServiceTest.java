@@ -528,7 +528,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                             .setJexlExpression(
                                                 JexlExpressionConfig.newBuilder()
                                                     .setJexlExpression(
-                                                        "TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000 == true")
+                                                        "TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000 == true")
                                                     .build())
                                             .build())
                                     .build())
@@ -548,7 +548,7 @@ class CategorizedBotConfigPolicyServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("Bing bot").build())
+                                        Value.newBuilder().setStringValue("Bingbot").build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())

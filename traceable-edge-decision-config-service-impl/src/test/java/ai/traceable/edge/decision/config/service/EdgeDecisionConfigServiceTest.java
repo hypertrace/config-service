@@ -438,7 +438,7 @@ class EdgeDecisionConfigServiceTest {
                     .getEdgeDecisionEngineConfig());
     final VariableDerivationMapping expectedVariableDerivation =
         VariableDerivationMapping.newBuilder()
-            .setName("TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000")
+            .setName("TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000")
             .addRules(
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
@@ -567,7 +567,7 @@ class EdgeDecisionConfigServiceTest {
                                             .setJexlExpression(
                                                 JexlExpressionConfig.newBuilder()
                                                     .setJexlExpression(
-                                                        "TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000 == true")
+                                                        "TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000 == true")
                                                     .build())
                                             .build())
                                     .build())
@@ -587,7 +587,7 @@ class EdgeDecisionConfigServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("Bing bot").build())
+                                        Value.newBuilder().setStringValue("Bingbot").build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
