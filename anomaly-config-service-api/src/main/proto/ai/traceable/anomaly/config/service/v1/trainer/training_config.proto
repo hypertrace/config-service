@@ -907,6 +907,21 @@ message TrieModelTrainingConfig {
   GibberishConfig gibberish_config = 10;
   repeated SegmentMergeConfig segment_merge_config = 11;
   StringList id_enums = 12;
+  repeated CustomCardinality custom_cardinalities = 13;
+}
+
+message CustomCardinality {
+  string node_type = 1; // to be used for trie node type identification in trie models
+  optional Filter url_path_filter = 2;
+  ThresholdRegexConfig threshold_regex_config = 3;
+  optional IntList positions = 4; // valid positions where the cardinality can be found, 0 indexed from method name
+  SegmentNomenclature segment_nomenclature = 5;
+}
+
+message SegmentNomenclature {
+  oneof segment {
+    string name = 1; // static segment name to be used for API naming
+  }
 }
 
 message GibberishConfig {
