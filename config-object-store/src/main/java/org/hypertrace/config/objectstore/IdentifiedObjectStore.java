@@ -18,8 +18,6 @@ import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
-import org.hypertrace.config.service.v1.Pagination;
-import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.config.service.v1.UpsertAllConfigsRequest;
 import org.hypertrace.config.service.v1.UpsertAllConfigsRequest.ConfigToUpsert;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
@@ -103,33 +101,6 @@ public abstract class IdentifiedObjectStore<T> {
                         GetAllConfigsRequest.newBuilder()
                             .setResourceName(this.resourceName)
                             .setResourceNamespace(this.resourceNamespace)
-                            .build()))
-        .getContextSpecificConfigsList()
-        .stream()
-        .map(
-            contextSpecificConfig ->
-                ContextualConfigObjectImpl.tryBuild(
-                    contextSpecificConfig, this::buildDataFromValue))
-        .flatMap(Optional::stream)
-        .collect(
-            Collectors.collectingAndThen(
-                Collectors.toUnmodifiableList(), this::orderFetchedObjects));
-  }
-
-  List<ContextualConfigObject<T>> getMatchingObjectsWithFilter(
-      RequestContext context, Filter filter, Pagination pagination, List<SortBy> sortByList) {
-    return context
-        .call(
-            () ->
-                this.configServiceBlockingStub
-                    .withDeadline(getDeadline())
-                    .getAllConfigs(
-                        GetAllConfigsRequest.newBuilder()
-                            .setResourceName(this.resourceName)
-                            .setResourceNamespace(this.resourceNamespace)
-                            .setFilter(filter)
-                            .setPagination(pagination)
-                            .addAllSortBy(sortByList)
                             .build()))
         .getContextSpecificConfigsList()
         .stream()

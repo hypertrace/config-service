@@ -7,12 +7,17 @@ import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.Filter;
+import org.hypertrace.config.service.v1.GetAllConfigsRequest;
 import org.hypertrace.config.service.v1.Pagination;
 import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
     extends IdentifiedObjectStore<T> {
+
+  private final ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub;
+  private final String resourceName;
+  private final String resourceNamespace;
 
   protected IdentifiedFilterPushedDownObjectStore(
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
@@ -26,13 +31,23 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
         resourceName,
         configChangeEventGenerator,
         clientConfig);
+    this.configServiceBlockingStub = configServiceBlockingStub;
+    this.resourceName = resourceName;
+    this.resourceNamespace = resourceNamespace;
   }
 
   public List<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context, F filterInput, List<S> sortInput, Pagination pagination) {
     Filter filter = buildFilter(filterInput);
     List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
-    return getMatchingObjectsWithFilter(context, filter, pagination, sortByList);
+    return getMatchingObjectsWithFilter(context, filter, sortByList, pagination);
+  }
+
+  public List<ContextualConfigObject<T>> getMatchingObjects(
+      RequestContext context, F filterInput, List<S> sortInput) {
+    Filter filter = buildFilter(filterInput);
+    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
+    return getMatchingObjectsWithFilter(context, filter, sortByList, null);
   }
 
   public List<T> getMatchingData(
@@ -44,8 +59,7 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
 
   public Optional<ContextualConfigObject<T>> getMatchingObject(
       RequestContext context, F filterInput, List<S> sortInput) {
-    List<ContextualConfigObject<T>> results =
-        getMatchingObjects(context, filterInput, sortInput, Pagination.getDefaultInstance());
+    List<ContextualConfigObject<T>> results = getMatchingObjects(context, filterInput, sortInput);
     if (results.size() > 1) {
       throw Status.FAILED_PRECONDITION
           .withDescription("Multiple objects found when expecting at most one")
@@ -56,6 +70,40 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
 
   public Optional<T> getMatchingData(RequestContext context, F filterInput, List<S> sortInput) {
     return getMatchingObject(context, filterInput, sortInput).map(ConfigObject::getData);
+  }
+
+  List<ContextualConfigObject<T>> getMatchingObjectsWithFilter(
+      RequestContext context, Filter filter, List<SortBy> sortByList, Pagination pagination) {
+    return context
+        .call(
+            () ->
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .getAllConfigs(buildGetAllConfigsRequest(filter, sortByList, pagination)))
+        .getContextSpecificConfigsList()
+        .stream()
+        .map(
+            contextSpecificConfig ->
+                ContextualConfigObjectImpl.tryBuild(
+                    contextSpecificConfig, this::buildDataFromValue))
+        .flatMap(Optional::stream)
+        .collect(
+            Collectors.collectingAndThen(
+                Collectors.toUnmodifiableList(), this::orderFetchedObjects));
+  }
+
+  private GetAllConfigsRequest buildGetAllConfigsRequest(
+      Filter filter, List<SortBy> sortByList, Pagination pagination) {
+    GetAllConfigsRequest.Builder getAllConfigsRequest =
+        GetAllConfigsRequest.newBuilder()
+            .setResourceName(this.resourceName)
+            .setResourceNamespace(this.resourceNamespace)
+            .setFilter(filter)
+            .addAllSortBy(sortByList);
+    if (pagination != null) {
+      getAllConfigsRequest.setPagination(pagination);
+    }
+    return getAllConfigsRequest.build();
   }
 
   protected abstract SortBy buildSort(S sortInput);
