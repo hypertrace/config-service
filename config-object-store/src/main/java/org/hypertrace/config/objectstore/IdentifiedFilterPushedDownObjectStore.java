@@ -1,5 +1,6 @@
 package org.hypertrace.config.objectstore;
 
+import io.grpc.Status;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,40 +31,34 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
   public List<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context, F filterInput, List<S> sortInput, Pagination pagination) {
     Filter filter = buildFilter(filterInput);
-    List<SortBy> sortByList = buildSort(sortInput);
+    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
     return getMatchingObjectsWithFilter(context, filter, pagination, sortByList);
   }
 
-  public List<T> getMatchingConfigData(
+  public List<T> getMatchingData(
       RequestContext context, F filterInput, List<S> sortInput, Pagination pagination) {
     return getMatchingObjects(context, filterInput, sortInput, pagination).stream()
         .map(ConfigObject::getData)
         .collect(Collectors.toUnmodifiableList());
   }
 
-  public Optional<ContextualConfigObject<T>> getObject(
-      RequestContext context, String id, F filter) {
-    return getObject(context, id).flatMap(configObject -> filterObject(configObject, filter));
+  public Optional<ContextualConfigObject<T>> getMatchingObject(
+      RequestContext context, F filterInput, List<S> sortInput) {
+    List<ContextualConfigObject<T>> results =
+        getMatchingObjects(context, filterInput, sortInput, Pagination.getDefaultInstance());
+    if (results.size() > 1) {
+      throw Status.FAILED_PRECONDITION
+          .withDescription("Multiple objects found when expecting at most one")
+          .asRuntimeException();
+    }
+    return results.stream().findFirst();
   }
 
-  public Optional<T> getData(RequestContext context, String id, F filter) {
-    return getObject(context, id, filter).map(ConfigObject::getData);
+  public Optional<T> getMatchingData(RequestContext context, F filterInput, List<S> sortInput) {
+    return getMatchingObject(context, filterInput, sortInput).map(ConfigObject::getData);
   }
 
-  private Optional<ContextualConfigObject<T>> filterObject(
-      ContextualConfigObject<T> configObject, F filter) {
-    return filterConfigData(configObject.getData(), filter)
-        .map(filteredData -> updateConfigData(configObject, filteredData));
-  }
-
-  private ContextualConfigObject<T> updateConfigData(
-      ContextualConfigObject<T> configObject, T updatedData) {
-    return ((ContextualConfigObjectImpl) configObject).toBuilder().data(updatedData).build();
-  }
-
-  protected abstract Optional<T> filterConfigData(T data, F filter);
+  protected abstract SortBy buildSort(S sortInput);
 
   protected abstract Filter buildFilter(F filterInput);
-
-  protected abstract List<SortBy> buildSort(List<S> sortInput);
 }
