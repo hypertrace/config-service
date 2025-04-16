@@ -21,6 +21,7 @@ message AkamaiIntegrationDetails {
 message AkamaiPolicyDetails {
   string akamai_policy_configuration_id = 1;
   string policy_id = 2;
+  string network_list_id = 3;
 }
 
 message AkamaiAuthCredentials {
