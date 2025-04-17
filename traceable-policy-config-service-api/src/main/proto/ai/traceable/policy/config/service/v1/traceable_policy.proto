@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.policy.config.service.v1;
 
 import "ai/traceable/policy/config/service/v1/client_bot_fingerprint_policy.proto";
+import "ai/traceable/policy/config/service/v1/invisible_captcha_policy.proto";
 
 option java_multiple_files = true;
 option java_package = "ai.traceable.policy.config.service.v1";
@@ -15,6 +16,7 @@ message TraceablePolicy {
   map<string, string> labels = 5;
   oneof policy {
     ClientBotFingerprintPolicy client_bot_fingerprint_policy = 6;
+    InvisibleCaptchaPolicy invisible_captcha_policy = 7;
     // other policy kinds will be added here when we migrate existing "fraud policy" to this module
   }
   // if this policy is generated from a template / default rule, store the template id

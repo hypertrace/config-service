@@ -1,0 +1,47 @@
+syntax = "proto3";
+package ai.traceable.policy.config.service.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_package = "ai.traceable.policy.config.service.v1";
+
+message InvisibleCaptchaPolicy {
+  string site_key = 1;
+  CaptchaDifficulty difficulty_category = 2;
+  repeated InvisibleCaptchaRule rules = 3;
+  google.protobuf.Value custom_fields = 5;
+}
+
+enum CaptchaDifficulty {
+  CAPTCHA_DIFFICULTY_UNSPECIFIED = 0;
+  CAPTCHA_DIFFICULTY_EASY = 1;
+  CAPTCHA_DIFFICULTY_MEDIUM = 2;
+  CAPTCHA_DIFFICULTY_HARD = 3;
+}
+
+enum RateDimension {
+  RATE_DIMENSION_UNSPECIFIED = 0;
+  RATE_DIMENSION_IP = 1;
+  RATE_DIMENSION_UA = 2;
+  RATE_DIMENSION_VISITOR = 3;
+}
+
+message RateConfig {
+  RateDimension dimension = 1;
+  double threshold = 2;
+  google.protobuf.Duration time_window = 3;
+  google.protobuf.Value complexity = 4;
+}
+
+message RuleConfig {
+  oneof rule {
+    RateConfig rate_config = 1;
+  }
+}
+
+message InvisibleCaptchaRule {
+  RuleConfig rule_config = 1;
+  google.protobuf.Value custom_fields = 2;
+}
