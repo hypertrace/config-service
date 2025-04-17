@@ -9,7 +9,6 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureConfigServi
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceGrpc;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.StoredUserAttributionRuleFetcher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.fetcher.UserAttributionRuleFetcher;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.CategorizedBotVariableEnricher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.VariableConstantRuleEnricher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.VariableEnricher;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.fetcher.UserAttributionVariableFetcher;
@@ -79,7 +78,6 @@ public class EdgeDecisionConfigServiceModule extends AbstractModule {
     Multibinder<VariableEnricher> variableEnricherMultibinder =
         Multibinder.newSetBinder(binder(), VariableEnricher.class);
     variableEnricherMultibinder.addBinding().to(VariableConstantRuleEnricher.class);
-    variableEnricherMultibinder.addBinding().to(CategorizedBotVariableEnricher.class);
     configBinder.addBinding().to(JwtExtractionEdgeDecisionConfigSupplier.class);
   }
 

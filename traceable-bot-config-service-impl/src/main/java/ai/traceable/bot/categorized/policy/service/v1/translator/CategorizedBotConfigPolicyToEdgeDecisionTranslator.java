@@ -8,6 +8,7 @@ import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_IN
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfig;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotDetails;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotDetailsConfig;
+import ai.traceable.bot.categorized.config.service.v1.translator.CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator;
 import ai.traceable.bot.categorized.policy.service.v1.BotScope;
 import ai.traceable.bot.categorized.policy.service.v1.BotScope.BotClassification;
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotAction;
@@ -25,6 +26,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationCo
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
@@ -64,6 +66,9 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
   private static final Map<String, CategorizedBotConfig> CATEGORIZED_BOT_CONFIG_MAP =
       CategorizedBotDetailsConfig.INSTANCE.getAllTraceableCategorizedBots().stream()
           .collect(Collectors.toMap(CategorizedBotConfig::getId, Function.identity()));
+  private static final Map<String, VariableDerivationMapping> BOT_ID_VARIABLE_DERVIVATION_MAP =
+      CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator.INSTANCE
+          .getBotIdToVariableDerivationMapping();
   private static final String CATEGORIZED_BOT_EDGE_DECISION_CONFIG =
       "CategorizedBotEdgeDecisionConfig";
 
@@ -250,6 +255,7 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
     return EdgeDecisionRuleDefinition.newBuilder()
         .setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST)
         .setCustomFields(Values.of(Structs.of("policyId", Values.of(policyId))))
+        .addRuleVariables(BOT_ID_VARIABLE_DERVIVATION_MAP.get(botId))
         .setSignatureRule(
             SignatureRule.newBuilder()
                 .setMatchCondition(

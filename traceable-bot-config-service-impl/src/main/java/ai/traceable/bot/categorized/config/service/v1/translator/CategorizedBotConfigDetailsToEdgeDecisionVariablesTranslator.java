@@ -13,7 +13,9 @@ import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import com.google.protobuf.Value;
 import java.util.Collection;
+import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.Getter;
 
 public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
 
@@ -25,17 +27,18 @@ public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
   public static final CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator INSTANCE =
       new CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator();
 
-  private final Collection<VariableDerivationMapping> allTranslatedEdgeDecisionVariableDerivations;
+  @Getter private final Map<String, VariableDerivationMapping> botIdToVariableDerivationMapping;
 
   private CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator() {
-    this.allTranslatedEdgeDecisionVariableDerivations =
+    this.botIdToVariableDerivationMapping =
         CategorizedBotDetailsConfig.INSTANCE.getAllTraceableCategorizedBots().stream()
-            .map(this::convertBotConfigToVariableDerivation)
-            .collect(Collectors.toUnmodifiableList());
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    CategorizedBotConfig::getId, this::convertBotConfigToVariableDerivation));
   }
 
   public Collection<VariableDerivationMapping> translate() {
-    return allTranslatedEdgeDecisionVariableDerivations;
+    return botIdToVariableDerivationMapping.values();
   }
 
   private VariableDerivationMapping convertBotConfigToVariableDerivation(

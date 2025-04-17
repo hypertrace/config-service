@@ -42,9 +42,7 @@ import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.CheckAndAddVariableToRule;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.RuleVariableEnricher;
-import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.enricher.CategorizedBotVariableEnricher;
 import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStore;
 import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStoreManager;
 import ai.traceable.edge.decision.config.service.store.EdgeCustomResponseStore;
@@ -378,11 +376,7 @@ class EdgeDecisionConfigServiceTest {
   @Test
   void testCategorizedBotPolicy() {
     RequestContext requestContext = buildRequestContext();
-    RuleVariableEnricher variableEnricher =
-        new RuleVariableEnricher(
-            Set.of(
-                new CategorizedBotVariableEnricher(
-                    new CheckAndAddVariableToRule(), categorizedBotConfigServiceBlockingStub)));
+    RuleVariableEnricher variableEnricher = new RuleVariableEnricher(Set.of());
 
     ArgumentCaptor<RequestContext> requestContextCaptor =
         ArgumentCaptor.forClass(RequestContext.class);
@@ -438,7 +432,7 @@ class EdgeDecisionConfigServiceTest {
                     .getEdgeDecisionEngineConfig());
     final VariableDerivationMapping expectedVariableDerivation =
         VariableDerivationMapping.newBuilder()
-            .setName("TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000")
+            .setName("TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000")
             .addRules(
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
@@ -567,7 +561,7 @@ class EdgeDecisionConfigServiceTest {
                                             .setJexlExpression(
                                                 JexlExpressionConfig.newBuilder()
                                                     .setJexlExpression(
-                                                        "TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000 == true")
+                                                        "TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000 == true")
                                                     .build())
                                             .build())
                                     .build())
@@ -587,7 +581,7 @@ class EdgeDecisionConfigServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("Bing bot").build())
+                                        Value.newBuilder().setStringValue("Bingbot").build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())

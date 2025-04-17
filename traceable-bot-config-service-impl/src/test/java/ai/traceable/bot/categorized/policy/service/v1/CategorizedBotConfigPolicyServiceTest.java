@@ -15,10 +15,19 @@ import ai.traceable.bot.categorized.policy.service.v1.store.DefaultPolicyConfig;
 import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
 import ai.traceable.bot.categorized.utils.CategorizedBotStringUtil;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
+import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
+import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
+import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
@@ -33,6 +42,7 @@ import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.RuleInfoDecoration;
 import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -491,6 +501,102 @@ class CategorizedBotConfigPolicyServiceTest {
                                     .build())
                             .build()));
 
+    final VariableDerivationMapping expectedVariableDerivation =
+        VariableDerivationMapping.newBuilder()
+            .setName("TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000")
+            .addRules(
+                DerivationRule.newBuilder()
+                    .setTransformationConfig(
+                        DataTransformationConfig.newBuilder()
+                            .setStaticValue(Value.newBuilder().setBoolValue(true))
+                            .setOutputType(FieldType.FIELD_TYPE_BOOL))
+                    .setMatchCondition(
+                        MatchCondition.newBuilder()
+                            .setLogicalMatchCondition(
+                                LogicalMatchCondition.newBuilder()
+                                    .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND)
+                                    .addConditions(
+                                        MatchCondition.newBuilder()
+                                            .setLogicalMatchCondition(
+                                                LogicalMatchCondition.newBuilder()
+                                                    .setOperator(
+                                                        LogicalMatchOperator
+                                                            .LOGICAL_MATCH_OPERATOR_OR)
+                                                    .addConditions(
+                                                        MatchCondition.newBuilder()
+                                                            .setGenericMatchCondition(
+                                                                GenericMatchCondition.newBuilder()
+                                                                    .setJexlExpression(
+                                                                        JexlExpressionConfig
+                                                                            .newBuilder()
+                                                                            .setJexlExpression(
+                                                                                "ipValidation:isIpAddressInRange('13.66.139.0/24', $s.getIpAddress())")
+                                                                            .build()))
+                                                            .build())
+                                                    .addConditions(
+                                                        MatchCondition.newBuilder()
+                                                            .setGenericMatchCondition(
+                                                                GenericMatchCondition.newBuilder()
+                                                                    .setJexlExpression(
+                                                                        JexlExpressionConfig
+                                                                            .newBuilder()
+                                                                            .setJexlExpression(
+                                                                                "ipValidation:isIpAddressInRange('40.77.167.0/24', $s.getIpAddress())")
+                                                                            .build())
+                                                                    .build()))
+                                                    .build())
+                                            .build())
+                                    .addConditions(
+                                        MatchCondition.newBuilder()
+                                            .setLogicalMatchCondition(
+                                                LogicalMatchCondition.newBuilder()
+                                                    .setOperator(
+                                                        LogicalMatchOperator
+                                                            .LOGICAL_MATCH_OPERATOR_OR)
+                                                    .addConditions(
+                                                        MatchCondition.newBuilder()
+                                                            .setStructuredMatchCondition(
+                                                                StructuredMatchCondition
+                                                                    .newBuilder()
+                                                                    .setLhs(
+                                                                        AttributeDerivationMapping
+                                                                            .newBuilder()
+                                                                            .setName("lhs")
+                                                                            .setType(FIELD_TYPE_STR)
+                                                                            .addRules(
+                                                                                DerivationRule
+                                                                                    .newBuilder()
+                                                                                    .setTransformationConfig(
+                                                                                        DataTransformationConfig
+                                                                                            .newBuilder()
+                                                                                            .setOutputType(
+                                                                                                FIELD_TYPE_STR)
+                                                                                            .setJexlExpression(
+                                                                                                JexlExpressionConfig
+                                                                                                    .newBuilder()
+                                                                                                    .setJexlExpression(
+                                                                                                        "$s.getUserAgent()")))))
+                                                                    .setBinaryOperator(
+                                                                        BinaryOperator.newBuilder()
+                                                                            .setListValue(
+                                                                                ListValue
+                                                                                    .newBuilder()
+                                                                                    .addValues(
+                                                                                        Value
+                                                                                            .newBuilder()
+                                                                                            .setStringValue(
+                                                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
+                                                                                            .build())
+                                                                                    .build())
+                                                                            .setMatchOperator(
+                                                                                MatchOperator
+                                                                                    .MATCH_OPERATOR_IN))))
+                                                    .build())
+                                            .build()))
+                            .build())
+                    .build())
+            .build();
+
     final EdgeDecisionRule expectedRule =
         EdgeDecisionRule.newBuilder()
             .setId(
@@ -517,6 +623,7 @@ class CategorizedBotConfigPolicyServiceTest {
             .setRuleDefinition(
                 EdgeDecisionRuleDefinition.newBuilder()
                     .setEdgeInputKind(EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST)
+                    .addRuleVariables(expectedVariableDerivation)
                     .setCustomFields(
                         Values.of(Structs.of("policyId", Values.of(createdPolicy.getId()))))
                     .setSignatureRule(
@@ -528,7 +635,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                             .setJexlExpression(
                                                 JexlExpressionConfig.newBuilder()
                                                     .setJexlExpression(
-                                                        "TRACEABLEAI_BOT_bing_bot_550e8400_e29b_41d4_a716_446655440000 == true")
+                                                        "TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000 == true")
                                                     .build())
                                             .build())
                                     .build())
@@ -548,7 +655,7 @@ class CategorizedBotConfigPolicyServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("Bing bot").build())
+                                        Value.newBuilder().setStringValue("Bingbot").build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())

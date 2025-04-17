@@ -3,7 +3,6 @@ package ai.traceable.edge.decision.config.service.aggregator.attributes.variable
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import java.util.concurrent.TimeUnit;
@@ -55,29 +54,6 @@ public class CheckAndAddVariableToRule {
     // Update cache with negative result
     cache.put(cacheKey, false);
     return edgeDecisionEngineConfig;
-  }
-
-  public EdgeDecisionEngineConfig addVariableToRulesInConfig(
-      final EdgeDecisionEngineConfig edgeDecisionEngineConfig,
-      final String variableName,
-      final VariableDerivationMapping variableDerivationMapping) {
-    final Pattern pattern = Pattern.compile(String.format(VARIABLE_REGEX_TEMPLATE, variableName));
-    if (!pattern.matcher(edgeDecisionEngineConfig.toString()).find()) {
-      return edgeDecisionEngineConfig;
-    }
-    final EdgeDecisionEngineConfig.Builder configBuilder = edgeDecisionEngineConfig.toBuilder();
-    for (int i = 0; i < edgeDecisionEngineConfig.getDecisionRulesList().size(); i++) {
-      final EdgeDecisionRule rule = edgeDecisionEngineConfig.getDecisionRules(i);
-      if (pattern.matcher(rule.toString()).find()) {
-        configBuilder.setDecisionRules(
-            i,
-            rule.toBuilder()
-                .setRuleDefinition(
-                    rule.getRuleDefinition().toBuilder()
-                        .addRuleVariables(variableDerivationMapping)));
-      }
-    }
-    return configBuilder.build();
   }
 
   private String generateCacheKey(
