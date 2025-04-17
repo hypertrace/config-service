@@ -38,9 +38,7 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
 
   public List<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context, F filterInput, List<S> sortInput) {
-    Filter filter = buildFilter(filterInput);
-    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
-    return getMatchingObjects(context, filter, sortByList, null);
+    return getMatchingObjects(context, filterInput, sortInput, null);
   }
 
   public List<T> getMatchingData(
