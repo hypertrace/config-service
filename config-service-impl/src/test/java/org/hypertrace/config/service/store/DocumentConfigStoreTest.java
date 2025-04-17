@@ -32,6 +32,7 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.Filter;
+import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.LogicalFilter;
 import org.hypertrace.config.service.v1.LogicalOperator;
 import org.hypertrace.config.service.v1.Pagination;
@@ -268,12 +269,16 @@ class DocumentConfigStoreTest {
                 getConfigDocument("context", CONFIG_VERSION - 1, config2, TIMESTAMP1, TIMESTAMP1)));
     when(collection.query(any(Query.class), any())).thenReturn(iterator);
 
-    List<ContextSpecificConfig> contextSpecificConfigList =
+    GetAllConfigsResponse response =
         configStore.getAllConfigs(
             new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID),
             Filter.getDefaultInstance(), // for empty filter
             Pagination.getDefaultInstance(),
-            Collections.emptyList());
+            Collections.emptyList(),
+            false);
+
+    List<ContextSpecificConfig> contextSpecificConfigList =
+        response.getContextSpecificConfigsList();
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(
         ContextSpecificConfig.newBuilder()

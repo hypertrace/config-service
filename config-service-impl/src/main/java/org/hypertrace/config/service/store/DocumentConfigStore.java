@@ -1,6 +1,7 @@
 package org.hypertrace.config.service.store;
 
 import static com.google.common.collect.Streams.zip;
+import static java.util.Collections.emptyList;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -31,6 +33,7 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
+import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -51,6 +54,7 @@ import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 import org.hypertrace.core.documentstore.model.options.QueryOptions;
 import org.hypertrace.core.documentstore.query.Pagination;
 import org.hypertrace.core.documentstore.query.Query;
+import org.hypertrace.core.documentstore.query.transform.TransformedQueryBuilder;
 
 /** Document store which stores and serves the configurations. */
 @Slf4j
@@ -213,16 +217,24 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public List<ContextSpecificConfig> getAllConfigs(
+  public GetAllConfigsResponse getAllConfigs(
       ConfigResource configResource,
       org.hypertrace.config.service.v1.Filter filter,
       org.hypertrace.config.service.v1.Pagination pagination,
-      List<SortBy> sortByList)
+      List<SortBy> sortByList,
+      boolean includeTotal)
       throws IOException {
 
     Query query = buildQuery(configResource, filter, pagination, sortByList);
     List<ContextSpecificConfig> configList = new ArrayList<>();
     Set<String> seenContexts = new HashSet<>();
+
+    CompletableFuture<Long> totalCountFuture = null;
+
+    if (includeTotal) {
+      Query countQuery = clearSortingAndPagination(query);
+      totalCountFuture = CompletableFuture.supplyAsync(() -> collection.count(countQuery));
+    }
 
     try (CloseableIterator<Document> documentIterator =
         collection.query(query, QueryOptions.DEFAULT_QUERY_OPTIONS)) {
@@ -233,7 +245,20 @@ public class DocumentConfigStore implements ConfigStore {
 
     configList.sort(
         Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
-    return configList;
+
+    GetAllConfigsResponse.Builder responseBuilder =
+        GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configList);
+
+    if (includeTotal) {
+      long totalCount = totalCountFuture.join(); // Wait for it if needed
+      responseBuilder.setTotalCount(totalCount);
+    }
+
+    return responseBuilder.build();
+  }
+
+  private Query clearSortingAndPagination(final Query query) {
+    return new TransformedQueryBuilder(query).setSorts(emptyList()).setPagination(null).build();
   }
 
   private Query buildQuery(

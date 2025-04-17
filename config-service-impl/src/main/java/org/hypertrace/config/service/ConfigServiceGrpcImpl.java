@@ -115,17 +115,15 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getAllConfigs(
       GetAllConfigsRequest request, StreamObserver<GetAllConfigsResponse> responseObserver) {
     try {
-      List<ContextSpecificConfig> contextSpecificConfigList =
+      GetAllConfigsResponse getAllConfigsResponse =
           configStore.getAllConfigs(
               new ConfigResource(
                   request.getResourceName(), request.getResourceNamespace(), getTenantId()),
               request.getFilter(),
               request.getPagination(),
-              request.getSortByList());
-      responseObserver.onNext(
-          GetAllConfigsResponse.newBuilder()
-              .addAllContextSpecificConfigs(contextSpecificConfigList)
-              .build());
+              request.getSortByList(),
+              request.getIncludeTotal());
+      responseObserver.onNext(getAllConfigsResponse);
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get all configs failed for request:{}", request, e);
