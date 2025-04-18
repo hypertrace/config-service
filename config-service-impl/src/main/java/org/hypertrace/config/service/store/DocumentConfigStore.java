@@ -1,7 +1,6 @@
 package org.hypertrace.config.service.store;
 
 import static com.google.common.collect.Streams.zip;
-import static java.util.Collections.emptyList;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
@@ -52,7 +51,6 @@ import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 import org.hypertrace.core.documentstore.model.options.QueryOptions;
 import org.hypertrace.core.documentstore.query.Pagination;
 import org.hypertrace.core.documentstore.query.Query;
-import org.hypertrace.core.documentstore.query.transform.TransformedQueryBuilder;
 
 /** Document store which stores and serves the configurations. */
 @Slf4j
