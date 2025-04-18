@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -33,7 +32,6 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
-import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
@@ -217,24 +215,16 @@ public class DocumentConfigStore implements ConfigStore {
   }
 
   @Override
-  public GetAllConfigsResponse getAllConfigs(
+  public List<ContextSpecificConfig> getAllConfigs(
       ConfigResource configResource,
       org.hypertrace.config.service.v1.Filter filter,
       org.hypertrace.config.service.v1.Pagination pagination,
-      List<SortBy> sortByList,
-      boolean includeTotal)
+      List<SortBy> sortByList)
       throws IOException {
 
     Query query = buildQuery(configResource, filter, pagination, sortByList);
     List<ContextSpecificConfig> configList = new ArrayList<>();
     Set<String> seenContexts = new HashSet<>();
-
-    CompletableFuture<Long> totalCountFuture = null;
-
-    if (includeTotal) {
-      Query countQuery = clearSortingAndPagination(query);
-      totalCountFuture = CompletableFuture.supplyAsync(() -> collection.count(countQuery));
-    }
 
     try (CloseableIterator<Document> documentIterator =
         collection.query(query, QueryOptions.DEFAULT_QUERY_OPTIONS)) {
@@ -242,19 +232,24 @@ public class DocumentConfigStore implements ConfigStore {
         processDocument(documentIterator.next(), seenContexts, configList);
       }
     }
-
-    configList.sort(
-        Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
-
-    GetAllConfigsResponse.Builder responseBuilder =
-        GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configList);
-
-    if (includeTotal) {
-      long totalCount = totalCountFuture.join(); // Wait for it if needed
-      responseBuilder.setTotalCount(totalCount);
+    // When there is no requested sort by, sort by creation timestamp default.
+    if (sortByList.isEmpty()) {
+      configList.sort(
+          Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
     }
+    return configList;
+  }
 
-    return responseBuilder.build();
+  @Override
+  public long getMatchingConfigsCount(
+      ConfigResource configResource, org.hypertrace.config.service.v1.Filter filter) {
+    Query query =
+        buildQuery(
+            configResource,
+            filter,
+            org.hypertrace.config.service.v1.Pagination.getDefaultInstance(),
+            Collections.emptyList());
+    return collection.count(query);
   }
 
   private Query clearSortingAndPagination(final Query query) {

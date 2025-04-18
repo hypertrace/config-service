@@ -8,11 +8,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
@@ -115,18 +118,49 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getAllConfigs(
       GetAllConfigsRequest request, StreamObserver<GetAllConfigsResponse> responseObserver) {
     try {
-      GetAllConfigsResponse getAllConfigsResponse =
-          configStore.getAllConfigs(
-              new ConfigResource(
-                  request.getResourceName(), request.getResourceNamespace(), getTenantId()),
-              request.getFilter(),
-              request.getPagination(),
-              request.getSortByList(),
-              request.getIncludeTotal());
-      responseObserver.onNext(getAllConfigsResponse);
+      ConfigResource configResource =
+          new ConfigResource(
+              request.getResourceName(), request.getResourceNamespace(), getTenantId());
+
+      CompletableFuture<List<ContextSpecificConfig>> configListFuture =
+          CompletableFuture.supplyAsync(
+              () -> {
+                try {
+                  return configStore.getAllConfigs(
+                      configResource,
+                      request.getFilter(),
+                      request.getPagination(),
+                      request.getSortByList());
+                } catch (IOException e) {
+                  throw new CompletionException(e);
+                }
+              });
+
+      CompletableFuture<Long> totalCountFuture = null;
+      if (request.getIncludeTotal()) {
+        totalCountFuture =
+            CompletableFuture.supplyAsync(
+                () -> configStore.getMatchingConfigsCount(configResource, request.getFilter()));
+      }
+
+      // Wait for both futures to complete
+      List<ContextSpecificConfig> configList = configListFuture.join();
+      GetAllConfigsResponse.Builder responseBuilder =
+          GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configList);
+
+      if (totalCountFuture != null) {
+        long totalCount = totalCountFuture.join();
+        responseBuilder.setTotalCount(totalCount);
+      }
+
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
+    } catch (CompletionException ce) {
+      Throwable cause = ce.getCause() instanceof IOException ? ce.getCause() : ce;
+      log.error("Get all configs failed for request: {}", request, cause);
+      responseObserver.onError(cause);
     } catch (Exception e) {
-      log.error("Get all configs failed for request:{}", request, e);
+      log.error("Get all configs failed for request: {}", request, e);
       responseObserver.onError(e);
     }
   }

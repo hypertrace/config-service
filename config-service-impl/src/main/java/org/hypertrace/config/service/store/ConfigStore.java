@@ -10,7 +10,6 @@ import org.hypertrace.config.service.ConfigResource;
 import org.hypertrace.config.service.ConfigResourceContext;
 import org.hypertrace.config.service.v1.ContextSpecificConfig;
 import org.hypertrace.config.service.v1.Filter;
-import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.Pagination;
 import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
@@ -64,17 +63,14 @@ public interface ConfigStore {
    * @param filter
    * @param pagination
    * @param sortByList
-   * @param includeTotal
    * @return
    * @throws IOException
    */
-  GetAllConfigsResponse getAllConfigs(
-      ConfigResource configResource,
-      Filter filter,
-      Pagination pagination,
-      List<SortBy> sortByList,
-      boolean includeTotal)
+  List<ContextSpecificConfig> getAllConfigs(
+      ConfigResource configResource, Filter filter, Pagination pagination, List<SortBy> sortByList)
       throws IOException;
+
+  long getMatchingConfigsCount(ConfigResource configResource, Filter filter);
 
   /**
    * Write each of the provided config value associated with the specified config resource to the

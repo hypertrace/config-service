@@ -186,12 +186,8 @@ class ConfigServiceGrpcImplTest {
             eq(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)),
             eq(Filter.getDefaultInstance()), // for empty filter
             eq(Pagination.getDefaultInstance()),
-            eq(Collections.emptyList()),
-            eq(false)))
-        .thenReturn(
-            GetAllConfigsResponse.newBuilder()
-                .addAllContextSpecificConfigs(contextSpecificConfigList)
-                .build());
+            eq(Collections.emptyList())))
+        .thenReturn(contextSpecificConfigList);
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
 
@@ -252,13 +248,11 @@ class ConfigServiceGrpcImplTest {
                         && TENANT_ID.equals(resource.getTenantId())),
             eq(filter),
             eq(pagination),
-            eq(List.of(sortBy)),
-            eq(true)))
-        .thenReturn(
-            GetAllConfigsResponse.newBuilder()
-                .addAllContextSpecificConfigs(contextSpecificConfigList)
-                .setTotalCount(mockedTotalCount)
-                .build());
+            eq(List.of(sortBy))))
+        .thenReturn(contextSpecificConfigList);
+    when(configStore.getMatchingConfigsCount(
+            eq(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)), eq(filter)))
+        .thenReturn(mockedTotalCount);
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
