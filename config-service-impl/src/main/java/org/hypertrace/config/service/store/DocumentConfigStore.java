@@ -252,10 +252,6 @@ public class DocumentConfigStore implements ConfigStore {
     return collection.count(query);
   }
 
-  private Query clearSortingAndPagination(final Query query) {
-    return new TransformedQueryBuilder(query).setSorts(emptyList()).setPagination(null).build();
-  }
-
   private Query buildQuery(
       ConfigResource configResource,
       @NonNull org.hypertrace.config.service.v1.Filter filter,
