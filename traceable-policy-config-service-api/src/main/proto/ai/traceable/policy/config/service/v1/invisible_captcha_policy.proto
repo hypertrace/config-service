@@ -12,6 +12,7 @@ message InvisibleCaptchaPolicy {
   CaptchaDifficulty difficulty_category = 2;
   repeated InvisibleCaptchaRule rules = 3;
   google.protobuf.Value custom_fields = 5;
+  double invisible_captcha_threshold = 4;
 }
 
 enum CaptchaDifficulty {
