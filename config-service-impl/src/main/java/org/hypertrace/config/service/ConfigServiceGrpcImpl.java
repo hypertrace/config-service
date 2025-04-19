@@ -151,7 +151,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
                 configExecutor);
       }
 
-      // 🔵 Then run getAllConfigs on the current thread
+      // Then run getAllConfigs on the current thread
       List<ContextSpecificConfig> configList =
           configStore.getAllConfigs(
               configResource,
@@ -159,7 +159,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
               request.getPagination(),
               request.getSortByList());
 
-      // 🧱 Build the response
+      // Build the response
       GetAllConfigsResponse.Builder responseBuilder =
           GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configList);
 
