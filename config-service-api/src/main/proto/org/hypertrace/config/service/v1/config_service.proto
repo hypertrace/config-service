@@ -100,11 +100,17 @@ message GetAllConfigsRequest {
   // optional - pagination parameters to limit and offset the result set.
   // Useful for retrieving configs in pages when total count is large.
   Pagination pagination = 5;
+
+  // optional - include total count in the response
+  bool include_total = 6;
 }
 
 message GetAllConfigsResponse {
   // list of config values along with the associated contexts, sorted in the descending order of their creation time
   repeated ContextSpecificConfig context_specific_configs = 1;
+
+  // Total number of records matching the filter before pagination if include_total is true.
+  optional int64 total_count = 2;
 }
 
 message ContextSpecificConfig {

@@ -206,7 +206,7 @@ class ConfigServiceGrpcImplTest {
   }
 
   @Test
-  void getAllConfigs_withFilterPaginationAndSorting() throws IOException {
+  void getAllConfigs_withFilterPaginationSortingAndTotalCount() throws IOException {
     ConfigStore configStore = mock(ConfigStore.class);
 
     // Define filter
@@ -236,6 +236,8 @@ class ConfigServiceGrpcImplTest {
             ContextSpecificConfig.newBuilder().setConfig(config1).build(),
             ContextSpecificConfig.newBuilder().setContext(CONTEXT1).setConfig(config2).build());
 
+    long mockedTotalCount = 42L;
+
     // Mock behavior
     when(configStore.getAllConfigs(
             argThat(
@@ -248,11 +250,14 @@ class ConfigServiceGrpcImplTest {
             eq(pagination),
             eq(List.of(sortBy))))
         .thenReturn(contextSpecificConfigList);
+    when(configStore.getMatchingConfigsCount(
+            eq(new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID)), eq(filter)))
+        .thenReturn(mockedTotalCount);
 
     ConfigServiceGrpcImpl configServiceGrpc = new ConfigServiceGrpcImpl(configStore);
     StreamObserver<GetAllConfigsResponse> responseObserver = mock(StreamObserver.class);
 
-    // Build request with all fields
+    // Build request with all fields and includeTotal = true
     GetAllConfigsRequest request =
         GetAllConfigsRequest.newBuilder()
             .setResourceName(RESOURCE_NAME)
@@ -260,6 +265,7 @@ class ConfigServiceGrpcImplTest {
             .setFilter(filter)
             .setPagination(pagination)
             .addSortBy(sortBy)
+            .setIncludeTotal(true)
             .build();
 
     // Execute in tenant context
@@ -276,6 +282,7 @@ class ConfigServiceGrpcImplTest {
 
     GetAllConfigsResponse actualResponse = responseCaptor.getValue();
     assertEquals(contextSpecificConfigList, actualResponse.getContextSpecificConfigsList());
+    assertEquals(mockedTotalCount, actualResponse.getTotalCount());
   }
 
   @Test
