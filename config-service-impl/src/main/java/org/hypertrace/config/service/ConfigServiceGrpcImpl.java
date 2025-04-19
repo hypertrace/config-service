@@ -7,15 +7,16 @@ import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Value;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
@@ -45,6 +46,15 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   private static String DEFAULT_USER_ID = "Unknown";
   private static String DEFAULT_USER_EMAIL = "Unknown";
   private final ConfigStore configStore;
+  private static final Executor configExecutor =
+      Executors.newFixedThreadPool(
+          4,
+          runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setName("config-executor");
+            thread.setDaemon(true);
+            return thread;
+          });
 
   public ConfigServiceGrpcImpl(ConfigStore configStore) {
     this.configStore = configStore;
@@ -122,46 +132,51 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
           new ConfigResource(
               request.getResourceName(), request.getResourceNamespace(), getTenantId());
 
-      CompletableFuture<List<ContextSpecificConfig>> configListFuture =
-          CompletableFuture.supplyAsync(
-              () -> {
-                try {
-                  return configStore.getAllConfigs(
-                      configResource,
-                      request.getFilter(),
-                      request.getPagination(),
-                      request.getSortByList());
-                } catch (IOException e) {
-                  throw new CompletionException(e);
-                }
-              });
-
       CompletableFuture<Long> totalCountFuture = null;
+
+      // Start count query first (in parallel)
       if (request.getIncludeTotal()) {
         totalCountFuture =
             CompletableFuture.supplyAsync(
-                () -> configStore.getMatchingConfigsCount(configResource, request.getFilter()));
+                () -> {
+                  try {
+                    return configStore.getMatchingConfigsCount(configResource, request.getFilter());
+                  } catch (Exception e) {
+                    throw Status.INTERNAL
+                        .withCause(e)
+                        .withDescription("Failed to fetch total count")
+                        .asRuntimeException();
+                  }
+                },
+                configExecutor);
       }
 
-      // Wait for both futures to complete
-      List<ContextSpecificConfig> configList = configListFuture.join();
+      // 🔵 Then run getAllConfigs on the current thread
+      List<ContextSpecificConfig> configList =
+          configStore.getAllConfigs(
+              configResource,
+              request.getFilter(),
+              request.getPagination(),
+              request.getSortByList());
+
+      // 🧱 Build the response
       GetAllConfigsResponse.Builder responseBuilder =
           GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configList);
 
       if (totalCountFuture != null) {
-        long totalCount = totalCountFuture.join();
+        long totalCount = totalCountFuture.join(); // Wait if not finished
         responseBuilder.setTotalCount(totalCount);
       }
 
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
-    } catch (CompletionException ce) {
-      Throwable cause = ce.getCause() instanceof IOException ? ce.getCause() : ce;
-      log.error("Get all configs failed for request: {}", request, cause);
-      responseObserver.onError(cause);
-    } catch (Exception e) {
+    } catch (StatusRuntimeException e) {
       log.error("Get all configs failed for request: {}", request, e);
       responseObserver.onError(e);
+    } catch (Exception e) {
+      log.error("Get all configs failed for request: {}", request, e);
+      responseObserver.onError(
+          Status.INTERNAL.withCause(e).withDescription("Unexpected error").asRuntimeException());
     }
   }
 

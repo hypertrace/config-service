@@ -2,6 +2,7 @@ package org.hypertrace.config.service.store;
 
 import static com.google.common.collect.Streams.zip;
 import static org.hypertrace.config.service.store.ConfigDocument.CONTEXT_FIELD_NAME;
+import static org.hypertrace.config.service.store.ConfigDocument.CREATION_TIMESTAMP_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -230,11 +230,6 @@ public class DocumentConfigStore implements ConfigStore {
         processDocument(documentIterator.next(), seenContexts, configList);
       }
     }
-    // When there is no requested sort by, sort by creation timestamp default.
-    if (sortByList.isEmpty()) {
-      configList.sort(
-          Comparator.comparingLong(ContextSpecificConfig::getCreationTimestamp).reversed());
-    }
     return configList;
   }
 
@@ -262,7 +257,7 @@ public class DocumentConfigStore implements ConfigStore {
       queryBuilder.setPagination(
           Pagination.builder().offset(pagination.getOffset()).limit(pagination.getLimit()).build());
     }
-
+    queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
     if (!sortByList.isEmpty()) {
       sortByList.forEach(
           sortBy ->
@@ -270,7 +265,7 @@ public class DocumentConfigStore implements ConfigStore {
                   IdentifierExpression.of(sortBy.getSelection().getConfigJsonPath()),
                   convertSortOrder(sortBy)));
     } else {
-      queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
+      queryBuilder.addSort(IdentifierExpression.of(CREATION_TIMESTAMP_FIELD_NAME), SortOrder.DESC);
     }
     return queryBuilder.build();
   }
