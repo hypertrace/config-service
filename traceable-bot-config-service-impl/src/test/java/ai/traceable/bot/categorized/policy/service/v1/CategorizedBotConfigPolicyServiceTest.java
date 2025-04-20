@@ -42,7 +42,6 @@ import ai.traceable.edge.decision.config.service.v1.PolicyKind;
 import ai.traceable.edge.decision.config.service.v1.RuleInfoDecoration;
 import ai.traceable.edge.decision.config.service.v1.SignatureRule;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
-import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -555,43 +554,47 @@ class CategorizedBotConfigPolicyServiceTest {
                                                             .LOGICAL_MATCH_OPERATOR_OR)
                                                     .addConditions(
                                                         MatchCondition.newBuilder()
-                                                            .setStructuredMatchCondition(
-                                                                StructuredMatchCondition
-                                                                    .newBuilder()
-                                                                    .setLhs(
-                                                                        AttributeDerivationMapping
-                                                                            .newBuilder()
-                                                                            .setName("lhs")
-                                                                            .setType(FIELD_TYPE_STR)
-                                                                            .addRules(
-                                                                                DerivationRule
+                                                            .setLogicalMatchCondition(
+                                                                LogicalMatchCondition.newBuilder()
+                                                                    .setOperator(
+                                                                        LogicalMatchOperator
+                                                                            .LOGICAL_MATCH_OPERATOR_OR)
+                                                                    .addConditions(
+                                                                        MatchCondition.newBuilder()
+                                                                            .setStructuredMatchCondition(
+                                                                                StructuredMatchCondition
                                                                                     .newBuilder()
-                                                                                    .setTransformationConfig(
-                                                                                        DataTransformationConfig
+                                                                                    .setLhs(
+                                                                                        AttributeDerivationMapping
                                                                                             .newBuilder()
-                                                                                            .setOutputType(
+                                                                                            .setName(
+                                                                                                "lhs")
+                                                                                            .setType(
                                                                                                 FIELD_TYPE_STR)
-                                                                                            .setJexlExpression(
-                                                                                                JexlExpressionConfig
+                                                                                            .addRules(
+                                                                                                DerivationRule
                                                                                                     .newBuilder()
-                                                                                                    .setJexlExpression(
-                                                                                                        "$s.getUserAgent()")))))
-                                                                    .setBinaryOperator(
-                                                                        BinaryOperator.newBuilder()
-                                                                            .setListValue(
-                                                                                ListValue
-                                                                                    .newBuilder()
-                                                                                    .addValues(
-                                                                                        Value
+                                                                                                    .setTransformationConfig(
+                                                                                                        DataTransformationConfig
+                                                                                                            .newBuilder()
+                                                                                                            .setOutputType(
+                                                                                                                FIELD_TYPE_STR)
+                                                                                                            .setJexlExpression(
+                                                                                                                JexlExpressionConfig
+                                                                                                                    .newBuilder()
+                                                                                                                    .setJexlExpression(
+                                                                                                                        "$s.getUserAgent().toLowerCase()")))))
+                                                                                    .setBinaryOperator(
+                                                                                        BinaryOperator
                                                                                             .newBuilder()
                                                                                             .setStringValue(
-                                                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
-                                                                                            .build())
-                                                                                    .build())
-                                                                            .setMatchOperator(
-                                                                                MatchOperator
-                                                                                    .MATCH_OPERATOR_IN))))
-                                                    .build())
+                                                                                                "bingbot")
+                                                                                            .setMatchOperator(
+                                                                                                MatchOperator
+                                                                                                    .MATCH_OPERATOR_CONTAINS)))
+                                                                            .build())
+                                                                    .build())
+                                                            .build()))
                                             .build()))
                             .build())
                     .build())

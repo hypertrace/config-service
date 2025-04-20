@@ -1,7 +1,7 @@
 package ai.traceable.bot.categorized.config.service.v1.translator;
 
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
-import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_IN;
+import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_CONTAINS;
 import static ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_LIKE;
 
 import ai.traceable.bot.categorized.config.service.v1.UserAgentCondition;
@@ -19,6 +19,7 @@ import com.google.protobuf.Value;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -35,7 +36,7 @@ public class UserAgentMatchConditionToEdgeMatchConditionTranslator {
                           .setOutputType(FIELD_TYPE_STR)
                           .setJexlExpression(
                               JexlExpressionConfig.newBuilder()
-                                  .setJexlExpression("$s.getUserAgent()"))))
+                                  .setJexlExpression("$s.getUserAgent().toLowerCase()"))))
           .build();
 
   public static MatchCondition buildMatchCondition(final UserAgentCondition userAgentCondition) {
@@ -53,7 +54,8 @@ public class UserAgentMatchConditionToEdgeMatchConditionTranslator {
     List<MatchCondition> childMatchConditions = new ArrayList<>();
     if (!userAgentCondition.getUserAgentsList().isEmpty()) {
       childMatchConditions.add(
-          buildInOperatorMatchCondition(USER_AGENT_LHS, userAgentCondition.getUserAgentsList()));
+          buildContainsOperatorMatchCondition(
+              USER_AGENT_LHS, userAgentCondition.getUserAgentsList()));
     }
     if (!userAgentCondition.getUserAgentRegexesList().isEmpty()) {
       childMatchConditions.add(
@@ -63,16 +65,26 @@ public class UserAgentMatchConditionToEdgeMatchConditionTranslator {
     return childMatchConditions;
   }
 
-  public static MatchCondition buildInOperatorMatchCondition(
+  public static MatchCondition buildContainsOperatorMatchCondition(
       AttributeDerivationMapping attributeDerivationMapping, List<String> values) {
     return MatchCondition.newBuilder()
-        .setStructuredMatchCondition(
-            StructuredMatchCondition.newBuilder()
-                .setLhs(attributeDerivationMapping)
-                .setBinaryOperator(
-                    BinaryOperator.newBuilder()
-                        .setMatchOperator(MATCH_OPERATOR_IN)
-                        .setListValue(convertToListValue(values))))
+        .setLogicalMatchCondition(
+            LogicalMatchCondition.newBuilder()
+                .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR)
+                .addAllConditions(
+                    values.stream()
+                        .map(
+                            value ->
+                                MatchCondition.newBuilder()
+                                    .setStructuredMatchCondition(
+                                        StructuredMatchCondition.newBuilder()
+                                            .setLhs(attributeDerivationMapping)
+                                            .setBinaryOperator(
+                                                BinaryOperator.newBuilder()
+                                                    .setMatchOperator(MATCH_OPERATOR_CONTAINS)
+                                                    .setStringValue(value.toLowerCase())))
+                                    .build())
+                        .collect(Collectors.toList())))
         .build();
   }
 

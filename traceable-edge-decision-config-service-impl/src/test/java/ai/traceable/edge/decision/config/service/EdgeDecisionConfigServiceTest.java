@@ -127,7 +127,6 @@ import ai.traceable.edge.decision.config.service.v1.UpdateEdgeDecisionSpecRespon
 import ai.traceable.edge.decision.config.service.v1.UpsertEdgeDecisionEngineConfigRequest;
 import ai.traceable.edge.decision.config.service.validation.RequestValidator;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
-import com.google.protobuf.ListValue;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.Structs;
 import com.google.protobuf.util.Values;
@@ -430,6 +429,7 @@ class EdgeDecisionConfigServiceTest {
                 stub.getResolvedEdgeDecisionEngineConfigs(
                         GetResolvedEdgeDecisionEngineConfigsRequest.getDefaultInstance())
                     .getEdgeDecisionEngineConfig());
+
     final VariableDerivationMapping expectedVariableDerivation =
         VariableDerivationMapping.newBuilder()
             .setName("TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000")
@@ -484,43 +484,47 @@ class EdgeDecisionConfigServiceTest {
                                                             .LOGICAL_MATCH_OPERATOR_OR)
                                                     .addConditions(
                                                         MatchCondition.newBuilder()
-                                                            .setStructuredMatchCondition(
-                                                                StructuredMatchCondition
-                                                                    .newBuilder()
-                                                                    .setLhs(
-                                                                        AttributeDerivationMapping
-                                                                            .newBuilder()
-                                                                            .setName("lhs")
-                                                                            .setType(FIELD_TYPE_STR)
-                                                                            .addRules(
-                                                                                DerivationRule
+                                                            .setLogicalMatchCondition(
+                                                                LogicalMatchCondition.newBuilder()
+                                                                    .setOperator(
+                                                                        LogicalMatchOperator
+                                                                            .LOGICAL_MATCH_OPERATOR_OR)
+                                                                    .addConditions(
+                                                                        MatchCondition.newBuilder()
+                                                                            .setStructuredMatchCondition(
+                                                                                StructuredMatchCondition
                                                                                     .newBuilder()
-                                                                                    .setTransformationConfig(
-                                                                                        DataTransformationConfig
+                                                                                    .setLhs(
+                                                                                        AttributeDerivationMapping
                                                                                             .newBuilder()
-                                                                                            .setOutputType(
+                                                                                            .setName(
+                                                                                                "lhs")
+                                                                                            .setType(
                                                                                                 FIELD_TYPE_STR)
-                                                                                            .setJexlExpression(
-                                                                                                JexlExpressionConfig
+                                                                                            .addRules(
+                                                                                                DerivationRule
                                                                                                     .newBuilder()
-                                                                                                    .setJexlExpression(
-                                                                                                        "$s.getUserAgent()")))))
-                                                                    .setBinaryOperator(
-                                                                        BinaryOperator.newBuilder()
-                                                                            .setListValue(
-                                                                                ListValue
-                                                                                    .newBuilder()
-                                                                                    .addValues(
-                                                                                        Value
+                                                                                                    .setTransformationConfig(
+                                                                                                        DataTransformationConfig
+                                                                                                            .newBuilder()
+                                                                                                            .setOutputType(
+                                                                                                                FIELD_TYPE_STR)
+                                                                                                            .setJexlExpression(
+                                                                                                                JexlExpressionConfig
+                                                                                                                    .newBuilder()
+                                                                                                                    .setJexlExpression(
+                                                                                                                        "$s.getUserAgent().toLowerCase()")))))
+                                                                                    .setBinaryOperator(
+                                                                                        BinaryOperator
                                                                                             .newBuilder()
                                                                                             .setStringValue(
-                                                                                                "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)")
-                                                                                            .build())
-                                                                                    .build())
-                                                                            .setMatchOperator(
-                                                                                MatchOperator
-                                                                                    .MATCH_OPERATOR_IN))))
-                                                    .build())
+                                                                                                "bingbot")
+                                                                                            .setMatchOperator(
+                                                                                                MatchOperator
+                                                                                                    .MATCH_OPERATOR_CONTAINS)))
+                                                                            .build())
+                                                                    .build())
+                                                            .build()))
                                             .build()))
                             .build())
                     .build())
