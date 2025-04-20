@@ -7,7 +7,6 @@ import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.Value;
 import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Map;
@@ -170,13 +169,9 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
 
       responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
-    } catch (StatusRuntimeException e) {
-      log.error("Get all configs failed for request: {}", request, e);
-      responseObserver.onError(e);
     } catch (Exception e) {
       log.error("Get all configs failed for request: {}", request, e);
-      responseObserver.onError(
-          Status.INTERNAL.withCause(e).withDescription("Unexpected error").asRuntimeException());
+      responseObserver.onError(Status.fromThrowable(e).withCause(e).asRuntimeException());
     }
   }
 
