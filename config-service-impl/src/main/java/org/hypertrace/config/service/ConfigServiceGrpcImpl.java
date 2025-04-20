@@ -5,6 +5,7 @@ import static org.hypertrace.config.service.ConfigServiceUtils.filterNull;
 import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -48,12 +49,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   private static final Executor configExecutor =
       Executors.newFixedThreadPool(
           4,
-          runnable -> {
-            Thread thread = new Thread(runnable);
-            thread.setName("config-executor");
-            thread.setDaemon(true);
-            return thread;
-          });
+          new ThreadFactoryBuilder().setNameFormat("config-executor-%d").setDaemon(true).build());
 
   public ConfigServiceGrpcImpl(ConfigStore configStore) {
     this.configStore = configStore;
