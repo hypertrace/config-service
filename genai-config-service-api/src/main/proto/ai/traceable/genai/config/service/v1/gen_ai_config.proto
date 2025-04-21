@@ -1,0 +1,23 @@
+syntax = "proto3";
+package ai.traceable.genai.config.service.v1;
+
+option java_multiple_files = true;
+
+message GenAiScope {
+  oneof scope {
+    EnvironmentScope environment_scope = 1;
+  }
+}
+
+message EnvironmentScope {
+  string environment_id = 1;
+}
+
+message GenAiConfig {
+  GenAiScope scope = 1;
+  IssuesSummaryFeatureConfig issues_summary_feature_config = 2;
+}
+
+message IssuesSummaryFeatureConfig {
+  bool enabled = 1;
+}

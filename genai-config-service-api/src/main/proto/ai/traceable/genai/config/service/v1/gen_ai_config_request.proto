@@ -1,0 +1,19 @@
+syntax = "proto3";
+package ai.traceable.genai.config.service.v1;
+
+import "ai/traceable/genai/config/service/v1/gen_ai_config.proto";
+
+option java_multiple_files = true;
+
+message GetGenAiConfigRequest {
+  GenAiScope scope = 1;
+}
+
+message UpdateGenAiConfigRequest {
+  GenAiScope scope = 1;
+  GenAiFeatureConfigUpdate update = 2;
+}
+
+message GenAiFeatureConfigUpdate {
+  IssuesSummaryFeatureConfig issues_summary_feature_config = 1;
+}

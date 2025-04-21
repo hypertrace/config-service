@@ -1,0 +1,12 @@
+syntax = "proto3";
+package ai.traceable.genai.config.service.v1;
+
+import "ai/traceable/genai/config/service/v1/gen_ai_config_request.proto";
+import "ai/traceable/genai/config/service/v1/gen_ai_config_response.proto";
+
+option java_multiple_files = true;
+
+service GenAiConfigService {
+  rpc GetGenAiConfig(GetGenAiConfigRequest) returns (GetGenAiConfigResponse) {}
+  rpc UpdateGenAiConfig(UpdateGenAiConfigRequest) returns (UpdateGenAiConfigResponse) {}
+}

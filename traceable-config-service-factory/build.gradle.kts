@@ -75,6 +75,7 @@ dependencies {
   implementation(projects.traceablePolicyConfigServiceImpl)
   implementation(projects.threatScoringConfigServiceImpl)
   implementation(projects.githubIntegrationConfigServiceImpl)
+  implementation(projects.genaiConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
