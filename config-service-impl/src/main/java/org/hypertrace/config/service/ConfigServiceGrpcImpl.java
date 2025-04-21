@@ -167,7 +167,7 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Get all configs failed for request: {}", request, e);
-      responseObserver.onError(Status.fromThrowable(e).withCause(e).asRuntimeException());
+      responseObserver.onError(Status.fromThrowable(e).asRuntimeException());
     }
   }
 
