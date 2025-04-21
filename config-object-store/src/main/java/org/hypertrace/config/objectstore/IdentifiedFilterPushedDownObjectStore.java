@@ -72,9 +72,20 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
     return getMatchingObject(context, filterInput, sortInput).map(ConfigObject::getData);
   }
 
-  public ConfigsResponse<ContextualConfigObject<T>> getMatchingDataWithTotalCount(
+  public ConfigsResponse<ContextualConfigObject<T>> getMatchingObjectsWithTotalCount(
       RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
     return getMatchingObjects(context, filterInput, sortInput, pagination, true);
+  }
+
+  public ConfigsResponse<T> getMatchingDataWithTotalCount(
+      RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
+    ConfigsResponse<ContextualConfigObject<T>> configsResponse =
+        getMatchingObjects(context, filterInput, sortInput, pagination, true);
+    return new ConfigsResponseImpl<>(
+        configsResponse.getContextualConfigObjects().stream()
+            .map(ConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList()),
+        configsResponse.totalCount());
   }
 
   ConfigsResponse<ContextualConfigObject<T>> getMatchingObjects(
