@@ -274,6 +274,7 @@ class DocumentConfigStoreTest {
             Filter.getDefaultInstance(), // for empty filter
             Pagination.getDefaultInstance(),
             Collections.emptyList());
+
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(
         ContextSpecificConfig.newBuilder()

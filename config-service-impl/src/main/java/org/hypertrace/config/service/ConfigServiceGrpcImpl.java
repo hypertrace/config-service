@@ -5,6 +5,7 @@ import static org.hypertrace.config.service.ConfigServiceUtils.filterNull;
 import static org.hypertrace.config.service.ConfigServiceUtils.merge;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -13,6 +14,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.service.store.ConfigStore;
@@ -42,6 +46,10 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   private static String DEFAULT_USER_ID = "Unknown";
   private static String DEFAULT_USER_EMAIL = "Unknown";
   private final ConfigStore configStore;
+  private static final Executor configExecutor =
+      Executors.newFixedThreadPool(
+          4,
+          new ThreadFactoryBuilder().setNameFormat("config-executor-%d").setDaemon(true).build());
 
   public ConfigServiceGrpcImpl(ConfigStore configStore) {
     this.configStore = configStore;
@@ -115,21 +123,51 @@ public class ConfigServiceGrpcImpl extends ConfigServiceGrpc.ConfigServiceImplBa
   public void getAllConfigs(
       GetAllConfigsRequest request, StreamObserver<GetAllConfigsResponse> responseObserver) {
     try {
-      List<ContextSpecificConfig> contextSpecificConfigList =
+      ConfigResource configResource =
+          new ConfigResource(
+              request.getResourceName(), request.getResourceNamespace(), getTenantId());
+
+      CompletableFuture<Long> totalCountFuture = null;
+
+      // Start count query first (in parallel)
+      if (request.getIncludeTotal()) {
+        totalCountFuture =
+            CompletableFuture.supplyAsync(
+                () -> {
+                  try {
+                    return configStore.getMatchingConfigsCount(configResource, request.getFilter());
+                  } catch (Exception e) {
+                    throw Status.INTERNAL
+                        .withCause(e)
+                        .withDescription("Failed to fetch total count")
+                        .asRuntimeException();
+                  }
+                },
+                configExecutor);
+      }
+
+      // Then run getAllConfigs on the current thread
+      List<ContextSpecificConfig> configList =
           configStore.getAllConfigs(
-              new ConfigResource(
-                  request.getResourceName(), request.getResourceNamespace(), getTenantId()),
+              configResource,
               request.getFilter(),
               request.getPagination(),
               request.getSortByList());
-      responseObserver.onNext(
-          GetAllConfigsResponse.newBuilder()
-              .addAllContextSpecificConfigs(contextSpecificConfigList)
-              .build());
+
+      // Build the response
+      GetAllConfigsResponse.Builder responseBuilder =
+          GetAllConfigsResponse.newBuilder().addAllContextSpecificConfigs(configList);
+
+      if (totalCountFuture != null) {
+        long totalCount = totalCountFuture.join(); // Wait if not finished
+        responseBuilder.setTotalCount(totalCount);
+      }
+
+      responseObserver.onNext(responseBuilder.build());
       responseObserver.onCompleted();
     } catch (Exception e) {
-      log.error("Get all configs failed for request:{}", request, e);
-      responseObserver.onError(e);
+      log.error("Get all configs failed for request: {}", request, e);
+      responseObserver.onError(Status.fromThrowable(e).asRuntimeException());
     }
   }
 

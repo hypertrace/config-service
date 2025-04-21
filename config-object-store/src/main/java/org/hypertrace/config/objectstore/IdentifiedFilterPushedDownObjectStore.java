@@ -9,6 +9,7 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
+import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.Pagination;
 import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -39,9 +40,9 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
 
   public List<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
-    Filter filter = buildFilter(filterInput);
-    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
-    return getMatchingObjects(context, filter, sortByList, pagination);
+    ConfigsResponse<ContextualConfigObject<T>> configsResponse =
+        getMatchingObjects(context, filterInput, sortInput, pagination, false);
+    return configsResponse.getContextualConfigObjects();
   }
 
   public List<ContextualConfigObject<T>> getMatchingObjects(
@@ -71,28 +72,54 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
     return getMatchingObject(context, filterInput, sortInput).map(ConfigObject::getData);
   }
 
-  List<ContextualConfigObject<T>> getMatchingObjects(
-      RequestContext context, Filter filter, List<SortBy> sortByList, Pagination pagination) {
-    return context
-        .call(
+  public ConfigsResponse<ContextualConfigObject<T>> getMatchingObjectsWithTotalCount(
+      RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
+    return getMatchingObjects(context, filterInput, sortInput, pagination, true);
+  }
+
+  public ConfigsResponse<T> getMatchingDataWithTotalCount(
+      RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
+    ConfigsResponse<ContextualConfigObject<T>> configsResponse =
+        getMatchingObjects(context, filterInput, sortInput, pagination, true);
+    return new ConfigsResponseImpl<>(
+        configsResponse.getContextualConfigObjects().stream()
+            .map(ConfigObject::getData)
+            .collect(Collectors.toUnmodifiableList()),
+        configsResponse.totalCount());
+  }
+
+  ConfigsResponse<ContextualConfigObject<T>> getMatchingObjects(
+      RequestContext context,
+      F filterInput,
+      List<S> sortInput,
+      Pagination pagination,
+      boolean totalIncluded) {
+    Filter filter = buildFilter(filterInput);
+    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
+    GetAllConfigsResponse getConfigsResponse =
+        context.call(
             () ->
                 this.configServiceBlockingStub
                     .withDeadline(getDeadline())
-                    .getAllConfigs(buildGetAllConfigsRequest(filter, sortByList, pagination)))
-        .getContextSpecificConfigsList()
-        .stream()
-        .map(
-            contextSpecificConfig ->
-                ContextualConfigObjectImpl.tryBuild(
-                    contextSpecificConfig, this::buildDataFromValue))
-        .flatMap(Optional::stream)
-        .collect(
-            Collectors.collectingAndThen(
-                Collectors.toUnmodifiableList(), this::orderFetchedObjects));
+                    .getAllConfigs(
+                        buildGetAllConfigsRequest(filter, sortByList, pagination, totalIncluded)));
+
+    List<ContextualConfigObject<T>> contextualConfigObjectsList =
+        getConfigsResponse.getContextSpecificConfigsList().stream()
+            .map(
+                contextSpecificConfig ->
+                    ContextualConfigObjectImpl.tryBuild(
+                        contextSpecificConfig, this::buildDataFromValue))
+            .flatMap(Optional::stream)
+            .collect(
+                Collectors.collectingAndThen(
+                    Collectors.toUnmodifiableList(), this::orderFetchedObjects));
+    return new ConfigsResponseImpl<>(
+        contextualConfigObjectsList, getConfigsResponse.getTotalCount());
   }
 
   private GetAllConfigsRequest buildGetAllConfigsRequest(
-      Filter filter, List<SortBy> sortByList, Pagination pagination) {
+      Filter filter, List<SortBy> sortByList, Pagination pagination, boolean totalIncluded) {
     GetAllConfigsRequest.Builder getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
             .setResourceName(this.resourceName)
@@ -101,6 +128,9 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
             .addAllSortBy(sortByList);
     if (pagination != null) {
       getAllConfigsRequest.setPagination(pagination);
+    }
+    if (totalIncluded) {
+      getAllConfigsRequest.setIncludeTotal(true);
     }
     return getAllConfigsRequest.build();
   }

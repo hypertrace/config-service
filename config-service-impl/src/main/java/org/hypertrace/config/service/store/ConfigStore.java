@@ -70,6 +70,8 @@ public interface ConfigStore {
       ConfigResource configResource, Filter filter, Pagination pagination, List<SortBy> sortByList)
       throws IOException;
 
+  long getMatchingConfigsCount(ConfigResource configResource, Filter filter);
+
   /**
    * Write each of the provided config value associated with the specified config resource to the
    * store.
