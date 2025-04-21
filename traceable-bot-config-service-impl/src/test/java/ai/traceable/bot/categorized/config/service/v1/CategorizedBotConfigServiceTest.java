@@ -73,7 +73,7 @@ class CategorizedBotConfigServiceTest {
             .setId("550e8400-e29b-41d4-a716-446655440000")
             .setCategorizedBotDetails(
                 CategorizedBotDetails.newBuilder()
-                    .setName("Bingbot")
+                    .setName("BingBot")
                     .setDescription(
                         "Bingbot is Microsoft's web crawler responsible for indexing content for Bing Search.")
                     .setCategorizedBotSignatureRule(

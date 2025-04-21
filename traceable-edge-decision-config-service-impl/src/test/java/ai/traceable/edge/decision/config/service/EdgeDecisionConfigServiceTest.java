@@ -585,7 +585,7 @@ class EdgeDecisionConfigServiceTest {
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("Bingbot").build())
+                                        Value.newBuilder().setStringValue("BingBot").build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
