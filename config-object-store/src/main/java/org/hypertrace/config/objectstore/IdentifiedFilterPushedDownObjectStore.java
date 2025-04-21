@@ -40,10 +40,8 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
 
   public List<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
-    Filter filter = buildFilter(filterInput);
-    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
     ConfigsResponse<ContextualConfigObject<T>> configsResponse =
-        getMatchingObjects(context, filter, sortByList, pagination, false);
+        getMatchingObjects(context, filterInput, sortInput, pagination, false);
     return configsResponse.getContextualConfigObjects();
   }
 
@@ -74,19 +72,19 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
     return getMatchingObject(context, filterInput, sortInput).map(ConfigObject::getData);
   }
 
-  public ConfigsResponse<ContextualConfigObject<T>> getMatchingObjectsWithTotalCount(
+  public ConfigsResponse<ContextualConfigObject<T>> getMatchingDataWithTotalCount(
       RequestContext context, F filterInput, List<S> sortInput, @Nullable Pagination pagination) {
-    Filter filter = buildFilter(filterInput);
-    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
-    return getMatchingObjects(context, filter, sortByList, pagination, true);
+    return getMatchingObjects(context, filterInput, sortInput, pagination, true);
   }
 
   ConfigsResponse<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context,
-      Filter filter,
-      List<SortBy> sortByList,
+      F filterInput,
+      List<S> sortInput,
       Pagination pagination,
       boolean totalIncluded) {
+    Filter filter = buildFilter(filterInput);
+    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
     GetAllConfigsResponse getConfigsResponse =
         context.call(
             () ->
