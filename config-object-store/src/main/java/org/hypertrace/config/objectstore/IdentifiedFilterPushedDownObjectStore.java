@@ -9,6 +9,7 @@ import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.GetAllConfigsRequest;
+import org.hypertrace.config.service.v1.GetAllConfigsResponse;
 import org.hypertrace.config.service.v1.Pagination;
 import org.hypertrace.config.service.v1.SortBy;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -71,6 +72,32 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
     return getMatchingObject(context, filterInput, sortInput).map(ConfigObject::getData);
   }
 
+  public ConfigsResponse<T> getMatchingObjectsWithTotalCount(
+      RequestContext context, F filterInput, List<S> sortInput, Pagination pagination) {
+    List<SortBy> sortByList = sortInput.stream().map(this::buildSort).collect(Collectors.toList());
+    GetAllConfigsResponse getAllConfigsResponse =
+        context.call(
+            () ->
+                this.configServiceBlockingStub
+                    .withDeadline(getDeadline())
+                    .getAllConfigs(
+                        buildGetAllConfigsRequest(
+                            buildFilter(filterInput), sortByList, pagination, true)));
+    List<ContextualConfigObject<T>> contextualConfigObjects =
+        getAllConfigsResponse.getContextSpecificConfigsList().stream()
+            .map(
+                contextSpecificConfig ->
+                    ContextualConfigObjectImpl.tryBuild(
+                        contextSpecificConfig, this::buildDataFromValue))
+            .flatMap(Optional::stream)
+            .collect(
+                Collectors.collectingAndThen(
+                    Collectors.toUnmodifiableList(), this::orderFetchedObjects));
+
+    return new ConfigsResponseImpl<>(
+        contextualConfigObjects, getAllConfigsResponse.getTotalCount());
+  }
+
   List<ContextualConfigObject<T>> getMatchingObjects(
       RequestContext context, Filter filter, List<SortBy> sortByList, Pagination pagination) {
     return context
@@ -78,7 +105,8 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
             () ->
                 this.configServiceBlockingStub
                     .withDeadline(getDeadline())
-                    .getAllConfigs(buildGetAllConfigsRequest(filter, sortByList, pagination)))
+                    .getAllConfigs(
+                        buildGetAllConfigsRequest(filter, sortByList, pagination, false)))
         .getContextSpecificConfigsList()
         .stream()
         .map(
@@ -92,7 +120,7 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
   }
 
   private GetAllConfigsRequest buildGetAllConfigsRequest(
-      Filter filter, List<SortBy> sortByList, Pagination pagination) {
+      Filter filter, List<SortBy> sortByList, Pagination pagination, boolean totalIncluded) {
     GetAllConfigsRequest.Builder getAllConfigsRequest =
         GetAllConfigsRequest.newBuilder()
             .setResourceName(this.resourceName)
@@ -101,6 +129,9 @@ public abstract class IdentifiedFilterPushedDownObjectStore<T, F, S>
             .addAllSortBy(sortByList);
     if (pagination != null) {
       getAllConfigsRequest.setPagination(pagination);
+    }
+    if (totalIncluded) {
+      getAllConfigsRequest.setIncludeTotal(true);
     }
     return getAllConfigsRequest.build();
   }
