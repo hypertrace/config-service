@@ -24,13 +24,18 @@ import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTraini
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.JAVA_SERIALIZED_OBJECT;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.JWT_ALGO_WEAKNESS;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.JWT_EXPIRY_AND_ISSUE_AT_NOT_SET;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.JWT_MISSING_AUDIENCE_CLAIM;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.LACK_OF_ENCRYPTION;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.MASS_PARAMETER_ASSIGNMENT;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.MISSING_GATEWAY_POLICIES;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.MULTIPLE_API_VERSIONS;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.OAUTH_ANTI_CSRF_CHECK;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.OAUTH_CLIENT_SECRET_IN_QUERY_PARAMS;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.OAUTH_IMPLICIT_GRANT_TYPE;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.OPEN_REDIRECT;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.PARAM_CONTAINS_SENSITIVE_DATA;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SENSITIVE_DATA_IN_ERROR_MESSAGE;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SERVER_VERSION_DISCLOSURE;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SERVICE_USES_BASIC_AUTH;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTrainingConfig.ConfigCase.SQL_INJECTION_ERROR_BASED;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.API_PARAM_CONTAINS_URL_FILTER;
@@ -44,13 +49,18 @@ import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFi
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.JAVA_SERIALIZED_OBJECT_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.JWT_ALGO_WEAKNESS_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.JWT_EXPIRY_AND_ISSUE_AT_NOT_SET_FILTER;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.JWT_MISSING_AUDIENCE_CLAIM_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.LACK_OF_ENCRYPTION_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.MASS_PARAMETER_ASSIGNMENT_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.MISSING_GATEWAY_POLICIES_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.MULTIPLE_API_VERSIONS_FILTER;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.OAUTH_ANTI_CSRF_CHECK_FILTER;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.OAUTH_CLIENT_SECRET_IN_QUERY_PARAMS_FILTER;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.OAUTH_IMPLICIT_GRANT_TYPE_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.OPEN_REDIRECT_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.PARAM_CONTAINS_SENSITIVE_DATA_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SENSITIVE_DATA_IN_ERROR_MESSAGE_FILTER;
+import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SERVER_VERSION_DISCLOSURE_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SERVICE_USES_BASIC_AUTH_FILTER;
 import static ai.traceable.anomaly.config.service.v1.trainer.VulnerabilityTypeFilter.TypeCase.SQL_INJECTION_ERROR_BASED_FILTER;
 
@@ -126,6 +136,36 @@ public class TrainingConfigSpecificFilterModule extends AbstractModule {
         .toInstance(
             new DefaultVulnerabilityTypeFilterMatcher(
                 DEPRECATED_API_ROUTE_FILTER, DEPRECATED_API_ROUTE));
+
+    vulnerabilityTypeFilterMatcherMultibinder
+        .addBinding()
+        .toInstance(
+            new DefaultVulnerabilityTypeFilterMatcher(
+                OAUTH_CLIENT_SECRET_IN_QUERY_PARAMS_FILTER, OAUTH_CLIENT_SECRET_IN_QUERY_PARAMS));
+
+    vulnerabilityTypeFilterMatcherMultibinder
+        .addBinding()
+        .toInstance(
+            new DefaultVulnerabilityTypeFilterMatcher(
+                OAUTH_ANTI_CSRF_CHECK_FILTER, OAUTH_ANTI_CSRF_CHECK));
+
+    vulnerabilityTypeFilterMatcherMultibinder
+        .addBinding()
+        .toInstance(
+            new DefaultVulnerabilityTypeFilterMatcher(
+                OAUTH_IMPLICIT_GRANT_TYPE_FILTER, OAUTH_IMPLICIT_GRANT_TYPE));
+
+    vulnerabilityTypeFilterMatcherMultibinder
+        .addBinding()
+        .toInstance(
+            new DefaultVulnerabilityTypeFilterMatcher(
+                SERVER_VERSION_DISCLOSURE_FILTER, SERVER_VERSION_DISCLOSURE));
+
+    vulnerabilityTypeFilterMatcherMultibinder
+        .addBinding()
+        .toInstance(
+            new DefaultVulnerabilityTypeFilterMatcher(
+                JWT_MISSING_AUDIENCE_CLAIM_FILTER, JWT_MISSING_AUDIENCE_CLAIM));
 
     vulnerabilityTypeFilterMatcherMultibinder
         .addBinding()
