@@ -9,6 +9,7 @@ import static org.hypertrace.config.service.TestUtils.getConfig2;
 import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURATIONS_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -37,6 +38,7 @@ import org.hypertrace.config.service.v1.LogicalOperator;
 import org.hypertrace.config.service.v1.Pagination;
 import org.hypertrace.config.service.v1.RelationalFilter;
 import org.hypertrace.config.service.v1.RelationalOperator;
+import org.hypertrace.config.service.v1.SortOrder;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.documentstore.CloseableIterator;
@@ -45,6 +47,11 @@ import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.UpdateResult;
+import org.hypertrace.core.documentstore.expression.impl.ConstantExpression;
+import org.hypertrace.core.documentstore.expression.impl.IdentifierExpression;
+import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
+import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
+import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
 import org.hypertrace.core.documentstore.query.Query;
 import org.junit.jupiter.api.BeforeEach;
@@ -356,6 +363,107 @@ class DocumentConfigStoreTest {
                     config1,
                     TIMESTAMP2,
                     updateTime)));
+  }
+
+  @Test
+  void buildQuery_withDefaultPagination() {
+    ConfigResource configResource =
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
+    Filter filter = Filter.getDefaultInstance();
+    Pagination pagination = Pagination.getDefaultInstance();
+    List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.emptyList();
+
+    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+
+    // Verify default sorting is applied
+    assertEquals(2, query.getSorts().size());
+    assertEquals(
+        "configVersion",
+        ((IdentifierExpression) query.getSorts().get(0).getExpression()).getName());
+    assertEquals(
+        "creationTimestamp",
+        ((IdentifierExpression) query.getSorts().get(1).getExpression()).getName());
+  }
+
+  @Test
+  void buildQuery_withCustomPagination() {
+    ConfigResource configResource =
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
+    Filter filter = Filter.getDefaultInstance();
+    Pagination pagination = Pagination.newBuilder().setOffset(10).setLimit(20).build();
+    List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.emptyList();
+
+    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+
+    assertEquals(10, query.getPagination().get().getOffset());
+    assertEquals(20, query.getPagination().get().getLimit());
+  }
+
+  @Test
+  void buildQuery_withCustomSorting() {
+    ConfigResource configResource =
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
+    Filter filter = Filter.getDefaultInstance();
+    Pagination pagination = Pagination.getDefaultInstance();
+
+    org.hypertrace.config.service.v1.Selection selection =
+        org.hypertrace.config.service.v1.Selection.newBuilder()
+            .setConfigJsonPath("test.path")
+            .build();
+    org.hypertrace.config.service.v1.SortBy sortBy =
+        org.hypertrace.config.service.v1.SortBy.newBuilder()
+            .setSelection(selection)
+            .setSortOrder(SortOrder.SORT_ORDER_DESC)
+            .build();
+    List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.singletonList(sortBy);
+
+    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+
+    assertEquals(2, query.getSorts().size());
+    assertEquals(
+        "configVersion",
+        ((IdentifierExpression) query.getSorts().get(0).getExpression()).getName());
+    assertEquals(
+        org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC,
+        query.getSorts().get(0).getOrder());
+    assertEquals(
+        "config.test.path",
+        ((IdentifierExpression) query.getSorts().get(1).getExpression()).getName());
+    assertEquals(
+        org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC,
+        query.getSorts().get(1).getOrder());
+  }
+
+  @Test
+  void buildQuery_withFilter() {
+    ConfigResource configResource =
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
+
+    RelationalFilter relationalFilter =
+        RelationalFilter.newBuilder()
+            .setConfigJsonPath("test.path")
+            .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+            .setValue(Values.of("test-value"))
+            .build();
+
+    Filter filter = Filter.newBuilder().setRelationalFilter(relationalFilter).build();
+
+    Pagination pagination = Pagination.getDefaultInstance();
+    List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.emptyList();
+
+    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+
+    // Verify filter is present in the query
+    assertNotNull(query.getFilter());
+
+    FilterTypeExpression userFilter =
+        ((LogicalExpression) query.getFilter().get()).getOperands().get(1);
+    assertEquals(
+        "config.test.path",
+        ((IdentifierExpression) ((RelationalExpression) userFilter).getLhs()).getName());
+    assertEquals(
+        "test-value",
+        ((ConstantExpression) ((RelationalExpression) userFilter).getRhs()).getValue().toString());
   }
 
   private static Document getConfigDocument(

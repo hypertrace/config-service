@@ -92,7 +92,7 @@ public class FilterExpressionBuilder {
         ConstantExpressionConverter.fromProtoValue(relationalFilter.getValue()));
   }
 
-  private String buildConfigFieldPath(String configJsonPath) {
+  String buildConfigFieldPath(String configJsonPath) {
     return String.format("%s.%s", CONFIG_FIELD_NAME, configJsonPath);
   }
 }

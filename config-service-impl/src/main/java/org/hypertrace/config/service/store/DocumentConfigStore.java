@@ -245,7 +245,7 @@ public class DocumentConfigStore implements ConfigStore {
     return collection.count(query);
   }
 
-  private Query buildQuery(
+  Query buildQuery(
       ConfigResource configResource,
       @NonNull org.hypertrace.config.service.v1.Filter filter,
       @NonNull org.hypertrace.config.service.v1.Pagination pagination,
@@ -262,7 +262,9 @@ public class DocumentConfigStore implements ConfigStore {
       sortByList.forEach(
           sortBy ->
               queryBuilder.addSort(
-                  IdentifierExpression.of(sortBy.getSelection().getConfigJsonPath()),
+                  IdentifierExpression.of(
+                      filterExpressionBuilder.buildConfigFieldPath(
+                          sortBy.getSelection().getConfigJsonPath())),
                   convertSortOrder(sortBy)));
     } else {
       queryBuilder.addSort(IdentifierExpression.of(CREATION_TIMESTAMP_FIELD_NAME), SortOrder.DESC);
