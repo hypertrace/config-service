@@ -51,7 +51,7 @@ service:
 corazaWafService:
   name: coraza-waf-service
   image:
-    tag: 0.3.14 # also sync traceable-corazaWafService in libs.versions.toml
+    tag: 0.3.22 # also sync traceable-corazaWafService in libs.versions.toml
     repository: traceable/coraza-waf-service
     pullPolicy: IfNotPresent
     tagOverride: ""
