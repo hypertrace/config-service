@@ -52,6 +52,7 @@ message DetectionExclusionCondition {
     UserAgentCondition user_agent_condition = 17;
     RequestScannerTypeCondition request_scanner_type_condition = 18;
     LogicalConditionalExpression conditional_expression = 19;
+    LhsRhsKeysCondition lhs_rhs_keys_condition = 20;
   }
 }
 

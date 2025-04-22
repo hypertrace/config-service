@@ -27,6 +27,12 @@ message SpanAttributeMatchCondition {
   MatchCondition value_match_condition = 2;
 }
 
+message LhsRhsKeysCondition {
+  KeyMetadataMatchCondition lhs_key_condition = 1;
+  KeyMetadataMatchCondition rhs_key_condition = 2;
+  MatchOperator lhs_rhs_match_operator = 3;
+}
+
 message IpLocationTypeCondition {
   repeated IpLocationType ip_location_types = 1;
   bool exclude = 2;
