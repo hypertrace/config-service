@@ -23,6 +23,7 @@ import com.google.protobuf.util.Values;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +55,7 @@ import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
 import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
 import org.hypertrace.core.documentstore.query.Query;
+import org.hypertrace.core.documentstore.query.SortingSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -420,18 +422,16 @@ class DocumentConfigStoreTest {
     Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
 
     assertEquals(2, query.getSorts().size());
-    assertEquals(
-        "configVersion",
-        ((IdentifierExpression) query.getSorts().get(0).getExpression()).getName());
-    assertEquals(
-        org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC,
-        query.getSorts().get(0).getOrder());
-    assertEquals(
-        "config.test.path",
-        ((IdentifierExpression) query.getSorts().get(1).getExpression()).getName());
-    assertEquals(
-        org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC,
-        query.getSorts().get(1).getOrder());
+    List<SortingSpec> expectedSorts =
+        Arrays.asList(
+            SortingSpec.of(
+                IdentifierExpression.of("configVersion"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC),
+            SortingSpec.of(
+                IdentifierExpression.of("config.test.path"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
+
+    assertEquals(expectedSorts, query.getSorts());
   }
 
   @Test

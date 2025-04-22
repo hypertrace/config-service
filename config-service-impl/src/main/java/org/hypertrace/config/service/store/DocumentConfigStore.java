@@ -263,7 +263,7 @@ public class DocumentConfigStore implements ConfigStore {
           sortBy ->
               queryBuilder.addSort(
                   IdentifierExpression.of(
-                      filterExpressionBuilder.buildConfigFieldPath(
+                      ConfigServiceUtils.buildConfigFieldPath(
                           sortBy.getSelection().getConfigJsonPath())),
                   convertSortOrder(sortBy)));
     } else {
