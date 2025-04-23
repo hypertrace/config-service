@@ -42,7 +42,7 @@ public class TrainerConfigServiceConfigTest {
   }
 
   private void testVulnerabilityTrainingConfigs(List<TrainingConfig> vulnerabilityTrainingConfigs) {
-    assertEquals(19, vulnerabilityTrainingConfigs.size());
+    assertEquals(24, vulnerabilityTrainingConfigs.size());
     vulnerabilityTrainingConfigs.forEach(
         trainingConfig -> {
           assertFalse(trainingConfig.getDisabled());
