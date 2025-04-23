@@ -391,9 +391,7 @@ class DocumentConfigStoreTest {
         emptyList());
 
     verify(collection)
-        .query(
-            argThat(query -> query.getSorts().equals(expectedSorts)),
-            any(QueryOptions.class));
+        .query(argThat(query -> query.getSorts().equals(expectedSorts)), any(QueryOptions.class));
   }
 
   @Test
