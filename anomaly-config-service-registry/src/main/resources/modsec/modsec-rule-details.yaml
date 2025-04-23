@@ -2720,7 +2720,7 @@
           - MITRE ATT&CK - T1083: File and Directory Discovery - https://attack.mitre.org/techniques/T1083/
           - OWASP Top 10 - 2021 – A01:Broken Access Control - https://owasp.org/Top10/A01_2021-Broken_Access_Control/
           - Web Application Security Consortium - WASC-33: Path Traversal - http://projects.webappsec.org/w/page/13246952/Path%20Traversal
-    
+
     - ruleId: crs_9300130
       eventDetails:
         description: |
@@ -3818,10 +3818,10 @@
   eventLabels:
     MITRE_TACTIC: TA0005
     MITRE_TECHNIQUE: T1620
-  eventDetails: 
+  eventDetails:
     description: |
       Java application attacks target vulnerabilities in Java-based applications, frameworks, or runtime environments. These attacks often exploit insecure deserialization, improper input validation, or outdated dependencies.
-    mitigation: | 
+    mitigation: |
       - Implement secure coding practices, including input validation and output encoding.
       - Regularly update Java applications, libraries, and runtime environments to patch vulnerabilities.
       - Use security tools to detect and prevent vulnerabilities, such as static code analysis and runtime application self-protection (RASP).
@@ -4165,10 +4165,10 @@
   eventLabels:
     MITRE_TACTIC: TA0005
     MITRE_TECHNIQUE: T1556
-  eventDetails: 
+  eventDetails:
     description: |
-        Basic authentication violations occur when attackers exploit weaknesses in the implementation of HTTP Basic Authentication, often through insecure transmission of credentials, weak passwords, or lack of encryption.
-    mitigation: | 
+      Basic authentication violations occur when attackers exploit weaknesses in the implementation of HTTP Basic Authentication, often through insecure transmission of credentials, weak passwords, or lack of encryption.
+    mitigation: |
       - Use HTTPS to encrypt communication and prevent credential interception.
       - Enforce strong password policies, including complexity and expiration.
       - Implement multi-factor authentication (MFA) to enhance security.
@@ -4247,10 +4247,10 @@
 - ruleId: crs_104
   ruleName: GraphQL Attacks
   anomalyRuleCategory: ANOMALY_RULE_CATEGORY_GRAPHQL_ATTACKS
-  eventDetails: 
+  eventDetails:
     description: |
       GraphQL attacks exploit vulnerabilities in GraphQL APIs, such as excessive data exposure, improper authorization, or query batching abuse, to access sensitive data or disrupt services.
-    mitigation: | 
+    mitigation: |
       - Implement strict access control and authentication mechanisms for GraphQL APIs.
       - Use query depth and complexity limits to prevent resource exhaustion attacks.
       - Perform input validation and sanitization to avoid injection vulnerabilities.
