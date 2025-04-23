@@ -19,6 +19,7 @@ class RegionConfigServiceModuleTest {
     Config mockConfig =
         ConfigFactory.parseString(
             "region.config.service {\n"
+                + "changeLog1.migrationDisabled = true \n"
                 + "neustar.countries.data {\n"
                 + "    mode = RESOURCE_FILE\n"
                 + "    resource.file = neustar/countries.csv\n"

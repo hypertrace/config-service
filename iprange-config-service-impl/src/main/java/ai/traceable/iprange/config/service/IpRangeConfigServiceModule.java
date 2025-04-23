@@ -2,6 +2,7 @@ package ai.traceable.iprange.config.service;
 
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.iprange.config.service.rules.RulesManagerModule;
+import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationModule;
 import com.google.inject.AbstractModule;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
@@ -35,5 +36,6 @@ class IpRangeConfigServiceModule extends AbstractModule {
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(Clock.class).toInstance(Clock.systemUTC());
     install(new RulesManagerModule());
+    install(new IpRangeRulesMigrationModule());
   }
 }

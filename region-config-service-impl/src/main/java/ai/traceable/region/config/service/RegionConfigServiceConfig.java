@@ -2,6 +2,7 @@ package ai.traceable.region.config.service;
 
 import ai.traceable.config.utils.refresh.FileRefreshConfig;
 import com.typesafe.config.Config;
+import lombok.Getter;
 
 public class RegionConfigServiceConfig {
   private final Config config;
@@ -11,9 +12,14 @@ public class RegionConfigServiceConfig {
   private static final String IPQS_COUNTRIES_DATA_CONFIG = "ipqs.countries.data";
   private static final String IPQS_NEUSTAR_RESOLUTION_ENABLED_CONFIG =
       "ipqs.countries.data.resolve.neustar";
+  private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
+  private static final String CHANGE_LOG_1_MIGRATION_DISABLED_KEY =
+      "changeLog1." + MIGRATION_DISABLED_KEY;
+  @Getter private final boolean changeLog1MigrationDisabled;
 
   public RegionConfigServiceConfig(Config config) {
     this.config = config.getConfig(REGION_CONFIG_SERVICE);
+    this.changeLog1MigrationDisabled = this.config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
   }
 
   public FileRefreshConfig getNeustarCountriesDataConfig() {

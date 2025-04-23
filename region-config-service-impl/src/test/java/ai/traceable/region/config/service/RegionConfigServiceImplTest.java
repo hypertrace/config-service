@@ -18,6 +18,7 @@ import ai.traceable.region.config.service.regions.IpqsResolvedWithNeustarRegionS
 import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.rules.migration.RegionRulesMigrationManager;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -87,7 +88,8 @@ class RegionConfigServiceImplTest {
             rulesManager,
             mockCustomSignatureConfigServiceConfig,
             mockActivityEventProducer,
-            featureCachingClient);
+            featureCachingClient,
+            mock(RegionRulesMigrationManager.class));
     requestContext = RequestContext.forTenantId(TENANT_ID);
   }
 

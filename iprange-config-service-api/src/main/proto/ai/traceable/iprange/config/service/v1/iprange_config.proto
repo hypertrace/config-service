@@ -19,6 +19,7 @@ message UpdateIpRangeRuleRequest {
   bool disabled = 3;
   bool internal = 4;
   RuleScope rule_scope = 5;
+  bool hidden = 6;
 }
 
 message UpdateIpRangeRuleResponse {
@@ -46,6 +47,7 @@ message GetRulesFilter {
   optional bool internal = 4;
   RuleScope rule_scope = 5;
   repeated RuleAction rule_actions = 6;
+  optional bool hidden = 7;
 }
 
 message IpRangeRule {
@@ -190,4 +192,9 @@ enum StatusCodeMatchType {
   STATUS_CODE_MATCH_TYPE_NOT_EQUAL = 2;
   STATUS_CODE_MATCH_TYPE_MATCHES_REGEX = 3;
   STATUS_CODE_MATCH_TYPE_NOT_MATCH_REGEX = 4;
+}
+
+message IpRangeMigrationConfig {
+  // marking existing internal rules as hidden
+  bool change_log_1_migration_completed = 1;
 }

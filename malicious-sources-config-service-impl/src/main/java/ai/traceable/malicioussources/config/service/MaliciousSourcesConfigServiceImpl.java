@@ -2,6 +2,7 @@ package ai.traceable.malicioussources.config.service;
 
 import ai.traceable.malicioussources.config.service.rules.RulesManager;
 import ai.traceable.malicioussources.config.service.rules.RulesValidator;
+import ai.traceable.malicioussources.config.service.rules.migration.MaliciousSourcesMigrationManager;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleResponse;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
@@ -24,11 +25,16 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigServiceImplBase {
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
+  private final MaliciousSourcesMigrationManager migrationManager;
 
   @Inject
-  MaliciousSourcesConfigServiceImpl(RulesValidator rulesValidator, RulesManager rulesManager) {
+  MaliciousSourcesConfigServiceImpl(
+      RulesValidator rulesValidator,
+      RulesManager rulesManager,
+      MaliciousSourcesMigrationManager migrationManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
+    this.migrationManager = migrationManager;
   }
 
   @Override
@@ -36,8 +42,10 @@ public class MaliciousSourcesConfigServiceImpl extends MaliciousSourcesConfigSer
       GetMaliciousSourcesRulesRequest request,
       StreamObserver<GetMaliciousSourcesRulesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      migrationManager.migrateFromChangeLog1IfApplicable(requestContext);
       List<MaliciousSourcesRule> maliciousSourcesRules =
-          rulesManager.getMaliciousSourcesRules(RequestContext.CURRENT.get(), request.getFilter());
+          rulesManager.getMaliciousSourcesRules(requestContext, request.getFilter());
 
       responseObserver.onNext(
           GetMaliciousSourcesRulesResponse.newBuilder().addAllRules(maliciousSourcesRules).build());

@@ -174,3 +174,8 @@ enum EmailFraudScoreLevel {
   EMAIL_FRAUD_SCORE_LEVEL_HIGH = 1;
   EMAIL_FRAUD_SCORE_LEVEL_CRITICAL = 2;
 }
+
+message MaliciousSourcesMigrationConfig {
+  // marking existing internal rules as hidden
+  bool change_log_1_migration_completed = 1;
+}

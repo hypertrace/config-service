@@ -6,6 +6,7 @@ import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
+import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationManager;
 import ai.traceable.iprange.config.service.v1.*;
 import ai.traceable.iprange.config.service.v1.IpRangeConfigServiceGrpc.IpRangeConfigServiceImplBase;
 import ai.traceable.iprange.config.service.v1.IpRangeRule;
@@ -25,25 +26,30 @@ class IpRangeConfigServiceImpl extends IpRangeConfigServiceImplBase {
   private ActivityEventProducer activityEventProducer;
 
   private final boolean shouldPublishActivityEvents;
+  private final IpRangeRulesMigrationManager migrationManager;
 
   @Inject
   IpRangeConfigServiceImpl(
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       IpRangeConfigServiceConfig config,
-      ActivityEventProducer activityEventProducer) {
+      ActivityEventProducer activityEventProducer,
+      IpRangeRulesMigrationManager migrationManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.activityEventProducer = activityEventProducer;
     this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
+    this.migrationManager = migrationManager;
   }
 
   @Override
   public void getIpRangeRules(
       GetIpRangeRulesRequest request, StreamObserver<GetIpRangeRulesResponse> responseObserver) {
     try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      this.migrationManager.migrateFromChangeLog1IfApplicable(requestContext);
       List<IpRangeRule> ipRangeRules =
-          rulesManager.getIpRangeRules(RequestContext.CURRENT.get(), request.getFilter());
+          rulesManager.getIpRangeRules(requestContext, request.getFilter());
 
       responseObserver.onNext(
           GetIpRangeRulesResponse.newBuilder().addAllRules(ipRangeRules).build());

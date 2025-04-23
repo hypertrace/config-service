@@ -42,4 +42,5 @@ message GetRulesFilter {
   MaliciousSourcesRuleScope rule_scope = 2;
   optional bool disabled = 3;
   repeated RuleActionType rule_action_types = 4;
+  optional bool hidden = 5;
 }

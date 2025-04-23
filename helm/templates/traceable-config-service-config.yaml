@@ -104,6 +104,7 @@ data:
       grpc.port = {{ .Values.traceableConfigServiceConfig.iamV2ServiceConfig.grpcPort }}
     }
     region.config.service {
+      changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.regionConfigService.changeLog1.migrationDisabled }}
       neustar.countries.data {
         mode = {{ .Values.traceableConfigServiceConfig.regionConfigService.neustar.mode }}
         {{- if .Values.traceableConfigServiceConfig.regionConfigService.neustar.resourceFile }}
@@ -302,6 +303,12 @@ data:
     }
     rate.limiting.config.service {
       changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.changeLog1.migrationDisabled }}
+    }
+    iprange.config.service {
+      changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.iprangeConfigService.changeLog1.migrationDisabled }}
+    }
+    malicious.sources.config.service {
+      changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.maliciousSourcesConfigService.changeLog1.migrationDisabled }}
     }
     ast.config.service = {
       defaultPurgeDuration = {{ .Values.traceableConfigServiceConfig.astConfigService.defaultPurgeDuration }}

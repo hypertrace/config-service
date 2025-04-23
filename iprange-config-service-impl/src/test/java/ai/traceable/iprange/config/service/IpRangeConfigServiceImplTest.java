@@ -9,6 +9,7 @@ import ai.traceable.activity.event.SecurityConfigurationType;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
+import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationManager;
 import ai.traceable.iprange.config.service.v1.*;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.Status;
@@ -48,7 +49,8 @@ class IpRangeConfigServiceImplTest {
             rulesValidator,
             rulesManager,
             mockIpRangeConfigServiceConfig,
-            mockActivityEventProducer);
+            mockActivityEventProducer,
+            mock(IpRangeRulesMigrationManager.class));
   }
 
   @Nested

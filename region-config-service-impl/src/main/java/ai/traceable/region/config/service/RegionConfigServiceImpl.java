@@ -11,6 +11,7 @@ import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
+import ai.traceable.region.config.service.rules.migration.RegionRulesMigrationManager;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -57,6 +58,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private final boolean shouldPublishActivityEvents;
   private final FeatureCachingClient featureCachingClient;
   private final IpqsResolvedWithNeustarRegionStore ipqsResolvedWithNeustarRegionStore;
+  private final RegionRulesMigrationManager regionRulesMigrationManager;
   private final boolean ipqsNeustarResolutionEnabled; // only considered when ipqs is enabled
 
   @Inject
@@ -68,7 +70,8 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       RulesManager rulesManager,
       RegionConfigServiceConfig config,
       ActivityEventProducer activityEventProducer,
-      FeatureCachingClient featureCachingClient) {
+      FeatureCachingClient featureCachingClient,
+      RegionRulesMigrationManager regionRulesMigrationManager) {
     this.neustarRegionStore = neustarRegionStore;
     this.ipqsRegionStore = ipqsRegionStore;
     this.ipqsResolvedWithNeustarRegionStore = ipqsResolvedWithNeustarRegionStore;
@@ -78,6 +81,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
     this.activityEventProducer = activityEventProducer;
     this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
     this.featureCachingClient = featureCachingClient;
+    this.regionRulesMigrationManager = regionRulesMigrationManager;
   }
 
   @Override
@@ -157,6 +161,7 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       GetAllRegionRulesRequest request,
       StreamObserver<GetAllRegionRulesResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
+    regionRulesMigrationManager.migrateFromChangeLog1IfApplicable(requestContext);
     List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext, request.getFilter());
     regionRules = populateRegionMapping(regionRules, requestContext);
 

@@ -5,8 +5,9 @@ import static org.mockito.Mockito.mock;
 
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import com.google.inject.Guice;
-import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import io.grpc.Channel;
+import java.util.Map;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,6 @@ class IpRangeConfigServiceModuleTest {
   void testResolveBindings() {
     Channel mockChannel = mock(Channel.class);
 
-    Config mockConfig = mock(Config.class);
     ActivityEventProducer mockActivityEventProducer = mock(ActivityEventProducer.class);
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
@@ -24,7 +24,8 @@ class IpRangeConfigServiceModuleTest {
             Guice.createInjector(
                     new IpRangeConfigServiceModule(
                         mockChannel,
-                        mockConfig,
+                        ConfigFactory.parseMap(
+                            Map.of("iprange.config.service.changeLog1.migrationDisabled", false)),
                         mockActivityEventProducer,
                         mockConfigChangeEventGenerator))
                 .getAllBindings());

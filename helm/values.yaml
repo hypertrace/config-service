@@ -237,6 +237,8 @@ traceableConfigServiceConfig:
     host: iam-v2
     grpcPort: 51100
   regionConfigService:
+    changeLog1:
+      migrationDisabled: true
     neustar:
       mode: VERSIONS_DIR
       resourceFile: neustar/countries.csv
@@ -313,6 +315,12 @@ traceableConfigServiceConfig:
     changeLog4:
       migrationDisabled: true
   rateLimitingConfigService:
+    changeLog1:
+      migrationDisabled: true
+  iprangeConfigService:
+    changeLog1:
+      migrationDisabled: true
+  maliciousSourcesConfigService:
     changeLog1:
       migrationDisabled: true
   astConfigService:

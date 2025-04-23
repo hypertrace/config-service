@@ -76,6 +76,7 @@ message GetRegionRulesFilter {
   repeated RegionRuleActionType rule_action_types = 2;
   optional bool disabled = 8;
   optional bool internal = 9;
+  optional bool hidden = 10;
 }
 
 message GetAllRegionRulesRequest {
@@ -270,4 +271,9 @@ enum StatusCodeMatchType {
   STATUS_CODE_MATCH_TYPE_NOT_EQUAL = 2;
   STATUS_CODE_MATCH_TYPE_MATCHES_REGEX = 3;
   STATUS_CODE_MATCH_TYPE_NOT_MATCH_REGEX = 4;
+}
+
+message RegionRuleMigrationConfig {
+  // marking existing internal rules as hidden
+  bool change_log_1_migration_completed = 1;
 }

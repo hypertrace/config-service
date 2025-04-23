@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.malicioussources.config.service.rules.RulesManager;
 import ai.traceable.malicioussources.config.service.rules.RulesValidator;
+import ai.traceable.malicioussources.config.service.rules.migration.MaliciousSourcesMigrationManager;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleRequest;
 import ai.traceable.malicioussources.config.service.v1.CreateMaliciousSourcesRuleResponse;
 import ai.traceable.malicioussources.config.service.v1.DeleteMaliciousSourcesRuleRequest;
@@ -46,6 +47,7 @@ public class MaliciousSourcesConfigServiceImplTest {
   private static final String TENANT_ID = "tenant-malicious-sources-test";
   @Mock private RulesValidator rulesValidator;
   @Mock private RulesManager rulesManager;
+  @Mock private MaliciousSourcesMigrationManager migrationManager;
   @InjectMocks private MaliciousSourcesConfigServiceImpl maliciousSourcesConfigService;
 
   @Nested

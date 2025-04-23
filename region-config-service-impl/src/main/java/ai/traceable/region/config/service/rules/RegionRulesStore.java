@@ -60,6 +60,7 @@ public class RegionRulesStore
     return Optional.of(data)
         .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
         .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
+        .filter(rule -> !filter.hasHidden() || filter.getHidden() == rule.getHidden())
         .filter(
             rule ->
                 filter.getRuleActionTypesCount() == 0

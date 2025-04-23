@@ -22,6 +22,7 @@ class IpqsResolvedWithNeustarRegionBuilderTest {
         new RegionConfigServiceConfig(
             ConfigFactory.parseString(
                 "region.config.service {\n"
+                    + "changeLog1.migrationDisabled = true \n"
                     + "\tipqs.countries.data {\n"
                     + "\t\tresolve.neustar = true\n"
                     + "\t\tmode = RESOURCE_FILE\n"
@@ -44,6 +45,7 @@ class IpqsResolvedWithNeustarRegionBuilderTest {
         new RegionConfigServiceConfig(
             ConfigFactory.parseString(
                 "region.config.service {\n"
+                    + "changeLog1.migrationDisabled = true \n"
                     + "\tipqs.countries.data {\n"
                     + "\t\tresolve.neustar = true\n"
                     + "\t\tmode = RESOURCE_FILE\n"

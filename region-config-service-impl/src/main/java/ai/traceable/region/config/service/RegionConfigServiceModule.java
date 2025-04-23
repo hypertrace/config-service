@@ -3,6 +3,7 @@ package ai.traceable.region.config.service;
 import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.rules.RulesManagerModule;
+import ai.traceable.region.config.service.rules.migration.RegionRulesMigrationModule;
 import com.google.inject.AbstractModule;
 import com.typesafe.config.Config;
 import io.grpc.BindableService;
@@ -40,5 +41,6 @@ class RegionConfigServiceModule extends AbstractModule {
     bind(FeatureCachingClient.class).toInstance(featureCachingClient);
 
     install(new RulesManagerModule());
+    install(new RegionRulesMigrationModule());
   }
 }

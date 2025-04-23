@@ -1,5 +1,8 @@
 package ai.traceable.malicioussources.config.service.rules;
 
+import static ai.traceable.malicioussources.config.service.constants.MaliciousSourcesConfigConstants.MALICIOUS_SOURCES_RULE_CONFIG_NAMESPACE;
+import static ai.traceable.malicioussources.config.service.constants.MaliciousSourcesConfigConstants.MALICIOUS_SOURCES_RULE_CONFIG_RESOURCE_NAME;
+
 import ai.traceable.malicioussources.config.service.v1.GetRulesFilter;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRule;
 import ai.traceable.malicioussources.config.service.v1.MaliciousSourcesRuleScope;
@@ -17,9 +20,6 @@ import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 @Slf4j
 public class MaliciousSourcesRulesStore
     extends IdentifiedObjectStoreWithFilter<MaliciousSourcesRule, GetRulesFilter> {
-  public static final String MALICIOUS_SOURCES_RULE_CONFIG_NAMESPACE = "maliciousSourcesRule";
-  public static final String MALICIOUS_SOURCES_RULE_CONFIG_RESOURCE_NAME =
-      "maliciousSourcesRuleConfig";
 
   @Inject
   public MaliciousSourcesRulesStore(
@@ -69,6 +69,8 @@ public class MaliciousSourcesRulesStore
             rule ->
                 !(filter.hasDisabled()
                     && rule.getRuleStatus().getDisabled() != filter.getDisabled()))
+        .filter(
+            rule -> !filter.hasHidden() || filter.getHidden() == rule.getRuleStatus().getHidden())
         .filter(
             rule ->
                 filter.getRuleActionTypesCount() == 0
