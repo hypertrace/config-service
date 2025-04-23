@@ -245,7 +245,7 @@ public class DocumentConfigStore implements ConfigStore {
     return collection.count(query);
   }
 
-  Query buildQuery(
+  private Query buildQuery(
       ConfigResource configResource,
       @NonNull org.hypertrace.config.service.v1.Filter filter,
       @NonNull org.hypertrace.config.service.v1.Pagination pagination,

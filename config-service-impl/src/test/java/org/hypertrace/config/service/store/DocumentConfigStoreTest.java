@@ -54,6 +54,7 @@ import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
 import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
 import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
+import org.hypertrace.core.documentstore.model.options.QueryOptions;
 import org.hypertrace.core.documentstore.query.Query;
 import org.hypertrace.core.documentstore.query.SortingSpec;
 import org.junit.jupiter.api.BeforeEach;
@@ -368,41 +369,75 @@ class DocumentConfigStoreTest {
   }
 
   @Test
-  void buildQuery_withDefaultPagination() {
+  void buildQuery_withDefaultPagination() throws Exception {
+    // Arrange
     ConfigResource configResource =
         new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
     Filter filter = Filter.getDefaultInstance();
-    Pagination pagination = Pagination.getDefaultInstance();
-    List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.emptyList();
+    Pagination pagination = Pagination.getDefaultInstance(); // Default pagination
 
-    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+    // Create a mock for CloseableIterator<Document>
+    CloseableIterator<Document> mockIterator = mock(CloseableIterator.class);
+    when(mockIterator.hasNext()).thenReturn(false); // No documents to process
 
-    // Verify default sorting is applied
-    assertEquals(2, query.getSorts().size());
-    assertEquals(
-        "configVersion",
-        ((IdentifierExpression) query.getSorts().get(0).getExpression()).getName());
-    assertEquals(
-        "creationTimestamp",
-        ((IdentifierExpression) query.getSorts().get(1).getExpression()).getName());
+    // Mock the collection.query to return the mock iterator
+    when(collection.query(any(Query.class), any(QueryOptions.class))).thenReturn(mockIterator);
+
+    // Act
+    configStore.getAllConfigs(configResource, filter, pagination, Collections.emptyList());
+
+    // Capture the Query object passed to collection.query
+    ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+    verify(collection).query(queryCaptor.capture(), any(QueryOptions.class));
+
+    // Assert the properties of the captured Query
+    Query capturedQuery = queryCaptor.getValue();
+    assertNotNull(capturedQuery);
+
+    List<SortingSpec> expectedSorts =
+        Arrays.asList(
+            SortingSpec.of(
+                IdentifierExpression.of("configVersion"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC),
+            SortingSpec.of(
+                IdentifierExpression.of("creationTimestamp"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
+    assertEquals(expectedSorts, capturedQuery.getSorts());
   }
 
   @Test
-  void buildQuery_withCustomPagination() {
+  void buildQuery_withCustomPagination() throws IOException {
     ConfigResource configResource =
         new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
     Filter filter = Filter.getDefaultInstance();
     Pagination pagination = Pagination.newBuilder().setOffset(10).setLimit(20).build();
     List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.emptyList();
 
-    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+    // Create a mock for CloseableIterator<Document>
+    CloseableIterator<Document> mockIterator = mock(CloseableIterator.class);
+    when(mockIterator.hasNext()).thenReturn(false); // No documents to process
 
-    assertEquals(10, query.getPagination().get().getOffset());
-    assertEquals(20, query.getPagination().get().getLimit());
+    // Mock the collection.query to return the mock iterator
+    when(collection.query(any(Query.class), any(QueryOptions.class))).thenReturn(mockIterator);
+
+    // Act
+    configStore.getAllConfigs(configResource, filter, pagination, sortByList);
+
+    // Capture the Query object passed to collection.query
+    ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+    verify(collection).query(queryCaptor.capture(), any(QueryOptions.class));
+
+    // Assert the properties of the captured Query
+    Query capturedQuery = queryCaptor.getValue();
+    assertNotNull(capturedQuery);
+
+    org.hypertrace.core.documentstore.query.Pagination expectedPagination =
+        org.hypertrace.core.documentstore.query.Pagination.builder().offset(10).limit(20).build();
+    assertEquals(expectedPagination, capturedQuery.getPagination().get());
   }
 
   @Test
-  void buildQuery_withCustomSorting() {
+  void buildQuery_withCustomSorting() throws IOException {
     ConfigResource configResource =
         new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
     Filter filter = Filter.getDefaultInstance();
@@ -418,10 +453,23 @@ class DocumentConfigStoreTest {
             .setSortOrder(SortOrder.SORT_ORDER_DESC)
             .build();
     List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.singletonList(sortBy);
+    // Create a mock for CloseableIterator<Document>
+    CloseableIterator<Document> mockIterator = mock(CloseableIterator.class);
+    when(mockIterator.hasNext()).thenReturn(false); // No documents to process
 
-    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+    // Mock the collection.query to return the mock iterator
+    when(collection.query(any(Query.class), any(QueryOptions.class))).thenReturn(mockIterator);
 
-    assertEquals(2, query.getSorts().size());
+    // Act
+    configStore.getAllConfigs(configResource, filter, pagination, sortByList);
+
+    // Capture the Query object passed to collection.query
+    ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+    verify(collection).query(queryCaptor.capture(), any(QueryOptions.class));
+
+    // Assert the properties of the captured Query
+    Query capturedQuery = queryCaptor.getValue();
+    assertNotNull(capturedQuery);
     List<SortingSpec> expectedSorts =
         Arrays.asList(
             SortingSpec.of(
@@ -431,11 +479,11 @@ class DocumentConfigStoreTest {
                 IdentifierExpression.of("config.test.path"),
                 org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
 
-    assertEquals(expectedSorts, query.getSorts());
+    assertEquals(expectedSorts, capturedQuery.getSorts());
   }
 
   @Test
-  void buildQuery_withFilter() {
+  void buildQuery_withFilter() throws IOException {
     ConfigResource configResource =
         new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
 
@@ -451,19 +499,45 @@ class DocumentConfigStoreTest {
     Pagination pagination = Pagination.getDefaultInstance();
     List<org.hypertrace.config.service.v1.SortBy> sortByList = Collections.emptyList();
 
-    Query query = configStore.buildQuery(configResource, filter, pagination, sortByList);
+    // Create a mock for CloseableIterator<Document>
+    CloseableIterator<Document> mockIterator = mock(CloseableIterator.class);
+    when(mockIterator.hasNext()).thenReturn(false); // No documents to process
+
+    // Mock the collection.query to return the mock iterator
+    when(collection.query(any(Query.class), any(QueryOptions.class))).thenReturn(mockIterator);
+
+    // Act
+    configStore.getAllConfigs(configResource, filter, pagination, Collections.emptyList());
+
+    // Capture the Query object passed to collection.query
+    ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+    verify(collection).query(queryCaptor.capture(), any(QueryOptions.class));
+
+    // Assert the properties of the captured Query
+    Query capturedQuery = queryCaptor.getValue();
+    assertNotNull(capturedQuery);
 
     // Verify filter is present in the query
-    assertNotNull(query.getFilter());
+    assertNotNull(capturedQuery.getFilter());
 
-    FilterTypeExpression userFilter =
-        ((LogicalExpression) query.getFilter().get()).getOperands().get(1);
-    assertEquals(
-        "config.test.path",
-        ((IdentifierExpression) ((RelationalExpression) userFilter).getLhs()).getName());
-    assertEquals(
-        "test-value",
-        ((ConstantExpression) ((RelationalExpression) userFilter).getRhs()).getValue().toString());
+    // Compare the actual filter with the expected filter
+    FilterTypeExpression actualFilter =
+        ((LogicalExpression) capturedQuery.getFilter().get()).getOperands().get(1);
+    FilterTypeExpression expectedFilter = createExpectedFilter();
+
+    assertEquals(expectedFilter, actualFilter); // Compare the entire filter expressions
+  }
+
+  private FilterTypeExpression createExpectedFilter() {
+    // Create the expected left-hand side and right-hand side expressions
+    IdentifierExpression lhs = IdentifierExpression.of("config.test.path");
+    ConstantExpression rhs = ConstantExpression.of("test-value");
+
+    // Build the relational expression
+
+    // Assuming you have a logical expression that contains this relational expression
+    return RelationalExpression.of(
+        lhs, org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ, rhs);
   }
 
   private static Document getConfigDocument(
