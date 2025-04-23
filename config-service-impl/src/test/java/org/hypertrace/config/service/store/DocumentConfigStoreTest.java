@@ -1,5 +1,6 @@
 package org.hypertrace.config.service.store;
 
+import static java.util.Collections.emptyList;
 import static org.hypertrace.config.service.TestUtils.CONTEXT1;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAME;
 import static org.hypertrace.config.service.TestUtils.RESOURCE_NAMESPACE;
@@ -9,8 +10,10 @@ import static org.hypertrace.config.service.TestUtils.getConfig2;
 import static org.hypertrace.config.service.TestUtils.getConfigResourceContext;
 import static org.hypertrace.config.service.store.DocumentConfigStore.CONFIGURATIONS_COLLECTION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,6 +25,7 @@ import com.google.protobuf.util.Values;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -37,6 +41,7 @@ import org.hypertrace.config.service.v1.LogicalOperator;
 import org.hypertrace.config.service.v1.Pagination;
 import org.hypertrace.config.service.v1.RelationalFilter;
 import org.hypertrace.config.service.v1.RelationalOperator;
+import org.hypertrace.config.service.v1.SortOrder;
 import org.hypertrace.config.service.v1.UpsertAllConfigsResponse.UpsertedConfig;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.documentstore.CloseableIterator;
@@ -45,12 +50,24 @@ import org.hypertrace.core.documentstore.Datastore;
 import org.hypertrace.core.documentstore.Document;
 import org.hypertrace.core.documentstore.Key;
 import org.hypertrace.core.documentstore.UpdateResult;
-import org.hypertrace.core.documentstore.metric.DocStoreMetricProvider;
+import org.hypertrace.core.documentstore.expression.impl.ConstantExpression;
+import org.hypertrace.core.documentstore.expression.impl.IdentifierExpression;
+import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
+import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
+import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
+import org.hypertrace.core.documentstore.model.options.QueryOptions;
 import org.hypertrace.core.documentstore.query.Query;
+import org.hypertrace.core.documentstore.query.SortingSpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class DocumentConfigStoreTest {
 
   private static final long CONFIG_VERSION = 5;
@@ -62,17 +79,19 @@ class DocumentConfigStoreTest {
   private static Value config1 = getConfig1();
   private static Value config2 = getConfig2();
   private static ConfigResourceContext configResourceContext = getConfigResourceContext();
-  private static Collection collection;
-  private DocumentConfigStore configStore;
-  private Clock mockClock;
-  private FilterBuilder filterBuilder;
 
-  @BeforeEach()
+  private Collection collection;
+  @Mock private Clock mockClock;
+  @Mock private FilterBuilder filterBuilder;
+
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+  private Datastore mockDatastore;
+
+  @InjectMocks private DocumentConfigStore configStore;
+
+  @BeforeEach
   void beforeEach() {
-    collection = mock(Collection.class);
-    this.mockClock = mock(Clock.class);
-    this.filterBuilder = mock(FilterBuilder.class);
-    this.configStore = new DocumentConfigStore(mockClock, new MockDatastore());
+    this.collection = mockDatastore.getCollection(CONFIGURATIONS_COLLECTION);
   }
 
   @Test
@@ -182,10 +201,7 @@ class DocumentConfigStoreTest {
                                     .setValue(Values.of("v2")))))
             .build();
 
-    org.hypertrace.core.documentstore.Filter docFilter =
-        new org.hypertrace.core.documentstore.Filter();
     when(request.getUpsertCondition()).thenReturn(upsertCondition);
-    when(filterBuilder.buildDocStoreFilter(upsertCondition)).thenReturn(docFilter);
     UpsertedConfig upsertedConfig =
         configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL);
     assertEquals(config2, upsertedConfig.getConfig());
@@ -212,7 +228,6 @@ class DocumentConfigStoreTest {
         document);
 
     // failed upsert condition
-    when(updateResult.getUpdatedCount()).thenReturn(0L);
     assertThrows(
         StatusRuntimeException.class,
         () -> configStore.writeConfig(configResourceContext, USER_ID, request, USER_EMAIL));
@@ -273,7 +288,7 @@ class DocumentConfigStoreTest {
             new ConfigResource(RESOURCE_NAME, RESOURCE_NAMESPACE, TENANT_ID),
             Filter.getDefaultInstance(), // for empty filter
             Pagination.getDefaultInstance(),
-            Collections.emptyList());
+            emptyList());
 
     assertEquals(2, contextSpecificConfigList.size());
     assertEquals(
@@ -358,7 +373,135 @@ class DocumentConfigStoreTest {
                     updateTime)));
   }
 
-  private static Document getConfigDocument(
+  @Test
+  void buildQuery_withDefaultPagination() throws Exception {
+    List<SortingSpec> expectedSorts =
+        Arrays.asList(
+            SortingSpec.of(
+                IdentifierExpression.of("configVersion"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC),
+            SortingSpec.of(
+                IdentifierExpression.of("creationTimestamp"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
+
+    configStore.getAllConfigs(
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1"),
+        Filter.getDefaultInstance(),
+        Pagination.getDefaultInstance(),
+        emptyList());
+
+    verify(collection)
+        .query(argThat(query -> query.getSorts().equals(expectedSorts)), any(QueryOptions.class));
+  }
+
+  @Test
+  void buildQuery_withCustomPagination() throws IOException {
+    Pagination pagination = Pagination.newBuilder().setOffset(10).setLimit(20).build();
+    org.hypertrace.core.documentstore.query.Pagination expectedPagination =
+        org.hypertrace.core.documentstore.query.Pagination.builder().offset(10).limit(20).build();
+
+    configStore.getAllConfigs(
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1"),
+        Filter.getDefaultInstance(),
+        pagination,
+        emptyList());
+
+    verify(collection)
+        .query(
+            argThat(query -> query.getPagination().orElseThrow().equals(expectedPagination)),
+            any(QueryOptions.class));
+  }
+
+  @Test
+  void buildQuery_withCustomSorting() throws IOException {
+    org.hypertrace.config.service.v1.Selection selection =
+        org.hypertrace.config.service.v1.Selection.newBuilder()
+            .setConfigJsonPath("test.path")
+            .build();
+    org.hypertrace.config.service.v1.SortBy sortBy =
+        org.hypertrace.config.service.v1.SortBy.newBuilder()
+            .setSelection(selection)
+            .setSortOrder(SortOrder.SORT_ORDER_DESC)
+            .build();
+
+    List<SortingSpec> expectedSorts =
+        Arrays.asList(
+            SortingSpec.of(
+                IdentifierExpression.of("configVersion"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC),
+            SortingSpec.of(
+                IdentifierExpression.of("config.test.path"),
+                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
+
+    configStore.getAllConfigs(
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1"),
+        Filter.getDefaultInstance(),
+        Pagination.getDefaultInstance(),
+        Collections.singletonList(sortBy));
+
+    verify(collection)
+        .query(argThat(query -> query.getSorts().equals(expectedSorts)), any(QueryOptions.class));
+  }
+
+  @Test
+  void buildQuery_withFilter() throws IOException {
+    ConfigResource configResource =
+        new ConfigResource(RESOURCE_NAMESPACE, RESOURCE_NAME, "tenant1");
+
+    RelationalFilter relationalFilter =
+        RelationalFilter.newBuilder()
+            .setConfigJsonPath("test.path")
+            .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
+            .setValue(Values.of("test-value"))
+            .build();
+
+    Filter filter = Filter.newBuilder().setRelationalFilter(relationalFilter).build();
+
+    Pagination pagination = Pagination.getDefaultInstance();
+    List<org.hypertrace.config.service.v1.SortBy> sortByList = emptyList();
+
+    // Create a mock for CloseableIterator<Document>
+    CloseableIterator<Document> mockIterator = mock(CloseableIterator.class);
+    when(mockIterator.hasNext()).thenReturn(false); // No documents to process
+
+    // Mock the collection.query to return the mock iterator
+    when(collection.query(any(Query.class), any(QueryOptions.class))).thenReturn(mockIterator);
+
+    // Act
+    configStore.getAllConfigs(configResource, filter, pagination, emptyList());
+
+    // Capture the Query object passed to collection.query
+    ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
+    verify(collection).query(queryCaptor.capture(), any(QueryOptions.class));
+
+    // Assert the properties of the captured Query
+    Query capturedQuery = queryCaptor.getValue();
+    assertNotNull(capturedQuery);
+
+    // Verify filter is present in the query
+    assertNotNull(capturedQuery.getFilter());
+
+    // Compare the actual filter with the expected filter
+    FilterTypeExpression actualFilter =
+        ((LogicalExpression) capturedQuery.getFilter().get()).getOperands().get(1);
+    FilterTypeExpression expectedFilter = createExpectedFilter();
+
+    assertEquals(expectedFilter, actualFilter); // Compare the entire filter expressions
+  }
+
+  private FilterTypeExpression createExpectedFilter() {
+    // Create the expected left-hand side and right-hand side expressions
+    IdentifierExpression lhs = IdentifierExpression.of("config.test.path");
+    ConstantExpression rhs = ConstantExpression.of("test-value");
+
+    // Build the relational expression
+
+    // Assuming you have a logical expression that contains this relational expression
+    return RelationalExpression.of(
+        lhs, org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ, rhs);
+  }
+
+  private Document getConfigDocument(
       String context, long version, Value config, long creationTimestamp, long updateTimestamp) {
     return new ConfigDocument(
         RESOURCE_NAME,
@@ -394,42 +537,5 @@ class DocumentConfigStoreTest {
     public Document next() {
       return documentIterator.next();
     }
-  }
-
-  public static class MockDatastore implements Datastore {
-
-    @Override
-    public Set<String> listCollections() {
-      return Collections.singleton(CONFIGURATIONS_COLLECTION);
-    }
-
-    @Override
-    public Collection getCollection(String s) {
-      return collection;
-    }
-
-    // default implementation for other methods as they are unused
-    @Override
-    public boolean createCollection(String s, Map<String, String> map) {
-      return false;
-    }
-
-    @Override
-    public boolean deleteCollection(String s) {
-      return false;
-    }
-
-    @Override
-    public boolean healthCheck() {
-      return false;
-    }
-
-    @Override
-    public DocStoreMetricProvider getDocStoreMetricProvider() {
-      return null;
-    }
-
-    @Override
-    public void close() {}
   }
 }

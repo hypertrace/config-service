@@ -262,7 +262,9 @@ public class DocumentConfigStore implements ConfigStore {
       sortByList.forEach(
           sortBy ->
               queryBuilder.addSort(
-                  IdentifierExpression.of(sortBy.getSelection().getConfigJsonPath()),
+                  IdentifierExpression.of(
+                      ConfigServiceUtils.buildConfigFieldPath(
+                          sortBy.getSelection().getConfigJsonPath())),
                   convertSortOrder(sortBy)));
     } else {
       queryBuilder.addSort(IdentifierExpression.of(CREATION_TIMESTAMP_FIELD_NAME), SortOrder.DESC);

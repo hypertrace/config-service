@@ -24,6 +24,7 @@ dependencies {
   compileOnly(commonLibs.lombok)
 
   testImplementation(commonLibs.junit.jupiter)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(commonLibs.mockito.core)
   testImplementation(commonLibs.hypertrace.grpcutils.client)
 }

@@ -1,5 +1,7 @@
 package org.hypertrace.config.service;
 
+import static org.hypertrace.config.service.store.ConfigDocument.CONFIG_FIELD_NAME;
+
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
@@ -106,6 +108,10 @@ public class ConfigServiceUtils {
         .setCreationTimestamp(0)
         .setUpdateTimestamp(0)
         .build();
+  }
+
+  public static String buildConfigFieldPath(String configJsonPath) {
+    return String.format("%s.%s", CONFIG_FIELD_NAME, configJsonPath);
   }
 
   private static ContextSpecificConfig buildContextSpecificConfig(

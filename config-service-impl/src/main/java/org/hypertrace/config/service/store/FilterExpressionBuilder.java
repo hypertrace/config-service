@@ -1,10 +1,9 @@
 package org.hypertrace.config.service.store;
 
-import static org.hypertrace.config.service.store.ConfigDocument.CONFIG_FIELD_NAME;
-
 import io.grpc.Status;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.LogicalFilter;
 import org.hypertrace.config.service.v1.RelationalFilter;
@@ -87,12 +86,9 @@ public class FilterExpressionBuilder {
     }
 
     return RelationalExpression.of(
-        IdentifierExpression.of(buildConfigFieldPath(relationalFilter.getConfigJsonPath())),
+        IdentifierExpression.of(
+            ConfigServiceUtils.buildConfigFieldPath(relationalFilter.getConfigJsonPath())),
         operator,
         ConstantExpressionConverter.fromProtoValue(relationalFilter.getValue()));
-  }
-
-  private String buildConfigFieldPath(String configJsonPath) {
-    return String.format("%s.%s", CONFIG_FIELD_NAME, configJsonPath);
   }
 }
