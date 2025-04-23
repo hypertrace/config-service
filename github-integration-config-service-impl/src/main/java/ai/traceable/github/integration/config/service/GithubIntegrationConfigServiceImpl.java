@@ -62,18 +62,21 @@ class GithubIntegrationConfigServiceImpl
     RequestContext requestContext = RequestContext.CURRENT.get();
     try {
       validator.validateCreateGithubIntegration(request, requestContext);
-      GithubIntegration newIntegration =
+      GithubIntegration.Builder newIntegrationBuilder =
           GithubIntegration.newBuilder()
               .setId(uuidGenerator.generateRandomId())
               .setStatus(
                   IntegrationStatus.newBuilder()
                       .setAwaitingRequest(
                           AwaitingRequest.newBuilder()
-                              .setRequestUserEmail(requestContext.getEmail().orElseThrow())))
-              .build();
+                              .setRequestUserEmail(requestContext.getEmail().orElseThrow())));
+      if (request.hasInternalAppId()) {
+        newIntegrationBuilder.setInternalAppId(request.getInternalAppId());
+      }
       responseObserver.onNext(
           CreateGithubIntegrationResponse.newBuilder()
-              .setCreatedIntegration(store.upsertObject(requestContext, newIntegration).getData())
+              .setCreatedIntegration(
+                  store.upsertObject(requestContext, newIntegrationBuilder.build()).getData())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

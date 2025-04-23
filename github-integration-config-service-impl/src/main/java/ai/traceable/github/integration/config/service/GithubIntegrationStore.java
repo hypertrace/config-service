@@ -50,7 +50,8 @@ class GithubIntegrationStore
         .filter(githubIntegration -> this.satisfiesIdFilter(filter, githubIntegration))
         .filter(githubIntegration -> this.satisfiesAnyInstallId(filter, githubIntegration))
         .filter(
-            githubIntegration -> this.satisfiesRequestUserEmailFilter(filter, githubIntegration));
+            githubIntegration -> this.satisfiesRequestUserEmailFilter(filter, githubIntegration))
+        .filter(githubIntegration -> this.satisfiesInternalAppIdFilter(filter, githubIntegration));
   }
 
   private boolean satisfiesAnyInstallId(
@@ -79,6 +80,12 @@ class GithubIntegrationStore
 
   private boolean satisfiesIdFilter(GithubIntegrationFilter filter, GithubIntegration integration) {
     return !filter.hasConfigId() || filter.getConfigId().equalsIgnoreCase(integration.getId());
+  }
+
+  private boolean satisfiesInternalAppIdFilter(
+      GithubIntegrationFilter filter, GithubIntegration integration) {
+    return !filter.hasInternalAppId()
+        || filter.getInternalAppId().equalsIgnoreCase(integration.getInternalAppId());
   }
 
   private boolean satisfiesRequestUserEmailFilter(

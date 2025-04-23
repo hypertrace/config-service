@@ -116,17 +116,22 @@ class GithubIntegrationConfigServiceImplTest {
     mockGenericConfigService.mockGet().mockGetAll().mockUpsert().mockDelete();
     RequestContext requestContext = buildTestContext();
     String newId = "new-id";
+    String internalAppId = "app-internal-id";
     when(mockIdGenerator.generateRandomId()).thenReturn(newId);
     GithubIntegration createdIntegration =
         requestContext.call(
             () ->
-                stub.createGithubIntegration(CreateGithubIntegrationRequest.getDefaultInstance())
+                stub.createGithubIntegration(
+                        CreateGithubIntegrationRequest.newBuilder()
+                            .setInternalAppId(internalAppId)
+                            .build())
                     .getCreatedIntegration());
 
     assertEquals(
         "user@email.com",
         createdIntegration.getStatus().getAwaitingRequest().getRequestUserEmail());
     assertEquals(newId, createdIntegration.getId());
+    assertEquals(internalAppId, createdIntegration.getInternalAppId());
 
     long installId = 123;
     String installOwner = "install-owner";

@@ -19,13 +19,16 @@ message GithubIntegrationFilter {
   optional string config_id = 2;
   optional string request_user_email = 3;
   optional int64 installation_id = 4;
+  optional string internal_app_id = 5;
 }
 
 message GetGithubIntegrationsResponse {
   repeated GithubIntegration integrations = 1;
 }
 
-message CreateGithubIntegrationRequest {}
+message CreateGithubIntegrationRequest {
+  optional string internal_app_id = 1;
+}
 
 message CreateGithubIntegrationResponse {
   GithubIntegration created_integration = 1;
@@ -75,4 +78,5 @@ message IntegrationStatus {
 message GithubIntegration {
   string id = 1;
   IntegrationStatus status = 2;
+  optional string internal_app_id = 3;
 }
