@@ -48,6 +48,7 @@ message GetCustomSignatureModsecRulesRequest {
   GetRulesFilter filter = 1;
   CustomModsecRuleVersion rule_version = 2;
   repeated string service_names = 3;
+  bool include_all_partial_modsec_rules = 4;
 }
 
 message GetCustomSignatureModsecRulesResponse {
