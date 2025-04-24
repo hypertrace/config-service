@@ -6,7 +6,6 @@ import static org.hypertrace.config.service.store.ConfigDocument.CREATION_TIMEST
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.RESOURCE_NAMESPACE_FIELD_NAME;
 import static org.hypertrace.config.service.store.ConfigDocument.TENANT_ID_FIELD_NAME;
-import static org.hypertrace.config.service.store.ConfigDocument.VERSION_FIELD_NAME;
 import static org.hypertrace.core.documentstore.Filter.Op.OR;
 
 import com.google.common.collect.Maps;
@@ -78,7 +77,7 @@ public class DocumentConfigStore implements ConfigStore {
       UpsertConfigRequest request,
       String lastUpdatedUserEmail)
       throws IOException {
-    Optional<ConfigDocument> previousConfigDoc = getLatestVersionConfigDoc(configResourceContext);
+    Optional<ConfigDocument> previousConfigDoc = getConfigDocument(configResourceContext);
     Optional<ContextSpecificConfig> optionalPreviousConfig =
         previousConfigDoc.flatMap(this::convertToContextSpecificConfig);
 
@@ -198,8 +197,7 @@ public class DocumentConfigStore implements ConfigStore {
   @Override
   public Optional<ContextSpecificConfig> getConfig(ConfigResourceContext configResourceContext)
       throws IOException {
-    return getLatestVersionConfigDoc(configResourceContext)
-        .flatMap(this::convertToContextSpecificConfig);
+    return getConfigDocument(configResourceContext).flatMap(this::convertToContextSpecificConfig);
   }
 
   @Override
@@ -257,7 +255,6 @@ public class DocumentConfigStore implements ConfigStore {
       queryBuilder.setPagination(
           Pagination.builder().offset(pagination.getOffset()).limit(pagination.getLimit()).build());
     }
-    queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
     if (!sortByList.isEmpty()) {
       sortByList.forEach(
           sortBy ->
@@ -313,13 +310,11 @@ public class DocumentConfigStore implements ConfigStore {
     return datastore.healthCheck();
   }
 
-  private Optional<ConfigDocument> getLatestVersionConfigDoc(
-      ConfigResourceContext configResourceContext) throws IOException {
+  private Optional<ConfigDocument> getConfigDocument(ConfigResourceContext configResourceContext)
+      throws IOException {
     Query query =
         Query.builder()
             .setFilter(getConfigResourceContextFilterTypeExpression(configResourceContext))
-            .addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC)
-            .setPagination(Pagination.builder().offset(0).limit(1).build())
             .build();
 
     try (CloseableIterator<Document> documentIterator =
