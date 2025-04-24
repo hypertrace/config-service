@@ -257,7 +257,6 @@ public class DocumentConfigStore implements ConfigStore {
       queryBuilder.setPagination(
           Pagination.builder().offset(pagination.getOffset()).limit(pagination.getLimit()).build());
     }
-    queryBuilder.addSort(IdentifierExpression.of(VERSION_FIELD_NAME), SortOrder.DESC);
     if (!sortByList.isEmpty()) {
       sortByList.forEach(
           sortBy ->

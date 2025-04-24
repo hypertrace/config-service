@@ -25,7 +25,6 @@ import com.google.protobuf.util.Values;
 import io.grpc.StatusRuntimeException;
 import java.io.IOException;
 import java.time.Clock;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -376,10 +375,7 @@ class DocumentConfigStoreTest {
   @Test
   void buildQuery_withDefaultPagination() throws Exception {
     List<SortingSpec> expectedSorts =
-        Arrays.asList(
-            SortingSpec.of(
-                IdentifierExpression.of("configVersion"),
-                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC),
+        List.of(
             SortingSpec.of(
                 IdentifierExpression.of("creationTimestamp"),
                 org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
@@ -425,10 +421,7 @@ class DocumentConfigStoreTest {
             .build();
 
     List<SortingSpec> expectedSorts =
-        Arrays.asList(
-            SortingSpec.of(
-                IdentifierExpression.of("configVersion"),
-                org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC),
+        List.of(
             SortingSpec.of(
                 IdentifierExpression.of("config.test.path"),
                 org.hypertrace.core.documentstore.expression.operators.SortOrder.DESC));
