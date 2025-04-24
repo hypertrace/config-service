@@ -52,6 +52,7 @@ message RateLimitingRuleData {
   RuleConfigScope rule_config_scope = 7;
   RuleStatus rule_status = 8;
   map<string, string> labels = 10;
+  repeated RuleEvaluationPoint rule_evaluation_points = 11;
 }
 
 message RuleStatus {
@@ -68,8 +69,15 @@ message RuleStatus {
   }
 }
 
+enum RuleEvaluationPoint {
+  RULE_EVALUATION_POINT_UNSPECIFIED = 0;
+  RULE_EVALUATION_POINT_INLINE_TRACING_AGENT = 1;
+  RULE_EVALUATION_POINT_EDGE = 2;
+  RULE_EVALUATION_POINT_PLATFORM = 3;
+}
+
 message RuleConfigScope {
-  oneof scope { // if no option selected, default is customer scope (all environments)
+  oneof scope { // if no option is selected, default is customer scope (all environments)
     EnvironmentScope environment_scope = 1;
   }
 }

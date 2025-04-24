@@ -13,7 +13,7 @@ message DetectionExclusionRule {
 }
 
 message DetectionExclusionRuleScope {
-  oneof scope { // if no option selected, default is customer scope (all environments)
+  oneof scope { // if no option is selected, default is customer scope (all environments)
     EnvironmentScope environment_scope = 1;
   }
 }
@@ -29,6 +29,7 @@ message DetectionExclusionRuleInfo {
   repeated DetectionExclusionCondition conditions = 3;
   DetectionExclusionRuleStatus rule_status = 4;
   repeated ExclusionTarget exclusion_targets = 5;
+  repeated RuleEvaluationPoint rule_evaluation_points = 6;
 }
 
 message DetectionExclusionCondition {
@@ -116,6 +117,13 @@ enum RuleIntent {
   RULE_INTENT_UNSPECIFIED = 0;
   RULE_INTENT_FALSE_POSITIVE = 1;
   RULE_INTENT_INTERNAL_TO_EXTERNAL = 2;
+}
+
+enum RuleEvaluationPoint {
+  RULE_EVALUATION_POINT_UNSPECIFIED = 0;
+  RULE_EVALUATION_POINT_INLINE_TRACING_AGENT = 1;
+  RULE_EVALUATION_POINT_EDGE = 2;
+  RULE_EVALUATION_POINT_PLATFORM = 3;
 }
 
 message DetectionExclusionModsecRule {
