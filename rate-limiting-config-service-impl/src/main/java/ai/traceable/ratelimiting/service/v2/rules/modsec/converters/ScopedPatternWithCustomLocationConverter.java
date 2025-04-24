@@ -10,6 +10,7 @@ import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.StringCondition;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
+import com.google.protobuf.Value;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -49,15 +50,35 @@ public class ScopedPatternWithCustomLocationConverter {
   private Clause buildCustomLocationClause(
       RegexBasedMatching customLocation, ScopedPattern scopedPattern) {
     KeyValueCondition keyValueCondition = customLocation.getCustomMatchingLocation();
-    keyValueCondition =
-        keyValueCondition.toBuilder()
-            .setValueCondition(
-                StringCondition.newBuilder()
-                    .setValue(buildScopePatternCombinedRegex(scopedPattern))
-                    .setOperator(KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX))
-            .build();
+    String scopedPatternCombinedRegex = buildScopePatternCombinedRegex(scopedPattern);
+    if (keyValueCondition.hasStaticValueCondition()) {
+      keyValueCondition =
+          keyValueCondition.toBuilder()
+              .setStaticValueCondition(
+                  keyValueCondition.getStaticValueCondition().toBuilder()
+                      .setValueMatchOperatorCondition(
+                          KeyValueCondition.MatchOperatorCondition.newBuilder()
+                              .setValue(
+                                  Value.newBuilder()
+                                      .setStringValue(scopedPatternCombinedRegex)
+                                      .build())
+                              .setOperator(
+                                  KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                              .build()))
+              .build();
+    } else {
+      keyValueCondition =
+          keyValueCondition.toBuilder()
+              .setValueCondition(
+                  StringCondition.newBuilder()
+                      .setValue(scopedPatternCombinedRegex)
+                      .setOperator(KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX))
+              .build();
+    }
 
-    return modsecBlobConverterUtils.buildKeyValueClause(keyValueCondition);
+    return keyValueCondition.hasStaticValueCondition()
+        ? modsecBlobConverterUtils.buildKeyValueClause(keyValueCondition)
+        : modsecBlobConverterUtils.buildDeprecatedKeyValueClause(keyValueCondition);
   }
 
   private String buildScopePatternCombinedRegex(ScopedPattern scopedPattern) {

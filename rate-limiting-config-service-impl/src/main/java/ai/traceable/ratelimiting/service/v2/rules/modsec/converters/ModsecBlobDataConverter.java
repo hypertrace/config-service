@@ -103,7 +103,12 @@ public class ModsecBlobDataConverter {
           ruleIdentifier,
           modsecBlobConverterUtils.buildUrlRegexClause(urlRegexes),
           keyValueConditionsList.stream()
-              .map(modsecBlobConverterUtils::buildKeyValueClause)
+              .map(
+                  keyValueCondition ->
+                      keyValueCondition.hasStaticValueCondition()
+                          ? modsecBlobConverterUtils.buildKeyValueClause(keyValueCondition)
+                          : modsecBlobConverterUtils.buildDeprecatedKeyValueClause(
+                              keyValueCondition))
               .collect(Collectors.toUnmodifiableList()),
           String.format(
               "URL Regex and key-value conditions corresponding to DLP Rule - %s", ruleIdentifier),

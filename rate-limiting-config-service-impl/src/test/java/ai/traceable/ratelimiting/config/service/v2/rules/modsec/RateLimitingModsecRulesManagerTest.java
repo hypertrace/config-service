@@ -73,6 +73,7 @@ import ai.traceable.ratelimiting.service.v2.rules.modsec.converters.ScopedPatter
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.datatype.DataClassificationInfoProvider.DataClassificationInfo;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobValidator;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.time.Clock;
 import java.util.Collection;
@@ -432,15 +433,29 @@ class RateLimitingModsecRulesManagerTest {
             LeafCondition.newBuilder()
                 .setKeyValueCondition(
                     KeyValueCondition.newBuilder()
-                        .setType(type)
-                        .setKeyCondition(
-                            StringCondition.newBuilder()
-                                .setValue("orderId")
-                                .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
-                        .setValueCondition(
-                            StringCondition.newBuilder()
-                                .setValue("123.*")
-                                .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX))))
+                        .setStaticValueCondition(
+                            KeyValueCondition.StaticValueCondition.newBuilder()
+                                .setKeyCondition(
+                                    KeyValueCondition.KeyCondition.newBuilder()
+                                        .setKeyType(type)
+                                        .setKeyMatchOperatorCondition(
+                                            KeyValueCondition.MatchOperatorCondition.newBuilder()
+                                                .setOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                                .setValue(
+                                                    Value.newBuilder()
+                                                        .setStringValue("orderId")
+                                                        .build())
+                                                .build())
+                                        .build())
+                                .setValueMatchOperatorCondition(
+                                    KeyValueCondition.MatchOperatorCondition.newBuilder()
+                                        .setValue(
+                                            Value.newBuilder().setStringValue("123.*").build())
+                                        .setOperator(MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
+                                        .build())
+                                .build())
+                        .build())
+                .build())
         .build();
   }
 

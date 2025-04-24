@@ -71,56 +71,106 @@ public class ModsecBlobConverterUtils {
         .build();
   }
 
+  @Deprecated
+  Clause buildDeprecatedKeyValueClause(KeyValueCondition keyValueCondition) {
+
+    KeyValueCondition.Type type = keyValueCondition.getType();
+    boolean hasKeyCondition = keyValueCondition.hasKeyCondition();
+    boolean hasValueCondition = keyValueCondition.hasValueCondition();
+    KeyValueCondition.MatchOperator keyOperator =
+        hasKeyCondition ? keyValueCondition.getKeyCondition().getOperator() : null;
+    KeyValueCondition.MatchOperator valueOperator =
+        hasValueCondition ? keyValueCondition.getValueCondition().getOperator() : null;
+    String value = hasValueCondition ? keyValueCondition.getValueCondition().getValue() : null;
+    String key = hasKeyCondition ? keyValueCondition.getKeyCondition().getValue() : null;
+    return buildConditionalKeyValueClause(
+        type, hasKeyCondition, hasValueCondition, keyOperator, valueOperator, key, value);
+  }
+
   Clause buildKeyValueClause(KeyValueCondition keyValueCondition) {
-    ClauseDetails extractedClauseDetails = convertType(keyValueCondition.getType());
-    if (keyValueCondition.hasKeyCondition() && keyValueCondition.hasValueCondition()) {
+    KeyValueCondition.StaticValueCondition staticValueCondition =
+        keyValueCondition.getStaticValueCondition();
+    KeyValueCondition.Type type = staticValueCondition.getKeyCondition().getKeyType();
+    boolean hasKeyCondition = staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition();
+
+    boolean hasValueCondition = staticValueCondition.hasValueMatchOperatorCondition();
+
+    KeyValueCondition.MatchOperator keyOperator =
+        hasKeyCondition
+            ? staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition().getOperator()
+            : null;
+    KeyValueCondition.MatchOperator valueOperator =
+        hasValueCondition
+            ? staticValueCondition.getValueMatchOperatorCondition().getOperator()
+            : null;
+    String value =
+        hasValueCondition
+            ? staticValueCondition.getValueMatchOperatorCondition().getValue().getStringValue()
+            : null;
+    String key =
+        hasKeyCondition
+            ? staticValueCondition
+                .getKeyCondition()
+                .getKeyMatchOperatorCondition()
+                .getValue()
+                .getStringValue()
+            : null;
+    return buildConditionalKeyValueClause(
+        type, hasKeyCondition, hasValueCondition, keyOperator, valueOperator, key, value);
+  }
+
+  Clause buildConditionalKeyValueClause(
+      Type type,
+      boolean hasKeyCondition,
+      boolean hasValueCondition,
+      MatchOperator keyOperator,
+      MatchOperator valueOperator,
+      String key,
+      String value) {
+    ClauseDetails extractedClauseDetails = convertType(type);
+    if (hasKeyCondition && hasValueCondition) {
       if (extractedClauseDetails.getKeyValueTagOptional().isPresent()) {
-        validateRegex(keyValueCondition.getKeyCondition().getValue());
-        validateRegex(keyValueCondition.getValueCondition().getValue());
+        validateRegex(key);
+        validateRegex(value);
 
         return Clause.newBuilder()
             .setKeyValueExpression(
                 KeyValueExpression.newBuilder()
                     .setTag(extractedClauseDetails.getKeyValueTagOptional().get())
                     .setMatchCategory(extractedClauseDetails.getCategory())
-                    .setMatchKey(keyValueCondition.getKeyCondition().getValue())
-                    .setKeyMatchOperator(
-                        convertOperator(keyValueCondition.getKeyCondition().getOperator()))
-                    .setMatchValue(keyValueCondition.getValueCondition().getValue())
-                    .setValueMatchOperator(
-                        convertOperator(keyValueCondition.getValueCondition().getOperator())))
+                    .setMatchKey(key)
+                    .setKeyMatchOperator(convertOperator(keyOperator))
+                    .setMatchValue(value)
+                    .setValueMatchOperator(convertOperator(valueOperator)))
             .build();
       }
-    } else if (keyValueCondition.hasValueCondition()) {
+    } else if (hasValueCondition) {
       // Check if formed regex are valid
-      validateRegex(keyValueCondition.getValueCondition().getValue());
+      validateRegex(value);
 
       return Clause.newBuilder()
           .setMatchExpression(
               MatchExpression.newBuilder()
                   .setMatchCategory(extractedClauseDetails.getCategory())
                   .setMatchKey(extractedClauseDetails.getValueType())
-                  .setMatchOperator(
-                      convertOperator(keyValueCondition.getValueCondition().getOperator()))
-                  .setMatchValue(keyValueCondition.getValueCondition().getValue()))
+                  .setMatchOperator(convertOperator(valueOperator))
+                  .setMatchValue(value))
           .build();
-    } else if (extractedClauseDetails.getKeyTypeOptional().isPresent()) {
+    } else if (hasKeyCondition && extractedClauseDetails.getKeyTypeOptional().isPresent()) {
       // Check if formed regex are valid
-      validateRegex(keyValueCondition.getKeyCondition().getValue());
+      validateRegex(key);
 
       return Clause.newBuilder()
           .setMatchExpression(
               MatchExpression.newBuilder()
                   .setMatchCategory(extractedClauseDetails.getCategory())
                   .setMatchKey(extractedClauseDetails.getKeyTypeOptional().get())
-                  .setMatchOperator(
-                      convertOperator(keyValueCondition.getKeyCondition().getOperator()))
-                  .setMatchValue(keyValueCondition.getKeyCondition().getValue()))
+                  .setMatchOperator(convertOperator(keyOperator))
+                  .setMatchValue(key))
           .build();
     }
     throw new UnsupportedOperationException(
-        String.format(
-            "Cannot convert key-value-condition - %s, into modsec rule", keyValueCondition));
+        String.format("Cannot convert key-value-condition into modsec rule"));
   }
 
   static void validateRegex(String combinedRegex) {

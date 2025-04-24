@@ -54,20 +54,75 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
   public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     KeyValueCondition keyValueCondition = leafCondition.getKeyValueCondition();
+    return keyValueCondition.hasStaticValueCondition()
+        ? buildMatchCondition(keyValueCondition)
+        : buildDeprecatedMatchCondition(keyValueCondition);
+  }
+
+  MatchConditionDetails buildMatchCondition(KeyValueCondition keyValueCondition) {
+    KeyValueCondition.StaticValueCondition staticValueCondition =
+        keyValueCondition.getStaticValueCondition();
+    KeyValueCondition.Type type = staticValueCondition.getKeyCondition().getKeyType();
+    boolean hasKeyCondition = staticValueCondition.getKeyCondition().hasKeyMatchOperatorCondition();
+    boolean hasValueCondition = staticValueCondition.hasValueMatchOperatorCondition();
+    KeyValueCondition.MatchOperator keyOperator =
+        hasKeyCondition
+            ? staticValueCondition.getKeyCondition().getKeyMatchOperatorCondition().getOperator()
+            : null;
+    KeyValueCondition.MatchOperator valueOperator =
+        hasValueCondition
+            ? staticValueCondition.getValueMatchOperatorCondition().getOperator()
+            : null;
+    String value =
+        hasValueCondition
+            ? staticValueCondition.getValueMatchOperatorCondition().getValue().getStringValue()
+            : null;
+    String key =
+        hasKeyCondition
+            ? staticValueCondition
+                .getKeyCondition()
+                .getKeyMatchOperatorCondition()
+                .getValue()
+                .getStringValue()
+            : null;
+    return buildConditionalMatchOperatorCondition(
+        type, hasKeyCondition, hasValueCondition, keyOperator, valueOperator, key, value);
+  }
+
+  @Deprecated
+  MatchConditionDetails buildDeprecatedMatchCondition(KeyValueCondition keyValueCondition) {
     KeyValueCondition.Type type = keyValueCondition.getType();
-    if (KEY_NULL_CONDITION_TYPES.contains(type)) {
-      KeyValueCondition.StringCondition stringCondition = keyValueCondition.getValueCondition();
+    boolean hasKeyCondition = keyValueCondition.hasKeyCondition();
+    boolean hasValueCondition = keyValueCondition.hasValueCondition();
+    KeyValueCondition.MatchOperator keyOperator =
+        hasKeyCondition ? keyValueCondition.getKeyCondition().getOperator() : null;
+    KeyValueCondition.MatchOperator valueOperator =
+        hasValueCondition ? keyValueCondition.getValueCondition().getOperator() : null;
+    String value = hasValueCondition ? keyValueCondition.getValueCondition().getValue() : null;
+    String key = hasKeyCondition ? keyValueCondition.getKeyCondition().getValue() : null;
+    return buildConditionalMatchOperatorCondition(
+        type, hasKeyCondition, hasValueCondition, keyOperator, valueOperator, key, value);
+  }
+
+  MatchConditionDetails buildConditionalMatchOperatorCondition(
+      KeyValueCondition.Type type,
+      boolean hasKeyCondition,
+      boolean hasValueCondition,
+      KeyValueCondition.MatchOperator keyOperator,
+      KeyValueCondition.MatchOperator valueOperator,
+      String key,
+      String value) {
+    if (hasValueCondition && KEY_NULL_CONDITION_TYPES.contains(type)) {
       BinaryOperator.Builder builder =
-          BinaryOperator.newBuilder()
-              .setMatchOperator(getOp(type, keyValueCondition.getValueCondition().getOperator()));
+          BinaryOperator.newBuilder().setMatchOperator(getOp(type, valueOperator));
       FieldType fieldType = FIELD_TYPE_STR;
-      if (INT_MATCH_OPERATORS.contains(stringCondition.getOperator())) {
-        builder.setNumberValue(Double.parseDouble(stringCondition.getValue()));
+      if (INT_MATCH_OPERATORS.contains(valueOperator)) {
+        builder.setNumberValue(Double.parseDouble(value));
         fieldType = FIELD_TYPE_INT;
-      } else if (REGEX_MATCH_OPERATORS.contains(stringCondition.getOperator())) {
-        builder.setRegex(stringCondition.getValue());
+      } else if (REGEX_MATCH_OPERATORS.contains(valueOperator)) {
+        builder.setRegex(value);
       } else {
-        builder.setStringValue(stringCondition.getValue());
+        builder.setStringValue(value);
       }
       StructuredMatchCondition structuredMatchCondition =
           StructuredMatchCondition.newBuilder()
@@ -88,9 +143,7 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
       MatchCondition.Builder matchConditionBuilder =
           MatchCondition.newBuilder().setStructuredMatchCondition(structuredMatchCondition);
       // no first class support of not contains currently
-      if (stringCondition
-          .getOperator()
-          .equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN)) {
+      if (valueOperator.equals(KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN)) {
         matchConditionBuilder.setNegate(true);
       }
       return new MatchConditionDetails(
@@ -98,29 +151,28 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
     } else {
       // types supporting both key and value condition are stored as Map<String, String> or
       // Map<String, List<String>> in the edge-decision-service
-      String jexlExp;
-      if (keyValueCondition.hasKeyCondition() && keyValueCondition.hasValueCondition()) {
+      String jexlExp = "";
+      if (hasKeyCondition && hasValueCondition) {
         jexlExp =
-            LIST_VALUE_MAP_TYPES.contains(keyValueCondition.getType())
+            LIST_VALUE_MAP_TYPES.contains(type)
                 ? String.format(
                     "map:match(%s, %s, %s, %s)",
-                    getJexlExp(keyValueCondition.getType()),
-                    getPredicateJexlExp(keyValueCondition.getKeyCondition()),
-                    getPredicateJexlExp(keyValueCondition.getValueCondition()),
-                    ALL_MATCH_OPERATORS.contains(
-                        keyValueCondition.getValueCondition().getOperator()))
+                    getJexlExp(type),
+                    getPredicateJexlExp(keyOperator, key),
+                    getPredicateJexlExp(valueOperator, value),
+                    ALL_MATCH_OPERATORS.contains(valueOperator))
                 : String.format(
                     "map:match(%s, %s, %s)",
-                    getJexlExp(keyValueCondition.getType()),
-                    getPredicateJexlExp(keyValueCondition.getKeyCondition()),
-                    getPredicateJexlExp(keyValueCondition.getValueCondition()));
-      } else {
+                    getJexlExp(type),
+                    getPredicateJexlExp(keyOperator, key),
+                    getPredicateJexlExp(valueOperator, value));
+      } else if (hasKeyCondition) {
         jexlExp =
             String.format(
                 "map:match(%s, %s, %s)",
-                getJexlExp(keyValueCondition.getType()),
-                getPredicateJexlExp(keyValueCondition.getKeyCondition()),
-                ALL_MATCH_OPERATORS.contains(keyValueCondition.getKeyCondition().getOperator()));
+                getJexlExp(type),
+                getPredicateJexlExp(keyOperator, key),
+                ALL_MATCH_OPERATORS.contains(keyOperator));
       }
       return new MatchConditionDetails(
           MatchCondition.newBuilder()
@@ -134,27 +186,27 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
     }
   }
 
-  private String getPredicateJexlExp(KeyValueCondition.StringCondition stringCondition) {
-    switch (stringCondition.getOperator()) {
+  private String getPredicateJexlExp(KeyValueCondition.MatchOperator operator, String value) {
+    switch (operator) {
       case MATCH_OPERATOR_EQUALS:
-        return String.format("predicate:equals('%s')", stringCondition.getValue());
+        return String.format("predicate:equals('%s')", value);
       case MATCH_OPERATOR_NOT_EQUAL:
-        return String.format("predicate:notEquals('%s')", stringCondition.getValue());
+        return String.format("predicate:notEquals('%s')", value);
       case MATCH_OPERATOR_MATCHES_REGEX:
-        return String.format("predicate:matchesRegex('%s')", stringCondition.getValue());
+        return String.format("predicate:matchesRegex('%s')", value);
       case MATCH_OPERATOR_NOT_MATCH_REGEX:
-        return String.format("predicate:notMatchesRegex('%s')", stringCondition.getValue());
+        return String.format("predicate:notMatchesRegex('%s')", value);
       case MATCH_OPERATOR_CONTAINS:
-        return String.format("predicate:contains('%s')", stringCondition.getValue());
+        return String.format("predicate:contains('%s')", value);
       case MATCH_OPERATOR_NOT_CONTAIN:
-        return String.format("predicate:notContains('%s')", stringCondition.getValue());
+        return String.format("predicate:notContains('%s')", value);
       case MATCH_OPERATOR_GREATER_THAN:
-        return String.format("predicate:greaterThan(%s)", stringCondition.getValue());
+        return String.format("predicate:greaterThan(%s)", value);
       case MATCH_OPERATOR_LESS_THAN:
-        return String.format("predicate:lessThan(%s)", stringCondition.getValue());
+        return String.format("predicate:lessThan(%s)", value);
       default:
         throw new IllegalArgumentException(
-            "Invalid match operator in key value condition : " + stringCondition.getOperator());
+            "Invalid match operator in key value condition : " + operator);
     }
   }
 

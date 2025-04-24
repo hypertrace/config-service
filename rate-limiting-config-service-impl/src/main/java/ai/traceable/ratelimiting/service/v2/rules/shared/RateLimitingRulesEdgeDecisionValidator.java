@@ -49,7 +49,14 @@ public class RateLimitingRulesEdgeDecisionValidator {
         return !(leafCondition.hasDatatypeCondition()
             || leafCondition.hasRequestScannerTypeCondition()
             || (leafCondition.hasKeyValueCondition()
-                && isIncompatibleKeyValueType(leafCondition.getKeyValueCondition().getType())));
+                && isIncompatibleKeyValueType(
+                    leafCondition.getKeyValueCondition().hasStaticValueCondition()
+                        ? leafCondition
+                            .getKeyValueCondition()
+                            .getStaticValueCondition()
+                            .getKeyCondition()
+                            .getKeyType()
+                        : leafCondition.getKeyValueCondition().getType())));
       case COMPOSITE_CONDITION:
         return condition.getCompositeCondition().getChildrenList().stream()
             .allMatch(RateLimitingRulesEdgeDecisionValidator::isCompatibleCondition);
