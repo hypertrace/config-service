@@ -47,12 +47,15 @@ message GetCustomSignatureRulesResponse {
 message GetCustomSignatureModsecRulesRequest {
   GetRulesFilter filter = 1;
   CustomModsecRuleVersion rule_version = 2;
+  repeated string service_names = 3;
 }
 
 message GetCustomSignatureModsecRulesResponse {
-  string modsec_rules_blob = 1;
+  string modsec_rules_blob = 1 [deprecated = true];
   repeated CustomSignatureRuleDetails rules = 2 [deprecated = true];
   repeated CustomSignatureInlineRule inline_rules = 3;
+  string modsec_directives_blob = 4;
+  repeated ModsecBlobData modsec_blobs_data = 5;
 }
 
 message GetCustomSignatureEdgeDecisionRulesRequest {
@@ -61,6 +64,12 @@ message GetCustomSignatureEdgeDecisionRulesRequest {
 
 message GetCustomSignatureEdgeDecisionRulesResponse {
   ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig edge_decision_engine_config = 1;
+}
+
+message ModsecBlobData {
+  string modsec_blob = 1;
+  repeated string service_names = 2;
+  repeated string custom_signature_rule_ids = 3;
 }
 
 message GetRulesFilter {
