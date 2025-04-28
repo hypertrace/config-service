@@ -22,6 +22,7 @@ message AkamaiPolicyDetails {
   string akamai_policy_configuration_id = 1;
   string policy_id = 2;
   string network_list_id = 3;
+  repeated string notification_emails = 4;
 }
 
 message AkamaiAuthCredentials {
