@@ -156,7 +156,13 @@ public class AggregationConfigManagerImpl
   private Map<String, ScopedAnomalyEventAggregationConfig> fetchConfigMap(
       RequestContext requestContext) {
     return getAllObjects(requestContext).stream()
-        .collect(Collectors.toMap(ContextualConfigObject::getContext, ConfigObject::getData));
+        .collect(
+            Collectors.toMap(
+                ContextualConfigObject::getContext,
+                ConfigObject::getData,
+                (previous, current) ->
+                    previous // sorted by latest in getAllObjects so keep the previous entry
+                ));
   }
 
   @Override
