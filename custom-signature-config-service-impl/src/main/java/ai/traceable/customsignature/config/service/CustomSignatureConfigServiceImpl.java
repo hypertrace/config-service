@@ -180,7 +180,8 @@ public class CustomSignatureConfigServiceImpl
         rules = CustomSignatureRulesEdgeDecisionFilter.getFilteredRules(rules);
       }
       GetCustomSignatureModsecRulesResponse response =
-          modsecRulesManager.getModsecRules(context, rules, request.getRuleVersion());
+          modsecRulesManager.getModsecRules(
+              context, rules, request.getRuleVersion(), request.getIncludeAllPartialModsecRules());
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

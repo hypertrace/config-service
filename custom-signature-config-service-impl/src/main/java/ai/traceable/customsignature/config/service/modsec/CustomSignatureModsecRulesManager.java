@@ -43,7 +43,8 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   public GetCustomSignatureModsecRulesResponse getModsecRules(
       RequestContext requestContext,
       List<CustomSignatureRule> customSignatureRules,
-      CustomModsecRuleVersion customModsecRuleVersion) {
+      CustomModsecRuleVersion customModsecRuleVersion,
+      boolean includeAllPartialModsecRules) {
     List<CustomSignatureInlineRule> inlineRuleList = new ArrayList<>();
     List<String> allowModsecRules = new ArrayList<>();
     List<String> violationModsecRules = new ArrayList<>();
@@ -51,7 +52,8 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     long modsecIdAssignment = MODSEC_ID_SEED;
 
     for (CustomSignatureRule rule : customSignatureRules) {
-      if (!isInlineRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
+      if (!includeAllPartialModsecRules
+          && !isInlineRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
         log.debug(
             "Inline rule mapping is not supported for rule - rule ID: {} tenant ID: {}",
             rule,

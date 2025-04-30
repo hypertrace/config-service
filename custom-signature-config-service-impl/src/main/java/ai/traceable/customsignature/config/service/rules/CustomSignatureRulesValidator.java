@@ -293,7 +293,31 @@ class CustomSignatureRulesValidator implements RulesValidator {
         return status;
       }
     }
+    // custom signature rule containing SecRule clause should not have OR operator or nested clauses
+    // since that's not yet supported in platform
+    // examples of such rules:
+    //  - (SecRuleClause) OR (KeyValueExpression)
+    // - (SecRuleClause) AND (KeyValueExpression OR IpAddressExpression)
+    if (containsSecRuleClause(clauseGroup)
+        && (containsNestedClause(clauseGroup)
+            || clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_OR))) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule Definition clause group with sec rule clause "
+              + "should not have nested clauses or OR operator.");
+    }
     return Status.OK;
+  }
+
+  private boolean containsSecRuleClause(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream()
+        .anyMatch(
+            clause ->
+                clause.hasCustomSecRule()
+                    || (clause.hasClauseGroup() && containsSecRuleClause(clause.getClauseGroup())));
+  }
+
+  private boolean containsNestedClause(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream().anyMatch(Clause::hasClauseGroup);
   }
 
   private Status validateExpiry(ExpiryDetails expiry) {

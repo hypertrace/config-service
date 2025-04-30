@@ -96,7 +96,8 @@ public class CustomSignatureModsecRulesManagerTest {
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
             List.of(ruleWithModsecConvertibleClause),
-            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED);
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_UNSPECIFIED,
+            false);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
 
@@ -104,7 +105,8 @@ public class CustomSignatureModsecRulesManagerTest {
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
             List.of(ruleWithModsecConvertibleClause),
-            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
+            false);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
 
@@ -115,7 +117,8 @@ public class CustomSignatureModsecRulesManagerTest {
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
             List.of(ruleWithModsecConvertibleClause),
-            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3);
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3,
+            false);
     assertTrue(response.getModsecRulesBlob().isEmpty());
     assertTrue(response.getInlineRulesList().isEmpty());
     verify(customModsecRuleConverter, times(3))
@@ -393,7 +396,8 @@ public class CustomSignatureModsecRulesManagerTest {
           modsecRulesManager.getModsecRules(
               RequestContext.forTenantId(TENANT_ID),
               rules,
-              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS);
+              CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+              false);
       assertEquals(
           rules.size()
               + 4
@@ -430,6 +434,83 @@ public class CustomSignatureModsecRulesManagerTest {
         assertEquals(Status.OK, ModsecRuleEngineUtils.modsecValidate(fileRules));
       }
     }
+  }
+
+  @Test
+  public void testIncludeAllPartialRules() throws Exception {
+    ModsecDirectivesManager mockDirectivesManager = mock(ModsecDirectivesManager.class);
+    when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
+        .thenReturn("");
+    CustomModsecRuleConverter customModsecRuleConverter = mock(CustomModsecRuleConverter.class);
+    CustomSignatureModsecRulesManager modsecRulesManager =
+        new CustomSignatureModsecRulesManager(customModsecRuleConverter, mockDirectivesManager);
+    when(customModsecRuleConverter.getValidatedModsecRule(
+            anyLong(), anyString(), anyString(), anyList()))
+        .thenReturn("SecRule");
+    CustomSignatureRule ruleWithModsecConvertibleClause =
+        CustomSignatureRule.newBuilder()
+            .setId(UUID.randomUUID().toString())
+            .setName("ruleWithModsecConvertibleClause")
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                            .setMatchKey(MatchKey.MATCH_KEY_URL)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                                            .setMatchValue("/foo")
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    CustomSignatureRule ruleWithConvertibleAndNonConvertibleClause =
+        CustomSignatureRule.newBuilder()
+            .setId(UUID.randomUUID().toString())
+            .setName("ruleWithConvertibleAndNonConvertibleClause")
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setMatchExpression(
+                                        MatchExpression.newBuilder()
+                                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                                            .setMatchKey(MatchKey.MATCH_KEY_URL)
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                                            .setMatchValue("/foo")
+                                            .build()))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpOrganisationExpression(
+                                        IpOrganisationExpression.getDefaultInstance()))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                            .build())
+                    .build())
+            .build();
+
+    List<CustomSignatureRule> rules = new ArrayList<>();
+    rules.add(ruleWithModsecConvertibleClause);
+    rules.add(ruleWithConvertibleAndNonConvertibleClause);
+    GetCustomSignatureModsecRulesResponse response =
+        modsecRulesManager.getModsecRules(
+            RequestContext.forTenantId(TENANT_ID),
+            rules,
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+            true);
+    assertEquals(2, response.getInlineRulesList().size());
+    response =
+        modsecRulesManager.getModsecRules(
+            RequestContext.forTenantId(TENANT_ID),
+            rules,
+            CustomModsecRuleVersion.CUSTOM_MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+            false);
+    assertEquals(1, response.getInlineRulesList().size());
   }
 
   private CustomSignatureModsecRulesManager getCustomSignatureModsecRulesManager() {

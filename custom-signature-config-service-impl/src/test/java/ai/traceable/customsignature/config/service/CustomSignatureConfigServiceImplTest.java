@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -240,7 +241,7 @@ public class CustomSignatureConfigServiceImplTest {
   public void testGetCustomSignatureModsecRules() {
     when(rulesManager.getCustomSignatureRules(any(), any()))
         .thenReturn(List.of(CustomSignatureRule.newBuilder().build()));
-    when(modsecRulesManager.getModsecRules(any(), any(), any()))
+    when(modsecRulesManager.getModsecRules(any(), any(), any(), anyBoolean()))
         .thenThrow(new UnsupportedOperationException())
         .thenReturn(GetCustomSignatureModsecRulesResponse.newBuilder().build());
 
@@ -249,7 +250,10 @@ public class CustomSignatureConfigServiceImplTest {
     Runnable runnable =
         () ->
             configService.getCustomSignatureModsecRules(
-                GetCustomSignatureModsecRulesRequest.getDefaultInstance(), responseObserver);
+                GetCustomSignatureModsecRulesRequest.newBuilder()
+                    .setIncludeAllPartialModsecRules(false)
+                    .build(),
+                responseObserver);
 
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
@@ -267,10 +271,11 @@ public class CustomSignatureConfigServiceImplTest {
             configService.getCustomSignatureModsecRules(
                 GetCustomSignatureModsecRulesRequest.newBuilder()
                     .setFilter(GetRulesFilter.newBuilder().setFilterEdgeDecisionRules(true))
+                    .setIncludeAllPartialModsecRules(false)
                     .build(),
                 responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(modsecRulesManager, times(1))
-        .getModsecRules(any(), eq(List.of(ruleNotSupportOnEdge)), any());
+        .getModsecRules(any(), eq(List.of(ruleNotSupportOnEdge)), any(), anyBoolean());
   }
 }
