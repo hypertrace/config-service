@@ -236,7 +236,8 @@ public class WafIntegrationConfigRequestValidator {
             existingWafIntegrations,
             IMPERVA_INTEGRATION_PARAMS);
         validateUpdatedImpervaIntegrationParam(
-            updatedWafIntegrationDetails.getUpdatedImpervaIntegrationParams());
+            updatedWafIntegrationDetails.getUpdatedImpervaIntegrationParams(),
+            existingWafIntegrations);
         break;
       case UPDATED_AZURE_INTEGRATION_PARAMS:
         final List<WafIntegration> existingAzureWafIntegrations =
@@ -520,7 +521,8 @@ public class WafIntegrationConfigRequestValidator {
                 null, IMPERVA_INTEGRATION_PARAMS, existingWafIntegrations);
         validateUniqueIntegrationName(
             wafIntegrationDetails.getName(), existingWafIntegrations, IMPERVA_INTEGRATION_PARAMS);
-        validateImpervaIntegrationParam(wafIntegrationDetails.getImpervaIntegrationParams());
+        validateImpervaIntegrationParam(
+            wafIntegrationDetails.getImpervaIntegrationParams(), existingWafIntegrations);
         validateNonCustomSignatureIntegrationTargets(
             wafIntegrationDetails,
             WafIntegrationDetails.IntegrationParamsCase.IMPERVA_INTEGRATION_PARAMS);
@@ -955,13 +957,63 @@ public class WafIntegrationConfigRequestValidator {
   }
 
   private void validateUpdatedImpervaIntegrationParam(
-      ImpervaIntegrationUpdateParams impervaIntegrationParams) {
-    if (impervaIntegrationParams.hasApiId()) {
-      validateNonDefaultPresenceOrThrow(
-          impervaIntegrationParams, ImpervaIntegrationUpdateParams.API_ID_FIELD_NUMBER);
-    }
+      ImpervaIntegrationUpdateParams impervaIntegrationParams,
+      List<WafIntegration> existingWafIntegrations) {
     if (impervaIntegrationParams.hasApiKey()) {
       validateImpervaApiKey(impervaIntegrationParams.getApiKey());
+    }
+
+    // If API ID is updated, check for duplicates
+    if (impervaIntegrationParams.hasApiId()) {
+      // Validate accountId is present
+      if (!impervaIntegrationParams.hasAccountId()) {
+        throw Status.INVALID_ARGUMENT
+            .withDescription("account_id is required for Imperva integration")
+            .asRuntimeException();
+      }
+
+      String apiId = impervaIntegrationParams.getApiId();
+      String accountId = impervaIntegrationParams.getAccountId();
+
+      checkForDuplicateImpervaIntegration(apiId, accountId, existingWafIntegrations);
+    }
+  }
+
+  private void validateImpervaIntegrationParam(
+      ImpervaIntegrationParams impervaIntegrationParams,
+      List<WafIntegration> existingWafIntegrations) {
+    validateNonDefaultPresenceOrThrow(
+        impervaIntegrationParams, ImpervaIntegrationParams.API_ID_FIELD_NUMBER);
+    validateImpervaApiKey(impervaIntegrationParams.getApiKey());
+
+    validateNonDefaultPresenceOrThrow(
+        impervaIntegrationParams, ImpervaIntegrationParams.ACCOUNT_ID_FIELD_NUMBER);
+
+    String apiId = impervaIntegrationParams.getApiId();
+    String accountId = impervaIntegrationParams.getAccountId();
+
+    checkForDuplicateImpervaIntegration(apiId, accountId, existingWafIntegrations);
+  }
+
+  private void checkForDuplicateImpervaIntegration(
+      String apiId, String accountId, List<WafIntegration> existingWafIntegrations) {
+    boolean duplicateExists =
+        existingWafIntegrations.stream()
+            .filter(
+                integration -> integration.getWafIntegrationDetails().hasImpervaIntegrationParams())
+            .anyMatch(
+                integration -> {
+                  ImpervaIntegrationParams existingParams =
+                      integration.getWafIntegrationDetails().getImpervaIntegrationParams();
+                  boolean sameApiId = existingParams.getApiId().equals(apiId);
+                  boolean sameAccountId = existingParams.getAccountId().equals(accountId);
+                  return sameApiId && sameAccountId;
+                });
+    if (duplicateExists) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              "Integration with the given combination of api-id,and accountId already exists")
+          .asRuntimeException();
     }
   }
 
@@ -979,12 +1031,6 @@ public class WafIntegrationConfigRequestValidator {
     awsIntegrationUpdateParams.getResourcesList().forEach(this::validateAwsResource);
     validateArnAlreadyExistInAwsWafIntegration(
         id, awsIntegrationUpdateParams.getResourcesList(), otherExistingAWSWafIntegrations);
-  }
-
-  private void validateImpervaIntegrationParam(ImpervaIntegrationParams impervaIntegrationParams) {
-    validateNonDefaultPresenceOrThrow(
-        impervaIntegrationParams, ImpervaIntegrationParams.API_ID_FIELD_NUMBER);
-    validateImpervaApiKey(impervaIntegrationParams.getApiKey());
   }
 
   private void validateAzureIntegrationParam(AzureIntegrationParams azureIntegrationParams) {

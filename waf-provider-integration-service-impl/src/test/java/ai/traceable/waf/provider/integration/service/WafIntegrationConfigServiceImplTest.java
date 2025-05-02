@@ -1015,6 +1015,7 @@ class WafIntegrationConfigServiceImplTest {
             .setUpdatedImpervaIntegrationParams(
                 ImpervaIntegrationUpdateParams.newBuilder()
                     .setApiId("id-2")
+                    .setAccountId("account-id-2")
                     .setWebsiteNames(
                         StringList.newBuilder()
                             .addValues("website1.com")
@@ -1036,7 +1037,7 @@ class WafIntegrationConfigServiceImplTest {
     assertEquals("id-2", impervaIntegrationParams.getApiId());
     assertEquals("secret-key-id-1", impervaIntegrationParams.getApiKey().getKeyId());
     assertEquals("secret-value-1", impervaIntegrationParams.getApiKey().getValue());
-    assertEquals("account-id-1", impervaIntegrationParams.getAccountId());
+    assertEquals("account-id-2", impervaIntegrationParams.getAccountId());
     assertEquals(
         List.of("website1.com", "website2.com"),
         impervaIntegrationParams.getWebsiteNames().getValuesList());
@@ -1747,6 +1748,7 @@ class WafIntegrationConfigServiceImplTest {
             .setImpervaIntegrationParams(
                 ImpervaIntegrationParams.newBuilder()
                     .setApiId("id")
+                    .setAccountId("account-id")
                     .setApiKey(
                         EncryptedText.newBuilder()
                             .setKeyId("secret-id")

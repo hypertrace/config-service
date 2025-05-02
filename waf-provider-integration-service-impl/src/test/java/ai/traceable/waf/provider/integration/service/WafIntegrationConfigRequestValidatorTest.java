@@ -333,7 +333,7 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request4, REQUEST_CONTEXT, List.of(existingImpervaWafIntegration)));
 
-    // valid request - both account_id and website_params are absent
+    // invalid request - both account_id  absent
     CreateWafIntegrationRequest validRequest1 =
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
@@ -349,12 +349,13 @@ class WafIntegrationConfigRequestValidatorTest {
                                     .build())
                             .build()))
             .build();
-    assertDoesNotThrow(
+    assertThrows(
+        StatusRuntimeException.class,
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest1, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // valid request - only the account_id is absent
+    // invalid request - only the account_id is absent
     CreateWafIntegrationRequest validRequest2 =
         CreateWafIntegrationRequest.newBuilder()
             .setWafIntegrationDetails(
@@ -376,7 +377,8 @@ class WafIntegrationConfigRequestValidatorTest {
                             .build())
                     .build())
             .build();
-    assertDoesNotThrow(
+    assertThrows(
+        StatusRuntimeException.class,
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
@@ -511,7 +513,8 @@ class WafIntegrationConfigRequestValidatorTest {
                     .setUpdatedImpervaIntegrationParams(
                         ImpervaIntegrationUpdateParams.newBuilder().setApiId("fsdkj").build()))
             .build();
-    assertDoesNotThrow(
+    assertThrows(
+        StatusRuntimeException.class,
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 request6, REQUEST_CONTEXT, existingWafIntegrations));
@@ -584,7 +587,8 @@ class WafIntegrationConfigRequestValidatorTest {
                                     .build())
                             .build()))
             .build();
-    assertDoesNotThrow(
+    assertThrows(
+        StatusRuntimeException.class,
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest1, REQUEST_CONTEXT, existingWafIntegrations));
@@ -613,7 +617,7 @@ class WafIntegrationConfigRequestValidatorTest {
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest2, REQUEST_CONTEXT, existingWafIntegrations));
 
-    // valid request - account_id is absent
+    // invalid request - account_id is absent
     UpdateWafIntegrationRequest validRequest3 =
         UpdateWafIntegrationRequest.newBuilder()
             .setId("id")
@@ -636,7 +640,8 @@ class WafIntegrationConfigRequestValidatorTest {
                             .build())
                     .build())
             .build();
-    assertDoesNotThrow(
+    assertThrows(
+        StatusRuntimeException.class,
         () ->
             wafIntegrationConfigRequestValidator.validateOrThrow(
                 validRequest3, REQUEST_CONTEXT, existingWafIntegrations));
