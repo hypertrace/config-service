@@ -37,6 +37,7 @@ message CaptchaSiteKeyConfig {
   // all match conditions are evaluated for a packet and all of them are added to "flows" in the jwt
   repeated FlowDerivationConfig flow_derivation_configs = 15;
   bool enable_invisible_captcha = 16;
+  string api_secret_key = 17; // api secret key for bot service to be used as captcha provider
 }
 
 // bot-service can only derive the flow based on the pages
