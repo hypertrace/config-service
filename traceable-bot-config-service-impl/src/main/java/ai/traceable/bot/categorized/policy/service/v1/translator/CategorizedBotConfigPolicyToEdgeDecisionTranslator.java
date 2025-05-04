@@ -21,12 +21,10 @@ import ai.traceable.bot.categorized.policy.service.v1.GetCategorizedBotConfigPol
 import ai.traceable.bot.categorized.policy.service.v1.GetCategorizedBotConfigPolicyEdgeDecisionRulesRequest;
 import ai.traceable.bot.categorized.policy.service.v1.GetCategorizedBotConfigPolicyEdgeDecisionRulesResponse;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
-import ai.traceable.bot.categorized.utils.CategorizedBotStringUtil;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
-import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRule;
@@ -50,11 +48,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -66,9 +64,6 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
   private static final Map<String, CategorizedBotConfig> CATEGORIZED_BOT_CONFIG_MAP =
       CategorizedBotDetailsConfig.INSTANCE.getAllTraceableCategorizedBots().stream()
           .collect(Collectors.toMap(CategorizedBotConfig::getId, Function.identity()));
-  private static final Map<String, VariableDerivationMapping> BOT_ID_VARIABLE_DERVIVATION_MAP =
-      CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator.INSTANCE
-          .getBotIdToVariableDerivationMapping();
   private static final String CATEGORIZED_BOT_EDGE_DECISION_CONFIG =
       "CategorizedBotEdgeDecisionConfig";
 
@@ -101,9 +96,10 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
             .filter(
                 categorizedBotConfigPolicy ->
                     categorizedBotConfigPolicy.getCategorizedBotPolicyDetails().getEnabled())
-            .flatMap(
+            .map(
                 categorizedBotConfigPolicy ->
-                    convertToEdgeDecisionRules(categorizedBotConfigPolicy, requestContext))
+                    convertToEdgeDecisionRule(categorizedBotConfigPolicy, requestContext))
+            .filter(Objects::nonNull)
             .distinct()
             .collect(Collectors.toUnmodifiableList());
     if (!rules.isEmpty()) {
@@ -119,98 +115,39 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
     return GetCategorizedBotConfigPolicyEdgeDecisionRulesResponse.getDefaultInstance();
   }
 
-  private Stream<EdgeDecisionRule> convertToEdgeDecisionRules(
+  private EdgeDecisionRule convertToEdgeDecisionRule(
       final CategorizedBotConfigPolicy categorizedBotConfigPolicy,
       final RequestContext requestContext) {
     final CategorizedBotConfigPolicyDetails categorizedBotPolicyDetails =
         categorizedBotConfigPolicy.getCategorizedBotPolicyDetails();
     final List<BotScope> botScopesList = categorizedBotPolicyDetails.getBotScopesList();
-    final List<EdgeDecisionRule> edgeDecisionRules = new ArrayList<>();
-
-    for (final BotScope botScope : botScopesList) {
-      if (botScope.hasBotList()) {
-        botScope.getBotList().getBotIdsList().stream()
-            .filter(CATEGORIZED_BOT_CONFIG_MAP::containsKey)
-            .map(CATEGORIZED_BOT_CONFIG_MAP::get)
-            .map(CategorizedBotConfig::getId)
-            .forEach(
-                botId -> {
-                  final EdgeDecisionRule edgeDecisionRule =
-                      getEdgeDecisionRule(categorizedBotConfigPolicy, botId, requestContext);
-                  edgeDecisionRules.add(edgeDecisionRule);
-                });
-      } else if (botScope.hasBotClassification()) {
-        CATEGORIZED_BOT_CONFIG_MAP.entrySet().stream()
-            .filter(
-                entry -> {
-                  final CategorizedBotDetails categorizedBotDetails =
-                      entry.getValue().getCategorizedBotDetails();
-                  final BotClassification botClassification = botScope.getBotClassification();
-                  final boolean categoryMatches =
-                      categorizedBotDetails
-                          .getBotCategory()
-                          .equals(botClassification.getCategory());
-                  if (!botClassification.getSubCategoryList().isEmpty()) {
-                    final boolean subCategoryMatches =
-                        botClassification
-                            .getSubCategoryList()
-                            .contains(categorizedBotDetails.getBotSubCategory());
-                    return categoryMatches && subCategoryMatches;
-                  }
-                  return categoryMatches;
-                })
-            .map(Map.Entry::getKey)
-            .map(botId -> getEdgeDecisionRule(categorizedBotConfigPolicy, botId, requestContext))
-            .forEach(edgeDecisionRules::add);
-      }
-    }
-
-    return edgeDecisionRules.stream();
+    return getEdgeDecisionRule(categorizedBotConfigPolicy, botScopesList, requestContext);
   }
 
   private EdgeDecisionRule getEdgeDecisionRule(
       final CategorizedBotConfigPolicy categorizedBotConfigPolicy,
-      final String botId,
+      final List<BotScope> botScopes,
       final RequestContext requestContext) {
     final EdgeDecisionRule.Builder edgeDecisionRuleBuilder = EdgeDecisionRule.newBuilder();
-    edgeDecisionRuleBuilder.setId(
-        CategorizedBotStringUtil.joinStrings(botId, categorizedBotConfigPolicy.getId()));
-    edgeDecisionRuleBuilder.setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION);
-    edgeDecisionRuleBuilder.setPolicyId(categorizedBotConfigPolicy.getId());
-
-    final CategorizedBotDetails categorizedBotDetails =
-        CATEGORIZED_BOT_CONFIG_MAP.get(botId).getCategorizedBotDetails();
-    final String botName = CategorizedBotStringUtil.getFormattedBotName(categorizedBotDetails);
     final CategorizedBotConfigPolicyDetails categorizedBotPolicyDetails =
         categorizedBotConfigPolicy.getCategorizedBotPolicyDetails();
-    // multiple rules may have same rule name, changed from bot_name_policy_id
     edgeDecisionRuleBuilder.setName(categorizedBotPolicyDetails.getName());
-    // this should not be required, as we are skipping rule creation for disabled policies, but
-    // added for now
-    edgeDecisionRuleBuilder.setRuleStatus(
-        EdgeDecisionRuleStatus.newBuilder()
-            .setDisabled(!categorizedBotPolicyDetails.getEnabled())
-            .setInternal(false)
-            .build());
+    edgeDecisionRuleBuilder.setId(categorizedBotConfigPolicy.getId());
+    edgeDecisionRuleBuilder.setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION);
+    edgeDecisionRuleBuilder.setPolicyId(categorizedBotConfigPolicy.getId());
     edgeDecisionRuleBuilder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS);
+    edgeDecisionRuleBuilder.setRuleStatus(
+        EdgeDecisionRuleStatus.newBuilder().setDisabled(false).setInternal(false).build());
 
+    final List<String> botIds = getApplicableBotIds(botScopes);
+    if (botIds.isEmpty()) {
+      return null;
+    }
+
+    // set rule scope
     if (categorizedBotPolicyDetails.hasCategorizedBotPolicyTargetScope()) {
-      final EntityScope entityScope =
-          categorizedBotPolicyDetails.getCategorizedBotPolicyTargetScope().getEntityScope();
-      if (!entityScope.getEntityType().equals(ENTITY_TYPE_API)) {
-        throw new IllegalArgumentException(
-            "Unsupported entity type: " + entityScope.getEntityType());
-      }
-      final Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntities =
-          cachedApiMappingProvider.getApiIdentifierEntities(
-              requestContext, Set.copyOf(entityScope.getEntityIdsList()));
       final List<String> urlRegexes =
-          apiIdentifierEntities.values().stream()
-              .flatMap(Optional::stream)
-              .map(
-                  apiIdentifierEntity ->
-                      String.join("|", apiIdentifierEntity.getResolvedUrlPatterns()))
-              .collect(Collectors.toUnmodifiableList());
+          getTargetEndpointUrlRegexes(requestContext, categorizedBotPolicyDetails);
       edgeDecisionRuleBuilder.setRuleScope(
           EdgeDecisionRuleScope.newBuilder()
               .addScopeConditions(
@@ -239,23 +176,77 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
     }
 
     final List<RuleInfoDecoration> ruleInfoDecorations =
-        buildRuleInfoDecorations(categorizedBotDetails, botId, categorizedBotConfigPolicy.getId());
+        buildRuleInfoDecorations(categorizedBotConfigPolicy.getId());
     edgeDecisionRuleBuilder.setRuleDecision(
         buildEdgeRuleDecision(
             categorizedBotPolicyDetails.getCategorizedBotPolicyActionConfig(),
             ruleInfoDecorations,
-            categorizedBotDetails.getBotCategory()));
+            categorizedBotPolicyDetails.getName()));
     edgeDecisionRuleBuilder.setRuleDefinition(
-        buildEdgeDecisionRuleDefinition(botId, botName, categorizedBotConfigPolicy.getId()));
+        buildEdgeDecisionRuleDefinition(botIds, categorizedBotConfigPolicy.getId()));
     return edgeDecisionRuleBuilder.build();
   }
 
+  private List<String> getApplicableBotIds(final List<BotScope> botScopes) {
+    final List<String> botIds = new ArrayList<>();
+    for (final BotScope botScope : botScopes) {
+      if (botScope.hasBotList()) {
+        botScope.getBotList().getBotIdsList().stream()
+            .filter(CATEGORIZED_BOT_CONFIG_MAP::containsKey)
+            .map(CATEGORIZED_BOT_CONFIG_MAP::get)
+            .map(CategorizedBotConfig::getId)
+            .forEach(botIds::add);
+      } else if (botScope.hasBotClassification()) {
+        CATEGORIZED_BOT_CONFIG_MAP.entrySet().stream()
+            .filter(
+                entry -> {
+                  final CategorizedBotDetails categorizedBotDetails =
+                      entry.getValue().getCategorizedBotDetails();
+                  final BotClassification botClassification = botScope.getBotClassification();
+                  final boolean categoryMatches =
+                      categorizedBotDetails
+                          .getBotCategory()
+                          .equals(botClassification.getCategory());
+                  if (!botClassification.getSubCategoryList().isEmpty()) {
+                    final boolean subCategoryMatches =
+                        botClassification
+                            .getSubCategoryList()
+                            .contains(categorizedBotDetails.getBotSubCategory());
+                    return categoryMatches && subCategoryMatches;
+                  }
+                  return categoryMatches;
+                })
+            .map(Map.Entry::getKey)
+            .forEach(botIds::add);
+      }
+    }
+    return botIds;
+  }
+
+  private List<String> getTargetEndpointUrlRegexes(
+      final RequestContext requestContext,
+      final CategorizedBotConfigPolicyDetails categorizedBotPolicyDetails) {
+    final EntityScope entityScope =
+        categorizedBotPolicyDetails.getCategorizedBotPolicyTargetScope().getEntityScope();
+    if (!entityScope.getEntityType().equals(ENTITY_TYPE_API)) {
+      throw new IllegalArgumentException("Unsupported entity type: " + entityScope.getEntityType());
+    }
+    final Map<String, Optional<ApiIdentifierEntity>> apiIdentifierEntities =
+        cachedApiMappingProvider.getApiIdentifierEntities(
+            requestContext, Set.copyOf(entityScope.getEntityIdsList()));
+    return apiIdentifierEntities.values().stream()
+        .flatMap(Optional::stream)
+        .map(apiIdentifierEntity -> String.join("|", apiIdentifierEntity.getResolvedUrlPatterns()))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   private EdgeDecisionRuleDefinition buildEdgeDecisionRuleDefinition(
-      final String botId, final String botName, final String policyId) {
+      final List<String> botIds, final String policyId) {
     return EdgeDecisionRuleDefinition.newBuilder()
         .setEdgeInputKind(EDGE_INPUT_KIND_HTTP_REQUEST)
         .setCustomFields(Values.of(Structs.of("policyId", Values.of(policyId))))
-        .addRuleVariables(BOT_ID_VARIABLE_DERVIVATION_MAP.get(botId))
+        .addRuleVariables(
+            CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator.INSTANCE.translate(botIds))
         .setSignatureRule(
             SignatureRule.newBuilder()
                 .setMatchCondition(
@@ -264,11 +255,7 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                             GenericMatchCondition.newBuilder()
                                 .setJexlExpression(
                                     JexlExpressionConfig.newBuilder()
-                                        .setJexlExpression(
-                                            String.format(
-                                                "%s == true",
-                                                CategorizedBotStringUtil
-                                                    .getFormattedBotVariableName(botName, botId)))
+                                        .setJexlExpression("tcBot['botId'] != null")
                                         .build())
                                 .build())
                         .build())
@@ -279,19 +266,16 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
   private EdgeDecision buildEdgeRuleDecision(
       final CategorizedBotPolicyActionConfig categorizedBotPolicyActionConfig,
       final List<RuleInfoDecoration> ruleInfoDecorations,
-      final String botCategory) {
+      final String policyName) {
     final EdgeDecision.Builder edgeDecisionBuilder = EdgeDecision.newBuilder();
-    edgeDecisionBuilder.setThreatType(botCategory);
+    edgeDecisionBuilder.setThreatType(policyName);
     edgeDecisionBuilder.addAllRuleInfoDecorations(ruleInfoDecorations);
     edgeDecisionBuilder.setEdgeDecisionType(
         translateActionType(categorizedBotPolicyActionConfig.getBotAction()));
     return edgeDecisionBuilder.build();
   }
 
-  private static List<RuleInfoDecoration> buildRuleInfoDecorations(
-      final CategorizedBotDetails categorizedBotDetails,
-      final String botId,
-      final String policyId) {
+  private static List<RuleInfoDecoration> buildRuleInfoDecorations(final String policyId) {
     return List.of(
         RuleInfoDecoration.newBuilder()
             .setRuleInfoKey(
@@ -301,8 +285,10 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                     .build())
             .setRuleInfoValue(
                 DataTransformationConfig.newBuilder()
-                    .setStaticValue(
-                        Value.newBuilder().setStringValue(categorizedBotDetails.getName()).build())
+                    .setJexlExpression(
+                        JexlExpressionConfig.newBuilder()
+                            .setJexlExpression("tcBot['botName']")
+                            .build())
                     .setOutputType(FIELD_TYPE_STR)
                     .build())
             .build(),
@@ -314,7 +300,10 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                     .build())
             .setRuleInfoValue(
                 DataTransformationConfig.newBuilder()
-                    .setStaticValue(Value.newBuilder().setStringValue(botId).build())
+                    .setJexlExpression(
+                        JexlExpressionConfig.newBuilder()
+                            .setJexlExpression("tcBot['botId']")
+                            .build())
                     .setOutputType(FIELD_TYPE_STR)
                     .build())
             .build(),
@@ -326,9 +315,24 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                     .build())
             .setRuleInfoValue(
                 DataTransformationConfig.newBuilder()
-                    .setStaticValue(
-                        Value.newBuilder()
-                            .setStringValue(categorizedBotDetails.getBotCategory())
+                    .setJexlExpression(
+                        JexlExpressionConfig.newBuilder()
+                            .setJexlExpression("tcBot['botCategory']")
+                            .build())
+                    .setOutputType(FIELD_TYPE_STR)
+                    .build())
+            .build(),
+        RuleInfoDecoration.newBuilder()
+            .setRuleInfoKey(
+                DataTransformationConfig.newBuilder()
+                    .setStaticValue(Value.newBuilder().setStringValue("threat_type").build())
+                    .setOutputType(FIELD_TYPE_STR)
+                    .build())
+            .setRuleInfoValue(
+                DataTransformationConfig.newBuilder()
+                    .setJexlExpression(
+                        JexlExpressionConfig.newBuilder()
+                            .setJexlExpression("tcBot['botCategory']")
                             .build())
                     .setOutputType(FIELD_TYPE_STR)
                     .build())
@@ -341,9 +345,9 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                     .build())
             .setRuleInfoValue(
                 DataTransformationConfig.newBuilder()
-                    .setStaticValue(
-                        Value.newBuilder()
-                            .setStringValue(categorizedBotDetails.getBotSubCategory())
+                    .setJexlExpression(
+                        JexlExpressionConfig.newBuilder()
+                            .setJexlExpression("tcBot['botSubCategory']")
                             .build())
                     .setOutputType(FIELD_TYPE_STR)
                     .build())

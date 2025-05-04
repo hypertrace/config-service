@@ -1,121 +1,108 @@
 package ai.traceable.bot.categorized.config.service.v1.translator;
 
-import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_BOOL;
-
-import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfig;
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotDetails;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotDetailsConfig;
-import ai.traceable.bot.categorized.utils.CategorizedBotStringUtil;
+import ai.traceable.bot.categorized.config.service.v1.LogicalMatchCondition;
+import ai.traceable.bot.categorized.config.service.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
-import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
-import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
-import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
+import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
-import com.google.protobuf.Value;
-import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Getter;
 
 public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
 
-  public static final DataTransformationConfig BOT_VARIABLE_DATA_TRANSFORMATION_CONFIG =
-      DataTransformationConfig.newBuilder()
-          .setOutputType(FIELD_TYPE_BOOL)
-          .setStaticValue(Value.newBuilder().setBoolValue(true).build())
-          .build();
   public static final CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator INSTANCE =
       new CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator();
 
-  @Getter private final Map<String, VariableDerivationMapping> botIdToVariableDerivationMapping;
+  private CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator() {}
 
-  private CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator() {
-    this.botIdToVariableDerivationMapping =
+  public VariableDerivationMapping translate(final List<String> botIds) {
+    final String jexlTransformExpression =
         CategorizedBotDetailsConfig.INSTANCE.getAllTraceableCategorizedBots().stream()
-            .collect(
-                Collectors.toUnmodifiableMap(
-                    CategorizedBotConfig::getId, this::convertBotConfigToVariableDerivation));
-  }
-
-  public Collection<VariableDerivationMapping> translate() {
-    return botIdToVariableDerivationMapping.values();
-  }
-
-  private VariableDerivationMapping convertBotConfigToVariableDerivation(
-      final CategorizedBotConfig categorizedBotConfig) {
-    final String botName =
-        CategorizedBotStringUtil.getFormattedBotName(
-            categorizedBotConfig.getCategorizedBotDetails());
-    return getVariableDerivationMapping(categorizedBotConfig, botName);
-  }
-
-  private VariableDerivationMapping getVariableDerivationMapping(
-      final CategorizedBotConfig categorizedBotConfig, final String botName) {
+                .filter(bot -> botIds.contains(bot.getId()))
+                .map(
+                    tcBot -> {
+                      final CategorizedBotDetails categorizedBotDetails =
+                          tcBot.getCategorizedBotDetails();
+                      final String matchExpression =
+                          getTranslatedJexlExpression(
+                              categorizedBotDetails
+                                  .getCategorizedBotSignatureRule()
+                                  .getMatchCondition());
+                      return String.format(
+                          "%s ? {'botId' : '%s', 'botName': '%s', 'botCategory' : '%s', 'botSubCategoty' : '%s'} : ",
+                          matchExpression,
+                          tcBot.getId(),
+                          categorizedBotDetails.getName(),
+                          categorizedBotDetails.getBotCategory(),
+                          categorizedBotDetails.getBotSubCategory());
+                    })
+                .collect(Collectors.joining())
+            + " {} ";
     return VariableDerivationMapping.newBuilder()
-        .setName(
-            CategorizedBotStringUtil.getFormattedBotVariableName(
-                botName, categorizedBotConfig.getId()))
-        .addRules(getDerivationRule(categorizedBotConfig))
+        .setName("tcBot")
+        .addRules(
+            DerivationRule.newBuilder()
+                .setTransformationConfig(
+                    DataTransformationConfig.newBuilder()
+                        .setJexlExpression(
+                            JexlExpressionConfig.newBuilder()
+                                .setJexlExpression(jexlTransformExpression)
+                                .build())
+                        .build())
+                .build())
         .build();
   }
 
-  private DerivationRule getDerivationRule(final CategorizedBotConfig categorizedBotConfig) {
-    return DerivationRule.newBuilder()
-        .setMatchCondition(getMatchCondition(categorizedBotConfig))
-        .setTransformationConfig(BOT_VARIABLE_DATA_TRANSFORMATION_CONFIG)
-        .build();
-  }
-
-  private MatchCondition getMatchCondition(final CategorizedBotConfig categorizedBotConfig) {
-    return getTranslatedMatchCondition(
-        categorizedBotConfig
-            .getCategorizedBotDetails()
-            .getCategorizedBotSignatureRule()
-            .getMatchCondition());
-  }
-
-  private MatchCondition getTranslatedMatchCondition(
+  private String getTranslatedJexlExpression(
       final ai.traceable.bot.categorized.config.service.v1.MatchCondition
           categorizedBotMatchCondition) {
-    if (categorizedBotMatchCondition.hasGenericMatchCondition()) {
-      return GenericMatchConditionToEdgeMatchConditionTranslator.buildMatchCondition(
-          categorizedBotMatchCondition.getGenericMatchCondition());
+    if (categorizedBotMatchCondition == null
+        || categorizedBotMatchCondition.hasGenericMatchCondition()) {
+      throw new IllegalArgumentException("Operation not supported");
+    }
+    String ipMatchExpression = "";
+    String userAgentMatchExpression = "";
+    if (categorizedBotMatchCondition.hasLogicalMatchCondition()) {
+      final LogicalMatchCondition logicalMatchCondition =
+          categorizedBotMatchCondition.getLogicalMatchCondition();
+      final String leftExpression =
+          getTranslatedJexlExpression(logicalMatchCondition.getLeftOperand());
+      final String rightExpression =
+          getTranslatedJexlExpression(logicalMatchCondition.getRightOperand());
+      if (logicalMatchCondition.getOperator() == LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND) {
+        return joinAnd(leftExpression, rightExpression);
+      } else {
+        return joinOr(leftExpression, rightExpression);
+      }
     }
     if (categorizedBotMatchCondition.hasIpMetadataMatchCondition()) {
-      return IpMetadataMatchConditionToEdgeMatchConditionTranslator.buildMatchCondition(
-          categorizedBotMatchCondition.getIpMetadataMatchCondition());
+      ipMatchExpression =
+          IpMetadataMatchConditionToJexlExpressionTranslator.buildJexlExpression(
+              categorizedBotMatchCondition.getIpMetadataMatchCondition());
     }
     if (categorizedBotMatchCondition.hasUserAgentMatchCondition()) {
-      return UserAgentMatchConditionToEdgeMatchConditionTranslator.buildMatchCondition(
-          categorizedBotMatchCondition.getUserAgentMatchCondition());
+      userAgentMatchExpression =
+          UserAgentMatchConditionToJexlExpressionTranslator.buildJexlExpression(
+              categorizedBotMatchCondition.getUserAgentMatchCondition());
     }
-    if (categorizedBotMatchCondition.hasLogicalMatchCondition()) {
-      final ai.traceable.bot.categorized.config.service.v1.LogicalMatchCondition
-          logicalMatchCondition = categorizedBotMatchCondition.getLogicalMatchCondition();
-      return MatchCondition.newBuilder()
-          .setLogicalMatchCondition(
-              LogicalMatchCondition.newBuilder()
-                  .setOperator(getTranslatedOperator(logicalMatchCondition.getOperator()))
-                  .addConditions(
-                      getTranslatedMatchCondition(logicalMatchCondition.getLeftOperand()))
-                  .addConditions(
-                      getTranslatedMatchCondition(logicalMatchCondition.getRightOperand()))
-                  .build())
-          .build();
-    } else {
-      throw new IllegalArgumentException("Unknown match condition type");
+    if (!ipMatchExpression.isEmpty() && !userAgentMatchExpression.isEmpty()) {
+      return joinAnd(ipMatchExpression, userAgentMatchExpression);
+    } else if (!ipMatchExpression.isEmpty()) {
+      return ipMatchExpression;
+    } else if (!userAgentMatchExpression.isEmpty()) {
+      return userAgentMatchExpression;
     }
+    throw new IllegalArgumentException("Unknown match condition type");
   }
 
-  private LogicalMatchOperator getTranslatedOperator(
-      final ai.traceable.bot.categorized.config.service.v1.LogicalMatchOperator operator) {
-    switch (operator) {
-      case LOGICAL_MATCH_OPERATOR_AND:
-        return LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND;
-      case LOGICAL_MATCH_OPERATOR_OR:
-        return LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR;
-      default:
-        throw new IllegalArgumentException("Unknown logical match operator: " + operator);
-    }
+  private static String joinOr(final String left, final String right) {
+    return String.format("(%s) || (%s)", left, right);
+  }
+
+  private static String joinAnd(final String left, final String right) {
+    return String.format("(%s) && (%s)", left, right);
   }
 }

@@ -55,8 +55,11 @@ public class CategorizedBotConfigService extends CategorizedBotConfigServiceImpl
     CategorizedBotConfigRequestValidator.validateRequestContext(requestContext);
     responseObserver.onNext(
         GetCategorizedBotConfigEdgeDecisionVariablesResponse.newBuilder()
-            .addAllVariableDerivationMappings(
-                CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator.INSTANCE.translate())
+            .addVariableDerivationMappings(
+                CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator.INSTANCE.translate(
+                    CategorizedBotDetailsConfig.INSTANCE.getAllTraceableCategorizedBots().stream()
+                        .map(CategorizedBotConfig::getId)
+                        .collect(Collectors.toUnmodifiableList())))
             .build());
     responseObserver.onCompleted();
   }

@@ -29,18 +29,11 @@ import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfig
 import ai.traceable.bot.categorized.policy.service.v1.store.DefaultPolicyConfig;
 import ai.traceable.bot.categorized.policy.service.v1.translator.CategorizedBotConfigPolicyToEdgeDecisionTranslator;
 import ai.traceable.config.utils.UuidGenerator;
-import ai.traceable.datamodel.data.transformation.config.v1.AttributeDerivationMapping;
-import ai.traceable.datamodel.data.transformation.config.v1.BinaryOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
 import ai.traceable.datamodel.data.transformation.config.v1.DerivationRule;
-import ai.traceable.datamodel.data.transformation.config.v1.FieldType;
 import ai.traceable.datamodel.data.transformation.config.v1.GenericMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.JexlExpressionConfig;
-import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchCondition;
-import ai.traceable.datamodel.data.transformation.config.v1.LogicalMatchOperator;
 import ai.traceable.datamodel.data.transformation.config.v1.MatchCondition;
-import ai.traceable.datamodel.data.transformation.config.v1.MatchOperator;
-import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondition;
 import ai.traceable.datamodel.data.transformation.config.v1.VariableDerivationMapping;
 import ai.traceable.edge.decision.config.service.aggregator.attributes.variable.enrich.RuleVariableEnricher;
 import ai.traceable.edge.decision.config.service.store.EdgeAttributionRuleStore;
@@ -395,7 +388,7 @@ class EdgeDecisionConfigServiceTest {
                         CreateCategorizedBotConfigPolicyRequest.newBuilder()
                             .setCategorizedBotConfigPolicyDetails(
                                 CategorizedBotConfigPolicyDetails.newBuilder()
-                                    .setName("Test")
+                                    .setName("Crawlers")
                                     .setDescription("Test")
                                     .setEnabled(true)
                                     .setCategorizedBotPolicyActionConfig(
@@ -432,84 +425,23 @@ class EdgeDecisionConfigServiceTest {
 
     final VariableDerivationMapping expectedVariableDerivation =
         VariableDerivationMapping.newBuilder()
-            .setName("TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000")
+            .setName("tcBot")
             .addRules(
                 DerivationRule.newBuilder()
                     .setTransformationConfig(
                         DataTransformationConfig.newBuilder()
-                            .setStaticValue(Value.newBuilder().setBoolValue(true))
-                            .setOutputType(FieldType.FIELD_TYPE_BOOL))
-                    .setMatchCondition(
-                        MatchCondition.newBuilder()
-                            .setLogicalMatchCondition(
-                                LogicalMatchCondition.newBuilder()
-                                    .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND)
-                                    .addConditions(
-                                        MatchCondition.newBuilder()
-                                            .setLogicalMatchCondition(
-                                                LogicalMatchCondition.newBuilder()
-                                                    .setOperator(
-                                                        LogicalMatchOperator
-                                                            .LOGICAL_MATCH_OPERATOR_OR)
-                                                    .addConditions(
-                                                        MatchCondition.newBuilder()
-                                                            .setGenericMatchCondition(
-                                                                GenericMatchCondition.newBuilder()
-                                                                    .setJexlExpression(
-                                                                        JexlExpressionConfig
-                                                                            .newBuilder()
-                                                                            .setJexlExpression(
-                                                                                "ipValidation:isIpAddressInRange('13.66.139.0/24', $s.getIpAddress())")
-                                                                            .build()))
-                                                            .build())
-                                                    .addConditions(
-                                                        MatchCondition.newBuilder()
-                                                            .setGenericMatchCondition(
-                                                                GenericMatchCondition.newBuilder()
-                                                                    .setJexlExpression(
-                                                                        JexlExpressionConfig
-                                                                            .newBuilder()
-                                                                            .setJexlExpression(
-                                                                                "ipValidation:isIpAddressInRange('40.77.167.0/24', $s.getIpAddress())")
-                                                                            .build())
-                                                                    .build()))
-                                                    .build())
-                                            .build())
-                                    .addConditions(
-                                        MatchCondition.newBuilder()
-                                            .setStructuredMatchCondition(
-                                                StructuredMatchCondition.newBuilder()
-                                                    .setLhs(
-                                                        AttributeDerivationMapping.newBuilder()
-                                                            .setName("lhs")
-                                                            .setType(FIELD_TYPE_STR)
-                                                            .addRules(
-                                                                DerivationRule.newBuilder()
-                                                                    .setTransformationConfig(
-                                                                        DataTransformationConfig
-                                                                            .newBuilder()
-                                                                            .setOutputType(
-                                                                                FIELD_TYPE_STR)
-                                                                            .setJexlExpression(
-                                                                                JexlExpressionConfig
-                                                                                    .newBuilder()
-                                                                                    .setJexlExpression(
-                                                                                        "$s.getLowerCaseUserAgent()")))))
-                                                    .setBinaryOperator(
-                                                        BinaryOperator.newBuilder()
-                                                            .setStringValue("bingbot")
-                                                            .setMatchOperator(
-                                                                MatchOperator
-                                                                    .MATCH_OPERATOR_CONTAINS)))
-                                            .build()))
-                            .build())
+                            .setJexlExpression(
+                                JexlExpressionConfig.newBuilder()
+                                    .setJexlExpression(
+                                        "(ipValidation:isIpAddressInRange('13.66.139.0/24', $s.getIpAddress()) || ipValidation:isIpAddressInRange('40.77.167.0/24', $s.getIpAddress())) && ($s.getLowerCaseUserAgent().contains('bingbot')) ? {'botId' : '550e8400-e29b-41d4-a716-446655440000', 'botName': 'BingBot', 'botCategory' : 'Crawlers', 'botSubCategoty' : 'Search bots'} :  {} ")
+                                    .build()))
                     .build())
             .build();
 
     assertEquals(
         EdgeDecisionRule.newBuilder()
-            .setId("550e8400-e29b-41d4-a716-446655440000_t1")
-            .setName("Test")
+            .setId("t1")
+            .setName("Crawlers")
             .setRuleCategory(
                 EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS)
             .setRuleStatus(EdgeDecisionRuleStatus.getDefaultInstance())
@@ -540,8 +472,7 @@ class EdgeDecisionConfigServiceTest {
                                         GenericMatchCondition.newBuilder()
                                             .setJexlExpression(
                                                 JexlExpressionConfig.newBuilder()
-                                                    .setJexlExpression(
-                                                        "TRACEABLEAI_BOT_bingbot_550e8400_e29b_41d4_a716_446655440000 == true")
+                                                    .setJexlExpression("tcBot['botId'] != null")
                                                     .build())
                                             .build())
                                     .build())
@@ -560,8 +491,10 @@ class EdgeDecisionConfigServiceTest {
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
-                                    .setStaticValue(
-                                        Value.newBuilder().setStringValue("BingBot").build())
+                                    .setJexlExpression(
+                                        JexlExpressionConfig.newBuilder()
+                                            .setJexlExpression("tcBot['botName']")
+                                            .build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
@@ -575,9 +508,9 @@ class EdgeDecisionConfigServiceTest {
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
-                                    .setStaticValue(
-                                        Value.newBuilder()
-                                            .setStringValue("550e8400-e29b-41d4-a716-446655440000")
+                                    .setJexlExpression(
+                                        JexlExpressionConfig.newBuilder()
+                                            .setJexlExpression("tcBot['botId']")
                                             .build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
@@ -592,8 +525,27 @@ class EdgeDecisionConfigServiceTest {
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
+                                    .setJexlExpression(
+                                        JexlExpressionConfig.newBuilder()
+                                            .setJexlExpression("tcBot['botCategory']")
+                                            .build())
+                                    .setOutputType(FIELD_TYPE_STR)
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
                                     .setStaticValue(
-                                        Value.newBuilder().setStringValue("Crawlers").build())
+                                        Value.newBuilder().setStringValue("threat_type").build())
+                                    .setOutputType(FIELD_TYPE_STR)
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setJexlExpression(
+                                        JexlExpressionConfig.newBuilder()
+                                            .setJexlExpression("tcBot['botCategory']")
+                                            .build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
@@ -609,8 +561,10 @@ class EdgeDecisionConfigServiceTest {
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
-                                    .setStaticValue(
-                                        Value.newBuilder().setStringValue("Search bots").build())
+                                    .setJexlExpression(
+                                        JexlExpressionConfig.newBuilder()
+                                            .setJexlExpression("tcBot['botSubCategory']")
+                                            .build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
@@ -624,7 +578,10 @@ class EdgeDecisionConfigServiceTest {
                                     .build())
                             .setRuleInfoValue(
                                 DataTransformationConfig.newBuilder()
-                                    .setStaticValue(Value.newBuilder().setStringValue("t1").build())
+                                    .setStaticValue(
+                                        Value.newBuilder()
+                                            .setStringValue(createdPolicy.getId())
+                                            .build())
                                     .setOutputType(FIELD_TYPE_STR)
                                     .build())
                             .build())
@@ -632,9 +589,7 @@ class EdgeDecisionConfigServiceTest {
                     .build())
             .build(),
         config.getDecisionRulesList().stream()
-            .filter(
-                edgeDecisionRule ->
-                    edgeDecisionRule.getId().contains("550e8400-e29b-41d4-a716-446655440000"))
+            .filter(edgeDecisionRule -> edgeDecisionRule.getId().contains("t1"))
             .findFirst()
             .get());
   }
