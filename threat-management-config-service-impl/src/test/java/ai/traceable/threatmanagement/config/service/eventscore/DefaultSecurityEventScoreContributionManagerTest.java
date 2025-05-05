@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
 import ai.traceable.threatmanagement.config.service.v1.EnvironmentScope;
+import ai.traceable.threatmanagement.config.service.v1.EventConfidenceLevel;
 import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import com.google.protobuf.Struct;
@@ -35,6 +36,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE = 2;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE = 10;
+  private static final EventConfidenceLevel DEFAULT_MINIMUM_EVENT_CONFIDENCE_LEVEL =
+      EventConfidenceLevel.EVENT_CONFIDENCE_LEVEL_MEDIUM;
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
       SecurityEventScoreContribution.newBuilder()
@@ -134,6 +137,8 @@ class DefaultSecurityEventScoreContributionManagerTest {
         .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE);
     when(this.config.getDefaultSecurityEventContributionCriticalScore())
         .thenReturn(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE);
+    when(this.config.getMinimumEventConfidenceLevel())
+        .thenReturn(DEFAULT_MINIMUM_EVENT_CONFIDENCE_LEVEL);
 
     assertEquals(
         SecurityEventScoreContribution.newBuilder()
@@ -141,6 +146,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
             .setMediumScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MEDIUM_SCORE)
             .setHighScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE)
             .setCriticalScore(DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE)
+            .setMinimumEventConfidenceLevel(DEFAULT_MINIMUM_EVENT_CONFIDENCE_LEVEL)
             .build(),
         securityEventScoreContributionManager.getSecurityEventScoreContribution(
             REQUEST_CONTEXT, ScopeConfig.newBuilder().build()));

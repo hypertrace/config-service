@@ -30,4 +30,12 @@ message SecurityEventScoreContribution {
   int32 low_score = 3;
   int32 critical_score = 4;
   ScopeConfig scope = 5;
+  EventConfidenceLevel minimum_event_confidence_level = 6;
+}
+
+enum EventConfidenceLevel {
+  EVENT_CONFIDENCE_LEVEL_UNSPECIFIED = 0;
+  EVENT_CONFIDENCE_LEVEL_LOW = 1;
+  EVENT_CONFIDENCE_LEVEL_MEDIUM = 2;
+  EVENT_CONFIDENCE_LEVEL_HIGH = 3;
 }

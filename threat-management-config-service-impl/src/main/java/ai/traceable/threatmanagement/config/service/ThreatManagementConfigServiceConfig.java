@@ -1,5 +1,6 @@
 package ai.traceable.threatmanagement.config.service;
 
+import ai.traceable.threatmanagement.config.service.v1.EventConfidenceLevel;
 import com.typesafe.config.Config;
 
 public class ThreatManagementConfigServiceConfig {
@@ -27,6 +28,9 @@ public class ThreatManagementConfigServiceConfig {
       "threat.management.config.service.ip.reputation.threat.score.increment.medium";
   private static final String DEFAULT_LOW_IP_REPUTATION_THREAT_SCORE_INCREMENT =
       "threat.management.config.service.ip.reputation.threat.score.increment.low";
+  private static final String
+      DEFAULT_SECURITY_EVENT_CONTRIBUTION_MINIMUM_EVENT_CONFIDENCE_LEVEL_KEY =
+          "threat.management.config.service.security.event.contribution.score.minimumEventConfidenceLevel";
 
   private final Config config;
 
@@ -80,5 +84,10 @@ public class ThreatManagementConfigServiceConfig {
 
   public int getDefaultLowIpReputationThreatScoreIncrement() {
     return config.getInt(DEFAULT_LOW_IP_REPUTATION_THREAT_SCORE_INCREMENT);
+  }
+
+  public EventConfidenceLevel getMinimumEventConfidenceLevel() {
+    return EventConfidenceLevel.valueOf(
+        config.getString(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MINIMUM_EVENT_CONFIDENCE_LEVEL_KEY));
   }
 }
