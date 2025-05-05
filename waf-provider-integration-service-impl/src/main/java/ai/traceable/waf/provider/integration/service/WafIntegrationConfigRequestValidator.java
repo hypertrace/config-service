@@ -743,6 +743,8 @@ public class WafIntegrationConfigRequestValidator {
         akamaiPolicyDetails, AkamaiPolicyDetails.POLICY_ID_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         akamaiPolicyDetails, AkamaiPolicyDetails.AKAMAI_POLICY_CONFIGURATION_ID_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        akamaiPolicyDetails, AkamaiPolicyDetails.NETWORK_LIST_ID_FIELD_NUMBER);
   }
 
   private void validateF5IntegrationDetailsNoDuplicatesOrThrow(

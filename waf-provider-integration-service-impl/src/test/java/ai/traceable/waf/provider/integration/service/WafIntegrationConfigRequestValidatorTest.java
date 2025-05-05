@@ -1946,6 +1946,7 @@ class WafIntegrationConfigRequestValidatorTest {
                                         AkamaiPolicyDetails.newBuilder()
                                             .setPolicyId("policy1")
                                             .setAkamaiPolicyConfigurationId("config1")
+                                            .setNetworkListId("network-list-id")
                                             .build())
                                     .setAkamaiAuthCredentials(
                                         AkamaiAuthCredentials.newBuilder()

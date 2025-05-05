@@ -1209,6 +1209,7 @@ class WafIntegrationConfigServiceImplTest {
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy2")
                                     .setAkamaiPolicyConfigurationId("config2")
+                                    .setNetworkListId("network2")
                                     .build()))
                     .build())
             .build();
@@ -1238,6 +1239,12 @@ class WafIntegrationConfigServiceImplTest {
             .getAkamaiIntegrationDetails()
             .getAkamaiPolicyDetails()
             .getAkamaiPolicyConfigurationId());
+    assertEquals(
+        "network2",
+        akamaiIntegrationParams
+            .getAkamaiIntegrationDetails()
+            .getAkamaiPolicyDetails()
+            .getNetworkListId());
 
     GetWafIntegrationsDetailsResponse wafIntegrationDetails =
         wafProviderServiceBlockingStub.getWafIntegrationsDetails(
@@ -1846,6 +1853,7 @@ class WafIntegrationConfigServiceImplTest {
                                 AkamaiPolicyDetails.newBuilder()
                                     .setPolicyId("policy1")
                                     .setAkamaiPolicyConfigurationId("configId")
+                                    .setNetworkListId("network-list-id")
                                     .build())
                             .setAkamaiAuthCredentials(
                                 AkamaiAuthCredentials.newBuilder()
