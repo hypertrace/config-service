@@ -32,7 +32,7 @@ public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
                                   .getCategorizedBotSignatureRule()
                                   .getMatchCondition());
                       return String.format(
-                          "%s ? {'botId' : '%s', 'botName': '%s', 'botCategory' : '%s', 'botSubCategoty' : '%s'} : ",
+                          "%s ? {'botId' : '%s', 'botName': '%s', 'botCategory' : '%s', 'botSubCategory' : '%s'} : ",
                           matchExpression,
                           tcBot.getId(),
                           categorizedBotDetails.getName(),

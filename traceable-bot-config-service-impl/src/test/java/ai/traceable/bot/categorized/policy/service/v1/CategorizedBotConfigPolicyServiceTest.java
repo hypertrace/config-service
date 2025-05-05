@@ -502,7 +502,7 @@ class CategorizedBotConfigPolicyServiceTest {
                             .setJexlExpression(
                                 JexlExpressionConfig.newBuilder()
                                     .setJexlExpression(
-                                        "(ipValidation:isIpAddressInRange('13.66.139.0/24', $s.getIpAddress()) || ipValidation:isIpAddressInRange('40.77.167.0/24', $s.getIpAddress())) && ($s.getLowerCaseUserAgent().contains('bingbot')) ? {'botId' : '550e8400-e29b-41d4-a716-446655440000', 'botName': 'BingBot', 'botCategory' : 'Crawlers', 'botSubCategoty' : 'Search bots'} :  {} ")
+                                        "(ipValidation:isIpAddressInRange('13.66.139.0/24', $s.getIpAddress()) || ipValidation:isIpAddressInRange('40.77.167.0/24', $s.getIpAddress())) && ($s.getLowerCaseUserAgent().contains('bingbot')) ? {'botId' : '550e8400-e29b-41d4-a716-446655440000', 'botName': 'BingBot', 'botCategory' : 'Crawlers', 'botSubCategory' : 'Search bots'} :  {} ")
                                     .build()))
                     .build())
             .build();
