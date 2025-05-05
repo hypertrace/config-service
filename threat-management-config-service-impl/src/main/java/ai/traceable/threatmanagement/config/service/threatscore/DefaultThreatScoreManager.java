@@ -41,11 +41,15 @@ class DefaultThreatScoreManager extends IdentifiedObjectStore<ThreatScoreBound>
   @Override
   public ThreatScoreBound getThreatScoreBound(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId).orElseGet(this::getDefaultThreatScoreBound);
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<ThreatScoreBound> optionalThreatScoreBoundConfig =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalThreatScoreBoundConfig.isPresent()) {
+        return optionalThreatScoreBoundConfig.get();
+      }
+    }
+    return getData(requestContext, getTenantId(requestContext))
+        .orElseGet(this::getDefaultThreatScoreBound);
   }
 
   @Override

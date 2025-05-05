@@ -59,11 +59,15 @@ class DefaultThreatAutoBlockingManager extends IdentifiedObjectStore<ThreatAutoB
   @Override
   public ThreatAutoBlockingActionConfig getThreatAutoBlockingAction(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId)
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<ThreatAutoBlockingActionConfig> optionalThreatAutoBlockingActionConfig =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalThreatAutoBlockingActionConfig.isPresent()) {
+        return optionalThreatAutoBlockingActionConfig.get();
+      }
+    }
+
+    return getData(requestContext, getTenantId(requestContext))
         .orElseGet(this::getDefaultThreatAutoBlockingActionConfig);
   }
 

@@ -34,11 +34,14 @@ class StatusCodeThreatScoreConfigsManagerImpl
   @Override
   public StatusCodeThreatScoreConfigs getStatusCodeThreatScoreConfigs(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId)
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<StatusCodeThreatScoreConfigs> optionalStatusCodeThreatScoreConfigs =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalStatusCodeThreatScoreConfigs.isPresent()) {
+        return optionalStatusCodeThreatScoreConfigs.get();
+      }
+    }
+    return getData(requestContext, getTenantId(requestContext))
         .orElse(StatusCodeThreatScoreConfigs.getDefaultInstance());
   }
 

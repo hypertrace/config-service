@@ -41,11 +41,15 @@ class DefaultAnomalyScoreContributionManager extends IdentifiedObjectStore<Anoma
   @Override
   public AnomalyScoreContribution getAnomalyScoreContribution(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId).orElseGet(this::getDefaultAnomalyScoreContribution);
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<AnomalyScoreContribution> optionalAnomalyScoreContribution =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalAnomalyScoreContribution.isPresent()) {
+        return optionalAnomalyScoreContribution.get();
+      }
+    }
+    return getData(requestContext, getTenantId(requestContext))
+        .orElseGet(this::getDefaultAnomalyScoreContribution);
   }
 
   @Override

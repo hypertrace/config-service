@@ -39,11 +39,14 @@ class DefaultSecurityEventTypeContributionManager
   @Override
   public SecurityEventTypeContribution getSecurityEventTypeContribution(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId)
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<SecurityEventTypeContribution> optionalSecurityEventTypeContribution =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalSecurityEventTypeContribution.isPresent()) {
+        return optionalSecurityEventTypeContribution.get();
+      }
+    }
+    return getData(requestContext, getTenantId(requestContext))
         .orElseGet(this::getDefaultSecurityEventTypeContribution);
   }
 
@@ -53,7 +56,8 @@ class DefaultSecurityEventTypeContributionManager
     return upsertObject(requestContext, securityEventTypeContribution).getData();
   }
 
-  private SecurityEventTypeContribution getDefaultSecurityEventTypeContribution() {
+  @Override
+  public SecurityEventTypeContribution getDefaultSecurityEventTypeContribution() {
     return SecurityEventTypeContribution.newBuilder()
         .setSecurityEventTypeContributionKind(
             SecurityEventTypeContributionKind.SECURITY_EVENT_TYPE_CONTRIBUTION_KIND_ALL)

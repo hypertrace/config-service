@@ -42,11 +42,14 @@ class DefaultSecurityEventScoreContributionManager
   @Override
   public SecurityEventScoreContribution getSecurityEventScoreContribution(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId)
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<SecurityEventScoreContribution> optionalSecurityEventScoreContribution =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalSecurityEventScoreContribution.isPresent()) {
+        return optionalSecurityEventScoreContribution.get();
+      }
+    }
+    return getData(requestContext, getTenantId(requestContext))
         .orElseGet(this::getDefaultSecurityEventScoreContribution);
   }
 

@@ -13,4 +13,6 @@ public interface SecurityEventTypeContributionManager {
   // update if config present, else create
   SecurityEventTypeContribution upsertSecurityEventTypeContribution(
       RequestContext requestContext, SecurityEventTypeContribution securityEventTypeContribution);
+
+  SecurityEventTypeContribution getDefaultSecurityEventTypeContribution();
 }

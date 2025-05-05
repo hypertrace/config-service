@@ -12,6 +12,7 @@ message GetSecurityEventTypeContributionRequest {
 
 message GetSecurityEventTypeContributionResponse {
   SecurityEventTypeContribution security_event_type_contribution = 1;
+  SecurityEventTypeContribution default_event_type_contribution = 2;
 }
 
 message UpdateSecurityEventTypeContributionRequest {

@@ -39,11 +39,15 @@ class IpReputationThreatScoreConfigManagerImpl
   @Override
   public IpReputationThreatScoreConfig getIpReputationThreatScoreConfig(
       RequestContext requestContext, ScopeConfig scopeConfig) {
-    String contextId =
-        scopeConfig.hasEnvironmentScope()
-            ? scopeConfig.getEnvironmentScope().getEnvironmentId()
-            : getTenantId(requestContext);
-    return getData(requestContext, contextId).orElse(getDefaultIpReputationThreatScoreConfig());
+    if (scopeConfig.hasEnvironmentScope()) {
+      Optional<IpReputationThreatScoreConfig> optionalIpReputationThreatScoreConfig =
+          getData(requestContext, scopeConfig.getEnvironmentScope().getEnvironmentId());
+      if (optionalIpReputationThreatScoreConfig.isPresent()) {
+        return optionalIpReputationThreatScoreConfig.get();
+      }
+    }
+    return getData(requestContext, getTenantId(requestContext))
+        .orElse(getDefaultIpReputationThreatScoreConfig());
   }
 
   @Override
