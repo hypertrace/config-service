@@ -69,6 +69,7 @@ message GetRulesFilter {
   repeated RuleSource rule_creation_sources = 6;
   repeated RuleIntent rule_intents = 7;
   repeated ExclusionTarget exclusion_targets = 8;
+  repeated RuleEvaluationPoint rule_evaluation_points = 9;
 }
 
 message DetectionExclusionMigrationConfig {

@@ -3,6 +3,7 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleScope;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,7 +60,9 @@ public class DetectionExclusionRulesUtils {
                     || filter
                         .getRuleIntentsList()
                         .contains(rule.getRuleInfo().getRuleStatus().getRuleIntent()))
-        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()));
+        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()))
+        .filter(
+            rule -> filterRuleOnRuleEvaluationPoints(rule, filter.getRuleEvaluationPointsList()));
   }
 
   /**
@@ -78,5 +81,12 @@ public class DetectionExclusionRulesUtils {
     }
     List<String> filterEnvironmentIds = ruleScope.getEnvironmentScope().getEnvironmentIdsList();
     return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
+  }
+
+  private static boolean filterRuleOnRuleEvaluationPoints(
+      DetectionExclusionRule rule, List<RuleEvaluationPoint> ruleEvaluationPointsInFilter) {
+    return ruleEvaluationPointsInFilter.isEmpty()
+        || rule.getRuleInfo().getRuleEvaluationPointsList().stream()
+            .anyMatch(ruleEvaluationPointsInFilter::contains);
   }
 }
