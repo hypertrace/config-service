@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ai.traceable.certificate.management.config.service.v1;
+
+import "ai/traceable/certificate/management/config/service/v1/certificate_management_config_request_response.proto";
+
+option java_multiple_files = true;
+
+// This service only manages certificate configurations, not storage
+service CertificateManagementConfigService {
+  // Store certificate configuration
+  rpc CreateCertificate(CreateCertificateRequest) returns (CreateCertificateResponse) {}
+
+  // Get certificates with optional filtering
+  rpc GetCertificates(GetCertificatesRequest) returns (GetCertificatesResponse) {}
+
+  // Update certificate metadata
+  rpc UpdateCertificate(UpdateCertificateRequest) returns (UpdateCertificateResponse) {}
+
+  // Delete certificate configuration
+  rpc DeleteCertificate(DeleteCertificateRequest) returns (DeleteCertificateResponse) {}
+}

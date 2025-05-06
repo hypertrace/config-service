@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package ai.traceable.certificate.management.config.service.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+message Certificate {
+  string id = 1;
+  string name = 2;
+  CertificateMetadata metadata = 3; // Extracted metadata and user-provided info
+  repeated CertificateStorageDetails storage = 4;
+  CertificateStatusDetails status_details = 5;
+}
+
+message CertificateMetadata {
+  repeated string domain_names = 1;
+  string key_algorithm = 2;
+  map<string, string> labels = 3;
+}
+
+message CertificateStatusDetails {
+  CertificateStatus status = 1;
+  google.protobuf.Timestamp expiration_timestamp = 2;
+}
+
+enum CertificateStatus {
+  CERTIFICATE_STATUS_UNSPECIFIED = 0;
+  CERTIFICATE_STATUS_PENDING = 1;
+  CERTIFICATE_STATUS_ACTIVE = 2;
+  CERTIFICATE_STATUS_EXPIRED = 3;
+  CERTIFICATE_STATUS_REVOKED = 4;
+  CERTIFICATE_STATUS_FAILED = 5;
+}
+
+message CertificateStorageDetails {
+  oneof provider {
+    AwsStorageDetails aws = 1;
+  }
+}
+
+message AwsStorageDetails {
+  string arn = 1;
+  string region = 2;
+}
+
+message CertificateUpdate {
+  optional string updated_name = 1;
+  CertificateMetadataUpdate metadata_update = 2;
+  google.protobuf.Timestamp updated_expiration_timestamp = 3;
+  optional CertificateStatus updated_status = 4;
+}
+
+message CertificateMetadataUpdate {
+  StringList updated_domain_names = 1;
+  optional string updated_key_algorithm = 2;
+  StringMap updated_labels = 3;
+}
+
+message StringList {
+  repeated string string_values = 1;
+}
+
+message StringMap {
+  map<string, string> map = 1;
+}

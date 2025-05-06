@@ -19,6 +19,7 @@ modules:
   - path: auth-detection-config-service-impl/src/main/proto
   - path: azure-devops-integration-config-service-api/src/main/proto
   - path: blocking-config-service-api/src/main/proto
+  - path: certificate-management-config-service-api/src/main/proto
   - path: custom-signature-config-service-api/src/main/proto
   - path: dashboard-config-service-api/src/main/proto
   - path: data-classification-config-service-api/src/main/proto

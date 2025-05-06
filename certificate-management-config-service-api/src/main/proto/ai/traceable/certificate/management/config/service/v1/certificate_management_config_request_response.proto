@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package ai.traceable.certificate.management.config.service.v1;
+
+import "ai/traceable/certificate/management/config/service/v1/certificate_management_config.proto";
+
+option java_multiple_files = true;
+
+message CreateCertificateRequest {
+  string name = 1;
+  CertificateMetadata metadata = 2;
+  CertificateStatusDetails status_details = 3;
+  repeated CertificateStorageDetails storage = 4;
+}
+
+message CreateCertificateResponse {
+  Certificate certificate = 1;
+}
+
+message CertificateFilter {
+  repeated string ids = 1;
+  repeated string domain_names = 2;
+  oneof storage_filter {
+    AwsFilter aws_filter = 3;
+  }
+  // rules having all these label keys will pass the filter
+  repeated string label_keys = 4;
+
+  message AwsFilter {
+    repeated string regions = 1;
+  }
+}
+
+message GetCertificatesRequest {
+  CertificateFilter filter = 1;
+}
+
+message GetCertificatesResponse {
+  repeated Certificate certificates = 1;
+}
+
+message UpdateCertificateRequest {
+  string id = 1;
+  CertificateUpdate certificate_update = 2;
+}
+
+message UpdateCertificateResponse {
+  Certificate certificate = 1;
+}
+
+message DeleteCertificateRequest {
+  string id = 1;
+}
+
+message DeleteCertificateResponse {}
