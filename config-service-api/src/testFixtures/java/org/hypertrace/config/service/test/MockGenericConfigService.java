@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceImplBase;
@@ -170,6 +171,45 @@ public class MockGenericConfigService {
 
               responseStreamObserver.onNext(response);
               responseStreamObserver.onCompleted();
+              return null;
+            })
+        .when(this.mockConfigService)
+        .getAllConfigs(ArgumentMatchers.any(), ArgumentMatchers.any());
+
+    return this;
+  }
+
+  public MockGenericConfigService mockGetAllWithFilter(
+      Predicate<ContextSpecificConfig> filterPredicate) {
+    Mockito.doAnswer(
+            invocation -> {
+              StreamObserver<GetAllConfigsResponse> responseObserver =
+                  invocation.getArgument(1, StreamObserver.class);
+              GetAllConfigsRequest request = invocation.getArgument(0, GetAllConfigsRequest.class);
+
+              List<ContextSpecificConfig> matchingConfigs =
+                  currentValues
+                      .row(
+                          ResourceType.of(
+                              request.getResourceNamespace(), request.getResourceName()))
+                      .values()
+                      .stream()
+                      .filter(
+                          config -> {
+                            if (request.hasFilter()) {
+                              return filterPredicate.test(config);
+                            }
+                            return true;
+                          })
+                      .collect(Collectors.toList());
+
+              GetAllConfigsResponse response =
+                  GetAllConfigsResponse.newBuilder()
+                      .addAllContextSpecificConfigs(matchingConfigs)
+                      .build();
+
+              responseObserver.onNext(response);
+              responseObserver.onCompleted();
               return null;
             })
         .when(this.mockConfigService)
