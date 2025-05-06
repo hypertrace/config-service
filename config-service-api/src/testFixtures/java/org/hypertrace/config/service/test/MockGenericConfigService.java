@@ -179,45 +179,6 @@ public class MockGenericConfigService {
     return this;
   }
 
-  public MockGenericConfigService mockGetAllWithFilter(
-      Predicate<ContextSpecificConfig> filterPredicate) {
-    Mockito.doAnswer(
-            invocation -> {
-              StreamObserver<GetAllConfigsResponse> responseObserver =
-                  invocation.getArgument(1, StreamObserver.class);
-              GetAllConfigsRequest request = invocation.getArgument(0, GetAllConfigsRequest.class);
-
-              List<ContextSpecificConfig> matchingConfigs =
-                  currentValues
-                      .row(
-                          ResourceType.of(
-                              request.getResourceNamespace(), request.getResourceName()))
-                      .values()
-                      .stream()
-                      .filter(
-                          config -> {
-                            if (request.hasFilter()) {
-                              return filterPredicate.test(config);
-                            }
-                            return true;
-                          })
-                      .collect(Collectors.toList());
-
-              GetAllConfigsResponse response =
-                  GetAllConfigsResponse.newBuilder()
-                      .addAllContextSpecificConfigs(matchingConfigs)
-                      .build();
-
-              responseObserver.onNext(response);
-              responseObserver.onCompleted();
-              return null;
-            })
-        .when(this.mockConfigService)
-        .getAllConfigs(ArgumentMatchers.any(), ArgumentMatchers.any());
-
-    return this;
-  }
-
   @SuppressWarnings("unchecked")
   public MockGenericConfigService mockDelete() {
     Mockito.doAnswer(
