@@ -83,7 +83,8 @@ message GetRulesFilter {
   repeated RuleSource rule_sources = 7;
   // rules having all these label keys will pass the filter
   repeated string label_keys = 8;
-  optional bool filter_edge_decision_rules = 9;
+  optional bool filter_edge_decision_rules = 9 [deprecated = true];
+  repeated RuleEvaluationPoint rule_evaluation_points = 10;
 }
 
 message CustomSignatureRule {

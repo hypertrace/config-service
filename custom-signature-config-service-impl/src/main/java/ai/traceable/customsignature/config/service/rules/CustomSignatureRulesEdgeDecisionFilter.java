@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 public class CustomSignatureRulesEdgeDecisionFilter {
 
   private CustomSignatureRulesEdgeDecisionFilter() {
-    // utility classes shouldn't have public constructor
+    // utility classes shouldn't have a public constructor
   }
 
   // filters out rules that will be evaluated by edge decision service

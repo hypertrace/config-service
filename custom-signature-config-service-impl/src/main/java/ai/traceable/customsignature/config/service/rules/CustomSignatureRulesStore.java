@@ -8,6 +8,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
@@ -120,20 +121,30 @@ public class CustomSignatureRulesStore
 
   @Override
   protected Optional<CustomSignatureRule> filterConfigData(
-      CustomSignatureRule ruleData, GetRulesFilter filter) {
-    return Optional.of(ruleData)
+      CustomSignatureRule rule, GetRulesFilter filter) {
+    return Optional.of(rule)
         .filter(
-            rule -> filter.getRuleIdsCount() == 0 || filter.getRuleIdsList().contains(rule.getId()))
+            filteredRule ->
+                filter.getRuleIdsCount() == 0
+                    || filter.getRuleIdsList().contains(filteredRule.getId()))
         .filter(
-            rule ->
+            filteredRule ->
                 filter.getEventTypesList().isEmpty()
-                    || filter.getEventTypesList().contains(rule.getEffect().getEventType()))
-        .filter(rule -> !(filter.hasDisabled() && rule.getDisabled() != filter.getDisabled()))
-        .filter(rule -> !(filter.hasInternal() && rule.getInternal() != filter.getInternal()))
-        .filter(rule -> filterOnCustomSecRulePresent(rule, filter))
-        .filter(rule -> filterRuleOnScope(rule, filter.getRuleScope()))
-        .filter(rule -> filterRuleOnSource(rule, filter.getRuleSourcesList()))
-        .filter(rule -> filterRuleOnLabels(rule, filter.getLabelKeysList()));
+                    || filter.getEventTypesList().contains(filteredRule.getEffect().getEventType()))
+        .filter(
+            filteredRule ->
+                !(filter.hasDisabled() && filteredRule.getDisabled() != filter.getDisabled()))
+        .filter(
+            filteredRule ->
+                !(filter.hasInternal() && filteredRule.getInternal() != filter.getInternal()))
+        .filter(filteredRule -> filterOnCustomSecRulePresent(filteredRule, filter))
+        .filter(filteredRule -> filterRuleOnScope(filteredRule, filter.getRuleScope()))
+        .filter(filteredRule -> filterRuleOnSource(filteredRule, filter.getRuleSourcesList()))
+        .filter(filteredRule -> filterRuleOnLabels(filteredRule, filter.getLabelKeysList()))
+        .filter(
+            filteredRule ->
+                filterRuleOnRuleEvaluationPoints(
+                    filteredRule, filter.getRuleEvaluationPointsList()));
   }
 
   private boolean filterRuleOnSource(CustomSignatureRule rule, List<RuleSource> ruleSources) {
@@ -143,6 +154,13 @@ public class CustomSignatureRulesStore
   private boolean filterRuleOnLabels(CustomSignatureRule rule, List<String> labelKeys) {
     return labelKeys.isEmpty()
         || rule.getDefinition().getLabelsMap().keySet().containsAll(labelKeys);
+  }
+
+  private boolean filterRuleOnRuleEvaluationPoints(
+      CustomSignatureRule rule, List<RuleEvaluationPoint> ruleEvaluationPointsInFilter) {
+    return ruleEvaluationPointsInFilter.isEmpty()
+        || rule.getEffect().getRuleEvaluationPointsList().stream()
+            .anyMatch(ruleEvaluationPointsInFilter::contains);
   }
 
   /**

@@ -15,7 +15,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class CustomSignatureRulesFetcher implements RulesFetcher {
   private static final GetRulesFilter DEFAULT_GET_CUSTOM_SIGNATURE_MODSEC_RULES_FILTER =
-      GetRulesFilter.newBuilder().setDisabled(false).setFilterEdgeDecisionRules(true).build();
+      GetRulesFilter.newBuilder().setDisabled(false).build();
 
   private final CustomSignatureConfigServiceBlockingStub configServiceBlockingStub;
   private final ClientConfig clientConfig;

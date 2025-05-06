@@ -18,7 +18,6 @@ import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRu
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesResponse;
-import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleResponse;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
@@ -66,9 +65,6 @@ public class CustomSignatureConfigServiceImpl
       rulesValidator.validate(request);
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(context, request.getFilter());
-      if (filterOutEdgeDecisionRules(context, request.getFilter())) {
-        rules = CustomSignatureRulesEdgeDecisionFilter.getFilteredRules(rules);
-      }
       responseObserver.onNext(
           GetCustomSignatureRulesResponse.newBuilder().addAllRules(rules).build());
       responseObserver.onCompleted();
@@ -176,9 +172,6 @@ public class CustomSignatureConfigServiceImpl
       rulesValidator.validate(request);
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(context, request.getFilter());
-      if (filterOutEdgeDecisionRules(context, request.getFilter())) {
-        rules = CustomSignatureRulesEdgeDecisionFilter.getFilteredRules(rules);
-      }
       GetCustomSignatureModsecRulesResponse response =
           modsecRulesManager.getModsecRules(
               context, rules, request.getRuleVersion(), request.getIncludeAllPartialModsecRules());
@@ -220,12 +213,5 @@ public class CustomSignatureConfigServiceImpl
               .withDescription("Unable to fetch custom signature edge decision rules")
               .asException());
     }
-  }
-
-  private boolean filterOutEdgeDecisionRules(RequestContext context, GetRulesFilter filter) {
-    return featureCachingClient.isEdgeDecisionEnabledForTenant(context)
-        && customSignatureConfigServiceConfig.isEdsConversionEnabled()
-        && filter.hasFilterEdgeDecisionRules()
-        && filter.getFilterEdgeDecisionRules();
   }
 }
