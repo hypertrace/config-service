@@ -4,7 +4,9 @@ import static ai.traceable.anomaly.config.service.trainer.trainingaction.Trainin
 import static ai.traceable.anomaly.config.service.trainer.trainingaction.TrainingActionConstants.TRAINING_ACTION_NAMESPACE;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
+import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.trainer.ScopedTrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
 import com.google.inject.Inject;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +31,14 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
     implements TrainingActionManager {
   private final TrainingActionConverter actionConverter;
   private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
+  private final TrainerConfigServiceConfig config;
 
   @Inject
   TrainingActionManagerImpl(
       TrainingActionConverter actionConverter,
       ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub,
       AnomalyConfigScopeUtils anomalyConfigScopeUtils,
+      TrainerConfigServiceConfig config,
       ConfigChangeEventGenerator configChangeEventGenerator) {
     super(
         configServiceBlockingStub,
@@ -42,6 +47,7 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
         configChangeEventGenerator);
     this.actionConverter = actionConverter;
     this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
+    this.config = config;
   }
 
   @Override
@@ -57,7 +63,7 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
     ScopedTrainingActionConfig updatedScopedTrainingConfig =
         actionConverter.merge(configScope, trainingAction, existingScopedActionConfig);
 
-    return upsertObject(requestContext, updatedScopedTrainingConfig).getData();
+    return mergeWithDefaults(upsertObject(requestContext, updatedScopedTrainingConfig).getData());
   }
 
   @Override
@@ -114,6 +120,16 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
               contextToScopedActionConfigMap, contextsWithIncreasingPriority, anomalyConfigScope));
     }
 
+    if (!contextToScopedActionConfigMap.containsKey(tenantId)) {
+      resolvedScopedActionConfigs.add(
+          ScopedTrainingActionConfig.newBuilder()
+              .setConfigScope(
+                  AnomalyConfigScope.newBuilder()
+                      .setCustomerScope(AnomalyCustomerScope.newBuilder().build())
+                      .build())
+              .addAllTrainingActionConfig(config.getDefaultTrainingActionConfigs())
+              .build());
+    }
     return resolvedScopedActionConfigs;
   }
 
@@ -130,7 +146,7 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
                   contextToScopedActionConfigMap.get(context), scopedActionConfig)
               : scopedActionConfig;
     }
-    return scopedActionConfig;
+    return mergeWithDefaults(scopedActionConfig);
   }
 
   @Override
@@ -141,6 +157,23 @@ public class TrainingActionManagerImpl extends IdentifiedObjectStore<ScopedTrain
       log.error("Unable to convert config to ScopedTrainingActionConfig for value: {}", value);
       return Optional.empty();
     }
+  }
+
+  private ScopedTrainingActionConfig mergeWithDefaults(ScopedTrainingActionConfig existingConfig) {
+    ScopedTrainingActionConfig.Builder builder =
+        ScopedTrainingActionConfig.newBuilder(existingConfig);
+
+    Set<TrainingAction.ActionCase> existingActionTypes =
+        existingConfig.getTrainingActionConfigList().stream()
+            .map(trainingActionConfig -> trainingActionConfig.getTrainingAction().getActionCase())
+            .collect(Collectors.toSet());
+
+    config.getDefaultTrainingActionConfigs().stream()
+        .filter(
+            defaultAction ->
+                !existingActionTypes.contains(defaultAction.getTrainingAction().getActionCase()))
+        .forEach(builder::addTrainingActionConfig);
+    return builder.build();
   }
 
   @Override

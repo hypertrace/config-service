@@ -1182,12 +1182,12 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     Map<AnomalyConfigScope, ScopedTrainingActionConfig> scopedActionConfigMap =
         getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
     assertEquals(1, scopedActionConfigMap.size());
-    // customer scope will have 1 action: PAUSE
+    // customer scope will have 3 action: PAUSE and TWO DEFAULTS(USER_SCOPE and USER_ROLE)
     List<TrainingActionConfig> trainingActionConfigList =
         scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
     Map<TrainingAction.ActionCase, TrainingActionConfig> actionConfigMap =
         getActionConfigMap(trainingActionConfigList);
-    assertEquals(1, actionConfigMap.size());
+    assertEquals(3, actionConfigMap.size());
     TrainingActionConfig trainingActionConfig = actionConfigMap.get(ActionCase.PAUSE_ACTION);
     assertTrue(trainingActionConfig.getTimestamp() >= upsertPauseRequestTime1);
     long tenantPauseActionTime = trainingActionConfig.getTimestamp();
@@ -1201,18 +1201,18 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     scopedTrainingActionConfigList = getAllTrainerActions(TENANT_ID);
     assertEquals(2, scopedTrainingActionConfigList.size());
     scopedActionConfigMap = getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
-    // customer scope will have 1 action: PAUSE
+    // customer scope will have 1 action: PAUSE and TWO DEFAULTS(USER_SCOPE and USER_ROLE)
     trainingActionConfigList =
         scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(1, actionConfigMap.size());
+    assertEquals(3, actionConfigMap.size());
     assertEquals(
         tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
-    // service scope will have 2 actions: PAUSE and RESUME
+    // service scope will have 2 actions: PAUSE, RESUME and TWO DEFAULTS(USER_SCOPE and USER_ROLE)
     trainingActionConfigList =
         scopedActionConfigMap.get(serviceConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(2, actionConfigMap.size());
+    assertEquals(4, actionConfigMap.size());
     assertEquals(
         tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
     assertTrue(
@@ -1228,18 +1228,18 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     scopedTrainingActionConfigList = getAllTrainerActions(TENANT_ID);
     assertEquals(3, scopedTrainingActionConfigList.size());
     scopedActionConfigMap = getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
-    // customer scope will have 1 action: PAUSE
+    // customer scope will have 3 action: PAUSE and TWO DEFAULTS(USER_SCOPE and USER_ROLE)
     trainingActionConfigList =
         scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(1, actionConfigMap.size());
+    assertEquals(3, actionConfigMap.size());
     assertEquals(
         tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
-    // service scope will have 2 actions: PAUSE and RESUME
+    // service scope will have 2 actions: PAUSE, RESUME and TWO DEFAULTS(USER_SCOPE and USER_ROLE)
     trainingActionConfigList =
         scopedActionConfigMap.get(serviceConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(2, actionConfigMap.size());
+    assertEquals(4, actionConfigMap.size());
     assertEquals(
         tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
     assertEquals(
@@ -1248,7 +1248,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     trainingActionConfigList =
         scopedActionConfigMap.get(apiConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(2, actionConfigMap.size());
+    assertEquals(4, actionConfigMap.size());
     long apiPauseActionTime = actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp();
     assertTrue(apiPauseActionTime >= tenantPauseActionTime);
     assertTrue(apiPauseActionTime >= upsertPauseRequestTime2);
@@ -1264,20 +1264,22 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     scopedTrainingActionConfigList = getAllTrainerActions(TENANT_ID);
     assertEquals(3, scopedTrainingActionConfigList.size());
     scopedActionConfigMap = getScopedTrainingActionConfigMap(scopedTrainingActionConfigList);
-    // customer scope will now have 2 actions: PAUSE and RESET
+    // customer scope will now have 4 actions: PAUSE, RESET and TWO DEFAULTS(USER_SCOPE and
+    // USER_ROLE)
     trainingActionConfigList =
         scopedActionConfigMap.get(customerConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(2, actionConfigMap.size());
+    assertEquals(4, actionConfigMap.size());
     assertEquals(
         tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
     long tenantResetActionTime = actionConfigMap.get(ActionCase.RESET_ACTION).getTimestamp();
     assertTrue(tenantResetActionTime >= upsertResetRequestTime);
-    // service scope will have 3 actions: PAUSE, RESUME and RESET
+    // service scope will have 3 actions: PAUSE, RESUME, RESET and TWO DEFAULTS(USER_SCOPE and
+    // USER_ROLE)
     trainingActionConfigList =
         scopedActionConfigMap.get(serviceConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(3, actionConfigMap.size());
+    assertEquals(5, actionConfigMap.size());
     assertEquals(
         tenantPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
     assertEquals(
@@ -1288,7 +1290,7 @@ public class TrainerConfigServiceIntegrationTest extends TraceableConfigServiceI
     trainingActionConfigList =
         scopedActionConfigMap.get(apiConfigScope).getTrainingActionConfigList();
     actionConfigMap = getActionConfigMap(trainingActionConfigList);
-    assertEquals(3, actionConfigMap.size());
+    assertEquals(5, actionConfigMap.size());
     assertEquals(apiPauseActionTime, actionConfigMap.get(ActionCase.PAUSE_ACTION).getTimestamp());
     assertEquals(
         serviceResumeActionTime, actionConfigMap.get(ActionCase.RESUME_ACTION).getTimestamp());

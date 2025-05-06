@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.v1.EnumExtension;
 import ai.traceable.anomaly.config.service.v1.aggregator.AggregationConfig;
 import ai.traceable.anomaly.config.service.v1.aggregator.EventAggregationGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -118,6 +119,18 @@ public class ConfigConverter {
         .map(
             config -> {
               TrainingConfig.Builder builder = TrainingConfig.newBuilder();
+              mergeFromConfig(config, builder);
+              return builder.build();
+            })
+        .collect(Collectors.toList());
+  }
+
+  public List<TrainingActionConfig> convertToTrainingActionConfigs(
+      List<? extends Config> configList) {
+    return configList.stream()
+        .map(
+            config -> {
+              TrainingActionConfig.Builder builder = TrainingActionConfig.newBuilder();
               mergeFromConfig(config, builder);
               return builder.build();
             })

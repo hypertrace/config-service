@@ -2,12 +2,13 @@ package ai.traceable.anomaly.config.service.trainer.trainingaction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
+import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceConfig;
 import ai.traceable.anomaly.config.service.v1.AnomalyApiScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
@@ -19,6 +20,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingAction.ActionCase;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UserRoleAction;
+import ai.traceable.anomaly.config.service.v1.trainer.UserScopeAction;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import com.typesafe.config.Config;
@@ -93,6 +95,8 @@ public class TrainingActionManagerTest {
     mockServer = InProcessServerBuilder.forName(serverName).build().start();
     mockConfigService =
         new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDelete();
+    TrainerConfigServiceConfig mockConfig = mock(TrainerConfigServiceConfig.class);
+    when(mockConfig.getDefaultTrainingActionConfigs()).thenReturn(getTrainingActions());
     mockConfigService.start();
     ConfigServiceGrpc.ConfigServiceBlockingStub configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
@@ -104,6 +108,7 @@ public class TrainingActionManagerTest {
                 actionConverter,
                 configServiceBlockingStub,
                 anomalyConfigScopeUtils,
+                mockConfig,
                 mock(ConfigChangeEventGenerator.class)));
   }
 
@@ -130,6 +135,7 @@ public class TrainingActionManagerTest {
                           AnomalyConfigScope.newBuilder()
                               .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
                               .build())
+                      .addAllTrainingActionConfig(getTrainingActions())
                       .build(),
                   result,
                   "Should return customer scope with empty TrainingActionConfig");
@@ -367,6 +373,7 @@ public class TrainingActionManagerTest {
                               .setServiceScope(
                                   AnomalyServiceScope.newBuilder().setId("service").build())
                               .build())
+                      .addAllTrainingActionConfig(getTrainingActions())
                       .build(),
                   result,
                   "Should return service scope with empty TrainingActionConfig");
@@ -380,7 +387,7 @@ public class TrainingActionManagerTest {
 
     List<ScopedTrainingActionConfig> scopedTrainingActionConfigList =
         actionManager.getAllTrainingActions(requestContext);
-    assertTrue(scopedTrainingActionConfigList.isEmpty());
+    assertFalse(scopedTrainingActionConfigList.isEmpty());
 
     // upsert action at customer level and verify responses for upsert and getAll methods
     Config customerScopedInputConfig = scopedTrainingActionsInput.getConfig(CUSTOMER_SCOPE_CONFIG);
@@ -516,8 +523,10 @@ public class TrainingActionManagerTest {
         fetchedScopedActionConfig.getConfigScope(), resolvedScopedActionConfig.getConfigScope());
     Map<ActionCase, TrainingActionConfig> fetchedActionConfigMap =
         getActionConfigMap(fetchedScopedActionConfig);
+    System.out.println(fetchedActionConfigMap);
     Map<ActionCase, TrainingActionConfig> resolvedActionConfigMap =
         getActionConfigMap(resolvedScopedActionConfig);
+    System.out.println(resolvedActionConfigMap);
     assertEquals(fetchedActionConfigMap.size(), resolvedActionConfigMap.size());
     // verify each TrainingAction within TrainingActionConfig is the same. Note that we cannot
     // verify the timestamp within fetchedScopedActionConfig since that is populated at runtime
@@ -537,5 +546,81 @@ public class TrainingActionManagerTest {
             Collectors.toMap(
                 trainingActionConfig -> trainingActionConfig.getTrainingAction().getActionCase(),
                 Function.identity()));
+  }
+
+  @Test
+  void testExistingActionsNotOverriddenByDefaults() {
+    TrainingAction customUserRoleAction =
+        TrainingAction.newBuilder()
+            .setUserRoleAction(
+                UserRoleAction.newBuilder()
+                    .setPauseEntityLearnAction(
+                        PauseEntityLearnAction.newBuilder().setDisabledAll(true).build())
+                    .build())
+            .build();
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+    Context.current()
+        .withValue(RequestContext.CURRENT, requestContext)
+        .run(
+            () ->
+                actionManager.upsertTrainingAction(
+                    requestContext, customerConfigScope, customUserRoleAction));
+    List<ScopedTrainingActionConfig> allConfigs =
+        actionManager.getAllTrainingActions(requestContext);
+    ScopedTrainingActionConfig customerConfig = null;
+    for (ScopedTrainingActionConfig config : allConfigs) {
+      if (config.getConfigScope().equals(customerConfigScope)) {
+        customerConfig = config;
+        break;
+      }
+    }
+
+    assertNotNull(customerConfig, "Customer config should exist after upsert");
+    Map<ActionCase, TrainingActionConfig> actionMap = getActionConfigMap(customerConfig);
+    TrainingActionConfig userRoleConfig = actionMap.get(TrainingAction.ActionCase.USER_ROLE_ACTION);
+
+    assertFalse(actionMap.isEmpty());
+    assertTrue(actionMap.containsKey(TrainingAction.ActionCase.USER_ROLE_ACTION));
+    assertTrue(
+        userRoleConfig
+            .getTrainingAction()
+            .getUserRoleAction()
+            .getPauseEntityLearnAction()
+            .getDisabledAll(),
+        "Custom UserRoleAction should not be overridden by defaults");
+    assertTrue(actionMap.containsKey(TrainingAction.ActionCase.USER_SCOPE_ACTION));
+    assertFalse(
+        actionMap
+            .get(TrainingAction.ActionCase.USER_SCOPE_ACTION)
+            .getTrainingAction()
+            .getUserScopeAction()
+            .getPauseEntityLearnAction()
+            .getDisabledAll(),
+        "UserScopeAction should be added from defaults with disabledAll=false");
+  }
+
+  private List<TrainingActionConfig> getTrainingActions() {
+    return List.of(
+        TrainingActionConfig.newBuilder()
+            .setTrainingAction(
+                TrainingAction.newBuilder()
+                    .setUserRoleAction(
+                        UserRoleAction.newBuilder()
+                            .setPauseEntityLearnAction(
+                                PauseEntityLearnAction.newBuilder().setDisabledAll(false).build())
+                            .build())
+                    .build())
+            .build(),
+        TrainingActionConfig.newBuilder()
+            .setTrainingAction(
+                TrainingAction.newBuilder()
+                    .setUserScopeAction(
+                        UserScopeAction.newBuilder()
+                            .setPauseEntityLearnAction(
+                                PauseEntityLearnAction.newBuilder().setDisabledAll(false).build())
+                            .build())
+                    .build())
+            .build());
   }
 }

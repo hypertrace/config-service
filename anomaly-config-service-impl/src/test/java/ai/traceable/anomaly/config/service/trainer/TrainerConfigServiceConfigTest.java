@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.v1.trainer.EnumerationsTrainingConfig
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdCountConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdFamilyConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.ThresholdsFamilyTrainingConfig;
+import ai.traceable.anomaly.config.service.v1.trainer.TrainingActionConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.TrainingConfig;
 import ai.traceable.anomaly.config.service.v1.trainer.UserAttributionTrainingConfig;
 import com.typesafe.config.Config;
@@ -36,9 +37,12 @@ public class TrainerConfigServiceConfigTest {
         trainerConfigServiceConfig.getMetadataTrainingConfigs();
     List<TrainingConfig> vulnerabilityTrainingConfigs =
         trainerConfigServiceConfig.getVulnerabilityTrainingConfigs();
+    List<TrainingActionConfig> trainingActionConfigs =
+        trainerConfigServiceConfig.getDefaultTrainingActionConfigs();
     testApiNamingTrainingConfigs(apiNamingTrainingConfigs);
     testMetadataTrainingConfigs(metadataTrainingConfigs);
     testVulnerabilityTrainingConfigs(vulnerabilityTrainingConfigs);
+    testDefaultTrainingActionConfigs(trainingActionConfigs);
   }
 
   private void testVulnerabilityTrainingConfigs(List<TrainingConfig> vulnerabilityTrainingConfigs) {
@@ -576,5 +580,23 @@ public class TrainerConfigServiceConfigTest {
     assertEquals(
         List.of("role", "roles", "user_role", "scope"),
         userAttributionTrainingConfig.getUserRoleKeywords().getValuesList());
+  }
+
+  private void testDefaultTrainingActionConfigs(List<TrainingActionConfig> trainingActionConfigs) {
+    assertEquals(2, trainingActionConfigs.size());
+    assertFalse(
+        trainingActionConfigs
+            .get(0)
+            .getTrainingAction()
+            .getUserRoleAction()
+            .getPauseEntityLearnAction()
+            .getDisabledAll());
+    assertFalse(
+        trainingActionConfigs
+            .get(0)
+            .getTrainingAction()
+            .getUserScopeAction()
+            .getPauseEntityLearnAction()
+            .getDisabledAll());
   }
 }
