@@ -35,19 +35,33 @@ message Param {
   }
 }
 
+message TupleParam {
+  string name = 1;
+  repeated Param tuple_elements = 2;
+}
+
 message LiteralParam {
   string name = 1;
+  // literal value, usually provided by the runtime module (not config)
   string value = 2;
 }
 
 message TypedParam {
   string name = 1;
   ai.traceable.fraud.datamodel.config.service.v1.FieldType type = 2;
+  // literal value, usually provided by the runtime module (not config)
   ai.traceable.fraud.datamodel.config.service.v1.FieldValue value = 3;
 }
 
+// query parameters that are usually populated from runtime context
+// runtime context depends on the module that's invoking the query
+// for ex
+// - when policy engine uses the query object, runtime context is the evaluation context
+// - when detection event span publisher uses the query object, runtime context is the output of a policy evaluation
+// - when incident processor uses the query object, runtime context is the incident event object
 message QueryParams {
   repeated Param query_params = 1;
+  repeated TupleParam tuple_query_params = 2;
 }
 
 message EntityGraphDataQuery {
