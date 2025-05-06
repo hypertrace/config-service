@@ -29,6 +29,7 @@ message CreateJiraIntegrationRequest {
   EncryptedData encrypted_access_token = 5 [deprecated = true];
   Scope scope = 6;
   JiraIntegrationDetails jira_integration_details = 7;
+  optional string override_base_url = 8;
 }
 
 message CreateJiraIntegrationResponse {
@@ -48,6 +49,7 @@ message UpdateJiraIntegrationRequest {
   string name = 2;
   string description = 3;
   Scope scope = 4;
+  optional string override_base_url = 5;
 }
 
 message UpdateJiraIntegrationResponse {
@@ -152,6 +154,7 @@ message JiraIntegration {
   EncryptedData encrypted_access_token = 7 [deprecated = true];
   JiraIntegrationDetails jira_integration_details = 8;
   optional bool jira_bidirectional_sync_is_enabled = 9;
+  optional string override_base_url = 10;
 }
 
 message JiraIntegrationDetails {
