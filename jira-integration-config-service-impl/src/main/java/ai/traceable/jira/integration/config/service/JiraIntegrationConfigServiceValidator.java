@@ -53,6 +53,10 @@ public class JiraIntegrationConfigServiceValidator {
       validateEncryptedDataOrThrow(request.getEncryptedAccessToken());
     }
     validateUniqueNameOrThrow(requestContext, request.getName());
+    if (request.hasOverrideBaseUrl()) {
+      validateNonDefaultPresenceOrThrow(
+          request, CreateJiraIntegrationRequest.OVERRIDE_BASE_URL_FIELD_NUMBER);
+    }
     if (request.hasScope()) {
       validateScopeForMutationOrThrow(request.getScope(), requestContext, Collections.emptySet());
     } else {
@@ -285,6 +289,10 @@ public class JiraIntegrationConfigServiceValidator {
           request.getScope(), requestContext, Set.of(request.getJiraIntegrationId()));
     } else {
       validateUnscopedForMutationOrThrow(requestContext, Set.of(request.getJiraIntegrationId()));
+    }
+    if (request.hasOverrideBaseUrl()) {
+      validateNonDefaultPresenceOrThrow(
+          request, UpdateJiraIntegrationRequest.OVERRIDE_BASE_URL_FIELD_NUMBER);
     }
     validateUniqueNameOrThrow(requestContext, request.getName(), request.getJiraIntegrationId());
   }

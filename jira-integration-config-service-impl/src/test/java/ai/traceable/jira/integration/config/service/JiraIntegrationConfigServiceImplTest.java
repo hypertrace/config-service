@@ -690,6 +690,7 @@ class JiraIntegrationConfigServiceImplTest {
             .setName("dummyIntegration" + sr)
             .setDescription("dummyDescription")
             .setBaseUrl("dummyLoginUrl")
+            .setOverrideBaseUrl("dummyOverrideBaseUrl")
             .setConsumerKey("dummyConsumerKey")
             .setEncryptedAccessToken(
                 EncryptedData.newBuilder()
@@ -758,6 +759,7 @@ class JiraIntegrationConfigServiceImplTest {
         .setName(jiraIntegration.getName())
         .setDescription(jiraIntegration.getDescription())
         .setBaseUrl(jiraIntegration.getBaseUrl())
+        .setOverrideBaseUrl(jiraIntegration.getOverrideBaseUrl())
         .setConsumerKey(jiraIntegration.getConsumerKey())
         .setEncryptedAccessToken(jiraIntegration.getEncryptedAccessToken())
         .setScope(jiraIntegration.getScope())

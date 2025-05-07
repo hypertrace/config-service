@@ -62,6 +62,9 @@ public class JiraIntegrationCoordinator {
     if (request.hasJiraIntegrationDetails()) {
       jiraIntegration.setJiraIntegrationDetails(request.getJiraIntegrationDetails());
     }
+    if (request.hasOverrideBaseUrl()) {
+      jiraIntegration.setOverrideBaseUrl(request.getOverrideBaseUrl());
+    }
     jiraIntegrationStore.upsertObject(requestContext, jiraIntegration.build());
     return CreateJiraIntegrationResponse.newBuilder().setIntegration(jiraIntegration).build();
   }
@@ -121,6 +124,9 @@ public class JiraIntegrationCoordinator {
     jiraIntegrationAtBuilder.clearScope();
     if (request.hasScope()) {
       jiraIntegrationAtBuilder.setScope(request.getScope());
+    }
+    if (request.hasOverrideBaseUrl()) {
+      jiraIntegrationAtBuilder.setOverrideBaseUrl(request.getOverrideBaseUrl());
     }
     jiraIntegrationStore.upsertObject(requestContext, jiraIntegrationAtBuilder.build());
     return jiraIntegrationAtBuilder.build();

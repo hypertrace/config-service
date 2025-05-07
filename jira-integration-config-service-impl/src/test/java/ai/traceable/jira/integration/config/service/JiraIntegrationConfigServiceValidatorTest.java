@@ -123,6 +123,7 @@ class JiraIntegrationConfigServiceValidatorTest {
     // encryptedAccessToken
     CreateJiraIntegrationRequest createRequest6 =
         createRequest4.toBuilder()
+            .setOverrideBaseUrl(TEXT)
             .clearEncryptedAccessToken()
             .clearConsumerKey()
             .clearScope()
@@ -241,6 +242,7 @@ class JiraIntegrationConfigServiceValidatorTest {
     UpdateJiraIntegrationRequest updateJiraIntegrationRequest2 =
         updateJiraIntegrationRequest1.toBuilder()
             .setName(TEXT)
+            .setOverrideBaseUrl(TEXT)
             .setScope(Scope.newBuilder().setEnvironmentIds(StringList.newBuilder().addValues(TEXT)))
             .build();
     when(jiraIntegrationStore.getAllConfigData(requestContext1))
@@ -249,6 +251,7 @@ class JiraIntegrationConfigServiceValidatorTest {
                 JiraIntegration.newBuilder()
                     .setId(updateJiraIntegrationRequest2.getJiraIntegrationId())
                     .setName(TEXT)
+                    .setOverrideBaseUrl(TEXT)
                     .build()));
     Assertions.assertDoesNotThrow(
         () ->
