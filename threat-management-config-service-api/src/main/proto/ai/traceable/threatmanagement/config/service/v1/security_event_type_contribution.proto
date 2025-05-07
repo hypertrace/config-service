@@ -21,6 +21,7 @@ message UpdateSecurityEventTypeContributionRequest {
 
 message UpdateSecurityEventTypeContributionResponse {
   SecurityEventTypeContribution security_event_type_contribution = 1;
+  SecurityEventTypeContribution default_event_type_contribution = 2;
 }
 
 message SecurityEventTypeContribution {

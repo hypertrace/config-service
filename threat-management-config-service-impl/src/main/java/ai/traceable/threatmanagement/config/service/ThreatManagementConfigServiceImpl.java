@@ -274,6 +274,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       responseObserver.onNext(
           UpdateSecurityEventTypeContributionResponse.newBuilder()
               .setSecurityEventTypeContribution(securityEventTypeContribution)
+              .setDefaultEventTypeContribution(
+                  securityEventTypeContributionManager.getDefaultSecurityEventTypeContribution())
               .build());
       responseObserver.onCompleted();
     } catch (Exception e) {

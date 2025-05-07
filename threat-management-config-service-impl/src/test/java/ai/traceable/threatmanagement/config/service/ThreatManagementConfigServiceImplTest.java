@@ -502,6 +502,8 @@ class ThreatManagementConfigServiceImplTest {
       when(securityEventTypeContributionManager.upsertSecurityEventTypeContribution(
               any(RequestContext.class), eq(SECURITY_EVENT_TYPE_CONTRIBUTION_1)))
           .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_2);
+      when(securityEventTypeContributionManager.getDefaultSecurityEventTypeContribution())
+          .thenReturn(SECURITY_EVENT_TYPE_CONTRIBUTION_2);
 
       StreamObserver<UpdateSecurityEventTypeContributionResponse> responseObserver =
           mock(StreamObserver.class);
@@ -519,6 +521,7 @@ class ThreatManagementConfigServiceImplTest {
           .onNext(
               UpdateSecurityEventTypeContributionResponse.newBuilder()
                   .setSecurityEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_2)
+                  .setDefaultEventTypeContribution(SECURITY_EVENT_TYPE_CONTRIBUTION_2)
                   .build());
       verify(responseObserver, times(1)).onCompleted();
     }
