@@ -8,6 +8,7 @@ import io.grpc.Status;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig.WebIdentityAuthenticationCredential;
@@ -16,6 +17,7 @@ import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRe
 import org.hypertrace.notification.config.service.v1.EmailChannelConfig;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.SplunkIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.SyslogIntegrationChannelConfig;
@@ -31,11 +33,16 @@ public class NotificationChannelConfigServiceRequestValidator {
   public void validateCreateNotificationChannelRequest(
       RequestContext requestContext,
       CreateNotificationChannelRequest request,
-      Config notificationChannelConfig) {
+      Config notificationChannelConfig,
+      List<NotificationChannel> existingNotificationChannels) {
     validateRequestContextOrThrow(requestContext);
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
     validateWebhookConfigExclusionDomains(
         request.getNotificationChannelMutableData(), notificationChannelConfig);
+    validateNonDuplicateNotificationChannelOrThrow(
+        null,
+        request.getNotificationChannelMutableData().getChannelName(),
+        existingNotificationChannels);
     validateWebhookHttpSupport(
         request.getNotificationChannelMutableData(), notificationChannelConfig);
   }
@@ -99,12 +106,17 @@ public class NotificationChannelConfigServiceRequestValidator {
   public void validateUpdateNotificationChannelRequest(
       RequestContext requestContext,
       UpdateNotificationChannelRequest request,
-      Config notificationChannelConfig) {
+      Config notificationChannelConfig,
+      List<NotificationChannel> existingNotificationChannels) {
     validateRequestContextOrThrow(requestContext);
     validateNonDefaultPresenceOrThrow(request, UpdateNotificationChannelRequest.ID_FIELD_NUMBER);
     validateNotificationChannelMutableData(request.getNotificationChannelMutableData());
     validateWebhookConfigExclusionDomains(
         request.getNotificationChannelMutableData(), notificationChannelConfig);
+    validateNonDuplicateNotificationChannelOrThrow(
+        request.getId(),
+        request.getNotificationChannelMutableData().getChannelName(),
+        existingNotificationChannels);
     validateWebhookHttpSupport(
         request.getNotificationChannelMutableData(), notificationChannelConfig);
   }
@@ -192,5 +204,22 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNonDefaultPresenceOrThrow(
         syslogIntegrationChannelConfig,
         SyslogIntegrationChannelConfig.SYSLOG_SERVER_INTEGRATION_ID_FIELD_NUMBER);
+  }
+
+  private void validateNonDuplicateNotificationChannelOrThrow(
+      @Nullable String id,
+      String channelName,
+      List<NotificationChannel> existingNotificationChannels) {
+    for (NotificationChannel existingNotificationChannel : existingNotificationChannels) {
+      if (!existingNotificationChannel.getId().equals(id)
+          && existingNotificationChannel
+              .getNotificationChannelMutableData()
+              .getChannelName()
+              .equals(channelName)) {
+        throw Status.ALREADY_EXISTS
+            .withDescription("Notification Channel with the same name already exists.")
+            .asRuntimeException();
+      }
+    }
   }
 }
