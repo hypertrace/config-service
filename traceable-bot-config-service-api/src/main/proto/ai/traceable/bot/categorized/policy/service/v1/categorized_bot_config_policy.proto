@@ -57,8 +57,8 @@ message BotScope {
   }
 
   message BotClassification {
-    string category = 1;
-    repeated string sub_category = 2;
+    string bot_category_id = 1;
+    repeated string bot_sub_category_id = 2;
   }
 
   message BotList {

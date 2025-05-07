@@ -35,4 +35,31 @@ dependencies {
 
 tasks.test {
   useJUnitPlatform()
+
+  // Make sure config files are copied before tests run
+  dependsOn("copyConfigFiles")
+
+  // Ensure cleanup happens after tests
+  finalizedBy("cleanupTestConfig")
+}
+
+// Task to copy configuration files from traceable-config-service to test resources
+// This will only be executed when the test task runs due to the dependsOn relationship
+tasks.register<Copy>("copyConfigFiles") {
+  from("${rootProject.projectDir}/traceable-config-service/src/main/resources/configs/common/application.conf")
+  into(layout.buildDirectory.dir("resources/test"))
+  // Ensure the directory exists
+  doFirst {
+    layout.buildDirectory.dir("resources/test").get().asFile.mkdirs()
+  }
+}
+
+// Task to remove the config file after tests are done
+tasks.register<Delete>("cleanupTestConfig") {
+  delete(layout.buildDirectory.file("resources/test/application.conf"))
+}
+
+// Explicitly exclude application.conf coped from traceable config service from the jar task
+tasks.jar {
+  exclude("**/application.conf")
 }

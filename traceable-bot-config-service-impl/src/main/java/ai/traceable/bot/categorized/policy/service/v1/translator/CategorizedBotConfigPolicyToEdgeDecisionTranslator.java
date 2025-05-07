@@ -205,13 +205,13 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                   final BotClassification botClassification = botScope.getBotClassification();
                   final boolean categoryMatches =
                       categorizedBotDetails
-                          .getBotCategory()
-                          .equals(botClassification.getCategory());
-                  if (!botClassification.getSubCategoryList().isEmpty()) {
+                          .getBotCategoryId()
+                          .equals(botClassification.getBotCategoryId());
+                  if (!botClassification.getBotSubCategoryIdList().isEmpty()) {
                     final boolean subCategoryMatches =
                         botClassification
-                            .getSubCategoryList()
-                            .contains(categorizedBotDetails.getBotSubCategory());
+                            .getBotSubCategoryIdList()
+                            .contains(categorizedBotDetails.getBotSubCategoryId());
                     return categoryMatches && subCategoryMatches;
                   }
                   return categoryMatches;

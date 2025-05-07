@@ -6,6 +6,7 @@ import ai.traceable.bot.categorized.config.service.v1.validation.CategorizedBotC
 import com.google.inject.Inject;
 import com.google.protobuf.ProtocolStringList;
 import io.grpc.stub.StreamObserver;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -14,6 +15,30 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class CategorizedBotConfigService extends CategorizedBotConfigServiceImplBase {
+
+  @Override
+  public void getCategorizedBotCategoryDetails(
+      final GetCategorizedBotCategoryDetailsRequest request,
+      final StreamObserver<GetCategorizedBotCategoryDetailsResponse> responseObserver) {
+    // validate request
+    final RequestContext requestContext = RequestContext.CURRENT.get();
+    CategorizedBotConfigRequestValidator.validateRequestContext(requestContext);
+
+    final Collection<BotCategory> botCategories;
+    if (request.getBotCategoryIdsList().isEmpty()) {
+      botCategories = CategorizedBotCategoriesConfig.INSTANCE.getBotCategories();
+    } else {
+      botCategories =
+          CategorizedBotCategoriesConfig.INSTANCE.getBotCategories().stream()
+              .filter(botCategory -> request.getBotCategoryIdsList().contains(botCategory.getId()))
+              .collect(Collectors.toUnmodifiableList());
+    }
+    responseObserver.onNext(
+        GetCategorizedBotCategoryDetailsResponse.newBuilder()
+            .addAllBotCategories(botCategories)
+            .build());
+    responseObserver.onCompleted();
+  }
 
   @Override
   public void getCategorizedBotConfigs(
@@ -32,14 +57,14 @@ public class CategorizedBotConfigService extends CategorizedBotConfigServiceImpl
                 bot ->
                     matchesFilter(
                         request,
-                        CategorizedBotRequestFilter::getCategoryList,
-                        bot.getCategorizedBotDetails().getBotCategory()))
+                        CategorizedBotRequestFilter::getBotCategoryIdsList,
+                        bot.getCategorizedBotDetails().getBotCategoryId()))
             .filter(
                 bot ->
                     matchesFilter(
                         request,
-                        CategorizedBotRequestFilter::getSubCategoryList,
-                        bot.getCategorizedBotDetails().getBotSubCategory()))
+                        CategorizedBotRequestFilter::getBotSubCategoryIdsList,
+                        bot.getCategorizedBotDetails().getBotSubCategoryId()))
             .collect(Collectors.toUnmodifiableList());
     responseObserver.onNext(
         GetCategorizedBotConfigsResponse.newBuilder().addAllBotConfigs(filteredBotList).build());

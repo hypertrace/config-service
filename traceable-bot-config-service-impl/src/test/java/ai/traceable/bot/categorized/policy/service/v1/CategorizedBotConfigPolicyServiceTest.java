@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.mockito.quality.Strictness.LENIENT;
 
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotCategoriesConfig;
 import ai.traceable.bot.categorized.policy.service.v1.BotScope.BotList;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStore;
 import ai.traceable.bot.categorized.policy.service.v1.store.CategorizedBotConfigPolicyStoreManager;
@@ -73,105 +74,7 @@ class CategorizedBotConfigPolicyServiceTest {
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
     when(mockConfig.getConfig("bot.config.service"))
         .thenReturn(
-            ConfigFactory.parseString(
-                "default.policies = [\n"
-                    + "    {\n"
-                    + "      \"id\": \"bd35c18f-4287-458c-93dc-0150d9bc7b93\",\n"
-                    + "      \"categorizedBotPolicyDetails\": {\n"
-                    + "        \"name\": \"Crawlers\",\n"
-                    + "        \"description\": \"Default Policy created for Crawlers\",\n"
-                    + "        \"botScopes\": [{\n"
-                    + "          \"botClassification\": {\n"
-                    + "            \"category\": \"Crawlers\"\n"
-                    + "          }\n"
-                    + "        }],\n"
-                    + "        \"categorizedBotPolicyActionConfig\": {\n"
-                    + "          \"botAction\": \"CATEGORIZED_BOT_ACTION_MONITOR\"\n"
-                    + "        },\n"
-                    + "        \"isDefaultPolicy\": true\n"
-                    + "      }\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"id\": \"d1b42153-70d9-4e19-89e5-baad262123b2\",\n"
-                    + "      \"categorizedBotPolicyDetails\": {\n"
-                    + "        \"name\": \"Monitoring and Development Bots\",\n"
-                    + "        \"description\": \"Default Policy created for Monitoring and Development Bots\",\n"
-                    + "        \"botScopes\": [{\n"
-                    + "          \"botClassification\": {\n"
-                    + "            \"category\": \"Monitoring and Development Bots\"\n"
-                    + "          }\n"
-                    + "        }],\n"
-                    + "        \"categorizedBotPolicyActionConfig\": {\n"
-                    + "          \"botAction\": \"CATEGORIZED_BOT_ACTION_MONITOR\"\n"
-                    + "        },\n"
-                    + "        \"isDefaultPolicy\": true\n"
-                    + "      }\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"id\": \"794adce2-32af-42ce-84c6-f78798d27cd9\",\n"
-                    + "      \"categorizedBotPolicyDetails\": {\n"
-                    + "        \"name\": \"Social Media and Content Bots\",\n"
-                    + "        \"description\": \"Default Policy created for Social Media and Content Bots\",\n"
-                    + "        \"botScopes\": [{\n"
-                    + "          \"botClassification\": {\n"
-                    + "            \"category\": \"Social Media and Content Bots\"\n"
-                    + "          }\n"
-                    + "        }],\n"
-                    + "        \"categorizedBotPolicyActionConfig\": {\n"
-                    + "          \"botAction\": \"CATEGORIZED_BOT_ACTION_MONITOR\"\n"
-                    + "        },\n"
-                    + "        \"isDefaultPolicy\": true\n"
-                    + "      }\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"id\": \"a5f2f9b4-4bda-46d7-9a70-319b2371311c\",\n"
-                    + "      \"categorizedBotPolicyDetails\": {\n"
-                    + "        \"name\": \"Marketing and SEO Bots\",\n"
-                    + "        \"description\": \"Default Policy created for Marketing and SEO Bots\",\n"
-                    + "        \"botScopes\": [{\n"
-                    + "          \"botClassification\": {\n"
-                    + "            \"category\": \"Marketing and SEO Bots\"\n"
-                    + "          }\n"
-                    + "        }],\n"
-                    + "        \"categorizedBotPolicyActionConfig\": {\n"
-                    + "          \"botAction\": \"CATEGORIZED_BOT_ACTION_MONITOR\"\n"
-                    + "        },\n"
-                    + "        \"isDefaultPolicy\": true\n"
-                    + "      }\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"id\": \"1fbd03b8-b386-42f4-a681-ba9289f2aece\",\n"
-                    + "      \"categorizedBotPolicyDetails\": {\n"
-                    + "        \"name\": \"Search and Indexing Bots\",\n"
-                    + "        \"description\": \"Default Policy created for Search and Indexing Bots\",\n"
-                    + "        \"botScopes\": [{\n"
-                    + "          \"botClassification\": {\n"
-                    + "            \"category\": \"Search and Indexing Bots\"\n"
-                    + "          }\n"
-                    + "        }],\n"
-                    + "        \"categorizedBotPolicyActionConfig\": {\n"
-                    + "          \"botAction\": \"CATEGORIZED_BOT_ACTION_MONITOR\"\n"
-                    + "        },\n"
-                    + "        \"isDefaultPolicy\": true\n"
-                    + "      }\n"
-                    + "    },\n"
-                    + "    {\n"
-                    + "      \"id\": \"03ed4bfd-6314-4792-b525-01dd162c5a51\",\n"
-                    + "      \"categorizedBotPolicyDetails\": {\n"
-                    + "        \"name\": \"E-commerce and Financial Bots\",\n"
-                    + "        \"description\": \"Default Policy created for E-commerce and Financial Bots\",\n"
-                    + "        \"botScopes\": [{\n"
-                    + "          \"botClassification\": {\n"
-                    + "            \"category\": \"E-commerce and Financial Bots\"\n"
-                    + "          }\n"
-                    + "        }],\n"
-                    + "        \"categorizedBotPolicyActionConfig\": {\n"
-                    + "          \"botAction\": \"CATEGORIZED_BOT_ACTION_MONITOR\"\n"
-                    + "        },\n"
-                    + "        \"isDefaultPolicy\": true\n"
-                    + "      }\n"
-                    + "    }\n"
-                    + "  ]"));
+            ConfigFactory.parseResources("application.conf").getConfig("bot.config.service"));
     final CategorizedBotConfigPolicyStoreManager categorizedBotConfigPolicyStoreManager =
         new CategorizedBotConfigPolicyStoreManager(
             new CategorizedBotConfigPolicyStore(
@@ -286,7 +189,7 @@ class CategorizedBotConfigPolicyServiceTest {
                                     .build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(7, expectedPoliciesForEnv.size());
+    assertEquals(10, expectedPoliciesForEnv.size());
     assertEquals(createdPolicy, expectedPoliciesForEnv.get(0));
 
     // Test Get policy by invalid environmentIDs
@@ -302,7 +205,9 @@ class CategorizedBotConfigPolicyServiceTest {
                                     .build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(6, expectedPoliciesInvalidEnv.size());
+    assertEquals(
+        CategorizedBotCategoriesConfig.INSTANCE.getBotCategories().size(),
+        expectedPoliciesInvalidEnv.size());
 
     // Test Get policy all policies with empty filter
     final List<CategorizedBotConfigPolicy> totalPoliciesEmptyFilter =
@@ -315,7 +220,9 @@ class CategorizedBotConfigPolicyServiceTest {
                                 CategorizedBotConfigPolicyFilter.newBuilder().build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(7, totalPoliciesEmptyFilter.size());
+    assertEquals(
+        CategorizedBotCategoriesConfig.INSTANCE.getBotCategories().size() + 1,
+        totalPoliciesEmptyFilter.size());
 
     // Test Get policy all policies with no filter
     final List<CategorizedBotConfigPolicy> totalPoliciesNoFilter =
@@ -325,7 +232,9 @@ class CategorizedBotConfigPolicyServiceTest {
                     stub.getCategorizedBotConfigPolicies(
                         GetCategorizedBotConfigPoliciesRequest.newBuilder().build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(7, totalPoliciesNoFilter.size());
+    assertEquals(
+        CategorizedBotCategoriesConfig.INSTANCE.getBotCategories().size() + 1,
+        totalPoliciesNoFilter.size());
 
     // Test update policy
     final CategorizedBotConfigPolicyDetails updatedPolicyDetails =
@@ -383,7 +292,8 @@ class CategorizedBotConfigPolicyServiceTest {
                                 CategorizedBotConfigPolicyFilter.newBuilder().build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(6, allPolicies.size());
+    assertEquals(
+        CategorizedBotCategoriesConfig.INSTANCE.getBotCategories().size(), allPolicies.size());
 
     // Test delete policy without providing policy id - noop
     final CategorizedBotConfigPolicy secondCreatedPolicy =
@@ -437,7 +347,9 @@ class CategorizedBotConfigPolicyServiceTest {
                                 CategorizedBotConfigPolicyFilter.newBuilder().build())
                             .build()))
             .getCategorizedBotConfigPoliciesList();
-    assertEquals(7, allCurrentPolicies.size());
+    assertEquals(
+        CategorizedBotCategoriesConfig.INSTANCE.getBotCategories().size() + 1,
+        allCurrentPolicies.size());
   }
 
   @Test

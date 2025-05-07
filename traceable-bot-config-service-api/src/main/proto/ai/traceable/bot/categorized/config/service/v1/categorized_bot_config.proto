@@ -15,8 +15,19 @@ message CategorizedBotDetails {
   string name = 1;
   optional string description = 2;
   CategorizedBotSignatureRule categorized_bot_signature_rule = 3;
-  string bot_category = 4;
-  string bot_sub_category = 5;
+  string bot_category_id = 4;
+  string bot_sub_category_id = 5;
+}
+
+message BotCategory {
+  string id = 1;
+  string bot_category_name = 2;
+  repeated BotSubCategory bot_sub_categories = 3;
+}
+
+message BotSubCategory {
+  string id = 1;
+  string bot_sub_category_name = 2;
 }
 
 message CategorizedBotSignatureRule {

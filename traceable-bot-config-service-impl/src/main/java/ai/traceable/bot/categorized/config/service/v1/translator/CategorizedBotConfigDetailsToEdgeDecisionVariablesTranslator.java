@@ -1,5 +1,6 @@
 package ai.traceable.bot.categorized.config.service.v1.translator;
 
+import ai.traceable.bot.categorized.config.service.v1.CategorizedBotCategoriesConfig;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotDetails;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotDetailsConfig;
 import ai.traceable.bot.categorized.config.service.v1.LogicalMatchCondition;
@@ -36,8 +37,12 @@ public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
                           matchExpression,
                           tcBot.getId(),
                           categorizedBotDetails.getName(),
-                          categorizedBotDetails.getBotCategory(),
-                          categorizedBotDetails.getBotSubCategory());
+                          CategorizedBotCategoriesConfig.INSTANCE
+                              .getBotCategory(categorizedBotDetails.getBotCategoryId())
+                              .getBotCategoryName(),
+                          CategorizedBotCategoriesConfig.INSTANCE
+                              .getBotSubCategory(categorizedBotDetails.getBotSubCategoryId())
+                              .getBotSubCategoryName());
                     })
                 .collect(Collectors.joining())
             + " {} ";

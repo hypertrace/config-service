@@ -9,7 +9,16 @@ option java_multiple_files = true;
 
 service CategorizedBotConfigService {
   rpc GetCategorizedBotConfigs(GetCategorizedBotConfigsRequest) returns (GetCategorizedBotConfigsResponse) {}
+  rpc GetCategorizedBotCategoryDetails(GetCategorizedBotCategoryDetailsRequest) returns (GetCategorizedBotCategoryDetailsResponse) {}
   rpc GetCategorizedBotConfigEdgeDecisionVariables(GetCategorizedBotConfigEdgeDecisionVariablesRequest) returns (GetCategorizedBotConfigEdgeDecisionVariablesResponse) {}
+}
+
+message GetCategorizedBotCategoryDetailsRequest {
+  repeated string bot_category_ids = 1;
+}
+
+message GetCategorizedBotCategoryDetailsResponse {
+  repeated BotCategory bot_categories = 1;
 }
 
 message GetCategorizedBotConfigsRequest {
@@ -22,8 +31,8 @@ message GetCategorizedBotConfigsResponse {
 message CategorizedBotRequestFilter {
   // if none specified all traceable-categorized (pre defined) bots to be sent
   repeated string bot_ids = 1;
-  repeated string category = 2;
-  repeated string sub_category = 3;
+  repeated string bot_category_ids = 2;
+  repeated string bot_sub_category_ids = 3;
 }
 
 message GetCategorizedBotConfigEdgeDecisionVariablesRequest {}
