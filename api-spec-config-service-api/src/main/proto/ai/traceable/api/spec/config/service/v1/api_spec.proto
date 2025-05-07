@@ -29,8 +29,14 @@ message SortBy {
 
 message Selection {
   oneof field {
-    google.protobuf.Timestamp creation_timestamp = 1;
+    SortableField sortable_field = 1;
   }
+}
+
+enum SortableField {
+  SORTABLE_FIELD_UNSPECIFIED = 0;
+  SORTABLE_FIELD_CREATION_TIMESTAMP = 1;
+  // Add more sortable fields as needed
 }
 
 message Pagination {
