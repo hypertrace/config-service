@@ -9,6 +9,7 @@ enum CaptchaMode {
   CAPTCHA_MODE_UNSPECIFIED = 0;
   CAPTCHA_MODE_AUTO = 1;
   CAPTCHA_MODE_FORCE_VISUAL = 2;
+  CAPTCHA_MODE_NONE = 3;
 }
 
 enum CaptchaDifficulty {
