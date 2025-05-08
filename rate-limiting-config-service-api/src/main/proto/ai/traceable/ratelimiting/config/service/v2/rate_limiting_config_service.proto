@@ -25,7 +25,8 @@ message GetRateLimitingRulesFilter {
   repeated Category categories = 1;
   RuleConfigScope scope = 2;
   optional bool disabled = 3;
-  optional bool filter_edge_decision_rules = 4;
+  optional bool filter_edge_decision_rules = 4 [deprecated = true];
+  repeated RuleEvaluationPoint rule_evaluation_points = 5;
 }
 
 message GetRateLimitingModsecRulesFilter {

@@ -7,6 +7,7 @@ import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -101,7 +102,9 @@ public class RateLimitingRulesStore
         .filter(rule -> filterRuleOnCategory(rule, filter.getCategoriesList()))
         .filter(rule -> filterRuleOnScope(rule, filter.getScope()))
         .filter(
-            rule -> !filter.hasDisabled() || filter.getDisabled() != rule.getData().getEnabled());
+            rule -> !filter.hasDisabled() || filter.getDisabled() != rule.getData().getEnabled())
+        .filter(
+            rule -> filterRuleOnRuleEvaluationPoints(rule, filter.getRuleEvaluationPointsList()));
   }
 
   private boolean filterRuleOnCategory(RateLimitingRule rule, List<Category> categoryList) {
@@ -124,6 +127,13 @@ public class RateLimitingRulesStore
 
     List<String> filterEnvironmentIds = filterScope.getEnvironmentScope().getEnvironmentIdsList();
     return ruleEnvironmentIds.stream().anyMatch(filterEnvironmentIds::contains);
+  }
+
+  private boolean filterRuleOnRuleEvaluationPoints(
+      RateLimitingRule rule, List<RuleEvaluationPoint> ruleEvaluationPointsInFilter) {
+    return ruleEvaluationPointsInFilter.isEmpty()
+        || rule.getData().getRuleEvaluationPointsList().stream()
+            .anyMatch(ruleEvaluationPointsInFilter::contains);
   }
 
   private List<RateLimitingRule> mergeRateLimitingRules(
