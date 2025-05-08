@@ -389,6 +389,7 @@ class ClauseValidator {
     if (attributeKeyValueExpression.hasValueCondition()) {
       validateStringCondition(attributeKeyValueExpression.getValueCondition());
     }
+
     return Status.OK;
   }
 

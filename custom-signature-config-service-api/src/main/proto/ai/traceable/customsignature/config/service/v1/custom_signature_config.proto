@@ -3,6 +3,7 @@ syntax = "proto3";
 package ai.traceable.customsignature.config.service.v1;
 
 import "ai/traceable/edge/decision/config/service/v1/edge_decision_config.proto";
+import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 
@@ -235,7 +236,14 @@ message Clause {
     RequestScannerTypeExpression request_scanner_type_expression = 16;
     ClauseGroup clause_group = 17;
     ScopeExpression scope_expression = 18;
+    LhsRhsKeysExpression lhs_rhs_keys_expression = 19;
   }
+}
+
+message LhsRhsKeysExpression {
+  MatchExpression lhs_key_expression = 1;
+  MatchExpression rhs_key_expression = 2;
+  MatchOperator match_operator = 3;
 }
 
 message CustomSecRule {
@@ -246,8 +254,9 @@ message CustomSecRule {
 message MatchExpression {
   MatchKey match_key = 1;
   MatchOperator match_operator = 2;
-  string match_value = 3;
+  string match_value = 3 [deprecated = true];
   MatchCategory match_category = 4;
+  google.protobuf.Value value = 5;
 }
 
 message KeyValueExpression {

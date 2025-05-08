@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -40,12 +41,11 @@ public class CustomSignatureRulesValidatorTest {
 
   private ModsecRulesManager modsecRulesManager;
   private CustomSignatureRulesValidator rulesValidator;
-  private ClauseValidator clauseValidator;
 
   @BeforeEach
   public void setup() {
     this.modsecRulesManager = mock(ModsecRulesManager.class);
-    this.clauseValidator = new ClauseValidator();
+    ClauseValidator clauseValidator = new ClauseValidator();
     when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
     when(modsecRulesManager.isInlineRuleMappingSupported(any())).thenReturn(true);
     when(modsecRulesManager.containsModsecConvertibleClauses(any())).thenReturn(true);
@@ -59,13 +59,11 @@ public class CustomSignatureRulesValidatorTest {
 
     request = CreateCustomSignatureRuleRequest.newBuilder().build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid name"));
+    assertInvalidArgument(status, "valid name");
 
     request = CreateCustomSignatureRuleRequest.newBuilder().setName("name").build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid definition"));
+    assertInvalidArgument(status, "valid definition");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -73,8 +71,7 @@ public class CustomSignatureRulesValidatorTest {
             .setDefinition(RuleDefinition.newBuilder().build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid effect"));
+    assertInvalidArgument(status, "valid effect");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -83,8 +80,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(RuleEffect.newBuilder().build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid event type"));
+    assertInvalidArgument(status, "valid event type");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -114,12 +110,9 @@ public class CustomSignatureRulesValidatorTest {
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW))
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(
-        status
-            .getDescription()
-            .contains(
-                "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type"));
+    assertInvalidArgument(
+        status,
+        "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type");
 
     RuleEffect ruleEffect =
         RuleEffect.newBuilder()
@@ -134,8 +127,7 @@ public class CustomSignatureRulesValidatorTest {
             .setDefinition(RuleDefinition.newBuilder().build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid clause group"));
+    assertInvalidArgument(status, "valid clause group");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -147,8 +139,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid clause operator"));
+    assertInvalidArgument(status, "valid clause operator");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -163,8 +154,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("at least one clause"));
+    assertInvalidArgument(status, "at least one clause");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -180,8 +170,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("Clause expression"));
+    assertInvalidArgument(status, "Clause expression");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -200,8 +189,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match key"));
+    assertInvalidArgument(status, "valid match key");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -223,8 +211,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match operator"));
+    assertInvalidArgument(status, "valid match operator");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -249,8 +236,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("Invalid Regex Value"));
+    assertInvalidArgument(status, "Invalid Regex Value");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -350,8 +336,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid event severity"));
+    assertInvalidArgument(status, "valid event severity");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -370,8 +355,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid tag"));
+    assertInvalidArgument(status, "valid tag");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -393,8 +377,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match key"));
+    assertInvalidArgument(status, "valid match key");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -417,8 +400,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid key match operator"));
+    assertInvalidArgument(status, "valid key match operator");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -443,8 +425,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match value"));
+    assertInvalidArgument(status, "valid match value");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -470,8 +451,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid value match operator"));
+    assertInvalidArgument(status, "valid value match operator");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -499,8 +479,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("Invalid Regex Value"));
+    assertInvalidArgument(status, "Invalid Regex Value");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -558,8 +537,7 @@ public class CustomSignatureRulesValidatorTest {
                     .build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("numerical value for match operator"));
+    assertInvalidArgument(status, "numerical value for match operator");
 
     // valid Cyrillic regex
     request =
@@ -656,8 +634,7 @@ public class CustomSignatureRulesValidatorTest {
             .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("1234").build())
             .build();
     status = rulesValidator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("Blocking expiry duration can't be parsed"));
+    assertInvalidArgument(status, "Blocking expiry duration can't be parsed");
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -726,22 +703,19 @@ public class CustomSignatureRulesValidatorTest {
     Status status;
 
     status = rulesValidator.validate(UpdateCustomSignatureRuleRequest.newBuilder().build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid id"));
+    assertInvalidArgument(status, "valid id");
 
     rule = CustomSignatureRule.newBuilder().setId("id").build();
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid name"));
+    assertInvalidArgument(status, "valid name");
 
     rule = CustomSignatureRule.newBuilder().setId("id").setName("name").build();
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid definition"));
+    assertInvalidArgument(status, "valid definition");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -752,8 +726,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid effect"));
+    assertInvalidArgument(status, "valid effect");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -765,8 +738,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid event type"));
+    assertInvalidArgument(status, "valid event type");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -794,12 +766,9 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(
-        status
-            .getDescription()
-            .contains(
-                "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type"));
+    assertInvalidArgument(
+        status,
+        "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type");
 
     RuleEffect ruleEffect =
         RuleEffect.newBuilder()
@@ -817,8 +786,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid clause group"));
+    assertInvalidArgument(status, "valid clause group");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -833,8 +801,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid clause operator"));
+    assertInvalidArgument(status, "valid clause operator");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -852,8 +819,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("at least one clause"));
+    assertInvalidArgument(status, "at least one clause");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -872,8 +838,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("Clause expression"));
+    assertInvalidArgument(status, "Clause expression");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -895,8 +860,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match key"));
+    assertInvalidArgument(status, "valid match key");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -921,8 +885,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match operator"));
+    assertInvalidArgument(status, "valid match operator");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1034,8 +997,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid event severity"));
+    assertInvalidArgument(status, "valid event severity");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1057,8 +1019,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid tag"));
+    assertInvalidArgument(status, "valid tag");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1083,8 +1044,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match key"));
+    assertInvalidArgument(status, "valid match key");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1110,8 +1070,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid key match operator"));
+    assertInvalidArgument(status, "valid key match operator");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1139,8 +1098,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid match value"));
+    assertInvalidArgument(status, "valid match value");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1169,8 +1127,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid value match operator"));
+    assertInvalidArgument(status, "valid value match operator");
 
     RuleDefinition validRuleDefinition =
         RuleDefinition.newBuilder()
@@ -1216,8 +1173,7 @@ public class CustomSignatureRulesValidatorTest {
     status =
         rulesValidator.validate(
             UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("Blocking expiry duration can't be parsed"));
+    assertInvalidArgument(status, "Blocking expiry duration can't be parsed");
 
     rule =
         CustomSignatureRule.newBuilder()
@@ -1331,8 +1287,7 @@ public class CustomSignatureRulesValidatorTest {
     Status status;
 
     status = rulesValidator.validate(DeleteCustomSignatureRuleRequest.newBuilder().build());
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
-    assertTrue(status.getDescription().contains("valid id"));
+    assertInvalidArgument(status, "valid id");
 
     status =
         rulesValidator.validate(DeleteCustomSignatureRuleRequest.newBuilder().setId("id").build());
@@ -1467,5 +1422,11 @@ public class CustomSignatureRulesValidatorTest {
                                 .setMatchValue(matchValue)
                                 .setMatchCategory(matchCategory))))
         .build();
+  }
+
+  private void assertInvalidArgument(Status status, String expectedDescription) {
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertNotNull(status.getDescription());
+    assertTrue(status.getDescription().contains(expectedDescription));
   }
 }
