@@ -160,7 +160,8 @@ public class CustomSignatureConfigServiceIntegrationTest
     assertFalse(fetchedRules.get(0).getBlockingExpiryDetails().hasExpiryDuration());
     assertEquals(0, fetchedRules.get(0).getBlockingExpiryDetails().getExpiryTimestampMillis());
     updateExpiryTime(fetchedRules.get(0));
-    List<CustomSignatureRule> updatedRules = fetchTestRules();
+    List<CustomSignatureRule> updatedRules =
+        fetchTestRules(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
     assertEquals(1, updatedRules.size());
     assertEquals(updatedRules.get(0).getId(), fetchedRules.get(0).getId());
     assertEquals(
@@ -378,6 +379,9 @@ public class CustomSignatureConfigServiceIntegrationTest
   private CustomSignatureRule updateExpiryTime(CustomSignatureRule rule) {
     CustomSignatureRule updatedRule =
         CustomSignatureRule.newBuilder(rule)
+            .setEffect(
+                rule.getEffect().toBuilder()
+                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
             .setBlockingExpiryDetails(
                 ExpiryDetails.newBuilder()
                     .setExpiryDuration(Duration.of(2, ChronoUnit.DAYS).toString())
@@ -393,16 +397,17 @@ public class CustomSignatureConfigServiceIntegrationTest
   }
 
   private List<CustomSignatureRule> fetchTestRules() {
+    return fetchTestRules(EventType.EVENT_TYPE_TESTING_DETECTION);
+  }
+
+  private List<CustomSignatureRule> fetchTestRules(EventType eventType) {
     return GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
             configServiceStub
                 .getCustomSignatureRules(
                     GetCustomSignatureRulesRequest.newBuilder()
-                        .setFilter(
-                            GetRulesFilter.newBuilder()
-                                .addEventTypes(EventType.EVENT_TYPE_TESTING_DETECTION)
-                                .build())
+                        .setFilter(GetRulesFilter.newBuilder().addEventTypes(eventType).build())
                         .build())
                 .getRulesList());
   }

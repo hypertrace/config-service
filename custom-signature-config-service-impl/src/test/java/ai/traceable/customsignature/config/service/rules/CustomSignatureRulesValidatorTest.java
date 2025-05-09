@@ -1319,7 +1319,6 @@ public class CustomSignatureRulesValidatorTest {
                     "10",
                     MatchCategory.MATCH_CATEGORY_REQUEST))
             .setEffect(ruleEffect)
-            .setBlockingExpiryDetails(expiryDetails)
             .setRuleScope(ruleScope)
             .setInternal(true)
             .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
@@ -1338,7 +1337,6 @@ public class CustomSignatureRulesValidatorTest {
                     "5",
                     MatchCategory.MATCH_CATEGORY_REQUEST))
             .setEffect(ruleEffect)
-            .setBlockingExpiryDetails(expiryDetails)
             .setRuleScope(ruleScope)
             .setInternal(true)
             .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
@@ -1357,7 +1355,6 @@ public class CustomSignatureRulesValidatorTest {
                     "3",
                     MatchCategory.MATCH_CATEGORY_REQUEST))
             .setEffect(ruleEffect)
-            .setBlockingExpiryDetails(expiryDetails)
             .setRuleScope(ruleScope)
             .setInternal(true)
             .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
@@ -1376,7 +1373,6 @@ public class CustomSignatureRulesValidatorTest {
                     "7",
                     MatchCategory.MATCH_CATEGORY_RESPONSE))
             .setEffect(ruleEffect)
-            .setBlockingExpiryDetails(expiryDetails)
             .setRuleScope(ruleScope)
             .setInternal(true)
             .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
@@ -1395,12 +1391,30 @@ public class CustomSignatureRulesValidatorTest {
                     "7",
                     MatchCategory.MATCH_CATEGORY_RESPONSE))
             .setEffect(ruleEffect)
-            .setBlockingExpiryDetails(expiryDetails)
             .setRuleScope(ruleScope)
             .setInternal(true)
             .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
             .build();
     status = rulesValidator.validate(invalidCreateRequest1);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+
+    CreateCustomSignatureRuleRequest invalidCreateRequest2 =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("CreateCustomSignatureRule-Response-HeadersCount-LessThan")
+            .setDescription("rule-description")
+            .setDefinition(
+                getRuleDefinitionForAggregateConfigParams(
+                    MatchKey.MATCH_KEY_HEADERS_COUNT,
+                    MatchOperator.MATCH_OPERATOR_LESS_THAN,
+                    "7",
+                    MatchCategory.MATCH_CATEGORY_RESPONSE))
+            .setEffect(ruleEffect)
+            .setBlockingExpiryDetails(expiryDetails)
+            .setRuleScope(ruleScope)
+            .setInternal(true)
+            .setRuleSource(RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    status = rulesValidator.validate(invalidCreateRequest2);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
   }
 

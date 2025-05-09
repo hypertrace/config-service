@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -39,7 +40,7 @@ import java.util.Set;
 class CustomSignatureRulesValidator implements RulesValidator {
 
   private static final Set<EventType> INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES =
-      Set.of(EventType.EVENT_TYPE_ALLOW, EventType.EVENT_TYPE_DETECTION_AND_BLOCKING);
+      Set.of(EventType.EVENT_TYPE_ALLOW, EVENT_TYPE_DETECTION_AND_BLOCKING);
 
   private static final Integer CUSTOM_LABELS_LIMIT = 5;
 
@@ -83,7 +84,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    if ((status = validateExpiry(request.getBlockingExpiryDetails())) != Status.OK) {
+    if ((status = validateExpiry(request.getEffect(), request.getBlockingExpiryDetails()))
+        != Status.OK) {
       return status;
     }
 
@@ -137,7 +139,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    if ((status = validateExpiry(rule.getBlockingExpiryDetails())) != Status.OK) {
+    if ((status = validateExpiry(rule.getEffect(), rule.getBlockingExpiryDetails())) != Status.OK) {
       return status;
     }
 
@@ -198,7 +200,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Effect with alert action should have a valid event severity.");
     }
-    if (eventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING
+    if (eventType == EVENT_TYPE_DETECTION_AND_BLOCKING
         && ruleEffect.getEffectsList().stream()
             .flatMap(effect -> effect.getAgentRuleEffect().getAgentModificationsList().stream())
             .anyMatch(AgentModification::hasHeaderInjection)) {
@@ -320,8 +322,12 @@ class CustomSignatureRulesValidator implements RulesValidator {
     return clauseGroup.getClausesList().stream().anyMatch(Clause::hasClauseGroup);
   }
 
-  private Status validateExpiry(ExpiryDetails expiry) {
+  private Status validateExpiry(RuleEffect ruleEffect, ExpiryDetails expiry) {
     if (expiry.hasExpiryDuration()) {
+      if (!ruleEffect.getEventType().equals(EVENT_TYPE_DETECTION_AND_BLOCKING)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Blocking expiry duration can be specified only for blocking event type");
+      }
       try {
         Duration.parse(expiry.getExpiryDuration());
       } catch (DateTimeParseException e) {
