@@ -52,9 +52,7 @@ public class NotificationChannelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       List<NotificationChannel> existingNotificationChannels =
-          notificationChannelStore.getAllObjects(requestContext).stream()
-              .map(ConfigObject::getData)
-              .collect(Collectors.toList());
+          notificationChannelStore.getAllConfigData(requestContext);
       validator.validateCreateNotificationChannelRequest(
           requestContext, request, notificationChannelConfig, existingNotificationChannels);
       NotificationChannel.Builder builder =
@@ -80,9 +78,7 @@ public class NotificationChannelConfigServiceImpl
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       List<NotificationChannel> existingNotificationChannels =
-          notificationChannelStore.getAllObjects(requestContext).stream()
-              .map(ConfigObject::getData)
-              .collect(Collectors.toList());
+          notificationChannelStore.getAllConfigData(requestContext);
       validator.validateUpdateNotificationChannelRequest(
           requestContext, request, notificationChannelConfig, existingNotificationChannels);
       responseObserver.onNext(
