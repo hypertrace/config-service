@@ -7,6 +7,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigValueFactory;
 import java.io.File;
+import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.UpdateNotificationChannelRequest;
@@ -83,7 +84,8 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
           notificationChannelConfigServiceRequestValidator.validateUpdateNotificationChannelRequest(
               RequestContext.forTenantId("tenant1"),
               getUpdateNotificationChannelRequestWithHttpUrl(),
-              notificationChannelConfig);
+              notificationChannelConfig,
+              List.of());
         },
         "RuntimeException was expected");
 
@@ -103,7 +105,8 @@ public class NotificationChannelConfigServiceRequestValidatorTest {
             .setId("id1")
             .setNotificationChannelMutableData(notificationChannelMutableDataWithHttpUrl)
             .build(),
-        updatedNotificationChannelConfig);
+        updatedNotificationChannelConfig,
+        List.of());
   }
 
   private static UpdateNotificationChannelRequest getUpdateNotificationChannelRequestWithHttpUrl() {
