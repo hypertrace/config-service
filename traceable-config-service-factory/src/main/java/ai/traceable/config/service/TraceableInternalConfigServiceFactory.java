@@ -13,6 +13,7 @@ import ai.traceable.auth.detection.config.service.AuthDetectionConfigServiceFact
 import ai.traceable.azure.devops.integration.config.service.AzureDevopsIntegrationConfigServiceFactory;
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceFactory;
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceFactory;
+import ai.traceable.certificate.management.config.service.v1.CertificateManagementConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.dashboard.config.service.DashboardConfigServiceFactory;
 import ai.traceable.data.classification.config.service.DataClassificationConfigServiceFactory;
@@ -334,7 +335,15 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 GenAiConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getChangeEventGenerator(),
-                    providers.getConfig())))
+                    providers.getConfig())),
+            wrap(
+                GenAiConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getChangeEventGenerator(),
+                    providers.getConfig())),
+            wrap(
+                CertificateManagementConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
   }

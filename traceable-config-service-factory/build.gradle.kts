@@ -76,6 +76,7 @@ dependencies {
   implementation(projects.threatScoringConfigServiceImpl)
   implementation(projects.githubIntegrationConfigServiceImpl)
   implementation(projects.genaiConfigServiceImpl)
+  implementation(projects.certificateManagementConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
