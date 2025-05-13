@@ -38,7 +38,6 @@ message GetAllNotificationRulesRequest {
 message NotificationRuleFilter {
   repeated string event_condition_type = 1;
   optional bool enabled = 2;
-  optional bool is_deleted = 3;
 }
 
 message GetAllNotificationRulesResponse {
