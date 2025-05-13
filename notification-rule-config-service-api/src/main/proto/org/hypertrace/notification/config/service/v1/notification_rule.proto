@@ -21,6 +21,8 @@ message NotificationRuleMutableData {
 
   NotificationIntegrationTarget integration_target = 7;
   bool disabled = 8;
+
+  bool is_deleted = 9; // Soft delete flag
 }
 
 message NotificationIntegrationTarget {
