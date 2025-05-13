@@ -475,6 +475,10 @@ public class DefaultApiNamingRulesManager implements ApiNamingRulesManager {
   }
 
   private List<ApiSpec> getApiSpecsFromIds(RequestContext requestContext, List<String> apiSpecIds) {
+    if (apiSpecIds.isEmpty()) {
+      return emptyList();
+    }
+
     GetApiSpecsRequest request =
         GetApiSpecsRequest.newBuilder()
             .setApiSpecFilter(
