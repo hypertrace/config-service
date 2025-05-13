@@ -51,8 +51,10 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<CreateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      List<NotificationChannel> existingNotificationChannels =
+          notificationChannelStore.getAllConfigData(requestContext);
       validator.validateCreateNotificationChannelRequest(
-          requestContext, request, notificationChannelConfig);
+          requestContext, request, notificationChannelConfig, existingNotificationChannels);
       NotificationChannel.Builder builder =
           NotificationChannel.newBuilder()
               .setId(UUID.randomUUID().toString())
@@ -75,8 +77,10 @@ public class NotificationChannelConfigServiceImpl
       StreamObserver<UpdateNotificationChannelResponse> responseObserver) {
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
+      List<NotificationChannel> existingNotificationChannels =
+          notificationChannelStore.getAllConfigData(requestContext);
       validator.validateUpdateNotificationChannelRequest(
-          requestContext, request, notificationChannelConfig);
+          requestContext, request, notificationChannelConfig, existingNotificationChannels);
       responseObserver.onNext(
           UpdateNotificationChannelResponse.newBuilder()
               .setNotificationChannel(
