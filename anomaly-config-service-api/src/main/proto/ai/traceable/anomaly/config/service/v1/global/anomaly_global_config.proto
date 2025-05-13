@@ -55,6 +55,15 @@ message GetAnomalyRuleInfosResponse {
   repeated AnomalyRuleInfo rule_infos = 1;
 }
 
+message GetAvailableRuleVersionsRequest {
+  RuleType rule_type = 1;
+  AvailableRuleVersionsFilter filter = 2;
+}
+
+message GetAvailableRuleVersionsResponse {
+  AvailableRuleVersions supported_versions = 1;
+}
+
 message ScopedAnomalyConfigStatus {
   AnomalyConfigScope config_scope = 1;
   AnomalyConfigStatus config_status = 2 [deprecated = true];
@@ -109,6 +118,34 @@ enum ModsecDefaultConfigsType {
   MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING = 9 [(string_value) = "Strict Profile - Monitoring Mode"]; // Aggressive monitor, rest monitor
   MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING = 10 [(string_value) = "Strict Profile - Blocking Mode"]; // Aggressive monitor, rest blocking
   MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT = 11 [(string_value) = "Inherit Policy from All Environments"];
+}
+
+message AvailableRuleVersionsFilter {
+  repeated RuleVersionType version_types = 1;
+}
+
+message AvailableRuleVersions {
+  RuleType rule_type = 1;
+  repeated RuleVersion versions = 2;
+}
+
+message RuleVersion {
+  string version = 1;
+  RuleVersionType version_type = 2;
+}
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_WEB_APPLICATION = 1;
+  RULE_TYPE_API_PROTECTION = 2;
+}
+
+enum RuleVersionType {
+  RULE_VERSION_TYPE_UNSPECIFIED = 0;
+  RULE_VERSION_TYPE_STABLE = 1;
+  RULE_VERSION_TYPE_BETA = 2;
+  RULE_VERSION_TYPE_EXPERIMENTAL = 3;
+  RULE_VERSION_TYPE_DEPRECATED = 4;
 }
 
 message ApiGlobalConfig {

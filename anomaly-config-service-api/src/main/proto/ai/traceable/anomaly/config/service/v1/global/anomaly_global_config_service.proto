@@ -21,5 +21,7 @@ service AnomalyGlobalConfigService {
   // tenant-agnostic
   rpc GetAnomalyRuleInfos(GetAnomalyRuleInfosRequest) returns (GetAnomalyRuleInfosResponse) {}
 
+  rpc GetAvailableRuleVersions(GetAvailableRuleVersionsRequest) returns (GetAvailableRuleVersionsResponse) {}
+
   rpc DeleteScopedAnomalyGlobalConfigStatus(DeleteScopedAnomalyGlobalConfigStatusRequest) returns (DeleteScopedAnomalyGlobalConfigStatusResponse) {}
 }
