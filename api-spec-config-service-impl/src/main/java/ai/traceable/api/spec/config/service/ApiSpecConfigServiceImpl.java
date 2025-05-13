@@ -1,16 +1,16 @@
 package ai.traceable.api.spec.config.service;
 
 import static ai.traceable.api.spec.config.service.v1.ApiSpecStatus.API_SPEC_STATUS_UNSPECIFIED;
-import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_OPEN_API_SPEC;
 import static ai.traceable.api.spec.config.service.v1.SpecType.SPEC_TYPE_UNSPECIFIED;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import ai.traceable.api.spec.config.service.converter.ApiSpecStatusConverter;
+import ai.traceable.api.spec.config.service.converter.ApiSpecsResult;
 import ai.traceable.api.spec.config.service.store.ApiSpecConfigStore;
 import ai.traceable.api.spec.config.service.v1.ApiSpec;
 import ai.traceable.api.spec.config.service.v1.ApiSpecConfigServiceGrpc;
+import ai.traceable.api.spec.config.service.v1.ApiSpecFilter;
 import ai.traceable.api.spec.config.service.v1.ApiSpecMetadata;
-import ai.traceable.api.spec.config.service.v1.ApiSpecStatus;
 import ai.traceable.api.spec.config.service.v1.ApiSpecUpdate;
 import ai.traceable.api.spec.config.service.v1.BulkUpdateApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.BulkUpdateApiSpecsResponse;
@@ -21,15 +21,14 @@ import ai.traceable.api.spec.config.service.v1.DeleteApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecResponse;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.DeleteApiSpecsResponse;
+import ai.traceable.api.spec.config.service.v1.FileContentSha256Filter;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecResponse;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsRequest;
 import ai.traceable.api.spec.config.service.v1.GetApiSpecsResponse;
-import ai.traceable.api.spec.config.service.v1.OpenApiSpecReference;
-import ai.traceable.api.spec.config.service.v1.OpenApiSpecResolutionState;
-import ai.traceable.api.spec.config.service.v1.ReferenceApiSpec;
 import ai.traceable.api.spec.config.service.v1.ReferenceType;
 import ai.traceable.api.spec.config.service.v1.SpecType;
+import ai.traceable.api.spec.config.service.v1.StringList;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpec;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecRequest;
 import ai.traceable.api.spec.config.service.v1.UpdateApiSpecResponse;
@@ -43,8 +42,10 @@ import com.google.protobuf.util.Timestamps;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -83,116 +84,17 @@ public class ApiSpecConfigServiceImpl
       RequestContext requestContext = RequestContext.CURRENT.get();
       this.validator.validateOrThrow(requestContext, request);
 
-      List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
+      ApiSpecsResult apiSpecsResult =
+          this.apiSpecConfigStore.getFilteredApiSpecsWithPaginationAndOptionalTotal(
+              requestContext,
+              request.getApiSpecFilter(),
+              request.getSortByList(),
+              request.getPagination(),
+              request.getIncludeTotal());
       GetApiSpecsResponse.Builder getApiSpecsResponse = GetApiSpecsResponse.newBuilder();
-      if (!request.hasApiSpecFilter()) {
-        getApiSpecsResponse.addAllApiSpecs(existingApiSpecs);
-      } else {
-        List<ApiSpecStatus> convertedStatuses = new ArrayList<>();
-        if (request.getApiSpecFilter().hasStatusFilter()) {
-          List<ApiSpecStatus> statuses =
-              request.getApiSpecFilter().getStatusFilter().getStatusesList();
-          convertedStatuses.addAll(
-              statuses.stream()
-                  .map(this.apiSpecStatusConverter::convert)
-                  .collect(toUnmodifiableList()));
-        }
-        List<ApiSpec> matchedApiSpecs =
-            existingApiSpecs.stream()
-                // filter based on file sha.
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasFileContentSha256()
-                            || request
-                                .getApiSpecFilter()
-                                .getFileContentSha256()
-                                .getFileContentSha256List()
-                                .contains(spec.getFileContentSha256()))
-                // filter based on ids
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasIds()
-                            || request
-                                .getApiSpecFilter()
-                                .getIds()
-                                .getValuesList()
-                                .contains(spec.getSpecId()))
-                // filter based on spec paths
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasSpecPaths()
-                            || request
-                                .getApiSpecFilter()
-                                .getSpecPaths()
-                                .getValuesList()
-                                .contains(spec.getSpecPath()))
-                // filter based on spec types
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasSpecTypeFilter()
-                            || (request
-                                .getApiSpecFilter()
-                                .getSpecTypeFilter()
-                                .getSpecTypesList()
-                                .contains(spec.getSpecType())))
-                // filter based on api inspector flag
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasApiInspectorDisabled()
-                            || Boolean.compare(
-                                    spec.getApiInspectorDisabled(),
-                                    request.getApiSpecFilter().getApiInspectorDisabled())
-                                == 0)
-                // filter based on references
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasReferenceApiSpec()
-                            || request
-                                    .getApiSpecFilter()
-                                    .getReferenceApiSpec()
-                                    .getReferenceApiSpecsCount()
-                                == 0
-                            || checkAnyReferenceMatch(request, spec))
-                // filter based on reference type
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasReferenceType()
-                            || request
-                                    .getApiSpecFilter()
-                                    .getReferenceType()
-                                    .getReferenceTypesCount()
-                                == 0
-                            || request
-                                .getApiSpecFilter()
-                                .getReferenceType()
-                                .getReferenceTypesList()
-                                .contains(spec.getReferenceType()))
-                // filter based on spec names
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasNames()
-                            || request
-                                .getApiSpecFilter()
-                                .getNames()
-                                .getValuesList()
-                                .contains(spec.getName()))
-                // filter based on statuses
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasStatusFilter()
-                            || convertedStatuses.contains(spec.getStatus()))
-                // filter based on spec resolution state
-                .filter(
-                    spec ->
-                        !request.getApiSpecFilter().hasSpecResolutionStateFilter()
-                            || checkAnySpecResolutionStateMatch(
-                                request
-                                    .getApiSpecFilter()
-                                    .getSpecResolutionStateFilter()
-                                    .getSpecResolutionStatesList(),
-                                spec))
-                .collect(Collectors.toUnmodifiableList());
-        getApiSpecsResponse.addAllApiSpecs(matchedApiSpecs);
+      getApiSpecsResponse.addAllApiSpecs(apiSpecsResult.getSpecs());
+      if (request.getIncludeTotal()) {
+        getApiSpecsResponse.setTotalCount(apiSpecsResult.getTotalCount());
       }
       responseObserver.onNext(getApiSpecsResponse.build());
       responseObserver.onCompleted();
@@ -251,15 +153,19 @@ public class ApiSpecConfigServiceImpl
               .setApiSpecMetadata(ApiSpecMetadata.getDefaultInstance())
               .setApiDiscoveryEnabledV2(createApiSpec.getApiDiscoveryEnabledV2());
 
-      List<ApiSpec> existingApiSpecs = this.apiSpecConfigStore.getAllData(requestContext);
-
       // If optional file hash is supplied in the request.
       if (createApiSpec.hasFileContentSha256()) {
         String inputSha256Hash = createApiSpec.getFileContentSha256();
-        boolean sha256Exists =
-            existingApiSpecs.stream()
-                .map(ApiSpec::getFileContentSha256)
-                .anyMatch(inputSha256Hash::equals);
+        Optional<ApiSpec> apiSpec =
+            this.apiSpecConfigStore.getData(
+                requestContext,
+                ApiSpecFilter.newBuilder()
+                    .setFileContentSha256(
+                        FileContentSha256Filter.newBuilder()
+                            .addFileContentSha256(inputSha256Hash)
+                            .build())
+                    .build());
+        boolean sha256Exists = apiSpec.isPresent();
         if (sha256Exists) {
           log.warn(
               "An API spec with the file hash specified in request: {} within context: {} already exists",
@@ -276,8 +182,13 @@ public class ApiSpecConfigServiceImpl
       // If spec path already exists then reject the request
       if (createApiSpec.hasSpecPath()) {
         final String specPath = createApiSpec.getSpecPath();
-        boolean specPathExists =
-            existingApiSpecs.stream().map(ApiSpec::getSpecPath).anyMatch(specPath::equals);
+        Optional<ApiSpec> apiSpec =
+            this.apiSpecConfigStore.getData(
+                requestContext,
+                ApiSpecFilter.newBuilder()
+                    .setSpecPaths(StringList.newBuilder().addValues(specPath).build())
+                    .build());
+        boolean specPathExists = apiSpec.isPresent();
         if (specPathExists) {
           log.warn(
               "An API spec with the spec path specified in request: {} within context: {} already exists",
@@ -292,7 +203,10 @@ public class ApiSpecConfigServiceImpl
       }
 
       // Limit number of API specs per tenant.
-      if (existingApiSpecs.size() >= apiSpecConfig.getMaxAllowedSpecsPerTenant()) {
+      long totalSpecs =
+          this.apiSpecConfigStore.getTotalMatchingCount(
+              requestContext, ApiSpecFilter.getDefaultInstance());
+      if (totalSpecs >= apiSpecConfig.getMaxAllowedSpecsPerTenant()) {
         throw Status.RESOURCE_EXHAUSTED
             .withDescription(
                 String.format(
@@ -302,10 +216,8 @@ public class ApiSpecConfigServiceImpl
       }
 
       ApiSpec apiSpec = apiSpecBuilder.build();
-
       ContextualConfigObject<ApiSpec> contextualConfigObject =
           this.apiSpecConfigStore.upsertObject(requestContext, apiSpec);
-
       responseObserver.onNext(
           CreateApiSpecResponse.newBuilder()
               .setApiSpec(
@@ -370,9 +282,19 @@ public class ApiSpecConfigServiceImpl
               .collect(Collectors.toUnmodifiableMap(UpdateApiSpec::getSpecId, Function.identity()));
 
       Map<String, ApiSpec> existingApiSpecs =
-          apiSpecConfigStore.getAllData(requestContext).stream()
-              .filter(apiSpec -> apiSpecMap.containsKey(apiSpec.getSpecId()))
+          apiSpecConfigStore
+              .getFilteredApiSpecsWithPaginationAndOptionalTotal(
+                  requestContext,
+                  ApiSpecFilter.newBuilder()
+                      .setIds(StringList.newBuilder().addAllValues(apiSpecMap.keySet()))
+                      .build(),
+                  Collections.emptyList(),
+                  null,
+                  false)
+              .getSpecs()
+              .stream()
               .collect(Collectors.toUnmodifiableMap(ApiSpec::getSpecId, Function.identity()));
+
       // check if all the specs corresponding to all the specs in the request exist
       List<String> missingSpecs = new ArrayList<>();
       for (UpdateApiSpec apiSpec : request.getApiSpecsList()) {
@@ -417,9 +339,20 @@ public class ApiSpecConfigServiceImpl
               .collect(Collectors.toUnmodifiableMap(ApiSpecUpdate::getSpecId, Function.identity()));
 
       Map<String, ApiSpec> existingApiSpecs =
-          apiSpecConfigStore.getAllData(requestContext).stream()
-              .filter(apiSpec -> specIdToApiSpecUpdateMap.containsKey(apiSpec.getSpecId()))
+          apiSpecConfigStore
+              .getFilteredApiSpecsWithPaginationAndOptionalTotal(
+                  requestContext,
+                  ApiSpecFilter.newBuilder()
+                      .setIds(
+                          StringList.newBuilder().addAllValues(specIdToApiSpecUpdateMap.keySet()))
+                      .build(),
+                  Collections.emptyList(),
+                  null,
+                  false)
+              .getSpecs()
+              .stream()
               .collect(Collectors.toUnmodifiableMap(ApiSpec::getSpecId, Function.identity()));
+
       // check if all the specs corresponding to all the specs in the request exist
       List<String> missingSpecs = new ArrayList<>();
       for (ApiSpecUpdate apiSpec : request.getApiSpecsList()) {
@@ -559,56 +492,5 @@ public class ApiSpecConfigServiceImpl
       }
     }
     return apiSpecBuilder.build();
-  }
-
-  private boolean checkAnyReferenceMatch(GetApiSpecsRequest request, ApiSpec spec) {
-    return spec.hasApiSpecMetadata()
-        && spec.getApiSpecMetadata().hasOpenApiSpecMetadata()
-        && spec
-            .getApiSpecMetadata()
-            .getOpenApiSpecMetadata()
-            .getOpenApiSpecReferencesList()
-            .stream()
-            .anyMatch(specMetaDataReference -> checkAnyFilterMatch(request, specMetaDataReference));
-  }
-
-  private boolean checkAnyFilterMatch(
-      GetApiSpecsRequest request, OpenApiSpecReference specMetaDataReference) {
-    return request.getApiSpecFilter().getReferenceApiSpec().getReferenceApiSpecsList().stream()
-        .anyMatch(
-            referenceSpec ->
-                checkReferenceSpecIdOrSpecPathMatch(specMetaDataReference, referenceSpec));
-  }
-
-  private boolean checkReferenceSpecIdOrSpecPathMatch(
-      OpenApiSpecReference specMetaDataReference, ReferenceApiSpec referenceSpec) {
-    if (referenceSpec.hasSpecId()) {
-      if (specMetaDataReference.hasCompleteOpenApiSpecReference()) {
-        return referenceSpec
-            .getSpecId()
-            .equals(specMetaDataReference.getCompleteOpenApiSpecReference().getSpecId());
-      } else if (specMetaDataReference.hasIncompleteOpenApiSpecReference()) {
-        return referenceSpec
-            .getSpecId()
-            .equals(specMetaDataReference.getIncompleteOpenApiSpecReference().getSpecId());
-      }
-    } else if (referenceSpec.hasSpecPath()) {
-      return referenceSpec.getSpecPath().equals(specMetaDataReference.getResolvedSpecPath());
-    }
-    return false;
-  }
-
-  private boolean checkAnySpecResolutionStateMatch(
-      List<OpenApiSpecResolutionState> apiSpecResolutionStates, ApiSpec spec) {
-    if (!SPEC_TYPE_OPEN_API_SPEC.equals(spec.getSpecType())) {
-      return false;
-    }
-
-    if (!spec.hasApiSpecMetadata() || !spec.getApiSpecMetadata().hasOpenApiSpecMetadata()) {
-      return false;
-    }
-
-    return apiSpecResolutionStates.contains(
-        spec.getApiSpecMetadata().getOpenApiSpecMetadata().getOpenApiSpecResolutionState());
   }
 }
