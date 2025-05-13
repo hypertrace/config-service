@@ -1,6 +1,7 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.Action.ActionCase.ACTION_NOT_SET;
+import static ai.traceable.ratelimiting.config.service.v2.DataSensitivityLevel.DATA_SENSITIVITY_LEVEL_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
@@ -260,10 +261,12 @@ public class TransactionActionConfigValidator {
               "Data location should be request in datatype condition : %s for transaction action config",
               datatypeCondition));
     }
-    if (!datatypeCondition.getDataSensitivityLevelsList().isEmpty()) {
+    if (!datatypeCondition
+        .getMinDataSensitivityLevel()
+        .equals(DATA_SENSITIVITY_LEVEL_UNSPECIFIED)) {
       validatorUtils.throwInvalidArgumentException(
           String.format(
-              "Data sensitivity level should not be present in datatype condition : %s for transaction action config",
+              "Min data sensitivity level should be unspecified in datatype condition : %s for transaction action config",
               datatypeCondition));
     }
     if (datatypeCondition.getDatatypeIdsList().isEmpty()

@@ -254,9 +254,10 @@ enum DataLocation {
 message DatatypeCondition {
   repeated string dataset_ids = 1;
   repeated string datatype_ids = 2;
-  repeated DataSensitivityLevel data_sensitivity_levels = 3;
+  repeated DataSensitivityLevel data_sensitivity_levels = 3 [deprecated = true];
   DataLocation data_location = 4;
   DatatypeMatching datatype_matching = 5;
+  DataSensitivityLevel min_data_sensitivity_level = 6;
 
   message DatatypeMatching {
     oneof matching {

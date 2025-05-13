@@ -209,8 +209,8 @@ public class RateLimitingRulesValidatorTest {
                                 DatatypeCondition.newBuilder()
                                     .addAllDatatypeIds(List.of("datatype1"))
                                     .setDataLocation(DataLocation.DATA_LOCATION_REQUEST)
-                                    .addAllDataSensitivityLevels(
-                                        List.of(DataSensitivityLevel.DATA_SENSITIVITY_LEVEL_LOW))
+                                    .setMinDataSensitivityLevel(
+                                        DataSensitivityLevel.DATA_SENSITIVITY_LEVEL_UNSPECIFIED)
                                     .setDatatypeMatching(
                                         DatatypeCondition.DatatypeMatching.newBuilder()
                                             .setRegexBasedMatching(
