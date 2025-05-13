@@ -108,6 +108,9 @@ public class NotificationRuleConfigServiceImpl
               .addAllNotificationRules(
                   notificationRuleStore.getAllObjects(requestContext, request.getFilter()).stream()
                       .map(ConfigObject::getData)
+                      .filter(
+                          notificationRule ->
+                              !notificationRule.getNotificationRuleMutableData().getIsDeleted())
                       .collect(Collectors.toUnmodifiableList()))
               .build());
       responseObserver.onCompleted();
@@ -145,6 +148,7 @@ public class NotificationRuleConfigServiceImpl
       NotificationRule notificationRule =
           notificationRuleStore
               .getData(requestContext, request.getNotificationRuleId())
+              .filter(rule -> !rule.getNotificationRuleMutableData().getIsDeleted())
               .orElseThrow(Status.NOT_FOUND::asRuntimeException);
       responseObserver.onNext(
           GetNotificationRuleResponse.newBuilder().setNotificationRule(notificationRule).build());
