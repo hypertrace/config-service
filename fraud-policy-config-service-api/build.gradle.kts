@@ -27,6 +27,7 @@ protobuf {
 
 dependencies {
   api(projects.fraudDatamodelConfigServiceApi)
+  api(projects.traceableEdgeDecisionConfigServiceApi)
   api(commonLibs.bundles.grpc.api)
 
   testImplementation(commonLibs.protobuf.javautil)

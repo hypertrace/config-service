@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+import "ai/traceable/edge/decision/config/service/v1/edge_decision_rule.proto";
+import "ai/traceable/fraud/policy/config/service/v1/time_object.proto";
+import "ai/traceable/fraud/query/model/v1/fraud_data_query.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+
+message TriageConfig {
+  string malicious_sql = 1;
+  string non_malicious_sql = 2;
+  bool generate_detection_event_spans = 3;
+  bool enable_fingerprinting = 4;
+  bool enable_edge_enforcement = 5;
+  ActionConfig action = 6;
+  DetectionEventSpanQueryConfig detection_event_span_query_config = 7;
+  google.protobuf.Value custom_fields = 100;
+}
+
+message DetectionEventSpanQueryConfig {
+  // must return a list of span_event_view rows
+  ai.traceable.fraud.query.model.v1.EntityGraphDataQuery query = 1;
+  // default: 10000
+  int64 max_span_count = 2;
+  bool ignore_null = 3;
+}
+
+message ActionConfig {
+  RuleDecisionConfig rule_decision = 1;
+  ai.traceable.fraud.policy.config.service.v1.TimeObj rule_expiry_duration = 2;
+}
+
+message RuleDecisionConfig {
+  ai.traceable.edge.decision.config.service.v1.EdgeDecisionType edge_decision_type = 1;
+  double sampling_rate = 2;
+  string threat_type = 3;
+}

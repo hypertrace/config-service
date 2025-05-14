@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ai.traceable.fraud.policy.config.service.v1;
+
+option java_multiple_files = true;
+
+message TimeObj {
+  int32 value = 1;
+  TimeUnit unit = 2;
+}
+
+enum TimeUnit {
+  TIME_UNIT_UNSPECIFIED = 0;
+  TIME_UNIT_MILLIS = 1;
+  TIME_UNIT_SECONDS = 2;
+  TIME_UNIT_MINUTES = 3;
+  TIME_UNIT_HOURS = 4;
+  TIME_UNIT_DAYS = 5;
+}

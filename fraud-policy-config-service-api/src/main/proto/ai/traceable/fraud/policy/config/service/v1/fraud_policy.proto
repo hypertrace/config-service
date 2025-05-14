@@ -3,6 +3,9 @@ syntax = "proto3";
 package ai.traceable.fraud.policy.config.service.v1;
 
 import "ai/traceable/fraud/datamodel/config/service/v1/fraud_datamodel.proto";
+import "ai/traceable/fraud/policy/config/service/v1/incident_config.proto";
+import "ai/traceable/fraud/policy/config/service/v1/time_object.proto";
+import "ai/traceable/fraud/policy/config/service/v1/triage_config.proto";
 import "ai/traceable/fraud/query/model/v1/fraud_data_query.proto";
 import "google/protobuf/struct.proto";
 
@@ -60,20 +63,6 @@ message TimeWindow {
     TimeObj relative_time = 1;
     ai.traceable.fraud.query.model.v1.TimeFrame time_frame = 2;
   }
-}
-
-message TimeObj {
-  int32 value = 1;
-  TimeUnit unit = 2;
-}
-
-enum TimeUnit {
-  TIME_UNIT_UNSPECIFIED = 0;
-  TIME_UNIT_MILLIS = 1;
-  TIME_UNIT_SECONDS = 2;
-  TIME_UNIT_MINUTES = 3;
-  TIME_UNIT_HOURS = 4;
-  TIME_UNIT_DAYS = 5;
 }
 
 enum FraudPolicyStage {
@@ -187,12 +176,8 @@ message FraudPolicy {
   // if this policy is generated from a template / default rule, store the template id
   optional string template_id = 20;
 
-  // store information for creating incidents from the policy.
-  // at this point, we don't know yet what is the actual structure.
-  google.protobuf.Value incident_config = 100;
-  // store information for triaging the policy (fingerprinting)
-  // at this point, we don't know yet what this may look like.
-  google.protobuf.Value triage_config = 101;
+  IncidentConfig incident_config = 100;
+  TriageConfig triage_config = 101;
   // store information about the last execution status of the policy.
   google.protobuf.Value execution_status = 102;
   google.protobuf.Value additional_fields = 103;
