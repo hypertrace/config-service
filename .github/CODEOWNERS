@@ -35,3 +35,17 @@ traceable-config-service-rest/src @sunilgattupalle @surajpuvvada @avinashkolluru
 threat-scoring-config-service-impl/src/main/resources @piyushroshan @soujanyanmbri @singhalprerana @avinashkolluru
 user-attribution-config-service-api/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
 user-attribution-config-service-impl/src @sanket-mundra @rutvij-menavlikar @saxenakshitiz @aaron-steinfeld
+azure-devops-integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+azure-devops-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+servicenow-itsm-integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+servicenow-itsm-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+splunk-integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+splunk-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+syslog-integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+syslog-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+waf-provider-integration-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+waf-provider-integration-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+jira-integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+jira-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
