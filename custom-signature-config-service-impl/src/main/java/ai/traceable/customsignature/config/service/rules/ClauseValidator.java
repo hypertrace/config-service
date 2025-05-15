@@ -2,6 +2,8 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL;
 import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_COOKIE_VALUE;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HEADER_VALUE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HOST;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HTTP_METHOD;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
@@ -10,6 +12,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE_DIRECTIVES_WITH_CHAIN_KEYWORDS_REGEX;
@@ -22,6 +25,7 @@ import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpressio
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.CustomSecRule;
 import ai.traceable.customsignature.config.service.v1.EmailDomainExpression;
+import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.IpAbuseVelocityExpression;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpressionType;
@@ -65,10 +69,10 @@ class ClauseValidator {
           MATCH_KEY_HTTP_METHOD,
           MATCH_KEY_USER_AGENT);
 
-  public Status validateClause(Clause clause) {
+  public Status validateClause(Clause clause, EventType eventType) {
     switch (clause.getClauseCase()) {
       case MATCH_EXPRESSION:
-        return validateMatchExpression(clause.getMatchExpression());
+        return validateMatchExpression(clause.getMatchExpression(), eventType);
       case KEY_VALUE_EXPRESSION:
         return validateKeyValueExpression(clause.getKeyValueExpression());
       case ATTRIBUTE_KEY_VALUE_EXPRESSION:
@@ -320,33 +324,54 @@ class ClauseValidator {
     return Status.OK;
   }
 
-  private Status validateMatchExpression(MatchExpression matchExpression) {
-    if (MatchKey.MATCH_KEY_UNSPECIFIED.equals(matchExpression.getMatchKey())) {
+  private Status validateMatchExpression(MatchExpression matchExpression, EventType eventType) {
+    MatchKey matchKey = matchExpression.getMatchKey();
+    MatchOperator matchOperator = matchExpression.getMatchOperator();
+
+    if (MatchKey.MATCH_KEY_UNSPECIFIED.equals(matchKey)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule match expression should have a valid match key.");
     }
-    if (MatchOperator.MATCH_OPERATOR_UNSPECIFIED.equals(matchExpression.getMatchOperator())) {
+
+    if (MatchOperator.MATCH_OPERATOR_UNSPECIFIED.equals(matchOperator)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule match expression should have a valid match operator.");
     }
+
     if (matchExpression.getMatchCategory().equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
-        && INVALID_RESPONSE_MATCH_KEYS.contains(matchExpression.getMatchKey())) {
+        && INVALID_RESPONSE_MATCH_KEYS.contains(matchKey)) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
               "Invalid match key : %s for match category : %s for custom signature rule",
-              matchExpression.getMatchKey(), matchExpression.getMatchCategory()));
+              matchKey, matchExpression.getMatchCategory()));
     }
+
+    if (hasInvalidBlockingConditionForCookieOrHeaderValues(matchKey, matchOperator, eventType)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Do not match exactly and Do not match pattern operators are unsupported "
+              + "for cookie and header values for blocking");
+    }
+
     if (isInvalidMathematicalOperation(matchExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
               "Custom Signature Rule match expression should have numerical value for match operator : %s",
-              matchExpression.getMatchOperator()));
+              matchOperator));
     }
-    if (MATCH_OPERATOR_MATCHES_REGEX.equals(matchExpression.getMatchOperator())
-        || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(matchExpression.getMatchOperator())) {
+
+    if (MATCH_OPERATOR_MATCHES_REGEX.equals(matchOperator)
+        || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(matchOperator)) {
       return validateRegex(matchExpression.getMatchValue());
     }
     return Status.OK;
+  }
+
+  private boolean hasInvalidBlockingConditionForCookieOrHeaderValues(
+      MatchKey matchKey, MatchOperator matchOperator, EventType eventType) {
+    return (matchKey == MATCH_KEY_COOKIE_VALUE || matchKey == MATCH_KEY_HEADER_VALUE)
+        && eventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING
+        && (matchOperator == MATCH_OPERATOR_NOT_EQUAL
+            || matchOperator == MATCH_OPERATOR_NOT_MATCH_REGEX);
   }
 
   private boolean isInvalidMathematicalOperation(MatchExpression matchExpression) {

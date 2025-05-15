@@ -80,7 +80,9 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    if ((status = validateRuleDefinition(request.getDefinition())) != Status.OK) {
+    if ((status =
+            validateRuleDefinition(request.getDefinition(), request.getEffect().getEventType()))
+        != Status.OK) {
       return status;
     }
 
@@ -135,7 +137,8 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
 
-    if ((status = validateRuleDefinition(rule.getDefinition())) != Status.OK) {
+    if ((status = validateRuleDefinition(rule.getDefinition(), rule.getEffect().getEventType()))
+        != Status.OK) {
       return status;
     }
 
@@ -269,7 +272,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
             });
   }
 
-  private Status validateRuleDefinition(RuleDefinition ruleDefinition) {
+  private Status validateRuleDefinition(RuleDefinition ruleDefinition, EventType eventType) {
     if (ruleDefinition.getLabelsMap().size() > CustomSignatureRulesValidator.CUSTOM_LABELS_LIMIT) {
       return Status.INVALID_ARGUMENT.withDescription("Custom labels limit exceeded");
     }
@@ -277,10 +280,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule definition should have a valid clause group.");
     }
-    return validateClauseGroup(ruleDefinition.getClauseGroup());
+    return validateClauseGroup(ruleDefinition.getClauseGroup(), eventType);
   }
 
-  private Status validateClauseGroup(ClauseGroup clauseGroup) {
+  private Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
     if (clauseGroup.getClauseOperator() == ClauseOperator.CLAUSE_OPERATOR_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Definition clause group should have a valid clause operator.");
@@ -291,7 +294,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     }
     Status status;
     for (Clause clause : clauseGroup.getClausesList()) {
-      if ((status = clauseValidator.validateClause(clause)) != Status.OK) {
+      if ((status = clauseValidator.validateClause(clause, eventType)) != Status.OK) {
         return status;
       }
     }
