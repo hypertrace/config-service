@@ -26,7 +26,8 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
    * V3_Sec_Args. Otherwise, we send V3. We determine support for sec_args rules if the libtraceable
    * version is greater than minimum
    */
-  private static final String MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG = "0.1.98-rc.139";
+  private static final String MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG_DETECTION_ONLY =
+      "0.1.98-rc.162";
 
   private final BlockingModsecBlobFetcher blockingModsecBlobFetcher;
   private final UuidGenerator uuidGenerator;
@@ -60,7 +61,7 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
         .ifPresent(responseElements::add);
     buildResponseElement(
             modsecRequestElements,
-            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
             blockingRulesSupplier)
         .ifPresent(responseElements::add);
     return responseElements;
@@ -121,7 +122,8 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
       AgentCapabilities agentCapabilities, ModsecRuleVersion modsecRuleVersion) {
     // An agent can be said to support seg arg limit if it has any component with desired
     // libtraceable version
-    return (modsecRuleVersion.equals(ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS))
+    return (modsecRuleVersion.equals(
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE))
         ? agentCapabilities.getComponentsList().stream().anyMatch(this::isSecArgLimitsSupported)
         : agentCapabilities.getComponentsList().stream().noneMatch(this::isSecArgLimitsSupported);
   }
@@ -130,7 +132,8 @@ public class ModsecBlockingManager implements BlockingConfigManagerBase {
     // A component can be said to support seg arg limit if it has desired libtraceable version
     return component.hasLibtraceableVersion()
         && semanticVersioningComparator.compare(
-                component.getLibtraceableVersion(), MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG)
+                component.getLibtraceableVersion(),
+                MINIMUM_LIBTRACEABLE_VERSION_FOR_V3_SECARG_DETECTION_ONLY)
             >= 0;
   }
 }

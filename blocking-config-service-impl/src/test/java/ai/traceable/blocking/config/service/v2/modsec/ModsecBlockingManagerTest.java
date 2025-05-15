@@ -53,7 +53,9 @@ class ModsecBlockingManagerTest {
     doReturn(V3_seg_arg_blob)
         .when(mockBlockingModsecBlobFetcher)
         .getEnabledRulesBlob(
-            requestContext, ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS, environmentId);
+            requestContext,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
+            environmentId);
   }
 
   @Test
@@ -173,11 +175,11 @@ class ModsecBlockingManagerTest {
                 List.of(
                     AgentCapabilities.newBuilder()
                         .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139"))
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.169"))
                         .build(),
                     AgentCapabilities.newBuilder()
                         .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140"))
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.170"))
                         .build()))),
         manager.generateBlockingElements(
             List.of(
@@ -186,11 +188,11 @@ class ModsecBlockingManagerTest {
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.169")))
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.140")))
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.170")))
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
@@ -219,12 +221,12 @@ class ModsecBlockingManagerTest {
                 .addAgentCapabilities(
                     AgentCapabilities.newBuilder()
                         .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139"))
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.169"))
                         .build())
                 .addAgentCapabilities(
                     AgentCapabilities.newBuilder()
                         .addComponents(
-                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.149"))
+                            Component.newBuilder().setLibtraceableVersion("0.1.98-rc.169"))
                         .build())
                 .setCrsBlockingRules(CrsBlockingRules.getDefaultInstance())
                 .build()),
@@ -235,7 +237,7 @@ class ModsecBlockingManagerTest {
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.139")))
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.169")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build(),
                 BlockingConfigRequestElement.newBuilder()
@@ -251,7 +253,7 @@ class ModsecBlockingManagerTest {
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.149")))
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.169")))
                     .setCrsBlockingRulesRequest(CrsBlockingRulesRequest.getDefaultInstance())
                     .build()),
             new BlockingRulesSupplierImpl(
@@ -271,7 +273,7 @@ class ModsecBlockingManagerTest {
                     .addSupportedAgentCapabilities(
                         AgentCapabilities.newBuilder()
                             .addComponents(
-                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.148")))
+                                Component.newBuilder().setLibtraceableVersion("0.1.98-rc.168")))
                     .build()),
             new BlockingRulesSupplierImpl(
                 blockingRulesSupplierContext, requestContext, environmentId)));

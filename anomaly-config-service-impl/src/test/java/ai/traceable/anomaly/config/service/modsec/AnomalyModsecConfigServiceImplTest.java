@@ -45,7 +45,9 @@ class AnomalyModsecConfigServiceImplTest {
         .getModsecCrsRules(any(), any(), any(), any(), anyBoolean(), any());
     modsecConfigService =
         new AnomalyModsecConfigServiceImpl(
-            modsecValidator, modsecManager, ModsecRuleVersion.MODSEC_RULE_VERSION_V3);
+            modsecValidator,
+            modsecManager,
+            ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE);
   }
 
   @Test

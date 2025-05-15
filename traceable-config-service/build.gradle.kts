@@ -218,7 +218,7 @@ tasks.run<JavaExec> {
 
 // Customize integration test report to include source of service-impl
 tasks.jacocoIntegrationTestReport {
-  sourceSets(project(":sensitive-data-config-service-impl").sourceSets.getByName("main"))
+  sourceSets(project(":traceable-config-service").sourceSets.getByName("main"))
 }
 
 hypertraceDocker {

@@ -641,7 +641,7 @@ logConfig:
 
 anomalyConfigServiceConfig:
   name: anomaly-config-service-config
-  modsecRuleVersion: MODSEC_RULE_VERSION_V3
+  modsecRuleVersion: MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE
   global:
     disabled: false
     internal: false

@@ -300,7 +300,7 @@ public class LocalProcessingConfigServiceIntegrationTest
         new ModsecRulesRegistryImpl(new ConfigConverter(), modsecCrsRulesHandler);
     return registry.getModsecCrsRulesBlob(
         List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
-        ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+        ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
         disabledRuleIds,
         false);
   }
