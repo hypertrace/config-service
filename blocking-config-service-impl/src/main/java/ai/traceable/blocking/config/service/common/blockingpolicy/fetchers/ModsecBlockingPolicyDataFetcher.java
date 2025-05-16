@@ -71,7 +71,7 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
 
     GetScopedAnomalyGlobalConfigStatusResponse statusResponse =
         getScopedAnomalyGlobalConfigStatus(requestContext, anomalyConfigScope);
-    if (!statusResponse.getScopedConfig().getConfigStatus().getDisabled()) {
+    if (!statusResponse.getScopedConfig().getModsecGlobalConfig().getDisabled()) {
       return new BlockingPolicyAggregate<>(
           parseModsecViolations(
               getScopedAnomalyDetectionConfig(requestContext, anomalyConfigScope)));

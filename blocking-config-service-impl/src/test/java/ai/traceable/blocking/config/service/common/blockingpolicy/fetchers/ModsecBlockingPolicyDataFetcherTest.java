@@ -6,7 +6,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
-import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -21,6 +20,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionCon
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc.AnomalyGlobalConfigServiceBlockingStub;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.blocking.config.service.common.blockingpolicy.BlockingPolicyDataBucket;
 import ai.traceable.blocking.config.service.common.blockingpolicy.data.BlockingPolicyData;
@@ -114,8 +114,7 @@ class ModsecBlockingPolicyDataFetcherTest {
             GetScopedAnomalyGlobalConfigStatusResponse.newBuilder()
                 .setScopedConfig(
                     ScopedAnomalyConfigStatus.newBuilder()
-                        .setConfigStatus(
-                            AnomalyConfigStatus.newBuilder().setDisabled(true).build()))
+                        .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(true)))
                 .build())
         .when(anomalyGlobalConfigServiceStub)
         .getScopedAnomalyGlobalConfigStatus(
@@ -201,6 +200,6 @@ class ModsecBlockingPolicyDataFetcherTest {
           GetScopedAnomalyGlobalConfigStatusResponse.newBuilder()
               .setScopedConfig(
                   ScopedAnomalyConfigStatus.newBuilder()
-                      .setConfigStatus(AnomalyConfigStatus.newBuilder().setDisabled(false).build()))
+                      .setModsecGlobalConfig(ModsecGlobalConfig.newBuilder().setDisabled(false)))
               .build();
 }
