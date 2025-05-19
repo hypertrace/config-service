@@ -127,6 +127,8 @@ public class JiraIntegrationCoordinator {
     }
     if (request.hasOverrideBaseUrl()) {
       jiraIntegrationAtBuilder.setOverrideBaseUrl(request.getOverrideBaseUrl());
+    } else {
+      jiraIntegrationAtBuilder.clearOverrideBaseUrl();
     }
     jiraIntegrationStore.upsertObject(requestContext, jiraIntegrationAtBuilder.build());
     return jiraIntegrationAtBuilder.build();

@@ -341,27 +341,34 @@ class JiraIntegrationConfigServiceImplTest {
                 Scope.newBuilder()
                     .setEnvironmentIds(
                         StringList.newBuilder().addAllValues(List.of("env2", "env3"))))
+            .setOverrideBaseUrl("newOverrideBaseUrl")
             .build();
     JiraIntegration expectedUpdatedJiraIntegration =
         jiraIntegration1.toBuilder()
             .setName(updateJiraIntegrationRequest1.getName())
             .setDescription(updateJiraIntegrationRequest1.getDescription())
             .setScope(updateJiraIntegrationRequest1.getScope())
+            .setOverrideBaseUrl(updateJiraIntegrationRequest1.getOverrideBaseUrl())
             .build();
     assertDoesNotThrow(() -> stub.updateJiraIntegration(updateJiraIntegrationRequest1));
     assertEquals(
         expectedUpdatedJiraIntegration,
         jiraIntegrationStore.getData(requestContext, jiraIntegration1.getId()).orElseThrow());
 
-    // this should successfully unset the scope
+    // this should successfully unset the scope and override base url
     UpdateJiraIntegrationRequest updateJiraIntegrationRequest2 =
-        updateJiraIntegrationRequest1.toBuilder().clearScope().build();
+        updateJiraIntegrationRequest1.toBuilder().clearScope().clearOverrideBaseUrl().build();
     stub.updateJiraIntegration(updateJiraIntegrationRequest2);
     assertFalse(
         jiraIntegrationStore
             .getData(requestContext, jiraIntegration1.getId())
             .orElseThrow()
             .hasScope());
+    assertFalse(
+        jiraIntegrationStore
+            .getData(requestContext, jiraIntegration1.getId())
+            .orElseThrow()
+            .hasOverrideBaseUrl());
 
     // this will fail because updating with the new scope will cause overlap in environments with
     // an existing integration
