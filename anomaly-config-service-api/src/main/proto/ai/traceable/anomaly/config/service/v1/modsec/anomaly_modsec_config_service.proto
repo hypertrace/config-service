@@ -13,4 +13,6 @@ service AnomalyModsecConfigService {
 
   // tenant-agnostic
   rpc GetDefaultModsecCrsRules(GetDefaultModsecCrsRulesRequest) returns (GetDefaultModsecCrsRulesResponse) {}
+
+  rpc GetWebAppEvaluationConfigContext(GetWebAppEvaluationConfigContextRequest) returns (GetWebAppEvaluationConfigContextResponse) {}
 }
