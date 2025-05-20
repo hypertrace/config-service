@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.threatmanagement.config.service.v1.ExcludeAutoBlockingConfig;
+import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
@@ -35,6 +36,7 @@ class ThreatAutoBlockingActionConfigConverterTest {
     assertEquals(
         ThreatAutoBlockingActionConfig.newBuilder()
             .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION)
+            .setScope(ScopeConfig.newBuilder().getDefaultInstanceForType())
             .build(),
         configConverter.convert(request));
   }
@@ -49,6 +51,7 @@ class ThreatAutoBlockingActionConfigConverterTest {
     assertEquals(
         ThreatAutoBlockingActionConfig.newBuilder()
             .setActionType(ThreatAutoBlockingActionType.THREAT_AUTO_BLOCKING_ACTION_TYPE_BLOCK)
+            .setScope(ScopeConfig.newBuilder().getDefaultInstanceForType())
             .build(),
         configConverter.convert(request));
   }
@@ -73,6 +76,7 @@ class ThreatAutoBlockingActionConfigConverterTest {
                     .setDuration("PT1H2M34S")
                     .setTimestampMillis(CURRENT_TIME_MILLIS + 3754000)
                     .build())
+            .setScope(ScopeConfig.newBuilder().getDefaultInstanceForType())
             .build(),
         configConverter.convert(request));
   }

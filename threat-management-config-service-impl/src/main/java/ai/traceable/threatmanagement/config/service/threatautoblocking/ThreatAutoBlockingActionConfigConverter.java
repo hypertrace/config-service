@@ -24,6 +24,7 @@ class ThreatAutoBlockingActionConfigConverter {
     ThreatAutoBlockingActionType actionType = request.getActionType();
     ThreatAutoBlockingActionConfig.Builder builder =
         ThreatAutoBlockingActionConfig.newBuilder().setActionType(actionType);
+    builder.setScope(request.getScope());
     if (actionType == THREAT_AUTO_BLOCKING_ACTION_TYPE_NO_ACTION) {
       return builder.build();
     }
