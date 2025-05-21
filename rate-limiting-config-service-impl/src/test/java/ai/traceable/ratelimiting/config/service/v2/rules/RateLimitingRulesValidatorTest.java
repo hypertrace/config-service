@@ -3185,7 +3185,7 @@ public class RateLimitingRulesValidatorTest {
       ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig) {
     return RateLimitingRuleData.newBuilder()
         .setName("rule1")
-        .setCategory(Category.CATEGORY_RATE_LIMITING)
+        .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
         .setEnabled(true)
         .setCondition(
             Condition.newBuilder()

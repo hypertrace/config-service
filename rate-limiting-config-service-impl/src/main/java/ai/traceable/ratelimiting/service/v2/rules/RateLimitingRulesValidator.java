@@ -1,6 +1,13 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
+import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_DATA_EXFILTRATION;
+import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_ENUMERATION;
+import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_RATE_LIMITING;
+import static ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.ThresholdConfigCase.DYNAMIC_THRESHOLD_CONFIG;
+import static ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.ThresholdConfigCase.ROLLING_WINDOW_THRESHOLD_CONFIG;
+import static ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.ThresholdConfigCase.VALUE_BASED_THRESHOLD_CONFIG;
+import static ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.ValueType.VALUE_TYPE_SENSITIVE_PARAMS;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_DEFAULT;
 import static ai.traceable.ratelimiting.config.service.v2.RuleStatus.RuleSource.RULE_SOURCE_UNSPECIFIED;
 import static ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionValidator.checkConversionToEdgeDecisionRules;
@@ -34,7 +41,9 @@ import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RateLimitingRulesValidator implements RulesValidator {
@@ -42,6 +51,18 @@ public class RateLimitingRulesValidator implements RulesValidator {
   private static final ValidatorUtils validatorUtils = new ValidatorUtils();
   private static final TransactionActionConfigValidator transactionActionConfigValidator =
       new TransactionActionConfigValidator();
+
+  private static final Map<Category, Set<ResourceAccessThresholdConfig.ThresholdConfigCase>>
+      THRESHOLD_CONFIG_SUPPORT_MATRIX =
+          Map.of(
+              CATEGORY_RATE_LIMITING,
+                  Set.of(ROLLING_WINDOW_THRESHOLD_CONFIG, DYNAMIC_THRESHOLD_CONFIG),
+              CATEGORY_ENUMERATION, Set.of(VALUE_BASED_THRESHOLD_CONFIG),
+              CATEGORY_DATA_EXFILTRATION,
+                  Set.of(
+                      ROLLING_WINDOW_THRESHOLD_CONFIG,
+                      DYNAMIC_THRESHOLD_CONFIG,
+                      VALUE_BASED_THRESHOLD_CONFIG));
 
   @Override
   public void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request) {
@@ -155,7 +176,9 @@ public class RateLimitingRulesValidator implements RulesValidator {
           .forEach(
               thresholdActionConfig ->
                   this.validateThresholdActionConfig(
-                      thresholdActionConfig, isSelectedDataTypesSensitiveParamsEvaluationValid));
+                      thresholdActionConfig,
+                      data.getCategory(),
+                      isSelectedDataTypesSensitiveParamsEvaluationValid));
       validateCondition(data.getCondition());
       checkConversionToEdgeDecisionRules(data);
     }
@@ -212,6 +235,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateThresholdActionConfig(
       ThresholdActionConfig thresholdActionConfig,
+      Category category,
       boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig,
@@ -222,6 +246,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
             resourceAccessThresholdConfig ->
                 validateResourceAccessThresholdConfig(
                     resourceAccessThresholdConfig,
+                    category,
                     isSelectedDataTypesSensitiveParamsEvaluationValid));
     validateNonDefaultPresenceOrThrow(
         thresholdActionConfig, ThresholdActionConfig.ACTIONS_FIELD_NUMBER);
@@ -240,7 +265,19 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private void validateResourceAccessThresholdConfig(
       ResourceAccessThresholdConfig resourceAccessThresholdConfig,
+      Category category,
       boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
+
+    // validate if the rate-limiting config type is supported for the intended category
+    if (!THRESHOLD_CONFIG_SUPPORT_MATRIX
+        .get(category)
+        .contains(resourceAccessThresholdConfig.getThresholdConfigCase())) {
+      validatorUtils.throwInvalidArgumentException(
+          String.format(
+              "ResourceAccessThresholdConfig of type %s not supported for category %s",
+              resourceAccessThresholdConfig.getThresholdConfigCase(), category));
+    }
+
     validateNonDefaultPresenceOrThrow(
         resourceAccessThresholdConfig,
         ResourceAccessThresholdConfig.USER_AGGREGATE_TYPE_FIELD_NUMBER);
@@ -254,6 +291,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
         break;
       case VALUE_BASED_THRESHOLD_CONFIG:
         validateValueBasedThresholdConfig(
+            category,
             resourceAccessThresholdConfig.getValueBasedThresholdConfig(),
             isSelectedDataTypesSensitiveParamsEvaluationValid);
         break;
@@ -290,6 +328,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
   }
 
   private void validateValueBasedThresholdConfig(
+      Category category,
       ResourceAccessThresholdConfig.ValueBasedThresholdConfig valueBasedThresholdConfig,
       boolean isSelectedDataTypesSensitiveParamsEvaluationValid) {
     validateNonDefaultPresenceOrThrow(
@@ -301,9 +340,12 @@ public class RateLimitingRulesValidator implements RulesValidator {
     validateNonDefaultPresenceOrThrow(
         valueBasedThresholdConfig,
         ResourceAccessThresholdConfig.ValueBasedThresholdConfig.VALUE_TYPE_FIELD_NUMBER);
-    if (!valueBasedThresholdConfig
-            .getValueType()
-            .equals(ResourceAccessThresholdConfig.ValueType.VALUE_TYPE_SENSITIVE_PARAMS)
+    if (category.equals(CATEGORY_DATA_EXFILTRATION)
+        && !valueBasedThresholdConfig.getValueType().equals(VALUE_TYPE_SENSITIVE_PARAMS)) {
+      validatorUtils.throwInvalidArgumentException(
+          "For data loss prevention category only sensitive params evaluation is supported.");
+    }
+    if (!valueBasedThresholdConfig.getValueType().equals(VALUE_TYPE_SENSITIVE_PARAMS)
         && !valueBasedThresholdConfig
             .getSensitiveParamsEvaluation()
             .equals(
