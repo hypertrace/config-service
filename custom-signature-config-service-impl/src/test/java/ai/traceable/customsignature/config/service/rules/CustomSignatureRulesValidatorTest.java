@@ -20,6 +20,7 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
@@ -29,6 +30,7 @@ import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +40,7 @@ public class CustomSignatureRulesValidatorTest {
 
   private static final String ZERO_EXPIRY_DURATION = "P0DT0H0M";
   private static final String NON_ZERO_EXPIRY_DURATION = "P2DT3H4M";
+  private final String HEADER_MATCH_VALUE = "header-value";
 
   private ModsecRulesManager modsecRulesManager;
   private CustomSignatureRulesValidator rulesValidator;
@@ -253,6 +256,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -279,6 +283,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -306,6 +311,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -330,6 +336,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -698,6 +705,150 @@ public class CustomSignatureRulesValidatorTest {
   }
 
   @Test
+  void testValidateCreateUpdateRuleForLhsRhsKeysExpression() {
+    RuleEffect ruleEffect =
+        RuleEffect.newBuilder()
+            .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .build();
+
+    CreateCustomSignatureRuleRequest createRequest =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setLhsRhsKeysExpression(
+                                        LhsRhsKeysExpression.newBuilder()
+                                            .setLhsKeyExpression(
+                                                getMatchExpression(
+                                                    MatchKey.MATCH_KEY_HEADER_NAME,
+                                                    MatchOperator.MATCH_OPERATOR_EQUALS,
+                                                    "str-value-1"))
+                                            .setRhsKeyExpression(
+                                                getMatchExpression(
+                                                    MatchKey.MATCH_KEY_COOKIE_NAME,
+                                                    MatchOperator.MATCH_OPERATOR_CONTAINS,
+                                                    "str-value-2"))
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+            .setRuleScope(
+                RuleScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id")))
+            .build();
+    Status status = rulesValidator.validate(createRequest);
+    assertEquals(Code.OK, status.getCode());
+
+    createRequest =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name")
+            .setEffect(ruleEffect)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setLhsRhsKeysExpression(
+                                        LhsRhsKeysExpression.newBuilder()
+                                            .setLhsKeyExpression(
+                                                getMatchExpression(
+                                                    MatchKey.MATCH_KEY_HEADER_NAME,
+                                                    MatchOperator.MATCH_OPERATOR_EQUALS,
+                                                    "str-value-1"))
+                                            .setRhsKeyExpression(
+                                                getMatchExpression(
+                                                    MatchKey.MATCH_KEY_COOKIE_NAME,
+                                                    MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+                                                    "str-value-2"))
+                                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+            .setRuleScope(
+                RuleScope.newBuilder()
+                    .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id")))
+            .build();
+    status = rulesValidator.validate(createRequest);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+
+    UpdateCustomSignatureRuleRequest updateRequest =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setName("name")
+                    .setId("id")
+                    .setEffect(ruleEffect)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setLhsRhsKeysExpression(
+                                                LhsRhsKeysExpression.newBuilder()
+                                                    .setLhsKeyExpression(
+                                                        getMatchExpression(
+                                                            MatchKey.MATCH_KEY_HEADER_NAME,
+                                                            MatchOperator.MATCH_OPERATOR_EQUALS,
+                                                            "str-value-1"))
+                                                    .setRhsKeyExpression(
+                                                        getMatchExpression(
+                                                            MatchKey.MATCH_KEY_COOKIE_NAME,
+                                                            MatchOperator.MATCH_OPERATOR_CONTAINS,
+                                                            "str-value-2"))
+                                                    .setMatchOperator(
+                                                        MatchOperator.MATCH_OPERATOR_EQUALS)))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+                    .setRuleScope(
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-id"))))
+            .build();
+    status = rulesValidator.validate(updateRequest);
+    assertEquals(Code.OK, status.getCode());
+
+    updateRequest =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setName("name")
+                    .setId("id")
+                    .setEffect(ruleEffect)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setLhsRhsKeysExpression(
+                                                LhsRhsKeysExpression.newBuilder()
+                                                    .setLhsKeyExpression(
+                                                        getMatchExpression(
+                                                            MatchKey.MATCH_KEY_HEADER_NAME,
+                                                            MatchOperator.MATCH_OPERATOR_EQUALS,
+                                                            "str-value-1"))
+                                                    .setRhsKeyExpression(
+                                                        getMatchExpression(
+                                                            MatchKey.MATCH_KEY_COOKIE_NAME,
+                                                            MatchOperator
+                                                                .MATCH_OPERATOR_GREATER_THAN,
+                                                            "str-value-2"))
+                                                    .setMatchOperator(
+                                                        MatchOperator.MATCH_OPERATOR_EQUALS)))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+                    .setRuleScope(
+                        RuleScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-id"))))
+            .build();
+    status = rulesValidator.validate(updateRequest);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+  }
+
+  @Test
   public void testValidateUpdateRule() {
     CustomSignatureRule rule;
     Status status;
@@ -903,6 +1054,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -932,6 +1084,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -962,6 +1115,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -989,6 +1143,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -1210,6 +1365,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -1238,6 +1394,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -1268,6 +1425,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                                            .setMatchValue(HEADER_MATCH_VALUE)
                                             .build())
                                     .build())
                             .build())
@@ -1435,6 +1593,16 @@ public class CustomSignatureRulesValidatorTest {
                                 .setMatchOperator(matchOperator)
                                 .setMatchValue(matchValue)
                                 .setMatchCategory(matchCategory))))
+        .build();
+  }
+
+  private MatchExpression getMatchExpression(
+      MatchKey matchKey, MatchOperator matchOperator, String strValue) {
+    return MatchExpression.newBuilder()
+        .setMatchKey(matchKey)
+        .setMatchOperator(matchOperator)
+        .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+        .setValue(Value.newBuilder().setStringValue(strValue))
         .build();
   }
 

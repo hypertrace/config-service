@@ -38,6 +38,7 @@ import ai.traceable.customsignature.config.service.v1.IpType;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
+import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
@@ -50,6 +51,7 @@ import ai.traceable.customsignature.config.service.v1.UserAgentExpression;
 import ai.traceable.customsignature.config.service.v1.UserIdExpression;
 import ai.traceable.platform.utils.ip.IpValidationUtils;
 import com.google.protobuf.Message;
+import com.google.protobuf.Value;
 import com.google.re2j.Matcher;
 import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
@@ -68,6 +70,9 @@ class ClauseValidator {
           MATCH_KEY_HOST,
           MATCH_KEY_HTTP_METHOD,
           MATCH_KEY_USER_AGENT);
+
+  private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
+      Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
   public Status validateClause(Clause clause, EventType eventType) {
     switch (clause.getClauseCase()) {
@@ -105,6 +110,8 @@ class ClauseValidator {
         return validateRequestScannerTypeExpression(clause.getRequestScannerTypeExpression());
       case SCOPE_EXPRESSION:
         return validateScopeExpression(clause.getScopeExpression());
+      case LHS_RHS_KEYS_EXPRESSION:
+        return validateLhsRhsKeysExpression(clause.getLhsRhsKeysExpression(), eventType);
       default:
         return Status.INVALID_ARGUMENT.withDescription(
             String.format("Invalid Custom Signature Rule Clause expression %s ", clause));
@@ -352,6 +359,10 @@ class ClauseValidator {
               + "for cookie and header values for blocking");
     }
 
+    if (matchExpression.getMatchValue().isEmpty() && !matchExpression.hasValue()) {
+      return Status.INVALID_ARGUMENT.withDescription("Both matchValue and Value cannot be empty.");
+    }
+
     if (isInvalidMathematicalOperation(matchExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
           String.format(
@@ -363,7 +374,8 @@ class ClauseValidator {
         || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(matchOperator)) {
       return validateRegex(matchExpression.getMatchValue());
     }
-    return Status.OK;
+
+    return validateValue(matchExpression);
   }
 
   private boolean hasInvalidBlockingConditionForCookieOrHeaderValues(
@@ -375,8 +387,7 @@ class ClauseValidator {
   }
 
   private boolean isInvalidMathematicalOperation(MatchExpression matchExpression) {
-    return (matchExpression.getMatchOperator().equals(MATCH_OPERATOR_GREATER_THAN)
-            || matchExpression.getMatchOperator().equals(MATCH_OPERATOR_LESS_THAN))
+    return NUMERIC_MATCH_OPERATORS.contains(matchExpression.getMatchOperator())
         && !isNumber(matchExpression.getMatchValue());
   }
 
@@ -493,6 +504,48 @@ class ClauseValidator {
     if (!rule.getSanitisedSecRule().isBlank()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Sanitized Sec Rule should be empty in create/update request");
+    }
+    return Status.OK;
+  }
+
+  private Status validateLhsRhsKeysExpression(
+      LhsRhsKeysExpression lhsRhsKeysExpression, EventType eventType) {
+    validateNonDefaultPresenceOrThrow(
+        lhsRhsKeysExpression, LhsRhsKeysExpression.MATCH_OPERATOR_FIELD_NUMBER);
+
+    Status status;
+    MatchExpression lhsKeyExpression = lhsRhsKeysExpression.getLhsKeyExpression();
+    MatchExpression rhsKeyExpression = lhsRhsKeysExpression.getRhsKeyExpression();
+
+    if (lhsKeyExpression.equals(rhsKeyExpression)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "LhsKeyExpression cannot be the same as RhsKeyExpression");
+    }
+
+    if ((status = validateMatchExpression(lhsKeyExpression, eventType)) != Status.OK) {
+      return status;
+    }
+    if ((status = validateMatchExpression(rhsKeyExpression, eventType)) != Status.OK) {
+      return status;
+    }
+
+    return Status.OK;
+  }
+
+  private Status validateValue(MatchExpression matchExpression) {
+    if (matchExpression.hasValue()) {
+      Value value = matchExpression.getValue();
+      // all Values come as strings from the UI
+      if (!value.hasStringValue()) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Custom signature rule match expression Value should be a string");
+      }
+
+      String stringValue = value.getStringValue();
+      if (isInvalidMathematicalOperation(matchExpression)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Numeric operator requires numeric value, got: " + stringValue);
+      }
     }
     return Status.OK;
   }
