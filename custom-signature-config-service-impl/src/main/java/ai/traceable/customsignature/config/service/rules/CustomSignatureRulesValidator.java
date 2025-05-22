@@ -1,5 +1,6 @@
 package ai.traceable.customsignature.config.service.rules;
 
+import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_ALLOW;
 import static ai.traceable.customsignature.config.service.v1.EventType.EVENT_TYPE_DETECTION_AND_BLOCKING;
 import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
@@ -327,9 +328,10 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
   private Status validateExpiry(RuleEffect ruleEffect, ExpiryDetails expiry) {
     if (expiry.hasExpiryDuration()) {
-      if (!ruleEffect.getEventType().equals(EVENT_TYPE_DETECTION_AND_BLOCKING)) {
+      if (!(ruleEffect.getEventType().equals(EVENT_TYPE_DETECTION_AND_BLOCKING)
+          || ruleEffect.getEventType().equals(EVENT_TYPE_ALLOW))) {
         return Status.INVALID_ARGUMENT.withDescription(
-            "Blocking expiry duration can be specified only for blocking event type");
+            "Expiry duration can be specified only for blocking or allow event type");
       }
       try {
         Duration.parse(expiry.getExpiryDuration());
