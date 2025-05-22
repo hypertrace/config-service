@@ -28,6 +28,8 @@ dependencies {
   // https://traceableai.atlassian.net/browse/ENG-10685
   // anomaly-config-service should be carved out soon to avoid chances of dependency loop..
   implementation(commonLibs.traceable.licensemetering.api)
+  implementation(commonLibs.traceable.protection.rules.webapp)
+  implementation(commonLibs.traceable.protection.rules.apiprotect)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

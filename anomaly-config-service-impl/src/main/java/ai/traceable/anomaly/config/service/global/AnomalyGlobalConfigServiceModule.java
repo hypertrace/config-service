@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.global;
 
 import ai.traceable.anomaly.config.service.AnomalyConfigServiceConfig;
 import ai.traceable.anomaly.config.service.global.validator.GlobalConfigValidatorModule;
+import ai.traceable.anomaly.config.service.global.version.RuleVersionModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.name.Names;
@@ -20,6 +21,7 @@ public class AnomalyGlobalConfigServiceModule extends AbstractModule {
     bind(BindableService.class)
         .annotatedWith(Names.named(bindableServiceAnnotation))
         .to(AnomalyGlobalConfigServiceImpl.class);
+    install(new RuleVersionModule());
     install(new GlobalConfigValidatorModule());
   }
 

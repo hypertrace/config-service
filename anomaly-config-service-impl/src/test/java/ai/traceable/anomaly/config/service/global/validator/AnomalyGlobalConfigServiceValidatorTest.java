@@ -13,10 +13,14 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.RuleType;
+import ai.traceable.anomaly.config.service.v1.global.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
@@ -178,5 +182,37 @@ class AnomalyGlobalConfigServiceValidatorTest {
       Status status = globalValidator.validate(request);
       assertEquals(Code.INVALID_ARGUMENT, status.getCode());
     }
+  }
+
+  @Test
+  void validate_getAvailableRuleVersionsRequest() {
+    GetAvailableRuleVersionsRequest validRequest =
+        GetAvailableRuleVersionsRequest.newBuilder()
+            .setRuleType(RuleType.RULE_TYPE_WEB_APPLICATION)
+            .setFilter(
+                AvailableRuleVersionsFilter.newBuilder()
+                    .addVersionTypes(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+                    .build())
+            .build();
+
+    Status status = globalValidator.validate(validRequest);
+    assertEquals(Status.Code.OK, status.getCode());
+
+    GetAvailableRuleVersionsRequest invalidRequest =
+        GetAvailableRuleVersionsRequest.newBuilder().build();
+    status = globalValidator.validate(invalidRequest);
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+
+    GetAvailableRuleVersionsRequest invalidRequest2 =
+        GetAvailableRuleVersionsRequest.newBuilder()
+            .setRuleType(RuleType.RULE_TYPE_API_PROTECTION)
+            .setFilter(
+                AvailableRuleVersionsFilter.newBuilder()
+                    .addVersionTypes(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+                    .addVersionTypes(RuleVersionType.RULE_VERSION_TYPE_EXPERIMENTAL)
+                    .build())
+            .build();
+    status = globalValidator.validate(invalidRequest2);
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
   }
 }

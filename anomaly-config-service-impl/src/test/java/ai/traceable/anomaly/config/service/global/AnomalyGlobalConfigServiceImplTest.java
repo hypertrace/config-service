@@ -16,7 +16,10 @@ import ai.traceable.anomaly.config.service.global.ruleinfo.AnomalyRuleInfoManage
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigServiceValidator;
+import ai.traceable.anomaly.config.service.global.version.RuleVersionManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersions;
+import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusRequest;
@@ -25,10 +28,14 @@ import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnoma
 import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosResponse;
+import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusResponse;
+import ai.traceable.anomaly.config.service.v1.global.RuleType;
+import ai.traceable.anomaly.config.service.v1.global.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
@@ -45,9 +52,10 @@ public class AnomalyGlobalConfigServiceImplTest {
   private final GlobalAnomalyConfigStatusManager anomalyConfigStatusManager =
       mock(GlobalAnomalyConfigStatusManager.class);
   private final RuleInfoManager ruleInfoManager = mock(AnomalyRuleInfoManagerImpl.class);
+  private final RuleVersionManager ruleVersionManager = mock(RuleVersionManager.class);
   private final AnomalyGlobalConfigServiceImpl globalConfigService =
       new AnomalyGlobalConfigServiceImpl(
-          globalValidator, anomalyConfigStatusManager, ruleInfoManager);
+          globalValidator, anomalyConfigStatusManager, ruleInfoManager, ruleVersionManager);
 
   @Test
   void test_getScopedAnomalyGlobalConfigStatus() {
@@ -250,5 +258,34 @@ public class AnomalyGlobalConfigServiceImplTest {
     verify(responseStreamObserver, times(1))
         .onNext(DeleteScopedAnomalyGlobalConfigStatusResponse.newBuilder().build());
     verify(responseStreamObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void test_getAvailableRuleVersions() {
+    AvailableRuleVersionsFilter filter =
+        AvailableRuleVersionsFilter.newBuilder()
+            .addVersionTypes(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+    StreamObserver<GetAvailableRuleVersionsResponse> responseObserver = mock(StreamObserver.class);
+    when(globalValidator.validate(
+            GetAvailableRuleVersionsRequest.newBuilder()
+                .setRuleType(RuleType.RULE_TYPE_WEB_APPLICATION)
+                .setFilter(filter)
+                .build()))
+        .thenReturn(Status.OK);
+    doReturn(
+            AvailableRuleVersions.newBuilder()
+                .setRuleType(RuleType.RULE_TYPE_WEB_APPLICATION)
+                .build())
+        .when(ruleVersionManager)
+        .getAvailableRuleVersions(RuleType.RULE_TYPE_WEB_APPLICATION, filter);
+    globalConfigService.getAvailableRuleVersions(
+        GetAvailableRuleVersionsRequest.newBuilder()
+            .setRuleType(RuleType.RULE_TYPE_WEB_APPLICATION)
+            .setFilter(filter)
+            .build(),
+        responseObserver);
+    verify(responseObserver, times(1)).onNext(any(GetAvailableRuleVersionsResponse.class));
+    verify(responseObserver, times(1)).onCompleted();
   }
 }

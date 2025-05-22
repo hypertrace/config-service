@@ -2,10 +2,14 @@ package ai.traceable.anomaly.config.service.global.validator;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
+import ai.traceable.anomaly.config.service.v1.global.RuleType;
+import ai.traceable.anomaly.config.service.v1.global.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -74,5 +78,28 @@ public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidato
           "Anomaly Global Config Delete request should have a valid config scope.");
     }
     return anomalyConfigValidator.validate(request.getConfigScope());
+  }
+
+  @Override
+  public Status validate(GetAvailableRuleVersionsRequest request) {
+    if (request.getRuleType().equals(RuleType.RULE_TYPE_UNSPECIFIED)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format("Rule type: %s not defined", request.getRuleType()));
+    }
+    if (request.hasFilter()) {
+      AvailableRuleVersionsFilter filter = request.getFilter();
+      for (RuleVersionType versionType : filter.getVersionTypesList()) {
+        if (versionType.equals(RuleVersionType.RULE_VERSION_TYPE_UNSPECIFIED)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Version type must not be RULE_VERSION_TYPE_UNSPECIFIED");
+        }
+        if (request.getRuleType().equals(RuleType.RULE_TYPE_API_PROTECTION)
+            && versionType.equals(RuleVersionType.RULE_VERSION_TYPE_EXPERIMENTAL)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              "Rule version type must not be RULE_VERSION_TYPE_EXPERIMENTAL for API protection");
+        }
+      }
+    }
+    return Status.OK;
   }
 }

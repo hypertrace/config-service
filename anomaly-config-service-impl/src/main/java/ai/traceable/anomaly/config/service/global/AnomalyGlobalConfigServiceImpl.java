@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.global;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigServiceValidator;
+import ai.traceable.anomaly.config.service.global.version.RuleVersionManager;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusResponse;
@@ -12,6 +13,8 @@ import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnoma
 import ai.traceable.anomaly.config.service.v1.global.GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosResponse;
+import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
@@ -30,15 +33,18 @@ public class AnomalyGlobalConfigServiceImpl
   private final AnomalyGlobalConfigServiceValidator globalValidator;
   private final GlobalAnomalyConfigStatusManager anomalyConfigStatusManager;
   private final RuleInfoManager ruleInfoManager;
+  private final RuleVersionManager ruleVersionManager;
 
   @Inject
   public AnomalyGlobalConfigServiceImpl(
       AnomalyGlobalConfigServiceValidator globalValidator,
       GlobalAnomalyConfigStatusManager anomalyConfigStatusManager,
-      RuleInfoManager ruleInfoManager) {
+      RuleInfoManager ruleInfoManager,
+      RuleVersionManager ruleVersionManager) {
     this.globalValidator = globalValidator;
     this.anomalyConfigStatusManager = anomalyConfigStatusManager;
     this.ruleInfoManager = ruleInfoManager;
+    this.ruleVersionManager = ruleVersionManager;
   }
 
   @Override
@@ -207,6 +213,31 @@ public class AnomalyGlobalConfigServiceImpl
       anomalyConfigStatusManager.deleteScopedAnomalyGlobalConfigStatus(
           RequestContext.CURRENT.get(), request.getConfigScope());
       responseObserver.onNext(DeleteScopedAnomalyGlobalConfigStatusResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getAvailableRuleVersions(
+      GetAvailableRuleVersionsRequest request,
+      StreamObserver<GetAvailableRuleVersionsResponse> responseObserver) {
+    Status status = globalValidator.validate(request);
+    if (!status.isOk()) {
+      log.error("Get Available Rule Versions Request is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+    try {
+      GetAvailableRuleVersionsResponse response =
+          GetAvailableRuleVersionsResponse.newBuilder()
+              .setSupportedVersions(
+                  ruleVersionManager.getAvailableRuleVersions(
+                      request.getRuleType(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error(e.getMessage(), e);
