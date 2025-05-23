@@ -5,7 +5,6 @@ plugins {
 }
 
 dependencies {
-  api(projects.activityEventProducer)
   api(commonLibs.grpc.api)
   api(commonLibs.typesafe.config)
   implementation(projects.regionConfigServiceApi)
@@ -24,7 +23,6 @@ dependencies {
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
   implementation(localLibs.hypertrace.configservice.protoconverter)
-  implementation(commonLibs.traceable.activityevent.api)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

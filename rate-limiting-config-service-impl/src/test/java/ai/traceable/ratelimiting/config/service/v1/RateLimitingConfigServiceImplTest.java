@@ -5,16 +5,11 @@ import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.R
 import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RATE_LIMITING_RULE_CONFIG_RESOURCE_NAME;
 import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigConstants.RULE_RATE_LIMITED_ENTITY_ASSOCIATION_RESOURCE_NAME;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtils;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -33,7 +28,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.tuple.Triple;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +41,6 @@ class RateLimitingConfigServiceImplTest {
   private static final String TENANT_ID = "tenant1";
   private Server testServer;
   private ManagedChannel testChannel;
-  private ActivityEventProducer mockActivityEventProducer;
 
   @BeforeEach
   void setup() throws IOException {
@@ -60,12 +53,8 @@ class RateLimitingConfigServiceImplTest {
             .start();
 
     testChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
-    Config config =
-        ConfigFactory.parseMap(
-            Map.of("rate.limiting.config.service", Map.of("shouldPublishActivityEvents", true)));
-    mockActivityEventProducer = mock(ActivityEventProducer.class);
-    rateLimitingConfigService =
-        new RateLimitingConfigServiceImpl(testChannel, config, mockActivityEventProducer);
+    Config config = ConfigFactory.parseMap(Map.of("rate.limiting.config.service", Map.of()));
+    rateLimitingConfigService = new RateLimitingConfigServiceImpl(testChannel, config);
   }
 
   @AfterEach
@@ -248,16 +237,6 @@ class RateLimitingConfigServiceImplTest {
     Assertions.assertEquals("changedName", createdRuleConfig.getRuleName());
     Assertions.assertEquals("ruleId1", createdRuleConfig.getRuleId());
     Assertions.assertFalse(createdRuleConfig.hasStatusCodesMatchingRegex());
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId("ruleId1")
-                    .setRuleName("changedName")
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
-                    .build()));
   }
 
   @Test
@@ -297,16 +276,6 @@ class RateLimitingConfigServiceImplTest {
     Assertions.assertEquals("ruleId1", createdRuleConfig.getRuleId());
     Assertions.assertTrue(createdRuleConfig.hasStatusCodesMatchingRegex());
     Assertions.assertEquals("400", createdRuleConfig.getStatusCodesMatchingRegex());
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId("ruleId1")
-                    .setRuleName("changedName")
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
-                    .build()));
   }
 
   @Test
@@ -321,17 +290,6 @@ class RateLimitingConfigServiceImplTest {
     Assertions.assertEquals(0, mockConfigService.getRateLimitingRuleConfigs().size());
     // since ruleId1 is deleted, association entry corresponding to rule1 should  also be deleted.
     Assertions.assertEquals(0, mockConfigService.getRuleEntityAssociations().size());
-
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId("ruleId1")
-                    .setRuleName("rule1")
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
-                    .build()));
   }
 
   @Test
@@ -359,16 +317,6 @@ class RateLimitingConfigServiceImplTest {
     Assertions.assertEquals("rule1", createdRuleConfig.getRuleName());
     Assertions.assertNotNull(createdRuleConfig.getRuleId());
     Assertions.assertFalse(createdRuleConfig.hasStatusCodesMatchingRegex());
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId(createdRuleConfig.getRuleId())
-                    .setRuleName("rule1")
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
-                    .build()));
   }
 
   @Test
@@ -398,16 +346,6 @@ class RateLimitingConfigServiceImplTest {
     Assertions.assertNotNull(createdRuleConfig.getRuleId());
     Assertions.assertTrue(createdRuleConfig.hasStatusCodesMatchingRegex());
     Assertions.assertEquals("^5[0-9]{2}$", createdRuleConfig.getStatusCodesMatchingRegex());
-    verify(mockActivityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId(createdRuleConfig.getRuleId())
-                    .setRuleName("rule1")
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
-                    .build()));
   }
 
   @Test

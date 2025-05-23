@@ -1,9 +1,5 @@
 package ai.traceable.region.config.service;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.regions.IpqsRegionStore;
 import ai.traceable.region.config.service.regions.IpqsResolvedWithNeustarRegionStore;
@@ -11,7 +7,6 @@ import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.regions.RegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
-import ai.traceable.region.config.service.rules.migration.RegionRulesMigrationManager;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -54,11 +49,8 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
   private final RegionStore ipqsRegionStore;
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
-  private final ActivityEventProducer activityEventProducer;
-  private final boolean shouldPublishActivityEvents;
   private final FeatureCachingClient featureCachingClient;
   private final IpqsResolvedWithNeustarRegionStore ipqsResolvedWithNeustarRegionStore;
-  private final RegionRulesMigrationManager regionRulesMigrationManager;
   private final boolean ipqsNeustarResolutionEnabled; // only considered when ipqs is enabled
 
   @Inject
@@ -69,19 +61,14 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       RulesValidator rulesValidator,
       RulesManager rulesManager,
       RegionConfigServiceConfig config,
-      ActivityEventProducer activityEventProducer,
-      FeatureCachingClient featureCachingClient,
-      RegionRulesMigrationManager regionRulesMigrationManager) {
+      FeatureCachingClient featureCachingClient) {
     this.neustarRegionStore = neustarRegionStore;
     this.ipqsRegionStore = ipqsRegionStore;
     this.ipqsResolvedWithNeustarRegionStore = ipqsResolvedWithNeustarRegionStore;
     this.ipqsNeustarResolutionEnabled = config.getIpqsNeustarResolutionEnabled();
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
-    this.activityEventProducer = activityEventProducer;
-    this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
     this.featureCachingClient = featureCachingClient;
-    this.regionRulesMigrationManager = regionRulesMigrationManager;
   }
 
   @Override
@@ -161,7 +148,6 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       GetAllRegionRulesRequest request,
       StreamObserver<GetAllRegionRulesResponse> responseObserver) {
     RequestContext requestContext = RequestContext.CURRENT.get();
-    regionRulesMigrationManager.migrateFromChangeLog1IfApplicable(requestContext);
     List<RegionRule> regionRules = rulesManager.getRegionRules(requestContext, request.getFilter());
     regionRules = populateRegionMapping(regionRules, requestContext);
 
@@ -193,12 +179,6 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
     RegionRule regionRule = regionRuleOptional.get();
     responseObserver.onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
-
-    if (shouldPublishActivityEvents) {
-      activityEventProducer.publishSecurityConfigurationChangeEvent(
-          RequestContext.CURRENT.get(),
-          buildSecurityConfigurationChangeEvent(regionRule, SecurityConfigurationAction.ADD));
-    }
   }
 
   @Override
@@ -225,12 +205,6 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
     RegionRule regionRule = regionRuleOptional.get();
     responseObserver.onNext(UpdateRegionRuleResponse.newBuilder().setRule(regionRule).build());
     responseObserver.onCompleted();
-
-    if (shouldPublishActivityEvents) {
-      activityEventProducer.publishSecurityConfigurationChangeEvent(
-          RequestContext.CURRENT.get(),
-          buildSecurityConfigurationChangeEvent(regionRule, SecurityConfigurationAction.UPDATE));
-    }
   }
 
   @Override
@@ -244,30 +218,13 @@ class RegionConfigServiceImpl extends RegionConfigServiceImplBase {
       }
 
       String ruleId = request.getId();
-      Optional<RegionRule> deletedRegionRuleConfig =
-          rulesManager.deleteRegionRule(RequestContext.CURRENT.get(), ruleId);
+      rulesManager.deleteRegionRule(RequestContext.CURRENT.get(), ruleId);
       responseObserver.onNext(DeleteRegionRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
-      if (shouldPublishActivityEvents && deletedRegionRuleConfig.isPresent()) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            RequestContext.CURRENT.get(),
-            buildSecurityConfigurationChangeEvent(
-                deletedRegionRuleConfig.get(), SecurityConfigurationAction.REMOVE));
-      }
     } catch (Exception e) {
       log.error("Unable to delete region rule with id {} :", request.getId(), e);
       responseObserver.onError(e);
     }
-  }
-
-  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
-      RegionRule regionRuleConfig, SecurityConfigurationAction securityConfigurationAction) {
-    return SecurityConfigurationChange.newBuilder()
-        .setRuleId(regionRuleConfig.getId())
-        .setRuleName(regionRuleConfig.getName())
-        .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
-        .setSecurityConfigurationAction(securityConfigurationAction)
-        .build();
   }
 
   private Supplier<List<RegionRule>> getAllRegionsRulesSupplier(RequestContext requestContext) {

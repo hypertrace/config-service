@@ -3,10 +3,6 @@ package ai.traceable.iprange.config.service;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.iprange.config.service.rules.RulesManager;
 import ai.traceable.iprange.config.service.rules.RulesValidator;
 import ai.traceable.iprange.config.service.rules.migration.IpRangeRulesMigrationManager;
@@ -20,7 +16,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,25 +27,16 @@ class IpRangeConfigServiceImplTest {
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
   private IpRangeConfigServiceImpl ipRangeConfigService;
-  private ActivityEventProducer mockActivityEventProducer;
   private Supplier<List<IpRangeRule>> blockAllExceptRulesSupplier;
 
   @BeforeEach
   void setup() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    IpRangeConfigServiceConfig mockIpRangeConfigServiceConfig =
-        mock(IpRangeConfigServiceConfig.class);
-    when(mockIpRangeConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
-    mockActivityEventProducer = mock(ActivityEventProducer.class);
     this.blockAllExceptRulesSupplier = Mockito.mock(Supplier.class);
     ipRangeConfigService =
         new IpRangeConfigServiceImpl(
-            rulesValidator,
-            rulesManager,
-            mockIpRangeConfigServiceConfig,
-            mockActivityEventProducer,
-            mock(IpRangeRulesMigrationManager.class));
+            rulesValidator, rulesManager, mock(IpRangeRulesMigrationManager.class));
   }
 
   @Nested
@@ -157,17 +143,6 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(CreateIpRangeRuleResponse.newBuilder().setRule(ipRangeRule).build());
       verify(responseStreamObserver, times(1)).onCompleted();
-
-      verify(mockActivityEventProducer, times(1))
-          .publishSecurityConfigurationChangeEvent(
-              any(RequestContext.class),
-              eq(
-                  SecurityConfigurationChange.newBuilder()
-                      .setRuleId("First-test")
-                      .setRuleName("Tester-1")
-                      .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
-                      .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
-                      .build()));
     }
 
     @Test
@@ -307,17 +282,6 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(UpdateIpRangeRuleResponse.newBuilder().setRule(ipRangeRule).build());
       verify(responseStreamObserver, times(1)).onCompleted();
-
-      verify(mockActivityEventProducer, times(1))
-          .publishSecurityConfigurationChangeEvent(
-              any(RequestContext.class),
-              eq(
-                  SecurityConfigurationChange.newBuilder()
-                      .setRuleId("First-test")
-                      .setRuleName("Tester-1")
-                      .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
-                      .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
-                      .build()));
     }
 
     @Test
@@ -439,17 +403,6 @@ class IpRangeConfigServiceImplTest {
       verify(responseStreamObserver, times(1))
           .onNext(DeleteIpRangeRuleResponse.getDefaultInstance());
       verify(responseStreamObserver, times(1)).onCompleted();
-
-      verify(mockActivityEventProducer, times(1))
-          .publishSecurityConfigurationChangeEvent(
-              any(RequestContext.class),
-              eq(
-                  SecurityConfigurationChange.newBuilder()
-                      .setRuleId("id")
-                      .setRuleName(IpRangeRule.getDefaultInstance().getRuleDetails().getName())
-                      .setSecurityConfigurationType(SecurityConfigurationType.IP_RANGE_RULE)
-                      .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
-                      .build()));
     }
 
     @Test

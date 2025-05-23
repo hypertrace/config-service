@@ -13,15 +13,12 @@ dependencies {
   implementation(projects.customSignatureConfigServiceImpl)
   implementation(projects.modsecurityUtils)
   implementation(projects.anomalyConfigServiceRegistry)
-  implementation(projects.activityEventProducer)
   implementation(projects.entityFetcherCache)
   implementation(projects.configUtils)
   implementation(projects.modsecurityUtils)
   implementation(projects.featureCachingClient)
   implementation(projects.traceableEdgeDecisionConverterUtils)
-
   implementation(commonLibs.traceable.actorservice.api)
-  implementation(commonLibs.traceable.opadistributor.api)
 
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.slf4j2.api)
@@ -37,8 +34,8 @@ dependencies {
   implementation(commonLibs.traceable.modsecurity.jni)
   implementation(commonLibs.traceable.traceenricher.constants)
   implementation(commonLibs.commons.lang)
+  implementation(commonLibs.commons.io)
 
-  implementation(commonLibs.traceable.activityevent.api)
   implementation(commonLibs.protobuf.javautil)
 
   annotationProcessor(commonLibs.lombok)

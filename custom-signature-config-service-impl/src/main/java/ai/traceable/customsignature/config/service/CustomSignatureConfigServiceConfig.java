@@ -21,7 +21,6 @@ public class CustomSignatureConfigServiceConfig {
       "defaultCustomSignatureRules";
   private static final String DEFAULT_CUSTOM_SIGNATURE_RULES_FILE_PATH =
       "default-custom-signature-rules.conf";
-  private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private static final String MODSEC_RULE_VERSION_CONFIG = "modsecurity.rule.version";
   private static final String EDS_CONVERSION_ENABLED_CONFIG_PATH = "edsConversionEnabled";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
@@ -47,10 +46,6 @@ public class CustomSignatureConfigServiceConfig {
             ConfigFactory.parseResources(DEFAULT_CUSTOM_SIGNATURE_RULES_FILE_PATH)
                 .getConfigList(DEFAULT_CUSTOM_SIGNATURE_RULES_CONFIG_PATH)));
     return defaultCustomSignatureRules;
-  }
-
-  public boolean shouldPublishActivityEvents() {
-    return this.config.getBoolean(SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG);
   }
 
   public List<CustomSignatureRule> getDefaultCustomSignatureRules() {

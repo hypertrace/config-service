@@ -15,7 +15,6 @@ import lombok.SneakyThrows;
 public class RateLimitingConfigServiceConfig {
   private final Config config;
   private static final String RATE_LIMITING_CONFIG_SERVICE = "rate.limiting.config.service";
-  private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS = "shouldPublishActivityEvents";
   private static final String DEFAULT_ENUMERATION_RULES_FILE_PATH =
       "default-enumeration-rules.conf";
   private static final String DEFAULT_DATA_ACCESS_RULES_FILE_PATH =
@@ -51,11 +50,6 @@ public class RateLimitingConfigServiceConfig {
     changeLog1MigrationDisabled =
         config.hasPath(CHANGE_LOG_1_MIGRATION_DISABLED_KEY)
             && config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
-  }
-
-  public boolean shouldPublishActivityEvents() {
-    return this.config.hasPath(SHOULD_PUBLISH_ACTIVITY_EVENTS)
-        && this.config.getBoolean(SHOULD_PUBLISH_ACTIVITY_EVENTS);
   }
 
   public List<RateLimitingRule> getDefaultRateLimitingRules() {

@@ -111,14 +111,12 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                 RegionConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getActivityEventProducer(),
                     providers.getChangeEventGenerator(),
                     providers.getFeatureCachingClient())),
             wrap(
                 IpRangeConfigServiceFactory.build(
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getActivityEventProducer(),
                     providers.getChangeEventGenerator())),
             wrap(
                 MaliciousSourcesConfigServiceFactory.build(
@@ -191,14 +189,11 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 new RateLimitingConfigServiceImpl( // v1
-                    providers.getLocalChannel(),
-                    providers.getConfig(),
-                    providers.getActivityEventProducer())),
+                    providers.getLocalChannel(), providers.getConfig())),
             wrap(
                 RateLimitingConfigServiceFactory.build( // v2
                     providers.getLocalChannel(),
                     providers.getConfig(),
-                    providers.getActivityEventProducer(),
                     providers.getChangeEventGenerator(),
                     environment.getChannelRegistry(),
                     providers.getFeatureCachingClient())),

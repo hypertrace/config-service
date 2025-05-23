@@ -16,7 +16,6 @@ dependencies {
   implementation(projects.traceableConfigServiceRest)
   implementation(commonLibs.traceable.accesscontrol.policy)
 
-  implementation(projects.activityEventProducer)
   implementation(projects.sensitiveDataConfigServiceImpl)
   implementation(projects.localProcessingConfigServiceImpl)
   implementation(projects.blockingConfigServiceImpl)

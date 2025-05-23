@@ -7,10 +7,6 @@ import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtil
 import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtils.toRateLimitingRuleConfig;
 import static ai.traceable.ratelimiting.service.v1.RateLimitingConfigServiceUtils.toValue;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.ratelimiting.config.service.v1.CreateRateLimitingRuleConfig;
 import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigRequest;
 import ai.traceable.ratelimiting.config.service.v1.CreateRuleConfigResponse;
@@ -56,7 +52,6 @@ import org.hypertrace.config.service.v1.GetConfigRequest;
 import org.hypertrace.config.service.v1.GetConfigResponse;
 import org.hypertrace.config.service.v1.UpsertConfigRequest;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class RateLimitingConfigServiceImpl
@@ -65,15 +60,11 @@ public class RateLimitingConfigServiceImpl
   private static final String RATE_LIMITING_CONFIG_SERVICE_CONFIG = "rate.limiting.config.service";
   private static final String MAX_CALL_COUNT_DURATION_LIMIT_MINUTES =
       "maxCallCountDurationLimitMinutes";
-  private static final String SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG = "shouldPublishActivityEvents";
   private final ConfigServiceBlockingStub configServiceBlockingStub;
   private final ClientConfig clientConfig;
   private static long maxCallCountDurationLimit = TimeUnit.MINUTES.toMillis(180);
-  private ActivityEventProducer activityEventProducer;
-  private final boolean shouldPublishActivityEvents;
 
-  public RateLimitingConfigServiceImpl(
-      Channel configChannel, Config config, ActivityEventProducer activityEventProducer) {
+  public RateLimitingConfigServiceImpl(Channel configChannel, Config config) {
     this.configServiceBlockingStub =
         ConfigServiceGrpc.newBlockingStub(configChannel)
             .withCallCredentials(
@@ -85,9 +76,6 @@ public class RateLimitingConfigServiceImpl
           rateLimitingConfigServiceConfig.getDuration(
               MAX_CALL_COUNT_DURATION_LIMIT_MINUTES, TimeUnit.MILLISECONDS);
     }
-    this.activityEventProducer = activityEventProducer;
-    this.shouldPublishActivityEvents =
-        rateLimitingConfigServiceConfig.getBoolean(SHOULD_PUBLISH_ACTIVITY_EVENTS_CONFIG);
   }
 
   @Override
@@ -212,13 +200,6 @@ public class RateLimitingConfigServiceImpl
           CreateRuleConfigResponse.newBuilder().setRule(createdRuleConfig).build();
       responseObserver.onNext(createRuleConfigResponse);
       responseObserver.onCompleted();
-
-      if (shouldPublishActivityEvents) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            RequestContext.CURRENT.get(),
-            buildSecurityConfigurationChangeEvent(
-                createdRuleConfig, SecurityConfigurationAction.ADD));
-      }
     } catch (Exception e) {
       log.error("Error occurred while creating the Rate Limiting Rule for request {}", request, e);
       responseObserver.onError(e);
@@ -270,13 +251,6 @@ public class RateLimitingConfigServiceImpl
           DeleteRuleConfigResponse.newBuilder().build();
       responseObserver.onNext(deleteRuleConfigResponse);
       responseObserver.onCompleted();
-
-      if (shouldPublishActivityEvents) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            RequestContext.CURRENT.get(),
-            buildSecurityConfigurationChangeEvent(
-                deletedRuleConfig, SecurityConfigurationAction.REMOVE));
-      }
     } catch (Exception e) {
       log.error("Error while deleting the Rate Limiting Rule for request {}", request, e);
       responseObserver.onError(e);
@@ -308,13 +282,6 @@ public class RateLimitingConfigServiceImpl
           UpdateRuleConfigResponse.newBuilder().setRule(updatedRuleConfig).build();
       responseObserver.onNext(updateRuleConfigResponse);
       responseObserver.onCompleted();
-
-      if (shouldPublishActivityEvents) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            RequestContext.CURRENT.get(),
-            buildSecurityConfigurationChangeEvent(
-                updatedRuleConfig, SecurityConfigurationAction.UPDATE));
-      }
     } catch (Exception e) {
       log.error("Error while updating Rate limiting Rule for request {}", request, e);
       responseObserver.onError(e);
@@ -491,16 +458,5 @@ public class RateLimitingConfigServiceImpl
           .withDeadlineAfter(clientConfig.getTimeout().toMillis(), TimeUnit.MILLISECONDS)
           .deleteConfig(deleteConfigRequest);
     }
-  }
-
-  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
-      RateLimitingRuleConfig rateLimitingRuleConfig,
-      SecurityConfigurationAction securityConfigurationAction) {
-    return SecurityConfigurationChange.newBuilder()
-        .setRuleId(rateLimitingRuleConfig.getRuleId())
-        .setRuleName(rateLimitingRuleConfig.getRuleName())
-        .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-        .setSecurityConfigurationAction(securityConfigurationAction)
-        .build();
   }
 }

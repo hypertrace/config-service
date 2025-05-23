@@ -11,10 +11,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceImpl;
@@ -28,7 +24,6 @@ import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.Optional;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +32,6 @@ public class RateLimitingConfigServiceImplTest {
 
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
-  private ActivityEventProducer activityEventProducer;
   private RateLimitingConfigServiceImpl configService;
   private FeatureCachingClient featureCachingClient;
 
@@ -45,25 +39,17 @@ public class RateLimitingConfigServiceImplTest {
   void setUp() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    activityEventProducer = mock(ActivityEventProducer.class);
     featureCachingClient = mock(FeatureCachingClient.class);
 
     RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
     RateLimitingEdgeDecisionConverter translator = mock(RateLimitingEdgeDecisionConverter.class);
     RateLimitingMigrationManager migrationManager = mock(RateLimitingMigrationManager.class);
 
-    when(config.shouldPublishActivityEvents()).thenReturn(true);
     when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
 
     configService =
         new RateLimitingConfigServiceImpl(
-            rulesValidator,
-            rulesManager,
-            activityEventProducer,
-            config,
-            translator,
-            featureCachingClient,
-            migrationManager);
+            rulesValidator, rulesManager, translator, featureCachingClient, migrationManager);
   }
 
   @Test
@@ -92,16 +78,6 @@ public class RateLimitingConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(CreateRateLimitingRuleResponse.newBuilder().setRule(rule).build());
     verify(responseObserver, times(1)).onCompleted();
-    verify(activityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId(rule.getId())
-                    .setRuleName(rule.getData().getName())
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
-                    .build()));
   }
 
   @Test
@@ -615,16 +591,6 @@ public class RateLimitingConfigServiceImplTest {
     verify(responseObserver, times(1))
         .onNext(UpdateRateLimitingRuleResponse.newBuilder().setRule(rule).build());
     verify(responseObserver, times(1)).onCompleted();
-    verify(activityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId(rule.getId())
-                    .setRuleName(rule.getData().getName())
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
-                    .build()));
   }
 
   @Test
@@ -650,16 +616,6 @@ public class RateLimitingConfigServiceImplTest {
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1)).onNext(DeleteRateLimitingRuleResponse.getDefaultInstance());
     verify(responseObserver, times(1)).onCompleted();
-    verify(activityEventProducer, times(1))
-        .publishSecurityConfigurationChangeEvent(
-            any(RequestContext.class),
-            eq(
-                SecurityConfigurationChange.newBuilder()
-                    .setRuleId(rule.getId())
-                    .setRuleName(rule.getData().getName())
-                    .setSecurityConfigurationType(SecurityConfigurationType.RATE_LIMITING_RULE)
-                    .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
-                    .build()));
   }
 
   private RateLimitingRule buildRateLimitingRule() {

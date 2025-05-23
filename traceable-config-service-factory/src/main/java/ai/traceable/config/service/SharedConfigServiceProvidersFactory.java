@@ -1,6 +1,5 @@
 package ai.traceable.config.service;
 
-import ai.traceable.activity.event.producer.ActivityEventProducerFactory;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClientConfig;
 import com.typesafe.config.Config;
@@ -28,7 +27,6 @@ public class SharedConfigServiceProvidersFactory {
             .createConfigChangeEventGenerator(config, clock),
         new FeatureCachingClient(
             FeatureCachingClientConfig.fromConfig(config), environment.getChannelRegistry()),
-        ActivityEventProducerFactory.build(config),
         environment.getChannelRegistry(),
         config,
         environment.getChannelRegistry().forName(environment.getInProcessChannelName()),

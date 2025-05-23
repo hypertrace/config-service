@@ -1,6 +1,5 @@
 package ai.traceable.iprange.config.service;
 
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
@@ -12,14 +11,10 @@ public class IpRangeConfigServiceFactory {
   private IpRangeConfigServiceFactory() {}
 
   public static BindableService build(
-      Channel channel,
-      Config config,
-      ActivityEventProducer activityEventProducer,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     Injector injector =
         Guice.createInjector(
-            new IpRangeConfigServiceModule(
-                channel, config, activityEventProducer, configChangeEventGenerator));
+            new IpRangeConfigServiceModule(channel, config, configChangeEventGenerator));
     return injector.getInstance(BindableService.class);
   }
 }

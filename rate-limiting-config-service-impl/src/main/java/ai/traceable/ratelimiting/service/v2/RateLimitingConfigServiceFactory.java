@@ -1,6 +1,5 @@
 package ai.traceable.ratelimiting.service.v2;
 
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -15,7 +14,6 @@ public class RateLimitingConfigServiceFactory {
   public static BindableService build(
       Channel channel,
       Config config,
-      ActivityEventProducer activityEventProducer,
       ConfigChangeEventGenerator configChangeEventGenerator,
       GrpcChannelRegistry grpcChannelRegistry,
       FeatureCachingClient featureCachingClient) {
@@ -25,7 +23,6 @@ public class RateLimitingConfigServiceFactory {
             new RateLimitingConfigServiceModule(
                 channel,
                 config,
-                activityEventProducer,
                 configChangeEventGenerator,
                 grpcChannelRegistry,
                 featureCachingClient));

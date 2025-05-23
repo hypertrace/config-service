@@ -1,6 +1,5 @@
 package ai.traceable.ratelimiting.service.v2;
 
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesManager;
@@ -27,7 +26,6 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
 
   private final Channel channel;
   private final Config config;
-  private final ActivityEventProducer activityEventProducer;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
   private final GrpcChannelRegistry grpcChannelRegistry;
   private final FeatureCachingClient featureCachingClient;
@@ -35,13 +33,11 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
   public RateLimitingConfigServiceModule(
       Channel channel,
       Config config,
-      ActivityEventProducer activityEventProducer,
       ConfigChangeEventGenerator configChangeEventGenerator,
       GrpcChannelRegistry grpcChannelRegistry,
       FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.config = config;
-    this.activityEventProducer = activityEventProducer;
     this.configChangeEventGenerator = configChangeEventGenerator;
     this.grpcChannelRegistry = grpcChannelRegistry;
     this.featureCachingClient = featureCachingClient;
@@ -50,7 +46,6 @@ public class RateLimitingConfigServiceModule extends AbstractModule {
   @Override
   public void configure() {
     bind(BindableService.class).to(RateLimitingConfigServiceImpl.class);
-    bind(ActivityEventProducer.class).toInstance(activityEventProducer);
     bind(RateLimitingConfigServiceConfig.class)
         .toInstance(new RateLimitingConfigServiceConfig(config));
     bind(RulesManager.class).to(RateLimitingRulesManager.class);

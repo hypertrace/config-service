@@ -1,12 +1,7 @@
 package ai.traceable.ratelimiting.service.v2;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
-import ai.traceable.ratelimiting.config.service.v2.Category;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleResponse;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
@@ -30,24 +25,14 @@ import ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDe
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImplBase {
-  private static final Map<Category, SecurityConfigurationType>
-      CATEGORY_TO_SECURITY_CONFIGURATION_TYPE_MAP =
-          Map.of(
-              Category.CATEGORY_RATE_LIMITING, SecurityConfigurationType.RATE_LIMITING_RULE,
-              Category.CATEGORY_ENUMERATION, SecurityConfigurationType.ENUMERATION_RULE,
-              Category.CATEGORY_DATA_EXFILTRATION,
-                  SecurityConfigurationType.DATA_LOSS_PREVENTION_RULE);
+
   private final RulesValidator rulesValidator;
   private final RulesManager rulesManager;
-  private final ActivityEventProducer activityEventProducer;
-  private final boolean shouldPublishActivityEvents;
   private final RateLimitingEdgeDecisionConverter translator;
   private final FeatureCachingClient featureCachingClient;
   private final RateLimitingMigrationManager migrationManager;
@@ -56,15 +41,11 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
   public RateLimitingConfigServiceImpl(
       RulesValidator rulesValidator,
       RulesManager rulesManager,
-      ActivityEventProducer activityEventProducer,
-      RateLimitingConfigServiceConfig config,
       RateLimitingEdgeDecisionConverter translator,
       FeatureCachingClient featureCachingClient,
       RateLimitingMigrationManager migrationManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
-    this.activityEventProducer = activityEventProducer;
-    this.shouldPublishActivityEvents = config.shouldPublishActivityEvents();
     this.translator = translator;
     this.featureCachingClient = featureCachingClient;
     this.migrationManager = migrationManager;
@@ -125,13 +106,6 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
-
-      if (shouldPublishActivityEvents) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            context,
-            buildSecurityConfigurationChangeEvent(
-                response.getRule(), SecurityConfigurationAction.UPDATE));
-      }
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);
       responseObserver.onError(exception);
@@ -145,17 +119,8 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
-      Optional<RateLimitingRule> deletedRule =
-          rulesManager.deleteRateLimitingRule(context, request.getRuleId());
       responseObserver.onNext(DeleteRateLimitingRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
-
-      if (shouldPublishActivityEvents && deletedRule.isPresent()) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            context,
-            buildSecurityConfigurationChangeEvent(
-                deletedRule.get(), SecurityConfigurationAction.REMOVE));
-      }
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);
       responseObserver.onError(exception);
@@ -178,13 +143,6 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
-
-      if (shouldPublishActivityEvents) {
-        activityEventProducer.publishSecurityConfigurationChangeEvent(
-            context,
-            buildSecurityConfigurationChangeEvent(
-                response.getRule(), SecurityConfigurationAction.ADD));
-      }
     } catch (Exception exception) {
       log.error(exception.getMessage(), exception);
       responseObserver.onError(exception);
@@ -234,16 +192,5 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       log.error(exception.getMessage(), exception);
       responseObserver.onError(exception);
     }
-  }
-
-  private SecurityConfigurationChange buildSecurityConfigurationChangeEvent(
-      RateLimitingRule rule, SecurityConfigurationAction securityConfigurationAction) {
-    return SecurityConfigurationChange.newBuilder()
-        .setRuleId(rule.getId())
-        .setRuleName(rule.getData().getName())
-        .setSecurityConfigurationType(
-            CATEGORY_TO_SECURITY_CONFIGURATION_TYPE_MAP.get(rule.getData().getCategory()))
-        .setSecurityConfigurationAction(securityConfigurationAction)
-        .build();
   }
 }

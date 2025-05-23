@@ -8,17 +8,12 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import ai.traceable.activity.event.SecurityConfigurationAction;
-import ai.traceable.activity.event.SecurityConfigurationChange;
-import ai.traceable.activity.event.SecurityConfigurationType;
-import ai.traceable.activity.event.producer.ActivityEventProducer;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.region.config.service.regions.IpqsRegionStore;
 import ai.traceable.region.config.service.regions.IpqsResolvedWithNeustarRegionStore;
 import ai.traceable.region.config.service.regions.NeustarRegionStore;
 import ai.traceable.region.config.service.rules.RulesManager;
 import ai.traceable.region.config.service.rules.RulesValidator;
-import ai.traceable.region.config.service.rules.migration.RegionRulesMigrationManager;
 import ai.traceable.region.config.service.v1.Country;
 import ai.traceable.region.config.service.v1.CreateRegionRuleRequest;
 import ai.traceable.region.config.service.v1.CreateRegionRuleResponse;
@@ -63,7 +58,6 @@ class RegionConfigServiceImplTest {
   private RulesManager rulesManager;
 
   private RegionConfigServiceImpl regionConfigService;
-  private ActivityEventProducer mockActivityEventProducer;
   private RequestContext requestContext;
   private FeatureCachingClient featureCachingClient;
 
@@ -73,10 +67,8 @@ class RegionConfigServiceImplTest {
     ipqsRegionStore = mock(IpqsRegionStore.class);
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    mockActivityEventProducer = mock(ActivityEventProducer.class);
     RegionConfigServiceConfig mockCustomSignatureConfigServiceConfig =
         mock(RegionConfigServiceConfig.class);
-    when(mockCustomSignatureConfigServiceConfig.shouldPublishActivityEvents()).thenReturn(true);
     featureCachingClient = mock(FeatureCachingClient.class);
 
     regionConfigService =
@@ -87,9 +79,7 @@ class RegionConfigServiceImplTest {
             rulesValidator,
             rulesManager,
             mockCustomSignatureConfigServiceConfig,
-            mockActivityEventProducer,
-            featureCachingClient,
-            mock(RegionRulesMigrationManager.class));
+            featureCachingClient);
     requestContext = RequestContext.forTenantId(TENANT_ID);
   }
 
@@ -293,17 +283,6 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(CreateRegionRuleResponse.newBuilder().setRule(regionRule).build());
       verify(responseObserver, times(1)).onCompleted();
-
-      verify(mockActivityEventProducer, times(1))
-          .publishSecurityConfigurationChangeEvent(
-              any(RequestContext.class),
-              eq(
-                  SecurityConfigurationChange.newBuilder()
-                      .setRuleId("id-1")
-                      .setRuleName("name")
-                      .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
-                      .setSecurityConfigurationAction(SecurityConfigurationAction.ADD)
-                      .build()));
     }
 
     @Test
@@ -365,17 +344,6 @@ class RegionConfigServiceImplTest {
       verify(responseObserver, times(1))
           .onNext(UpdateRegionRuleResponse.newBuilder().setRule(updatedRegionRule).build());
       verify(responseObserver, times(1)).onCompleted();
-
-      verify(mockActivityEventProducer, times(1))
-          .publishSecurityConfigurationChangeEvent(
-              any(RequestContext.class),
-              eq(
-                  SecurityConfigurationChange.newBuilder()
-                      .setRuleId("id")
-                      .setRuleName("name")
-                      .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
-                      .setSecurityConfigurationAction(SecurityConfigurationAction.UPDATE)
-                      .build()));
     }
 
     @Test
@@ -450,17 +418,6 @@ class RegionConfigServiceImplTest {
           });
       verify(responseObserver, times(1)).onNext(DeleteRegionRuleResponse.getDefaultInstance());
       verify(responseObserver, times(1)).onCompleted();
-
-      verify(mockActivityEventProducer, times(1))
-          .publishSecurityConfigurationChangeEvent(
-              any(RequestContext.class),
-              eq(
-                  SecurityConfigurationChange.newBuilder()
-                      .setRuleId("id")
-                      .setRuleName(regionRule.getName())
-                      .setSecurityConfigurationType(SecurityConfigurationType.LOCATION_RULE)
-                      .setSecurityConfigurationAction(SecurityConfigurationAction.REMOVE)
-                      .build()));
     }
 
     @Test
