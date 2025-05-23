@@ -142,6 +142,7 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     }
 
     if (ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+        && !ruleInfo.getRuleEvaluationPointsList().isEmpty()
         && !(ruleInfo.getRuleEvaluationPointsList().size() == 1
             && ruleInfo.getRuleEvaluationPointsList().contains(RULE_EVALUATION_POINT_PLATFORM))) {
       throw Status.INVALID_ARGUMENT
