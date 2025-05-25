@@ -23,6 +23,8 @@ import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDef
 import ai.traceable.config.utils.RegexValidator;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.Clause;
+import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSecRule;
 import ai.traceable.customsignature.config.service.v1.EmailDomainExpression;
 import ai.traceable.customsignature.config.service.v1.EventType;
@@ -59,7 +61,7 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Set;
 
-class ClauseValidator {
+class ClauseGroupValidator {
 
   private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
 
@@ -73,6 +75,36 @@ class ClauseValidator {
 
   private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
+
+  public Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
+    if (clauseGroup.getClauseOperator() == ClauseOperator.CLAUSE_OPERATOR_UNSPECIFIED) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule Definition clause group should have a valid clause operator.");
+    }
+    if (clauseGroup.getClausesList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule Definition clause group should have at least one clause.");
+    }
+    Status status;
+    for (Clause clause : clauseGroup.getClausesList()) {
+      if ((status = validateClause(clause, eventType)) != Status.OK) {
+        return status;
+      }
+    }
+    // custom signature rule containing SecRule clause should not have OR operator or nested clauses
+    // since that's not yet supported in platform
+    // examples of such rules:
+    //  - (SecRuleClause) OR (KeyValueExpression)
+    // - (SecRuleClause) AND (KeyValueExpression OR IpAddressExpression)
+    if (containsSecRuleClause(clauseGroup)
+        && (containsNestedClause(clauseGroup)
+            || clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_OR))) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Custom Signature Rule Definition clause group with sec rule clause "
+              + "should not have nested clauses or OR operator.");
+    }
+    return Status.OK;
+  }
 
   public Status validateClause(Clause clause, EventType eventType) {
     switch (clause.getClauseCase()) {
@@ -112,6 +144,8 @@ class ClauseValidator {
         return validateScopeExpression(clause.getScopeExpression());
       case LHS_RHS_KEYS_EXPRESSION:
         return validateLhsRhsKeysExpression(clause.getLhsRhsKeysExpression(), eventType);
+      case CLAUSE_GROUP:
+        return validateClauseGroup(clause.getClauseGroup(), eventType);
       default:
         return Status.INVALID_ARGUMENT.withDescription(
             String.format("Invalid Custom Signature Rule Clause expression %s ", clause));
@@ -562,6 +596,18 @@ class ClauseValidator {
     } catch (Exception e) {
       return false;
     }
+  }
+
+  private boolean containsSecRuleClause(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream()
+        .anyMatch(
+            clause ->
+                clause.hasCustomSecRule()
+                    || (clause.hasClauseGroup() && containsSecRuleClause(clause.getClauseGroup())));
+  }
+
+  private boolean containsNestedClause(ClauseGroup clauseGroup) {
+    return clauseGroup.getClausesList().stream().anyMatch(Clause::hasClauseGroup);
   }
 
   private String getName(Message message) {

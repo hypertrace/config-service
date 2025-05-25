@@ -11,7 +11,6 @@ import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
-import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
@@ -47,13 +46,13 @@ class CustomSignatureRulesValidator implements RulesValidator {
 
   private final ModsecRulesManager modsecRulesManager;
 
-  private final ClauseValidator clauseValidator;
+  private final ClauseGroupValidator clauseGroupValidator;
 
   @Inject
   public CustomSignatureRulesValidator(
-      ModsecRulesManager modsecRulesManager, ClauseValidator clauseValidator) {
+      ModsecRulesManager modsecRulesManager, ClauseGroupValidator clauseGroupValidator) {
     this.modsecRulesManager = modsecRulesManager;
-    this.clauseValidator = clauseValidator;
+    this.clauseGroupValidator = clauseGroupValidator;
   }
 
   @Override
@@ -281,49 +280,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule definition should have a valid clause group.");
     }
-    return validateClauseGroup(ruleDefinition.getClauseGroup(), eventType);
-  }
-
-  private Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
-    if (clauseGroup.getClauseOperator() == ClauseOperator.CLAUSE_OPERATOR_UNSPECIFIED) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule Definition clause group should have a valid clause operator.");
-    }
-    if (clauseGroup.getClausesList().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule Definition clause group should have at least one clause.");
-    }
-    Status status;
-    for (Clause clause : clauseGroup.getClausesList()) {
-      if ((status = clauseValidator.validateClause(clause, eventType)) != Status.OK) {
-        return status;
-      }
-    }
-    // custom signature rule containing SecRule clause should not have OR operator or nested clauses
-    // since that's not yet supported in platform
-    // examples of such rules:
-    //  - (SecRuleClause) OR (KeyValueExpression)
-    // - (SecRuleClause) AND (KeyValueExpression OR IpAddressExpression)
-    if (containsSecRuleClause(clauseGroup)
-        && (containsNestedClause(clauseGroup)
-            || clauseGroup.getClauseOperator().equals(ClauseOperator.CLAUSE_OPERATOR_OR))) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Custom Signature Rule Definition clause group with sec rule clause "
-              + "should not have nested clauses or OR operator.");
-    }
-    return Status.OK;
-  }
-
-  private boolean containsSecRuleClause(ClauseGroup clauseGroup) {
-    return clauseGroup.getClausesList().stream()
-        .anyMatch(
-            clause ->
-                clause.hasCustomSecRule()
-                    || (clause.hasClauseGroup() && containsSecRuleClause(clause.getClauseGroup())));
-  }
-
-  private boolean containsNestedClause(ClauseGroup clauseGroup) {
-    return clauseGroup.getClausesList().stream().anyMatch(Clause::hasClauseGroup);
+    return clauseGroupValidator.validateClauseGroup(ruleDefinition.getClauseGroup(), eventType);
   }
 
   private Status validateExpiry(RuleEffect ruleEffect, ExpiryDetails expiry) {

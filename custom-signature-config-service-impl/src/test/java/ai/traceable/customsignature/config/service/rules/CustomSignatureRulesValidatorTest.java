@@ -48,11 +48,12 @@ public class CustomSignatureRulesValidatorTest {
   @BeforeEach
   public void setup() {
     this.modsecRulesManager = mock(ModsecRulesManager.class);
-    ClauseValidator clauseValidator = new ClauseValidator();
+    ClauseGroupValidator clauseGroupValidator = new ClauseGroupValidator();
     when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
     when(modsecRulesManager.isInlineRuleMappingSupported(any())).thenReturn(true);
     when(modsecRulesManager.containsModsecConvertibleClauses(any())).thenReturn(true);
-    this.rulesValidator = new CustomSignatureRulesValidator(modsecRulesManager, clauseValidator);
+    this.rulesValidator =
+        new CustomSignatureRulesValidator(modsecRulesManager, clauseGroupValidator);
   }
 
   @Test
