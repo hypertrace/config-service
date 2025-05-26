@@ -1,0 +1,38 @@
+package ai.traceable.genai.config.service.v1.feature.config;
+
+import ai.traceable.genai.config.service.v1.GenAiConfig;
+import ai.traceable.genai.config.service.v1.GenAiFeatureConfigUpdate;
+import ai.traceable.genai.config.service.v1.ThreatActivitySummaryFeatureConfig;
+import java.util.Optional;
+
+public class ThreatActivitySummaryFeatureConfigHandler
+    implements GenAiFeatureConfigHandler<ThreatActivitySummaryFeatureConfig> {
+
+  private static final String FEATURE_NAME = "threat_activity_summary_feature_config";
+
+  @Override
+  public String getFeatureName() {
+    return FEATURE_NAME;
+  }
+
+  @Override
+  public Optional<ThreatActivitySummaryFeatureConfig> mergeConfigs(
+      GenAiConfig highPriorityConfig, GenAiConfig lowPriorityConfig) {
+    if (highPriorityConfig.hasThreatActivitySummaryFeatureConfig()) {
+      return Optional.of(highPriorityConfig.getThreatActivitySummaryFeatureConfig());
+    }
+    if (lowPriorityConfig.hasThreatActivitySummaryFeatureConfig()) {
+      return Optional.of(lowPriorityConfig.getThreatActivitySummaryFeatureConfig());
+    }
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<ThreatActivitySummaryFeatureConfig> getFeatureConfigFromUpdate(
+      GenAiFeatureConfigUpdate featureConfigUpdate) {
+    if (featureConfigUpdate.hasThreatActivitySummaryFeatureConfig()) {
+      return Optional.of(featureConfigUpdate.getThreatActivitySummaryFeatureConfig());
+    }
+    return Optional.empty();
+  }
+}

@@ -16,8 +16,13 @@ message EnvironmentScope {
 message GenAiConfig {
   GenAiScope scope = 1;
   IssuesSummaryFeatureConfig issues_summary_feature_config = 2;
+  ThreatActivitySummaryFeatureConfig threat_activity_summary_feature_config = 3;
 }
 
 message IssuesSummaryFeatureConfig {
+  bool enabled = 1;
+}
+
+message ThreatActivitySummaryFeatureConfig {
   bool enabled = 1;
 }

@@ -16,4 +16,5 @@ message UpdateGenAiConfigRequest {
 
 message GenAiFeatureConfigUpdate {
   IssuesSummaryFeatureConfig issues_summary_feature_config = 1;
+  ThreatActivitySummaryFeatureConfig threat_activity_summary_feature_config = 2;
 }
