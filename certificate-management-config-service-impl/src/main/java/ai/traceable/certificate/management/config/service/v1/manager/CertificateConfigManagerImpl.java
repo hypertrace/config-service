@@ -20,18 +20,7 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
   private final UuidGenerator uuidGenerator;
 
   @Override
-  public Certificate createCertificate(
-      RequestContext ctx,
-      CertificateMetadata metadata,
-      CertificateStatusDetails statusDetails,
-      List<CertificateStorageDetails> storage) {
-    CreateCertificateRequest request =
-        CreateCertificateRequest.newBuilder()
-            .setMetadata(metadata)
-            .setStatusDetails(statusDetails)
-            .addAllStorage(storage)
-            .build();
-
+  public Certificate createCertificate(RequestContext ctx, CreateCertificateRequest request) {
     Status validationStatus = validator.validate(request);
     if (!validationStatus.isOk()) {
       throw new StatusRuntimeException(validationStatus);
@@ -43,9 +32,10 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
     Certificate certificate =
         Certificate.newBuilder()
             .setId(id)
-            .setMetadata(metadata)
-            .addAllStorage(storage)
-            .setStatusDetails(statusDetails)
+            .setName(request.getName())
+            .setMetadata(request.getMetadata())
+            .addAllStorage(request.getStorageList())
+            .setStatusDetails(request.getStatusDetails())
             .build();
 
     return store.createCertificate(ctx, certificate);

@@ -22,9 +22,7 @@ public class CertificateManagementConfigServiceImpl
       StreamObserver<CreateCertificateResponse> responseObserver) {
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
-      Certificate certificate =
-          certificateConfigManager.createCertificate(
-              ctx, request.getMetadata(), request.getStatusDetails(), request.getStorageList());
+      Certificate certificate = certificateConfigManager.createCertificate(ctx, request);
 
       responseObserver.onNext(
           CreateCertificateResponse.newBuilder().setCertificate(certificate).build());

@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.certificate.management.config.service.v1.manager.CertificateConfigManager;
 import io.grpc.stub.StreamObserver;
-import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,22 +33,20 @@ class CertificateManagementConfigServiceImplTest {
     CertificateStatusDetails statusDetails = mock(CertificateStatusDetails.class);
     CertificateStorageDetails storageDetails = mock(CertificateStorageDetails.class);
     Certificate certificate = mock(Certificate.class);
+    CreateCertificateRequest request =
+        CreateCertificateRequest.newBuilder()
+            .setName("name")
+            .setMetadata(certificateMetadata)
+            .setStatusDetails(statusDetails)
+            .addStorage(storageDetails)
+            .build();
 
-    when(certificateConfigManager.createCertificate(
-            any(), eq(certificateMetadata), eq(statusDetails), eq(List.of(storageDetails))))
-        .thenReturn(certificate);
+    when(certificateConfigManager.createCertificate(any(), eq(request))).thenReturn(certificate);
 
     StreamObserver<CreateCertificateResponse> responseStreamObserver = mock(StreamObserver.class);
 
     Runnable runnable =
-        () ->
-            certificateManagementConfigService.createCertificate(
-                CreateCertificateRequest.newBuilder()
-                    .setMetadata(certificateMetadata)
-                    .setStatusDetails(statusDetails)
-                    .addStorage(storageDetails)
-                    .build(),
-                responseStreamObserver);
+        () -> certificateManagementConfigService.createCertificate(request, responseStreamObserver);
 
     REQUEST_CONTEXT.run(runnable);
 

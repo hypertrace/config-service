@@ -81,8 +81,15 @@ class CertificateConfigManagerImplTest {
     when(store.createCertificate(eq(requestContext), any(Certificate.class)))
         .thenReturn(expectedCertificate);
 
-    Certificate result =
-        manager.createCertificate(requestContext, metadata, statusDetails, storage);
+    CreateCertificateRequest request =
+        CreateCertificateRequest.newBuilder()
+            .setName("ma,e")
+            .setMetadata(metadata)
+            .setStatusDetails(statusDetails)
+            .addAllStorage(storage)
+            .build();
+
+    Certificate result = manager.createCertificate(requestContext, request);
 
     assertNotNull(result);
     assertEquals("cert-123", result.getId());
@@ -90,7 +97,7 @@ class CertificateConfigManagerImplTest {
     assertEquals(statusDetails, result.getStatusDetails());
     assertEquals(storage, result.getStorageList());
 
-    verify(validator).validate(any(CreateCertificateRequest.class));
+    verify(validator).validate(eq(request));
     verify(store).createCertificate(eq(requestContext), any(Certificate.class));
   }
 
