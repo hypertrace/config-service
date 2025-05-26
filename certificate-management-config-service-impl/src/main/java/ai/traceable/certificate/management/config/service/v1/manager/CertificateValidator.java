@@ -5,16 +5,12 @@ import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.List;
-import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CertificateValidator {
-
-  private static final Pattern DOMAIN_PATTERN =
-      Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\\.[a-zA-Z]{2,}$");
 
   public Status validate(CreateCertificateRequest request) {
 
@@ -73,9 +69,8 @@ public class CertificateValidator {
 
     // Validate domain names
     for (String domainName : metadata.getDomainNamesList()) {
-      if (!DOMAIN_PATTERN.matcher(domainName).matches()) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            String.format("Invalid domain name: %s", domainName));
+      if (!domainName.contains(".")) {
+        return Status.INVALID_ARGUMENT.withDescription("Invalid domain name received");
       }
     }
 
@@ -165,9 +160,8 @@ public class CertificateValidator {
 
       // Validate each domain name
       for (String domainName : domainNamesChange.getStringValuesList()) {
-        if (!DOMAIN_PATTERN.matcher(domainName).matches()) {
-          return Status.INVALID_ARGUMENT.withDescription(
-              String.format("Invalid domain name: %s", domainName));
+        if (!domainName.contains(".")) {
+          return Status.INVALID_ARGUMENT.withDescription("Invalid domain name received");
         }
       }
     }
