@@ -2,10 +2,16 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_EXTERNAL;
 import static ai.traceable.customsignature.config.service.v1.IpAddressExpressionType.IP_ADDRESS_EXPRESSION_TYPE_ALL_INTERNAL;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_BODY_SIZE;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_COOKIES_COUNT;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_COOKIE_VALUE;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HEADERS_COUNT;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HEADER_VALUE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HOST;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_HTTP_METHOD;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_PARAMETER_VALUE;
+import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_URL;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_USER_AGENT;
@@ -73,6 +79,18 @@ class ClauseGroupValidator {
           MATCH_KEY_HTTP_METHOD,
           MATCH_KEY_USER_AGENT);
 
+  private static final Set<MatchKey> VALUE_ONLY_MATCH_KEYS =
+      Set.of(
+          MATCH_KEY_HEADER_VALUE,
+          MATCH_KEY_PARAMETER_VALUE,
+          MATCH_KEY_QUERY_PARAMETER_VALUE,
+          MATCH_KEY_BODY_PARAMETER_VALUE,
+          MATCH_KEY_COOKIE_VALUE,
+          MATCH_KEY_BODY_SIZE,
+          MATCH_KEY_QUERY_PARAMS_COUNT,
+          MATCH_KEY_HEADERS_COUNT,
+          MATCH_KEY_COOKIES_COUNT);
+
   private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
@@ -85,6 +103,7 @@ class ClauseGroupValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Definition clause group should have at least one clause.");
     }
+
     Status status;
     for (Clause clause : clauseGroup.getClausesList()) {
       if ((status = validateClause(clause, eventType)) != Status.OK) {
@@ -546,14 +565,24 @@ class ClauseGroupValidator {
       LhsRhsKeysExpression lhsRhsKeysExpression, EventType eventType) {
     validateNonDefaultPresenceOrThrow(
         lhsRhsKeysExpression, LhsRhsKeysExpression.MATCH_OPERATOR_FIELD_NUMBER);
+    if (!lhsRhsKeysExpression.hasLhsKeyExpression()
+        || !lhsRhsKeysExpression.hasRhsKeyExpression()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Both LhsKeyExpression and RhsKeyExpression must be present.");
+    }
 
     Status status;
     MatchExpression lhsKeyExpression = lhsRhsKeysExpression.getLhsKeyExpression();
     MatchExpression rhsKeyExpression = lhsRhsKeysExpression.getRhsKeyExpression();
 
+    if (VALUE_ONLY_MATCH_KEYS.contains(lhsKeyExpression.getMatchKey())
+        || VALUE_ONLY_MATCH_KEYS.contains(rhsKeyExpression.getMatchKey())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Comparison operations cannot be performed with value-only match keys.");
+    }
     if (lhsKeyExpression.equals(rhsKeyExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "LhsKeyExpression cannot be the same as RhsKeyExpression");
+          "LhsKeyExpression cannot be the same as RhsKeyExpression.");
     }
 
     if ((status = validateMatchExpression(lhsKeyExpression, eventType)) != Status.OK) {
