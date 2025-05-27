@@ -2,6 +2,7 @@ package ai.traceable.detection.exclusion.config.service.v1.rules;
 
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_ALLOW;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_BLOCK;
+import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_ACTOR_CREATION;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION;
 import static ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget.EXCLUSION_TARGET_UNSPECIFIED;
 import static ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM;
@@ -142,12 +143,15 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
     }
 
     if (ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
-        && !ruleInfo.getRuleEvaluationPointsList().isEmpty()
-        && !(ruleInfo.getRuleEvaluationPointsList().size() == 1
-            && ruleInfo.getRuleEvaluationPointsList().contains(RULE_EVALUATION_POINT_PLATFORM))) {
+        || ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_ACTOR_CREATION)
+            && !ruleInfo.getRuleEvaluationPointsList().isEmpty()
+            && !(ruleInfo.getRuleEvaluationPointsList().size() == 1
+                && ruleInfo
+                    .getRuleEvaluationPointsList()
+                    .contains(RULE_EVALUATION_POINT_PLATFORM))) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
-              "DetectionExclusionRule with THREAT_SCORE_CONTRIBUTION target must have only RULE_EVALUATION_POINT_PLATFORM evaluation point")
+              "DetectionExclusionRule must have only RULE_EVALUATION_POINT_PLATFORM evaluation point")
           .asRuntimeException();
     }
 
