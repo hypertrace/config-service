@@ -136,8 +136,10 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
     edgeDecisionRuleBuilder.setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION);
     edgeDecisionRuleBuilder.setPolicyId(categorizedBotConfigPolicy.getId());
     edgeDecisionRuleBuilder.setRuleCategory(EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS);
-    edgeDecisionRuleBuilder.setRuleStatus(
-        EdgeDecisionRuleStatus.newBuilder().setDisabled(false).setInternal(false).build());
+    if (categorizedBotConfigPolicy.getCategorizedBotPolicyDetails().getInternal()) {
+      edgeDecisionRuleBuilder.setRuleStatus(
+          EdgeDecisionRuleStatus.newBuilder().setInternal(true).build());
+    }
 
     final List<String> botIds = getApplicableBotIds(botScopes);
     if (botIds.isEmpty()) {
@@ -181,7 +183,8 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
         buildEdgeRuleDecision(
             categorizedBotPolicyDetails.getCategorizedBotPolicyActionConfig(),
             ruleInfoDecorations,
-            categorizedBotPolicyDetails.getName()));
+            categorizedBotPolicyDetails.getName(),
+            categorizedBotPolicyDetails.getInternal()));
     edgeDecisionRuleBuilder.setRuleDefinition(
         buildEdgeDecisionRuleDefinition(botIds, categorizedBotConfigPolicy.getId()));
     return edgeDecisionRuleBuilder.build();
@@ -266,10 +269,14 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
   private EdgeDecision buildEdgeRuleDecision(
       final CategorizedBotPolicyActionConfig categorizedBotPolicyActionConfig,
       final List<RuleInfoDecoration> ruleInfoDecorations,
-      final String policyName) {
+      final String policyName,
+      final boolean internal) {
     final EdgeDecision.Builder edgeDecisionBuilder = EdgeDecision.newBuilder();
     edgeDecisionBuilder.setThreatType(policyName);
     edgeDecisionBuilder.addAllRuleInfoDecorations(ruleInfoDecorations);
+    if (internal) {
+      edgeDecisionBuilder.setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_INTERNAL);
+    }
     edgeDecisionBuilder.setEdgeDecisionType(
         translateActionType(categorizedBotPolicyActionConfig.getBotAction()));
     return edgeDecisionBuilder.build();

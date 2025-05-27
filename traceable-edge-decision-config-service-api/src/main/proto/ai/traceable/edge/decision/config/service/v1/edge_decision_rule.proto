@@ -83,6 +83,7 @@ enum EdgeDecisionType {
   EDGE_DECISION_TYPE_MARK_FOR_TESTING = 4;
   EDGE_DECISION_TYPE_EXCLUDE = 5;
   EDGE_DECISION_TYPE_ALERT = 6;
+  EDGE_DECISION_TYPE_INTERNAL = 7;
 }
 
 // this is our implementation detail.

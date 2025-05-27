@@ -78,7 +78,6 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleDefinition;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScope;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleScopeCondition;
-import ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleStatus;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpec;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionSpecDirective;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionType;
@@ -444,7 +443,6 @@ class EdgeDecisionConfigServiceTest {
             .setName("Crawlers")
             .setRuleCategory(
                 EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS)
-            .setRuleStatus(EdgeDecisionRuleStatus.getDefaultInstance())
             .setPolicyId("t1")
             .setPolicyKind(PolicyKind.POLICY_KIND_BOT_MITIGATION)
             .setRuleScope(
