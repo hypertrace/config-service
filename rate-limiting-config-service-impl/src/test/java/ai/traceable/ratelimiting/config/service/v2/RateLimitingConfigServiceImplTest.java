@@ -614,6 +614,7 @@ public class RateLimitingConfigServiceImplTest {
     doNothing().when(rulesValidator).validateOrThrow(any(), (DeleteRateLimitingRuleRequest) any());
     when(rulesManager.deleteRateLimitingRule(any(), any())).thenReturn(Optional.of(rule));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
+    verify(rulesManager, times(1)).deleteRateLimitingRule(any(), any());
     verify(responseObserver, times(1)).onNext(DeleteRateLimitingRuleResponse.getDefaultInstance());
     verify(responseObserver, times(1)).onCompleted();
   }

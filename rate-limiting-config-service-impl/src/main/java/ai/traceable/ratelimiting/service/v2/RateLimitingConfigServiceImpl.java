@@ -119,6 +119,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
+      rulesManager.deleteRateLimitingRule(context, request.getRuleId());
       responseObserver.onNext(DeleteRateLimitingRuleResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception exception) {
