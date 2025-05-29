@@ -142,13 +142,11 @@ public class DetectionExclusionRulesValidator implements RulesValidator {
           .asRuntimeException();
     }
 
-    if (ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
-        || ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_ACTOR_CREATION)
-            && !ruleInfo.getRuleEvaluationPointsList().isEmpty()
-            && !(ruleInfo.getRuleEvaluationPointsList().size() == 1
-                && ruleInfo
-                    .getRuleEvaluationPointsList()
-                    .contains(RULE_EVALUATION_POINT_PLATFORM))) {
+    if ((ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_SCORE_CONTRIBUTION)
+            || ruleInfo.getExclusionTargetsList().contains(EXCLUSION_TARGET_THREAT_ACTOR_CREATION))
+        && !ruleInfo.getRuleEvaluationPointsList().isEmpty()
+        && !(ruleInfo.getRuleEvaluationPointsList().size() == 1
+            && ruleInfo.getRuleEvaluationPointsList().contains(RULE_EVALUATION_POINT_PLATFORM))) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               "DetectionExclusionRule must have only RULE_EVALUATION_POINT_PLATFORM evaluation point")
