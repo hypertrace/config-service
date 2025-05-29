@@ -90,7 +90,7 @@ commonPodLabels: {}
 
 commonPodAnnotations: {}
 
-javaOpts: "-XX:InitialRAMPercentage=50.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError"
+javaOpts: "-XX:InitialRAMPercentage=60.0 -XX:MaxRAMPercentage=60.0 -XX:MaxDirectMemorySize=128M -XX:+ExitOnOutOfMemoryError -Dotel.instrumentation.kafka.enabled=false -Dta.logging.level=LOG_LEVEL_ERROR -Dio.netty.maxDirectMemory=134217728 -Dio.netty.allocator.numDirectArenas=0"
 
 livenessProbe:
   periodSeconds: 5
@@ -98,7 +98,7 @@ livenessProbe:
   timeoutSeconds: 3
 startupProbe:
   periodSeconds: 5
-  failureThreshold: 24
+  failureThreshold: 36
   timeoutSeconds: 3
 
 resources:
@@ -207,8 +207,8 @@ traceableConfigServiceConfig:
 
   partitionerServiceConfig:
     defaultProfiles:
-        - name: "spans"
-          partitionKey: "customer_id"
+      - name: "spans"
+        partitionKey: "customer_id"
   insightsServiceConfig:
     host: insights-service
     port: 50098
@@ -258,16 +258,16 @@ traceableConfigServiceConfig:
     modsecurity:
       ruleVersion: MODSEC_RULE_VERSION_V3
     edsConversionEnabled: false
-#    defaultCustomSignatureRules: |-
-#    [
-#     {
-#        id = "ruleId"
-#        name = "ruleName"
-#        definition = {}
-#      }
-#    ]
+    #    defaultCustomSignatureRules: |-
+    #    [
+    #     {
+    #        id = "ruleId"
+    #        name = "ruleName"
+    #        definition = {}
+    #      }
+    #    ]
   blockingConfigService:
-    enableNewModsecCrsBlockingFlow: false
+    enableNewModsecCrsBlockingFlow: true
     agentPollingFrequency: 30s
     iptype:
       mode: VERSIONS_DIR
@@ -339,43 +339,43 @@ traceableConfigServiceConfig:
     request:
       timeout: 1m
   externalDataClassificationServiceConfig:
-#    defaultExternalDataTypes: |-
-#      {
-#        "data_type_id": "db_query_attributes"
-#        "match_rules": [
-#          {
-#            "attribute_filter": {
-#              "prefixes": ["sql.query", "db.statement"]
-#            }
-#            "result": RESULT_MATCH
-#            "path_predicate": {
-#              "path_segment_predicate": {
-#                "operator": OPERATOR_MATCHES_REGEX,
-#                "value": ".*"
-#              }
-#            }
-#          }
-#        ]
-#        "transformation": DATA_TRANSFORMATION_REDACT
-#      },
-#      {
-#        "data_type_id": "new_session_attribute"
-#        "match_rules": [
-#          {
-#            "attribute_filter": {
-#              "prefixes": ["session.new"]
-#            }
-#            "result": RESULT_MATCH
-#            "path_predicate": {
-#              "path_segment_predicate": {
-#                "operator": OPERATOR_MATCHES_REGEX,
-#                "value": ".*\\.id"
-#              }
-#            }
-#          }
-#        ]
-#        "transformation": DATA_TRANSFORMATION_OBFUSCATE
-#      }
+    #    defaultExternalDataTypes: |-
+    #      {
+    #        "data_type_id": "db_query_attributes"
+    #        "match_rules": [
+    #          {
+    #            "attribute_filter": {
+    #              "prefixes": ["sql.query", "db.statement"]
+    #            }
+    #            "result": RESULT_MATCH
+    #            "path_predicate": {
+    #              "path_segment_predicate": {
+    #                "operator": OPERATOR_MATCHES_REGEX,
+    #                "value": ".*"
+    #              }
+    #            }
+    #          }
+    #        ]
+    #        "transformation": DATA_TRANSFORMATION_REDACT
+    #      },
+    #      {
+    #        "data_type_id": "new_session_attribute"
+    #        "match_rules": [
+    #          {
+    #            "attribute_filter": {
+    #              "prefixes": ["session.new"]
+    #            }
+    #            "result": RESULT_MATCH
+    #            "path_predicate": {
+    #              "path_segment_predicate": {
+    #                "operator": OPERATOR_MATCHES_REGEX,
+    #                "value": ".*\\.id"
+    #              }
+    #            }
+    #          }
+    #        ]
+    #        "transformation": DATA_TRANSFORMATION_OBFUSCATE
+    #      }
     cache:
       refresh: 1m
       maxSize: 1000
@@ -383,6 +383,76 @@ traceableConfigServiceConfig:
     apiSpecConfigServiceTimeout: 10s
     defaultRequestHeaderRetentionRules: |-
       [
+        {
+          "id": "89ba876c-2678-41b6-9ed9-011d0c0ebc5c",
+          "data": {
+            "action": {
+              "discard": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_EQUALS",
+                "any_of_values": {
+                  "values": [
+                    "traceparent",
+                    "tracestate",
+                    "nrtraceid",
+                    "b3",
+                    "traceid"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "2cd41584-1077-402c-b25b-50a748cc33bc",
+          "data": {
+            "action": {
+              "discard": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_STARTS_WITH",
+                "any_of_values": {
+                  "values": [
+                    "twilio",
+                    "newrelic",
+                    "akamai",
+                    "fastly",
+                    "sentry",
+                    "rpc-persist",
+                    "elastic",
+                    "amadeus",
+                    "postman",
+                    "datadog",
+                    "cf-",
+                    "bx-",
+                    "uber-"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "f8cf4278-4839-4476-9e47-229ece7f1314",
+          "data": {
+            "action": {
+              "discard": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_CONTAINS",
+                "any_of_values": {
+                  "values": [
+                    "twilio"
+                  ]
+                }
+              }
+            }
+          }
+        },
         {
           "id": "5786b32c-36aa-494e-aa24-cf4cdfdfc3cb",
           "data": {
@@ -440,7 +510,7 @@ traceableConfigServiceConfig:
           "id": "b11f633a-5543-4b15-a975-27ca478425e0",
           "data": {
             "action": {
-              "discard": {}
+              "discard_value": {}
             },
             "predicate": {
               "target_key_predicate": {
@@ -474,44 +544,115 @@ traceableConfigServiceConfig:
     defaultResponseHeaderRetentionRules: |-
       [
         {
-        "id": "77be3151-54aa-4b67-9ab6-593797759178",
-        "data": {
-          "action": {
-            "retain": {}
-          },
-          "predicate": {
-            "target_key_predicate": {
-              "operator": "OPERATOR_EQUALS",
-              "any_of_values": {
-                "values": [
-                  "x-auth-token",
-                  "x-envoy-upstream-service-time",
-                  "x-forwarded-for",
-                  "x-forwarded-host",
-                  "x-forwarded-proto",
-                  "x-identity-user",
-                  "x-pretend-user-eid",
-                  "x-proxyuser-ip",
-                  "x-proxy-user-ip",
-                  "x-real-ip",
-                  "x-scheme",
-                  "x-tenant-id",
-                  "x-traceable-ast",
-                  "x-traceable-ast-plugin",
-                  "x-user-eid",
-                  "x-user-id",
-                  "x-content-type-options"
-                ]
+          "id": "f8cf4278-4839-4476-9e47-229ece7f1314",
+          "data": {
+            "action": {
+              "discard": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_EQUALS",
+                "any_of_values": {
+                  "values": [
+                    "traceparent",
+                    "tracestate",
+                    "nrtraceid",
+                    "b3",
+                    "traceid",
+                    "etag"
+                  ]
+                }
               }
             }
           }
-        }
-      },
+        },
+        {
+          "id": "e933fe75-4adb-4f87-830d-8ed76a753e6c",
+          "data": {
+            "action": {
+              "discard": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_STARTS_WITH",
+                "any_of_values": {
+                  "values": [
+                    "twilio",
+                    "newrelic",
+                    "akamai",
+                    "fastly",
+                    "sentry",
+                    "rpc-persist",
+                    "elastic",
+                    "amadeus",
+                    "postman",
+                    "datadog",
+                    "cf-",
+                    "bx-",
+                    "uber-"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "cdeeedf1-9113-424b-b1d3-5a8744ee42f4",
+          "data": {
+            "action": {
+              "discard": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_CONTAINS",
+                "any_of_values": {
+                  "values": [
+                    "twilio"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "77be3151-54aa-4b67-9ab6-593797759178",
+          "data": {
+            "action": {
+              "retain": {}
+            },
+            "predicate": {
+              "target_key_predicate": {
+                "operator": "OPERATOR_EQUALS",
+                "any_of_values": {
+                  "values": [
+                    "x-auth-token",
+                    "x-envoy-upstream-service-time",
+                    "x-forwarded-for",
+                    "x-forwarded-host",
+                    "x-forwarded-proto",
+                    "x-identity-user",
+                    "x-pretend-user-eid",
+                    "x-proxyuser-ip",
+                    "x-proxy-user-ip",
+                    "x-real-ip",
+                    "x-scheme",
+                    "x-tenant-id",
+                    "x-traceable-ast",
+                    "x-traceable-ast-plugin",
+                    "x-user-eid",
+                    "x-user-id",
+                    "x-content-type-options"
+                  ]
+                }
+              }
+            }
+          }
+        },
         {
           "id": "22cdf7b0-db8a-4204-af8c-f8b67c227868",
           "data": {
             "action": {
-              "discard": {}
+              "discard_value": {}
             },
             "predicate": {
               "target_key_predicate": {
@@ -614,11 +755,2386 @@ traceableConfigServiceConfig:
         }
       ]
 
+    systemExcludeSpanRules: |-
+      [
+        {
+          "id": "2895d181-b06f-42e4-a366-039ef7d82560",
+          "rule_info": {
+            "name": "Exclude HEAD, OPTIONS, CONNECT, TRACE http methods",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "logical_span_filter": {
+                "operator": "LOGICAL_OPERATOR_OR",
+                "operands": [
+                  {
+                    "relational_span_filter": {
+                      "span_attribute_key": "http.method",
+                      "operator": "RELATIONAL_OPERATOR_EQUALS",
+                      "right_operand": {
+                        "string_value": "HEAD"
+                      }
+                    }
+                  },
+                  {
+                    "relational_span_filter": {
+                      "span_attribute_key": "http.method",
+                      "operator": "RELATIONAL_OPERATOR_EQUALS",
+                      "right_operand": {
+                        "string_value": "CONNECT"
+                      }
+                    }
+                  },
+                  {
+                    "relational_span_filter": {
+                      "span_attribute_key": "http.method",
+                      "operator": "RELATIONAL_OPERATOR_EQUALS",
+                      "right_operand": {
+                        "string_value": "OPTIONS"
+                      }
+                    }
+                  },
+                  {
+                    "relational_span_filter": {
+                      "span_attribute_key": "http.method",
+                      "operator": "RELATIONAL_OPERATOR_EQUALS",
+                      "right_operand": {
+                        "string_value": "TRACE"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "24a6ccce-1ccf-4a3a-b93f-30a988ffb41f",
+          "rule_info": {
+            "name": "Exclude Static URLs",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "logical_span_filter": {
+                "operator": "LOGICAL_OPERATOR_OR",
+                "operands": [
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".html"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".HTML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".htm"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".HTM"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".css"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CSS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".scss"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SCSS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".js"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".JS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".shtml"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SHTML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".xhtml"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".XHTML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".dhtml"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".DHTML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ssi"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SSI"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".map"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".MAP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".jpg"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".JPG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".jpeg"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".JPEG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".gif"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".GIF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".png"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".PNG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".svg"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SVG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".woff"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".WOFF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".woff2"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".WOFF2"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".eot"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".EOT"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ttf"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TTF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".otf"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".OTF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".mp3"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".MP3"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".wma"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".WMA"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".wav"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".WAV"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ogg"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".OGG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".mp4"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".MP4"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".avi"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".AVI"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".mkv"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".MKV"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".tgz"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TGZ"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".rar"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".RAR"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".zip"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ZIP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".gz"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".GZ"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".bz2"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".BZ2"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".z"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".Z"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".xz"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".XZ"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".tar"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TAR"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".7z"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".7Z"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".jar"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".JAR"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".webp"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".WEBP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".cgi"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CGI"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".tif"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TIF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".tiff"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TIFF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".htr"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".HTR"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".qap"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".QAP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".cfm"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CFM"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".mscgi"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".MSCGI"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".txt"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TXT"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".yml"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".YML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".yaml"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".YAML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".pdf"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".PDF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".xlsx"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".XLSX"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".sql"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SQL"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".db"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".DB"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".sqlite"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SQLITE"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".cnf"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CNF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".config"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CONFIG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ini"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".INI"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".cfg"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CFG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".toml"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".TOML"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".settings"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SETTINGS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".properties"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".PROPERTIES"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".bak"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".BAK"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".swp"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SWP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".swo"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".SWO"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".old"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".OLD"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".orig"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ORIG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".dll"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".DLL"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".log"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".LOG"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".pem"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".PEM"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".bas"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".BAS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".iso"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ISO"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".exe"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".EXE"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".nsf"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".NSF"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".local"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".LOCAL"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".key"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".KEY"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".pyc"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".PYC"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".pwd"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".PWD"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".gch"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".GCH"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".exp"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".EXP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".cmd"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".CMD"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".axd"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".AXD"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".back"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".BACK"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".fts"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".FTS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ics"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".ICS"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "logical_span_filter": {
+                      "operator": "LOGICAL_OPERATOR_OR",
+                      "operands": [
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".nasl"
+                            }
+                          }
+                        },
+                        {
+                          "relational_span_filter": {
+                            "field": "FIELD_URL_PATH",
+                            "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                            "right_operand": {
+                              "string_value": ".NASL"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "b18abe97-2461-4291-99aa-6e98b56c3e1f",
+          "rule_info": {
+            "name": "Exclude GoogleHC/1.0",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "http.request.header.user-agent",
+                "operator": "RELATIONAL_OPERATOR_EQUALS",
+                "right_operand": {
+                  "string_value": "GoogleHC/1.0"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "d6a1f32c-038f-47b3-a6dd-5a067df645d5",
+          "rule_info": {
+            "name": "Exclude kube-probe spans",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "http.request.header.user-agent",
+                "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                "right_operand": {
+                  "string_value": "kube-probe"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "902c2d2a-ee80-46e7-8c9d-a18c7d11ff01",
+          "rule_info": {
+            "name": "Exclude ELB-HealthChecker",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "http.request.header.user-agent",
+                "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                "right_operand": {
+                  "string_value": "ELB-HealthChecker"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "5c752672-0557-4749-ada9-2e18e86b3dcb",
+          "rule_info": {
+            "name": "Exclude Health Check",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "http.request.header.user-agent",
+                "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                "right_operand": {
+                  "string_value": "health"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "21f4e574-9f65-4972-87af-db281c2245c7",
+          "rule_info": {
+            "name": "Exclude Health Check URLs",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "logical_span_filter": {
+                "operator": "LOGICAL_OPERATOR_OR",
+                "operands": [
+                  {
+                    "relational_span_filter": {
+                      "field": "FIELD_URL_PATH",
+                      "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                      "right_operand": {
+                        "string_value": "health"
+                      }
+                    }
+                  },
+                  {
+                    "relational_span_filter": {
+                      "field": "FIELD_URL_PATH",
+                      "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                      "right_operand": {
+                        "string_value": "healthz"
+                      }
+                    }
+                  },
+                  {
+                    "relational_span_filter": {
+                      "field": "FIELD_URL_PATH",
+                      "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                      "right_operand": {
+                        "string_value": "ping"
+                      }
+                    }
+                  },
+                  {
+                    "relational_span_filter": {
+                      "field": "FIELD_URL_PATH",
+                      "operator": "RELATIONAL_OPERATOR_ENDS_WITH",
+                      "right_operand": {
+                        "string_value": "ready"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "cfde5b4d-5478-4f69-b92a-18209caaef04",
+          "rule_info": {
+            "name": "Exclude spans with span_type as nospan",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "traceableai.span_type",
+                "operator": "RELATIONAL_OPERATOR_EQUALS",
+                "right_operand": {
+                  "string_value": "nospan"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "86f9dd0e-f1e4-470f-a720-ffaf53a229a3",
+          "rule_info": {
+            "name": "Exclude Prometheus",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "http.request.header.user-agent",
+                "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                "right_operand": {
+                  "string_value": "Prometheus"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "2620406e-5179-4fb5-862e-97556f53e33b",
+          "rule_info": {
+            "name": "Exclude Dynatrace One Agent Local",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "relational_span_filter": {
+                "span_attribute_key": "http.request.header.user-agent",
+                "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                "right_operand": {
+                  "string_value": "OneAgentLocal"
+                }
+              }
+            }
+          }
+        },
+        {
+          "id": "e9bb52c6-0f1a-4a09-878b-da68dcbfb5eb",
+          "rule_info": {
+            "name": "Exclude One Agent Process",
+            "disabled": false,
+            "type": "RULE_TYPE_SYSTEM",
+            "filter": {
+              "logical_span_filter": {
+                "operator": "LOGICAL_OPERATOR_OR",
+                "operands": [
+                  {
+                    "relational_span_filter": {
+                      "span_attribute_key": "process.executable.path",
+                      "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                      "right_operand": {
+                        "string_value": "oneagentdynamizer",
+                      },
+                    },
+                  },
+                  {
+                    "relational_span_filter": {
+                      "span_attribute_key": "process.executable.path",
+                      "operator": "RELATIONAL_OPERATOR_CONTAINS",
+                      "right_operand": {
+                        "string_value": "oneagentos",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        }
+      ]
   spanExclusionRules:
     agentUnsupportedRuleIds: ["24a6ccce-1ccf-4a3a-b93f-30a988ffb41f"]
   apiSpecConfig:
     maxAllowedSpecsPerTenant: 2000
-
+  dataStoreType: "mongo"
+  actorServiceConfig:
+    request:
+      timeout: 30s
 localApiNamingConfig:
   agentPollingFrequency: 5m
   fullTrieReloadConfig:
@@ -629,7 +3145,6 @@ localApiNamingConfig:
     default:
       disabled: true
       version: "1.2.4"
-
 logConfig:
   name: traceable-config-service-log-config
   monitorInterval: 30
@@ -638,7 +3153,6 @@ logConfig:
   appender:
     rolling:
       enabled: false
-
 anomalyConfigServiceConfig:
   name: anomaly-config-service-config
   modsecRuleVersion: MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE
@@ -648,7 +3162,7 @@ anomalyConfigServiceConfig:
     apiGlobalConfig:
       defaultConfigsType: API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED
     modsecGlobalConfig:
-      defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING
+      defaultConfigsType: MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD
       environmentDefaultConfigType: MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT
     licenseTiers: |-
       [
@@ -657,11 +3171,9 @@ anomalyConfigServiceConfig:
           disabled = false
         }
       ]
-
 fraudDataModelDerivationConfigService:
   defaultFraudDataModelDerivations: |-
     []
-
 defaultModsecDetectionConfigs: |-
   [
     {
@@ -1047,7 +3559,6 @@ defaultModsecDetectionConfigs: |-
       }
     }
   ]
-
 #defaultJwtExtractionConfigRules: |-
 #  [
 #    {
@@ -1228,21 +3739,303 @@ defaultModsecDetectionConfigs: |-
 #      }
 #    ]
 #  }
-
 prometheusRule:
   enabled: true
   additionalRuleLabels: {}
-
 hpa:
   enabled: false
   minReplicas: 1
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
-
 savedQueriesConfig:
   userDataMigrationFlag: false
-
 injectUserGroup:
   enabled: false
   userName: traceable
   groupName: traceable
+defaultVulnerabilityTrainingConfigs: |-
+  [
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            apiParamContainsUrl = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            contentTypeOptionsSecurityHeader = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            cspSecurityHeader = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            deprecatedApiRoute = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            directoryListing = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            enumerableParam = {
+                include_param_regex = "",
+                max_allowed_bucket_occurrence_percent = 50,
+                min_required_total_occurrence_count = 100
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            excessDataExposure = {
+                dataOccurrenceConfig = {
+                    minTotalOccurrences = 10
+                    minDataTypeOccurrences = 10
+                }
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            hstsSecurityHeader = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            javaSerializedObject = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            jwtAlgoWeakness = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            jwtExpiryAndIssueAtNotSet = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            lackOfEncryption = {
+                httpsCallsConfig = {
+                    minTotalOccurrences = 100,
+                    minPercent = 90
+                }
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            massParameterAssignment = {
+                thresholdParameterConfig = {
+                    minTotalOccurrences = 10
+                }
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            missingGatewayPolicies = {
+                recommendedPolicies = [
+                    {
+                        gatewayType = GATEWAY_TYPE_MULESOFT,
+                        policies = []
+                    },
+                    {
+                        gatewayType = GATEWAY_TYPE_APIGEE,
+                        policies = [
+                            {
+                                type = "Quota"
+                            },
+                            {
+                                type = "SpikeArrest"
+                            },
+                            {
+                                type = "Traceable"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            multipleApiVersions = {
+                maxAllowedApiVersionsCount = 2
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            openRedirect = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            paramContainsSensitiveData = {
+                queryParamPiiTypeConfig = {
+                    minTotalOccurrences = 2,
+                    minPercent = 10
+                },
+                persistentCookiePiiTypeConfig = {
+                    minTotalOccurrences = 2,
+                    minPercent = 10
+                }
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+            serviceUsesBasicAuth = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = false
+            },
+                sqlInjectionErrorBased = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = true
+            },
+                jwtMissingAudienceClaim = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = true
+            },
+                oauthAntiCsrfCheck = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = true
+            },
+                oauthClientSecretInQueryParams = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = true
+            },
+                oauthImplicitGrantType = {
+            }
+        }
+    },
+    {
+        disabled = false,
+        vulnerabilityTrainingConfig = {
+            autoResolutionConfig = {
+                disabled = true
+            },
+                serverVersionDisclosure = {
+            }
+        }
+    }
+  ]
