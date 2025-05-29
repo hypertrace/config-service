@@ -395,7 +395,7 @@ public class AnomalyDetectionConfigManagerTest {
     ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig;
     GetAnomalyDetectionConfigsFilter filter = GetAnomalyDetectionConfigsFilter.getDefaultInstance();
     when(globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
-            any(RequestContext.class)))
+            any(RequestContext.class), any()))
         .thenReturn(createScopedAnomalyConfigStatusList());
 
     scopedAnomalyDetectionConfigs =

@@ -8,7 +8,10 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -160,5 +163,33 @@ public class AnomalyConfigScopeUtilsTest {
     assertEquals(
         List.of(TENANT_ID, ENV_ID, SERVICE_ID, API_ID),
         scopeMatcher.getContextsWithIncreasingPriority(TENANT_ID, apiWithEnvConfigScope));
+  }
+
+  @Test
+  void testFilterConfigMap() {
+    List<AnomalyConfigScope> applicableScopes = List.of(environmentConfigScope);
+    assertEquals(
+        Map.of(
+            API_ID,
+            ScopedAnomalyDetectionConfig.newBuilder()
+                .setConfigScope(apiWithEnvConfigScope)
+                .build()),
+        scopeMatcher.filterConfigMap(
+            Map.of(
+                API_ID,
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(apiWithEnvConfigScope)
+                    .build()),
+            applicableScopes,
+            ScopedAnomalyDetectionConfig::getConfigScope));
+
+    assertEquals(
+        Collections.emptyMap(),
+        scopeMatcher.filterConfigMap(
+            Map.of(
+                API_ID,
+                ScopedAnomalyDetectionConfig.newBuilder().setConfigScope(apiConfigScope).build()),
+            applicableScopes,
+            ScopedAnomalyDetectionConfig::getConfigScope));
   }
 }

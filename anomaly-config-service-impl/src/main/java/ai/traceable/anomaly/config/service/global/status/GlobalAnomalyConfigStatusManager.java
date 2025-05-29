@@ -9,13 +9,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public interface GlobalAnomalyConfigStatusManager {
 
   List<ScopedAnomalyConfigStatus> getAllScopedAnomalyConfigStatusConfigs(
-      RequestContext requestContext);
+      RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList);
 
   ScopedAnomalyConfigStatus getScopedAnomalyConfigStatus(
       RequestContext requestContext, AnomalyConfigScope configScope);
 
   List<ScopedAnomalyConfigStatusChange> getAllUnresolvedScopedAnomalyConfigStatusConfigs(
-      RequestContext requestContext);
+      RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList);
 
   ScopedAnomalyConfigStatusChange getUnresolvedScopedAnomalyConfigStatus(
       RequestContext requestContext, AnomalyConfigScope configScope);

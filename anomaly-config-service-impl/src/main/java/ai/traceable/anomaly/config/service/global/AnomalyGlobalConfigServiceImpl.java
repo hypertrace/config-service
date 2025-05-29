@@ -84,7 +84,7 @@ public class AnomalyGlobalConfigServiceImpl
           GetAllScopedAnomalyGlobalConfigStatusResponse.newBuilder()
               .addAllScopedConfigs(
                   anomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
-                      RequestContext.CURRENT.get()))
+                      RequestContext.CURRENT.get(), request.getFilter().getApplicableScopesList()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
@@ -131,7 +131,7 @@ public class AnomalyGlobalConfigServiceImpl
           GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse.newBuilder()
               .addAllScopedConfigs(
                   anomalyConfigStatusManager.getAllUnresolvedScopedAnomalyConfigStatusConfigs(
-                      RequestContext.CURRENT.get()))
+                      RequestContext.CURRENT.get(), request.getFilter().getApplicableScopesList()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

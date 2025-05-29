@@ -33,13 +33,17 @@ message GetUnresolvedScopedAnomalyGlobalConfigStatusResponse {
   ScopedAnomalyConfigStatusChange scoped_config = 1;
 }
 
-message GetAllScopedAnomalyGlobalConfigStatusRequest {}
+message GetAllScopedAnomalyGlobalConfigStatusRequest {
+  GetAllAnomalyGlobalConfigStatusFilter filter = 1;
+}
 
 message GetAllScopedAnomalyGlobalConfigStatusResponse {
   repeated ScopedAnomalyConfigStatus scoped_configs = 1;
 }
 
-message GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest {}
+message GetAllUnresolvedScopedAnomalyGlobalConfigStatusRequest {
+  GetAllAnomalyGlobalConfigStatusFilter filter = 1;
+}
 
 message GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse {
   repeated ScopedAnomalyConfigStatusChange scoped_configs = 1;
@@ -62,6 +66,10 @@ message GetAvailableRuleVersionsRequest {
 
 message GetAvailableRuleVersionsResponse {
   AvailableRuleVersions supported_versions = 1;
+}
+
+message GetAllAnomalyGlobalConfigStatusFilter {
+  repeated AnomalyConfigScope applicable_scopes = 1;
 }
 
 message ScopedAnomalyConfigStatus {

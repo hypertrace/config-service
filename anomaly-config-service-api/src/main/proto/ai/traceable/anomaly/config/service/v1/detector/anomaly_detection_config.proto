@@ -48,6 +48,7 @@ enum DeleteAnomalyConfigOption {
 
 message GetAnomalyDetectionConfigsFilter {
   repeated AnomalyDetectionConfigType anomaly_detection_config_types = 1;
+  repeated AnomalyConfigScope applicable_scopes = 2;
 }
 
 message GetScopedAnomalyDetectionConfigRequest {

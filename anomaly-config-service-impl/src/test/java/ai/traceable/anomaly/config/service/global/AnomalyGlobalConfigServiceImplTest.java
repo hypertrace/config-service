@@ -132,7 +132,7 @@ public class AnomalyGlobalConfigServiceImplTest {
 
     doThrow(new RuntimeException("msg"))
         .when(anomalyConfigStatusManager)
-        .getAllScopedAnomalyConfigStatusConfigs(any());
+        .getAllScopedAnomalyConfigStatusConfigs(any(), any());
     globalConfigService.getAllScopedAnomalyGlobalConfigStatus(getRequest, responseObserver);
     verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
 
@@ -148,7 +148,7 @@ public class AnomalyGlobalConfigServiceImplTest {
             .build();
     doReturn(response.getScopedConfigsList())
         .when(anomalyConfigStatusManager)
-        .getAllScopedAnomalyConfigStatusConfigs(any());
+        .getAllScopedAnomalyConfigStatusConfigs(any(), any());
     globalConfigService.getAllScopedAnomalyGlobalConfigStatus(getRequest, responseObserver);
     verify(responseObserver, times(1)).onNext(response);
     verify(responseObserver, times(1)).onCompleted();
@@ -163,7 +163,7 @@ public class AnomalyGlobalConfigServiceImplTest {
 
     doThrow(new RuntimeException("msg"))
         .when(anomalyConfigStatusManager)
-        .getAllUnresolvedScopedAnomalyConfigStatusConfigs(any());
+        .getAllUnresolvedScopedAnomalyConfigStatusConfigs(any(), any());
     globalConfigService.getAllUnresolvedScopedAnomalyGlobalConfigStatus(
         getRequest, responseObserver);
     verify(responseObserver, times(1)).onError(argThat(err -> err.getMessage().equals("msg")));
@@ -176,7 +176,7 @@ public class AnomalyGlobalConfigServiceImplTest {
             .build();
     doReturn(response.getScopedConfigsList())
         .when(anomalyConfigStatusManager)
-        .getAllUnresolvedScopedAnomalyConfigStatusConfigs(any());
+        .getAllUnresolvedScopedAnomalyConfigStatusConfigs(any(), any());
     globalConfigService.getAllUnresolvedScopedAnomalyGlobalConfigStatus(
         getRequest, responseObserver);
     verify(responseObserver, times(1)).onNext(response);

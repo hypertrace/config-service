@@ -76,7 +76,8 @@ public class AnomalyDetectionConfigManagerImpl
       RequestContext requestContext,
       AnomalyConfigScope configScope,
       GetAnomalyDetectionConfigsFilter filter) {
-    Map<String, ScopedAnomalyDetectionConfig> configMap = fetchConfigMap(requestContext);
+    Map<String, ScopedAnomalyDetectionConfig> configMap =
+        getFilteredConfigMap(requestContext, filter.getApplicableScopesList());
     return getResolvedConfig(
         requestContext,
         configMap,
@@ -91,7 +92,8 @@ public class AnomalyDetectionConfigManagerImpl
       RequestContext requestContext,
       AnomalyConfigScope configScope,
       GetAnomalyDetectionConfigsFilter filter) {
-    Map<String, ScopedAnomalyDetectionConfig> configMap = fetchConfigMap(requestContext);
+    Map<String, ScopedAnomalyDetectionConfig> configMap =
+        getFilteredConfigMap(requestContext, filter.getApplicableScopesList());
     ScopedAnomalyDetectionConfig resolvedConfig =
         getResolvedConfig(
             requestContext,
@@ -113,14 +115,19 @@ public class AnomalyDetectionConfigManagerImpl
   public List<ScopedAnomalyDetectionConfig> getAllGlobalResolvedScopedAnomalyDetectionConfigs(
       RequestContext requestContext, GetAnomalyDetectionConfigsFilter filter) {
     List<ScopedAnomalyConfigStatus> globalConfigStatuses =
-        globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(requestContext);
+        globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
+            requestContext, filter.getApplicableScopesList());
 
     Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> globalConfigStatusMap =
         globalConfigStatuses.stream()
             .collect(
                 Collectors.toMap(ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
 
-    return getResolvedConfigs(requestContext, fetchConfigMap(requestContext), filter).stream()
+    return getResolvedConfigs(
+            requestContext,
+            getFilteredConfigMap(requestContext, filter.getApplicableScopesList()),
+            filter)
+        .stream()
         .map(
             resolvedConfig ->
                 getResolvedConfig(
@@ -146,7 +153,7 @@ public class AnomalyDetectionConfigManagerImpl
   public List<ScopedAnomalyDetectionConfig> getAllScopedAnomalyDetectionConfig(
       RequestContext requestContext, GetAnomalyDetectionConfigsFilter filter) {
     Map<String, ScopedAnomalyDetectionConfig> anomalyDetectionConfigMap =
-        fetchConfigMap(requestContext);
+        getFilteredConfigMap(requestContext, filter.getApplicableScopesList());
 
     return getResolvedConfigs(requestContext, anomalyDetectionConfigMap, filter);
   }
@@ -176,7 +183,7 @@ public class AnomalyDetectionConfigManagerImpl
     String tenantId = requestContext.getTenantId().orElseThrow();
 
     Map<String, ScopedAnomalyDetectionConfig> anomalyDetectionConfigMap =
-        fetchConfigMap(requestContext);
+        getFilteredConfigMap(requestContext, filter.getApplicableScopesList());
 
     List<ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigs =
         new ArrayList<>(anomalyDetectionConfigMap.values());
@@ -263,15 +270,21 @@ public class AnomalyDetectionConfigManagerImpl
     return anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(data.getConfigScope());
   }
 
-  private Map<String, ScopedAnomalyDetectionConfig> fetchConfigMap(RequestContext requestContext) {
-    return getAllObjects(requestContext).stream()
-        .collect(
-            Collectors.toMap(
-                ContextualConfigObject::getContext,
-                ConfigObject::getData,
-                (previous, current) ->
-                    previous // sorted by latest in getAllObjects so keep the previous entry
-                ));
+  private Map<String, ScopedAnomalyDetectionConfig> getFilteredConfigMap(
+      RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList) {
+    Map<String, ScopedAnomalyDetectionConfig> scopedAnomalyDetectionConfigMap =
+        getAllObjects(requestContext).stream()
+            .collect(
+                Collectors.toMap(
+                    ContextualConfigObject::getContext,
+                    ConfigObject::getData,
+                    (previous, current) ->
+                        previous // sorted by latest in getAllObjects so keep the previous entry
+                    ));
+    return anomalyConfigScopeUtils.filterConfigMap(
+        scopedAnomalyDetectionConfigMap,
+        applicableScopesList,
+        ScopedAnomalyDetectionConfig::getConfigScope);
   }
 
   /**

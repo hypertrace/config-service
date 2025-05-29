@@ -87,8 +87,9 @@ public class GlobalAnomalyConfigStatusManagerImpl
 
   @Override
   public List<ScopedAnomalyConfigStatus> getAllScopedAnomalyConfigStatusConfigs(
-      RequestContext requestContext) {
-    Map<String, ScopedAnomalyConfigStatusChange> configMap = fetchConfigMap(requestContext);
+      RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList) {
+    Map<String, ScopedAnomalyConfigStatusChange> configMap =
+        getFilteredConfigMap(requestContext, applicableScopesList);
     List<ScopedAnomalyConfigStatus> resolvedConfigs =
         configMap.values().stream()
             .map(
@@ -126,8 +127,9 @@ public class GlobalAnomalyConfigStatusManagerImpl
 
   @Override
   public List<ScopedAnomalyConfigStatusChange> getAllUnresolvedScopedAnomalyConfigStatusConfigs(
-      RequestContext requestContext) {
-    Map<String, ScopedAnomalyConfigStatusChange> configMap = fetchConfigMap(requestContext);
+      RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList) {
+    Map<String, ScopedAnomalyConfigStatusChange> configMap =
+        getFilteredConfigMap(requestContext, applicableScopesList);
     return configMap.values().stream()
         .map(this::migrateScopedAnomalyConfigStatusChange)
         .collect(Collectors.toUnmodifiableList());
@@ -138,7 +140,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
       RequestContext requestContext, AnomalyConfigScope configScope) {
     return getResolvedConfig(
         requestContext,
-        fetchConfigMap(requestContext),
+        getFilteredConfigMap(requestContext, Collections.emptyList()),
         configScope,
         anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
             getTenantId(requestContext), configScope));
@@ -221,18 +223,6 @@ public class GlobalAnomalyConfigStatusManagerImpl
     return builder.build();
   }
 
-  private Map<String, ScopedAnomalyConfigStatusChange> fetchConfigMap(
-      RequestContext requestContext) {
-    return getAllObjects(requestContext).stream()
-        .collect(
-            Collectors.toMap(
-                ContextualConfigObject::getContext,
-                ConfigObject::getData,
-                (previous, current) ->
-                    previous // sorted by latest in getAllObjects so keep the previous entry
-                ));
-  }
-
   private ScopedAnomalyConfigStatusChange migrateScopedAnomalyConfigStatusChange(
       ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange) {
     ScopedAnomalyConfigStatusChange.Builder builder =
@@ -290,5 +280,22 @@ public class GlobalAnomalyConfigStatusManagerImpl
         .getTenantId()
         .orElseThrow(
             () -> new IllegalArgumentException("Unable to get tenant id from request context"));
+  }
+
+  private Map<String, ScopedAnomalyConfigStatusChange> getFilteredConfigMap(
+      RequestContext requestContext, List<AnomalyConfigScope> applicableScopesList) {
+    Map<String, ScopedAnomalyConfigStatusChange> scopedAnomalyConfigStatusChangeMap =
+        getAllObjects(requestContext).stream()
+            .collect(
+                Collectors.toMap(
+                    ContextualConfigObject::getContext,
+                    ConfigObject::getData,
+                    (previous, current) ->
+                        previous // sorted by latest in getAllObjects so keep the previous entry
+                    ));
+    return anomalyConfigScopeUtils.filterConfigMap(
+        scopedAnomalyConfigStatusChangeMap,
+        applicableScopesList,
+        ScopedAnomalyConfigStatusChange::getConfigScope);
   }
 }
