@@ -1,5 +1,6 @@
 package ai.traceable.edge.decision.config.service;
 
+import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_BOOL;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -581,6 +582,20 @@ class EdgeDecisionConfigServiceTest {
                                             .setStringValue(createdPolicy.getId())
                                             .build())
                                     .setOutputType(FIELD_TYPE_STR)
+                                    .build())
+                            .build())
+                    .addRuleInfoDecorations(
+                        RuleInfoDecoration.newBuilder()
+                            .setRuleInfoKey(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(
+                                        Value.newBuilder().setStringValue("internal").build())
+                                    .setOutputType(FIELD_TYPE_STR)
+                                    .build())
+                            .setRuleInfoValue(
+                                DataTransformationConfig.newBuilder()
+                                    .setStaticValue(Value.newBuilder().setBoolValue(false).build())
+                                    .setOutputType(FIELD_TYPE_BOOL)
                                     .build())
                             .build())
                     .setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_BLOCK)

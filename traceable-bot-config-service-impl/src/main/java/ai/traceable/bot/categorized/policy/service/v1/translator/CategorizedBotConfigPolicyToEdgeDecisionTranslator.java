@@ -1,6 +1,7 @@
 package ai.traceable.bot.categorized.policy.service.v1.translator;
 
 import static ai.traceable.bot.categorized.policy.service.v1.EntityType.ENTITY_TYPE_API;
+import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_BOOL;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.edge.decision.config.service.v1.EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_TRACEABLE_CATEGORIZED_BOTS;
 import static ai.traceable.edge.decision.config.service.v1.EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST;
@@ -178,13 +179,13 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
     }
 
     final List<RuleInfoDecoration> ruleInfoDecorations =
-        buildRuleInfoDecorations(categorizedBotConfigPolicy.getId());
+        buildRuleInfoDecorations(
+            categorizedBotConfigPolicy.getId(), categorizedBotPolicyDetails.getInternal());
     edgeDecisionRuleBuilder.setRuleDecision(
         buildEdgeRuleDecision(
             categorizedBotPolicyDetails.getCategorizedBotPolicyActionConfig(),
             ruleInfoDecorations,
-            categorizedBotPolicyDetails.getName(),
-            categorizedBotPolicyDetails.getInternal()));
+            categorizedBotPolicyDetails.getName()));
     edgeDecisionRuleBuilder.setRuleDefinition(
         buildEdgeDecisionRuleDefinition(botIds, categorizedBotConfigPolicy.getId()));
     return edgeDecisionRuleBuilder.build();
@@ -269,20 +270,17 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
   private EdgeDecision buildEdgeRuleDecision(
       final CategorizedBotPolicyActionConfig categorizedBotPolicyActionConfig,
       final List<RuleInfoDecoration> ruleInfoDecorations,
-      final String policyName,
-      final boolean internal) {
+      final String policyName) {
     final EdgeDecision.Builder edgeDecisionBuilder = EdgeDecision.newBuilder();
     edgeDecisionBuilder.setThreatType(policyName);
     edgeDecisionBuilder.addAllRuleInfoDecorations(ruleInfoDecorations);
-    if (internal) {
-      edgeDecisionBuilder.setEdgeDecisionType(EdgeDecisionType.EDGE_DECISION_TYPE_INTERNAL);
-    }
     edgeDecisionBuilder.setEdgeDecisionType(
         translateActionType(categorizedBotPolicyActionConfig.getBotAction()));
     return edgeDecisionBuilder.build();
   }
 
-  private static List<RuleInfoDecoration> buildRuleInfoDecorations(final String policyId) {
+  private static List<RuleInfoDecoration> buildRuleInfoDecorations(
+      final String policyId, final boolean internal) {
     return List.of(
         RuleInfoDecoration.newBuilder()
             .setRuleInfoKey(
@@ -369,6 +367,18 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                 DataTransformationConfig.newBuilder()
                     .setStaticValue(Value.newBuilder().setStringValue(policyId).build())
                     .setOutputType(FIELD_TYPE_STR)
+                    .build())
+            .build(),
+        RuleInfoDecoration.newBuilder()
+            .setRuleInfoKey(
+                DataTransformationConfig.newBuilder()
+                    .setStaticValue(Value.newBuilder().setStringValue("internal").build())
+                    .setOutputType(FIELD_TYPE_STR)
+                    .build())
+            .setRuleInfoValue(
+                DataTransformationConfig.newBuilder()
+                    .setStaticValue(Value.newBuilder().setBoolValue(internal).build())
+                    .setOutputType(FIELD_TYPE_BOOL)
                     .build())
             .build());
   }
