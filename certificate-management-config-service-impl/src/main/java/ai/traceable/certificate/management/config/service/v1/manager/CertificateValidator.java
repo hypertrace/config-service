@@ -62,16 +62,14 @@ public class CertificateValidator {
   }
 
   private Status validateMetadata(CertificateMetadata metadata) {
-    if (metadata.getDomainNamesList().isEmpty()) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Certificate must have at least one domain name");
-    }
-
-    // Validate domain names
     for (String domainName : metadata.getDomainNamesList()) {
       if (!domainName.contains(".")) {
         return Status.INVALID_ARGUMENT.withDescription("Invalid domain name received");
       }
+    }
+
+    if (metadata.getKeyAlgorithm().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription("Key algorithm cannot be empty");
     }
 
     return Status.OK;

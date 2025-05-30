@@ -38,6 +38,7 @@ class CertificateValidatorTest {
                 .setMetadata(
                     CertificateMetadata.newBuilder()
                         .addDomainNames("example.com")
+                        .setKeyAlgorithm("RSA-2048")
                         .putLabels("env", "dev")
                         .putLabels("team", "security"))
                 .setStatusDetails(
