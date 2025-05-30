@@ -37,7 +37,7 @@ class DefaultSecurityEventScoreContributionManagerTest {
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_HIGH_SCORE = 3;
   private static final int DEFAULT_SECURITY_EVENT_CONTRIBUTION_CRITICAL_SCORE = 10;
   private static final EventConfidenceLevel DEFAULT_MINIMUM_EVENT_CONFIDENCE_LEVEL =
-      EventConfidenceLevel.EVENT_CONFIDENCE_LEVEL_LOW;
+      EventConfidenceLevel.EVENT_CONFIDENCE_LEVEL_HIGH;
 
   private static final SecurityEventScoreContribution SECURITY_EVENT_SCORE_CONTRIBUTION_1 =
       SecurityEventScoreContribution.newBuilder()
