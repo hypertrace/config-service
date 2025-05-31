@@ -17,7 +17,7 @@ public class UserAttributionVariableFetcher implements VariableFetcher {
           .setTransformationConfig(
               DataTransformationConfig.newBuilder()
                   .setJexlExpression(
-                      JexlExpressionConfig.newBuilder().setJexlExpression("$s.getIpAddress"))
+                      JexlExpressionConfig.newBuilder().setJexlExpression("$s.getIpAddress()"))
                   .setOutputType(FieldType.FIELD_TYPE_STR))
           .build();
   private final UserAttributionRuleFetcher userAttributionRuleFetcher;
