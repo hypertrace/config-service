@@ -75,3 +75,4 @@ modules:
   - path: vulnerability-config-service-api/src/main/proto
   - path: waf-provider-integration-service-api/src/main/proto
   - path: genai-config-service-api/src/main/proto
+  - path: http-event-collector-integration-config-service-api/src/main/proto

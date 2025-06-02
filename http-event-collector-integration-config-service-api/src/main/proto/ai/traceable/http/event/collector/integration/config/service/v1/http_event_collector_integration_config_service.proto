@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package ai.traceable.http.event.collector.integration.config.service.v1;
+
+option java_multiple_files = true;
+
+service HttpEventCollectorIntegrationConfigService {
+  rpc GetHttpEventCollectorIntegrations(GetHttpEventCollectorIntegrationsRequest) returns (GetHttpEventCollectorIntegrationsResponse) {}
+  rpc CreateHttpEventCollectorIntegration(CreateHttpEventCollectorIntegrationRequest) returns (CreateHttpEventCollectorIntegrationResponse) {}
+  rpc UpdateHttpEventCollectorIntegration(UpdateHttpEventCollectorIntegrationRequest) returns (UpdateHttpEventCollectorIntegrationResponse) {}
+  rpc DeleteHttpEventCollectorIntegration(DeleteHttpEventCollectorIntegrationRequest) returns (DeleteHttpEventCollectorIntegrationResponse) {}
+}
+
+message GetHttpEventCollectorIntegrationsRequest {
+  HttpEventCollectorIntegrationsFilter filter = 1;
+}
+
+message GetHttpEventCollectorIntegrationsResponse {
+  repeated HttpEventCollectorIntegration integrations = 1;
+}
+
+message CreateHttpEventCollectorIntegrationRequest {
+  string name = 1;
+  optional string description = 2;
+  EncryptedText api_token = 3;
+  string http_event_collector_url = 4;
+  ThirdPartyVendor third_party_vendor = 5;
+}
+
+message CreateHttpEventCollectorIntegrationResponse {
+  HttpEventCollectorIntegration integration = 1;
+}
+
+message UpdateHttpEventCollectorIntegrationRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  EncryptedText api_token = 4;
+  string http_event_collector_url = 5;
+}
+
+message UpdateHttpEventCollectorIntegrationResponse {
+  HttpEventCollectorIntegration integration = 1;
+}
+
+message DeleteHttpEventCollectorIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteHttpEventCollectorIntegrationResponse {}
+
+message HttpEventCollectorIntegrationDetails {
+  string name = 1;
+  string description = 2;
+  EncryptedText api_token = 3;
+  string http_event_collector_url = 4;
+  ThirdPartyVendor third_party_vendor = 5;
+}
+
+message HttpEventCollectorIntegration {
+  string id = 1;
+  HttpEventCollectorIntegrationDetails details = 2;
+}
+
+message EncryptedText {
+  string key_id = 1;
+  string value = 2;
+}
+
+message HttpEventCollectorIntegrationsFilter {
+  repeated string ids = 1;
+}
+
+enum ThirdPartyVendor {
+  THIRD_PARTY_VENDOR_UNSPECIFIED = 0;
+  THIRD_PARTY_VENDOR_SPLUNK = 1;
+  THIRD_PARTY_VENDOR_CROWDSTRIKE = 2;
+}
