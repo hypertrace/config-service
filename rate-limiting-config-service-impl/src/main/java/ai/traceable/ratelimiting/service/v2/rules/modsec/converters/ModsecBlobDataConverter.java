@@ -6,6 +6,7 @@ import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.ModsecBlobData;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.EnrichedRateLimitingModsecRule;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.validator.ModsecBlobValidator;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ModsecBlobDataConverter {
   private static final long MODSEC_ID_SEED = 20000000;
   private static final String NEW_LINES_DELIMITER = "\n\n";
+  private static final RateLimiter LOG_RATE_LIMITER = RateLimiter.create(0.007);
+
   private final ModsecBlobConverterUtils modsecBlobConverterUtils;
   private final DataTypeRuleModsecConverter dataTypeRuleModsecConverter;
   private final ModsecBlobValidator modsecBlobValidator;
@@ -115,7 +118,9 @@ public class ModsecBlobDataConverter {
           "Matched URL and request criteria corresponding to DLP Rule",
           modsecIdAssignment);
     } catch (Exception e) {
-      log.warn("Cannot convert rateLimitingRule with id {} into modsec rule", ruleIdentifier, e);
+      if (LOG_RATE_LIMITER.tryAcquire()) {
+        log.warn("Cannot convert rateLimitingRule with id {} into modsec rule", ruleIdentifier, e);
+      }
       return EMPTY_STRING;
     }
   }

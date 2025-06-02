@@ -11,6 +11,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator;
 import ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Status;
@@ -28,7 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ModsecBlobConverterUtils {
   private static final String OR_REGEX_DELIMITER = "|";
+  private static final RateLimiter LOG_RATE_LIMITER = RateLimiter.create(0.007);
+
   private final CustomModsecRuleConverter customModsecRuleConverter;
+
   static final String EMPTY_STRING = "";
 
   @Inject
@@ -50,7 +54,12 @@ public class ModsecBlobConverterUtils {
       return customModsecRuleConverter.getJNIValidatedModsecRuleWithCustomLogMsg(
           modsecIdAssignment.getAndIncrement(), ruleIdentifier, message, clauses, logMessage);
     } catch (Exception e) {
-      log.warn("Cannot convert rateLimitingRule with id {} into modsec rule", ruleIdentifier, e);
+      if (LOG_RATE_LIMITER.tryAcquire()) {
+        log.warn(
+            "Cannot convert datatypes of rateLimitingRule with id {} into modsec rule",
+            ruleIdentifier,
+            e);
+      }
       return EMPTY_STRING;
     }
   }
