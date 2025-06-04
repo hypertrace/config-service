@@ -1,5 +1,6 @@
 package ai.traceable.saved.filter.config.service.validation;
 
+import ai.traceable.generic.filter.normaliser.FilterModelModule;
 import ai.traceable.saved.filter.config.service.v1.ArrayFilterCondition;
 import ai.traceable.saved.filter.config.service.v1.FilterCriteria;
 import ai.traceable.saved.filter.config.service.v1.LogicalFilterCondition;
@@ -12,6 +13,7 @@ public class SavedFilterValidationModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(new FilterModelModule());
     bindFilterValidators();
     bindRelationalFilterInspectors();
   }

@@ -3,6 +3,7 @@ package ai.traceable.saved.filter.config.service.validation;
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_IN;
 import static ai.traceable.saved.filter.config.service.v1.RelationalOperator.RELATIONAL_OPERATOR_NOT_IN;
 
+import ai.traceable.generic.filter.normaliser.ValueDatatypeConverter;
 import ai.traceable.saved.filter.config.service.v1.RelationalOperator;
 import com.google.inject.Inject;
 import io.grpc.Status;
@@ -17,6 +18,7 @@ public class DefaultAttributeKindCompatibilityCheckerImpl
       Set.of(RELATIONAL_OPERATOR_IN, RELATIONAL_OPERATOR_NOT_IN);
 
   private ArrayContentTypeFetcher arrayContentTypeFetcher;
+  private final ValueDatatypeConverter valueDatatypeConverter;
 
   @Override
   public void checkCompatibility(
@@ -29,8 +31,7 @@ public class DefaultAttributeKindCompatibilityCheckerImpl
       rhsTypeToCompare = rhs;
     }
 
-    // TODO: Consume the converters here from the library once added
-    if (lhs != rhsTypeToCompare) {
+    if (!valueDatatypeConverter.isConvertible(lhs, rhsTypeToCompare)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
               String.format(

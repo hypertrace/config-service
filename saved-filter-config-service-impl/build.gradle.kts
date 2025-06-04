@@ -21,6 +21,7 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.protoconverter)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(commonLibs.hypertrace.attributeservice.client)
+  implementation(commonLibs.traceable.platform.filter.normaliser)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
