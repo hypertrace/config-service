@@ -16,6 +16,14 @@ message NotificationChannelMutableData {
   repeated AwsS3BucketChannelConfig s3_bucket_channel_config = 4;
   repeated SplunkIntegrationChannelConfig splunk_integration_channel_config = 5;
   repeated SyslogIntegrationChannelConfig syslog_integration_channel_config = 6;
+  repeated HttpEventCollectorChannelConfig http_event_collector_channel_config = 7;
+}
+
+message HttpEventCollectorChannelConfig {
+  oneof channel_type {
+    SplunkIntegrationChannelConfig splunk_integration_channel_config = 1;
+    CrowdStrikeIntegrationChannelConfig crowd_strike_integration_channel_config = 2;
+  }
 }
 
 message AwsS3BucketChannelConfig {
@@ -59,4 +67,8 @@ message SplunkIntegrationChannelConfig {
 
 message SyslogIntegrationChannelConfig {
   string syslog_server_integration_id = 1;
+}
+
+message CrowdStrikeIntegrationChannelConfig {
+  string crowd_strike_integration_id = 1;
 }
