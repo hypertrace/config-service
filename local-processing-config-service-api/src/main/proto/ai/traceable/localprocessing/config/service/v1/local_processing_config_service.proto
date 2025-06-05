@@ -104,6 +104,7 @@ message SpanProcessingRules {
   repeated ExcludeSpanProcessingRule exclude_span_rules = 1;
   repeated ProtectionSpanProcessingRule protection_span_rules = 3;
   RateLimitConfig rate_limit_config = 2;
+  repeated RateLimitConfig custom_rate_limit_configs = 4;
 }
 
 message ExcludeSpanProcessingRule {
