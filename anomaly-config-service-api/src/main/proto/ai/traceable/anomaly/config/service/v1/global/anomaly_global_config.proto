@@ -53,6 +53,7 @@ message GetAnomalyRuleInfosRequest {
   repeated AnomalyEventFamily event_families = 1;
   optional ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion modsec_rule_version = 2;
   bool use_test_modsec_rules = 3;
+  RuleVersion version = 4;
 }
 
 message GetAnomalyRuleInfosResponse {
@@ -78,8 +79,10 @@ message ScopedAnomalyConfigStatus {
   ExcludedEventsGenerationConfig excluded_events_config = 3 [deprecated = true];
   AnomalyConfidenceLevel min_confidence_level = 4 [deprecated = true];
   bool enabled_for_exit_spans = 5 [deprecated = true];
-  ModsecGlobalConfig modsec_global_config = 6;
-  ApiGlobalConfig api_global_config = 7;
+  ModsecGlobalConfig modsec_global_config = 6 [deprecated = true];
+  ApiGlobalConfig api_global_config = 7 [deprecated = true];
+  GlobalModsecConfig global_modsec_config = 8;
+  GlobalApiConfig global_api_config = 9;
 }
 
 // any addition here requires update in ScopedGlobalConfigStatusChangeConverter logic
@@ -89,8 +92,50 @@ message ScopedAnomalyConfigStatusChange {
   ExcludedEventsGenerationConfig excluded_events_config = 3 [deprecated = true];
   optional AnomalyConfidenceLevel min_confidence_level = 4 [deprecated = true];
   optional bool enabled_for_exit_spans = 5 [deprecated = true];
-  ModsecGlobalConfig modsec_global_config = 6;
-  ApiGlobalConfig api_global_config = 7;
+  ModsecGlobalConfig modsec_global_config = 6 [deprecated = true];
+  ApiGlobalConfig api_global_config = 7 [deprecated = true];
+  GlobalModsecConfigChange global_modsec_config_change = 8;
+  GlobalApiConfigChange global_api_config_change = 9;
+}
+
+message GlobalModsecConfigChange {
+  optional bool blocking_available_for_regular_rules = 1;
+  optional bool use_test_rules = 2;
+  optional bool disabled = 3;
+  ModsecDefaultConfigsType default_configs_type = 4;
+  AnomalyConfidenceLevel min_confidence_level = 5;
+  optional bool enabled_for_exit_spans = 6;
+  ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
+  RuleVersion stable_version = 8;
+  RuleVersion override_version = 9;
+}
+
+message GlobalModsecConfig {
+  bool blocking_available_for_regular_rules = 1;
+  bool use_test_rules = 2;
+  bool disabled = 3;
+  ModsecDefaultConfigsType default_configs_type = 4;
+  AnomalyConfidenceLevel min_confidence_level = 5;
+  bool enabled_for_exit_spans = 6;
+  ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
+  RuleVersion current_version = 8;
+  RuleVersion previous_version = 9;
+}
+
+message GlobalApiConfigChange {
+  optional bool disabled = 1;
+  ApiDefaultConfigsType default_configs_type = 2;
+  optional bool enabled_for_exit_spans = 3;
+  RuleVersion stable_version = 4;
+  RuleVersion override_version = 5;
+}
+
+message GlobalApiConfig {
+  bool disabled = 1;
+  ApiDefaultConfigsType default_configs_type = 2;
+  bool enabled_for_exit_spans = 3;
+  RuleVersion current_version = 4;
+  RuleVersion previous_version = 5;
 }
 
 enum CorazaEngineVersion {
@@ -103,7 +148,9 @@ message ModsecEvaluationEngineConfig {
   CorazaEngineVersion coraza_engine_version = 1;
 }
 
+// deprecated
 message ModsecGlobalConfig {
+  option deprecated = true;
   optional bool blocking_available_for_regular_rules = 1;
   optional bool use_test_rules = 2;
   optional bool disabled = 3;
@@ -156,7 +203,9 @@ enum RuleVersionType {
   RULE_VERSION_TYPE_DEPRECATED = 4;
 }
 
+// deprecated
 message ApiGlobalConfig {
+  option deprecated = true;
   optional bool disabled = 1;
   ApiDefaultConfigsType default_configs_type = 2;
   optional bool enabled_for_exit_spans = 3;
