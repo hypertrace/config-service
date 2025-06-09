@@ -159,6 +159,13 @@ public class CustomSignatureEdgeDecisionConverter {
   }
 
   private MatchCondition buildMatchCondition(Clause clause) {
+    if (clause.hasClauseGroup()) {
+      Optional<MatchCondition> matchCondition = buildMatchCondition(clause.getClauseGroup());
+      return matchCondition.orElseThrow(
+          () ->
+              new IllegalArgumentException(
+                  "Failed to build match condition for nested clause group"));
+    }
     return getConditionConverter(clause.getClauseCase()).buildMatchCondition(clause);
   }
 

@@ -1,0 +1,128 @@
+{
+  "decision_rules" : [ {
+    "id" : "rule-id",
+    "name" : "rule-name",
+    "rule_category" : "EDGE_DECISION_RULE_CATEGORY_CUSTOM_SIGNATURE",
+    "rule_status" : { },
+    "rule_definition" : {
+      "edge_input_kind" : "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signature_rule" : {
+        "match_condition" : {
+          "logical_match_condition" : {
+            "operator" : "LOGICAL_MATCH_OPERATOR_AND",
+            "conditions" : [ {
+              "logical_match_condition" : {
+                "operator" : "LOGICAL_MATCH_OPERATOR_OR",
+                "conditions" : [ {
+                  "logical_match_condition" : {
+                    "operator" : "LOGICAL_MATCH_OPERATOR_OR",
+                    "conditions" : [ {
+                      "structured_match_condition" : {
+                        "lhs" : {
+                          "name" : "lhs",
+                          "type" : "FIELD_TYPE_STR",
+                          "rules" : [ {
+                            "transformation_config" : {
+                              "jexl_expression" : {
+                                "jexl_expression" : "TRACEABLE_USER_ID"
+                              },
+                              "output_type" : "FIELD_TYPE_STR"
+                            }
+                          } ]
+                        },
+                        "binary_operator" : {
+                          "string_value" : "gmail.com",
+                          "match_operator" : "MATCH_OPERATOR_CONTAINS"
+                        }
+                      }
+                    }, {
+                      "structured_match_condition" : {
+                        "lhs" : {
+                          "name" : "lhs",
+                          "type" : "FIELD_TYPE_STR",
+                          "rules" : [ {
+                            "transformation_config" : {
+                              "jexl_expression" : {
+                                "jexl_expression" : "TRACEABLE_USER_ID"
+                              },
+                              "output_type" : "FIELD_TYPE_STR"
+                            }
+                          } ]
+                        },
+                        "binary_operator" : {
+                          "string_value" : "yahoo.com",
+                          "match_operator" : "MATCH_OPERATOR_CONTAINS"
+                        }
+                      }
+                    } ]
+                  },
+                  "negate" : true
+                }, {
+                  "logical_match_condition" : {
+                    "operator" : "LOGICAL_MATCH_OPERATOR_OR",
+                    "conditions" : [ {
+                      "generic_match_condition" : {
+                        "jexl_expression" : {
+                          "jexl_expression" : "$s.getIpIntelligenceData().getTraits().getAbuseVelocity().equals(IpAbuseVelocity.IP_ABUSE_VELOCITY_MEDIUM)"
+                        }
+                      }
+                    }, {
+                      "generic_match_condition" : {
+                        "jexl_expression" : {
+                          "jexl_expression" : "$s.getIpIntelligenceData().getTraits().getAbuseVelocity().equals(IpAbuseVelocity.IP_ABUSE_VELOCITY_HIGH)"
+                        }
+                      }
+                    } ]
+                  }
+                } ]
+              }
+            }, {
+              "structured_match_condition" : {
+                "lhs" : {
+                  "name" : "lhs",
+                  "type" : "FIELD_TYPE_STR",
+                  "rules" : [ {
+                    "transformation_config" : {
+                      "jexl_expression" : {
+                        "jexl_expression" : "$s.getMethod()"
+                      },
+                      "output_type" : "FIELD_TYPE_STR"
+                    }
+                  } ]
+                },
+                "binary_operator" : {
+                  "string_value" : "GET",
+                  "match_operator" : "MATCH_OPERATOR_NOT_EQ"
+                }
+              }
+            } ]
+          }
+        }
+      }
+    },
+    "rule_decision" : {
+      "edge_decision_type" : "EDGE_DECISION_TYPE_BLOCK",
+      "rule_info_decorations" : [ {
+        "rule_info_key" : {
+          "static_value" : "severity",
+          "output_type" : "FIELD_TYPE_STR"
+        },
+        "rule_info_value" : {
+          "static_value" : "EVENT_SEVERITY_MEDIUM",
+          "output_type" : "FIELD_TYPE_STR"
+        }
+      }, {
+        "rule_info_key" : {
+          "static_value" : "labels",
+          "output_type" : "FIELD_TYPE_STR"
+        },
+        "rule_info_value" : {
+          "static_value" : "{}",
+          "output_type" : "FIELD_TYPE_STR"
+        }
+      } ]
+    },
+    "policy_kind" : "POLICY_KIND_WAF",
+    "policy_id" : "rule-id"
+  } ]
+}

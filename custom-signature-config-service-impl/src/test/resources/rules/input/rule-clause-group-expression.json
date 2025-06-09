@@ -1,0 +1,42 @@
+{
+  "id": "rule-id",
+  "name": "rule-name",
+  "definition": {
+    "clauseGroup": {
+      "clauseOperator": "CLAUSE_OPERATOR_AND",
+      "clauses":
+      [
+        {
+          "clauseGroup": {
+            "clauseOperator": "CLAUSE_OPERATOR_OR",
+            "clauses": [
+              {
+                "emailDomainExpression": {
+                  "emailDomains": ["gmail.com", "yahoo.com"],
+                  "exclude": true
+                }
+              },
+              {
+                "ipAbuseVelocityExpression": {
+                  "minIpAbuseVelocity": "IP_ABUSE_VELOCITY_MEDIUM"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "matchExpression": {
+            "matchKey": "MATCH_KEY_HTTP_METHOD",
+            "matchOperator": "MATCH_OPERATOR_NOT_EQUAL",
+            "matchValue": "GET",
+            "matchCategory": "MATCH_CATEGORY_REQUEST"
+          }
+        }
+      ]
+    }
+  },
+  "effect": {
+    "eventType": "EVENT_TYPE_DETECTION_AND_BLOCKING",
+    "eventSeverity": "EVENT_SEVERITY_MEDIUM"
+  }
+}
