@@ -3,14 +3,15 @@ package ai.traceable.localprocessing.config.service.spanprocessingrules.ratelimi
 import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_BARESPAN;
 import static ai.traceable.span.processing.config.service.v1.RateLimitStrategy.RATE_LIMIT_STRATEGY_DROP;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.config.utils.SpanFilterMatcher;
+import ai.traceable.localprocessing.config.service.utils.FilterConverter;
 import ai.traceable.localprocessing.config.service.v1.RateLimit;
 import ai.traceable.localprocessing.config.service.v1.RateLimitConfig;
 import ai.traceable.localprocessing.config.service.v1.RateLimitStrategy;
 import ai.traceable.localprocessing.config.service.v1.WindowedRateLimit;
 import ai.traceable.span.processing.config.service.v1.GetAllResolvedSamplingConfigsRequest;
 import ai.traceable.span.processing.config.service.v1.SamplingConfig;
-import ai.traceable.span.processing.config.service.v1.SpanFilter;
 import ai.traceable.span.processing.config.service.v1.SpanProcessingConfigServiceGrpc;
 import com.google.inject.Inject;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.objectstore.ClientConfig;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -35,16 +37,22 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       configServiceBlockingStub;
   private final SpanFilterMatcher spanFilterMatcher;
   private final ClientConfig clientConfig;
+  private final FilterConverter filterConverter;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   public DefaultRateLimitConfigManager(
       SpanProcessingConfigServiceGrpc.SpanProcessingConfigServiceBlockingStub
           configServiceBlockingStub,
       SpanFilterMatcher spanFilterMatcher,
-      ClientConfig clientConfig) {
+      ClientConfig clientConfig,
+      FilterConverter filterConverter,
+      FeatureCachingClient featureCachingClient) {
     this.configServiceBlockingStub = configServiceBlockingStub;
     this.spanFilterMatcher = spanFilterMatcher;
     this.clientConfig = clientConfig;
+    this.filterConverter = filterConverter;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -71,6 +79,24 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
         .findFirst();
   }
 
+  @Override
+  public List<RateLimitConfig> getAllCustomRateLimitConfigs(
+      RequestContext requestContext,
+      List<SamplingConfig> samplingConfigs,
+      String serviceName,
+      Optional<String> environment) {
+    // Check if custom rate limit config is disabled
+    if (featureCachingClient.isTpaCustomRateLimitConfigDisabled(requestContext)) {
+      return List.of();
+    }
+    return samplingConfigs.stream()
+        .map(
+            samplingConfig ->
+                convertToCustomRateLimitConfig(samplingConfig, serviceName, environment))
+        .flatMap(Optional::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
   private Optional<RateLimitConfig> convertSamplingConfig(
       ai.traceable.span.processing.config.service.v1.SamplingConfig samplingConfig,
       String serviceName,
@@ -82,7 +108,8 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       return Optional.empty();
     }
 
-    SpanFilter spanFilter = samplingConfig.getSamplingConfigInfo().getFilter();
+    ai.traceable.span.processing.config.service.v1.SpanFilter spanFilter =
+        samplingConfig.getSamplingConfigInfo().getFilter();
 
     /**
      * If the sampling config has any span filters other than environment and service name filters,
@@ -148,5 +175,51 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
         .setQuantityAllowed(windowedRateLimit.getQuantityAllowed())
         .setWindowDuration(windowedRateLimit.getWindowDuration())
         .build();
+  }
+
+  private Optional<RateLimitConfig> convertToCustomRateLimitConfig(
+      SamplingConfig samplingConfig, String serviceName, Optional<String> environment) {
+    // check if the config has an ID
+    if (samplingConfig.getId().isEmpty()) {
+      return Optional.empty();
+    }
+
+    ai.traceable.span.processing.config.service.v1.SamplingConfigInfo samplingConfigInfo =
+        samplingConfig.getSamplingConfigInfo();
+    ai.traceable.span.processing.config.service.v1.RateLimitConfig rateLimitConfig =
+        samplingConfigInfo.getRateLimitConfig();
+    ai.traceable.span.processing.config.service.v1.SpanFilter spanFilter =
+        samplingConfigInfo.getFilter();
+
+    // check if rate limit strategy is allowed
+    if (!ALLOWED_RATE_LIMIT_STRATEGIES.contains(rateLimitConfig.getRateLimitStrategy())) {
+      return Optional.empty();
+    }
+
+    // apply environment filters if any
+    if (!spanFilterMatcher.matchesEnvironment(spanFilter, environment)) {
+      return Optional.empty();
+    }
+
+    // apply service name filters if any
+    if (!spanFilterMatcher.matchesServiceName(spanFilter, serviceName)) {
+      return Optional.empty();
+    }
+
+    Optional<ai.traceable.localprocessing.config.service.v1.SpanFilter> filter =
+        filterConverter.convert(spanFilter);
+    if (filter.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        RateLimitConfig.newBuilder()
+            .setApiEndpointCacheDuration(rateLimitConfig.getApiEndpointCacheDuration())
+            .setTraceLimitGlobal(convertRateLimit(rateLimitConfig.getTraceLimitGlobal()))
+            .setTraceLimitPerEndpoint(convertRateLimit(rateLimitConfig.getTraceLimitPerEndpoint()))
+            .setRateLimitStrategy(convertRateLimitStrategy(rateLimitConfig.getRateLimitStrategy()))
+            .setId(samplingConfig.getId())
+            .setFilter(filter.get())
+            .build());
   }
 }

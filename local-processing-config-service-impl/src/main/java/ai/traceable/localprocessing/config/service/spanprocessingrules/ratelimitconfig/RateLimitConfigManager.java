@@ -15,4 +15,10 @@ public interface RateLimitConfigManager {
       List<SamplingConfig> samplingConfigs,
       String serviceName,
       Optional<String> environment);
+
+  List<RateLimitConfig> getAllCustomRateLimitConfigs(
+      RequestContext requestContext,
+      List<SamplingConfig> samplingConfigs,
+      String serviceName,
+      Optional<String> environment);
 }

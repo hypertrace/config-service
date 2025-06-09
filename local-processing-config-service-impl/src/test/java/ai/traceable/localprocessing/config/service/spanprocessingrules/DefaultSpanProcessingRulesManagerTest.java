@@ -16,10 +16,13 @@ import static ai.traceable.localprocessing.config.service.spanprocessingrules.Sp
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseNoFilter;
 import static ai.traceable.localprocessing.config.service.spanprocessingrules.SpanProcessingRulesManagerTestUtils.buildGetAllResolvedSamplingConfigsResponseServiceNameFilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.DefaultExcludeSpanRulesManager;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesConfig;
 import ai.traceable.localprocessing.config.service.spanprocessingrules.excludespanrules.ExcludeSpanRulesManager;
@@ -61,6 +64,7 @@ class DefaultSpanProcessingRulesManagerTest {
           .SpanProcessingConfigServiceBlockingStub
       traceableSpanProcessingConfigServiceBlockingStub;
   private RequestContext requestContext;
+  private FeatureCachingClient featureCachingClient;
 
   @BeforeEach
   void setup() {
@@ -92,18 +96,24 @@ class DefaultSpanProcessingRulesManagerTest {
             spanFilterMatcher,
             new FilterConverter(),
             ClientConfig.DEFAULT);
+
+    requestContext = RequestContext.forTenantId("tenantId");
+    featureCachingClient = mock(FeatureCachingClient.class);
+    when(featureCachingClient.isTpaCustomRateLimitConfigDisabled(requestContext)).thenReturn(true);
+
     RateLimitConfigManager rateLimitConfigManager =
         new DefaultRateLimitConfigManager(
             traceableSpanProcessingConfigServiceBlockingStub,
             spanFilterMatcher,
-            ClientConfig.DEFAULT);
+            ClientConfig.DEFAULT,
+            new FilterConverter(),
+            featureCachingClient);
     spanProcessingRulesManager =
         new DefaultSpanProcessingRulesManager(
             excludeSpanRulesManager,
             protectionSpanRulesManager,
             rateLimitConfigManager,
             uuidGenerator);
-    requestContext = RequestContext.forTenantId("tenantId");
   }
 
   @Test
@@ -871,5 +881,59 @@ class DefaultSpanProcessingRulesManagerTest {
                     .build())
             .build(),
         getSpanProcessingRulesResponse);
+  }
+
+  @Test
+  void testGetAllCustomRateLimitConfigs() {
+    when(featureCachingClient.isTpaCustomRateLimitConfigDisabled(requestContext)).thenReturn(false);
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
+        .thenReturn(buildGetAllResolvedSamplingConfigsResponse());
+    when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))
+        .thenReturn(GetAllExcludeSpanRulesResponse.getDefaultInstance());
+    when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedProtectionSpanRules(any()))
+        .thenReturn(GetAllResolvedProtectionSpanRulesResponse.getDefaultInstance());
+
+    GetSpanProcessingRulesResponse getSpanProcessingRulesResponse =
+        spanProcessingRulesManager.getSpanProcessingRulesResponse(
+            requestContext,
+            GetSpanProcessingRulesRequest.newBuilder()
+                .addServiceRequests(
+                    SpanProcessingRulesServiceRequest.newBuilder()
+                        .setServiceName("service1")
+                        .build())
+                .build());
+
+    assertFalse(
+        getSpanProcessingRulesResponse.getSpanProcessingRulesServiceResponsesList().isEmpty());
+    assertEquals(
+        "service1",
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getServiceName());
+    assertFalse(
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getCustomRateLimitConfigsList()
+            .isEmpty());
+    assertEquals(
+        "id",
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getCustomRateLimitConfigsList()
+            .get(0)
+            .getId());
+    assertTrue(
+        getSpanProcessingRulesResponse
+            .getSpanProcessingRulesServiceResponsesList()
+            .get(0)
+            .getSpanProcessingRules()
+            .getCustomRateLimitConfigsList()
+            .get(0)
+            .hasFilter());
   }
 }
