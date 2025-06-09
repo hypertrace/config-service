@@ -15,6 +15,7 @@ import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRule
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionRuleStatus;
 import ai.traceable.detection.exclusion.config.service.v1.EventCondition;
 import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
+import ai.traceable.detection.exclusion.config.service.v1.LogicalOperator;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition.DetectionExclusionRuleConditionConverter;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecision;
@@ -223,29 +224,56 @@ public class DetectionExclusionRuleEdgeDecisionConverter {
         .setEdgeInputKind(EdgeInputKind.EDGE_INPUT_KIND_HTTP_REQUEST)
         .setSignatureRule(
             SignatureRule.newBuilder()
-                .setMatchCondition(getMatchCondition(requestContext, conditions)))
+                .setMatchCondition(
+                    getMatchCondition(
+                        requestContext,
+                        conditions,
+                        LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND)))
         .build();
   }
 
   private MatchCondition getMatchCondition(
-      RequestContext requestContext, List<DetectionExclusionCondition> conditions) {
+      RequestContext requestContext,
+      List<DetectionExclusionCondition> conditions,
+      LogicalMatchOperator logicalMatchOperator) {
     List<MatchCondition> matchConditions =
         conditions.stream()
             .filter(condition -> !condition.hasEventCondition())
             .map(
-                condition ->
-                    conditionConverterMap
+                condition -> {
+                  if (condition.hasConditionalExpression()) {
+                    return getMatchCondition(
+                        requestContext,
+                        condition.getConditionalExpression().getExpressionsList(),
+                        getLogicalMatchOperator(
+                            condition.getConditionalExpression().getOperator()));
+                  } else {
+                    return conditionConverterMap
                         .get(condition.getConditionCase())
-                        .buildMatchCondition(requestContext, condition))
+                        .buildMatchCondition(requestContext, condition);
+                  }
+                })
             .collect(Collectors.toUnmodifiableList());
+
     if (matchConditions.size() == 1) {
       return matchConditions.get(0);
     }
+
     return MatchCondition.newBuilder()
         .setLogicalMatchCondition(
             LogicalMatchCondition.newBuilder()
-                .setOperator(LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND)
+                .setOperator(logicalMatchOperator)
                 .addAllConditions(matchConditions))
         .build();
+  }
+
+  private LogicalMatchOperator getLogicalMatchOperator(LogicalOperator logicalOperator) {
+    switch (logicalOperator) {
+      case LOGICAL_OPERATOR_OR:
+        return LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_OR;
+      default:
+        // aligning with AND operator being used as the 1st level logical operator
+        return LogicalMatchOperator.LOGICAL_MATCH_OPERATOR_AND;
+    }
   }
 }
