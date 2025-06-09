@@ -30,6 +30,7 @@ dependencies {
   implementation(commonLibs.traceable.licensemetering.api)
   implementation(commonLibs.traceable.protection.rules.webapp)
   implementation(commonLibs.traceable.protection.rules.apiprotect)
+  implementation(commonLibs.traceable.protection.engine.config.webapp)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

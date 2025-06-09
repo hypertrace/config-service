@@ -47,6 +47,7 @@ class AnomalyModsecConfigServiceImplTest {
         new AnomalyModsecConfigServiceImpl(
             modsecValidator,
             modsecManager,
+            null,
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE);
   }
 

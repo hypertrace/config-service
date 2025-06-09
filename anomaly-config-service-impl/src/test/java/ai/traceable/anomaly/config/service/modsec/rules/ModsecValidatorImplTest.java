@@ -1,12 +1,17 @@
 package ai.traceable.anomaly.config.service.modsec.rules;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesRequest;
+import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
+import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
 import io.grpc.Status;
 import io.grpc.Status.Code;
+import io.grpc.StatusRuntimeException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,20 +51,36 @@ class ModsecValidatorImplTest {
       Status status = validator.validate(request);
       assertEquals(Status.Code.OK, status.getCode());
     }
+
+    {
+      GetWebAppEvaluationConfigContextRequest request =
+          GetWebAppEvaluationConfigContextRequest.newBuilder()
+              .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+              .build();
+      assertDoesNotThrow(() -> validator.validate(request));
+    }
   }
 
   @Test
   @DisplayName(
       "Should return INVALID_ARGUMENT status when a given an invalid get modsec rule request")
   void validateError() {
-    GetModsecCrsRulesRequest request =
-        GetModsecCrsRulesRequest.newBuilder()
-            .addAllSubRuleTypes(
-                List.of(
-                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED,
-                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
-            .build();
-    Status status = validator.validate(request);
-    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    {
+      GetModsecCrsRulesRequest request =
+          GetModsecCrsRulesRequest.newBuilder()
+              .addAllSubRuleTypes(
+                  List.of(
+                      AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_UNSPECIFIED,
+                      AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+              .build();
+      Status status = validator.validate(request);
+      assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    }
+
+    {
+      GetWebAppEvaluationConfigContextRequest request =
+          GetWebAppEvaluationConfigContextRequest.getDefaultInstance();
+      assertThrows(StatusRuntimeException.class, () -> validator.validate(request));
+    }
   }
 }

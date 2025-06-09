@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.modsec;
 
+import ai.traceable.anomaly.config.service.modsec.protection.engine.WebAppEvaluationConfigContextModule;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
@@ -18,5 +19,6 @@ public class AnomalyModsecConfigServiceModule extends AbstractModule {
         .annotatedWith(Names.named(bindableServiceAnnotation))
         .to(AnomalyModsecConfigServiceImpl.class);
     install(new ModsecModule());
+    install(new WebAppEvaluationConfigContextModule());
   }
 }
