@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,8 +72,7 @@ class DetectionExclusionRuleEdgeDecisionConverterTest {
             new DetectionExclusionRuleEdgeDecisionConverterTestModule(
                 serviceEntityProvider, apiEntityProvider));
     Set<DetectionExclusionRuleConditionConverter> conditionConverters =
-        injector.getInstance(
-            Key.get(new TypeLiteral<Set<DetectionExclusionRuleConditionConverter>>() {}));
+        injector.getInstance(Key.get(new TypeLiteral<>() {}));
     converter = new DetectionExclusionRuleEdgeDecisionConverter(conditionConverters);
   }
 
@@ -92,14 +92,15 @@ class DetectionExclusionRuleEdgeDecisionConverterTest {
 
   static List<String> getInputFileNames() {
     String folderName =
-        DetectionExclusionRuleEdgeDecisionConverterTest.class
-            .getClassLoader()
-            .getResource(INPUT_DIR)
+        Objects.requireNonNull(
+                DetectionExclusionRuleEdgeDecisionConverterTest.class
+                    .getClassLoader()
+                    .getResource(INPUT_DIR))
             .getFile();
     File queriesFolder = new File(folderName);
 
-    return Arrays.stream(queriesFolder.listFiles())
-        .map(file -> file.getName())
+    return Arrays.stream(Objects.requireNonNull(queriesFolder.listFiles()))
+        .map(File::getName)
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -107,9 +108,10 @@ class DetectionExclusionRuleEdgeDecisionConverterTest {
     try {
       File file =
           new File(
-              this.getClass()
-                  .getClassLoader()
-                  .getResource(dirName + File.separator + fileName)
+              Objects.requireNonNull(
+                      this.getClass()
+                          .getClassLoader()
+                          .getResource(dirName + File.separator + fileName))
                   .toURI());
       return FileUtils.readFileToString(file, StandardCharsets.UTF_8);
     } catch (Exception e) {
