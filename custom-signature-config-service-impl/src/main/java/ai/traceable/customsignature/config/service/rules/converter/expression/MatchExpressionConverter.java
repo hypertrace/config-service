@@ -1,6 +1,5 @@
 package ai.traceable.customsignature.config.service.rules.converter.expression;
 
-import static ai.traceable.customsignature.config.service.rules.converter.expression.KeyValueExpressionConverter.getPredicateJexlExp;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_INT;
 import static ai.traceable.datamodel.data.transformation.config.v1.FieldType.FIELD_TYPE_STR;
 import static ai.traceable.edge.decision.converter.utils.Constants.ATTRIBUTE_NAME_LHS;
@@ -25,15 +24,6 @@ import ai.traceable.datamodel.data.transformation.config.v1.StructuredMatchCondi
 import java.util.Set;
 
 public class MatchExpressionConverter implements CustomSignatureExpressionConverter {
-
-  private static final Set<MatchKey> CASE_INSENSITIVE_TYPES =
-      Set.of(
-          MatchKey.MATCH_KEY_USER_AGENT,
-          MatchKey.MATCH_KEY_HOST,
-          MatchKey.MATCH_KEY_URL,
-          MatchKey.MATCH_KEY_HTTP_METHOD,
-          MatchKey.MATCH_KEY_STATUS_CODE);
-
   private static final Set<MatchOperator> INT_MATCH_OPERATORS =
       Set.of(MatchOperator.MATCH_OPERATOR_GREATER_THAN, MatchOperator.MATCH_OPERATOR_LESS_THAN);
 
@@ -80,7 +70,10 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
 
     MatchKey matchKey = matchExpression.getMatchKey();
     MatchOperator matchOperator = matchExpression.getMatchOperator();
-    String matchValue = matchExpression.getMatchValue();
+    String matchValue =
+        matchExpression.hasValue()
+            ? matchExpression.getValue().getStringValue()
+            : matchExpression.getMatchValue();
 
     if (MATCH_KEY_TYPES_WITH_ONLY_VALUE.contains(matchKey)) {
       return buildStructuredMatchCondition(matchKey, matchOperator, matchValue);
@@ -109,8 +102,13 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
 
   private MatchCondition buildStructuredMatchCondition(
       MatchKey matchKey, MatchOperator matchOperator, String matchValue) {
+    boolean isMatchKeyCaseInsensitive =
+        CustomSignatureExpressionConverterUtils.isMatchKeyCaseInsensitive(matchKey);
     BinaryOperator.Builder builder =
-        BinaryOperator.newBuilder().setMatchOperator(getOp(matchKey, matchOperator));
+        BinaryOperator.newBuilder()
+            .setMatchOperator(
+                CustomSignatureExpressionConverterUtils.getDataTransformationOperator(
+                    isMatchKeyCaseInsensitive, matchOperator));
     FieldType fieldType = FIELD_TYPE_STR;
 
     if (INT_MATCH_OPERATORS.contains(matchOperator)) {
@@ -135,13 +133,15 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
                                     .setOutputType(fieldType)
                                     .setJexlExpression(
                                         JexlExpressionConfig.newBuilder()
-                                            .setJexlExpression(getJexlExp(matchKey))))))
+                                            .setJexlExpression(
+                                                CustomSignatureExpressionConverterUtils
+                                                    .getJexlExpForMatchKey(matchKey))))))
             .setBinaryOperator(builder)
             .build();
 
     MatchCondition.Builder matchConditionBuilder =
         MatchCondition.newBuilder().setStructuredMatchCondition(structuredMatchCondition);
-    // no first class support of not contains currently
+    // no first-class support of not contains currently
     if (matchOperator.equals(MatchOperator.MATCH_OPERATOR_NOT_CONTAIN)) {
       matchConditionBuilder.setNegate(true);
     }
@@ -154,15 +154,19 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
       String jexlExpForQueryParams =
           String.format(
               "map:match(%s, %s, %s)",
-              getJexlExp(MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME),
-              getPredicateJexlExp(matchOperator, matchValue),
+              CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+                  MatchKey.MATCH_KEY_QUERY_PARAMETER_NAME),
+              CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+                  matchOperator, matchValue),
               ALL_MATCH_OPERATORS.contains(matchOperator));
 
       String jexlExpForBodyParams =
           String.format(
               "map:match(%s, %s, %s)",
-              getJexlExp(MatchKey.MATCH_KEY_BODY_PARAMETER_NAME),
-              getPredicateJexlExp(matchOperator, matchValue),
+              CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+                  MatchKey.MATCH_KEY_BODY_PARAMETER_NAME),
+              CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
+                  matchOperator, matchValue),
               ALL_MATCH_OPERATORS.contains(matchOperator));
 
       return MatchCondition.newBuilder()
@@ -193,8 +197,8 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
     String jexlExp =
         String.format(
             "map:match(%s, %s, %s)",
-            getJexlExp(matchKey),
-            getPredicateJexlExp(matchOperator, matchValue),
+            CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(matchKey),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     return MatchCondition.newBuilder()
@@ -209,15 +213,19 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
     String jexlExpForQueryParams =
         String.format(
             "map:matchValue(%s, %s, %s)",
-            getCollectValuesFromMapJexlExp(getJexlExp(MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE)),
-            getPredicateJexlExp(matchOperator, matchValue),
+            getCollectValuesFromMapJexlExp(
+                CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+                    MatchKey.MATCH_KEY_QUERY_PARAMETER_VALUE)),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     String jexlExpForBodyParams =
         String.format(
             "map:matchValue(%s, %s, %s)",
-            getCollectValuesFromMapJexlExp(getJexlExp(MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE)),
-            getPredicateJexlExp(matchOperator, matchValue),
+            getCollectValuesFromMapJexlExp(
+                CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(
+                    MatchKey.MATCH_KEY_BODY_PARAMETER_VALUE)),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     return MatchCondition.newBuilder()
@@ -250,8 +258,9 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
     String jexlExp =
         String.format(
             "map:matchValue(%s, %s, %s)",
-            getCollectValuesFromMapJexlExp(getJexlExp(matchKey)),
-            getPredicateJexlExp(matchOperator, matchValue),
+            getCollectValuesFromMapJexlExp(
+                CustomSignatureExpressionConverterUtils.getJexlExpForMatchKey(matchKey)),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(matchOperator, matchValue),
             ALL_MATCH_OPERATORS.contains(matchOperator));
 
     return MatchCondition.newBuilder()
@@ -259,78 +268,6 @@ public class MatchExpressionConverter implements CustomSignatureExpressionConver
             GenericMatchCondition.newBuilder()
                 .setJexlExpression(JexlExpressionConfig.newBuilder().setJexlExpression(jexlExp)))
         .build();
-  }
-
-  private ai.traceable.datamodel.data.transformation.config.v1.MatchOperator getOp(
-      MatchKey matchKey, MatchOperator matchOperator) {
-    switch (matchOperator) {
-      case MATCH_OPERATOR_EQUALS:
-        return CASE_INSENSITIVE_TYPES.contains(matchKey)
-            ? ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
-                .MATCH_OPERATOR_EQ_IGNORE_CASE
-            : ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_EQ;
-      case MATCH_OPERATOR_NOT_EQUAL:
-        return ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
-            .MATCH_OPERATOR_NOT_EQ;
-      case MATCH_OPERATOR_MATCHES_REGEX:
-        return ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
-            .MATCH_OPERATOR_LIKE;
-      case MATCH_OPERATOR_NOT_MATCH_REGEX:
-        return ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
-            .MATCH_OPERATOR_NOT_LIKE;
-      case MATCH_OPERATOR_CONTAINS:
-      case MATCH_OPERATOR_NOT_CONTAIN:
-        return ai.traceable.datamodel.data.transformation.config.v1.MatchOperator
-            .MATCH_OPERATOR_CONTAINS;
-      case MATCH_OPERATOR_GREATER_THAN:
-        return ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_GT;
-      case MATCH_OPERATOR_LESS_THAN:
-        return ai.traceable.datamodel.data.transformation.config.v1.MatchOperator.MATCH_OPERATOR_LT;
-      default:
-        throw new IllegalArgumentException(
-            "Invalid match operator in key value expression : " + matchOperator);
-    }
-  }
-
-  private String getJexlExp(MatchKey key) {
-    switch (key) {
-      case MATCH_KEY_URL:
-        return "$s.getUrl()";
-      case MATCH_KEY_HOST:
-        return "$s.getHost()";
-      case MATCH_KEY_HTTP_METHOD:
-        return "$s.getMethod()";
-      case MATCH_KEY_USER_AGENT:
-        return "$s.getUserAgent()";
-      case MATCH_KEY_HEADER_NAME:
-      case MATCH_KEY_HEADER_VALUE:
-        return "$s.getRequestHeaders()";
-      case MATCH_KEY_BODY_PARAMETER_NAME:
-      case MATCH_KEY_BODY_PARAMETER_VALUE:
-        return "$s.getRequestBodyParams()";
-      case MATCH_KEY_BODY:
-        return "$s.getRequestBody()";
-      case MATCH_KEY_QUERY_PARAMETER_NAME:
-      case MATCH_KEY_QUERY_PARAMETER_VALUE:
-        return "$s.getQueryParams()";
-      case MATCH_KEY_COOKIE_NAME:
-      case MATCH_KEY_COOKIE_VALUE:
-        return "$s.getRequestCookies()";
-      case MATCH_KEY_BODY_SIZE:
-        return "$s.getRequestBody().length()";
-      case MATCH_KEY_QUERY_PARAMS_COUNT:
-        return "$s.getQueryParams().size()";
-      case MATCH_KEY_HEADERS_COUNT:
-        return "$s.getRequestHeaders().size()";
-      case MATCH_KEY_COOKIES_COUNT:
-        return "$s.getRequestCookies().size()";
-      case MATCH_KEY_STATUS_CODE:
-        // TODO : add exp after edge decision rules are supported on response
-        throw new IllegalArgumentException(
-            "Edge decision rule not applicable on response metadata type : " + key);
-      default:
-        throw new IllegalArgumentException("Invalid match key in key value expression : " + key);
-    }
   }
 
   private String getCollectValuesFromMapJexlExp(String mapJexlExp) {

@@ -71,18 +71,18 @@ public class KeyValueExpressionConverter implements CustomSignatureExpressionCon
     return LIST_VALUE_MAP_TYPES.contains(tag)
         ? String.format(
             "map:match(%s, %s, %s, %s)",
-            getJexlExp(tag),
-            getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getJexlExpForTag(tag),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
                 keyValueExpression.getKeyMatchOperator(), keyValueExpression.getMatchKey()),
-            getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
                 keyValueExpression.getValueMatchOperator(), keyValueExpression.getMatchValue()),
             ALL_MATCH_OPERATORS.contains(keyValueExpression.getValueMatchOperator()))
         : String.format(
             "map:match(%s, %s, %s)",
-            getJexlExp(tag),
-            getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getJexlExpForTag(tag),
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
                 keyValueExpression.getKeyMatchOperator(), keyValueExpression.getMatchKey()),
-            getPredicateJexlExp(
+            CustomSignatureExpressionConverterUtils.getPredicateJexlExp(
                 keyValueExpression.getValueMatchOperator(), keyValueExpression.getMatchValue()));
   }
 
@@ -98,43 +98,5 @@ public class KeyValueExpressionConverter implements CustomSignatureExpressionCon
             GenericMatchCondition.newBuilder()
                 .setJexlExpression(JexlExpressionConfig.newBuilder().setJexlExpression(jexlExp)))
         .build();
-  }
-
-  private String getJexlExp(KeyValueTag tag) {
-    switch (tag) {
-      case KEY_VALUE_TAG_HEADER:
-        return "$s.getRequestHeaders()";
-      case KEY_VALUE_TAG_BODY_PARAMETER:
-        return "$s.getRequestBodyParams()";
-      case KEY_VALUE_TAG_QUERY_PARAMETER:
-        return "$s.getQueryParams()";
-      case KEY_VALUE_TAG_COOKIE:
-        return "$s.getRequestCookies()";
-      default:
-        throw new IllegalArgumentException("Invalid tag: " + tag);
-    }
-  }
-
-  static String getPredicateJexlExp(MatchOperator matchOperator, String matchValue) {
-    switch (matchOperator) {
-      case MATCH_OPERATOR_EQUALS:
-        return String.format("predicate:equals('%s')", matchValue);
-      case MATCH_OPERATOR_NOT_EQUAL:
-        return String.format("predicate:notEquals('%s')", matchValue);
-      case MATCH_OPERATOR_MATCHES_REGEX:
-        return String.format("predicate:matchesRegex('%s')", matchValue);
-      case MATCH_OPERATOR_NOT_MATCH_REGEX:
-        return String.format("predicate:notMatchesRegex('%s')", matchValue);
-      case MATCH_OPERATOR_CONTAINS:
-        return String.format("predicate:contains('%s')", matchValue);
-      case MATCH_OPERATOR_NOT_CONTAIN:
-        return String.format("predicate:notContains('%s')", matchValue);
-      case MATCH_OPERATOR_GREATER_THAN:
-        return String.format("predicate:greaterThan(%s)", matchValue);
-      case MATCH_OPERATOR_LESS_THAN:
-        return String.format("predicate:lessThan(%s)", matchValue);
-      default:
-        throw new IllegalArgumentException("Invalid match operator: " + matchOperator);
-    }
   }
 }

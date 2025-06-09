@@ -7,7 +7,6 @@ import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CustomSignatureRulesEdgeDecisionFilter {
@@ -16,32 +15,12 @@ public class CustomSignatureRulesEdgeDecisionFilter {
     // utility classes shouldn't have a public constructor
   }
 
-  // filters out rules that will be evaluated by edge decision service
-  public static List<CustomSignatureRule> getFilteredRules(List<CustomSignatureRule> rules) {
-    return rules.stream()
-        .map(CustomSignatureRulesEdgeDecisionFilter::getFilteredRule)
-        .flatMap(Optional::stream)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
   // Rules that can be converted to edge decision rules
   public static List<CustomSignatureRule> getConvertibleRules(List<CustomSignatureRule> rules) {
     return rules.stream()
-        .filter(
-            rule ->
-                CustomSignatureRulesEdgeDecisionFilter.hasCompatibleClauseGroup(
-                    rule.getDefinition().getClauseGroup()))
-        .filter(
-            rule -> CustomSignatureRulesEdgeDecisionFilter.hasCompatibleEventType(rule.getEffect()))
+        .filter(rule -> hasCompatibleClauseGroup(rule.getDefinition().getClauseGroup()))
+        .filter(rule -> hasCompatibleEventType(rule.getEffect()))
         .collect(Collectors.toUnmodifiableList());
-  }
-
-  private static Optional<CustomSignatureRule> getFilteredRule(CustomSignatureRule rule) {
-    if (hasCompatibleClauseGroup(rule.getDefinition().getClauseGroup())
-        && hasCompatibleEventType(rule.getEffect())) {
-      return Optional.empty();
-    }
-    return Optional.of(rule);
   }
 
   private static boolean hasCompatibleClauseGroup(ClauseGroup clauseGroup) {
@@ -65,6 +44,17 @@ public class CustomSignatureRulesEdgeDecisionFilter {
             .getKeyValueExpression()
             .getMatchCategory()
             .equals(MatchCategory.MATCH_CATEGORY_REQUEST);
+      case LHS_RHS_KEYS_EXPRESSION:
+        return clause
+                .getLhsRhsKeysExpression()
+                .getLhsKeyExpression()
+                .getMatchCategory()
+                .equals(MatchCategory.MATCH_CATEGORY_REQUEST)
+            && clause
+                .getLhsRhsKeysExpression()
+                .getRhsKeyExpression()
+                .getMatchCategory()
+                .equals(MatchCategory.MATCH_CATEGORY_REQUEST);
       default:
         return true;
     }
