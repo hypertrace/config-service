@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.1812=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.1859=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.79=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.101=runtimeClasspath,testRuntimeClasspath
@@ -12,7 +12,7 @@ ai.traceable.platform-gateway:event-invalidation-cache:0.8.101=compileClasspath,
 ai.traceable.platform-gateway:traceable-raw-span-constants:0.8.101=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:training-evaluation-framework:0.8.101=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:xml-utils:0.8.101=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:api-naming-model:6.0.66=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.platform:api-naming-model:6.0.68=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.217=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:4.0.217=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-constants:4.0.217=runtimeClasspath,testRuntimeClasspath
