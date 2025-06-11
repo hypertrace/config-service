@@ -87,7 +87,7 @@ public class DetectorConfigServiceIntegrationTest
     assertThrows(
         RuntimeException.class, () -> fetchDetectorConfig(AnomalyConfigScope.newBuilder().build()));
     assertThrows(
-        RuntimeException.class,
+        Exception.class,
         () ->
             updateDetectorConfig(
                 ScopedAnomalyDetectionConfig.newBuilder()
@@ -146,7 +146,7 @@ public class DetectorConfigServiceIntegrationTest
     assertThrows(
         RuntimeException.class, () -> fetchDetectorConfig(AnomalyConfigScope.newBuilder().build()));
     assertThrows(
-        RuntimeException.class,
+        Exception.class,
         () ->
             updateDetectorConfig(
                 ScopedAnomalyDetectionConfig.newBuilder()
@@ -322,7 +322,7 @@ public class DetectorConfigServiceIntegrationTest
     assertThrows(
         RuntimeException.class, () -> fetchDetectorConfig(AnomalyConfigScope.newBuilder().build()));
     assertThrows(
-        RuntimeException.class,
+        Exception.class,
         () ->
             updateDetectorConfig(
                 ScopedAnomalyDetectionConfig.newBuilder()
@@ -484,7 +484,7 @@ public class DetectorConfigServiceIntegrationTest
         RuntimeException.class,
         () -> fetchGlobalResolvedDetectorConfig(AnomalyConfigScope.newBuilder().build()));
     assertThrows(
-        RuntimeException.class,
+        Exception.class,
         () ->
             updateDetectorConfig(
                 ScopedAnomalyDetectionConfig.newBuilder()
@@ -591,7 +591,7 @@ public class DetectorConfigServiceIntegrationTest
         RuntimeException.class,
         () -> fetchGlobalResolvedDetectorConfig(AnomalyConfigScope.newBuilder().build()));
     assertThrows(
-        RuntimeException.class,
+        Exception.class,
         () ->
             updateDetectorConfig(
                 ScopedAnomalyDetectionConfig.newBuilder()

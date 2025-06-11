@@ -163,13 +163,13 @@ public class DetectorConfigServiceImplTest {
     StreamObserver<UpdateScopedAnomalyDetectionConfigResponse> responseObserver =
         mock(StreamObserver.class);
 
-    doReturn(Status.INVALID_ARGUMENT).when(validator).validate(request);
+    doReturn(Status.INVALID_ARGUMENT).when(validator).validate(request, null);
     detectorConfigService.updateScopedAnomalyDetectionConfig(request, responseObserver);
     verify(responseObserver, times(1))
         .onError(
             argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
 
-    doReturn(Status.OK).when(validator).validate(request);
+    doReturn(Status.OK).when(validator).validate(request, null);
     doThrow(new RuntimeException("msg"))
         .when(configManager)
         .updateScopedAnomalyDetectionConfig(any(), any());

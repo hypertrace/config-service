@@ -216,21 +216,23 @@ public class DetectorConfigServiceImpl
   public void updateScopedAnomalyDetectionConfig(
       UpdateScopedAnomalyDetectionConfigRequest request,
       StreamObserver<UpdateScopedAnomalyDetectionConfigResponse> responseObserver) {
-    Status status = configValidator.validate(request);
-
-    if (!status.isOk()) {
-      log.error(
-          "UpdateScopedAnomalyDetectionConfigRequest is not valid: {}", status.getDescription());
-      responseObserver.onError(status.asException());
-      return;
-    }
+    RequestContext requestContext = RequestContext.CURRENT.get();
 
     try {
+      Status status = configValidator.validate(request, requestContext);
+
+      if (!status.isOk()) {
+        log.error(
+            "UpdateScopedAnomalyDetectionConfigRequest is not valid: {}", status.getDescription());
+        responseObserver.onError(status.asException());
+        return;
+      }
+
       UpdateScopedAnomalyDetectionConfigResponse response =
           UpdateScopedAnomalyDetectionConfigResponse.newBuilder()
               .setScopedAnomalyDetectionConfig(
                   anomalyDetectionConfigManager.updateScopedAnomalyDetectionConfig(
-                      RequestContext.CURRENT.get(), request.getScopedAnomalyDetectionConfig()))
+                      requestContext, request.getScopedAnomalyDetectionConfig()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();

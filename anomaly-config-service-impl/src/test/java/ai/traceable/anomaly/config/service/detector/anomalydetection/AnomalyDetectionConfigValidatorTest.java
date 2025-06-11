@@ -2,8 +2,14 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
+import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
+import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler;
@@ -11,6 +17,9 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryIm
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
@@ -45,10 +54,15 @@ import ai.traceable.anomaly.config.service.v1.detector.UnderThresholdLearningApi
 import ai.traceable.anomaly.config.service.v1.detector.UnknownParamAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.UserIdBolaAnomalyConfig;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
+import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import io.grpc.Status;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class AnomalyDetectionConfigValidatorTest {
@@ -60,17 +74,39 @@ public class AnomalyDetectionConfigValidatorTest {
   private final ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
   private final ModsecCrsRulesHandler modsecCrsRulesHandler =
       new ModsecCrsRulesHandler(modsecRuleUtils);
-  private final AnomalyDetectionConfigValidator validator =
-      new AnomalyDetectionConfigValidator(
-          anomalyConfigValidator,
-          anomalyDetectionConfigRegexValidator,
-          new ApiDefinitionRegistryImpl(configConverter),
-          new SessionRulesRegistryImpl(configConverter),
-          new ModsecRulesRegistryImpl(configConverter, modsecCrsRulesHandler));
+  private RuleInfoManager ruleInfoManager;
+  private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
+  private AnomalyDetectionConfigManager anomalyDetectionConfigManager;
+  private AnomalyDetectionConfigValidator validator;
   private final AnomalyConfigScope configScope =
       AnomalyConfigScope.newBuilder()
           .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
           .build();
+
+  @BeforeEach
+  void setup() {
+    ruleInfoManager = mock(RuleInfoManager.class);
+    globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
+    anomalyDetectionConfigManager = mock(AnomalyDetectionConfigManager.class);
+    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
+        .thenReturn(ScopedAnomalyConfigStatus.newBuilder().build());
+    when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(any(), any(), any()))
+        .thenReturn(ScopedAnomalyDetectionConfig.newBuilder().build());
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+        .thenReturn(Collections.emptyList());
+    validator =
+        new AnomalyDetectionConfigValidator(
+            anomalyConfigValidator,
+            new ModsecConfigValidator(
+                ruleInfoManager,
+                globalAnomalyConfigStatusManager,
+                anomalyDetectionConfigManager,
+                ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3),
+            anomalyDetectionConfigRegexValidator,
+            new ApiDefinitionRegistryImpl(configConverter),
+            new SessionRulesRegistryImpl(configConverter),
+            new ModsecRulesRegistryImpl(configConverter, modsecCrsRulesHandler));
+  }
 
   @Test
   void testGetRequest() {
@@ -152,7 +188,9 @@ public class AnomalyDetectionConfigValidatorTest {
     AnomalySubRuleConfig subRuleConfig1, subRuleConfig2;
 
     Status status =
-        validator.validate(UpdateScopedAnomalyDetectionConfigRequest.getDefaultInstance());
+        validator.validate(
+            UpdateScopedAnomalyDetectionConfigRequest.getDefaultInstance(),
+            mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("valid config scope"));
 
@@ -184,7 +222,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .build())
             .build();
 
-    status = validator.validate(updateRequest);
+    status = validator.validate(updateRequest, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -213,7 +251,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .build())
             .build();
 
-    status = validator.validate(updateRequest);
+    status = validator.validate(updateRequest, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -239,7 +277,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .build())
             .build();
 
-    status = validator.validate(updateRequest);
+    status = validator.validate(updateRequest, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -248,6 +286,52 @@ public class AnomalyDetectionConfigValidatorTest {
             .contains(
                 "UpdateScopedAnomalyDetectionConfigRequest should have only one modsecAllDetectionConfig"));
 
+    subRuleConfig1 =
+        AnomalySubRuleConfig.newBuilder()
+            .setBlockingEnabled(true)
+            .setSubRuleId("crs_913100")
+            .build();
+    anomalyDetectionConfig1 =
+        AnomalyDetectionConfig.newBuilder()
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("crs_913")
+                            .addAllSubRuleConfigs(List.of(subRuleConfig1))
+                            .build()))
+            .build();
+    updateRequest =
+        UpdateScopedAnomalyDetectionConfigRequest.newBuilder()
+            .setScopedAnomalyDetectionConfig(
+                ScopedAnomalyDetectionConfig.newBuilder()
+                    .setConfigScope(configScope)
+                    .addAnomalyDetectionConfigs(anomalyDetectionConfig1)
+                    .build())
+            .build();
+
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+        .thenReturn(
+            List.of(
+                AnomalyRuleInfo.newBuilder()
+                    .setRuleId("crs_913")
+                    .addSubRuleInfos(
+                        AnomalySubRuleInfo.newBuilder()
+                            .setRuleId("crs_913100")
+                            .addSubRuleTypes(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)
+                            .build())
+                    .build()));
+
+    status = validator.validate(updateRequest, mock(RequestContext.class));
+
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+    assertTrue(
+        status
+            .getDescription()
+            .contains("crs_913100 is an aggressive rule which can't be blocked"));
+
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+        .thenReturn(List.of());
     anomalyDetectionConfig1 =
         AnomalyDetectionConfig.newBuilder()
             .setModsecurityAnomalyDetectionConfig(
@@ -280,7 +364,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .build())
             .build();
 
-    status = validator.validate(updateRequest);
+    status = validator.validate(updateRequest, mock(RequestContext.class));
 
     assertEquals(Status.OK.getCode(), status.getCode());
 
@@ -302,7 +386,7 @@ public class AnomalyDetectionConfigValidatorTest {
             .build();
 
     updateRequest = buildUpdateRequest(List.of(anomalyDetectionConfig1));
-    status = validator.validate(updateRequest);
+    status = validator.validate(updateRequest, mock(RequestContext.class));
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 
@@ -334,7 +418,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
             .build();
 
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Duplicate key LEARNT_API"));
 
@@ -354,7 +438,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.OK.getCode(), status.getCode());
   }
@@ -379,7 +463,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
 
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -400,7 +484,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
         status
@@ -423,7 +507,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -446,7 +530,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -471,7 +555,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.OK.getCode(), status.getCode());
 
@@ -488,7 +572,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid api definition detection config"));
@@ -514,7 +598,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
             .build();
 
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Duplicate key CUSTOM_IP"));
 
@@ -534,7 +618,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.OK.getCode(), status.getCode());
   }
@@ -559,7 +643,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
 
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -582,7 +666,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig1)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     System.out.println(status.getDescription());
@@ -608,7 +692,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1, detectionConfig2)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.OK.getCode(), status.getCode());
 
@@ -625,7 +709,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(
@@ -654,7 +738,8 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
             .build();
 
-    assertEquals(Status.OK.getCode(), validator.validate(request).getCode());
+    assertEquals(
+        Status.OK.getCode(), validator.validate(request, mock(RequestContext.class)).getCode());
 
     detectionConfig =
         AnomalyDetectionConfig.newBuilder()
@@ -680,7 +765,8 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
             .build();
 
-    assertEquals(Status.OK.getCode(), validator.validate(request).getCode());
+    assertEquals(
+        Status.OK.getCode(), validator.validate(request, mock(RequestContext.class)).getCode());
 
     detectionConfig =
         AnomalyDetectionConfig.newBuilder()
@@ -706,7 +792,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
             .build();
 
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertEquals(
         "Invalid EmailDomainAnomalyConfig: highEmailFraudScoreMinThreshold > criticalEmailFraudScoreMinThreshold",
@@ -735,7 +821,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
             .build();
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
 
@@ -761,7 +847,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.OK.getCode(), status.getCode());
 
     AnomalyDetectionConfig detectionConfig2 =
@@ -782,7 +868,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig2)))
             .build();
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
 
@@ -808,7 +894,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig3)))
             .build();
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 
@@ -837,7 +923,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .setConfigScope(configScope)
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
             .build();
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
@@ -867,7 +953,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
@@ -896,7 +982,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig2)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
 
     assertEquals(Status.OK.getCode(), status.getCode());
   }
@@ -936,7 +1022,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig)))
             .build();
 
-    Status status = validator.validate(request);
+    Status status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
     assertTrue(status.getDescription().contains("Invalid Regex pattern: ["));
 
@@ -972,7 +1058,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .addAllAnomalyDetectionConfigs(List.of(detectionConfig1)))
             .build();
 
-    status = validator.validate(request);
+    status = validator.validate(request, mock(RequestContext.class));
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 

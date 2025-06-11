@@ -4,11 +4,8 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
-import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
-import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
-import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ApiStateBasedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.BlockingMetadataAnomalyDetectionConfig;
@@ -21,23 +18,22 @@ import ai.traceable.anomaly.config.service.v1.detector.GetGlobalResolvedScopedAn
 import ai.traceable.anomaly.config.service.v1.detector.GetScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.GetUnresolvedScopedAnomalyDetectionConfigRequest;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.SessionDefinitionMetadataAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.UpdateScopedAnomalyDetectionConfigRequest;
 import com.google.inject.Inject;
 import io.grpc.Status;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class AnomalyDetectionConfigValidator {
   private final AnomalyConfigValidator anomalyConfigValidator;
+  private final ModsecConfigValidator modsecConfigValidator;
   private final AnomalyDetectionConfigRegexValidator anomalyDetectionConfigRegexValidator;
   private final Map<String, ApiDefinitionMetadataAnomalyDetectionConfig> apiDefRuleIdToConfigMap;
   private final Map<String, SessionDefinitionMetadataAnomalyDetectionConfig>
@@ -46,6 +42,7 @@ public class AnomalyDetectionConfigValidator {
   @Inject
   public AnomalyDetectionConfigValidator(
       AnomalyConfigValidator anomalyConfigValidator,
+      ModsecConfigValidator modsecConfigValidator,
       AnomalyDetectionConfigRegexValidator anomalyDetectionConfigRegexValidator,
       ApiDefinitionRegistry apiDefinitionRegistry,
       SessionRulesRegistry sessionRulesRegistry,
@@ -55,6 +52,7 @@ public class AnomalyDetectionConfigValidator {
     this.apiDefRuleIdToConfigMap = apiDefinitionRegistry.getApiDefRuleIdToDetectionConfigMap();
     this.sessionDefRuleIdToConfigMap =
         sessionRulesRegistry.getSessionDefRuleIdToDetectionConfigMap();
+    this.modsecConfigValidator = modsecConfigValidator;
   }
 
   public Status validate(GetScopedAnomalyDetectionConfigRequest request) {
@@ -105,13 +103,17 @@ public class AnomalyDetectionConfigValidator {
         request.getScopedAnomalyDetectionConfig().getConfigScope(), true);
   }
 
-  public Status validate(UpdateScopedAnomalyDetectionConfigRequest request) {
+  public Status validate(
+      UpdateScopedAnomalyDetectionConfigRequest request, RequestContext requestContext) {
     if (!request.getScopedAnomalyDetectionConfig().hasConfigScope()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "UpdateScopedAnomalyDetectionConfigRequest should have a valid config scope.");
     }
     Status status =
-        validate(request.getScopedAnomalyDetectionConfig().getAnomalyDetectionConfigsList());
+        validate(
+            request.getScopedAnomalyDetectionConfig().getAnomalyDetectionConfigsList(),
+            request.getScopedAnomalyDetectionConfig().getConfigScope(),
+            requestContext);
     if (status == Status.OK) {
       return anomalyConfigValidator.validate(
           request.getScopedAnomalyDetectionConfig().getConfigScope(), true);
@@ -119,14 +121,17 @@ public class AnomalyDetectionConfigValidator {
     return status;
   }
 
-  private Status validate(List<AnomalyDetectionConfig> detectionConfigs) {
+  private Status validate(
+      List<AnomalyDetectionConfig> detectionConfigs,
+      AnomalyConfigScope configScope,
+      RequestContext requestContext) {
     List<ModsecurityAnomalyDetectionConfig> modsecRuleConfigs =
         detectionConfigs.stream()
             .filter(AnomalyDetectionConfig::hasModsecurityAnomalyDetectionConfig)
             .map(AnomalyDetectionConfig::getModsecurityAnomalyDetectionConfig)
             .collect(Collectors.toList());
 
-    Status status = validateModsecConfigs(modsecRuleConfigs);
+    Status status = modsecConfigValidator.validate(modsecRuleConfigs, requestContext, configScope);
 
     if (!status.isOk()) {
       return status;
@@ -323,46 +328,6 @@ public class AnomalyDetectionConfigValidator {
   }
 
   /**
-   * @param modsecConfigs
-   * @return Status.INVALID_ARGUMENT in case of presence of configs with same ruleId or presence of
-   *     subRuleConfigs with same subRuleId for a particular modsec config. Status.OK in all other
-   *     cases.
-   */
-  private Status validateModsecConfigs(List<ModsecurityAnomalyDetectionConfig> modsecConfigs) {
-    Set<String> ruleIds = new HashSet<>();
-    ModsecurityAnomalyDetectionConfig modsecAllDetectionConfig =
-        ModsecurityAnomalyDetectionConfig.getDefaultInstance();
-    for (ModsecurityAnomalyDetectionConfig detectionConfig : modsecConfigs) {
-      if (detectionConfig.hasModsecAnomalyRule()) {
-        ModsecurityAnomalyRuleConfig modsecRuleConfig = detectionConfig.getModsecAnomalyRule();
-        String ruleId = modsecRuleConfig.getAnomalyRuleId();
-
-        if (ruleIds.contains(ruleId)) {
-          return Status.INVALID_ARGUMENT.withDescription(
-              String.format(
-                  "UpdateScopedAnomalyDetectionConfigRequest should have only one modsec config with ruleId: %s",
-                  ruleId));
-        } else {
-          Status status = validateSubRuleConfigs(modsecRuleConfig.getSubRuleConfigsList(), ruleId);
-          if (!status.isOk()) {
-            return status;
-          }
-          ruleIds.add(ruleId);
-        }
-      } else if (detectionConfig.hasModsecAllDetection()) {
-        if (modsecAllDetectionConfig.equals(
-            ModsecurityAnomalyDetectionConfig.getDefaultInstance())) {
-          modsecAllDetectionConfig = detectionConfig;
-        } else {
-          return Status.INVALID_ARGUMENT.withDescription(
-              "UpdateScopedAnomalyDetectionConfigRequest should have only one modsecAllDetectionConfig");
-        }
-      }
-    }
-    return Status.OK;
-  }
-
-  /**
    * @param stateBasedDetectionConfigs
    * @return Status.INVALID_ARGUMENT in case of presence of configs with same config case. Status.OK
    *     in all other cases.
@@ -448,33 +413,5 @@ public class AnomalyDetectionConfigValidator {
         ? Status.INVALID_ARGUMENT.withDescription(
             "Invalid EmailDomainAnomalyConfig: highEmailFraudScoreMinThreshold > criticalEmailFraudScoreMinThreshold")
         : Status.OK;
-  }
-
-  private Status validateSubRuleConfigs(List<AnomalySubRuleConfig> subRuleConfigs, String ruleId) {
-    Set<String> subRuleIds = new HashSet<>();
-
-    for (AnomalySubRuleConfig subRuleConfig : subRuleConfigs) {
-      String subRuleId = subRuleConfig.getSubRuleId();
-      if (subRuleIds.contains(subRuleId)) {
-        return Status.INVALID_ARGUMENT.withDescription(
-            String.format(
-                "UpdateScopedAnomalyDetectionConfigRequest should have only one subRule config with subRuleId: %s in modsec config with ruleId: %s",
-                subRuleId, ruleId));
-      } else {
-        subRuleIds.add(subRuleId);
-      }
-    }
-
-    return Status.OK;
-  }
-
-  private Map<String, List<AnomalySubRuleType>> getSubRuleInfoMap(AnomalyRuleInfo ruleInfo) {
-    Map<String, List<AnomalySubRuleType>> subRuleInfoMap = new HashMap<>();
-
-    for (AnomalySubRuleInfo subRuleInfo : ruleInfo.getSubRuleInfosList()) {
-      subRuleInfoMap.put(subRuleInfo.getRuleId(), subRuleInfo.getSubRuleTypesList());
-    }
-
-    return subRuleInfoMap;
   }
 }
