@@ -9,7 +9,6 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureInlineRule;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
-import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -26,7 +25,6 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
   private static final long MODSEC_ID_SEED = 10000000;
   private static final String RANDOM_RULE_ID = UUID.randomUUID().toString();
   private static final String NEW_LINES_DELIMITER = "\n\n";
-  private static final String COOKIE_KEYWORD = "COOKIE";
 
   private final CustomModsecRuleConverter customModsecRuleConverter;
   private final ModsecDirectivesManager modsecDirectivesManager;
@@ -53,7 +51,8 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
 
     for (CustomSignatureRule rule : customSignatureRules) {
       if (!includeAllPartialModsecRules
-          && !isInlineRuleMappingSupported(rule.getDefinition().getClauseGroup())) {
+          && !ModsecRulesSupportChecker.isInlineRuleMappingSupported(
+              rule.getDefinition().getClauseGroup())) {
         log.debug(
             "Inline rule mapping is not supported for rule - rule ID: {} tenant ID: {}",
             rule,
@@ -102,49 +101,12 @@ public class CustomSignatureModsecRulesManager implements ModsecRulesManager {
     }
     String modsecRulesBlob =
         getModsecDirective(customModsecRuleVersion)
-            + String.join(
-                NEW_LINES_DELIMITER,
-                Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
-                    .collect(Collectors.toList()));
+            + Stream.concat(allowModsecRules.stream(), violationModsecRules.stream())
+                .collect(Collectors.joining(NEW_LINES_DELIMITER));
     return GetCustomSignatureModsecRulesResponse.newBuilder()
         .setModsecRulesBlob(modsecRulesBlob)
         .addAllInlineRules(inlineRuleList)
         .build();
-  }
-
-  @Override
-  public boolean isInlineRuleMappingSupported(ClauseGroup clauseGroup) {
-    for (Clause clause : clauseGroup.getClausesList()) {
-      // following clauses can not be converted to inline rule.
-      if (clause.hasAttributeKeyValueExpression()
-          || clause.hasIpReputationExpression()
-          || clause.hasIpConnectionTypeExpression()
-          || clause.hasIpOrganisationExpression()
-          || clause.hasIpAsnExpression()
-          || clause.hasIpAbuseVelocityExpression()
-          || clause.hasUserIdExpression()
-          || clause.hasEmailDomainExpression()
-          || clause.hasUserAgentExpression()
-          || clause.hasRequestScannerTypeExpression()) {
-        return false;
-      }
-      // response-cookie metadata is not supported in modsec
-      if (clause
-              .getKeyValueExpression()
-              .getMatchCategory()
-              .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
-          && clause.getKeyValueExpression().getTag().name().contains(COOKIE_KEYWORD)) {
-        return false;
-      }
-      if (clause
-              .getMatchExpression()
-              .getMatchCategory()
-              .equals(MatchCategory.MATCH_CATEGORY_RESPONSE)
-          && clause.getMatchExpression().getMatchKey().name().contains(COOKIE_KEYWORD)) {
-        return false;
-      }
-    }
-    return true;
   }
 
   @Override

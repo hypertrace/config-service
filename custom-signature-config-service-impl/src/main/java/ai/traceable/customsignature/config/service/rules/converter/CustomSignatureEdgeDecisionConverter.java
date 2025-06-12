@@ -22,6 +22,8 @@ import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.RuleDefinition;
+import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.datamodel.data.transformation.config.v1.DataTransformationConfig;
@@ -179,25 +181,24 @@ public class CustomSignatureEdgeDecisionConverter {
 
   private EdgeDecision buildEdgeDecision(CustomSignatureRule customSignatureRule) {
     EdgeDecision.Builder builder = EdgeDecision.newBuilder();
-    if (!CustomSignatureRulesEdgeDecisionFilter.hasCompatibleEventType(
-        customSignatureRule.getEffect())) {
-      throw new IllegalArgumentException(
-          "Unsupported rule effect : " + customSignatureRule.getEffect());
+    RuleEffect ruleEffect = customSignatureRule.getEffect();
+    RuleDefinition ruleDefinition = customSignatureRule.getDefinition();
+    if (!CustomSignatureRulesEdgeDecisionFilter.isConvertibleRule(
+        ruleEffect, ruleDefinition.getClauseGroup())) {
+      throw new IllegalArgumentException("Non-convertible rule : " + customSignatureRule);
     }
-    builder.setEdgeDecisionType(convertEventType(customSignatureRule.getEffect().getEventType()));
-    builder.addAllDecorations(
-        buildPayloadDecorations(customSignatureRule.getEffect().getEffectsList()));
+    builder.setEdgeDecisionType(convertEventType(ruleEffect.getEventType()));
+    builder.addAllDecorations(buildPayloadDecorations(ruleEffect.getEffectsList()));
 
     Map<String, String> ruleInfoDecorations = new HashMap<>();
-    ruleInfoDecorations.put(SEVERITY, customSignatureRule.getEffect().getEventSeverity().name());
+    ruleInfoDecorations.put(SEVERITY, ruleEffect.getEventSeverity().name());
     try {
       ruleInfoDecorations.put(
-          LABELS,
-          OBJECT_MAPPER.writeValueAsString(customSignatureRule.getDefinition().getLabelsMap()));
+          LABELS, OBJECT_MAPPER.writeValueAsString(ruleDefinition.getLabelsMap()));
     } catch (JsonProcessingException e) {
       log.error(
           "Error in converting custom signature labels : {} with ruleId : {} to json string",
-          customSignatureRule.getDefinition().getLabelsMap(),
+          ruleDefinition.getLabelsMap(),
           customSignatureRule.getId());
     }
 

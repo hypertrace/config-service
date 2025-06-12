@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChecker;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.ClauseOperator;
@@ -33,8 +34,11 @@ import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleR
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 public class CustomSignatureRulesValidatorTest {
 
@@ -44,16 +48,31 @@ public class CustomSignatureRulesValidatorTest {
 
   private ModsecRulesManager modsecRulesManager;
   private CustomSignatureRulesValidator rulesValidator;
+  private MockedStatic<ModsecRulesSupportChecker> mockedModsecRulesSupportChecker;
 
   @BeforeEach
   public void setup() {
+    if (mockedModsecRulesSupportChecker != null) {
+      mockedModsecRulesSupportChecker.close();
+    }
     this.modsecRulesManager = mock(ModsecRulesManager.class);
     ClauseGroupValidator clauseGroupValidator = new ClauseGroupValidator();
     when(modsecRulesManager.validateModsecRule(any(), any())).thenReturn(Status.OK);
-    when(modsecRulesManager.isInlineRuleMappingSupported(any())).thenReturn(true);
+    mockedModsecRulesSupportChecker = Mockito.mockStatic(ModsecRulesSupportChecker.class);
+    mockedModsecRulesSupportChecker
+        .when(() -> ModsecRulesSupportChecker.isInlineRuleMappingSupported(any()))
+        .thenReturn(true);
     when(modsecRulesManager.containsModsecConvertibleClauses(any())).thenReturn(true);
     this.rulesValidator =
         new CustomSignatureRulesValidator(modsecRulesManager, clauseGroupValidator);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    if (mockedModsecRulesSupportChecker != null) {
+      mockedModsecRulesSupportChecker.close();
+      mockedModsecRulesSupportChecker = null;
+    }
   }
 
   @Test

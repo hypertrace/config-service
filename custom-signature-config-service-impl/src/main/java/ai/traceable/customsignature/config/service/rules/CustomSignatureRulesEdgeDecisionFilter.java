@@ -23,6 +23,10 @@ public class CustomSignatureRulesEdgeDecisionFilter {
         .collect(Collectors.toUnmodifiableList());
   }
 
+  public static boolean isConvertibleRule(RuleEffect ruleEffect, ClauseGroup clauseGroup) {
+    return hasCompatibleEventType(ruleEffect) && hasCompatibleClauseGroup(clauseGroup);
+  }
+
   private static boolean hasCompatibleClauseGroup(ClauseGroup clauseGroup) {
     return clauseGroup.getClausesList().stream()
         .allMatch(CustomSignatureRulesEdgeDecisionFilter::isCompatibleClause);
@@ -60,7 +64,7 @@ public class CustomSignatureRulesEdgeDecisionFilter {
     }
   }
 
-  public static boolean hasCompatibleEventType(RuleEffect ruleEffect) {
+  private static boolean hasCompatibleEventType(RuleEffect ruleEffect) {
     return ruleEffect.getEventType().equals(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
         || ruleEffect.getEventType().equals(EventType.EVENT_TYPE_ALLOW)
         || (ruleEffect.getEventType().equals(EventType.EVENT_TYPE_NORMAL_DETECTION)

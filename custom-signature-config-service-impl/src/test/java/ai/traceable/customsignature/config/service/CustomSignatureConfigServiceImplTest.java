@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.customsignature.config.service.migration.CustomSignatureRuleMigrationManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
 import ai.traceable.customsignature.config.service.rules.RulesValidator;
@@ -62,6 +63,8 @@ class CustomSignatureConfigServiceImplTest {
     edgeDecisionConverter = mock(CustomSignatureEdgeDecisionConverter.class);
     featureCachingClient = mock(FeatureCachingClient.class);
     customSignatureConfigServiceConfig = mock(CustomSignatureConfigServiceConfig.class);
+    CustomSignatureRuleMigrationManager mockRuleMigrationManager =
+        mock(CustomSignatureRuleMigrationManager.class);
     when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
     when(customSignatureConfigServiceConfig.isEdsConversionEnabled()).thenReturn(true);
     configService =
@@ -71,7 +74,14 @@ class CustomSignatureConfigServiceImplTest {
             modsecRulesManager,
             edgeDecisionConverter,
             featureCachingClient,
-            customSignatureConfigServiceConfig);
+            customSignatureConfigServiceConfig,
+            mockRuleMigrationManager);
+    when(mockRuleMigrationManager.migrateRules(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(mockRuleMigrationManager.migrateCreateCustomSignatureRuleRequest(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(mockRuleMigrationManager.migrateUpdateCustomSignatureRuleRequest(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
   }
 
   @Test
@@ -256,27 +266,32 @@ class CustomSignatureConfigServiceImplTest {
   @Test
   void testCreateRule() {
     CustomSignatureRule rule = CustomSignatureRule.newBuilder().setId("id1").build();
-
     StreamObserver<CreateCustomSignatureRuleResponse> responseObserver = mock(StreamObserver.class);
-    Runnable runnable =
-        () ->
-            configService.createCustomSignatureRule(
-                CreateCustomSignatureRuleRequest.getDefaultInstance(), responseObserver);
+    CreateCustomSignatureRuleRequest request =
+        CreateCustomSignatureRuleRequest.newBuilder().setName("Test Rule").build();
 
-    when(rulesValidator.validate((CreateCustomSignatureRuleRequest) any()))
+    // Test case 1: Validation fails
+    when(rulesValidator.validate(any(CreateCustomSignatureRuleRequest.class)))
         .thenReturn(Status.INVALID_ARGUMENT);
+    Runnable runnable = () -> configService.createCustomSignatureRule(request, responseObserver);
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(
             argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INVALID_ARGUMENT));
 
+    // Test case 2: Validation passes but rule creation fails
     reset(responseObserver);
-    when(rulesValidator.validate((CreateCustomSignatureRuleRequest) any())).thenReturn(Status.OK);
+    when(rulesValidator.validate(any(CreateCustomSignatureRuleRequest.class)))
+        .thenReturn(Status.OK);
+    when(rulesManager.createCustomSignatureRule(any(), any())).thenReturn(Optional.empty());
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))
         .onError(argThat(err -> Status.fromThrowable(err).getCode() == Status.Code.INTERNAL));
 
+    // Test case 3: Validation passes and rule creation succeeds
     reset(responseObserver);
+    when(rulesValidator.validate(any(CreateCustomSignatureRuleRequest.class)))
+        .thenReturn(Status.OK);
     when(rulesManager.createCustomSignatureRule(any(), any())).thenReturn(Optional.of(rule));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, runnable);
     verify(responseObserver, times(1))

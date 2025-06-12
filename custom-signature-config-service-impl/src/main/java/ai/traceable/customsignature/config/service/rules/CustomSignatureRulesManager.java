@@ -23,7 +23,7 @@ import org.hypertrace.config.objectstore.DeletedContextualConfigObject;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
-class CustomSignatureRulesManager implements RulesManager {
+public class CustomSignatureRulesManager implements RulesManager {
 
   private final CustomSignatureRulesStore rulesStore;
 
@@ -56,9 +56,11 @@ class CustomSignatureRulesManager implements RulesManager {
             .setDisabled(false)
             .setInternal(createRuleRequest.getInternal())
             .setRuleSource(createRuleRequest.getRuleSource());
+
     if (createRuleRequest.hasBlockingExpiryDetails()) {
       updateExpiryDetails(customSignatureRuleBuilder, createRuleRequest.getBlockingExpiryDetails());
     }
+
     return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 
@@ -78,6 +80,7 @@ class CustomSignatureRulesManager implements RulesManager {
     customSignatureRuleBuilder.setRuleSource(originalRule.get().getRuleSource());
     customSignatureRuleBuilder.setDefinition(
         processRuleDefinition(customSignatureRule.getDefinition()));
+
     return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 

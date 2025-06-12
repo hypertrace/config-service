@@ -19,7 +19,5 @@ public interface ModsecRulesManager {
 
   Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition);
 
-  boolean isInlineRuleMappingSupported(ClauseGroup clauseGroup);
-
   boolean containsModsecConvertibleClauses(ClauseGroup clauseGroup);
 }

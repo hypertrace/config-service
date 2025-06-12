@@ -6,6 +6,7 @@ import static ai.traceable.customsignature.config.service.v1.MatchCategory.MATCH
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
+import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChecker;
 import ai.traceable.customsignature.config.service.v1.AgentModification;
 import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
@@ -94,7 +95,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
     if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
       return status;
     }
-    if (modsecRulesManager.isInlineRuleMappingSupported(clauseGroup)
+    if (ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup)
         && modsecRulesManager.containsModsecConvertibleClauses(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
     }
@@ -150,7 +151,7 @@ class CustomSignatureRulesValidator implements RulesValidator {
       return status;
     }
     ClauseGroup clauseGroup = rule.getDefinition().getClauseGroup();
-    if (modsecRulesManager.isInlineRuleMappingSupported(clauseGroup)
+    if (ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup)
         && modsecRulesManager.containsModsecConvertibleClauses(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
     }

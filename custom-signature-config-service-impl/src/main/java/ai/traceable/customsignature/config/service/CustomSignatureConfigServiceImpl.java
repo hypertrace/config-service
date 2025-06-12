@@ -1,6 +1,7 @@
 package ai.traceable.customsignature.config.service;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.customsignature.config.service.migration.CustomSignatureRuleMigrationManager;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesManager;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdgeDecisionFilter;
 import ai.traceable.customsignature.config.service.rules.RulesManager;
@@ -39,6 +40,7 @@ public class CustomSignatureConfigServiceImpl
   private final CustomSignatureEdgeDecisionConverter edgeDecisionConverter;
   private final FeatureCachingClient featureCachingClient;
   private final CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig;
+  private final CustomSignatureRuleMigrationManager ruleMigrationManager;
 
   @Inject
   public CustomSignatureConfigServiceImpl(
@@ -47,13 +49,15 @@ public class CustomSignatureConfigServiceImpl
       ModsecRulesManager modsecRulesManager,
       CustomSignatureEdgeDecisionConverter edgeDecisionConverter,
       FeatureCachingClient featureCachingClient,
-      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig) {
+      CustomSignatureConfigServiceConfig customSignatureConfigServiceConfig,
+      CustomSignatureRuleMigrationManager ruleMigrationManager) {
     this.rulesValidator = rulesValidator;
     this.rulesManager = rulesManager;
     this.modsecRulesManager = modsecRulesManager;
     this.edgeDecisionConverter = edgeDecisionConverter;
     this.featureCachingClient = featureCachingClient;
     this.customSignatureConfigServiceConfig = customSignatureConfigServiceConfig;
+    this.ruleMigrationManager = ruleMigrationManager;
   }
 
   @Override
@@ -65,8 +69,12 @@ public class CustomSignatureConfigServiceImpl
       rulesValidator.validate(request);
       List<CustomSignatureRule> rules =
           rulesManager.getCustomSignatureRules(context, request.getFilter());
+      List<CustomSignatureRule> rulesWithRuleEvaluationPointsSet =
+          ruleMigrationManager.migrateRules(rules);
       responseObserver.onNext(
-          GetCustomSignatureRulesResponse.newBuilder().addAllRules(rules).build());
+          GetCustomSignatureRulesResponse.newBuilder()
+              .addAllRules(rulesWithRuleEvaluationPointsSet)
+              .build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       responseObserver.onError(
@@ -79,7 +87,10 @@ public class CustomSignatureConfigServiceImpl
       CreateCustomSignatureRuleRequest request,
       StreamObserver<CreateCustomSignatureRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
+      CreateCustomSignatureRuleRequest migratedCreateRuleRequest =
+          ruleMigrationManager.migrateCreateCustomSignatureRuleRequest(request);
+
+      Status status = rulesValidator.validate(migratedCreateRuleRequest);
       if (!status.isOk()) {
         log.error("Create Custom Signature Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -87,12 +98,15 @@ public class CustomSignatureConfigServiceImpl
       }
 
       Optional<CustomSignatureRule> customSignatureRuleOptional =
-          rulesManager.createCustomSignatureRule(RequestContext.CURRENT.get(), request);
+          rulesManager.createCustomSignatureRule(
+              RequestContext.CURRENT.get(), migratedCreateRuleRequest);
       if (customSignatureRuleOptional.isEmpty()) {
         responseObserver.onError(
             Status.INTERNAL
                 .withDescription(
-                    String.format("Unable to create custom signature rule %s", request.getName()))
+                    String.format(
+                        "Unable to create custom signature rule %s",
+                        migratedCreateRuleRequest.getName()))
                 .asException());
         return;
       }
@@ -112,7 +126,10 @@ public class CustomSignatureConfigServiceImpl
       UpdateCustomSignatureRuleRequest request,
       StreamObserver<UpdateCustomSignatureRuleResponse> responseObserver) {
     try {
-      Status status = rulesValidator.validate(request);
+      UpdateCustomSignatureRuleRequest migratedUpdateRuleRequest =
+          ruleMigrationManager.migrateUpdateCustomSignatureRuleRequest(request);
+
+      Status status = rulesValidator.validate(migratedUpdateRuleRequest);
       if (!status.isOk()) {
         log.error("Update Custom Signature Rule Request is not valid {}", status.getDescription());
         responseObserver.onError(status.asException());
@@ -120,13 +137,15 @@ public class CustomSignatureConfigServiceImpl
       }
 
       Optional<CustomSignatureRule> customSignatureRuleOptional =
-          rulesManager.updateCustomSignatureRule(RequestContext.CURRENT.get(), request.getRule());
+          rulesManager.updateCustomSignatureRule(
+              RequestContext.CURRENT.get(), migratedUpdateRuleRequest.getRule());
       if (customSignatureRuleOptional.isEmpty()) {
         responseObserver.onError(
             Status.INTERNAL
                 .withDescription(
                     String.format(
-                        "Unable to update custom signature rule %s", request.getRule().getId()))
+                        "Unable to update custom signature rule %s",
+                        migratedUpdateRuleRequest.getRule().getId()))
                 .asException());
         return;
       }

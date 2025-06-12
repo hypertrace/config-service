@@ -28,6 +28,7 @@ import ai.traceable.customsignature.config.service.v1.IpAbuseVelocityExpression;
 import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.StringCondition;
@@ -115,7 +116,9 @@ class CustomSignatureRulesManagerTest {
                 .setDefinition(testRuleDefinition)
                 .setEffect(
                     RuleEffect.newBuilder()
-                        .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
+                        .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                        .addRuleEvaluationPoints(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
                 .setRuleScope(getRuleScope(List.of("dev", "prod")))
                 .setRuleSource(RuleSource.RULE_SOURCE_SYSTEM)
                 .build(),
@@ -124,7 +127,10 @@ class CustomSignatureRulesManagerTest {
                 .setName("name-2")
                 .setDefinition(testRuleDefinition)
                 .setEffect(
-                    RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                    RuleEffect.newBuilder()
+                        .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                        .addRuleEvaluationPoints(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
                 .setRuleScope(getRuleScope(List.of("dev")))
                 .build(),
             CustomSignatureRule.newBuilder()
@@ -134,7 +140,10 @@ class CustomSignatureRulesManagerTest {
                     RuleDefinition.newBuilder(testRuleDefinition)
                         .putLabels("label-key-3", "label-value-3"))
                 .setEffect(
-                    RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                    RuleEffect.newBuilder()
+                        .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                        .addRuleEvaluationPoints(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
                 .build(),
             CustomSignatureRule.newBuilder()
                 .setId("id4")
@@ -153,7 +162,10 @@ class CustomSignatureRulesManagerTest {
                                                 .setMatchValue("value"))))
                         .putLabels("label-key-4", "label-value-4"))
                 .setEffect(
-                    RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                    RuleEffect.newBuilder()
+                        .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                        .addRuleEvaluationPoints(
+                            RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
                 .build());
 
     when(rulesManager.generateRuleId())
@@ -223,7 +235,10 @@ class CustomSignatureRulesManagerTest {
                                                     .setValue("value")
                                                     .setOperator(MATCH_OPERATOR_NOT_EQUAL)))))
                     .putLabels("label-key-4", "label-value-4"))
-            .setEffect(RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+            .setEffect(
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .build();
     assertEquals(5, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
@@ -239,7 +254,7 @@ class CustomSignatureRulesManagerTest {
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
 
-    // Filter on event type : present
+    // Filter on EventType field present
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
@@ -249,7 +264,7 @@ class CustomSignatureRulesManagerTest {
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
 
-    // Filter on event type : absent
+    // Filter on EventType field absent
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
@@ -258,7 +273,7 @@ class CustomSignatureRulesManagerTest {
                 .build());
     assertTrue(results.isEmpty());
 
-    // Filter on event type : present and internal : present
+    // Filter on both EventType and internal fields present
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
@@ -269,7 +284,7 @@ class CustomSignatureRulesManagerTest {
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(0), results.get(0));
 
-    // Filter on event type : present and internal : not present
+    // Filter on EventType field present and internal field absent
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
@@ -326,7 +341,7 @@ class CustomSignatureRulesManagerTest {
     assertTrue(results.contains(expectedRules.get(2)));
     assertTrue(results.contains(DEFAULT_CUSTOM_SIGNATURE_RULE));
 
-    // Filter on rule source
+    // Filter on RuleSource
     results =
         rulesManager.getCustomSignatureRules(
             requestContext,
@@ -351,7 +366,7 @@ class CustomSignatureRulesManagerTest {
             .setId("id")
             .setName("name")
             .setDefinition(testRuleDefinition)
-            .setEffect(RuleEffect.newBuilder().build())
+            .setEffect(RuleEffect.getDefaultInstance())
             .setRuleScope(getRuleScope(List.of("dev")))
             .setInternal(true)
             .build();
@@ -378,7 +393,7 @@ class CustomSignatureRulesManagerTest {
   }
 
   @Test
-  void testRawIpAdressesClauseForCreateRule() throws InvalidProtocolBufferException {
+  void testRawIpAddressesClauseForCreateRule() {
     when(rulesManager.generateRuleId()).thenReturn("id1");
     RuleDefinition ruleDefinition1 =
         RuleDefinition.newBuilder()
@@ -406,7 +421,7 @@ class CustomSignatureRulesManagerTest {
             .setId("id1")
             .setName("name")
             .setDefinition(effectiveRuleDefinition)
-            .setEffect(RuleEffect.newBuilder().build())
+            .setEffect(RuleEffect.getDefaultInstance())
             .setRuleScope(getRuleScope(List.of("dev")))
             .setInternal(true)
             .build();
@@ -441,9 +456,7 @@ class CustomSignatureRulesManagerTest {
     IllegalArgumentException thrownException =
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-              rulesManager.createCustomSignatureRule(requestContext, createRuleRequest2);
-            });
+            () -> rulesManager.createCustomSignatureRule(requestContext, createRuleRequest2));
     assertTrue(thrownException.getMessage().contains("Invalid IP range"));
   }
 
@@ -458,7 +471,7 @@ class CustomSignatureRulesManagerTest {
     assertTrue(
         rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).isEmpty());
 
-    Value mockRuleConfig = mockRuleConfig("id", "name-1");
+    Value mockRuleConfig = mockRuleConfig("id");
     upsertRuleConfigs(ImmutableSortedMap.of("id", mockRuleConfig));
     assertEquals(
         customSignatureRule,
@@ -480,7 +493,7 @@ class CustomSignatureRulesManagerTest {
   @Test
   void testDeleteRule() {
     String id = "id-1";
-    Value mockRegionRuleConfig = mockRuleConfig(id, "name-1");
+    Value mockRegionRuleConfig = mockRuleConfig(id);
 
     upsertRuleConfigs(ImmutableSortedMap.of(id, mockRegionRuleConfig));
     assertFalse(
@@ -511,7 +524,7 @@ class CustomSignatureRulesManagerTest {
             .setId("id")
             .setName("name")
             .setDefinition(testRuleDefinition)
-            .setEffect(RuleEffect.newBuilder().build())
+            .setEffect(RuleEffect.getDefaultInstance())
             .setRuleScope(RuleScope.newBuilder())
             .build();
     CreateCustomSignatureRuleRequest createRuleRequest =
@@ -584,7 +597,7 @@ class CustomSignatureRulesManagerTest {
     assertTrue(
         rulesManager.updateCustomSignatureRule(requestContext, customSignatureRule).isEmpty());
 
-    Value mockRuleConfig = mockRuleConfig("id", "name-1");
+    Value mockRuleConfig = mockRuleConfig("id");
     upsertRuleConfigs(ImmutableSortedMap.of("id", mockRuleConfig));
 
     // Expiry duration is set, expiry timestamp not set
@@ -601,7 +614,7 @@ class CustomSignatureRulesManagerTest {
             .get()
             .getBlockingExpiryDetails()
             .getExpiryTimestampMillis();
-    assertTrue(expiryTimestampMillis > System.currentTimeMillis() + 1 * 3600 * 1000);
+    assertTrue(expiryTimestampMillis > System.currentTimeMillis() + 3600 * 1000);
 
     // Expiry duration is not set, expiry timestamp is set
     customSignatureRule =
@@ -666,11 +679,11 @@ class CustomSignatureRulesManagerTest {
                     .build()));
   }
 
-  private Value mockRuleConfig(String id, String name) {
+  private Value mockRuleConfig(String id) {
     Struct ruleConfigStruct =
         Struct.newBuilder()
             .putFields("id", Value.newBuilder().setStringValue(id).build())
-            .putFields("name", Value.newBuilder().setStringValue(name).build())
+            .putFields("name", Value.newBuilder().setStringValue("name-1").build())
             .build();
     return Value.newBuilder().setStructValue(ruleConfigStruct).build();
   }

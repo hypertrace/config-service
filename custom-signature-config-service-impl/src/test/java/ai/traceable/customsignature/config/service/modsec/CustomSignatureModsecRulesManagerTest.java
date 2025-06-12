@@ -142,9 +142,9 @@ public class CustomSignatureModsecRulesManagerTest {
                         MatchExpression.newBuilder().setMatchKey(MatchKey.MATCH_KEY_BODY)))
             .build();
 
-    assertTrue(modsecRulesManager.isInlineRuleMappingSupported(clauseGroup));
+    assertTrue(ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -152,7 +152,7 @@ public class CustomSignatureModsecRulesManagerTest {
                             AttributeKeyValueExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -162,7 +162,7 @@ public class CustomSignatureModsecRulesManagerTest {
                                 .setTag(KeyValueTag.KEY_VALUE_TAG_COOKIE)))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -172,27 +172,27 @@ public class CustomSignatureModsecRulesManagerTest {
                                 .setMatchKey(MatchKey.MATCH_KEY_COOKIE_VALUE)))
                 .build()));
     assertTrue(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpAddressExpression(IpAddressExpression.getDefaultInstance()))
                 .build()));
     assertTrue(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setIpTypeExpression(IpTypeExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpReputationExpression(IpReputationExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -200,20 +200,20 @@ public class CustomSignatureModsecRulesManagerTest {
                             IpConnectionTypeExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setIpOrganisationExpression(IpOrganisationExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setIpAsnExpression(IpAsnExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
@@ -221,33 +221,33 @@ public class CustomSignatureModsecRulesManagerTest {
                             IpAbuseVelocityExpression.getDefaultInstance()))
                 .build()));
     assertTrue(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setRegionExpression(RegionExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder().setUserIdExpression(UserIdExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setEmailDomainExpression(EmailDomainExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()
                         .setUserAgentExpression(UserAgentExpression.getDefaultInstance()))
                 .build()));
     assertFalse(
-        modsecRulesManager.isInlineRuleMappingSupported(
+        ModsecRulesSupportChecker.isInlineRuleMappingSupported(
             clauseGroup.toBuilder()
                 .addClauses(
                     Clause.newBuilder()

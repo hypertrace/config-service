@@ -27,6 +27,7 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.common.io.Resources;
@@ -359,6 +360,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_TESTING_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
                     .build())
             .setDefinition(definition)
             .setRuleScope(RuleScope.newBuilder().build())
@@ -370,6 +372,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
                     .build())
             .setDefinition(definition)
             .setRuleScope(RuleScope.newBuilder().build())
