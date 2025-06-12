@@ -99,7 +99,7 @@ class DefaultSpanProcessingRulesManagerTest {
 
     requestContext = RequestContext.forTenantId("tenantId");
     featureCachingClient = mock(FeatureCachingClient.class);
-    when(featureCachingClient.isTpaCustomRateLimitConfigDisabled(requestContext)).thenReturn(true);
+    when(featureCachingClient.isTpaCustomRateLimitConfigEnabled(requestContext)).thenReturn(false);
 
     RateLimitConfigManager rateLimitConfigManager =
         new DefaultRateLimitConfigManager(
@@ -885,7 +885,7 @@ class DefaultSpanProcessingRulesManagerTest {
 
   @Test
   void testGetAllCustomRateLimitConfigs() {
-    when(featureCachingClient.isTpaCustomRateLimitConfigDisabled(requestContext)).thenReturn(false);
+    when(featureCachingClient.isTpaCustomRateLimitConfigEnabled(requestContext)).thenReturn(true);
     when(traceableSpanProcessingConfigServiceBlockingStub.getAllResolvedSamplingConfigs(any()))
         .thenReturn(buildGetAllResolvedSamplingConfigsResponse());
     when(spanProcessingConfigServiceBlockingStub.getAllExcludeSpanRules(any()))

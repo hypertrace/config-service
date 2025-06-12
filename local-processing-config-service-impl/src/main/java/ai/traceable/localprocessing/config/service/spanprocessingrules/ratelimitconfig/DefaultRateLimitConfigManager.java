@@ -86,7 +86,7 @@ public class DefaultRateLimitConfigManager implements RateLimitConfigManager {
       String serviceName,
       Optional<String> environment) {
     // Check if custom rate limit config is disabled
-    if (featureCachingClient.isTpaCustomRateLimitConfigDisabled(requestContext)) {
+    if (!featureCachingClient.isTpaCustomRateLimitConfigEnabled(requestContext)) {
       return List.of();
     }
     return samplingConfigs.stream()

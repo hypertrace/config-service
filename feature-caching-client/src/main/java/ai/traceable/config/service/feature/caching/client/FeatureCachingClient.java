@@ -36,7 +36,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_TPA_MODSEC_PROCESSING_DISABLED = false;
   private static final boolean DEFAULT_TPA_CORAZA_BASED_EVALUATION = true;
   private static final boolean DEFAULT_TPA_CRS_MSG_HIDE_MATCH_VALUE = false;
-  private static final boolean DEFAULT_TPA_CUSTOM_RATE_LIMIT_CONFIG_DISABLED = true;
+  private static final boolean DEFAULT_TPA_CUSTOM_RATE_LIMIT_CONFIG = false;
   private static final boolean DEFAULT_RASP_INSPECTION = false;
   private static final boolean DEFAULT_THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG_VALUE =
       false;
@@ -54,8 +54,7 @@ public class FeatureCachingClient {
   private static final String TPA_MODSEC_PROCESSING_DISABLED = "tpa.modsec-processing-disabled";
   private static final String TPA_CORAZA_BASED_EVALUATION = "tpa.coraza-based-evaluation";
   private static final String TPA_CRS_MSG_HIDE_MATCH_VALUE = "tpa.crs-msg-hide-match-value";
-  private static final String TPA_CUSTOM_RATE_LIMIT_CONFIG_DISABLED =
-      "tpa.custom-rate-limit-config-disabled";
+  private static final String TPA_CUSTOM_RATE_LIMIT_CONFIG = "tpa.custom-rate-limit-config";
   private static final String RASP_INSPECTION = "enricher.rasp-inspection";
   private static final String THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG =
       "notifications.threat-scoring-configuration";
@@ -73,7 +72,7 @@ public class FeatureCachingClient {
           TPA_MODSEC_PROCESSING_DISABLED,
           TPA_CORAZA_BASED_EVALUATION,
           TPA_CRS_MSG_HIDE_MATCH_VALUE,
-          TPA_CUSTOM_RATE_LIMIT_CONFIG_DISABLED,
+          TPA_CUSTOM_RATE_LIMIT_CONFIG,
           RASP_INSPECTION,
           THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG,
           TRACEABLE_EDGE_DECISION_FLAG);
@@ -235,17 +234,17 @@ public class FeatureCachingClient {
     }
   }
 
-  public boolean isTpaCustomRateLimitConfigDisabled(RequestContext requestContext) {
+  public boolean isTpaCustomRateLimitConfigEnabled(RequestContext requestContext) {
     try {
       return requireNonNull(
           this.featureFlagCache
               .get(requestContext.buildInternalContextualKey())
-              .get(TPA_CUSTOM_RATE_LIMIT_CONFIG_DISABLED));
+              .get(TPA_CUSTOM_RATE_LIMIT_CONFIG));
     } catch (Exception exception) {
       log.warn(
-          "Failed to retrieve current feature flag value for TPA custom rate limit config disabled",
+          "Failed to retrieve current feature flag value for TPA custom rate limit config",
           exception);
-      return DEFAULT_TPA_CUSTOM_RATE_LIMIT_CONFIG_DISABLED;
+      return DEFAULT_TPA_CUSTOM_RATE_LIMIT_CONFIG;
     }
   }
 
