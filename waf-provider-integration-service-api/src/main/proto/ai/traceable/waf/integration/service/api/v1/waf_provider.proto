@@ -73,6 +73,7 @@ message UpdatedCloudflareIntegrationParams {
   string email = 2;
   optional string api_token = 3 [deprecated = true];
   optional EncryptedData encrypted_api_token = 4;
+  string ruleset_id = 5;
 }
 
 message WafIntegrationScope {
