@@ -42,6 +42,7 @@ message AllowedRunnersInfo {
 
 message RunnerInfo {
   string id = 1;
+  repeated string labels = 2;
 }
 
 enum TestStatus {
