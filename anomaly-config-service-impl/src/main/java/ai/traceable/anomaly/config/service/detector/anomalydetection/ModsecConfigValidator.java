@@ -13,6 +13,7 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import io.grpc.Status;
 import jakarta.inject.Inject;
@@ -41,7 +42,14 @@ public class ModsecConfigValidator {
       List<ModsecurityAnomalyDetectionConfig> modsecConfigs,
       RequestContext requestContext,
       AnomalyConfigScope configScope) {
-    Set<String> aggressiveSubRuleIds = getAggressiveSubRuleIds(requestContext, configScope);
+    GlobalModsecConfig globalModsecConfig =
+        globalAnomalyConfigStatusManager
+            .getScopedAnomalyConfigStatus(requestContext, configScope)
+            .getGlobalModsecConfig();
+    Set<String> aggressiveSubRuleIds =
+        getAggressiveSubRuleIds(requestContext, configScope, globalModsecConfig);
+    boolean blockingAvailableForRegularRules =
+        globalModsecConfig.getBlockingAvailableForRegularRules();
 
     Set<String> ruleIds = new HashSet<>();
     ModsecurityAnomalyDetectionConfig modsecAllDetectionConfig =
@@ -59,7 +67,10 @@ public class ModsecConfigValidator {
         } else {
           Status status =
               validateSubRuleConfigs(
-                  modsecRuleConfig.getSubRuleConfigsList(), ruleId, aggressiveSubRuleIds);
+                  modsecRuleConfig.getSubRuleConfigsList(),
+                  ruleId,
+                  aggressiveSubRuleIds,
+                  blockingAvailableForRegularRules);
           if (!status.isOk()) {
             return status;
           }
@@ -79,12 +90,17 @@ public class ModsecConfigValidator {
   }
 
   private Status validateSubRuleConfigs(
-      List<AnomalySubRuleConfig> subRuleConfigs, String ruleId, Set<String> aggressiveSubRuleIds) {
+      List<AnomalySubRuleConfig> subRuleConfigs,
+      String ruleId,
+      Set<String> aggressiveSubRuleIds,
+      boolean blockingAvailableForRegularRules) {
     Set<String> subRuleIds = new HashSet<>();
 
     for (AnomalySubRuleConfig subRuleConfig : subRuleConfigs) {
       String subRuleId = subRuleConfig.getSubRuleId();
-      if (aggressiveSubRuleIds.contains(subRuleId) && subRuleConfig.getBlockingEnabled()) {
+      if (!blockingAvailableForRegularRules
+          && aggressiveSubRuleIds.contains(subRuleId)
+          && subRuleConfig.getBlockingEnabled()) {
         return Status.INVALID_ARGUMENT.withDescription(
             String.format("%s is an aggressive rule which can't be blocked", subRuleId));
       }
@@ -102,9 +118,11 @@ public class ModsecConfigValidator {
   }
 
   private Set<String> getAggressiveSubRuleIds(
-      RequestContext requestContext, AnomalyConfigScope configScope) {
+      RequestContext requestContext,
+      AnomalyConfigScope configScope,
+      GlobalModsecConfig globalModsecConfig) {
     Set<String> aggressiveSubRuleIds = new HashSet<>();
-    getModsecAnomalyRuleInfos(requestContext, configScope)
+    getModsecAnomalyRuleInfos(requestContext, configScope, globalModsecConfig)
         .forEach(
             anomalyRuleInfo ->
                 anomalyRuleInfo
@@ -119,7 +137,9 @@ public class ModsecConfigValidator {
   }
 
   private List<AnomalyRuleInfo> getModsecAnomalyRuleInfos(
-      RequestContext requestContext, AnomalyConfigScope configScope) {
+      RequestContext requestContext,
+      AnomalyConfigScope configScope,
+      GlobalModsecConfig globalModsecConfig) {
     ModsecRuleVersion modsecRuleVersion =
         anomalyDetectionConfigManager
             .getScopedAnomalyDetectionConfig(
@@ -156,10 +176,7 @@ public class ModsecConfigValidator {
         requestContext,
         List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
         modsecRuleVersion,
-        globalAnomalyConfigStatusManager
-            .getScopedAnomalyConfigStatus(requestContext, configScope)
-            .getGlobalModsecConfig()
-            .getUseTestRules());
+        globalModsecConfig.getUseTestRules());
   }
 
   private boolean isRuleAggressive(
