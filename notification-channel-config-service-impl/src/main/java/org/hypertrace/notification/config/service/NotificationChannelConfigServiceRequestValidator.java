@@ -13,10 +13,12 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig;
 import org.hypertrace.notification.config.service.v1.AwsS3BucketChannelConfig.WebIdentityAuthenticationCredential;
 import org.hypertrace.notification.config.service.v1.CreateNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.CrowdStrikeIntegrationChannelConfig;
 import org.hypertrace.notification.config.service.v1.DeleteNotificationChannelRequest;
 import org.hypertrace.notification.config.service.v1.EmailChannelConfig;
 import org.hypertrace.notification.config.service.v1.GetAllNotificationChannelsRequest;
 import org.hypertrace.notification.config.service.v1.GetNotificationChannelRequest;
+import org.hypertrace.notification.config.service.v1.HttpEventCollectorChannelConfig;
 import org.hypertrace.notification.config.service.v1.NotificationChannel;
 import org.hypertrace.notification.config.service.v1.NotificationChannelMutableData;
 import org.hypertrace.notification.config.service.v1.SplunkIntegrationChannelConfig;
@@ -128,7 +130,8 @@ public class NotificationChannelConfigServiceRequestValidator {
         && data.getWebhookChannelConfigCount() == 0
         && data.getS3BucketChannelConfigCount() == 0
         && data.getSplunkIntegrationChannelConfigCount() == 0
-        && data.getSyslogIntegrationChannelConfigCount() == 0) {
+        && data.getSyslogIntegrationChannelConfigCount() == 0
+        && data.getHttpEventCollectorChannelConfigCount() == 0) {
       throw Status.INVALID_ARGUMENT.withDescription("No config present").asRuntimeException();
     }
     data.getEmailChannelConfigList().forEach(this::validateEmailChannelConfig);
@@ -138,6 +141,8 @@ public class NotificationChannelConfigServiceRequestValidator {
         .forEach(this::validateSplunkIntegrationChannelConfig);
     data.getSyslogIntegrationChannelConfigList()
         .forEach(this::validateSyslogIntegrationChannelConfig);
+    data.getHttpEventCollectorChannelConfigList()
+        .forEach(this::validateHttpEventCollectorChannelConfig);
   }
 
   public void validateGetAllNotificationChannelsRequest(
@@ -197,6 +202,29 @@ public class NotificationChannelConfigServiceRequestValidator {
     validateNonDefaultPresenceOrThrow(
         splunkIntegrationChannelConfig,
         SplunkIntegrationChannelConfig.SPLUNK_INTEGRATION_ID_FIELD_NUMBER);
+  }
+
+  private void validateHttpEventCollectorChannelConfig(
+      HttpEventCollectorChannelConfig httpEventCollectorChannelConfig) {
+    switch (httpEventCollectorChannelConfig.getChannelTypeCase()) {
+      case CROWD_STRIKE_INTEGRATION_CHANNEL_CONFIG:
+        validateNonDefaultPresenceOrThrow(
+            httpEventCollectorChannelConfig.getCrowdStrikeIntegrationChannelConfig(),
+            CrowdStrikeIntegrationChannelConfig.CROWD_STRIKE_INTEGRATION_ID_FIELD_NUMBER);
+        break;
+      case SPLUNK_INTEGRATION_CHANNEL_CONFIG:
+        validateNonDefaultPresenceOrThrow(
+            httpEventCollectorChannelConfig.getSplunkIntegrationChannelConfig(),
+            SplunkIntegrationChannelConfig.SPLUNK_INTEGRATION_ID_FIELD_NUMBER);
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription(
+                String.format(
+                    "Invalid Channel Type for Http Event Collector: %s",
+                    httpEventCollectorChannelConfig.getChannelTypeCase()))
+            .asRuntimeException();
+    }
   }
 
   private void validateSyslogIntegrationChannelConfig(
