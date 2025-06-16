@@ -25,6 +25,7 @@ import ai.traceable.edge.decision.config.service.EdgeDecisionConfigServiceFactor
 import ai.traceable.fraud.policy.config.service.FraudPolicyConfigServiceFactory;
 import ai.traceable.genai.config.service.v1.GenAiConfigServiceFactory;
 import ai.traceable.github.integration.config.service.GithubIntegrationConfigServiceFactory;
+import ai.traceable.http.event.collector.integration.config.service.HttpEventCollectorIntegrationConfigServiceFactory;
 import ai.traceable.integration.config.service.IntegrationConfigServiceFactory;
 import ai.traceable.iprange.config.service.IpRangeConfigServiceFactory;
 import ai.traceable.jira.integration.config.service.JiraIntegrationConfigServiceFactory;
@@ -338,7 +339,12 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getConfig())),
             wrap(
                 CertificateManagementConfigServiceFactory.build(
-                    providers.getLocalChannel(), providers.getChangeEventGenerator())))
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                HttpEventCollectorIntegrationConfigServiceFactory.build(
+                    providers.getLocalChannel(),
+                    providers.getConfig(),
+                    providers.getChangeEventGenerator())))
         .flatMap(stream -> stream)
         .collect(Collectors.toUnmodifiableList());
   }

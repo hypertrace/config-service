@@ -76,6 +76,7 @@ dependencies {
   implementation(projects.githubIntegrationConfigServiceImpl)
   implementation(projects.genaiConfigServiceImpl)
   implementation(projects.certificateManagementConfigServiceImpl)
+  implementation(projects.httpEventCollectorIntegrationConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
