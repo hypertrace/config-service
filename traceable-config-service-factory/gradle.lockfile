@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ai.traceable.accesscontrol:grpc-access-control-policy:0.5.12=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.bom:traceable-bom:0.4.1923=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.1938=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-future-client:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.iam.v2:iam-service-api-v2:0.16.115=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -29,9 +29,9 @@ ai.traceable.platform:config-providers:2.0.275=runtimeClasspath,testRuntimeClass
 ai.traceable.platform:coraza-waf-service-api:0.3.25=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.25=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:enriched-span-constants:4.0.217=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:insights-service-api:2.0.176=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:insights-service-api:2.0.177=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.132=runtimeClasspath,testRuntimeClasspath
-ai.traceable.platform:opa-aggregator-api:0.2.53=runtimeClasspath,testRuntimeClasspath
+ai.traceable.platform:opa-aggregator-api:0.2.56=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:session-constants:1.0.57=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-data-parser:2.0.275=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform:trace-enricher-api:4.0.217=runtimeClasspath,testRuntimeClasspath
@@ -297,9 +297,9 @@ org.hypertrace.core.serviceframework:service-framework-spi:0.1.88=compileClasspa
 org.hypertrace.core.spannormalizer:raw-span-constants:3.0.3=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:semantic-convention-utils:3.0.3=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.core.spannormalizer:span-normalizer-constants:3.0.3=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-api:0.8.228=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-change-event-api:0.8.228=runtimeClasspath,testRuntimeClasspath
-org.hypertrace.entity.service:entity-service-client:0.8.228=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-api:0.8.229=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-change-event-api:0.8.229=runtimeClasspath,testRuntimeClasspath
+org.hypertrace.entity.service:entity-service-client:0.8.229=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.ingester:semantic-convention-utils:0.9.30=runtimeClasspath,testRuntimeClasspath
 org.hypertrace.traceenricher:enriched-span-constants:0.9.30=runtimeClasspath,testRuntimeClasspath
 org.javassist:javassist:3.30.2-GA=runtimeClasspath,testRuntimeClasspath
