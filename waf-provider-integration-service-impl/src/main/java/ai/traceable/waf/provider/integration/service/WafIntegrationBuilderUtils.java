@@ -269,6 +269,11 @@ public class WafIntegrationBuilderUtils {
                     .getUpdatedWafIntegrationDetails()
                     .getUpdatedCloudflareIntegrationParams()
                     .getZone())
+            .setRulesetId(
+                request
+                    .getUpdatedWafIntegrationDetails()
+                    .getUpdatedCloudflareIntegrationParams()
+                    .getRulesetId())
             .setEncryptedApiToken(
                 EncryptedData.newBuilder()
                     .setKeyId(keyId)

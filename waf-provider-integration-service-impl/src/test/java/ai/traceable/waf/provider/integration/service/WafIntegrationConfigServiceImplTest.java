@@ -819,7 +819,10 @@ class WafIntegrationConfigServiceImplTest {
             .setDescription("des")
             .setWafIntegrationScope(updateWafIntegrationScope)
             .setUpdatedCloudflareIntegrationParams(
-                UpdatedCloudflareIntegrationParams.newBuilder().setEmail("email1").setZone("zone"))
+                UpdatedCloudflareIntegrationParams.newBuilder()
+                    .setEmail("email1")
+                    .setZone("zone")
+                    .setRulesetId("rulesetId"))
             .build();
     UpdateWafIntegrationRequest updateRequest =
         UpdateWafIntegrationRequest.newBuilder()
@@ -836,6 +839,13 @@ class WafIntegrationConfigServiceImplTest {
             .getWafIntegrationDetails()
             .getCloudflareIntegrationParams()
             .getEmail());
+    assertEquals(
+        "rulesetId",
+        updateResponse
+            .getWafIntegration()
+            .getWafIntegrationDetails()
+            .getCloudflareIntegrationParams()
+            .getRulesetId());
     assertEquals(
         updateWafIntegrationScope,
         updateResponse.getWafIntegration().getWafIntegrationDetails().getWafIntegrationScope());
@@ -1714,6 +1724,7 @@ class WafIntegrationConfigServiceImplTest {
                             .setBase64EncryptedData("apitoken")
                             .build())
                     .setEmail(email)
+                    .setRulesetId("rulesetId")
                     .setZone("zone"))
             .build();
       case AWS_INTEGRATION_PARAMS:
