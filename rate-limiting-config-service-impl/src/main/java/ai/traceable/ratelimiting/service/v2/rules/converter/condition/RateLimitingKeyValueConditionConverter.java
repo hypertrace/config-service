@@ -54,9 +54,74 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
   public MatchConditionDetails buildMatchCondition(
       RequestContext requestContext, LeafCondition leafCondition) {
     KeyValueCondition keyValueCondition = leafCondition.getKeyValueCondition();
+    if (keyValueCondition.hasLhsRhsCondition()) {
+      return buildLhsRhsMatchCondition(keyValueCondition.getLhsRhsCondition());
+    }
     return keyValueCondition.hasStaticValueCondition()
         ? buildMatchCondition(keyValueCondition)
         : buildDeprecatedMatchCondition(keyValueCondition);
+  }
+
+  MatchConditionDetails buildLhsRhsMatchCondition(
+      KeyValueCondition.LhsRhsKeysCondition lhsRhsKeysCondition) {
+    // Access key conditions
+    KeyValueCondition.KeyCondition lhsKeyCondition = lhsRhsKeysCondition.getLhsKeyCondition();
+    KeyValueCondition.KeyCondition rhsKeyCondition = lhsRhsKeysCondition.getRhsKeyCondition();
+    KeyValueCondition.MatchOperator matchOperator = lhsRhsKeysCondition.getLhsRhsMatchOperator();
+
+    // Extract key types
+    KeyValueCondition.Type lhsKeyType = lhsKeyCondition.getKeyType();
+    KeyValueCondition.Type rhsKeyType = rhsKeyCondition.getKeyType();
+
+    // Extract match operator conditions
+    KeyValueCondition.MatchOperatorCondition lhsMatchOperatorCondition =
+        lhsKeyCondition.getKeyMatchOperatorCondition();
+    KeyValueCondition.MatchOperatorCondition rhsMatchOperatorCondition =
+        rhsKeyCondition.getKeyMatchOperatorCondition();
+
+    // Extract operators and values
+    KeyValueCondition.MatchOperator lhsOperator = lhsMatchOperatorCondition.getOperator();
+    KeyValueCondition.MatchOperator rhsOperator = rhsMatchOperatorCondition.getOperator();
+
+    // Extract values - just get the string value directly
+    String lhsValue = "";
+    if (lhsMatchOperatorCondition.hasValue()) {
+      lhsValue = lhsMatchOperatorCondition.getValue().getStringValue();
+    }
+
+    String rhsValue = "";
+    if (rhsMatchOperatorCondition.hasValue()) {
+      rhsValue = rhsMatchOperatorCondition.getValue().getStringValue();
+    }
+
+    // Get the JEXL expressions for LHS and RHS key sets
+    String lhsJexlExp = getJexlExpForKeyValueConditionType(lhsKeyType);
+    String rhsJexlExp = getJexlExpForKeyValueConditionType(rhsKeyType);
+
+    // Build the predicates for LHS and RHS values
+    String lhsPredicate = getPredicateJexlExp(lhsOperator, lhsValue);
+    String rhsPredicate = getPredicateJexlExp(rhsOperator, rhsValue);
+
+    // Construct the full JEXL expression using map:match
+    String jexlExp =
+        String.format(
+            "map:match(%s, %s, %s, %s, %s)",
+            lhsJexlExp,
+            rhsJexlExp,
+            lhsPredicate,
+            rhsPredicate,
+            matchOperator.name()); // Use the match operator from the condition
+
+    // Build and return the match condition details
+    return new MatchConditionDetails(
+        MatchCondition.newBuilder()
+            .setGenericMatchCondition(
+                GenericMatchCondition.newBuilder()
+                    .setJexlExpression(
+                        JexlExpressionConfig.newBuilder().setJexlExpression(jexlExp)))
+            .build(),
+        Collections.emptyList(),
+        Collections.emptyList());
   }
 
   MatchConditionDetails buildMatchCondition(KeyValueCondition keyValueCondition) {
@@ -277,6 +342,27 @@ public class RateLimitingKeyValueConditionConverter implements RateLimitingCondi
       default:
         throw new IllegalArgumentException(
             "Invalid match operator in key value condition : " + operator);
+    }
+  }
+
+  private String getJexlExpForKeyValueConditionType(KeyValueCondition.Type type) {
+    switch (type) {
+      case TYPE_REQUEST_HEADER:
+        return "$s.getRequestHeaders().getKeySet()";
+      case TYPE_RESPONSE_HEADER:
+        return "$s.getResponseHeaders().getKeySet()";
+      case TYPE_REQUEST_BODY_PARAMETER:
+        return "$s.getRequestBodyParams().getKeySet()";
+      case TYPE_RESPONSE_BODY_PARAMETER:
+        return "$s.getResponseBodyParams().getKeySet()";
+      case TYPE_QUERY_PARAMETER:
+        return "$s.getQueryParams().getKeySet()";
+      case TYPE_REQUEST_COOKIE:
+        return "$s.getRequestCookies().getKeySet()";
+      case TYPE_RESPONSE_COOKIE:
+        return "$s.getResponseCookies().getKeySet()";
+      default:
+        throw new IllegalArgumentException("Invalid type for key set expression: " + type);
     }
   }
 

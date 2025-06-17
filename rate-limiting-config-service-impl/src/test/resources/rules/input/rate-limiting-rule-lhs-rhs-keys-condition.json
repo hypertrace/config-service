@@ -1,0 +1,55 @@
+{
+  "id": "rate-limiting-rule-lhs-rhs-id",
+  "data": {
+    "category": "CATEGORY_RATE_LIMITING",
+    "name": "test-lhs-rhs-policy",
+    "enabled": true,
+    "condition": {
+      "leafCondition": {
+        "keyValueCondition": {
+          "lhsRhsCondition": {
+            "lhsKeyCondition": {
+              "keyType": "TYPE_REQUEST_HEADER",
+              "keyMatchOperatorCondition": {
+                "operator": "MATCH_OPERATOR_MATCHES_REGEX",
+                "value": "header.*"
+              }
+            },
+            "rhsKeyCondition": {
+              "keyType": "TYPE_REQUEST_COOKIE",
+              "keyMatchOperatorCondition": {
+                "operator": "MATCH_OPERATOR_MATCHES_REGEX",
+                "value": "cookie.*"
+              }
+            },
+            "lhsRhsMatchOperator": "MATCH_OPERATOR_EQUALS"
+          }
+        }
+      }
+    },
+    "thresholdActionConfigs": [{
+      "resourceAccessThresholdConfigs": [{
+        "userAggregateType": "USER_AGGREGATE_TYPE_PER_USER",
+        "apiAggregateType": "API_AGGREGATE_TYPE_PER_ENDPOINT",
+        "rollingWindowThresholdConfig": {
+          "countAllowed": "100",
+          "durationIso": "PT1M"
+        }
+      }],
+      "actions": [{
+        "block": {
+          "eventSeverity": "EVENT_SEVERITY_CRITICAL",
+          "useThresholdDuration": true
+        }
+      }]
+    }],
+    "ruleConfigScope": {
+      "environmentScope": {
+        "environmentIds": ["test-env"]
+      }
+    },
+    "ruleStatus": {
+      "ruleCreationSource": "RULE_SOURCE_TRACEABLE"
+    }
+  }
+}
