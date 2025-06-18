@@ -6,6 +6,7 @@ import ai.traceable.edge.config.service.supplier.ClientBotFingerprintPolicySuppl
 import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.supplier.InvisibleCaptchaPolicySupplier;
+import ai.traceable.edge.config.service.supplier.WebAppEvaluationConfigContextSupplier;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.config.service.v1.GetConfigsRequest;
 import ai.traceable.edge.config.service.v1.GetConfigsResponse;
@@ -34,7 +35,8 @@ public class TraceableEdgeConfigService
       CaptchaSiteKeyConfigSupplier captchaSiteKeyConfigSupplier,
       ClientBotFingerprintPolicySupplier clientBotFingerprintPolicySupplier,
       InvisibleCaptchaPolicySupplier invisibleCaptchaPolicySupplier,
-      FlowConfigSupplier flowConfigSupplier) {
+      FlowConfigSupplier flowConfigSupplier,
+      WebAppEvaluationConfigContextSupplier webAppEvaluationConfigContextSupplier) {
     this.uuidGenerator = uuidGenerator;
     this.configSuppliersByType = new HashMap<>();
     this.configSuppliersByType.put(
@@ -46,6 +48,9 @@ public class TraceableEdgeConfigService
     this.configSuppliersByType.put(flowConfigSupplier.getConfigType(), flowConfigSupplier);
     this.configSuppliersByType.put(
         invisibleCaptchaPolicySupplier.getConfigType(), invisibleCaptchaPolicySupplier);
+    this.configSuppliersByType.put(
+        webAppEvaluationConfigContextSupplier.getConfigType(),
+        webAppEvaluationConfigContextSupplier);
     // todo: use configSupplier to automatically instantiate the appropriate class.
     //    var configTypeSupplierConfigs = config.getConfigList(CONFIG_TYPES_CONFIG_NAME);
     //    for (var configTypeSupplierConfig : configTypeSupplierConfigs) {

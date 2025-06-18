@@ -1,5 +1,6 @@
 package ai.traceable.edge.config.service;
 
+import ai.traceable.anomaly.config.service.v1.modsec.AnomalyModsecConfigServiceGrpc;
 import ai.traceable.edge.bot.config.service.v1.BotConfigServiceGrpc;
 import ai.traceable.edge.config.service.config.TraceableEdgeConfig;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc;
@@ -63,6 +64,14 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
   @Provides
   ConfigServiceGrpc.ConfigServiceBlockingStub provideConfigStub() {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  AnomalyModsecConfigServiceGrpc.AnomalyModsecConfigServiceBlockingStub
+      providesAnomalyModsecConfigServiceStub() {
+    return AnomalyModsecConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

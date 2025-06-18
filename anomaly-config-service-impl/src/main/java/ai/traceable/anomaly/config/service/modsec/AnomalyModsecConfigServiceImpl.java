@@ -11,7 +11,7 @@ import ai.traceable.anomaly.config.service.v1.modsec.GetModsecCrsRulesResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextResponse;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationConfigContext;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;

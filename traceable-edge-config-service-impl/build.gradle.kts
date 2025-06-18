@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
   implementation(projects.configUtils)
+  implementation(projects.anomalyConfigServiceApi)
   implementation(projects.traceableEdgeConfigServiceApi)
   implementation(projects.traceableEdgeBotConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
@@ -13,6 +14,7 @@ dependencies {
   implementation(commonLibs.grpc.api)
   implementation(commonLibs.typesafe.config)
   implementation(commonLibs.protobuf.javautil)
+  implementation(commonLibs.traceable.protection.engine.config.webapp)
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
 
   implementation(commonLibs.guice7)

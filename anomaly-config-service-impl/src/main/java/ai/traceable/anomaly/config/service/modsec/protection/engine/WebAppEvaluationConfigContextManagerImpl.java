@@ -17,26 +17,26 @@ import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
-import ai.traceable.protection.engine.config.web.application.v1.SecRuleProcessorConfig;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationConfig;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationConfigContext;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationRulesContext;
+import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationRulesContext;
 import ai.traceable.protection.processing.common.v1.CustomerScope;
 import ai.traceable.protection.processing.common.v1.EntityScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
 import ai.traceable.protection.processing.common.v1.Scope;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
-import ai.traceable.secrules.processor.v1.CorazaEngineVersion;
-import ai.traceable.secrules.processor.v1.CorazaRuleDirectivesType;
-import ai.traceable.secrules.processor.v1.CorazaRuleProcessor;
-import ai.traceable.secrules.processor.v1.ModsecJniRuleDirectivesType;
-import ai.traceable.secrules.processor.v1.ModsecJniRuleProcessor;
-import ai.traceable.secrules.processor.v1.SecRuleProcessorDetails;
+import ai.traceable.protection.processor.secrules.v1.CorazaEngineVersion;
+import ai.traceable.protection.processor.secrules.v1.CorazaRuleDirectivesType;
+import ai.traceable.protection.processor.secrules.v1.CorazaRuleProcessor;
+import ai.traceable.protection.processor.secrules.v1.ModsecJniRuleDirectivesType;
+import ai.traceable.protection.processor.secrules.v1.ModsecJniRuleProcessor;
+import ai.traceable.protection.processor.secrules.v1.SecRuleProcessorDetails;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,7 +123,7 @@ public class WebAppEvaluationConfigContextManagerImpl
 
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
 
-      boolean useTestRules = scopedAnomalyConfigStatus.getModsecGlobalConfig().getUseTestRules();
+      boolean useTestRules = scopedAnomalyConfigStatus.getGlobalModsecConfig().getUseTestRules();
       List<AnomalySubRuleType> anomalySubRuleTypes =
           getAnomalySubRuleTypes(scopedAnomalyConfigStatus, request.getRuleEvaluationPoint());
 
@@ -163,7 +163,7 @@ public class WebAppEvaluationConfigContextManagerImpl
     switch (ruleEvaluationPoint) {
       case RULE_EVALUATION_POINT_EDGE:
         if (!scopedAnomalyConfigStatus
-            .getModsecGlobalConfig()
+            .getGlobalModsecConfig()
             .getBlockingAvailableForRegularRules()) {
           return List.of(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
@@ -267,10 +267,10 @@ public class WebAppEvaluationConfigContextManagerImpl
   private SecRuleProcessorConfig getSecRuleProcessorConfig(
       ScopedAnomalyConfigStatus configStatus, ModsecRuleVersion modsecRuleVersion) {
     ScopeContext scopeContext = getScopeContext(configStatus.getConfigScope());
-    ModsecGlobalConfig modsecGlobalConfig = configStatus.getModsecGlobalConfig();
+    GlobalModsecConfig globalModsecConfig = configStatus.getGlobalModsecConfig();
     CorazaEngineVersion corazaEngineVersion =
         getCorazaEngineVersion(
-            modsecGlobalConfig.getModsecEvaluationEngineConfig().getCorazaEngineVersion());
+            globalModsecConfig.getModsecEvaluationEngineConfig().getCorazaEngineVersion());
 
     return SecRuleProcessorConfig.newBuilder()
         .setProcessorDetails(getSecRuleProcessorDetails(modsecRuleVersion, corazaEngineVersion))

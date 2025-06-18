@@ -25,22 +25,23 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.global.CorazaEngineVersion;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ModsecEvaluationEngineConfig;
-import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
-import ai.traceable.protection.engine.config.web.application.v1.SecRuleProcessorConfig;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationConfig;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationConfigContext;
-import ai.traceable.protection.engine.config.web.application.v1.WebAppEvaluationRulesContext;
+import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
+import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationRulesContext;
 import ai.traceable.protection.processing.common.v1.CustomerScope;
 import ai.traceable.protection.processing.common.v1.EntityScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
 import ai.traceable.protection.processing.common.v1.Scope;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -135,8 +136,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
         .setConfigScope(
             AnomalyConfigScope.newBuilder()
                 .setCustomerScope(AnomalyCustomerScope.getDefaultInstance()))
-        .setModsecGlobalConfig(
-            ModsecGlobalConfig.newBuilder()
+        .setGlobalModsecConfig(
+            GlobalModsecConfig.newBuilder()
                 .setModsecEvaluationEngineConfig(
                     ModsecEvaluationEngineConfig.newBuilder()
                         .setCorazaEngineVersion(
@@ -234,7 +235,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
     SecRuleProcessorConfig secRuleProcessorConfig = result.getSecRuleProcessorConfigs(0);
     assertEquals(CUSTOMER_SCOPE_CONTEXT, secRuleProcessorConfig.getScopeContext());
     assertEquals(
-        ai.traceable.secrules.processor.v1.CorazaEngineVersion.CORAZA_ENGINE_VERSION_LATEST_STABLE,
+        ai.traceable.protection.processor.secrules.v1.CorazaEngineVersion
+            .CORAZA_ENGINE_VERSION_LATEST_STABLE,
         secRuleProcessorConfig
             .getProcessorDetails()
             .getCorazaRuleProcessor()
@@ -268,7 +270,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
     SecRuleProcessorConfig secRuleProcessorConfig = result.getSecRuleProcessorConfigs(0);
     assertEquals(CUSTOMER_SCOPE_CONTEXT, secRuleProcessorConfig.getScopeContext());
     assertEquals(
-        ai.traceable.secrules.processor.v1.CorazaEngineVersion.CORAZA_ENGINE_VERSION_LATEST_STABLE,
+        ai.traceable.protection.processor.secrules.v1.CorazaEngineVersion
+            .CORAZA_ENGINE_VERSION_LATEST_STABLE,
         secRuleProcessorConfig
             .getProcessorDetails()
             .getCorazaRuleProcessor()
