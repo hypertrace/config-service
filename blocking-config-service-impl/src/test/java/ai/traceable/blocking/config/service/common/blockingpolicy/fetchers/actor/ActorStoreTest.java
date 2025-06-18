@@ -227,6 +227,7 @@ class ActorStoreTest {
                         .setRuleId("rate-limit-" + id)
                         .setRuleName("Name: Rule - " + id)
                         .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION)
+                        .setRuleSeverity("LOW")
                         .build());
           } catch (Exception ignored) {
           }
@@ -266,7 +267,8 @@ class ActorStoreTest {
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-" + id)
                         .setRuleName("Name: Rule - " + id)
-                        .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
+                        .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_DATA_EXFILTRATION)
+                        .setRuleSeverity("LOW"))
                 .build()
             : StatusChangeDetails.getDefaultInstance();
     long expirationTimestampMillis = 1000L + n;

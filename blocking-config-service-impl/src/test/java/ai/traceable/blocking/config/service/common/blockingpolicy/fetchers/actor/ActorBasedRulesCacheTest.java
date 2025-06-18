@@ -96,6 +96,7 @@ class ActorBasedRulesCacheTest {
             "entity-1",
             "rate-limit-id-1",
             "rate-limit-name-1",
+            "LOW",
             RATE_LIMIT_CATEGORY_RATE_LIMITING,
             Map.of("key", "value")),
         response.get(0).getInfo());
@@ -188,7 +189,8 @@ class ActorBasedRulesCacheTest {
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-id-1")
                         .setRuleName("rate-limit-name-1")
-                        .setRuleCategory(RATE_LIMIT_CATEGORY_RATE_LIMITING))
+                        .setRuleCategory(RATE_LIMIT_CATEGORY_RATE_LIMITING)
+                        .setRuleSeverity("LOW"))
                 .build(),
             ACTIVE_TIMESTAMP,
             blockedLabelsMap),
@@ -258,6 +260,7 @@ class ActorBasedRulesCacheTest {
                     RateLimitDetails.newBuilder()
                         .setRuleId("rate-limit-id-7")
                         .setRuleName("rate-limit-name-7")
+                        .setRuleSeverity("MEDIUM")
                         .setRuleCategory(RATE_LIMIT_CATEGORY_DATA_EXFILTRATION))
                 .build(),
             ACTIVE_TIMESTAMP,

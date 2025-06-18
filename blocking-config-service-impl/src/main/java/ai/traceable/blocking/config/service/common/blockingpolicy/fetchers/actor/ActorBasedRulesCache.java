@@ -165,6 +165,10 @@ public class ActorBasedRulesCache {
                                 actorDetails
                                     .getStatusChangeDetails()
                                     .getRateLimitDetails()
+                                    .getRuleSeverity(),
+                                actorDetails
+                                    .getStatusChangeDetails()
+                                    .getRateLimitDetails()
                                     .getRuleCategory(),
                                 actorDetails.getBlockedEventLabels()),
                             actorDetails,

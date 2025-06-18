@@ -1267,6 +1267,7 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
             actorEntityId.get(0),
             "rate-limit-rule-id",
             "Rate-limit-rule",
+            "LOW",
             RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION,
             Map.of("key", "value")),
         blockingPolicyConfiguration.getBlockingDetailsList(index).getInfo());
@@ -1669,7 +1670,8 @@ class V2BlockingConfigServiceIntegrationTest extends TraceableConfigServiceInteg
                   RateLimitDetails.newBuilder()
                       .setRuleName("Rate-limit-rule")
                       .setRuleId("rate-limit-rule-id")
-                      .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION)));
+                      .setRuleCategory(RateLimitCategory.RATE_LIMIT_CATEGORY_ENUMERATION)
+                      .setRuleSeverity("LOW")));
     } else if (blockingCategory == BLOCKING_CATEGORY_MALICIOUS_SOURCES_RULE) {
       actorBuilder.setStatusChangeSource(StatusChangeSource.STATUS_CHANGE_SOURCE_MALICIOUS_SOURCES);
       actorBuilder.setStatusChangeDetails(
