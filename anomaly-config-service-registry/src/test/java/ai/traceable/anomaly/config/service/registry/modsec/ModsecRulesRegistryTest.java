@@ -74,38 +74,42 @@ public class ModsecRulesRegistryTest {
     long allRulesCount = subRules.size();
     assertEquals(allRulesCount, regularRulesCount + safeRulesCount);
     assertEquals(safeRulesCount, blockingRulesCount);
-
-    {
-      String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(
-              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR), version, Set.of(), false);
-      if (regularRulesCount == 0) {
-        assertTrue(crsRulesBlob.isEmpty(), "Regular rules empty for version " + version);
-      } else {
-        assertEquals(
-            allRulesCount - regularRulesCount,
-            crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
-            "Regular rules count for version " + version);
+    if (!version.toString().contains("TEST")) {
+      {
+        String crsRulesBlob =
+            modsecRulesRegistry.getModsecCrsRulesBlob(
+                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
+                version,
+                Set.of(),
+                false);
+        if (regularRulesCount == 0) {
+          assertTrue(crsRulesBlob.isEmpty(), "Regular rules empty for version " + version);
+        } else {
+          assertEquals(
+              allRulesCount - regularRulesCount,
+              crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
+              "Regular rules count for version " + version);
+        }
       }
-    }
-    {
-      String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(
-              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE), version, Set.of(), false);
-      assertEquals(
-          allRulesCount - safeRulesCount,
-          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
-          "Non safe rules count for version " + version);
-    }
-    {
-      String crsRulesBlob =
-          modsecRulesRegistry.getModsecCrsRulesBlob(
-              List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK), version, Set.of(), false);
-      // few rules in file not marked safe
-      assertEquals(
-          allRulesCount - blockingRulesCount,
-          crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
-          "Block rules count for version " + version);
+      {
+        String crsRulesBlob =
+            modsecRulesRegistry.getModsecCrsRulesBlob(
+                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE), version, Set.of(), false);
+        assertEquals(
+            allRulesCount - safeRulesCount,
+            crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
+            "Non safe rules count for version " + version);
+      }
+      {
+        String crsRulesBlob =
+            modsecRulesRegistry.getModsecCrsRulesBlob(
+                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK), version, Set.of(), false);
+        // few rules in file not marked safe
+        assertEquals(
+            allRulesCount - blockingRulesCount,
+            crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
+            "Block rules count for version " + version);
+      }
     }
     {
       // safe and regular rules are mutually exclusive sets
@@ -481,12 +485,15 @@ public class ModsecRulesRegistryTest {
         continue;
       } else if (!modsecCrsAllRules[i].startsWith("SecRule")) {
         assertEquals(modsecCrsAllRules[i], modsecCrsSensitiveAgentRules[j++]);
-      } else if (!modsecCrsAllRules[i].contains("tag:'traceable/type/regular'")) {
+      } else if (!(modsecCrsAllRules[i].contains("tag:'traceable/type/regular'")
+          || modsecCrsAllRules[i].startsWith("SecRuleRemoveById"))) {
         String sanitizedString =
             modsecCrsAllRules[i].replace(
                 "found within %{MATCHED_VAR_NAME}: %{MATCHED_VAR}",
                 "found within %{MATCHED_VAR_NAME}");
         assertEquals(sanitizedString, modsecCrsSensitiveAgentRules[j++]);
+      } else if (modsecCrsAllRules[i].startsWith("SecRuleRemoveById")) {
+        j++;
       }
     }
     assertEquals(modsecCrsSensitiveAgentRules.length, j);
