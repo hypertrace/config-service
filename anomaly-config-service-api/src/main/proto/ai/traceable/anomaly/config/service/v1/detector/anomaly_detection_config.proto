@@ -482,9 +482,11 @@ message MaliciousSourcesAnomalyConfig {}
 
 message AnomalySubRuleConfig {
   string sub_rule_id = 1;
-  AnomalyConfigStatusChange config_status = 2;
+  AnomalyConfigStatusChange config_status = 2 [deprecated = true];
   AnomalyCategoryConfig category_config = 3;
-  optional bool blocking_enabled = 4;
+  optional bool blocking_enabled = 4 [deprecated = true];
+  optional bool internal = 5;
+  AnomalyRuleAction anomaly_rule_action = 6;
 }
 
 message ParamValueTypeModsecExclude {

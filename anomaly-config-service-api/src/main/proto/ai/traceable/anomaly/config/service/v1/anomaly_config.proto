@@ -213,6 +213,14 @@ enum AnomalySeverityLevel {
   ANOMALY_SEVERITY_LEVEL_CRITICAL = 4;
 }
 
+enum AnomalyRuleAction {
+  ANOMALY_RULE_ACTION_UNSPECIFIED = 0;
+  ANOMALY_RULE_ACTION_DISABLE = 1;
+  ANOMALY_RULE_ACTION_MONITOR = 2;
+  ANOMALY_RULE_ACTION_BLOCK = 3;
+  ANOMALY_RULE_ACTION_TESTING = 4;
+}
+
 message StringList {
   repeated string values = 1;
 }
