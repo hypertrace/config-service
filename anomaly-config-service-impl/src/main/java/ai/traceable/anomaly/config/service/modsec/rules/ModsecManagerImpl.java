@@ -78,7 +78,7 @@ public class ModsecManagerImpl implements ModsecManager {
 
     boolean useTestRules = globalConfig.getModsecGlobalConfig().getUseTestRules();
     Set<String> disabledModsecRuleIds;
-    if (removeDisabledRules) {
+    if (removeDisabledRules && !useTestRules) {
       boolean checkBlockingStatus =
           rulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING
               || (subRuleTypes.size() == 1
