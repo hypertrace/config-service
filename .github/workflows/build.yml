@@ -56,10 +56,6 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Build with Gradle
         uses: hypertrace/github-actions/gradle@main
@@ -70,7 +66,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Build Service Docker Image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: traceable-config-service/build/docker
           cache-from: type=registry,ref=${{ secrets.GCP_CACHE_ARTIFACT_REGISTRY }}/traceable/traceable-config-service
@@ -99,20 +95,11 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Unit test and other verification
         uses: hypertrace/github-actions/gradle@main
         with:
           args: check jacocoTestReport
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: copy test reports
         uses: hypertrace/github-actions/gradle@main
@@ -157,21 +144,11 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Integration test
         uses: hypertrace/github-actions/gradle@main
         with:
           args: jacocoIntegrationTestReport
-
-      - name: Upload Integration Coverage to Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          flags: integration
 
       - name: Copy test reports
         uses: hypertrace/github-actions/gradle@main
@@ -203,12 +180,12 @@ jobs:
     steps:
       # Set fetch-depth: 0 to fetch commit history and tags for use in version calculation
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Checkout Traceable actions
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
@@ -216,10 +193,6 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Dependency Check
         uses: ./.github/actions/dependency-check

@@ -25,10 +25,6 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Compile source
         uses: hypertrace/github-actions/gradle@main

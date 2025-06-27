@@ -3,26 +3,42 @@ import org.hypertrace.gradle.dependency.DependencyPluginSettingExtension
 pluginManagement {
   repositories {
     mavenLocal()
-    maven((extra.properties["artifactory_contextUrl"] as String) + "/gradle") {
-      credentials {
-        username = extra.properties["artifactory_user"] as String
-        password = extra.properties["artifactory_password"] as String
-      }
-    }
+    maven("artifactregistry://us-maven.pkg.dev/traceable-actions-386017/gradle")
   }
 }
 
-plugins {
-  id("org.hypertrace.version-settings") version "0.2.1"
-  id("ai.traceable.dependency-settings") version "1.6.3"
+dependencyResolutionManagement {
+  repositories {
+    maven("artifactregistry://us-maven.pkg.dev/traceable-actions-386017/gradle")
+  }
 }
+
+buildscript {
+  repositories {
+    gradlePluginPortal()
+    maven("https://us-maven.pkg.dev/hypertrace-repos/maven")
+    }
+  dependencies {
+    classpath("com.google.cloud.artifactregistry.gradle-plugin:com.google.cloud.artifactregistry.gradle-plugin.gradle.plugin:2.2.5")
+    classpath("org.hypertrace.gradle.versioning:hypertrace-gradle-version-settings-plugin:0.3.0")
+    classpath("org.hypertrace.gradle.dependency:hypertrace-gradle-dependency-settings-plugin:0.2.0")
+  }
+}
+
+apply(plugin = "com.google.cloud.artifactregistry.gradle-plugin")
+apply(plugin = "org.hypertrace.version-settings")
+apply(plugin = "org.hypertrace.dependency-settings")
 
 rootProject.name = "traceable-config-service-root"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 configure<DependencyPluginSettingExtension> {
-  catalogVersion.set("0.4.1970")
+  catalogVersion.set("0.4.2027")
+  catalogGroup.set("ai.traceable.bom")
+  catalogArtifact.set("traceable-version-catalog")
+  bomArtifactName.set("traceable-bom")
+  bomVersionName.set("traceable-bom")
 }
 
 includeBuild("./hypertrace-config-service")

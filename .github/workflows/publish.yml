@@ -25,10 +25,6 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Determine version
         id: version
@@ -43,7 +39,7 @@ jobs:
           release_name: Release ${{ steps.version.outputs.version }}
   publish-artifacts:
     runs-on: self-hosted-x64-small
-    needs: [ create-release ]
+    needs: [create-release]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -61,16 +57,14 @@ jobs:
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
         with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
-          password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
+          use-service-account: true
 
       - name: Determine docker tag
         id: tag
         run: echo tag=$(./gradlew -q printDockerImageDefaultTag | head -1) >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Setup Docker Image Builds
         uses: hypertrace/github-actions/gradle@main
@@ -97,7 +91,7 @@ jobs:
           context: traceable-config-service/build/docker
 
   publish-charts:
-    needs: [ create-release, publish-artifacts ]
+    needs: [create-release, publish-artifacts]
     runs-on: self-hosted-x64-small
     steps:
       - name: Checkout Repository
@@ -115,13 +109,10 @@ jobs:
 
       - name: Package and release chart
         uses: ./.github/actions/helm-artifactory-publish
-        with:
-          helm-artifactory-user: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
-          helm-artifactory-password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
 
   publish-release-notes:
     runs-on: self-hosted-x64-small
-    needs: [ create-release ]
+    needs: [create-release]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -133,7 +124,7 @@ jobs:
 
   post-publish-artifacts:
     runs-on: self-hosted-x64-small
-    needs: [ create-release, publish-charts ]
+    needs: [create-release, publish-charts]
     steps:
       - name: Get Token from Github App
         uses: tibdex/github-app-token@v2

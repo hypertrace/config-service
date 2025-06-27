@@ -2,7 +2,7 @@ name: Update Locks
 on:
   workflow_dispatch:
   schedule:
-    - cron: '38 8 * * 4'
+    - cron: "38 8 * * 4"
 jobs:
   update-versions:
     runs-on: self-hosted-x64-small
@@ -14,7 +14,7 @@ jobs:
           submodules: recursive
 
       - name: Checkout Traceable actions
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: traceableai/github-actions
           ssh-key: ${{ secrets.GH_ACTION_READ_KEY }}
@@ -22,10 +22,6 @@ jobs:
 
       - name: Setup gradle auth
         uses: ./.github/actions/gradle-setup
-        with:
-          context-url: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          user: ${{ secrets.ARTIFACTORY_READ_USER }}
-          password: ${{ secrets.ARTIFACTORY_READ_TOKEN }}
 
       - name: Calculate simple repository name
         id: repo-basename

@@ -67,7 +67,7 @@ class PredicateBuilder {
         return Optional.of(ComparisonOperator.COMPARISON_OPERATOR_MATCHES_REGEX);
       case RELATIONAL_OPERATOR_NOT_EQUALS:
       case RELATIONAL_OPERATOR_NOT_MATCHES_REGEX:
-        // TODO not equals, not matches regex
+      // TODO not equals, not matches regex
       case UNRECOGNIZED:
       case RELATIONAL_OPERATOR_UNSPECIFIED:
       default:
