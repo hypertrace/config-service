@@ -55,7 +55,22 @@ public class ModsecBlobValidator {
       List<String> serviceNames,
       List<String> environmentIds) {
     try {
-      return ModsecRuleEngineUtils.validateRuleBlob(modsecRuleBlob);
+      boolean isValid = ModsecRuleEngineUtils.modsecValidate(modsecRuleBlob).isOk();
+      if (!isValid && LOG_RATE_LIMITER.tryAcquire()) {
+        log.error(
+            "DLP modsec rule validation failed for tenant:{},environments: {} and services:{}.",
+            tenantName,
+            environmentIds,
+            serviceNames);
+      } else if (!isValid) {
+        log.debug(
+            "DLP modsec rule validation failed for rule: {} for tenant:{} environments: {} and services:{}.",
+            modsecRuleBlob,
+            tenantName,
+            environmentIds,
+            serviceNames);
+      }
+      return isValid;
     } catch (Exception e) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(

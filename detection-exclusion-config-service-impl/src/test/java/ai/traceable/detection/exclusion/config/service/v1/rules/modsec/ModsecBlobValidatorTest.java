@@ -34,9 +34,6 @@ class ModsecBlobValidatorTest {
       mockModsecUtils
           .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
           .thenReturn(Status.OK);
-      mockModsecUtils
-          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
-          .thenReturn(Status.OK);
 
       when(uuidGenerator.generateId(anyString())).thenReturn("valid-blob-id");
 
@@ -53,9 +50,6 @@ class ModsecBlobValidatorTest {
       mockModsecUtils
           .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
           .thenReturn(Status.INVALID_ARGUMENT);
-      mockModsecUtils
-          .when(() -> ModsecRuleEngineUtils.corazaValidate(anyString()))
-          .thenReturn(Status.INVALID_ARGUMENT);
 
       RequestContext requestContext = RequestContext.forTenantId("test-tenant");
       when(uuidGenerator.generateId(anyString())).thenReturn("invalid-blob-id");
@@ -71,8 +65,8 @@ class ModsecBlobValidatorTest {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
       mockModsecUtils
-          .when(() -> ModsecRuleEngineUtils.validateRuleBlob(anyString()))
-          .thenReturn(true);
+          .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+          .thenReturn(Status.OK);
       when(uuidGenerator.generateId(anyString())).thenReturn("valid-blob-id");
       boolean result = validator.validate(requestContext, "valid-modsec-blob", "test-service");
       assertTrue(result);
@@ -92,8 +86,8 @@ class ModsecBlobValidatorTest {
     try (MockedStatic<ModsecRuleEngineUtils> mockModsecUtils =
         mockStatic(ModsecRuleEngineUtils.class)) {
       mockModsecUtils
-          .when(() -> ModsecRuleEngineUtils.validateRuleBlob(anyString()))
-          .thenReturn(true);
+          .when(() -> ModsecRuleEngineUtils.modsecValidate(anyString()))
+          .thenReturn(Status.OK);
 
       String modsecRuleBlob = "cached-modsec-blob";
       String modsecBlobId = "cached-blob-id";

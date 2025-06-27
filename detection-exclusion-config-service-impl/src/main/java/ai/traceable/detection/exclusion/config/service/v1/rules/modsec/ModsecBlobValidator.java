@@ -33,7 +33,7 @@ public class ModsecBlobValidator {
     String modsecBlobHash = uuidGenerator.generateId(modsecRuleBlob);
     if (!modsecBlobCache.containsKey(modsecBlobHash)) {
       log.debug(
-          "For customer ID: {}, Created modsec blob: [{}] for the exclusion rules for service: [{}] which failed validation",
+          "For customer ID: {}, Created modsec blob: [{}] for the exclusion rules for service: [{}]",
           requestContext.getTenantId().orElse(""),
           modsecRuleBlob,
           serviceNames);
@@ -49,17 +49,30 @@ public class ModsecBlobValidator {
   @VisibleForTesting
   boolean validateModsecBlob(String modsecRuleBlob, String tenantName, String serviceName) {
     try {
-      return ModsecRuleEngineUtils.validateRuleBlob(modsecRuleBlob);
+      boolean isValid = ModsecRuleEngineUtils.modsecValidate(modsecRuleBlob).isOk();
+      if (!isValid && LOG_RATE_LIMITER.tryAcquire()) {
+        log.error(
+            "Detection exclusion modsec rule validation failed for tenant:{}, service:{}.",
+            tenantName,
+            serviceName);
+      } else if (!isValid) {
+        log.debug(
+            "Detection exclusion modsec rule validation failed for rule: {} for tenant:{} and service:{}.",
+            modsecRuleBlob,
+            tenantName,
+            serviceName);
+      }
+      return isValid;
     } catch (Exception e) {
       if (LOG_RATE_LIMITER.tryAcquire()) {
         log.error(
-            "Invalid modsec rule was formed when trying to convert exclusion rule for tenant:{}, service:{}. Skipping.",
+            "Exception during detection exclusion modsec rule validation for tenant: {}, service: {}.",
             tenantName,
             serviceName,
             e);
       } else {
         log.debug(
-            "Invalid modsec rule: {} was formed when trying to convert exclusion rule for tenant:{} and service:{}. Skipping.",
+            "Exception during detection exclusion modsec rule validation. Rule content: {}, tenant: {}, service: {}.",
             modsecRuleBlob,
             tenantName,
             serviceName,
