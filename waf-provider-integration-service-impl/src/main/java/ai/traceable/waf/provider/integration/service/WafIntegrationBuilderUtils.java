@@ -751,6 +751,7 @@ public class WafIntegrationBuilderUtils {
       case AKAMAI_INTEGRATION_PARAMS:
       case IMPERVA_INTEGRATION_PARAMS:
       case FORTINET_INTEGRATION_PARAMS:
+      case GCP_INTEGRATION_PARAMS:
         return wafIntegration.toBuilder()
             .setWafIntegrationDetails(
                 populateAllTargetsIfEmptyList(wafIntegration.getWafIntegrationDetails()))

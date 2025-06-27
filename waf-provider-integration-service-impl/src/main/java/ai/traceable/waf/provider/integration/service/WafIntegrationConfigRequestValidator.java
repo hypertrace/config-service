@@ -550,9 +550,10 @@ public class WafIntegrationConfigRequestValidator {
             wafIntegrationDetails.getName(), existingWafIntegrations, GCP_INTEGRATION_PARAMS);
         validateGcpIntegrationParams(
             wafIntegrationDetails.getGcpIntegrationParams(), existingWafIntegrations);
-        validateNonCustomSignatureIntegrationTargets(
-            wafIntegrationDetails,
-            WafIntegrationDetails.IntegrationParamsCase.GCP_INTEGRATION_PARAMS);
+        // Now we are providing Custom signature integration targets
+        //        validateNonCustomSignatureIntegrationTargets(
+        //            wafIntegrationDetails,
+        //            WafIntegrationDetails.IntegrationParamsCase.GCP_INTEGRATION_PARAMS);
         break;
       case F5_INTEGRATION_PARAMS:
         existingWafIntegrations =

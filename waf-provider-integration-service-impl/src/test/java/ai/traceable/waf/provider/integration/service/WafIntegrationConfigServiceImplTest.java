@@ -145,6 +145,10 @@ class WafIntegrationConfigServiceImplTest {
                         .build())
                 .addIntegrationTargets(
                     WafIntegrationTarget.newBuilder()
+                        .setRuleTarget(RuleType.RULE_TYPE_CUSTOM_SIGNATURE)
+                        .build())
+                .addIntegrationTargets(
+                    WafIntegrationTarget.newBuilder()
                         .setRuleTarget(RuleType.RULE_TYPE_THREAT_ACTORS)
                         .build())
                 .build()),
