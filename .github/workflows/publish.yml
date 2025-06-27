@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_READ_USER }}
           password: ${{ secrets.DOCKERHUB_READ_TOKEN }}
@@ -29,9 +29,9 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKERHUB_PUBLISH_USER }}
           DOCKER_PASSWORD: ${{ secrets.DOCKERHUB_PUBLISH_TOKEN }}
-          ORG_GRADLE_PROJECT_artifactory_contextUrl: ${{ secrets.ARTIFACTORY_CONTEXT_URL }}
-          ORG_GRADLE_PROJECT_artifactory_user: ${{ secrets.ARTIFACTORY_PUBLISH_USER }}
-          ORG_GRADLE_PROJECT_artifactory_password: ${{ secrets.ARTIFACTORY_PUBLISH_TOKEN }}
+          ORG_GRADLE_PROJECT_maven_repo_url: ${{ secrets.HAR_REPO_URL }}
+          ORG_GRADLE_PROJECT_maven_user: ${{ secrets.HAR_PUBLISH_USER }}
+          ORG_GRADLE_PROJECT_maven_password: ${{ secrets.HAR_PUBLISH_TOKEN }}
 
   publish-helm-charts:
     needs: publish-artifacts
