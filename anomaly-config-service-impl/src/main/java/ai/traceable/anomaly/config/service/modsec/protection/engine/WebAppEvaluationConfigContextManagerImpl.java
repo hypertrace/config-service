@@ -125,7 +125,10 @@ public class WebAppEvaluationConfigContextManagerImpl
 
       boolean useTestRules = scopedAnomalyConfigStatus.getGlobalModsecConfig().getUseTestRules();
       List<AnomalySubRuleType> anomalySubRuleTypes =
-          getAnomalySubRuleTypes(scopedAnomalyConfigStatus, request.getRuleEvaluationPoint());
+          getAnomalySubRuleTypes(
+              scopedAnomalyConfigStatus,
+              request.getRuleEvaluationPoint(),
+              request.getSubRuleTypesList());
 
       if (!scopedAnomalyConfigStatus.equals(ScopedAnomalyConfigStatus.getDefaultInstance())) {
         secRuleProcessorConfigs.add(
@@ -159,21 +162,33 @@ public class WebAppEvaluationConfigContextManagerImpl
 
   private List<AnomalySubRuleType> getAnomalySubRuleTypes(
       ScopedAnomalyConfigStatus scopedAnomalyConfigStatus,
-      RuleEvaluationPoint ruleEvaluationPoint) {
+      RuleEvaluationPoint ruleEvaluationPoint,
+      List<AnomalySubRuleType> subRuleTypes) {
     switch (ruleEvaluationPoint) {
       case RULE_EVALUATION_POINT_EDGE:
         if (!scopedAnomalyConfigStatus
             .getGlobalModsecConfig()
             .getBlockingAvailableForRegularRules()) {
-          return List.of(
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
-              AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
+          return filterSubRuleTypes(
+              subRuleTypes,
+              List.of(
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                  AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK));
         }
-        return ALL_SUB_RULE_TYPES;
+        return filterSubRuleTypes(subRuleTypes, ALL_SUB_RULE_TYPES);
       case RULE_EVALUATION_POINT_PLATFORM:
+        return filterSubRuleTypes(subRuleTypes, ALL_SUB_RULE_TYPES);
       default:
-        return ALL_SUB_RULE_TYPES;
+        throw new IllegalArgumentException(
+            "Unsupported rule evaluation point: " + ruleEvaluationPoint);
     }
+  }
+
+  private List<AnomalySubRuleType> filterSubRuleTypes(
+      List<AnomalySubRuleType> subRuleTypes, List<AnomalySubRuleType> allowedTypes) {
+    return subRuleTypes.isEmpty()
+        ? allowedTypes
+        : subRuleTypes.stream().filter(allowedTypes::contains).collect(Collectors.toList());
   }
 
   private WebAppEvaluationRulesContext getWebAppEvaluationRulesContext(

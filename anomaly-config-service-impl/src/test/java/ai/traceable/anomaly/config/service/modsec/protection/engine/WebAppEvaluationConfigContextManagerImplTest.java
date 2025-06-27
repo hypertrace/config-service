@@ -18,6 +18,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAllDetectionConfig;
@@ -45,6 +46,7 @@ import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class WebAppEvaluationConfigContextManagerImplTest {
 
@@ -97,6 +99,26 @@ class WebAppEvaluationConfigContextManagerImplTest {
             anyBoolean()))
         .thenReturn(
             ModsecManager.ModsecCrsRules.builder().aggregatedModsecBlob("sensitiveBlob").build());
+    when(modsecManager.getModsecCrsRules(
+            Mockito.eq(
+                List.of(
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                    AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)),
+            eq(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3),
+            anyBoolean()))
+        .thenReturn(
+            ModsecManager.ModsecCrsRules.builder()
+                .aggregatedModsecBlob("onlyStandardRulesBlob")
+                .build());
+
+    when(modsecManager.getModsecCrsRules(
+            Mockito.eq(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)),
+            eq(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3),
+            anyBoolean()))
+        .thenReturn(
+            ModsecManager.ModsecCrsRules.builder()
+                .aggregatedModsecBlob("onlyAggressiveRulesBlob")
+                .build());
 
     when(modsecRulesRegistry.getModsecRuleInfos(any(), anyBoolean()))
         .thenReturn(
@@ -249,7 +271,7 @@ class WebAppEvaluationConfigContextManagerImplTest {
 
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
-    assertEquals("defaultBlob", rulesContext2.getCrsRulesBlob());
+    assertEquals("onlyStandardRulesBlob", rulesContext2.getCrsRulesBlob());
   }
 
   @Test
@@ -285,5 +307,48 @@ class WebAppEvaluationConfigContextManagerImplTest {
     WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
     assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
     assertEquals("defaultBlob", rulesContext2.getCrsRulesBlob());
+  }
+
+  @Test
+  void testWebAppEvaluationRulesContextForStandardRulesFilter() {
+    WebAppEvaluationConfigContext result =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addAllSubRuleTypes(
+                    List.of(
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
+                        AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK))
+                .build());
+
+    assertEquals(2, result.getWebAppEvaluationRulesContextsList().size());
+    WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
+    assertEquals(API_SCOPE_CONTEXT, rulesContext1.getScopeContext());
+    assertEquals("sensitiveBlob", rulesContext1.getCrsRulesBlob());
+
+    WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
+    assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
+    assertEquals("onlyStandardRulesBlob", rulesContext2.getCrsRulesBlob());
+  }
+
+  @Test
+  void testWebAppConfigContextForAggressiveRulesFilter() {
+    WebAppEvaluationConfigContext result =
+        configContextManager.getWebAppEvaluationConfigContext(
+            requestContext,
+            GetWebAppEvaluationConfigContextRequest.newBuilder()
+                .setRuleEvaluationPoint(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                .addAllSubRuleTypes(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR))
+                .build());
+
+    assertEquals(2, result.getWebAppEvaluationRulesContextsList().size());
+    WebAppEvaluationRulesContext rulesContext1 = result.getWebAppEvaluationRulesContexts(0);
+    assertEquals(API_SCOPE_CONTEXT, rulesContext1.getScopeContext());
+    assertEquals("sensitiveBlob", rulesContext1.getCrsRulesBlob());
+
+    WebAppEvaluationRulesContext rulesContext2 = result.getWebAppEvaluationRulesContexts(1);
+    assertEquals(ENVIRONMENT_SCOPE_CONTEXT, rulesContext2.getScopeContext());
+    assertEquals("onlyAggressiveRulesBlob", rulesContext2.getCrsRulesBlob());
   }
 }

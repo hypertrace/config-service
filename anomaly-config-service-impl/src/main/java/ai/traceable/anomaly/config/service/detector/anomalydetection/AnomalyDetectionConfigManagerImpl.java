@@ -291,7 +291,6 @@ public class AnomalyDetectionConfigManagerImpl
    * @param configMap
    * @param requestContext
    * @param filter
-   * @param scopedAnomalyConfigStatus
    * @return List of resolved scopedAnomalyDetectionConfigs for all the anomalyConfigScopes of the
    *     given tenant
    */
