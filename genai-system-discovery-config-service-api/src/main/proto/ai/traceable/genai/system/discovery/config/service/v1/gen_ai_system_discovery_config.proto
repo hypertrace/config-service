@@ -1,0 +1,97 @@
+syntax = "proto3";
+package ai.traceable.genai.system.discovery.config.service;
+
+option java_multiple_files = true;
+
+message GenAiSystemDiscoveryRule {
+  string rule_id = 1;
+  GenAiSystemDiscoveryRuleData gen_ai_system_discovery_rule_data = 2;
+}
+
+message GenAiSystemDiscoveryRuleData {
+  string name = 1;
+  string description = 2;
+  Condition condition = 3;
+  GenAiInfoExtractionAction gen_ai_info_extraction_action = 4;
+}
+
+message Condition {
+  oneof condition {
+    CompositeCondition composite_condition = 1;
+    LeafCondition leaf_condition = 2;
+  }
+}
+
+message CompositeCondition {
+  LogicalOperator operator = 1;
+  repeated Condition children = 2;
+
+  enum LogicalOperator {
+    LOGICAL_OPERATOR_UNSPECIFIED = 0;
+    LOGICAL_OPERATOR_AND = 1;
+    LOGICAL_OPERATOR_OR = 2;
+  }
+}
+
+message LeafCondition {
+  oneof condition {
+    MatchCondition url_condition = 1;
+    KeyValueCondition attribute_condition = 2;
+  }
+}
+
+message GenAiInfoExtractionAction {
+  GenAiNameExtractionAction provider_action = 1;
+  GenAiNameExtractionAction model_action = 2;
+}
+
+message GenAiNameExtractionAction {
+  oneof gen_ai_name_extraction_action {
+    StaticNameAction static_name_action = 1;
+    DynamicNameExtractionAction dynamic_name_extraction_action = 2;
+  }
+}
+
+message StaticNameAction {
+  string value = 1;
+}
+
+message DynamicNameExtractionAction {
+  oneof dynamic_name_extraction_action {
+    MatchGroupOperation url_extraction_action = 1;
+    ExtractionAction attribute_extraction_action = 2;
+  }
+}
+
+message ExtractionAction {
+  string key = 1;
+  oneof value_extraction_operation {
+    NoOperation no_operation = 2;
+    MatchGroupOperation match_group_operation = 3;
+  }
+}
+
+message NoOperation {}
+
+message MatchGroupOperation {
+  string match_group_regex = 1;
+  string match_group = 2;
+}
+
+message KeyValueCondition {
+  MatchCondition key_match_condition = 1;
+  MatchCondition value_match_condition = 2;
+}
+
+message MatchCondition {
+  Operator operator = 1;
+  string value = 2;
+}
+
+enum Operator {
+  OPERATOR_UNSPECIFIED = 0;
+  OPERATOR_EQUALS = 1;
+  OPERATOR_CONTAINS = 2;
+  OPERATOR_STARTS_WITH = 4;
+  OPERATOR_MATCHES_REGEX = 3;
+}

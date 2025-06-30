@@ -1,0 +1,20 @@
+syntax = "proto3";
+package ai.traceable.genai.system.discovery.config.service;
+
+import "ai/traceable/genai/system/discovery/config/service/v1/gen_ai_system_discovery_config.proto";
+
+option java_multiple_files = true;
+
+message GetGenAiSystemDiscoveryRulesResponse {
+  repeated GenAiSystemDiscoveryRule gen_ai_system_discovery_rules = 1;
+}
+
+message CreateGenAiSystemDiscoveryRuleResponse {
+  GenAiSystemDiscoveryRule gen_ai_system_discovery_rule = 1;
+}
+
+message UpdateGenAiSystemDiscoveryRuleResponse {
+  GenAiSystemDiscoveryRule gen_ai_system_discovery_rule = 1;
+}
+
+message DeleteGenAiSystemDiscoveryRuleResponse {}
