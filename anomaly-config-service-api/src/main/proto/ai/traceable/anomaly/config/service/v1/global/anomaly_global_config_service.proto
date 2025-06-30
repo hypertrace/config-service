@@ -23,5 +23,7 @@ service AnomalyGlobalConfigService {
 
   rpc GetAvailableRuleVersions(GetAvailableRuleVersionsRequest) returns (GetAvailableRuleVersionsResponse) {}
 
+  rpc GetRulesChangeLog(GetRulesChangeLogRequest) returns (GetRulesChangeLogResponse) {}
+
   rpc DeleteScopedAnomalyGlobalConfigStatus(DeleteScopedAnomalyGlobalConfigStatusRequest) returns (DeleteScopedAnomalyGlobalConfigStatusResponse) {}
 }

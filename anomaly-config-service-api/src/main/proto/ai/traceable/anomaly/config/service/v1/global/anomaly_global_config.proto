@@ -69,6 +69,16 @@ message GetAvailableRuleVersionsResponse {
   AvailableRuleVersions supported_versions = 1;
 }
 
+message GetRulesChangeLogRequest {
+  RuleType rule_type = 1;
+  RuleVersion current_version = 2;
+  RuleVersion previous_version = 3;
+}
+
+message GetRulesChangeLogResponse {
+  RulesChangeLog rules_change_log = 1;
+}
+
 message GetAllAnomalyGlobalConfigStatusFilter {
   repeated AnomalyConfigScope applicable_scopes = 1;
 }
@@ -146,6 +156,73 @@ enum CorazaEngineVersion {
 
 message ModsecEvaluationEngineConfig {
   CorazaEngineVersion coraza_engine_version = 1;
+}
+
+message RulesChangeLog {
+  RuleType rule_type = 1;
+  RuleVersionUpdateDetails version_updated = 2;
+  repeated ThreatTypeChange threat_type_changes = 3;
+  repeated ThreatRuleChange rule_changes = 4;
+}
+
+message RuleVersionUpdateDetails {
+  RuleVersion old_version = 1;
+  RuleVersion new_version = 2;
+}
+
+message ThreatTypeChange {
+  oneof change {
+    StringList threat_type_ids_removed = 1;
+    StringList threat_type_ids_added = 2;
+    ThreatTypeUpdateDetails threat_type_updated = 3;
+  }
+}
+
+message ThreatRuleChange {
+  oneof change {
+    StringList rule_ids_removed = 1;
+    StringList rule_ids_added = 2;
+    ThreatRuleUpdateDetails rule_updated = 3;
+  }
+}
+
+message ThreatTypeUpdateDetails {
+  string threat_type_id = 1;
+  repeated ThreatTypeUpdate updates = 2;
+  message ThreatTypeUpdate {
+    oneof update {
+      StringValueUpdate name_updated = 1;
+    }
+  }
+}
+
+message ThreatRuleUpdateDetails {
+  string rule_id = 1;
+  repeated ThreatRuleUpdate updates = 2;
+  message ThreatRuleUpdate {
+    oneof update {
+      StringValueUpdate name_updated = 1;
+      StringValueUpdate threat_type_id_updated = 2;
+      bool signature_updated = 3;
+      StringValueUpdate rule_type_updated = 4;
+      StringValueUpdate severity_updated = 5;
+      StringKeyValueUpdate threat_label_updated = 6;
+    }
+  }
+}
+
+message StringValueUpdate {
+  string old_value = 1;
+  string new_value = 2;
+}
+
+message StringKeyValueUpdate {
+  string key = 1;
+  oneof update {
+    bool key_removed = 2;
+    string value_added = 3;
+    StringValueUpdate value_updated = 4;
+  }
 }
 
 // deprecated

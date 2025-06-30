@@ -15,6 +15,8 @@ import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsResponse;
+import ai.traceable.anomaly.config.service.v1.global.GetRulesChangeLogRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetRulesChangeLogResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
@@ -236,6 +238,35 @@ public class AnomalyGlobalConfigServiceImpl
               .setSupportedVersions(
                   ruleVersionManager.getAvailableRuleVersions(
                       request.getRuleType(), request.getFilter()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getRulesChangeLog(
+      GetRulesChangeLogRequest request,
+      StreamObserver<GetRulesChangeLogResponse> responseObserver) {
+    Status status = globalValidator.validate(request);
+    if (!status.isOk()) {
+      log.error("Get Rules Change Log Request is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    try {
+      GetRulesChangeLogResponse response =
+          GetRulesChangeLogResponse.newBuilder()
+              .setRulesChangeLog(
+                  ruleVersionManager.getRulesChangeLog(
+                      RequestContext.CURRENT.get(),
+                      request.getRuleType(),
+                      request.getCurrentVersion(),
+                      request.getPreviousVersion()))
               .build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
