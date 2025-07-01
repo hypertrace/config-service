@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static ai.traceable.anomaly.config.service.common.AnomalyConfigServiceUtils.mergeConfigs;
 
+import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyCategoryConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -11,6 +12,7 @@ import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyRuleCon
 import ai.traceable.anomaly.config.service.v1.detector.ScopedAnomalyDetectionConfig;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -240,16 +242,26 @@ public class ModsecConfigHandler {
                       String subRuleId = anomalySubRuleConfig.getSubRuleId();
                       if (subRuleConfigMap.containsKey(subRuleId)) {
                         AnomalySubRuleConfig mergedAnomalySubRuleConfig =
-                            (AnomalySubRuleConfig)
-                                mergeConfigs(anomalySubRuleConfig, subRuleConfigMap.get(subRuleId));
+                            AnomalySubRuleConfigUtils.mergeAndPopulateNewFields(
+                                anomalySubRuleConfig, subRuleConfigMap.get(subRuleId));
                         subRuleConfigMap.put(subRuleId, mergedAnomalySubRuleConfig);
                       } else {
-                        subRuleConfigMap.put(subRuleId, anomalySubRuleConfig);
+                        subRuleConfigMap.put(
+                            subRuleId,
+                            AnomalySubRuleConfigUtils.populateNewFields(anomalySubRuleConfig));
                       }
                     });
 
           } else {
-            modsecSubRuleConfigMap.put(anomalyRuleId, getModsecSubRuleConfigMap(modsecConfig));
+            Map<String, AnomalySubRuleConfig> newSubRuleConfigMap = new HashMap<>();
+            modsecConfig
+                .getSubRuleConfigsList()
+                .forEach(
+                    subRuleConfig ->
+                        newSubRuleConfigMap.put(
+                            subRuleConfig.getSubRuleId(),
+                            AnomalySubRuleConfigUtils.populateNewFields(subRuleConfig)));
+            modsecSubRuleConfigMap.put(anomalyRuleId, newSubRuleConfigMap);
           }
         });
 

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
+import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
@@ -45,6 +46,8 @@ import io.grpc.Server;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -654,7 +657,9 @@ public class AnomalyDetectionConfigManagerTest {
                                     .setConfigStatus(
                                         AnomalyConfigStatusChange.newBuilder()
                                             .setDisabled(true)
-                                            .build()))
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE))
                             .build())
                     .build())
             .build());
@@ -710,6 +715,161 @@ public class AnomalyDetectionConfigManagerTest {
   }
 
   @Test
+  void testPopulateNewFields()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    AnomalyDetectionConfigManagerImpl manager =
+        new AnomalyDetectionConfigManagerImpl(
+            configServiceBlockingStub,
+            detectionConfigConverter,
+            anomalyConfigScopeUtils,
+            getDefaultConfig(),
+            mock(ConfigChangeEventGenerator.class),
+            globalAnomalyConfigStatusManager,
+            wafConfigResolver);
+    AnomalySubRuleConfig oldStyleConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("old-style-config")
+            .setConfigStatus(
+                AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build())
+            .build();
+    AnomalySubRuleConfig blockingEnabledOnlyConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("blocking-only-config")
+            .setBlockingEnabled(true)
+            .build();
+
+    ScopedAnomalyDetectionConfig inputConfig =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .setConfigScope(customerConfigScope)
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setModsecurityAnomalyDetectionConfig(
+                        ModsecurityAnomalyDetectionConfig.newBuilder()
+                            .setModsecAnomalyRule(
+                                ModsecurityAnomalyRuleConfig.newBuilder()
+                                    .setAnomalyRuleId("test-rule")
+                                    .addSubRuleConfigs(oldStyleConfig)
+                                    .addSubRuleConfigs(blockingEnabledOnlyConfig)
+                                    .build())
+                            .build()))
+            .build();
+    ScopedAnomalyDetectionConfig processedConfig;
+    Method populateNewFieldsMethod =
+        AnomalyDetectionConfigManagerImpl.class.getDeclaredMethod(
+            "populateNewFields", ScopedAnomalyDetectionConfig.class);
+    populateNewFieldsMethod.setAccessible(true);
+    processedConfig =
+        (ScopedAnomalyDetectionConfig) populateNewFieldsMethod.invoke(manager, inputConfig);
+    AnomalyDetectionConfig detectionConfig = processedConfig.getAnomalyDetectionConfigs(0);
+    ModsecurityAnomalyRuleConfig ruleConfig =
+        detectionConfig.getModsecurityAnomalyDetectionConfig().getModsecAnomalyRule();
+    AnomalySubRuleConfig processedOldConfig = ruleConfig.getSubRuleConfigs(0);
+    assertEquals("old-style-config", processedOldConfig.getSubRuleId());
+    assertTrue(processedOldConfig.hasConfigStatus());
+    assertTrue(processedOldConfig.getConfigStatus().getDisabled());
+    assertTrue(processedOldConfig.getConfigStatus().hasInternal());
+    assertTrue(processedOldConfig.getConfigStatus().getInternal());
+    assertTrue(processedOldConfig.hasInternal());
+    assertTrue(processedOldConfig.getInternal());
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, processedOldConfig.getAnomalyRuleAction());
+
+    // Verify blocking config
+    AnomalySubRuleConfig processedBlockingConfig = ruleConfig.getSubRuleConfigs(1);
+    assertEquals("blocking-only-config", processedBlockingConfig.getSubRuleId());
+    assertTrue(processedBlockingConfig.hasBlockingEnabled());
+    assertTrue(processedBlockingConfig.getBlockingEnabled());
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK,
+        processedBlockingConfig.getAnomalyRuleAction());
+  }
+
+  @Test
+  void testBackwardCompatibilityInGetScopedAnomalyDetectionConfig() {
+    AnomalySubRuleConfig oldStyleConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("old-style-config")
+            .setConfigStatus(
+                AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(false).build())
+            .build();
+    AnomalySubRuleConfig processedOldConfig =
+        AnomalySubRuleConfigUtils.populateNewFields(oldStyleConfig);
+    assertTrue(processedOldConfig.hasConfigStatus());
+    assertTrue(processedOldConfig.getConfigStatus().getDisabled());
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, processedOldConfig.getAnomalyRuleAction());
+    AnomalySubRuleConfig blockingEnabledConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("blocking-only-config")
+            .setBlockingEnabled(true)
+            .build();
+    AnomalySubRuleConfig processedBlockingConfig =
+        AnomalySubRuleConfigUtils.populateNewFields(blockingEnabledConfig);
+    assertTrue(processedBlockingConfig.hasBlockingEnabled());
+    assertTrue(processedBlockingConfig.getBlockingEnabled());
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK,
+        processedBlockingConfig.getAnomalyRuleAction());
+  }
+
+  @Test
+  void testAnomalySubRuleConfigBackwardCompatibilityUtility() {
+    AnomalySubRuleConfig oldStyleConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("old-style-config")
+            .setConfigStatus(
+                AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(true).build())
+            .build();
+
+    AnomalySubRuleConfig updatedConfig =
+        AnomalySubRuleConfigUtils.populateNewFields(oldStyleConfig);
+    assertTrue(updatedConfig.hasConfigStatus());
+    assertTrue(updatedConfig.getConfigStatus().getDisabled());
+    assertTrue(updatedConfig.getConfigStatus().hasInternal());
+    assertTrue(updatedConfig.getConfigStatus().getInternal());
+    assertTrue(updatedConfig.hasInternal());
+    assertTrue(updatedConfig.getInternal());
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, updatedConfig.getAnomalyRuleAction());
+
+    AnomalySubRuleConfig blockingEnabledOnlyConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("blocking-only-config")
+            .setBlockingEnabled(true)
+            .build();
+
+    updatedConfig = AnomalySubRuleConfigUtils.populateNewFields(blockingEnabledOnlyConfig);
+    assertTrue(updatedConfig.hasBlockingEnabled());
+    assertTrue(updatedConfig.getBlockingEnabled());
+    assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK, updatedConfig.getAnomalyRuleAction());
+
+    // Test when both disabled and blocking are not set - should be MONITOR
+    AnomalySubRuleConfig neitherDisabledNorBlockingConfig =
+        AnomalySubRuleConfig.newBuilder().setSubRuleId("monitor-config").build();
+
+    updatedConfig = AnomalySubRuleConfigUtils.populateNewFields(neitherDisabledNorBlockingConfig);
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, updatedConfig.getAnomalyRuleAction());
+    AnomalySubRuleConfig preferredConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("test-sub-rule")
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .build();
+    AnomalySubRuleConfig fallbackConfig =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("test-sub-rule")
+            .setBlockingEnabled(true)
+            .build();
+
+    AnomalySubRuleConfig mergedConfig =
+        AnomalySubRuleConfigUtils.mergeAndPopulateNewFields(fallbackConfig, preferredConfig);
+    assertTrue(mergedConfig.hasConfigStatus());
+    assertTrue(mergedConfig.getConfigStatus().getDisabled());
+    assertEquals(
+        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, mergedConfig.getAnomalyRuleAction());
+  }
+
+  @Test
   void testDefaultRecommmendedModsecConfig() {
     String tenantId = "tenant";
     RequestContext requestContext = RequestContext.forTenantId(tenantId);
@@ -739,11 +899,15 @@ public class AnomalyDetectionConfigManagerTest {
                                     .setConfigStatus(
                                         AnomalyConfigStatusChange.newBuilder()
                                             .setDisabled(true)
-                                            .build()))
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE))
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build());
@@ -759,7 +923,9 @@ public class AnomalyDetectionConfigManagerTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build());
@@ -837,7 +1003,9 @@ public class AnomalyDetectionConfigManagerTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build());
@@ -853,7 +1021,9 @@ public class AnomalyDetectionConfigManagerTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build());
@@ -935,7 +1105,9 @@ public class AnomalyDetectionConfigManagerTest {
                                     .setConfigStatus(
                                         AnomalyConfigStatusChange.newBuilder()
                                             .setDisabled(true)
-                                            .build()))
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE))
                             .build())
                     .build())
             .build());
@@ -1015,7 +1187,9 @@ public class AnomalyDetectionConfigManagerTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build());
@@ -1031,7 +1205,9 @@ public class AnomalyDetectionConfigManagerTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build());
