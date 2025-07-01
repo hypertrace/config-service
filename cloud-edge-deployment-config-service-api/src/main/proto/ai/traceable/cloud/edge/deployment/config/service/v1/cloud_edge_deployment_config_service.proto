@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package ai.traceable.cloud.edge.deployment.config.service.v1;
+
+import "ai/traceable/cloud/edge/deployment/config/service/v1/cloud_edge_deployment_config.proto";
+import "ai/traceable/cloud/edge/deployment/config/service/v1/shared_config_metadata.proto";
+
+option java_multiple_files = true;
+
+service CloudEdgeDeploymentConfigService {
+  rpc CreateCloudEdgeDeploymentConfig(CreateCloudEdgeDeploymentConfigRequest) returns (CreateCloudEdgeDeploymentConfigResponse) {} // api to create deployment config from UI
+  rpc UpdateCloudEdgeDeploymentConfig(UpdateCloudEdgeDeploymentConfigRequest) returns (UpdateCloudEdgeDeploymentConfigResponse) {} // api to update deployment config from UI
+  rpc DeleteCloudEdgeDeploymentConfig(DeleteCloudEdgeDeploymentConfigRequest) returns (DeleteCloudEdgeDeploymentConfigResponse) {} // api to delete deployment config from UI
+  rpc GetCloudEdgeDeploymentConfigs(GetCloudEdgeDeploymentConfigsRequest) returns (GetCloudEdgeDeploymentConfigsResponse) {} // api to fetch config, used for both UI and helm generation
+  rpc GetSharedConfigMetadata(GetSharedConfigMetadataRequest) returns (GetSharedConfigMetadataResponse) {} // api to fetch generic key-value map info coming from yaml
+}
+
+message CreateCloudEdgeDeploymentConfigRequest {
+  CloudEdgeDeploymentInputConfig cloud_edge_deployment_input_config = 1;
+  ConfigPermission config_permission = 2;
+}
+
+message CreateCloudEdgeDeploymentConfigResponse {
+  CloudEdgeDeploymentConfig cloud_edge_deployment = 1;
+}
+
+message UpdateCloudEdgeDeploymentConfigRequest {
+  string id = 1;
+  ConfigPermission config_permission = 2;
+  CloudEdgeDeploymentInputConfig cloud_edge_deployment_input_config = 3;
+  CloudEdgeDeploymentOutputConfig cloud_edge_deployed_output_config = 4;
+}
+
+message UpdateCloudEdgeDeploymentConfigResponse {
+  CloudEdgeDeploymentConfig cloud_edge_deployment = 1;
+}
+
+message GetCloudEdgeDeploymentConfigsRequest {
+  repeated string ids = 1;
+  ConfigAccessType read_access = 2;
+}
+
+message GetCloudEdgeDeploymentConfigsResponse {
+  repeated CloudEdgeDeploymentConfig cloud_edge_deployments = 1;
+}
+
+message GetSharedConfigMetadataRequest {
+  ConfigAccessType read_access = 1;
+}
+
+message GetSharedConfigMetadataResponse {
+  SharedConfigMetadata shared_config_metadata = 1;
+}
+
+message DeleteCloudEdgeDeploymentConfigRequest {
+  string id = 1;
+}
+
+message DeleteCloudEdgeDeploymentConfigResponse {}

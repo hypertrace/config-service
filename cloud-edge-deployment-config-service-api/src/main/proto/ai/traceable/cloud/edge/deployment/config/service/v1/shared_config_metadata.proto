@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package ai.traceable.cloud.edge.deployment.config.service.v1;
+
+option java_multiple_files = true;
+
+message SharedConfigMetadata {
+  map<string, ConfigValueDescriptor> cluster_config_details = 1;
+  map<string, ConfigValueDescriptor> service_config_details = 2;
+}
+
+message ConfigValueDescriptor {
+  string description = 1;
+  string display_name = 2;
+  ConfigConstraint constraint = 3; // Optional constraints for validation/rendering
+  ConfigPermission config_permission = 4;
+  repeated HelmConfigIdentifier identifiers = 5;
+}
+
+message ConfigConstraint {
+  oneof kind {
+    IntRange int_range = 1;
+    EnumValues enum_values = 2;
+  }
+}
+
+// Defines inclusive min and max bounds for numeric values
+message IntRange {
+  int32 min = 1;
+  int32 max = 2;
+}
+
+// Defines a list of valid enum values
+message EnumValues {
+  repeated string allowed_values = 1;
+}
+
+message HelmConfigIdentifier {
+  string chart_name = 1;
+  string chart_path = 2;
+}
+
+message ConfigPermission {
+  ConfigAccessType read = 1;
+  ConfigAccessType write = 2;
+}
+
+enum ConfigAccessType {
+  CONFIG_ACCESS_TYPE_UNSPECIFIED = 0;
+  CONFIG_ACCESS_TYPE_GLOBAL = 1;
+  CONFIG_ACCESS_TYPE_TRACEABLE = 2;
+}

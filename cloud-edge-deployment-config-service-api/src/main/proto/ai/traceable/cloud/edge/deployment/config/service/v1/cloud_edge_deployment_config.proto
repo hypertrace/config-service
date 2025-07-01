@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ai.traceable.cloud.edge.deployment.config.service.v1;
+
+import "ai/traceable/cloud/edge/deployment/config/service/v1/cluster_config.proto";
+import "ai/traceable/cloud/edge/deployment/config/service/v1/service_config.proto";
+
+option java_multiple_files = true;
+
+message CloudEdgeDeploymentConfig {
+  string id = 1;
+  CloudEdgeDeploymentInputConfig cloud_edge_deployment_input_config = 2;
+  CloudEdgeDeploymentOutputConfig cloud_edge_deployed_output_config = 3;
+}
+
+message CloudEdgeDeploymentInputConfig {
+  ClusterConfig cluster_config = 1;
+  repeated ServiceConfig service_configs = 2;
+}
+
+message CloudEdgeDeploymentOutputConfig {
+  string cname = 1;
+  string health_check_url = 2;
+  repeated string ips_to_be_whitelisted = 3;
+  DeploymentStatus status = 4;
+}
+
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_IN_PROGRESS = 1;
+  DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY = 2;
+}
