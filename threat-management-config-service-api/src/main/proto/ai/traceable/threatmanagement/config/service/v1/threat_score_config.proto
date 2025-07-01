@@ -9,6 +9,7 @@ import "ai/traceable/threatmanagement/config/service/v1/security_event_score_con
 import "ai/traceable/threatmanagement/config/service/v1/security_event_type_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/status_code_score_contribution.proto";
 import "ai/traceable/threatmanagement/config/service/v1/threat_score_bound.proto";
+import "ai/traceable/threatmanagement/config/service/v1/threat_score_decay.proto";
 
 option java_multiple_files = true;
 
@@ -27,4 +28,5 @@ message ThreatScoreConfig {
   IpReputationThreatScoreConfig ip_reputation_threat_score_config = 4;
   StatusCodeThreatScoreConfigs status_code_threat_score_configs = 5;
   ThreatScoreBound threat_score_bound = 6;
+  ThreatScoreDecay threat_score_decay = 7;
 }

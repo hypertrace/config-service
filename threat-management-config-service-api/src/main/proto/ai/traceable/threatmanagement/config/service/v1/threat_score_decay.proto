@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ai.traceable.threatmanagement.config.service.v1;
+
+import "ai/traceable/threatmanagement/config/service/v1/scope_config.proto";
+import "google/protobuf/duration.proto";
+
+option java_multiple_files = true;
+
+message GetThreatScoreDecayRequest {
+  ScopeConfig scope = 1;
+}
+
+message GetThreatScoreDecayResponse {
+  ThreatScoreDecay threat_score_decay = 1;
+  ThreatScoreDecay default_threat_score_decay = 2;
+}
+
+message UpdateThreatScoreDecayRequest {
+  ThreatScoreDecay threat_score_decay = 1;
+}
+
+message UpdateThreatScoreDecayResponse {
+  ThreatScoreDecay threat_score_decay = 1;
+  ThreatScoreDecay default_threat_score_decay = 2;
+}
+
+message ThreatScoreDecay {
+  ScopeConfig scope = 1;
+  google.protobuf.Duration decay_after_duration = 2;
+  DecayValue decay_value = 3;
+}
+
+message DecayValue {
+  oneof decay_type {
+    float percentage_decay_value = 1;
+    float absolute_decay_value = 2;
+  }
+}
