@@ -24,6 +24,7 @@ import ai.traceable.edge.bot.config.service.CaptchaSiteKeyConfigServiceFactory;
 import ai.traceable.edge.decision.config.service.EdgeDecisionConfigServiceFactory;
 import ai.traceable.fraud.policy.config.service.FraudPolicyConfigServiceFactory;
 import ai.traceable.genai.config.service.v1.GenAiConfigServiceFactory;
+import ai.traceable.genai.system.discovery.config.service.v1.GenAiSystemDiscoveryConfigServiceFactory;
 import ai.traceable.github.integration.config.service.GithubIntegrationConfigServiceFactory;
 import ai.traceable.http.event.collector.integration.config.service.HttpEventCollectorIntegrationConfigServiceFactory;
 import ai.traceable.integration.config.service.IntegrationConfigServiceFactory;
@@ -278,6 +279,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(),
                     providers.getConfig(),
                     providers.getChangeEventGenerator())),
+            wrap(
+                GenAiSystemDiscoveryConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 SavedFilterConfigServiceFactory.build(
                     providers.getLocalChannel(),

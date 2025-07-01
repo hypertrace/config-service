@@ -75,6 +75,7 @@ dependencies {
   implementation(projects.threatScoringConfigServiceImpl)
   implementation(projects.githubIntegrationConfigServiceImpl)
   implementation(projects.genaiConfigServiceImpl)
+  implementation(projects.genaiSystemDiscoveryConfigServiceImpl)
   implementation(projects.certificateManagementConfigServiceImpl)
   implementation(projects.httpEventCollectorIntegrationConfigServiceImpl)
 

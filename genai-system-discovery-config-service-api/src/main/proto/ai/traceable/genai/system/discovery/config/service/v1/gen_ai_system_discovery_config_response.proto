@@ -1,5 +1,5 @@
 syntax = "proto3";
-package ai.traceable.genai.system.discovery.config.service;
+package ai.traceable.genai.system.discovery.config.service.v1;
 
 import "ai/traceable/genai/system/discovery/config/service/v1/gen_ai_system_discovery_config.proto";
 
