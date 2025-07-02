@@ -315,6 +315,7 @@ public class WebAppEvaluationConfigContextManagerImpl
     switch (ruleVersion) {
       case MODSEC_RULE_VERSION_V3:
       case MODSEC_RULE_VERSION_TEST_V3:
+      case MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3:
         return SecRuleProcessorDetails.newBuilder()
             .setModsecRuleProcessor(
                 ModsecJniRuleProcessor.newBuilder()
@@ -338,16 +339,9 @@ public class WebAppEvaluationConfigContextManagerImpl
                         ModsecJniRuleDirectivesType
                             .MODSEC_JNI_RULE_DIRECTIVES_TYPE_SECARGLIMITS_DETECTION_ONLY))
             .build();
-      case MODSEC_RULE_VERSION_SENSITIVE_AGENT_V3:
-        return SecRuleProcessorDetails.newBuilder()
-            .setModsecRuleProcessor(
-                ModsecJniRuleProcessor.newBuilder()
-                    .setDirectivesType(
-                        ModsecJniRuleDirectivesType
-                            .MODSEC_JNI_RULE_DIRECTIVES_TYPE_SENSITIVE_AGENT_V3))
-            .build();
       case MODSEC_RULE_VERSION_CORAZA_V3:
       case MODSEC_RULE_VERSION_TEST_CORAZA_V3:
+      case MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3:
         return SecRuleProcessorDetails.newBuilder()
             .setCorazaRuleProcessor(
                 CorazaRuleProcessor.newBuilder()
@@ -362,14 +356,6 @@ public class WebAppEvaluationConfigContextManagerImpl
                     .setCorazaEngineVersion(corazaEngineVersion)
                     .setDirectivesType(
                         CorazaRuleDirectivesType.CORAZA_RULE_DIRECTIVES_TYPE_DETECTION_ONLY))
-            .build();
-      case MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3:
-        return SecRuleProcessorDetails.newBuilder()
-            .setCorazaRuleProcessor(
-                CorazaRuleProcessor.newBuilder()
-                    .setCorazaEngineVersion(corazaEngineVersion)
-                    .setDirectivesType(
-                        CorazaRuleDirectivesType.CORAZA_RULE_DIRECTIVES_TYPE_SENSITIVE_AGENT_V3))
             .build();
       default:
         throw new IllegalArgumentException("Unsupported ModsecRuleVersion: " + ruleVersion.name());
