@@ -35,9 +35,14 @@ public class GenAiSystemDiscoveryRuleStore
 
   @Override
   protected Optional<GenAiSystemDiscoveryRule> filterConfigData(
-      GenAiSystemDiscoveryRule data, GetGenAiSystemDiscoveryRulesFilter filter) {
-    // ToDo : In future to support filter on getGenAiSystemDiscoveryRules
-    return Optional.of(data);
+      GenAiSystemDiscoveryRule rule, GetGenAiSystemDiscoveryRulesFilter filter) {
+    if (GetGenAiSystemDiscoveryRulesFilter.getDefaultInstance().equals(filter)) {
+      return Optional.of(rule);
+    }
+    return Optional.of(rule)
+        .filter(
+            filterRule ->
+                filterRule.getGenAiSystemDiscoveryRuleData().getEnabled() == filter.getEnabled());
   }
 
   @Override

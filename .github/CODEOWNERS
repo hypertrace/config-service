@@ -49,3 +49,6 @@ waf-provider-integration-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-
 waf-provider-integration-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
 jira-integration-config-service-api/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
 jira-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-harness
+genai-system-discovery-config-service-api/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
+genai-system-discovery-config-service-impl/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
+genai-system-discovery-client/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420

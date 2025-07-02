@@ -3,7 +3,9 @@ package ai.traceable.genai.system.discovery.config.service.v1;
 
 option java_multiple_files = true;
 
-message GetGenAiSystemDiscoveryRulesFilter {}
+message GetGenAiSystemDiscoveryRulesFilter {
+  bool enabled = 1;
+}
 
 message GenAiSystemDiscoveryRule {
   string rule_id = 1;
@@ -15,6 +17,7 @@ message GenAiSystemDiscoveryRuleData {
   string description = 2;
   Condition condition = 3;
   GenAiInfoExtractionAction gen_ai_info_extraction_action = 4;
+  bool enabled = 5;
 }
 
 message Condition {
