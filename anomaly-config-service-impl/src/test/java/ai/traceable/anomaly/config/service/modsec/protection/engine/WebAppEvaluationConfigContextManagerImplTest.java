@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.modsec.protection.engine;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -32,17 +33,22 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
 import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationRulesContext;
 import ai.traceable.protection.processing.common.v1.CustomerScope;
+import ai.traceable.protection.processing.common.v1.Entity;
 import ai.traceable.protection.processing.common.v1.EntityScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
 import ai.traceable.protection.processing.common.v1.Scope;
 import ai.traceable.protection.processing.common.v1.ScopeContext;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +58,7 @@ class WebAppEvaluationConfigContextManagerImplTest {
 
   private static final String TENANT_ID = "test-tenant";
   private static final String API_ID = "test-api";
+  private static final String API_NAME = "test-api-name";
   private static final String ENVIRONMENT_ID = "test-env";
   private static final ScopeContext API_SCOPE_CONTEXT =
       ScopeContext.newBuilder()
@@ -60,7 +67,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
                   .setEntityScope(
                       EntityScope.newBuilder()
                           .setEntityType(EntityType.ENTITY_TYPE_API)
-                          .addEntityIds(API_ID)))
+                          .addEntities(
+                              Entity.newBuilder().setId(API_ID).setName(API_NAME).build())))
           .build();
   private static final ScopeContext ENVIRONMENT_SCOPE_CONTEXT =
       ScopeContext.newBuilder()
@@ -69,7 +77,11 @@ class WebAppEvaluationConfigContextManagerImplTest {
                   .setEntityScope(
                       EntityScope.newBuilder()
                           .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
-                          .addEntityIds(ENVIRONMENT_ID)))
+                          .addEntities(
+                              Entity.newBuilder()
+                                  .setId(ENVIRONMENT_ID)
+                                  .setName(ENVIRONMENT_ID)
+                                  .build())))
           .build();
   private static final ScopeContext CUSTOMER_SCOPE_CONTEXT =
       ScopeContext.newBuilder()
@@ -78,9 +90,18 @@ class WebAppEvaluationConfigContextManagerImplTest {
 
   private WebAppEvaluationConfigContextManagerImpl configContextManager;
   private RequestContext requestContext;
+  private CachedApiMappingProvider apiMappingProvider;
+  private CachedServiceMappingProvider serviceMappingProvider;
 
   @BeforeEach
   void setUp() {
+    apiMappingProvider = mock(CachedApiMappingProvider.class);
+    serviceMappingProvider = mock(CachedServiceMappingProvider.class);
+    ApiIdentifierEntity apiEntity =
+        new ApiIdentifierEntity(API_ID, API_NAME, "/api-path", List.of("/api/path/.*"), List.of());
+    when(apiMappingProvider.getApiIdentifierEntities(any(RequestContext.class), anySet()))
+        .thenReturn(Map.of(API_ID, Optional.of(apiEntity)));
+
     requestContext = RequestContext.forTenantId(TENANT_ID);
     ModsecManager modsecManager = mock(ModsecManager.class);
     ModsecRulesRegistry modsecRulesRegistry = mock(ModsecRulesRegistry.class);
@@ -150,7 +171,9 @@ class WebAppEvaluationConfigContextManagerImplTest {
             modsecRulesRegistry,
             anomalyDetectionConfigManager,
             globalAnomalyConfigStatusManager,
-            ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3);
+            ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
+            serviceMappingProvider,
+            apiMappingProvider);
   }
 
   private ScopedAnomalyConfigStatus getTenantScopedAnomalyConfigStatus() {

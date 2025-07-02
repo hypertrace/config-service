@@ -22,11 +22,16 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationRulesContext;
 import ai.traceable.protection.processing.common.v1.CustomerScope;
+import ai.traceable.protection.processing.common.v1.Entity;
 import ai.traceable.protection.processing.common.v1.EntityScope;
 import ai.traceable.protection.processing.common.v1.EntityType;
 import ai.traceable.protection.processing.common.v1.Scope;
@@ -41,6 +46,8 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,11 +80,14 @@ public class WebAppEvaluationConfigContextManagerImpl
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
           AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR);
+  private static final String EMPTY_STRING = "";
   private final ModsecManager modsecManager;
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
   private final GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private final ModsecRuleVersion defaultModsecRuleVersion;
+  private final CachedServiceMappingProvider cachedServiceMappingProvider;
+  private final CachedApiMappingProvider cachedApiMappingProvider;
 
   @Inject
   public WebAppEvaluationConfigContextManagerImpl(
@@ -85,12 +95,16 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRulesRegistry modsecRulesRegistry,
       AnomalyDetectionConfigManager anomalyDetectionConfigManager,
       GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager,
-      ModsecRuleVersion defaultModsecRuleVersion) {
+      ModsecRuleVersion defaultModsecRuleVersion,
+      CachedServiceMappingProvider cachedServiceMappingProvider,
+      CachedApiMappingProvider cachedApiMappingProvider) {
     this.modsecManager = modsecManager;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
     this.globalAnomalyConfigStatusManager = globalAnomalyConfigStatusManager;
     this.defaultModsecRuleVersion = defaultModsecRuleVersion;
+    this.cachedServiceMappingProvider = cachedServiceMappingProvider;
+    this.cachedApiMappingProvider = cachedApiMappingProvider;
   }
 
   @Override
@@ -112,7 +126,8 @@ public class WebAppEvaluationConfigContextManagerImpl
     List<WebAppEvaluationConfig> webAppEvaluationConfigs = new ArrayList<>();
     List<SecRuleProcessorConfig> secRuleProcessorConfigs = new ArrayList<>();
     List<WebAppEvaluationRulesContext> webAppEvaluationRulesContextList = new ArrayList<>();
-
+    Map<AnomalyConfigScope, ScopeContext> scopeContextMap =
+        getScopeContextMap(requestContext, configScopes);
     for (AnomalyConfigScope configScope : configScopes) {
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
           scopedAnomalyDetectionConfigMap.getOrDefault(
@@ -132,7 +147,8 @@ public class WebAppEvaluationConfigContextManagerImpl
 
       if (!scopedAnomalyConfigStatus.equals(ScopedAnomalyConfigStatus.getDefaultInstance())) {
         secRuleProcessorConfigs.add(
-            getSecRuleProcessorConfig(scopedAnomalyConfigStatus, modsecRuleVersion));
+            getSecRuleProcessorConfig(
+                scopedAnomalyConfigStatus, modsecRuleVersion, scopeContextMap.get(configScope)));
       }
       if (!scopedAnomalyDetectionConfig.equals(ScopedAnomalyDetectionConfig.getDefaultInstance())) {
         Optional<WebAppEvaluationConfig> webAppEvaluationConfig =
@@ -140,16 +156,17 @@ public class WebAppEvaluationConfigContextManagerImpl
                 scopedAnomalyDetectionConfig,
                 modsecRuleVersion,
                 request.getRuleEvaluationPoint(),
-                useTestRules);
+                useTestRules,
+                scopeContextMap.get(configScope));
 
         webAppEvaluationConfig.ifPresent(webAppEvaluationConfigs::add);
 
         webAppEvaluationRulesContextList.add(
             getWebAppEvaluationRulesContext(
-                scopedAnomalyDetectionConfig,
                 modsecRuleVersion,
                 anomalySubRuleTypes,
-                useTestRules));
+                useTestRules,
+                scopeContextMap.get(configScope)));
       }
     }
 
@@ -192,11 +209,10 @@ public class WebAppEvaluationConfigContextManagerImpl
   }
 
   private WebAppEvaluationRulesContext getWebAppEvaluationRulesContext(
-      ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
       ModsecRuleVersion modsecRuleVersion,
       List<AnomalySubRuleType> anomalySubRuleTypes,
-      boolean useTestRules) {
-    ScopeContext scopeContext = getScopeContext(scopedAnomalyDetectionConfig.getConfigScope());
+      boolean useTestRules,
+      ScopeContext scopeContext) {
 
     return WebAppEvaluationRulesContext.newBuilder()
         .setScopeContext(scopeContext)
@@ -211,8 +227,8 @@ public class WebAppEvaluationConfigContextManagerImpl
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
       ModsecRuleVersion modsecRuleVersion,
       RuleEvaluationPoint ruleEvaluationPoint,
-      boolean useTestRules) {
-    ScopeContext scopeContext = getScopeContext(scopedAnomalyDetectionConfig.getConfigScope());
+      boolean useTestRules,
+      ScopeContext scopeContext) {
     Set<String> disabledRuleIds =
         getDisabledModsecRuleIds(
             scopedAnomalyDetectionConfig, modsecRuleVersion, ruleEvaluationPoint, useTestRules);
@@ -280,8 +296,9 @@ public class WebAppEvaluationConfigContextManagerImpl
   }
 
   private SecRuleProcessorConfig getSecRuleProcessorConfig(
-      ScopedAnomalyConfigStatus configStatus, ModsecRuleVersion modsecRuleVersion) {
-    ScopeContext scopeContext = getScopeContext(configStatus.getConfigScope());
+      ScopedAnomalyConfigStatus configStatus,
+      ModsecRuleVersion modsecRuleVersion,
+      ScopeContext scopeContext) {
     GlobalModsecConfig globalModsecConfig = configStatus.getGlobalModsecConfig();
     CorazaEngineVersion corazaEngineVersion =
         getCorazaEngineVersion(
@@ -370,42 +387,105 @@ public class WebAppEvaluationConfigContextManagerImpl
     }
   }
 
-  private ScopeContext getScopeContext(AnomalyConfigScope scope) {
-    switch (scope.getScopeCase()) {
-      case CUSTOMER_SCOPE:
-        return ScopeContext.newBuilder()
-            .addScopes(Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
-            .build();
-      case ENVIRONMENT_SCOPE:
-        return ScopeContext.newBuilder()
-            .addScopes(
-                Scope.newBuilder()
-                    .setEntityScope(
-                        EntityScope.newBuilder()
-                            .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
-                            .addEntityIds(scope.getEnvironmentScope().getEnvironmentId())))
-            .build();
-      case SERVICE_SCOPE:
-        return ScopeContext.newBuilder()
-            .addScopes(
-                Scope.newBuilder()
-                    .setEntityScope(
-                        EntityScope.newBuilder()
-                            .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
-                            .addEntityIds(scope.getServiceScope().getId())))
-            .build();
-      case API_SCOPE:
-        return ScopeContext.newBuilder()
-            .addScopes(
-                Scope.newBuilder()
-                    .setEntityScope(
-                        EntityScope.newBuilder()
-                            .setEntityType(EntityType.ENTITY_TYPE_API)
-                            .addEntityIds(scope.getApiScope().getId())))
-            .build();
-      default:
-        throw new IllegalArgumentException("Unsupported scope type: " + scope.getScopeCase());
+  private Map<AnomalyConfigScope, ScopeContext> getScopeContextMap(
+      RequestContext requestContext, Set<AnomalyConfigScope> configScopes) {
+    Set<String> serviceIds = new HashSet<>();
+    Set<String> apiIds = new HashSet<>();
+
+    for (AnomalyConfigScope configScope : configScopes) {
+      switch (configScope.getScopeCase()) {
+        case API_SCOPE:
+          apiIds.add(configScope.getApiScope().getId());
+          break;
+        case SERVICE_SCOPE:
+          serviceIds.add(configScope.getServiceScope().getId());
+          break;
+        case ENVIRONMENT_SCOPE:
+        case CUSTOMER_SCOPE:
+          break;
+        default:
+          throw new IllegalArgumentException(
+              "Unsupported scope type: " + configScope.getScopeCase());
+      }
     }
+
+    Map<String, Optional<ApiIdentifierEntity>> apiEntities =
+        cachedApiMappingProvider.getApiIdentifierEntities(requestContext, apiIds);
+    Map<String, Optional<ServiceIdentifierEntity>> serviceEntities =
+        cachedServiceMappingProvider.getServiceIdentifierEntities(requestContext, serviceIds);
+    Map<AnomalyConfigScope, ScopeContext> scopeContextMap = new HashMap<>();
+    for (AnomalyConfigScope scope : configScopes) {
+      switch (scope.getScopeCase()) {
+        case CUSTOMER_SCOPE:
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
+                  .build());
+          break;
+        case ENVIRONMENT_SCOPE:
+          // NOTE: env id & env name are same
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getEnvironmentScope().getEnvironmentId())
+                                          .setName(scope.getEnvironmentScope().getEnvironmentId())
+                                          .build())))
+                  .build());
+          break;
+        case SERVICE_SCOPE:
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getServiceScope().getId())
+                                          .setName(
+                                              serviceEntities
+                                                  .get(scope.getServiceScope().getId())
+                                                  .map(ServiceIdentifierEntity::getServiceName)
+                                                  .orElse(EMPTY_STRING))
+                                          .build())))
+                  .build());
+          break;
+        case API_SCOPE:
+          scopeContextMap.put(
+              scope,
+              ScopeContext.newBuilder()
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_API)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getApiScope().getId())
+                                          .setName(
+                                              apiEntities
+                                                  .get(scope.getApiScope().getId())
+                                                  .map(ApiIdentifierEntity::getApiName)
+                                                  .orElse(EMPTY_STRING))
+                                          .build())))
+                  .build());
+          break;
+        default:
+          throw new IllegalArgumentException("Unsupported scope type: " + scope.getScopeCase());
+      }
+    }
+    return scopeContextMap;
   }
 
   private ModsecRuleVersion getModsecRuleVersion(

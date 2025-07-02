@@ -18,6 +18,7 @@ import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModu
 import ai.traceable.anomaly.config.service.registry.AnomalyConfigRegistryModule;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -31,6 +32,7 @@ public class AnomalyConfigServiceModule extends AbstractModule {
 
   private static final String ANOMALY_CONFIG_SERVICE_CONFIG_PATH = "anomaly.config.service";
   private static final String LICENSE_METERING_SERVICE_CONFIG_PATH = "license.metering.service";
+  private static final String CACHED_SERVICE_MAPPING_NAME = "cachedServiceMapping-anomalyConfig";
 
   private final Config config;
   private final GrpcChannelRegistry channelRegistry;
@@ -63,6 +65,9 @@ public class AnomalyConfigServiceModule extends AbstractModule {
     install(new DetectorConfigServiceModule(DETECTOR_CONFIG_ANNOTATION));
     install(new AggregationConfigServiceModule(AGGREGATOR_CONFIG_ANNOTATION));
     install(new AnomalyConfigRegistryModule());
+    install(
+        new CachedServiceMappingProviderModule(
+            channelRegistry, config, CACHED_SERVICE_MAPPING_NAME));
   }
 
   @Provides
