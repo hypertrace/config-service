@@ -204,7 +204,107 @@ traceableConfigServiceConfig:
     port: 9012
     request:
       timeout: "10 s"
-
+  botConfigService:
+    defaultPolicies:
+      - id: bd35c18f-4287-458c-93dc-0150d9bc7b93
+        categorizedBotPolicyDetails:
+          name: Crawlers
+          description: Default Policy created for Crawlers
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-crawler-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: d1b42153-70d9-4e19-89e5-baad262123b2
+        categorizedBotPolicyDetails:
+          name: Monitoring and Development Bots
+          description: Default Policy created for Monitoring and Development Bots
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-monitoring-and-development-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: 794adce2-32af-42ce-84c6-f78798d27cd9
+        categorizedBotPolicyDetails:
+          name: Social Media and Content Bots
+          description: Default Policy created for Social Media and Content Bots
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-social-media-and-content-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: a5f2f9b4-4bda-46d7-9a70-319b2371311c
+        categorizedBotPolicyDetails:
+          name: Marketing and SEO Bots
+          description: Default Policy created for Marketing and SEO Bots
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-marketing-and-seo-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: 1fbd03b8-b386-42f4-a681-ba9289f2aece
+        categorizedBotPolicyDetails:
+          name: Search and Indexing Bots
+          description: Default Policy created for Search and Indexing Bots
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-search-and-indexing-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: 03ed4bfd-6314-4792-b525-01dd162c5a51
+        categorizedBotPolicyDetails:
+          name: E-commerce and Financial Bots
+          description: Default Policy created for E-commerce and Financial Bots
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-e-commerce-and-financial-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: 03ed4bfd-6314-4792-b525-01dd162c5a26
+        categorizedBotPolicyDetails:
+          name: Scanners
+          description: Default Policy created for Scanners
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-scanner-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: 03ed4bfd-6314-4792-b525-01dd162c5a21
+        categorizedBotPolicyDetails:
+          name: Automation Tools
+          description: Default Policy created for Automation Tools
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-automation-tools
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
+      - id: 09d421d0-7990-4b5c-8b31-693c22cdff8a
+        categorizedBotPolicyDetails:
+          name: Malicious Bots
+          description: Default Policy created for Malicious Bots
+          botScopes:
+            - botClassification:
+                botCategoryId: bot-category-malicious-bots
+          categorizedBotPolicyActionConfig:
+            botAction: CATEGORIZED_BOT_ACTION_MONITOR
+          isDefaultPolicy: true
+          enabled: true
   partitionerServiceConfig:
     defaultProfiles:
       - name: "spans"

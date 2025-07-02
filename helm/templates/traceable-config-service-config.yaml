@@ -133,6 +133,9 @@ data:
       {{- end }}
       edsConversionEnabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.edsConversionEnabled }}
     }
+    bot.config.service {
+        default.policies = {{ toJson .Values.traceableConfigServiceConfig.botConfigService.defaultPolicies }}
+    }
     actor.service.config {
       host = {{ .Values.traceableConfigServiceConfig.actorService.host }}
       port = {{ .Values.traceableConfigServiceConfig.actorService.port }}
