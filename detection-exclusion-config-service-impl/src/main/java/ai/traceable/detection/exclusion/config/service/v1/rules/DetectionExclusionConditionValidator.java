@@ -29,8 +29,10 @@ import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_STATUS_CODE;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_URL;
 import static ai.traceable.detection.exclusion.config.service.v1.KeyMetadata.KEY_METADATA_USER_AGENT;
+import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_EQUALS;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
 import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
+import static ai.traceable.detection.exclusion.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static ai.traceable.detection.exclusion.config.service.v1.ThreatActorIdentifier.THREAT_ACTOR_IDENTIFIER_UNSPECIFIED;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.printMessage;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
@@ -58,6 +60,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadata;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
+import ai.traceable.detection.exclusion.config.service.v1.LhsRhsKeysCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchOperator;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
@@ -83,7 +86,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DetectionExclusionConditionValidator {
 
-  public static final Set<KeyMetadata> KEY_NULL_META_DATAS =
+  public static final Set<KeyMetadata> KEY_NULL_METADATA =
       Set.of(
           KEY_METADATA_URL,
           KEY_METADATA_HOST,
@@ -111,7 +114,7 @@ public class DetectionExclusionConditionValidator {
               ATTRIBUTE_MATCH_CONDITION,
               ANOMALOUS_ATTRIBUTE_CONDITION);
 
-  private static final Set<KeyMetadata> VALID_METADATAS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW =
+  private static final Set<KeyMetadata> VALID_METADATA_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW =
       Set.of(
           KEY_METADATA_URL,
           KEY_METADATA_HOST,
@@ -122,6 +125,13 @@ public class DetectionExclusionConditionValidator {
           KEY_METADATA_REQUEST_COOKIE,
           KEY_METADATA_QUERY_PARAMETER,
           KEY_METADATA_REQUEST_BODY_PARAMETER);
+
+  private static final Set<MatchOperator>
+      SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION =
+          Set.of(MATCH_OPERATOR_EQUALS, MATCH_OPERATOR_NOT_EQUAL);
+
+  private static final Set<MatchOperator> UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION =
+      Set.of(MATCH_OPERATOR_GREATER_THAN, MATCH_OPERATOR_LESS_THAN);
 
   void validateRuleCondition(
       List<ExclusionTarget> exclusionTargets, DetectionExclusionCondition condition) {
@@ -197,11 +207,49 @@ public class DetectionExclusionConditionValidator {
       case REQUEST_SCANNER_TYPE_CONDITION:
         validateRequestScannerTypeCondition(condition.getRequestScannerTypeCondition());
         break;
+      case LHS_RHS_KEYS_CONDITION:
+        validateLhsRhsKeysCondition(condition.getLhsRhsKeysCondition());
+        break;
       default:
         throwInvalidArgumentException(
             String.format(
                 "Invalid detection exclusion condition type : %s", condition.getConditionCase()));
     }
+  }
+
+  private void validateLhsRhsKeysCondition(LhsRhsKeysCondition lhsRhsKeysCondition) {
+    validateNonDefaultPresenceOrThrow(
+        lhsRhsKeysCondition, LhsRhsKeysCondition.LHS_RHS_MATCH_OPERATOR_FIELD_NUMBER);
+    if (!SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(
+        lhsRhsKeysCondition.getLhsRhsMatchOperator())) {
+      throwInvalidArgumentException(
+          "The first-level MatchOperator in LhsRhsKeysCondition must be either EQUALS or NOT_EQUAL.");
+    }
+
+    if (!lhsRhsKeysCondition.hasLhsKeyCondition() || !lhsRhsKeysCondition.hasRhsKeyCondition()) {
+      throwInvalidArgumentException("Both LhsKeyCondition and RhsKeyCondition must be present.");
+    }
+
+    KeyMetadataMatchCondition lhsKeyMetadataMatchCondition =
+        lhsRhsKeysCondition.getLhsKeyCondition();
+    KeyMetadataMatchCondition rhsKeyMetadataMatchCondition =
+        lhsRhsKeysCondition.getRhsKeyCondition();
+
+    if (lhsKeyMetadataMatchCondition.equals(rhsKeyMetadataMatchCondition)) {
+      throwInvalidArgumentException(
+          "LhsKeyMetadataMatchCondition cannot be the same as RhsKeyMetadataMatchCondition.");
+    }
+
+    if (UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(
+            lhsKeyMetadataMatchCondition.getMatchCondition().getOperator())
+        || UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(
+            rhsKeyMetadataMatchCondition.getMatchCondition().getOperator())) {
+      throwInvalidArgumentException(
+          "GREATER_THAN and LESS_THAN match operators are unsupported in LhsRhsKeysCondition");
+    }
+
+    validateKeyMetadataMatchCondition(lhsKeyMetadataMatchCondition);
+    validateKeyMetadataMatchCondition(rhsKeyMetadataMatchCondition);
   }
 
   private void validateRequestScannerTypeCondition(
@@ -211,7 +259,7 @@ public class DetectionExclusionConditionValidator {
     if (requestScannerTypeCondition.getScannerTypesList().stream().anyMatch(String::isBlank)) {
       throwInvalidArgumentException(
           String.format(
-              "RequestScannerTypeCondition should not contain blank string : {}",
+              "RequestScannerTypeCondition should not contain blank string : %s",
               requestScannerTypeCondition));
     }
   }
@@ -337,7 +385,7 @@ public class DetectionExclusionConditionValidator {
 
     KeyMetadataMatchCondition keyMetadataMatchCondition = condition.getKeyMatchCondition();
     if (isBlockOrAllowTargetPresent) {
-      if (!VALID_METADATAS_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW.contains(
+      if (!VALID_METADATA_FOR_EXCLUSION_TARGET_BLOCK_OR_ALLOW.contains(
           keyMetadataMatchCondition.getMetadata())) {
         throwInvalidArgumentException(
             String.format(
@@ -348,7 +396,7 @@ public class DetectionExclusionConditionValidator {
     validateNonDefaultPresenceOrThrow(
         keyMetadataMatchCondition, KeyMetadataMatchCondition.METADATA_FIELD_NUMBER);
     KeyMetadata metadata = keyMetadataMatchCondition.getMetadata();
-    if (KEY_NULL_META_DATAS.contains(metadata)) {
+    if (KEY_NULL_METADATA.contains(metadata)) {
       if (keyMetadataMatchCondition.hasMatchCondition()) {
         throwInvalidArgumentException(
             String.format(
@@ -599,6 +647,15 @@ public class DetectionExclusionConditionValidator {
         break;
       default:
         validateIpAddressesAndRanges(condition, cidrIpRanges, ipAddresses, rawInputIpData);
+    }
+  }
+
+  private void validateKeyMetadataMatchCondition(
+      KeyMetadataMatchCondition keyMetadataMatchCondition) {
+    validateNonDefaultPresenceOrThrow(
+        keyMetadataMatchCondition, KeyMetadataMatchCondition.METADATA_FIELD_NUMBER);
+    if (keyMetadataMatchCondition.hasMatchCondition()) {
+      validateMatchCondition(keyMetadataMatchCondition.getMatchCondition());
     }
   }
 

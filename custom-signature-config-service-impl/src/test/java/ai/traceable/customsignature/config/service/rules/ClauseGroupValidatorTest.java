@@ -16,12 +16,15 @@ import ai.traceable.customsignature.config.service.v1.IpReputationExpression;
 import ai.traceable.customsignature.config.service.v1.IpReputationSeverity;
 import ai.traceable.customsignature.config.service.v1.IpType;
 import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
+import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
+import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Collections;
@@ -354,6 +357,111 @@ public class ClauseGroupValidatorTest {
             MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT, MatchOperator.MATCH_OPERATOR_GREATER_THAN, "1");
     status = clauseGroupValidator.validateClause(clause, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  @Test
+  void testLhsRhsKeysExpressionClause() {
+    // invalid first level MatchOperator
+    Clause lhsRhsKeysExpressionClause1 =
+        getLhsRhsKeysExpressionClause(
+            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+            MatchKey.MATCH_KEY_HEADER_NAME,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "lhs-match-value-1",
+            MatchKey.MATCH_KEY_COOKIE_NAME,
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+            "rhs-match-value-1");
+    Status status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause1, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // invalid second level MatchOperator
+    Clause lhsRhsKeysExpressionClause2 =
+        getLhsRhsKeysExpressionClause(
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            MatchKey.MATCH_KEY_HEADER_NAME,
+            MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+            "100",
+            MatchKey.MATCH_KEY_COOKIE_NAME,
+            MatchOperator.MATCH_OPERATOR_LESS_THAN,
+            "10");
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause2, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // same LhsKeyExpression and RhsKeyExpression
+    Clause lhsRhsKeysExpressionClause3 =
+        getLhsRhsKeysExpressionClause(
+            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+            MatchKey.MATCH_KEY_COOKIE_NAME,
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+            "lhs-rhs-match-value",
+            MatchKey.MATCH_KEY_COOKIE_NAME,
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+            "lhs-rhs-match-value");
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause3, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // value only MatchKeys
+    Clause lhsRhsKeysExpressionClause4 =
+        getLhsRhsKeysExpressionClause(
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            MatchKey.MATCH_KEY_HEADER_VALUE,
+            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+            "lhs-match-value-2",
+            MatchKey.MATCH_KEY_COOKIE_VALUE,
+            MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX,
+            "rhs-match-value-2");
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause4, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // valid case
+    Clause lhsRhsKeysExpressionClause5 =
+        getLhsRhsKeysExpressionClause(
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            MatchKey.MATCH_KEY_HEADER_NAME,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "lhs-match-value-3",
+            MatchKey.MATCH_KEY_COOKIE_NAME,
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+            "rhs-match-value-3");
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause5, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.OK.getCode(), status.getCode());
+  }
+
+  private Clause getLhsRhsKeysExpressionClause(
+      MatchOperator lhsRhsKeysMatchOperator,
+      MatchKey lhsMatchKey,
+      MatchOperator lhsMatchOperator,
+      String lhsMatchValue,
+      MatchKey rhsMatchKey,
+      MatchOperator rhsMatchOperator,
+      String rhsMatchValue) {
+    return Clause.newBuilder()
+        .setLhsRhsKeysExpression(
+            LhsRhsKeysExpression.newBuilder()
+                .setLhsKeyExpression(
+                    MatchExpression.newBuilder()
+                        .setMatchKey(lhsMatchKey)
+                        .setMatchOperator(lhsMatchOperator)
+                        .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                        .setValue(Value.newBuilder().setStringValue(lhsMatchValue)))
+                .setRhsKeyExpression(
+                    MatchExpression.newBuilder()
+                        .setMatchKey(rhsMatchKey)
+                        .setMatchOperator(rhsMatchOperator)
+                        .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                        .setValue(Value.newBuilder().setStringValue(rhsMatchValue)))
+                .setMatchOperator(lhsRhsKeysMatchOperator))
+        .build();
   }
 
   private Clause getMatchExpressionClause(

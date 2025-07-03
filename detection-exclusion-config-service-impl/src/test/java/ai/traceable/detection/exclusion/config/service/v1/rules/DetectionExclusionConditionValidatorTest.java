@@ -36,6 +36,7 @@ import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadata;
 import ai.traceable.detection.exclusion.config.service.v1.KeyMetadataMatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.LabelScope;
+import ai.traceable.detection.exclusion.config.service.v1.LhsRhsKeysCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchCondition;
 import ai.traceable.detection.exclusion.config.service.v1.MatchOperator;
 import ai.traceable.detection.exclusion.config.service.v1.RegionCondition;
@@ -68,7 +69,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateScopeCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -82,7 +83,7 @@ class DetectionExclusionConditionValidatorTest {
       assertTrue(throwable.getMessage().contains("Invalid scopeConditionCase"));
     }
 
-    // entity scope not set
+    // entity scope isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -97,7 +98,7 @@ class DetectionExclusionConditionValidatorTest {
           () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition));
     }
 
-    // label scope not set
+    // label scope isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -112,7 +113,7 @@ class DetectionExclusionConditionValidatorTest {
           () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition));
     }
 
-    // entity ids not set
+    // entity ids aren't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -188,7 +189,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateAttributeMatchCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -202,7 +203,7 @@ class DetectionExclusionConditionValidatorTest {
       assertTrue(throwable.getMessage().contains("Invalid spanAttributeMatchCondition"));
     }
 
-    // key metadata not set
+    // key metadata isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -215,7 +216,7 @@ class DetectionExclusionConditionValidatorTest {
           () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition));
     }
 
-    // value not set for match condition
+    // value isn't set for match condition
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -374,7 +375,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateIpLocationTypeCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -438,7 +439,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void validateIpReputationCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -497,7 +498,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateUserIdCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -536,7 +537,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateEventCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -726,7 +727,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateAnomalousAttributeCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -759,9 +760,7 @@ class DetectionExclusionConditionValidatorTest {
               () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition));
 
       assertTrue(
-          throwable
-              .getMessage()
-              .contains(String.format("Invalid type : ATTRIBUTE_VALUE_TYPE_UNSPECIFIED")));
+          throwable.getMessage().contains("Invalid type : ATTRIBUTE_VALUE_TYPE_UNSPECIFIED"));
 
       DetectionExclusionCondition condition1 =
           DetectionExclusionCondition.newBuilder()
@@ -782,9 +781,7 @@ class DetectionExclusionConditionValidatorTest {
               () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition1));
 
       assertTrue(
-          throwable
-              .getMessage()
-              .contains(String.format("Invalid type : ATTRIBUTE_VALUE_TYPE_UNSPECIFIED")));
+          throwable.getMessage().contains("Invalid type : ATTRIBUTE_VALUE_TYPE_UNSPECIFIED"));
     }
     // valid condition
     {
@@ -819,7 +816,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateIpAddressCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -1154,7 +1151,7 @@ class DetectionExclusionConditionValidatorTest {
 
   @Test
   void testValidateRequestScannerTypeTypeCondition() {
-    // condition not set
+    // condition isn't set
     {
       DetectionExclusionCondition condition =
           DetectionExclusionCondition.newBuilder()
@@ -1191,5 +1188,119 @@ class DetectionExclusionConditionValidatorTest {
       assertDoesNotThrow(
           () -> conditionValidator.validateRuleCondition(Collections.emptyList(), condition));
     }
+  }
+
+  @Test
+  void testValidateLhsRhsKeysCondition() {
+    // invalid first level MatchOperator
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setLhsRhsKeysCondition(
+                  getLhsRhsKeysCondition(
+                      MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+                      KeyMetadata.KEY_METADATA_REQUEST_HEADER,
+                      MatchOperator.MATCH_OPERATOR_EQUALS,
+                      "lhs-key-value-1",
+                      KeyMetadata.KEY_METADATA_REQUEST_COOKIE,
+                      MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+                      "rhs-key-value-1"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class,
+          () ->
+              conditionValidator.validateRuleCondition(
+                  Collections.emptyList(), detectionExclusionCondition));
+    }
+
+    // invalid second level MatchOperator
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setLhsRhsKeysCondition(
+                  getLhsRhsKeysCondition(
+                      MatchOperator.MATCH_OPERATOR_EQUALS,
+                      KeyMetadata.KEY_METADATA_REQUEST_HEADER,
+                      MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+                      "100",
+                      KeyMetadata.KEY_METADATA_REQUEST_COOKIE,
+                      MatchOperator.MATCH_OPERATOR_LESS_THAN,
+                      "10"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class,
+          () ->
+              conditionValidator.validateRuleCondition(
+                  Collections.emptyList(), detectionExclusionCondition));
+    }
+
+    // same LhsKeyCondition and RhsKeyCondition
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setLhsRhsKeysCondition(
+                  getLhsRhsKeysCondition(
+                      MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+                      KeyMetadata.KEY_METADATA_REQUEST_HEADER,
+                      MatchOperator.MATCH_OPERATOR_EQUALS,
+                      "lhs-rhs-key-value",
+                      KeyMetadata.KEY_METADATA_REQUEST_HEADER,
+                      MatchOperator.MATCH_OPERATOR_EQUALS,
+                      "lhs-rhs-key-value"))
+              .build();
+      assertThrows(
+          StatusRuntimeException.class,
+          () ->
+              conditionValidator.validateRuleCondition(
+                  Collections.emptyList(), detectionExclusionCondition));
+    }
+
+    // valid LhsRhsKeysCondition
+    {
+      DetectionExclusionCondition detectionExclusionCondition =
+          DetectionExclusionCondition.newBuilder()
+              .setLhsRhsKeysCondition(
+                  getLhsRhsKeysCondition(
+                      MatchOperator.MATCH_OPERATOR_EQUALS,
+                      KeyMetadata.KEY_METADATA_REQUEST_HEADER,
+                      MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+                      "lhs-key-value-2",
+                      KeyMetadata.KEY_METADATA_REQUEST_COOKIE,
+                      MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+                      "rhs-key-value-2"))
+              .build();
+      assertDoesNotThrow(
+          () ->
+              conditionValidator.validateRuleCondition(
+                  Collections.emptyList(), detectionExclusionCondition));
+    }
+  }
+
+  private LhsRhsKeysCondition getLhsRhsKeysCondition(
+      MatchOperator lhsRhsMatchOperator,
+      KeyMetadata lhsKeyMetadata,
+      MatchOperator lhsKeyMatchOperator,
+      String lhsKeyValue,
+      KeyMetadata rhsKeyMetadata,
+      MatchOperator rhsKeyMatchOperator,
+      String rhsKeyValue) {
+    return LhsRhsKeysCondition.newBuilder()
+        .setLhsRhsMatchOperator(lhsRhsMatchOperator)
+        .setLhsKeyCondition(
+            getKeyMetadataMatchCondition(lhsKeyMetadata, lhsKeyMatchOperator, lhsKeyValue))
+        .setRhsKeyCondition(
+            getKeyMetadataMatchCondition(rhsKeyMetadata, rhsKeyMatchOperator, rhsKeyValue))
+        .build();
+  }
+
+  private KeyMetadataMatchCondition getKeyMetadataMatchCondition(
+      KeyMetadata keyMetadata, MatchOperator matchOperator, String value) {
+    return KeyMetadataMatchCondition.newBuilder()
+        .setMetadata(keyMetadata)
+        .setMatchCondition(
+            MatchCondition.newBuilder()
+                .setOperator(matchOperator)
+                .setValue(Value.newBuilder().setStringValue(value)))
+        .build();
   }
 }

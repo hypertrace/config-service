@@ -55,7 +55,7 @@ class DetectionExclusionRuleAttributeMatchConditionConverter
       RequestContext requestContext, DetectionExclusionCondition condition) {
     SpanAttributeMatchCondition attributeMatchCondition = condition.getAttributeMatchCondition();
     KeyMetadata keyMetadata = attributeMatchCondition.getKeyMatchCondition().getMetadata();
-    if (DetectionExclusionConditionValidator.KEY_NULL_META_DATAS.contains(keyMetadata)) {
+    if (DetectionExclusionConditionValidator.KEY_NULL_METADATA.contains(keyMetadata)) {
       ai.traceable.detection.exclusion.config.service.v1.MatchCondition matchCondition =
           attributeMatchCondition.getValueMatchCondition();
       boolean isKeyMetadataCaseInsensitive =

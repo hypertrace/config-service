@@ -15,9 +15,12 @@ import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_QUERY_PARAMS_COUNT;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_URL;
 import static ai.traceable.customsignature.config.service.v1.MatchKey.MATCH_KEY_USER_AGENT;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_CONTAINS;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_EQUALS;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static ai.traceable.customsignature.config.service.v1.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX;
 import static ai.traceable.modsecurity.rule.secrule.ModsecRuleConstants.SEC_RULE;
@@ -92,6 +95,17 @@ class ClauseGroupValidator {
           MATCH_KEY_COOKIES_COUNT);
 
   private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
+      Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
+
+  private static final Set<MatchOperator>
+      SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION =
+          Set.of(
+              MATCH_OPERATOR_EQUALS,
+              MATCH_OPERATOR_NOT_EQUAL,
+              MATCH_OPERATOR_CONTAINS,
+              MATCH_OPERATOR_NOT_CONTAIN);
+
+  private static final Set<MatchOperator> UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
   public Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
@@ -565,6 +579,12 @@ class ClauseGroupValidator {
       LhsRhsKeysExpression lhsRhsKeysExpression, EventType eventType) {
     validateNonDefaultPresenceOrThrow(
         lhsRhsKeysExpression, LhsRhsKeysExpression.MATCH_OPERATOR_FIELD_NUMBER);
+    if (!SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION.contains(
+        lhsRhsKeysExpression.getMatchOperator())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "The first-level MatchOperator in LhsRhsKeysExpression must be one of: EQUALS, NOT_EQUAL, CONTAINS, or NOT_CONTAIN.");
+    }
+
     if (!lhsRhsKeysExpression.hasLhsKeyExpression()
         || !lhsRhsKeysExpression.hasRhsKeyExpression()) {
       return Status.INVALID_ARGUMENT.withDescription(
@@ -583,6 +603,13 @@ class ClauseGroupValidator {
     if (lhsKeyExpression.equals(rhsKeyExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "LhsKeyExpression cannot be the same as RhsKeyExpression.");
+    }
+    if (UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION.contains(
+            lhsKeyExpression.getMatchOperator())
+        || UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION.contains(
+            rhsKeyExpression.getMatchOperator())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GREATER_THAN and LESS_THAN match operators are unsupported in case of LhsRhsKeysExpression.");
     }
 
     if ((status = validateMatchExpression(lhsKeyExpression, eventType)) != Status.OK) {

@@ -1,7 +1,13 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.DataSensitivityLevel.DATA_SENSITIVITY_LEVEL_UNSPECIFIED;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_CONTAINS;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_EQUALS;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_GREATER_THAN;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_LESS_THAN;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_CONTAIN;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.MatchOperator.MATCH_OPERATOR_NOT_EQUAL;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HOST;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_HTTP_METHOD;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_QUERY_PARAMS_COUNT;
@@ -50,6 +56,7 @@ import com.google.protobuf.Message;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Set;
 
 public class ValidatorUtils {
   public static final List<Type> KEY_NULL_CONDITION_TYPES =
@@ -68,6 +75,17 @@ public class ValidatorUtils {
           TYPE_RESPONSE_HEADERS_COUNT,
           TYPE_REQUEST_COOKIES_COUNT,
           TYPE_RESPONSE_COOKIES_COUNT);
+
+  private static final Set<MatchOperator>
+      SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION =
+          Set.of(
+              MATCH_OPERATOR_EQUALS,
+              MATCH_OPERATOR_NOT_EQUAL,
+              MATCH_OPERATOR_CONTAINS,
+              MATCH_OPERATOR_NOT_CONTAIN);
+
+  private static final Set<MatchOperator> UNSUPPORTED_LHS_RHS_KEYS_CONDITION_OPERATORS =
+      Set.of(MATCH_OPERATOR_GREATER_THAN, MATCH_OPERATOR_LESS_THAN);
 
   public void validateLeafCondition(LeafCondition leafCondition) {
     switch (leafCondition.getConditionCase()) {
@@ -142,13 +160,30 @@ public class ValidatorUtils {
               "Invalid condition for type %s:%n %s",
               getName(lhsRhsKeysCondition), printMessage(lhsRhsKeysCondition)));
     }
+
     validateNonDefaultPresenceOrThrow(
         lhsRhsKeysCondition,
         KeyValueCondition.LhsRhsKeysCondition.LHS_RHS_MATCH_OPERATOR_FIELD_NUMBER);
-    validateMatchOperatorCondition(
-        lhsRhsKeysCondition.getLhsKeyCondition().getKeyMatchOperatorCondition());
-    validateMatchOperatorCondition(
-        lhsRhsKeysCondition.getRhsKeyCondition().getKeyMatchOperatorCondition());
+    if (!SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_CONDITION.contains(
+        lhsRhsKeysCondition.getLhsRhsMatchOperator())) {
+      throwInvalidArgumentException(
+          "The first-level MatchOperator in LhsRhsKeysCondition must be one of: EQUALS, NOT_EQUAL, CONTAINS, or NOT_CONTAIN.");
+    }
+
+    KeyValueCondition.MatchOperatorCondition lhsKeyMatchOperatorCondition =
+        lhsRhsKeysCondition.getLhsKeyCondition().getKeyMatchOperatorCondition();
+    KeyValueCondition.MatchOperatorCondition rhsKeyMatchOperatorCondition =
+        lhsRhsKeysCondition.getRhsKeyCondition().getKeyMatchOperatorCondition();
+    if (UNSUPPORTED_LHS_RHS_KEYS_CONDITION_OPERATORS.contains(
+            lhsKeyMatchOperatorCondition.getOperator())
+        || UNSUPPORTED_LHS_RHS_KEYS_CONDITION_OPERATORS.contains(
+            rhsKeyMatchOperatorCondition.getOperator())) {
+      throwInvalidArgumentException(
+          "GREATER_THAN and LESS_THAN match operators are unsupported in LhsRhsKeysCondition");
+    }
+    validateMatchOperatorCondition(lhsKeyMatchOperatorCondition);
+    validateMatchOperatorCondition(rhsKeyMatchOperatorCondition);
+
     if (lhsRhsKeysCondition
             .getLhsKeyCondition()
             .getKeyType()
@@ -334,12 +369,14 @@ public class ValidatorUtils {
       KeyValueCondition.MatchOperatorCondition matchOperatorCondition) {
     validateNonDefaultPresenceOrThrow(
         matchOperatorCondition, KeyValueCondition.MatchOperatorCondition.OPERATOR_FIELD_NUMBER);
+
     if (matchOperatorCondition.getValue().equals(Value.getDefaultInstance())) {
       throwInvalidArgumentException(
           String.format(
               "Value should be set in matchOperatorCondition: %s",
               matchOperatorCondition.getOperator()));
     }
+
     if (isInvalidMathematicalOperation(matchOperatorCondition)) {
       throwInvalidArgumentException(
           String.format(

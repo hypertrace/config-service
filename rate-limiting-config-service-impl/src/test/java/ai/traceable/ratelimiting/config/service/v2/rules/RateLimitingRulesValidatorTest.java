@@ -3,6 +3,10 @@ package ai.traceable.ratelimiting.config.service.v2.rules;
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
 import static ai.traceable.ratelimiting.config.service.v2.CompositeCondition.LogicalOperator.LOGICAL_OPERATOR_AND;
 import static ai.traceable.ratelimiting.config.service.v2.IpLocationType.IP_LOCATION_TYPE_HOSTING_PROVIDER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_QUERY_PARAMETER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_BODY_PARAMETER;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_COOKIE;
+import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADER;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_REQUEST_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.KeyValueCondition.Type.TYPE_RESPONSE_HEADERS_COUNT;
 import static ai.traceable.ratelimiting.config.service.v2.ScopeCondition.EntityType.ENTITY_TYPE_API;
@@ -56,7 +60,9 @@ import ai.traceable.ratelimiting.config.service.v2.UserAgentCondition;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
 import ai.traceable.ratelimiting.config.service.v2.UserIdCondition;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
+import ai.traceable.ratelimiting.service.v2.rules.ValidatorUtils;
 import com.google.protobuf.Duration;
+import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
@@ -72,11 +78,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class RateLimitingRulesValidatorTest {
   private RequestContext requestContext;
   private RateLimitingRulesValidator rulesValidator;
+  private ValidatorUtils validatorUtils;
 
   @BeforeEach
   void setUp() {
     requestContext = RequestContext.forTenantId("default tenant");
     rulesValidator = new RateLimitingRulesValidator();
+    validatorUtils = new ValidatorUtils();
   }
 
   @Test
@@ -2935,7 +2943,7 @@ public class RateLimitingRulesValidatorTest {
                         RequestScannerTypeCondition.newBuilder()
                             .addAllScannerTypes(List.of("Scanner1", "Scanner2"))))
             .build();
-    RateLimitingRuleData ruleData = getRateLimitingRule(requestScannerTypeCondition);
+    RateLimitingRuleData ruleData = getRateLimitingRuleData(requestScannerTypeCondition);
     CreateRateLimitingRuleRequest request =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request, List.of()));
@@ -2947,7 +2955,7 @@ public class RateLimitingRulesValidatorTest {
                     .setRequestScannerTypeCondition(
                         RequestScannerTypeCondition.getDefaultInstance()))
             .build();
-    ruleData = getRateLimitingRule(requestScannerTypeCondition);
+    ruleData = getRateLimitingRuleData(requestScannerTypeCondition);
     CreateRateLimitingRuleRequest request1 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertThrows(
@@ -2962,7 +2970,7 @@ public class RateLimitingRulesValidatorTest {
                         RequestScannerTypeCondition.newBuilder()
                             .addAllScannerTypes(List.of("", "Scanner1"))))
             .build();
-    ruleData = getRateLimitingRule(requestScannerTypeCondition);
+    ruleData = getRateLimitingRuleData(requestScannerTypeCondition);
     CreateRateLimitingRuleRequest request2 =
         CreateRateLimitingRuleRequest.newBuilder().setData(ruleData).build();
     assertThrows(
@@ -3140,7 +3148,97 @@ public class RateLimitingRulesValidatorTest {
     assertDoesNotThrow(() -> rulesValidator.validateOrThrow(requestContext, request3, List.of()));
   }
 
-  private RateLimitingRuleData getRateLimitingRule(Condition condition) {
+  @Test
+  void testLhsRhsKeysCondition() {
+    // invalid first level MatchOperator
+    KeyValueCondition keyValueCondition1 =
+        getLhsRhsKeysCondition(
+            MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
+            TYPE_REQUEST_HEADER,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "lhs-key-value-1",
+            TYPE_REQUEST_COOKIE,
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+            "rhs-key-value-1");
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> validatorUtils.validateKeyValueCondition(keyValueCondition1));
+
+    // invalid second level MatchOperator
+    KeyValueCondition keyValueCondition2 =
+        getLhsRhsKeysCondition(
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            TYPE_QUERY_PARAMETER,
+            MatchOperator.MATCH_OPERATOR_GREATER_THAN,
+            "100",
+            TYPE_REQUEST_BODY_PARAMETER,
+            MatchOperator.MATCH_OPERATOR_LESS_THAN,
+            "10");
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> validatorUtils.validateKeyValueCondition(keyValueCondition2));
+
+    // same LhsKeyCondition and RhsKeyCondition
+    KeyValueCondition keyValueCondition3 =
+        getLhsRhsKeysCondition(
+            MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
+            TYPE_REQUEST_COOKIE,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "key-value-2",
+            TYPE_REQUEST_COOKIE,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "key-value-2");
+    assertThrows(
+        StatusRuntimeException.class,
+        () -> validatorUtils.validateKeyValueCondition(keyValueCondition3));
+
+    // valid case
+    KeyValueCondition keyValueCondition4 =
+        getLhsRhsKeysCondition(
+            MatchOperator.MATCH_OPERATOR_EQUALS,
+            TYPE_REQUEST_HEADER,
+            MatchOperator.MATCH_OPERATOR_CONTAINS,
+            "lhs-key-value-3",
+            TYPE_REQUEST_COOKIE,
+            MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
+            "rhs-key-value-4");
+    assertDoesNotThrow(() -> validatorUtils.validateKeyValueCondition(keyValueCondition4));
+  }
+
+  private KeyValueCondition getLhsRhsKeysCondition(
+      MatchOperator lhsRhsKeysMatchOperator,
+      Type lhsKeyType,
+      MatchOperator lhsKeyMatchOperator,
+      String lhsValue,
+      Type rhsKeyType,
+      MatchOperator rhsKeyMatchOperator,
+      String rhsValue) {
+    return KeyValueCondition.newBuilder()
+        .setLhsRhsCondition(
+            KeyValueCondition.LhsRhsKeysCondition.newBuilder()
+                .setLhsKeyCondition(getKeyCondition(lhsKeyType, lhsKeyMatchOperator, lhsValue))
+                .setRhsKeyCondition(getKeyCondition(rhsKeyType, rhsKeyMatchOperator, rhsValue))
+                .setLhsRhsMatchOperator(lhsRhsKeysMatchOperator))
+        .build();
+  }
+
+  private KeyValueCondition.KeyCondition getKeyCondition(
+      Type keyType, MatchOperator matchOperator, String value) {
+    return KeyValueCondition.KeyCondition.newBuilder()
+        .setKeyType(keyType)
+        .setKeyMatchOperatorCondition(getMatchOperatorCondition(matchOperator, value))
+        .build();
+  }
+
+  private KeyValueCondition.MatchOperatorCondition getMatchOperatorCondition(
+      MatchOperator matchOperator, String value) {
+    return KeyValueCondition.MatchOperatorCondition.newBuilder()
+        .setOperator(matchOperator)
+        .setValue(Value.newBuilder().setStringValue(value))
+        .build();
+  }
+
+  private RateLimitingRuleData getRateLimitingRuleData(Condition condition) {
     return RateLimitingRuleData.newBuilder()
         .setName("rule")
         .setCategory(Category.CATEGORY_RATE_LIMITING)
