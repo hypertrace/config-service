@@ -18,6 +18,8 @@ import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStat
 import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigServiceValidator;
 import ai.traceable.anomaly.config.service.global.version.RuleVersionManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.RuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersions;
 import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
@@ -34,8 +36,6 @@ import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfi
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusResponse;
-import ai.traceable.anomaly.config.service.v1.global.RuleType;
-import ai.traceable.anomaly.config.service.v1.global.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;

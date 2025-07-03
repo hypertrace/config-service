@@ -3,11 +3,11 @@ package ai.traceable.anomaly.config.service.global.version;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import ai.traceable.anomaly.config.service.v1.RuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
+import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersions;
 import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
-import ai.traceable.anomaly.config.service.v1.global.RuleType;
-import ai.traceable.anomaly.config.service.v1.global.RuleVersion;
-import ai.traceable.anomaly.config.service.v1.global.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.RulesChangeLog;
 import ai.traceable.anomaly.config.service.v1.global.ThreatRuleChange;
 import ai.traceable.anomaly.config.service.v1.global.ThreatRuleUpdateDetails;

@@ -2,6 +2,8 @@ package ai.traceable.anomaly.config.service.global.validator;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigValidator;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.RuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
@@ -9,8 +11,6 @@ import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsReq
 import ai.traceable.anomaly.config.service.v1.global.GetRulesChangeLogRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
-import ai.traceable.anomaly.config.service.v1.global.RuleType;
-import ai.traceable.anomaly.config.service.v1.global.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import io.grpc.Status;
 import jakarta.inject.Inject;

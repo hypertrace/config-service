@@ -221,6 +221,31 @@ enum AnomalyRuleAction {
   ANOMALY_RULE_ACTION_TESTING = 4;
 }
 
+message RuleVersionData {
+  RuleVersion current_version = 1;
+  RuleVersion previous_version = 2;
+}
+
+message RuleVersion {
+  string version = 1;
+  RuleVersionType version_type = 2;
+  string published_date = 3;
+}
+
+enum RuleType {
+  RULE_TYPE_UNSPECIFIED = 0;
+  RULE_TYPE_WEB_APPLICATION = 1;
+  RULE_TYPE_API_PROTECTION = 2;
+}
+
+enum RuleVersionType {
+  RULE_VERSION_TYPE_UNSPECIFIED = 0;
+  RULE_VERSION_TYPE_STABLE = 1;
+  RULE_VERSION_TYPE_BETA = 2;
+  RULE_VERSION_TYPE_EXPERIMENTAL = 3;
+  RULE_VERSION_TYPE_DEPRECATED = 4;
+}
+
 message StringList {
   repeated string values = 1;
 }

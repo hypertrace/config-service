@@ -128,8 +128,7 @@ message GlobalModsecConfig {
   AnomalyConfidenceLevel min_confidence_level = 5;
   bool enabled_for_exit_spans = 6;
   ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
-  RuleVersion current_version = 8;
-  RuleVersion previous_version = 9;
+  RuleVersionData rule_version_data = 8;
 }
 
 message GlobalApiConfigChange {
@@ -144,8 +143,7 @@ message GlobalApiConfig {
   bool disabled = 1;
   ApiDefaultConfigsType default_configs_type = 2;
   bool enabled_for_exit_spans = 3;
-  RuleVersion current_version = 4;
-  RuleVersion previous_version = 5;
+  RuleVersionData rule_version_data = 4;
 }
 
 enum CorazaEngineVersion {
@@ -259,25 +257,6 @@ message AvailableRuleVersionsFilter {
 message AvailableRuleVersions {
   RuleType rule_type = 1;
   repeated RuleVersion versions = 2;
-}
-
-message RuleVersion {
-  string version = 1;
-  RuleVersionType version_type = 2;
-}
-
-enum RuleType {
-  RULE_TYPE_UNSPECIFIED = 0;
-  RULE_TYPE_WEB_APPLICATION = 1;
-  RULE_TYPE_API_PROTECTION = 2;
-}
-
-enum RuleVersionType {
-  RULE_VERSION_TYPE_UNSPECIFIED = 0;
-  RULE_VERSION_TYPE_STABLE = 1;
-  RULE_VERSION_TYPE_BETA = 2;
-  RULE_VERSION_TYPE_EXPERIMENTAL = 3;
-  RULE_VERSION_TYPE_DEPRECATED = 4;
 }
 
 // deprecated
