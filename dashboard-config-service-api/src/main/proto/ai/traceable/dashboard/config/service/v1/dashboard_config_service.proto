@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package ai.traceable.dashboard.config.service.v1;
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -14,6 +15,8 @@ service DashboardConfigService {
   rpc UpdateDashboard(UpdateDashboardRequest) returns (UpdateDashboardResponse) {}
 
   rpc DeleteDashboard(DeleteDashboardRequest) returns (DeleteDashboardResponse) {}
+
+  rpc UpdateDashboardRoleAssignments(UpdateDashboardRoleAssignmentsRequest) returns (UpdateDashboardRoleAssignmentsResponse) {}
 }
 
 message GetDashboardsRequest {
@@ -67,4 +70,28 @@ message Dashboard {
   google.protobuf.Timestamp creation_timestamp = 6;
   google.protobuf.Timestamp last_updated_timestamp = 7;
   optional string ui_reference = 8;
+  DashboardRoleAssignments role_assignments = 9;
+}
+
+message DashboardRoleAssignments {
+  repeated DashboardPrincipal viewers = 1;
+  repeated DashboardPrincipal editors = 2;
+  repeated DashboardPrincipal owners = 3;
+}
+
+message DashboardPrincipal {
+  oneof principal {
+    google.protobuf.Empty all_authenticated_users = 1;
+    string user_email = 2;
+  }
+}
+
+message UpdateDashboardRoleAssignmentsRequest {
+  string id = 1;
+  google.protobuf.Timestamp previous_update_timestamp = 2;
+  DashboardRoleAssignments role_assignments = 3;
+}
+
+message UpdateDashboardRoleAssignmentsResponse {
+  Dashboard dashboard = 1;
 }
