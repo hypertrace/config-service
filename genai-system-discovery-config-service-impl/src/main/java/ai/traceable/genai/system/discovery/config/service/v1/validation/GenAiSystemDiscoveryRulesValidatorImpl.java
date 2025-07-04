@@ -91,6 +91,12 @@ public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscov
       case ATTRIBUTE_CONDITION:
         validateKeyValueCondition(leafCondition.getAttributeCondition());
         break;
+      case REQUEST_BODY_CONDITION:
+        validateKeyValueCondition(leafCondition.getRequestBodyCondition());
+        break;
+      case RESPONSE_BODY_CONDITION:
+        validateKeyValueCondition(leafCondition.getResponseBodyCondition());
+        break;
       default:
         throw Status.INVALID_ARGUMENT
             .withDescription(
@@ -173,6 +179,12 @@ public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscov
         break;
       case ATTRIBUTE_EXTRACTION_ACTION:
         validateExtractionAction(dynamicNameExtractionAction.getAttributeExtractionAction());
+        break;
+      case REQUEST_BODY_EXTRACTION_ACTION:
+        validateExtractionAction(dynamicNameExtractionAction.getRequestBodyExtractionAction());
+        break;
+      case RESPONSE_BODY_EXTRACTION_ACTION:
+        validateExtractionAction(dynamicNameExtractionAction.getResponseBodyExtractionAction());
         break;
       default:
         throw Status.INVALID_ARGUMENT
