@@ -41,6 +41,7 @@ public class FeatureCachingClient {
   private static final boolean DEFAULT_THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG_VALUE =
       false;
   private static final boolean DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE = false;
+  private static final boolean DEFAULT_WAAP_VERSIONING_FLAG_VALUE = false;
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
   private static final String DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG =
@@ -59,6 +60,8 @@ public class FeatureCachingClient {
   private static final String THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG =
       "notifications.threat-scoring-configuration";
   private static final String TRACEABLE_EDGE_DECISION_FLAG = "traceable-edge.edge-decision";
+  private static final String CONFIG_SERVICE_WAAP_RULES_VERSIONING =
+      "config-service.waap-rules-versioning";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -75,7 +78,8 @@ public class FeatureCachingClient {
           TPA_CUSTOM_RATE_LIMIT_CONFIG,
           RASP_INSPECTION,
           THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG,
-          TRACEABLE_EDGE_DECISION_FLAG);
+          TRACEABLE_EDGE_DECISION_FLAG,
+          CONFIG_SERVICE_WAAP_RULES_VERSIONING);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -282,6 +286,18 @@ public class FeatureCachingClient {
     } catch (Exception exception) {
       log.warn("Failed to retrieve current feature flag value for edge decision flag", exception);
       return DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE;
+    }
+  }
+
+  public boolean isWAAPVersioningEnabledForTenant(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(CONFIG_SERVICE_WAAP_RULES_VERSIONING));
+    } catch (Exception exception) {
+      log.warn("Failed to retrieve current feature flag value for WAAP versioning", exception);
+      return DEFAULT_WAAP_VERSIONING_FLAG_VALUE;
     }
   }
 

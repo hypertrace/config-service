@@ -176,6 +176,7 @@ public class ModsecConfigValidator {
         requestContext,
         List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
         modsecRuleVersion,
+        globalModsecConfig.getRuleVersionData().getCurrentVersion(),
         globalModsecConfig.getUseTestRules());
   }
 

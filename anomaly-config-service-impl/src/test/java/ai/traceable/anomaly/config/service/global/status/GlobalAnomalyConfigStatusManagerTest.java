@@ -22,8 +22,14 @@ import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyParamScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
+import ai.traceable.anomaly.config.service.v1.RuleVersionDataChange;
+import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.global.ExcludedEventsGenerationConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
+import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.license.metering.service.api.v1.GetLicenseInfoRequest;
@@ -134,6 +140,10 @@ public class GlobalAnomalyConfigStatusManagerTest {
                 "disabled = true\n"
                     + "  internal = false\n"
                     + "  minConfidenceLevel = ANOMALY_CONFIDENCE_LEVEL_MEDIUM\n"
+                    + "  modsecGlobalConfig.ruleVersion.newWebAppStableVersion = \"1.0.0\"\n"
+                    + "  modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
+                    + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                     + "  licenseTiers = [\n"
                     + "    {\n"
                     + "        tier = TIER_TEAM_TRIAL\n"
@@ -514,6 +524,68 @@ public class GlobalAnomalyConfigStatusManagerTest {
   }
 
   @Test
+  public void test_getScopedAnomalyConfigStatus_WithVersionHandling() {
+    RuleVersion overrideVersion =
+        RuleVersion.newBuilder()
+            .setVersion("custom-version")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+
+    GlobalModsecConfigChange modsecConfigChange =
+        GlobalModsecConfigChange.newBuilder()
+            .setRuleVersionDataChange(
+                RuleVersionDataChange.newBuilder().setOverrideVersion(overrideVersion).build())
+            .build();
+
+    AnomalyConfigScope customScope =
+        AnomalyConfigScope.newBuilder()
+            .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+            .build();
+
+    ScopedAnomalyConfigStatusChange configWithOverride =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(customScope)
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setGlobalModsecConfigChange(modsecConfigChange)
+            .build();
+
+    RequestContext requestContext = RequestContext.forTenantId("custom_version_tenant");
+    requestContext.call(
+        () ->
+            configStatusManager.updateScopedAnomalyConfigStatus(
+                requestContext, configWithOverride));
+    ScopedAnomalyConfigStatus result =
+        configStatusManager.getScopedAnomalyConfigStatus(requestContext, customScope);
+
+    assertEquals(
+        "custom-version",
+        result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion().getVersion());
+    AnomalyConfigScope defaultScope =
+        AnomalyConfigScope.newBuilder()
+            .setCustomerScope(AnomalyCustomerScope.getDefaultInstance())
+            .build();
+
+    RequestContext defaultRequestContext = RequestContext.forTenantId("default_config_tenant");
+    ScopedAnomalyConfigStatus defaultResult =
+        configStatusManager.getScopedAnomalyConfigStatus(defaultRequestContext, defaultScope);
+    assertEquals(
+        "1.0.0",
+        defaultResult
+            .getGlobalModsecConfig()
+            .getRuleVersionData()
+            .getCurrentVersion()
+            .getVersion());
+
+    assertEquals(
+        RuleVersionType.RULE_VERSION_TYPE_STABLE,
+        defaultResult
+            .getGlobalModsecConfig()
+            .getRuleVersionData()
+            .getCurrentVersion()
+            .getVersionType());
+  }
+
+  @Test
   public void test_updateAnomalyConfigStatus() {
     RequestContext requestContext = RequestContext.forTenantId("update_tenant");
 
@@ -644,6 +716,71 @@ public class GlobalAnomalyConfigStatusManagerTest {
             .getConfigStatus());
   }
 
+  @Test
+  void test_updateAnomalyConfigStatusNew() {
+    ScopedAnomalyConfigStatusChange newConfig =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(environmentConfigScope)
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setDisabled(true)
+                    .setDefaultConfigsType(
+                        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING)
+                    .setBlockingAvailableForRegularRules(false)
+                    .setUseTestRules(true)
+                    .setMinConfidenceLevel(ANOMALY_CONFIDENCE_LEVEL_MEDIUM)
+                    .build())
+            .build();
+
+    RequestContext requestContext = RequestContext.forTenantId("update_tenant");
+    ScopedAnomalyConfigStatusChange result = updateAnomalyConfigStatus(requestContext, newConfig);
+
+    assertEquals(true, result.hasModsecGlobalConfig());
+    assertEquals(true, result.hasGlobalModsecConfigChange());
+
+    ModsecGlobalConfig modsec = result.getModsecGlobalConfig();
+    GlobalModsecConfigChange globalModsec = result.getGlobalModsecConfigChange();
+    assertEquals(modsec.getDisabled(), globalModsec.getDisabled());
+    assertEquals(modsec.getDefaultConfigsType(), globalModsec.getDefaultConfigsType());
+    assertEquals(
+        modsec.getBlockingAvailableForRegularRules(),
+        globalModsec.getBlockingAvailableForRegularRules());
+    assertEquals(modsec.getUseTestRules(), globalModsec.getUseTestRules());
+    assertEquals(modsec.getMinConfidenceLevel(), globalModsec.getMinConfidenceLevel());
+    assertEquals(true, modsec.getDisabled());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING,
+        modsec.getDefaultConfigsType());
+    assertEquals(false, modsec.getBlockingAvailableForRegularRules());
+    assertEquals(true, modsec.getUseTestRules());
+    assertEquals(ANOMALY_CONFIDENCE_LEVEL_MEDIUM, modsec.getMinConfidenceLevel());
+
+    newConfig =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(environmentConfigScope)
+            .setModsecGlobalConfig(
+                ModsecGlobalConfig.newBuilder()
+                    .setDisabled(false)
+                    .setDefaultConfigsType(
+                        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING)
+                    .setBlockingAvailableForRegularRules(true)
+                    .setUseTestRules(false)
+                    .setMinConfidenceLevel(ANOMALY_CONFIDENCE_LEVEL_HIGH)
+                    .build())
+            .build();
+    result = updateAnomalyConfigStatus(requestContext, newConfig);
+    assertEquals(true, result.hasModsecGlobalConfig());
+    assertEquals(true, result.hasGlobalModsecConfigChange());
+    modsec = result.getModsecGlobalConfig();
+    assertEquals(false, modsec.getDisabled());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING,
+        modsec.getDefaultConfigsType());
+    assertEquals(true, modsec.getBlockingAvailableForRegularRules());
+    assertEquals(false, modsec.getUseTestRules());
+    assertEquals(ANOMALY_CONFIDENCE_LEVEL_HIGH, modsec.getMinConfidenceLevel());
+  }
+
   private ScopedAnomalyConfigStatusChange upsertApiConfigStatus(
       AnomalyConfigStatusChange configStatus) throws InvalidProtocolBufferException {
     ScopedAnomalyConfigStatusChange scopedConfig =
@@ -744,6 +881,15 @@ public class GlobalAnomalyConfigStatusManagerTest {
                         .build()));
     assertEquals(scope, scopedConfig.getConfigScope());
     return scopedConfig.getConfigStatus();
+  }
+
+  private ScopedAnomalyConfigStatusChange updateAnomalyConfigStatus(
+      RequestContext requestContext, ScopedAnomalyConfigStatusChange scopedConfig) {
+    ScopedAnomalyConfigStatusChange result =
+        requestContext.call(
+            () ->
+                configStatusManager.updateScopedAnomalyConfigStatus(requestContext, scopedConfig));
+    return result;
   }
 
   protected static class MockLicenseMeteringService

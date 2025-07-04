@@ -2,6 +2,7 @@ package ai.traceable.anomaly.config.service.modsec.rules;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
@@ -27,7 +28,9 @@ public interface ModsecManager {
   ModsecCrsRules getModsecCrsRules(
       List<AnomalySubRuleType> subRuleTypes,
       ModsecRuleVersion modsecRuleVersion,
-      boolean useTestModsecRules);
+      boolean useTestModsecRules,
+      RuleVersion ruleVersion,
+      boolean includeDirectives);
 
   @Builder
   class ModsecCrsRules {

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecCrsRulesHandler;
@@ -19,9 +20,11 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
@@ -31,6 +34,7 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesData;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -51,15 +55,24 @@ class ModsecManagerImplTest {
   private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private ModsecManagerImpl modsecManager;
   private RequestContext requestContext;
+  private WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private FeatureCachingClient featureCachingClient;
 
   @BeforeEach
   void setUp() {
     modsecRulesRegistry = mock(ModsecRulesRegistryImpl.class);
     anomalyDetectionConfigManager = mock(AnomalyDetectionConfigManager.class);
     globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
+    webAppRuleInfoProvider = mock(WebAppRuleInfoProvider.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
+
     modsecManager =
         new ModsecManagerImpl(
-            modsecRulesRegistry, anomalyDetectionConfigManager, globalAnomalyConfigStatusManager);
+            modsecRulesRegistry,
+            webAppRuleInfoProvider,
+            featureCachingClient,
+            anomalyDetectionConfigManager,
+            globalAnomalyConfigStatusManager);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -94,7 +107,11 @@ class ModsecManagerImplTest {
     {
       ModsecManager.ModsecCrsRules crsRules =
           modsecManager.getModsecCrsRules(
-              List.of(), ModsecRuleVersion.MODSEC_RULE_VERSION_V3, false);
+              List.of(),
+              ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
+              false,
+              RuleVersion.getDefaultInstance(),
+              true);
       List<ModsecCrsRulesData> expectedResponse =
           ImmutableList.of(
               ModsecCrsRulesData.newBuilder()
@@ -230,7 +247,11 @@ class ModsecManagerImplTest {
         .thenReturn(ScopedAnomalyConfigStatus.getDefaultInstance());
     modsecManager =
         new ModsecManagerImpl(
-            modsecRulesRegistry, anomalyDetectionConfigManager, globalAnomalyConfigStatusManager);
+            modsecRulesRegistry,
+            webAppRuleInfoProvider,
+            featureCachingClient,
+            anomalyDetectionConfigManager,
+            globalAnomalyConfigStatusManager);
     subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);
     // crsBlob is empty
     expectedResponse =
@@ -263,7 +284,9 @@ class ModsecManagerImplTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subRule1")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .build())
                     .build())
             .build();
@@ -280,10 +303,14 @@ class ModsecManagerImplTest {
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subRule3")
-                                    .setBlockingEnabled(true))
+                                    .setBlockingEnabled(true)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subRule4")
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE)
                                     .setConfigStatus(
                                         AnomalyConfigStatusChange.newBuilder()
                                             .setDisabled(true)

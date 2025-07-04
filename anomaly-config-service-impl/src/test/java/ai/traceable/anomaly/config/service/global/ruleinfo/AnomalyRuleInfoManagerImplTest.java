@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConfig;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
@@ -23,7 +24,9 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.modsecurity.utils.ModsecRuleUtils;
+import ai.traceable.protection.rules.webapp.v1.WebAppProtectionRulesProvider;
 import java.util.List;
 import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -37,6 +40,8 @@ class AnomalyRuleInfoManagerImplTest {
   private VolumetricRulesRegistryImpl volumetricRulesRegistry;
   private CredentialStuffingRulesRegistryImpl credentialStuffingRulesRegistry;
   private AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
+  private WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private FeatureCachingClient featureCachingClient;
   private RuleInfoManager ruleInfoManager;
   private RequestContext requestContext;
 
@@ -48,6 +53,8 @@ class AnomalyRuleInfoManagerImplTest {
     volumetricRulesRegistry = mock(VolumetricRulesRegistryImpl.class);
     credentialStuffingRulesRegistry = mock(CredentialStuffingRulesRegistryImpl.class);
     accountTakeoverRulesRegistry = mock(AccountTakeoverRulesRegistry.class);
+    webAppRuleInfoProvider = mock(WebAppRuleInfoProvider.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
     ruleInfoManager =
         new AnomalyRuleInfoManagerImpl(
             apiDefinitionRegistry,
@@ -55,7 +62,9 @@ class AnomalyRuleInfoManagerImplTest {
             sessionRulesRegistry,
             volumetricRulesRegistry,
             credentialStuffingRulesRegistry,
-            accountTakeoverRulesRegistry);
+            accountTakeoverRulesRegistry,
+            webAppRuleInfoProvider,
+            featureCachingClient);
     requestContext = RequestContext.forTenantId("default tenant");
   }
 
@@ -81,6 +90,7 @@ class AnomalyRuleInfoManagerImplTest {
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false);
     assertEquals(1, response.size());
     response =
@@ -88,6 +98,7 @@ class AnomalyRuleInfoManagerImplTest {
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false);
     // As two are repeated
     assertEquals(1, response.size());
@@ -96,6 +107,7 @@ class AnomalyRuleInfoManagerImplTest {
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false);
     assertEquals(1, response.size());
     response =
@@ -103,6 +115,7 @@ class AnomalyRuleInfoManagerImplTest {
             requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false);
     assertEquals(1, response.size());
     response =
@@ -112,6 +125,7 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false);
     assertEquals(2, response.size());
 
@@ -125,6 +139,7 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false);
     // Common rules are not duplicated
     assertEquals(5, response.size());
@@ -138,12 +153,19 @@ class AnomalyRuleInfoManagerImplTest {
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE,
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
                 ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+                null,
                 false));
   }
 
   @Test
   void test_ruleInfo() {
     ConfigConverter configConverter = new ConfigConverter();
+    AnomalyGlobalConfigServiceConfig config = mock(AnomalyGlobalConfigServiceConfig.class);
+    WebAppProtectionRulesProvider webAppProtectionRulesProvider =
+        mock(WebAppProtectionRulesProvider.class);
+    when(featureCachingClient.isWAAPVersioningEnabledForTenant(any())).thenReturn(false);
+    ModsecRuleUtils modsecRuleUtils = new ModsecRuleUtils();
+
     ruleInfoManager =
         new AnomalyRuleInfoManagerImpl(
             new ApiDefinitionRegistryImpl(configConverter),
@@ -152,7 +174,9 @@ class AnomalyRuleInfoManagerImplTest {
             new SessionRulesRegistryImpl(configConverter),
             new VolumetricRulesRegistryImpl(configConverter),
             new CredentialStuffingRulesRegistryImpl(configConverter),
-            new AccountTakeoverRulesRegistryImpl(configConverter));
+            new AccountTakeoverRulesRegistryImpl(configConverter),
+            new WebAppRuleInfoProviderImpl(webAppProtectionRulesProvider, modsecRuleUtils),
+            featureCachingClient);
 
     for (AnomalyRuleInfo ruleInfo :
         ruleInfoManager.getAnomalyRuleInfos(
@@ -164,6 +188,7 @@ class AnomalyRuleInfoManagerImplTest {
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
+            null,
             false)) {
 
       assertFalse(

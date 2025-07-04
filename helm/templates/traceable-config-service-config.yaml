@@ -407,6 +407,12 @@ data:
       licenseTiers = {{- .Values.anomalyConfigServiceConfig.global.licenseTiers | indent 6 }}
       modsecGlobalConfig {
         defaultConfigsType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.defaultConfigsType }}
+        ruleVersion {
+          newWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersion }}
+          newWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.newWebAppStableVersionPublishedDate | quote }}
+          oldWebAppStableVersion = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.oldWebAppStableVersion }}
+          oldWebAppStableVersionPublishedDate = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.oldWebAppStableVersionPublishedDate | quote }}
+        }
         environmentDefaultConfigType = {{ .Values.anomalyConfigServiceConfig.global.modsecGlobalConfig.environmentDefaultConfigType }}
       }
       apiGlobalConfig {

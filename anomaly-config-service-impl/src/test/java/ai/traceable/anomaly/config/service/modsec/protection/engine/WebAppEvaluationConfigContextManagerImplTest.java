@@ -111,12 +111,18 @@ class WebAppEvaluationConfigContextManagerImplTest {
         mock(GlobalAnomalyConfigStatusManager.class);
 
     when(modsecManager.getModsecCrsRules(
-            any(), eq(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3), anyBoolean()))
+            any(),
+            eq(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3),
+            anyBoolean(),
+            any(),
+            anyBoolean()))
         .thenReturn(
             ModsecManager.ModsecCrsRules.builder().aggregatedModsecBlob("defaultBlob").build());
     when(modsecManager.getModsecCrsRules(
             any(),
             eq(ModsecRuleVersion.MODSEC_RULE_VERSION_SENSITIVE_AGENT_CORAZA_V3),
+            anyBoolean(),
+            any(),
             anyBoolean()))
         .thenReturn(
             ModsecManager.ModsecCrsRules.builder().aggregatedModsecBlob("sensitiveBlob").build());
@@ -126,6 +132,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
                     AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE,
                     AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK)),
             eq(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3),
+            anyBoolean(),
+            any(),
             anyBoolean()))
         .thenReturn(
             ModsecManager.ModsecCrsRules.builder()
@@ -135,6 +143,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
     when(modsecManager.getModsecCrsRules(
             Mockito.eq(List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR)),
             eq(ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3),
+            anyBoolean(),
+            any(),
             anyBoolean()))
         .thenReturn(
             ModsecManager.ModsecCrsRules.builder()

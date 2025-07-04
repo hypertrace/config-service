@@ -231,7 +231,7 @@ public class AnomalyGlobalConfigServiceImplTest {
 
     reset(responseStreamObserver);
 
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(List.of(AnomalyRuleInfo.getDefaultInstance()));
 
     globalConfigService.getAnomalyRuleInfos(

@@ -190,6 +190,7 @@ public class AnomalyGlobalConfigServiceImpl
                       RequestContext.CURRENT.get(),
                       request.getEventFamiliesList(),
                       request.getModsecRuleVersion(),
+                      request.getVersion(),
                       request.getUseTestModsecRules()))
               .build();
       responseObserver.onNext(response);

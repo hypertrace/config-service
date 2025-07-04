@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.inject.Guice;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -36,7 +37,8 @@ class AnomalyConfigServiceModuleTest {
                         new GrpcChannelRegistry(),
                         mockChannel,
                         config,
-                        mock(ConfigChangeEventGenerator.class)))
+                        mock(ConfigChangeEventGenerator.class),
+                        mock(FeatureCachingClient.class)))
                 .getAllBindings());
   }
 }

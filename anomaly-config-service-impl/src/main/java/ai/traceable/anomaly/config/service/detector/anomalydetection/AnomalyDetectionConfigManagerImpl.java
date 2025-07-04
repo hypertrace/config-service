@@ -206,7 +206,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(
                 wafConfigResolver.resolve(
                     requestContext,
-                    scopedAnomalyConfigStatus.getModsecGlobalConfig(),
+                    scopedAnomalyConfigStatus.getGlobalModsecConfig(),
                     anomalyDetectionConfigMap,
                     Collections.emptyList()))
             .addAllAnomalyDetectionConfigs(
@@ -378,7 +378,7 @@ public class AnomalyDetectionConfigManagerImpl
     String tenantId = requestContext.getTenantId().orElseThrow();
     if (configScope.hasEnvironmentScope()
         && !scopedAnomalyConfigStatus
-            .getModsecGlobalConfig()
+            .getGlobalModsecConfig()
             .getDefaultConfigsType()
             .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT)) {
       anomalyDetectionConfig =
@@ -387,7 +387,7 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   wafConfigResolver.resolve(
                       requestContext,
-                      scopedAnomalyConfigStatus.getModsecGlobalConfig(),
+                      scopedAnomalyConfigStatus.getGlobalModsecConfig(),
                       configMap,
                       Collections.emptyList()))
               .addAllAnomalyDetectionConfigs(
@@ -403,7 +403,7 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   wafConfigResolver.resolve(
                       requestContext,
-                      globalScopedAnomalyConfigStatus.getModsecGlobalConfig(),
+                      globalScopedAnomalyConfigStatus.getGlobalModsecConfig(),
                       configMap,
                       contextsWithIncreasingPriority))
               .addAllAnomalyDetectionConfigs(
@@ -441,19 +441,19 @@ public class AnomalyDetectionConfigManagerImpl
       Optional<ScopedAnomalyConfigStatus> globalConfigStatus) {
 
     // If global config is disabled, then disable all the individual anomaly detection configs.
-    boolean modsecGlobalConfigDisabled =
+    boolean globalModsecConfigDisabled =
         globalConfigStatus
-            .flatMap(status -> Optional.of(status.getModsecGlobalConfig().getDisabled()))
+            .flatMap(status -> Optional.of(status.getGlobalModsecConfig().getDisabled()))
             .orElse(false);
     boolean apiGlobalConfigDisabled =
         globalConfigStatus
             .flatMap(status -> Optional.of(status.getApiGlobalConfig().getDisabled()))
             .orElse(false);
-    if (modsecGlobalConfigDisabled || apiGlobalConfigDisabled) {
+    if (globalModsecConfigDisabled || apiGlobalConfigDisabled) {
       List<AnomalyDetectionConfig> resolvedAnomalyDetectionConfigs =
           disableAnomalyDetectionConfigs(
               resolvedConfig.getAnomalyDetectionConfigsList(),
-              modsecGlobalConfigDisabled,
+              globalModsecConfigDisabled,
               apiGlobalConfigDisabled);
 
       return resolvedConfig.toBuilder()

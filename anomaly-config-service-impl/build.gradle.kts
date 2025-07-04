@@ -7,6 +7,7 @@ plugins {
 dependencies {
   api(projects.anomalyConfigServiceApi)
   api(projects.anomalyConfigServiceRegistry)
+  api(projects.featureCachingClient)
   implementation(projects.configUtils)
   implementation(projects.entityFetcherCache)
   implementation(projects.modsecurityUtils)
@@ -32,6 +33,7 @@ dependencies {
   implementation(commonLibs.traceable.protection.rules.webapp)
   implementation(commonLibs.traceable.protection.rules.apiprotect)
   implementation(commonLibs.traceable.protection.engine.config.webapp)
+  implementation(commonLibs.traceable.protection.engine.processor.secrules)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

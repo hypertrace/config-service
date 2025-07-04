@@ -18,6 +18,7 @@ import ai.traceable.anomaly.config.service.modsec.AnomalyModsecConfigServiceModu
 import ai.traceable.anomaly.config.service.registry.AnomalyConfigRegistryModule;
 import ai.traceable.anomaly.config.service.trainer.TrainerConfigServiceModule;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProviderModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -38,16 +39,19 @@ public class AnomalyConfigServiceModule extends AbstractModule {
   private final GrpcChannelRegistry channelRegistry;
   private final Channel channel;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
+  private final FeatureCachingClient featureCachingClient;
 
   AnomalyConfigServiceModule(
       GrpcChannelRegistry channelRegistry,
       Channel channel,
       Config config,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     this.channel = channel;
     this.channelRegistry = channelRegistry;
     this.config = config;
     this.configChangeEventGenerator = configChangeEventGenerator;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -56,6 +60,7 @@ public class AnomalyConfigServiceModule extends AbstractModule {
         new LicenseMeteringServiceModule(
             config.getConfig(LICENSE_METERING_SERVICE_CONFIG_PATH), channelRegistry));
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
+    bind(FeatureCachingClient.class).toInstance(featureCachingClient);
     install(new ConfigStatusModule());
     install(new RuleInfoModule());
     install(new AnomalyGlobalConfigServiceModule(ANOMALY_GLOBAL_CONFIG_ANNOTATION));

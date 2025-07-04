@@ -92,7 +92,7 @@ public class AnomalyDetectionConfigValidatorTest {
         .thenReturn(ScopedAnomalyConfigStatus.newBuilder().build());
     when(anomalyDetectionConfigManager.getScopedAnomalyDetectionConfig(any(), any(), any()))
         .thenReturn(ScopedAnomalyDetectionConfig.newBuilder().build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Collections.emptyList());
     validator =
         new AnomalyDetectionConfigValidator(
@@ -310,7 +310,7 @@ public class AnomalyDetectionConfigValidatorTest {
                     .build())
             .build();
 
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -330,7 +330,7 @@ public class AnomalyDetectionConfigValidatorTest {
             .getDescription()
             .contains("crs_913100 is an aggressive rule which can't be blocked"));
 
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(List.of());
     anomalyDetectionConfig1 =
         AnomalyDetectionConfig.newBuilder()

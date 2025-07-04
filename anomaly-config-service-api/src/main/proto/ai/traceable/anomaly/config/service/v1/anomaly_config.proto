@@ -120,10 +120,10 @@ message AnomalyRuleInfo {
   string rule_category = 3 [deprecated = true];
   AnomalyEventFamily event_family = 4;
   repeated AnomalySubRuleInfo sub_rule_infos = 5;
-  AnomalyRuleCategory anomaly_rule_category = 6;
+  AnomalyRuleCategory anomaly_rule_category = 6 [deprecated = true];
   map<string, string> event_labels = 7;
   AnomalyEventDetails event_details = 8;
-  AnomalySeverityLevel severity_level = 9;
+  AnomalySeverityLevel severity_level = 9 [deprecated = true];
 }
 
 message AnomalySubRuleInfo {

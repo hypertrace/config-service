@@ -24,6 +24,7 @@ message GetDefaultModsecCrsRulesRequest {
   repeated AnomalySubRuleType sub_rule_types = 1;
   ModsecRuleVersion rule_version = 2;
   bool use_test_modsec_rules = 3;
+  RuleVersion version = 4;
 }
 
 message GetDefaultModsecCrsRulesResponse {

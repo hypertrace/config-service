@@ -11,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
@@ -139,6 +140,11 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
 
       boolean useTestRules = scopedAnomalyConfigStatus.getGlobalModsecConfig().getUseTestRules();
+      RuleVersion ruleVersion =
+          scopedAnomalyConfigStatus
+              .getGlobalModsecConfig()
+              .getRuleVersionData()
+              .getCurrentVersion();
       List<AnomalySubRuleType> anomalySubRuleTypes =
           getAnomalySubRuleTypes(
               scopedAnomalyConfigStatus,
@@ -166,6 +172,7 @@ public class WebAppEvaluationConfigContextManagerImpl
                 modsecRuleVersion,
                 anomalySubRuleTypes,
                 useTestRules,
+                ruleVersion,
                 scopeContextMap.get(configScope)));
       }
     }
@@ -212,13 +219,15 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRuleVersion modsecRuleVersion,
       List<AnomalySubRuleType> anomalySubRuleTypes,
       boolean useTestRules,
+      RuleVersion ruleVersion,
       ScopeContext scopeContext) {
 
     return WebAppEvaluationRulesContext.newBuilder()
         .setScopeContext(scopeContext)
         .setCrsRulesBlob(
             modsecManager
-                .getModsecCrsRules(anomalySubRuleTypes, modsecRuleVersion, useTestRules)
+                .getModsecCrsRules(
+                    anomalySubRuleTypes, modsecRuleVersion, useTestRules, ruleVersion, false)
                 .getAggregatedModsecBlob())
         .build();
   }

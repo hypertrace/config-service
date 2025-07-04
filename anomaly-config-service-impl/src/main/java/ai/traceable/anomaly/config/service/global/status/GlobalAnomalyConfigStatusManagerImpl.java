@@ -11,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
@@ -120,6 +121,12 @@ public class GlobalAnomalyConfigStatusManagerImpl
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
                       .build())
+              .setGlobalModsecConfig(
+                  GlobalModsecConfig.newBuilder()
+                      .setDisabled(configStatus.getDisabled())
+                      .setMinConfidenceLevel(config.getMinConfidenceLevel())
+                      .setDefaultConfigsType(config.getModsecDefaultConfigsType())
+                      .build())
               .build());
     }
     return Collections.unmodifiableList(resolvedConfigs);
@@ -162,14 +169,21 @@ public class GlobalAnomalyConfigStatusManagerImpl
   @Override
   public ScopedAnomalyConfigStatusChange updateScopedAnomalyConfigStatus(
       RequestContext requestContext, ScopedAnomalyConfigStatusChange scopedConfigStatusChange) {
+
     return upsertObject(
             requestContext,
             getData(requestContext, getContextFromData(scopedConfigStatusChange))
                 .map(
-                    existingScopedConfigStatusChange ->
-                        configConverter.merge(
-                            scopedConfigStatusChange, existingScopedConfigStatusChange))
-                .orElse(scopedConfigStatusChange))
+                    existing -> {
+                      ScopedAnomalyConfigStatusChange merged =
+                          configConverter.merge(scopedConfigStatusChange, existing);
+                      return GlobalAnomalyConfigStatusUtils.handleMergedConfigChange(
+                          merged, scopedConfigStatusChange);
+                    })
+                .orElseGet(
+                    () ->
+                        GlobalAnomalyConfigStatusUtils.handleMergedConfigChange(
+                            scopedConfigStatusChange, scopedConfigStatusChange)))
         .getData();
   }
 

@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service;
 
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -25,11 +26,16 @@ public class AnomalyConfigServiceFactory {
       GrpcChannelRegistry channelRegistry,
       Channel channel,
       Config config,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      FeatureCachingClient featureCachingClient) {
     Injector injector =
         Guice.createInjector(
             new AnomalyConfigServiceModule(
-                channelRegistry, channel, config, configChangeEventGenerator));
+                channelRegistry,
+                channel,
+                config,
+                configChangeEventGenerator,
+                featureCachingClient));
 
     return ImmutableList.of(
         getInjectorInstance(injector, ANOMALY_GLOBAL_CONFIG_ANNOTATION),

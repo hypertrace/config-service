@@ -92,7 +92,9 @@ public class AnomalyModsecConfigServiceImpl extends AnomalyModsecConfigServiceIm
               (request.getRuleVersion() == ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED)
                   ? defaultModsecRuleVersion
                   : request.getRuleVersion(),
-              request.getUseTestModsecRules());
+              request.getUseTestModsecRules(),
+              request.getVersion(),
+              true);
       GetDefaultModsecCrsRulesResponse response =
           GetDefaultModsecCrsRulesResponse.newBuilder()
               .addAllModsecCrsRules(crsRules.getModsecCrsRulesData())

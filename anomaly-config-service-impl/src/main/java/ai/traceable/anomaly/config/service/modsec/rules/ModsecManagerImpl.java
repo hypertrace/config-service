@@ -1,12 +1,15 @@
 package ai.traceable.anomaly.config.service.modsec.rules;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
@@ -14,6 +17,7 @@ import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfig
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecCrsRulesTarget;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +42,21 @@ public class ModsecManagerImpl implements ModsecManager {
           .build();
 
   private final ModsecRulesRegistry modsecRulesRegistry;
+  private final WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private final FeatureCachingClient featureCachingClient;
   private final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
   private final GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
 
   @Inject
   public ModsecManagerImpl(
       ModsecRulesRegistry modsecRulesRegistry,
+      WebAppRuleInfoProvider webAppRuleInfoProvider,
+      FeatureCachingClient featureCachingClient,
       AnomalyDetectionConfigManager anomalyDetectionConfigManager,
       GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager) {
     this.modsecRulesRegistry = modsecRulesRegistry;
+    this.webAppRuleInfoProvider = webAppRuleInfoProvider;
+    this.featureCachingClient = featureCachingClient;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
     this.globalAnomalyConfigStatusManager = globalAnomalyConfigStatusManager;
   }
@@ -60,14 +70,15 @@ public class ModsecManagerImpl implements ModsecManager {
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
 
-    ScopedAnomalyConfigStatus globalConfig;
+    ScopedAnomalyConfigStatus globalConfig =
+        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            requestContext, anomalyConfigScope);
+    RuleVersion currentVersion =
+        globalConfig.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion();
+
     if (rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION)) {
       // Platform is tenant-agnostic
       globalConfig = ScopedAnomalyConfigStatus.getDefaultInstance();
-    } else {
-      globalConfig =
-          globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-              requestContext, anomalyConfigScope);
     }
 
     subRuleTypes =
@@ -76,7 +87,7 @@ public class ModsecManagerImpl implements ModsecManager {
       return new ModsecCrsRules(subRuleTypes);
     }
 
-    boolean useTestRules = globalConfig.getModsecGlobalConfig().getUseTestRules();
+    boolean useTestRules = globalConfig.getGlobalModsecConfig().getUseTestRules();
     Set<String> disabledModsecRuleIds;
     if (removeDisabledRules && !useTestRules) {
       boolean checkBlockingStatus =
@@ -100,19 +111,39 @@ public class ModsecManagerImpl implements ModsecManager {
             .collect(
                 Collectors.toUnmodifiableMap(
                     Function.identity(),
-                    subRuleType ->
-                        modsecRulesRegistry.getModsecCrsRulesBlob(
+                    subRuleType -> {
+                      if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
+                          && currentVersion != null
+                          && !currentVersion.getVersion().isEmpty()) {
+                        return webAppRuleInfoProvider.getCrsRulesBlob(
                             List.of(subRuleType),
                             modsecRuleVersion,
                             disabledModsecRuleIds,
-                            useTestRules)));
+                            currentVersion,
+                            true);
+                      } else {
+                        return modsecRulesRegistry.getModsecCrsRulesBlob(
+                            List.of(subRuleType),
+                            modsecRuleVersion,
+                            disabledModsecRuleIds,
+                            useTestRules);
+                      }
+                    }));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
     if (subRuleTypes.size() == 1) {
       builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
     } else {
-      builder.aggregatedModsecBlob(
-          modsecRulesRegistry.getModsecCrsRulesBlob(
-              subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, useTestRules));
+      if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
+          && currentVersion != null
+          && !currentVersion.getVersion().isEmpty()) {
+        builder.aggregatedModsecBlob(
+            webAppRuleInfoProvider.getCrsRulesBlob(
+                subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, currentVersion, true));
+      } else {
+        builder.aggregatedModsecBlob(
+            modsecRulesRegistry.getModsecCrsRulesBlob(
+                subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, useTestRules));
+      }
     }
 
     return builder.build();
@@ -122,7 +153,9 @@ public class ModsecManagerImpl implements ModsecManager {
   public ModsecCrsRules getModsecCrsRules(
       List<AnomalySubRuleType> subRuleTypes,
       ModsecRuleVersion modsecRuleVersion,
-      boolean useTestModsecRules) {
+      boolean useTestModsecRules,
+      RuleVersion ruleVersion,
+      boolean includeDirectives) {
 
     if (subRuleTypes.isEmpty()) {
       subRuleTypes = ALL_SUB_RULE_TYPES;
@@ -134,12 +167,19 @@ public class ModsecManagerImpl implements ModsecManager {
             .collect(
                 Collectors.toUnmodifiableMap(
                     Function.identity(),
-                    subRuleType ->
-                        modsecRulesRegistry.getModsecCrsRulesBlob(
+                    subRuleType -> {
+                      if (ruleVersion != null && !ruleVersion.getVersion().isEmpty()) {
+                        return webAppRuleInfoProvider.getCrsRulesBlob(
                             List.of(subRuleType),
                             modsecRuleVersion,
                             Set.of(),
-                            useTestModsecRules)));
+                            ruleVersion,
+                            includeDirectives);
+                      } else {
+                        return modsecRulesRegistry.getModsecCrsRulesBlob(
+                            List.of(subRuleType), modsecRuleVersion, Set.of(), useTestModsecRules);
+                      }
+                    }));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
     if (subRuleTypes.size() == 1) {
       builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
@@ -180,8 +220,13 @@ public class ModsecManagerImpl implements ModsecManager {
 
         boolean isDisabled =
             detectionConfig.getConfigStatus().getDisabled()
-                || subRuleConfig.getConfigStatus().getDisabled()
-                || (checkBlockingStatus && !subRuleConfig.getBlockingEnabled());
+                || subRuleConfig
+                    .getAnomalyRuleAction()
+                    .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE)
+                || (checkBlockingStatus
+                    && !(subRuleConfig
+                        .getAnomalyRuleAction()
+                        .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)));
         if (isDisabled) {
           disabledModsecRuleIds.add(subRuleId);
         }
@@ -216,7 +261,7 @@ public class ModsecManagerImpl implements ModsecManager {
       case MODSEC_CRS_RULES_TARGET_TPA_DETECTION:
         return List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);
       case MODSEC_CRS_RULES_TARGET_TA_BLOCKING:
-        if (!globalConfig.getModsecGlobalConfig().getBlockingAvailableForRegularRules()) {
+        if (!globalConfig.getGlobalModsecConfig().getBlockingAvailableForRegularRules()) {
           return List.of(
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK,
               AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE);

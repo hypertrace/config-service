@@ -8,13 +8,17 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final ApiDefinitionRegistry apiDefinitionRegistry;
   private final ModsecRulesRegistry modsecRulesRegistry;
@@ -22,6 +26,8 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final VolumetricRulesRegistry volumetricRulesRegistry;
   private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry;
   private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
+  private final WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private final FeatureCachingClient featureCachingClient;
 
   @Inject
   AnomalyRuleInfoManagerImpl(
@@ -30,13 +36,17 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
       SessionRulesRegistry sessionRulesRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
-      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
+      WebAppRuleInfoProvider webAppRuleInfoProvider,
+      FeatureCachingClient featureCachingClient) {
     this.apiDefinitionRegistry = apiDefinitionRegistry;
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.sessionRulesRegistry = sessionRulesRegistry;
     this.volumetricRulesRegistry = volumetricRulesRegistry;
     this.credentialStuffingRulesRegistry = credentialStuffingRulesRegistry;
     this.accountTakeoverRulesRegistry = accountTakeoverRulesRegistry;
+    this.webAppRuleInfoProvider = webAppRuleInfoProvider;
+    this.featureCachingClient = featureCachingClient;
   }
 
   @Override
@@ -44,6 +54,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
       RequestContext requestContext,
       List<AnomalyEventFamily> eventFamilies,
       ModsecRuleVersion ruleVersion,
+      RuleVersion version,
       boolean useTestModsecRules) {
     // Duplicate entries in both request and response are removed
     HashSet<AnomalyRuleInfo> ruleInfos = new HashSet<>();
@@ -55,10 +66,16 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                   ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
                   break;
                 case ANOMALY_EVENT_FAMILY_MODSEC:
-                  ruleInfos.addAll(
-                      modsecRulesRegistry
-                          .getModsecRuleInfos(ruleVersion, useTestModsecRules)
-                          .values());
+                  if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
+                      && version != null) {
+                    ruleInfos.addAll(
+                        webAppRuleInfoProvider.getWebAppRuleInfo(requestContext, version));
+                  } else {
+                    ruleInfos.addAll(
+                        modsecRulesRegistry
+                            .getModsecRuleInfos(ruleVersion, useTestModsecRules)
+                            .values());
+                  }
                   break;
                 case ANOMALY_EVENT_FAMILY_SESSION:
                   ruleInfos.addAll(sessionRulesRegistry.getSessionRuleInfos().values());
