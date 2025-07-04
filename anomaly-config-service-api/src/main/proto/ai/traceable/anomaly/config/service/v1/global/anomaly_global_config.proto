@@ -116,8 +116,7 @@ message GlobalModsecConfigChange {
   AnomalyConfidenceLevel min_confidence_level = 5;
   optional bool enabled_for_exit_spans = 6;
   ModsecEvaluationEngineConfig modsec_evaluation_engine_config = 7;
-  RuleVersion stable_version = 8;
-  RuleVersion override_version = 9;
+  RuleVersionDataChange rule_version_data_change = 8;
 }
 
 message GlobalModsecConfig {
@@ -135,8 +134,7 @@ message GlobalApiConfigChange {
   optional bool disabled = 1;
   ApiDefaultConfigsType default_configs_type = 2;
   optional bool enabled_for_exit_spans = 3;
-  RuleVersion stable_version = 4;
-  RuleVersion override_version = 5;
+  RuleVersionDataChange rule_version_data_change = 4;
 }
 
 message GlobalApiConfig {

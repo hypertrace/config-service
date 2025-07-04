@@ -221,9 +221,16 @@ enum AnomalyRuleAction {
   ANOMALY_RULE_ACTION_TESTING = 4;
 }
 
+message RuleVersionDataChange {
+  RuleVersion stable_version = 1;
+  RuleVersion override_version = 2;
+  RuleTestingMode rule_testing_mode = 3;
+}
+
 message RuleVersionData {
   RuleVersion current_version = 1;
   RuleVersion previous_version = 2;
+  RuleTestingMode rule_testing_mode = 3;
 }
 
 message RuleVersion {
@@ -244,6 +251,14 @@ enum RuleVersionType {
   RULE_VERSION_TYPE_BETA = 2;
   RULE_VERSION_TYPE_EXPERIMENTAL = 3;
   RULE_VERSION_TYPE_DEPRECATED = 4;
+}
+
+enum RuleTestingMode {
+  RULE_TESTING_MODE_UNSPECIFIED = 0;
+  RULE_TESTING_MODE_DISABLED = 1;
+  RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES = 2;
+  RULE_TESTING_MODE_ENABLED_FOR_UPDATED_RULES = 3;
+  RULE_TESTING_MODE_ENABLED_FOR_NEW_AND_UPDATED_RULES = 4;
 }
 
 message StringList {
