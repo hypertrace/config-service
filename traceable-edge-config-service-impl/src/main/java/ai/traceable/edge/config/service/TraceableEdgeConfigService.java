@@ -25,6 +25,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 public class TraceableEdgeConfigService
     extends TraceableEdgeConfigServiceGrpc.TraceableEdgeConfigServiceImplBase {
+  private static final String TENANT_ID_KEY = "tenant-id";
   private final UuidGenerator uuidGenerator;
   private final Map<String, TraceableEdgeConfigSupplier> configSuppliersByType;
 
@@ -83,6 +84,8 @@ public class TraceableEdgeConfigService
     try {
       RequestContext requestContext = RequestContext.CURRENT.get();
       RequestValidator.validateRequestContext(requestContext);
+      responseBuilder.putAllConfigMetadata(
+          Map.of(TENANT_ID_KEY, requestContext.getTenantId().get()));
       List<ConfigResponseElement> responseElements = new ArrayList<>();
       for (var requestElement : requestElements) {
         var configType = requestElement.getConfigType();

@@ -69,4 +69,5 @@ message GetConfigsResponse {
   // hash of all response elements together.
   string hash = 1;
   repeated ConfigResponseElement config_responses = 2;
+  map<string, string> config_metadata = 3;
 }
