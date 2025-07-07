@@ -40,7 +40,11 @@ class RateLimitingMigrationManagerTest {
     rulesStore = mock(RateLimitingRulesStore.class);
     migrationStore = mock(RateLimitingMigrationStore.class);
     RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
-    migrationManager = new RateLimitingMigrationManagerImpl(migrationStore, rulesStore, config);
+    RateLimitingRuleEvaluationPointsMigrator ruleEvaluationPointsMigrator =
+        mock(RateLimitingRuleEvaluationPointsMigrator.class);
+    migrationManager =
+        new RateLimitingMigrationManagerImpl(
+            migrationStore, rulesStore, config, ruleEvaluationPointsMigrator);
   }
 
   @Test

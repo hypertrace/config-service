@@ -1,9 +1,11 @@
 package ai.traceable.ratelimiting.service.v2.rules.migration;
 
+import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingMigrationConfig;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
+import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesStore;
 import jakarta.inject.Inject;
@@ -22,6 +24,9 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
   private final RateLimitingRulesStore rulesStore;
   private final RateLimitingConfigServiceConfig config;
   private final Set<ContextualKey<Void>> changeLog1MigrationCompletedTenantsSet = new HashSet<>();
+  private final Set<ContextualKey<Void>> ruleEvaluationPointsMigrationCompletedTenantsSet =
+      new HashSet<>();
+  private final RateLimitingRuleEvaluationPointsMigrator ruleEvaluationPointsMigrator;
 
   @Override
   public void migrateFromChangeLog1IfApplicable(RequestContext requestContext) {
@@ -44,6 +49,40 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
     }
   }
 
+  @Override
+  public CreateRateLimitingRuleRequest migrateCreateRateLimitingRuleRequest(
+      CreateRateLimitingRuleRequest createRateLimitingRuleRequest) {
+    return ruleEvaluationPointsMigrator.migrateCreateRateLimitingRuleRequest(
+        createRateLimitingRuleRequest);
+  }
+
+  @Override
+  public UpdateRateLimitingRuleRequest migrateUpdateRateLimitingRuleRequest(
+      UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest) {
+    return ruleEvaluationPointsMigrator.migrateUpdateRateLimitingRuleRequest(
+        updateRateLimitingRuleRequest);
+  }
+
+  @Override
+  public void migrateForRuleEvaluationPointsIfApplicable(RequestContext requestContext) {
+    if (config.isRuleEvaluationPointsMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (ruleEvaluationPointsMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    RateLimitingMigrationConfig rateLimitingMigrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(RateLimitingMigrationConfig.getDefaultInstance());
+    if (rateLimitingMigrationConfig.getRuleEvaluationPointsMigrationCompleted()) {
+      ruleEvaluationPointsMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateRateLimitingRulesWithRuleEvaluationPoints(requestContext, rateLimitingMigrationConfig);
+    }
+  }
+
   private void updateRateLimitingRulesFromChangeLog1(
       RequestContext requestContext, RateLimitingMigrationConfig migrationConfig) {
     List<RateLimitingRule> updatedRateLimitingRules =
@@ -59,6 +98,34 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
     migrationStore.upsertObject(
         requestContext, migrationConfig.toBuilder().setChangeLog1MigrationCompleted(true).build());
     changeLog1MigrationCompletedTenantsSet.add(requestContext.buildInternalContextualKey());
+  }
+
+  private void updateRateLimitingRulesWithRuleEvaluationPoints(
+      RequestContext requestContext, RateLimitingMigrationConfig rateLimitingMigrationConfig) {
+    List<RateLimitingRule> updatedRateLimitingRules =
+        rulesStore.getAllConfigData(requestContext).stream()
+            .filter(rule -> rule.getData().getRuleEvaluationPointsList().isEmpty())
+            .map(
+                rule ->
+                    rule.toBuilder()
+                        .setData(
+                            rule.getData().toBuilder()
+                                .addAllRuleEvaluationPoints(
+                                    ruleEvaluationPointsMigrator.getRuleEvaluationPoints(
+                                        rule.getData()))
+                                .build())
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    if (!updatedRateLimitingRules.isEmpty()) {
+      rulesStore.upsertObjects(requestContext, updatedRateLimitingRules);
+    }
+    migrationStore.upsertObject(
+        requestContext,
+        rateLimitingMigrationConfig.toBuilder()
+            .setRuleEvaluationPointsMigrationCompleted(true)
+            .build());
+    ruleEvaluationPointsMigrationCompletedTenantsSet.add(
+        requestContext.buildInternalContextualKey());
   }
 
   private RateLimitingRule markRuleAsHidden(RateLimitingRule rule) {

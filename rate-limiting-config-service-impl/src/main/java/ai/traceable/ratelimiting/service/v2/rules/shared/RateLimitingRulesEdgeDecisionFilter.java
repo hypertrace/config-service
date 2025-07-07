@@ -35,7 +35,7 @@ public class RateLimitingRulesEdgeDecisionFilter {
   // Rules that can be converted to edge decision rules
   public static List<RateLimitingRule> getConvertibleRules(List<RateLimitingRule> rules) {
     return rules.stream()
-        .filter(RateLimitingRulesEdgeDecisionFilter::isCategorySupported)
+        .filter(rule -> RateLimitingRulesEdgeDecisionFilter.isCategorySupported(rule.getData()))
         .map(RateLimitingRulesEdgeDecisionFilter::getConvertibleRule)
         .flatMap(Optional::stream)
         .collect(Collectors.toUnmodifiableList());
@@ -44,7 +44,7 @@ public class RateLimitingRulesEdgeDecisionFilter {
   private static Optional<RateLimitingRule> getFilteredRule(
       RateLimitingRule rule, boolean removeAllEdgeCompatibleBlockRules) {
     // check if this category is supported by edge decision rules
-    if (isCategorySupported(rule)
+    if (isCategorySupported(rule.getData())
         && RateLimitingRulesEdgeDecisionValidator.isCompatibleCondition(
             rule.getData().getCondition())) {
       List<ThresholdActionConfig> filteredThresholdActionConfigs =
@@ -68,16 +68,34 @@ public class RateLimitingRulesEdgeDecisionFilter {
     return Optional.of(rule);
   }
 
-  private static boolean isCategorySupported(RateLimitingRule rateLimitingRule) {
-    Category category = rateLimitingRule.getData().getCategory();
+  public static boolean meetsEdgeDecisionRequirements(RateLimitingRuleData rateLimitingRuleData) {
+    boolean isEdgeTypeOfRuleData =
+        isCategorySupported(rateLimitingRuleData)
+            && RateLimitingRulesEdgeDecisionValidator.isCompatibleCondition(
+                rateLimitingRuleData.getCondition());
+    List<ThresholdActionConfig> filteredThresholdActionConfigs =
+        rateLimitingRuleData.getThresholdActionConfigsList().stream()
+            .filter(
+                thresholdActionConfig ->
+                    RateLimitingRulesEdgeDecisionFilter.findAnyMatchingEdgeDecisionAction(
+                            thresholdActionConfig)
+                        .isPresent())
+            .collect(Collectors.toUnmodifiableList());
+    return isEdgeTypeOfRuleData && !filteredThresholdActionConfigs.isEmpty();
+  }
+
+  private static boolean isCategorySupported(RateLimitingRuleData rateLimitingRuleData) {
+    Category category = rateLimitingRuleData.getCategory();
     return category.equals(Category.CATEGORY_RATE_LIMITING)
         || category.equals(Category.CATEGORY_ENUMERATION);
   }
 
-  // if matching edge decision actions are empty, which includes block for duration,
-  // rest of the block actions (other than block for duration) whose criteria is supported on edge
-  // if removeAllEdgeCompatibleBlockRules is set to true, alert/mark for testing with header
-  // injection, then return true
+  /**
+   * Checks if threshold actions contain no actions that should be processed at edge.
+   * Edge-compatible actions include Block-with-duration actions, i.e., Any block action (when
+   * removeAllEdgeCompatibleBlockRules = true), Mark-for-testing/Alert actions with agent rule
+   * effects. Returns true only when NO edge-compatible actions are present.
+   */
   private static boolean doesNotContainMatchingEdgeDecisionAction(
       ThresholdActionConfig thresholdActionConfig, boolean removeAllEdgeCompatibleBlockRules) {
     return thresholdActionConfig.getActionsList().stream()

@@ -60,6 +60,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       rulesValidator.validateOrThrow(context, request);
 
       migrationManager.migrateFromChangeLog1IfApplicable(context);
+      migrationManager.migrateForRuleEvaluationPointsIfApplicable(context);
 
       if (request.hasFilter()) { // backward compatibility
         request.toBuilder()
@@ -71,6 +72,7 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       GetRateLimitingRulesFilter rulesFilter = request.getRulesFilter();
       List<RateLimitingRule> rateLimitingRules =
           rulesManager.getRateLimitingRules(context, rulesFilter);
+
       if (rulesFilter.hasFilterEdgeDecisionRules() && rulesFilter.getFilterEdgeDecisionRules()) {
         rateLimitingRules =
             RateLimitingRulesEdgeDecisionFilter.getFilteredRules(
@@ -97,13 +99,15 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       List<RateLimitingRule> existingRules =
           rulesManager.getRateLimitingRules(
               RequestContext.CURRENT.get(), GetRateLimitingRulesFilter.getDefaultInstance());
-      rulesValidator.validateOrThrow(context, request, existingRules);
+      UpdateRateLimitingRuleRequest migratedUpdateRuleRequest =
+          migrationManager.migrateUpdateRateLimitingRuleRequest(request);
+      rulesValidator.validateOrThrow(context, migratedUpdateRuleRequest, existingRules);
+
+      RateLimitingRule rule =
+          rulesManager.updateRateLimitingRule(
+              context, migratedUpdateRuleRequest.getRuleId(), migratedUpdateRuleRequest.getData());
       UpdateRateLimitingRuleResponse response =
-          UpdateRateLimitingRuleResponse.newBuilder()
-              .setRule(
-                  rulesManager.updateRateLimitingRule(
-                      context, request.getRuleId(), request.getData()))
-              .build();
+          UpdateRateLimitingRuleResponse.newBuilder().setRule(rule).build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -137,11 +141,14 @@ public class RateLimitingConfigServiceImpl extends RateLimitingConfigServiceImpl
       List<RateLimitingRule> existingRules =
           rulesManager.getRateLimitingRules(
               RequestContext.CURRENT.get(), GetRateLimitingRulesFilter.getDefaultInstance());
-      rulesValidator.validateOrThrow(context, request, existingRules);
+      CreateRateLimitingRuleRequest migratedCreateRuleRequest =
+          migrationManager.migrateCreateRateLimitingRuleRequest(request);
+      rulesValidator.validateOrThrow(context, migratedCreateRuleRequest, existingRules);
+
+      RateLimitingRule rule =
+          rulesManager.createRateLimitingRule(context, migratedCreateRuleRequest.getData());
       CreateRateLimitingRuleResponse response =
-          CreateRateLimitingRuleResponse.newBuilder()
-              .setRule(rulesManager.createRateLimitingRule(context, request.getData()))
-              .build();
+          CreateRateLimitingRuleResponse.newBuilder().setRule(rule).build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {

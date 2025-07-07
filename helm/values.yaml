@@ -417,6 +417,8 @@ traceableConfigServiceConfig:
   rateLimitingConfigService:
     changeLog1:
       migrationDisabled: true
+    ruleEvaluationPoints:
+      migrationDisabled: true
   iprangeConfigService:
     changeLog1:
       migrationDisabled: true

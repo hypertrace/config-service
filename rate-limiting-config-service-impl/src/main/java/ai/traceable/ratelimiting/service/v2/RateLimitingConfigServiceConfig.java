@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 public class RateLimitingConfigServiceConfig {
@@ -29,8 +30,11 @@ public class RateLimitingConfigServiceConfig {
   private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
   private static final String CHANGE_LOG_1_MIGRATION_DISABLED_KEY =
       "changeLog1." + MIGRATION_DISABLED_KEY;
-  private final List<RateLimitingRule> defaultRateLimitingRules;
-  private final boolean changeLog1MigrationDisabled;
+  private static final String RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY =
+      "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
+  @Getter private final List<RateLimitingRule> defaultRateLimitingRules;
+  @Getter private final boolean changeLog1MigrationDisabled;
+  @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
 
   public RateLimitingConfigServiceConfig(Config config) {
     this.config = config.getConfig(RATE_LIMITING_CONFIG_SERVICE);
@@ -50,14 +54,9 @@ public class RateLimitingConfigServiceConfig {
     changeLog1MigrationDisabled =
         config.hasPath(CHANGE_LOG_1_MIGRATION_DISABLED_KEY)
             && config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
-  }
-
-  public List<RateLimitingRule> getDefaultRateLimitingRules() {
-    return defaultRateLimitingRules;
-  }
-
-  public boolean isChangeLog1MigrationDisabled() {
-    return changeLog1MigrationDisabled;
+    ruleEvaluationPointsMigrationDisabled =
+        config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
+            && config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
   }
 
   private List<RateLimitingRule> convert(List<? extends Config> configList) {

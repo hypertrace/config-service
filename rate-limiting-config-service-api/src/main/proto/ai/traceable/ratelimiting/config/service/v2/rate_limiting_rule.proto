@@ -22,6 +22,8 @@ message RateLimitingModsecRule {
 message RateLimitingMigrationConfig {
   // marking existing internal rules as hidden
   bool change_log_1_migration_completed = 1;
+  // migration with respect to rule evaluation points
+  bool rule_evaluation_points_migration_completed = 4;
 }
 
 message ModsecRuleIdInfo {
@@ -363,7 +365,7 @@ message ResourceAccessThresholdConfig {
     int64 unique_values_allowed = 1;
     string duration_iso = 2;
     ValueType value_type = 3;
-    SensitiveParamsEvaluation sensitive_params_evaluation = 4; // only applicable for sensitive params value type
+    SensitiveParamsEvaluation sensitive_params_evaluation = 4; // only applicable for a sensitive params value type
   }
 
   enum ValueType {

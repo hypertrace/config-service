@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
-import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceImpl;
 import ai.traceable.ratelimiting.service.v2.rules.RulesManager;
 import ai.traceable.ratelimiting.service.v2.rules.RulesValidator;
@@ -33,28 +32,32 @@ public class RateLimitingConfigServiceImplTest {
   private RulesValidator rulesValidator;
   private RulesManager rulesManager;
   private RateLimitingConfigServiceImpl configService;
-  private FeatureCachingClient featureCachingClient;
+  private RateLimitingMigrationManager rateLimitingMigrationManager;
 
   @BeforeEach
   void setUp() {
     rulesValidator = mock(RulesValidator.class);
     rulesManager = mock(RulesManager.class);
-    featureCachingClient = mock(FeatureCachingClient.class);
-
-    RateLimitingConfigServiceConfig config = mock(RateLimitingConfigServiceConfig.class);
+    FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     RateLimitingEdgeDecisionConverter translator = mock(RateLimitingEdgeDecisionConverter.class);
-    RateLimitingMigrationManager migrationManager = mock(RateLimitingMigrationManager.class);
+    rateLimitingMigrationManager = mock(RateLimitingMigrationManager.class);
 
     when(featureCachingClient.isEdgeDecisionEnabledForTenant(any())).thenReturn(true);
 
     configService =
         new RateLimitingConfigServiceImpl(
-            rulesValidator, rulesManager, translator, featureCachingClient, migrationManager);
+            rulesValidator,
+            rulesManager,
+            translator,
+            featureCachingClient,
+            rateLimitingMigrationManager);
   }
 
   @Test
   void testCreateRateLimitingRule() {
     StreamObserver<CreateRateLimitingRuleResponse> responseObserver = mock(StreamObserver.class);
+    when(rateLimitingMigrationManager.migrateCreateRateLimitingRuleRequest(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     Runnable runnable =
         () ->
             configService.createRateLimitingRule(
@@ -113,9 +116,10 @@ public class RateLimitingConfigServiceImplTest {
     List<RateLimitingRule> platformRules = List.of(platformRule, multipleEvaluationPointsRule);
     List<RateLimitingRule> agentRules = List.of(agentRule);
     List<RateLimitingRule> edgeRules = List.of(edgeRule, multipleEvaluationPointsRule);
-    List<RateLimitingRule> multipleEvaluationPointsRules =
-        List.of(platformRule, edgeRule, multipleEvaluationPointsRule);
     StreamObserver<GetRateLimitingRulesResponse> responseObserver = mock(StreamObserver.class);
+    doNothing()
+        .when(rateLimitingMigrationManager)
+        .migrateForRuleEvaluationPointsIfApplicable(any());
 
     // Case 1: Test with no filter
     Runnable noFilterRunnable =
@@ -347,6 +351,9 @@ public class RateLimitingConfigServiceImplTest {
     List<RateLimitingRule> allRules =
         List.of(platformRule, agentRule, edgeRule, multiEvalPointRule, noEvalPointRule);
     StreamObserver<GetRateLimitingRulesResponse> responseObserver = mock(StreamObserver.class);
+    doNothing()
+        .when(rateLimitingMigrationManager)
+        .migrateForRuleEvaluationPointsIfApplicable(any());
 
     // Case 1: Test with EDGE evaluation point filter
     GetRateLimitingRulesFilter edgeFilter =
@@ -455,7 +462,30 @@ public class RateLimitingConfigServiceImplTest {
         .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(combinedFilterRules).build());
     verify(responseObserver, times(1)).onCompleted();
 
-    // Case 7: Test error handling
+    // Case 7: Test with edge decision filter set to True
+    reset(responseObserver);
+    GetRateLimitingRulesFilter edgeDecisionFilter =
+        GetRateLimitingRulesFilter.newBuilder()
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+            .setFilterEdgeDecisionRules(true)
+            .build();
+    List<RateLimitingRule> edgeDecisionRules = List.of(edgeRule, multiEvalPointRule);
+    when(rulesManager.getRateLimitingRules(any(), eq(edgeDecisionFilter)))
+        .thenReturn(edgeDecisionRules);
+    doNothing()
+        .when(rateLimitingMigrationManager)
+        .migrateForRuleEvaluationPointsIfApplicable(any());
+    Runnable edgeDecisionFilterRunnable =
+        () ->
+            configService.getRateLimitingRules(
+                GetRateLimitingRulesRequest.newBuilder().setRulesFilter(edgeDecisionFilter).build(),
+                responseObserver);
+    GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, edgeDecisionFilterRunnable);
+    verify(responseObserver, times(1))
+        .onNext(GetRateLimitingRulesResponse.newBuilder().addAllRules(edgeDecisionRules).build());
+    verify(responseObserver, times(1)).onCompleted();
+
+    // Case 8: Test error handling
     reset(responseObserver);
     reset(rulesManager);
     reset(rulesValidator);
@@ -474,12 +504,6 @@ public class RateLimitingConfigServiceImplTest {
             "Platform Rule",
             Category.CATEGORY_RATE_LIMITING,
             List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM));
-    RateLimitingRule agentRule =
-        buildRateLimitingRuleWithRuleEvaluationPoints(
-            "agent-rule-id",
-            "Agent Rule",
-            Category.CATEGORY_RATE_LIMITING,
-            List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT));
     ModsecRuleIdInfo modsecRuleIdInfo =
         ModsecRuleIdInfo.newBuilder()
             .setType(ModsecRuleIdInfo.IdType.ID_TYPE_DATA_TYPE_CUSTOM_LOCATION)
@@ -492,8 +516,6 @@ public class RateLimitingConfigServiceImplTest {
             .addServiceNames("service1")
             .addRuleIds(platformRule.getId())
             .build();
-    GetRateLimitingRuleModsecRulesResponse emptyResponse =
-        GetRateLimitingRuleModsecRulesResponse.getDefaultInstance();
     GetRateLimitingRuleModsecRulesResponse platformResponse =
         GetRateLimitingRuleModsecRulesResponse.newBuilder()
             .setModsecDirectivesBlob("SecRuleEngine On")
@@ -567,6 +589,8 @@ public class RateLimitingConfigServiceImplTest {
 
   @Test
   void testUpdateRateLimitingRule() {
+    when(rateLimitingMigrationManager.migrateUpdateRateLimitingRuleRequest(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     StreamObserver<UpdateRateLimitingRuleResponse> responseObserver = mock(StreamObserver.class);
     Runnable runnable =
         () ->
@@ -600,7 +624,6 @@ public class RateLimitingConfigServiceImplTest {
         () ->
             configService.deleteRateLimitingRule(
                 DeleteRateLimitingRuleRequest.getDefaultInstance(), responseObserver);
-
     doThrow(Status.INVALID_ARGUMENT.asRuntimeException())
         .when(rulesValidator)
         .validateOrThrow(any(), (DeleteRateLimitingRuleRequest) any());

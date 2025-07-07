@@ -145,10 +145,7 @@ public class RateLimitingRulesEdgeDecisionValidator {
       ResourceAccessThresholdConfig resourceAccessThresholdConfig) {
     ValueType valueType =
         resourceAccessThresholdConfig.getValueBasedThresholdConfig().getValueType();
-    if (valueType == ValueType.VALUE_TYPE_SENSITIVE_PARAMS) {
-      return false;
-    }
-    return true;
+    return valueType != ValueType.VALUE_TYPE_SENSITIVE_PARAMS;
   }
 
   private static void isCompatibleAction(
