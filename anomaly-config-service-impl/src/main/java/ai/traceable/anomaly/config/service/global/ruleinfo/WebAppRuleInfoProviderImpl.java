@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 @Slf4j
 public class WebAppRuleInfoProviderImpl implements WebAppRuleInfoProvider {
@@ -55,8 +54,7 @@ public class WebAppRuleInfoProviderImpl implements WebAppRuleInfoProvider {
   }
 
   @Override
-  public List<AnomalyRuleInfo> getWebAppRuleInfo(
-      RequestContext requestContext, RuleVersion version) {
+  public List<AnomalyRuleInfo> getWebAppRuleInfo(RuleVersion version) {
     return new ArrayList<>(
         convertToAnomalyRuleInfos(getWebAppVersionedRules(convertToWebAppRulesVersion(version))));
   }

@@ -7,7 +7,6 @@ import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
-import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
@@ -164,12 +163,8 @@ public class WafConfigResolver {
       ModsecRuleVersion modsecRuleVersion,
       RuleVersion currentVersion,
       boolean useTestRules) {
-    return ruleInfoManager.getAnomalyRuleInfos(
-        requestContext,
-        List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
-        modsecRuleVersion,
-        currentVersion,
-        useTestRules);
+    return ruleInfoManager.getModsecAnomalyRuleInfo(
+        requestContext, modsecRuleVersion, currentVersion, useTestRules);
   }
 
   private AnomalySubRuleConfig buildDisabledAnomalySubRuleConfig(AnomalySubRuleInfo subRuleInfo) {

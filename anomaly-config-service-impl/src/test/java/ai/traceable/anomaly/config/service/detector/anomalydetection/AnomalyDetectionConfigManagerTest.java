@@ -680,7 +680,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getModsecAnomalyRuleInfo(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -942,7 +942,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getModsecAnomalyRuleInfo(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -1041,7 +1041,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getModsecAnomalyRuleInfo(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()
@@ -1112,7 +1112,7 @@ public class AnomalyDetectionConfigManagerTest {
                     .build())
             .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getModsecAnomalyRuleInfo(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
                 AnomalyRuleInfo.newBuilder()

@@ -4,8 +4,10 @@ import ai.traceable.anomaly.config.service.global.AnomalyGlobalConfigServiceConf
 import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.RuleTestingMode;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
+import ai.traceable.anomaly.config.service.v1.RuleVersionDataChange;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
@@ -167,6 +169,8 @@ public class ScopedGlobalConfigStatusChangeConverter {
         RuleVersionData.newBuilder()
             .setCurrentVersion(ruleVersions.getKey())
             .setPreviousVersion(ruleVersions.getValue())
+            .setRuleTestingMode(
+                getRuleTestingMode(globalModsecConfigChange.getRuleVersionDataChange()))
             .build());
 
     return builder.build();
@@ -208,5 +212,16 @@ public class ScopedGlobalConfigStatusChangeConverter {
 
   private static boolean isNotNullOrDefault(final RuleVersion ruleVersion) {
     return ruleVersion != null && !ruleVersion.equals(RuleVersion.getDefaultInstance());
+  }
+
+  private static RuleTestingMode getRuleTestingMode(RuleVersionDataChange ruleVersionDataChange) {
+    if (ruleVersionDataChange == null
+        || ruleVersionDataChange.equals(RuleVersionDataChange.getDefaultInstance())) {
+      return RuleTestingMode.RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES;
+    }
+    return ruleVersionDataChange.getRuleTestingMode()
+            != RuleTestingMode.RULE_TESTING_MODE_UNSPECIFIED
+        ? ruleVersionDataChange.getRuleTestingMode()
+        : RuleTestingMode.RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES;
   }
 }

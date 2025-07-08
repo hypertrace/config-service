@@ -102,6 +102,11 @@ enum AnomalyConfigScopeType {
   ANOMALY_CONFIG_SCOPE_TYPE_API = 3;
 }
 
+message AnomalyRuleTypeVersion {
+  AnomalyEventFamily anomaly_event_family = 1;
+  RuleVersion rule_version = 2;
+}
+
 enum AnomalyEventFamily {
   ANOMALY_EVENT_FAMILY_UNSPECIFIED = 0;
   ANOMALY_EVENT_FAMILY_API_DEF = 1;

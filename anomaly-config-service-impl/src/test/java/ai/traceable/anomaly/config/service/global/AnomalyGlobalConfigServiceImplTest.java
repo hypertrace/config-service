@@ -230,16 +230,16 @@ public class AnomalyGlobalConfigServiceImplTest {
     verify(responseStreamObserver, times(1)).onCompleted();
 
     reset(responseStreamObserver);
-
-    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), any(), anyBoolean()))
+    when(ruleInfoManager.getAnomalyRuleInfos(any(), any(), any(), anyBoolean()))
         .thenReturn(List.of(AnomalyRuleInfo.getDefaultInstance()));
 
     globalConfigService.getAnomalyRuleInfos(
         GetAnomalyRuleInfosRequest.getDefaultInstance(), responseStreamObserver);
+
     verify(responseStreamObserver, times(1))
         .onNext(
             GetAnomalyRuleInfosResponse.newBuilder()
-                .addRuleInfos(AnomalyRuleInfo.getDefaultInstance())
+                .addAllRuleInfos(List.of(AnomalyRuleInfo.getDefaultInstance()))
                 .build());
     verify(responseStreamObserver, times(1)).onCompleted();
   }

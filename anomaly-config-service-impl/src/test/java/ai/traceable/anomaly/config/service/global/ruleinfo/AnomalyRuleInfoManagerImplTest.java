@@ -87,7 +87,6 @@ class AnomalyRuleInfoManagerImplTest {
         .thenReturn(Map.of("id-2", buildAnomalyRuleInfo("id-4")));
     List<AnomalyRuleInfo> response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
             null,
@@ -95,7 +94,6 @@ class AnomalyRuleInfoManagerImplTest {
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
             null,
@@ -104,7 +102,6 @@ class AnomalyRuleInfoManagerImplTest {
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_VOLUMETRIC),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
             null,
@@ -112,7 +109,6 @@ class AnomalyRuleInfoManagerImplTest {
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CREDENTIAL_STUFFING),
             ModsecRuleVersion.MODSEC_RULE_VERSION_UNSPECIFIED,
             null,
@@ -120,7 +116,6 @@ class AnomalyRuleInfoManagerImplTest {
     assertEquals(1, response.size());
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
@@ -131,7 +126,6 @@ class AnomalyRuleInfoManagerImplTest {
 
     response =
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,
@@ -148,7 +142,6 @@ class AnomalyRuleInfoManagerImplTest {
         IllegalArgumentException.class,
         () ->
             ruleInfoManager.getAnomalyRuleInfos(
-                requestContext,
                 List.of(
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_CUSTOM_SIGNATURE,
                     AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC),
@@ -180,7 +173,6 @@ class AnomalyRuleInfoManagerImplTest {
 
     for (AnomalyRuleInfo ruleInfo :
         ruleInfoManager.getAnomalyRuleInfos(
-            requestContext,
             List.of(
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_API_DEF,
                 AnomalyEventFamily.ANOMALY_EVENT_FAMILY_MODSEC,

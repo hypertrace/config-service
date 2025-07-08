@@ -8,6 +8,7 @@ import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleTypeVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
@@ -15,6 +16,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
@@ -50,26 +53,57 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   }
 
   @Override
-  public List<AnomalyRuleInfo> getAnomalyRuleInfos(
+  public List<AnomalyRuleInfo> getModsecAnomalyRuleInfo(
       RequestContext requestContext,
-      List<AnomalyEventFamily> eventFamilies,
       ModsecRuleVersion ruleVersion,
       RuleVersion version,
       boolean useTestModsecRules) {
     // Duplicate entries in both request and response are removed
     HashSet<AnomalyRuleInfo> ruleInfos = new HashSet<>();
-    new HashSet<>(eventFamilies)
+    if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
+        && version != null
+        && !version.equals(RuleVersion.getDefaultInstance())) {
+      ruleInfos.addAll(webAppRuleInfoProvider.getWebAppRuleInfo(version));
+    } else {
+      ruleInfos.addAll(
+          modsecRulesRegistry.getModsecRuleInfos(ruleVersion, useTestModsecRules).values());
+    }
+    return ImmutableList.copyOf(ruleInfos);
+  }
+
+  @Override
+  public List<AnomalyRuleInfo> getAnomalyRuleInfos(
+      List<AnomalyEventFamily> eventFamilies,
+      ModsecRuleVersion ruleVersion,
+      List<AnomalyRuleTypeVersion> anomalyRuleTypeVersions,
+      boolean useTestModsecRules) {
+    // Duplicate entries in both request and response are removed
+    HashSet<AnomalyRuleInfo> ruleInfos = new HashSet<>();
+    if (Objects.isNull(anomalyRuleTypeVersions) || anomalyRuleTypeVersions.isEmpty()) {
+      anomalyRuleTypeVersions =
+          eventFamilies.stream()
+              .map(
+                  eventFamily ->
+                      AnomalyRuleTypeVersion.newBuilder()
+                          .setAnomalyEventFamily(eventFamily)
+                          .build())
+              .collect(Collectors.toList());
+    }
+    new HashSet<>(anomalyRuleTypeVersions)
         .forEach(
-            eventFamily -> {
-              switch (eventFamily) {
+            anomalyRuleTypeVersion -> {
+              switch (anomalyRuleTypeVersion.getAnomalyEventFamily()) {
                 case ANOMALY_EVENT_FAMILY_API_DEF:
                   ruleInfos.addAll(apiDefinitionRegistry.getApiDefRuleInfos().values());
                   break;
                 case ANOMALY_EVENT_FAMILY_MODSEC:
-                  if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
-                      && version != null) {
+                  if (anomalyRuleTypeVersion.getRuleVersion() != null
+                      && !anomalyRuleTypeVersion
+                          .getRuleVersion()
+                          .equals(RuleVersion.getDefaultInstance())) {
                     ruleInfos.addAll(
-                        webAppRuleInfoProvider.getWebAppRuleInfo(requestContext, version));
+                        webAppRuleInfoProvider.getWebAppRuleInfo(
+                            anomalyRuleTypeVersion.getRuleVersion()));
                   } else {
                     ruleInfos.addAll(
                         modsecRulesRegistry
