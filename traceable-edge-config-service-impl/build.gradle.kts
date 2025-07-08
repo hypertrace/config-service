@@ -19,6 +19,8 @@ dependencies {
 
   implementation(commonLibs.guice7)
   implementation(commonLibs.slf4j2.api)
+  implementation(commonLibs.traceable.protection.rules.filtering)
+  implementation(commonLibs.traceable.protection.engine.config.filtering)
 
   implementation(localLibs.hypertrace.configservice.validation)
   implementation(localLibs.hypertrace.configservice.api)

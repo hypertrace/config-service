@@ -7,6 +7,7 @@ import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrp
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionConfigServiceGrpc.EdgeDecisionConfigServiceBlockingStub;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc;
 import ai.traceable.policy.config.service.v1.TraceablePolicyConfigServiceGrpc.TraceablePolicyConfigServiceBlockingStub;
+import ai.traceable.protection.rules.filtering.v1.ProtectionFilteringRulesProviderModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.typesafe.config.Config;
@@ -36,6 +37,8 @@ public class TraceableEdgeConfigServiceModule extends AbstractModule {
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(TraceableEdgeConfig.class).toInstance(config);
     bind(BindableService.class).to(TraceableEdgeConfigService.class);
+
+    install(new ProtectionFilteringRulesProviderModule());
   }
 
   @Provides

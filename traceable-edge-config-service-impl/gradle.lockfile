@@ -1,14 +1,18 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2115=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.protection:web-application-protection-engine-config:0.1.35=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2161=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-filtering-rules:0.1.40=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection.rules:protection-rules-common:0.1.40=runtimeClasspath,testRuntimeClasspath
+ai.traceable.protection:protection-filtering-engine-config:0.1.37=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.protection:web-application-protection-engine-config:0.1.37=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-annotations:2.16.1=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-core:2.16.1=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-databind:2.16.1=runtimeClasspath,testRuntimeClasspath
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.f4b6a3:uuid-creator:5.3.2=runtimeClasspath,testRuntimeClasspath
 com.github.luben:zstd-jni:1.5.6-3=runtimeClasspath,testRuntimeClasspath
@@ -73,6 +77,7 @@ net.bytebuddy:byte-buddy:1.15.4=testCompileClasspath,testRuntimeClasspath
 net.minidev:accessors-smart:2.5.2=runtimeClasspath,testRuntimeClasspath
 net.minidev:json-smart:2.5.2=runtimeClasspath,testRuntimeClasspath
 org.apache.commons:commons-csv:1.10.0=runtimeClasspath,testRuntimeClasspath
+org.apache.commons:commons-lang3:3.13.0=runtimeClasspath,testRuntimeClasspath
 org.apache.kafka:kafka-clients:7.7.0-ccs=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.checkerframework:checker-qual:3.42.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -111,4 +116,5 @@ org.projectlombok:lombok:1.18.30=annotationProcessor,compileClasspath
 org.slf4j:slf4j-api:2.0.11=runtimeClasspath,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.7=compileClasspath,testCompileClasspath
 org.xerial.snappy:snappy-java:1.1.10.5=runtimeClasspath,testRuntimeClasspath
+org.yaml:snakeyaml:2.2=runtimeClasspath,testRuntimeClasspath
 empty=

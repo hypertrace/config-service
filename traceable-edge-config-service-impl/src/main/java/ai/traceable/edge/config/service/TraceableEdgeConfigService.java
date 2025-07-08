@@ -7,6 +7,8 @@ import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplie
 import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.supplier.InvisibleCaptchaPolicySupplier;
 import ai.traceable.edge.config.service.supplier.WebAppEvaluationConfigContextSupplier;
+import ai.traceable.edge.config.service.supplier.filtering.config.context.PostDetectionFilteringConfigContextSupplier;
+import ai.traceable.edge.config.service.supplier.filtering.config.context.PreDetectionFilteringConfigContextSupplier;
 import ai.traceable.edge.config.service.v1.ConfigResponseElement;
 import ai.traceable.edge.config.service.v1.GetConfigsRequest;
 import ai.traceable.edge.config.service.v1.GetConfigsResponse;
@@ -37,7 +39,9 @@ public class TraceableEdgeConfigService
       ClientBotFingerprintPolicySupplier clientBotFingerprintPolicySupplier,
       InvisibleCaptchaPolicySupplier invisibleCaptchaPolicySupplier,
       FlowConfigSupplier flowConfigSupplier,
-      WebAppEvaluationConfigContextSupplier webAppEvaluationConfigContextSupplier) {
+      WebAppEvaluationConfigContextSupplier webAppEvaluationConfigContextSupplier,
+      PreDetectionFilteringConfigContextSupplier preDetectionFilteringConfigContextSupplier,
+      PostDetectionFilteringConfigContextSupplier postDetectionFilteringConfigContextSupplier) {
     this.uuidGenerator = uuidGenerator;
     this.configSuppliersByType = new HashMap<>();
     this.configSuppliersByType.put(
@@ -52,6 +56,12 @@ public class TraceableEdgeConfigService
     this.configSuppliersByType.put(
         webAppEvaluationConfigContextSupplier.getConfigType(),
         webAppEvaluationConfigContextSupplier);
+    this.configSuppliersByType.put(
+        preDetectionFilteringConfigContextSupplier.getConfigType(),
+        preDetectionFilteringConfigContextSupplier);
+    this.configSuppliersByType.put(
+        postDetectionFilteringConfigContextSupplier.getConfigType(),
+        postDetectionFilteringConfigContextSupplier);
     // todo: use configSupplier to automatically instantiate the appropriate class.
     //    var configTypeSupplierConfigs = config.getConfigList(CONFIG_TYPES_CONFIG_NAME);
     //    for (var configTypeSupplierConfig : configTypeSupplierConfigs) {
