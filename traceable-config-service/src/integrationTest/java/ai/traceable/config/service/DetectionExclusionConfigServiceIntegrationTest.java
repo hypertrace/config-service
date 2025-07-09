@@ -20,6 +20,7 @@ import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationCondition;
 import ai.traceable.detection.exclusion.config.service.v1.IpReputationSeverity;
 import ai.traceable.detection.exclusion.config.service.v1.RuleChangeSource;
+import ai.traceable.detection.exclusion.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
@@ -37,6 +38,7 @@ public class DetectionExclusionConfigServiceIntegrationTest
       DetectionExclusionRuleInfo.newBuilder()
           .setName("ruleName1")
           .addExclusionTargets(EXCLUSION_TARGET_ALERT)
+          .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
           .addConditions(
               DetectionExclusionCondition.newBuilder()
                   .setIpReputationCondition(
@@ -60,6 +62,7 @@ public class DetectionExclusionConfigServiceIntegrationTest
       DetectionExclusionRuleInfo.newBuilder()
           .setName("ruleName2")
           .addExclusionTargets(EXCLUSION_TARGET_ALERT)
+          .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
           .addConditions(
               DetectionExclusionCondition.newBuilder()
                   .setEventCondition(

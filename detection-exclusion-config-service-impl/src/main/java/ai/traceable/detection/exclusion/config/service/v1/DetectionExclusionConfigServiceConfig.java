@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigRenderOptions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 public class DetectionExclusionConfigServiceConfig {
@@ -26,13 +27,17 @@ public class DetectionExclusionConfigServiceConfig {
       "changeLog3." + MIGRATION_DISABLED_KEY;
   private static final String CHANGE_LOG_4_MIGRATION_DISABLED_KEY =
       "changeLog4." + MIGRATION_DISABLED_KEY;
+  private static final String RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY =
+      "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
 
   private final Config config;
-  private final boolean migrationDisabled;
-  private final boolean changeLog2MigrationDisabled;
-  private final boolean changeLog3MigrationDisabled;
-  private final boolean changeLog4MigrationDisabled;
-  private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
+  @Getter private final boolean migrationDisabled;
+  @Getter private final boolean changeLog2MigrationDisabled;
+  @Getter private final boolean changeLog3MigrationDisabled;
+  @Getter private final boolean changeLog4MigrationDisabled;
+  @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
+
+  @Getter private final List<DetectionExclusionRule> defaultDetectionExclusionRules;
 
   public DetectionExclusionConfigServiceConfig(Config config) {
     this.config =
@@ -51,6 +56,9 @@ public class DetectionExclusionConfigServiceConfig {
         config.hasPath(CHANGE_LOG_4_MIGRATION_DISABLED_KEY)
             && config.getBoolean(CHANGE_LOG_4_MIGRATION_DISABLED_KEY);
     this.defaultDetectionExclusionRules = loadDefaultDetectionExclusionRules();
+    this.ruleEvaluationPointsMigrationDisabled =
+        config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
+            && config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
   }
 
   private List<DetectionExclusionRule> loadDefaultDetectionExclusionRules() {
@@ -65,26 +73,6 @@ public class DetectionExclusionConfigServiceConfig {
             ConfigFactory.parseResources(DEFAULT_EXCLUSION_RULES_FILE_PATH)
                 .getConfigList(DETECTION_EXCLUSION_RULES_PATH)));
     return defaultDetectionExclusionRules;
-  }
-
-  public List<DetectionExclusionRule> getDefaultDetectionExclusionRules() {
-    return defaultDetectionExclusionRules;
-  }
-
-  public boolean isMigrationDisabled() {
-    return migrationDisabled;
-  }
-
-  public boolean isChangeLog2MigrationDisabled() {
-    return changeLog2MigrationDisabled;
-  }
-
-  public boolean isChangeLog3MigrationDisabled() {
-    return changeLog3MigrationDisabled;
-  }
-
-  public boolean isChangeLog4MigrationDisabled() {
-    return changeLog4MigrationDisabled;
   }
 
   private List<DetectionExclusionRule> convertToDetectionExclusionRules(

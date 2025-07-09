@@ -38,6 +38,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -185,15 +186,14 @@ public class DetectionExclusionRuleEdgeDecisionConverter {
   }
 
   private EdgeDecisionRuleCategory getEdgeDecisionRuleCategory(CustomRuleFamily customRuleFamily) {
-    switch (customRuleFamily) {
-      case CUSTOM_RULE_FAMILY_RATE_LIMIT:
-        return EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
-      default:
-        throw new IllegalArgumentException(
-            String.format(
-                "Custom rule family : %s not supported for exclusion in edge decision service",
-                customRuleFamily));
+    if (Objects.requireNonNull(customRuleFamily)
+        == CustomRuleFamily.CUSTOM_RULE_FAMILY_RATE_LIMIT) {
+      return EdgeDecisionRuleCategory.EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT;
     }
+    throw new IllegalArgumentException(
+        String.format(
+            "Custom rule family : %s not supported for exclusion in edge decision service",
+            customRuleFamily));
   }
 
   private EdgeDecisionRuleScope getEdgeDecisionRuleScope(DetectionExclusionRuleScope ruleScope) {

@@ -62,6 +62,7 @@ public class DetectionExclusionRulesManager implements RulesManager {
     rulesMigrationManager.migrateFromChangeLog2IfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog3IfApplicable(requestContext);
     rulesMigrationManager.migrateFromChangeLog4IfApplicable(requestContext);
+    rulesMigrationManager.migrateForRuleEvaluationPointsIfApplicable(requestContext);
     List<DetectionExclusionRule> rules = new ArrayList<>();
     if (filter.equals(GetRulesFilter.getDefaultInstance())) {
       rules.addAll(rulesStore.getAllConfigData(requestContext));
@@ -247,7 +248,8 @@ public class DetectionExclusionRulesManager implements RulesManager {
     return builder.build();
   }
 
-  // added EXCLUSION_TARGET_ALERT to exclusion target list (if list is empty), for backward
+  // added EXCLUSION_TARGET_ALERT to exclusionTargetList (if exclusionTargetList is empty), for
+  // backward
   // compatibility.
   private void processExclusionTarget(
       DetectionExclusionRuleInfo ruleInfo, DetectionExclusionRuleInfo.Builder builder) {

@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
-class DetectionExclusionRuleIpTypeConditionConverter
+class DetectionExclusionRuleIpLocationTypeConditionConverter
     implements DetectionExclusionRuleConditionConverter {
 
   @Override

@@ -46,7 +46,7 @@ public class ExclusionModsecRulesManager {
       List<DetectionExclusionRule> exclusionRules,
       List<String> serviceNames) {
     // Numbering rules to generate unique ids for each modsec rule
-    // Using same seed to keep modsec rules blob same if nothing else changes
+    // Using the same seed to keep modsec rules blob same if nothing else changes
     AtomicLong modsecIdAssignment = new AtomicLong(MODSEC_ID_SEED);
 
     // Map to hold service-specific ModSec blobs and rule IDs as pairs
@@ -73,7 +73,7 @@ public class ExclusionModsecRulesManager {
 
           // Convert into DetectionExclusionModsecRule
           if (modsecBlobResult.getModsecBlob().isBlank()) {
-            // If blob is empty there would be no associated modsec rule id
+            // If blob is empty, there would be no associated modsec rule id
             // There can be rules with request/response conditions, which would produce a blank
             // modsec blob, but we would still want to evaluate the rules
             exclusionModsecRules.add(

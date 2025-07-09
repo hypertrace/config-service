@@ -1,6 +1,5 @@
 package ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.condition;
 
-import static ai.traceable.detection.exclusion.config.service.v1.EntityType.ENTITY_TYPE_API;
 import static ai.traceable.detection.exclusion.config.service.v1.LabelType.LABEL_TYPE_API;
 import static ai.traceable.edge.decision.converter.utils.ConverterUtils.PATH_ATTRIBUTE;
 import static ai.traceable.edge.decision.converter.utils.ConverterUtils.SERVICE_ATTRIBUTE;

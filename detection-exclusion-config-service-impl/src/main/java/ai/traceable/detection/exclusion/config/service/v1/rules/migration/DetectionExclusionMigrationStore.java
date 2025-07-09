@@ -40,7 +40,7 @@ public class DetectionExclusionMigrationStore
       ConfigProtoConverter.mergeFromValue(value, detectionExclusionMigrationConfigBuilder);
       return Optional.of(detectionExclusionMigrationConfigBuilder.build());
     } catch (InvalidProtocolBufferException e) {
-      log.error("Could not deserialize Detection Exclusion Migration Config from value -> {}", e);
+      log.error("Could not deserialize Detection Exclusion Migration Config from value -> ", e);
       return Optional.empty();
     }
   }

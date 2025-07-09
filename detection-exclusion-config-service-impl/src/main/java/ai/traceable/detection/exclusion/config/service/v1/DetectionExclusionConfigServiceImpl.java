@@ -4,6 +4,7 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.DetectionExclusionRuleEdgeDecisionConverter;
+import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -18,17 +19,20 @@ public class DetectionExclusionConfigServiceImpl
   private final RulesValidator rulesValidator;
   private final FeatureCachingClient featureCachingClient;
   private final DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter;
+  private final RulesMigrationManager rulesMigrationManager;
 
   @Inject
   public DetectionExclusionConfigServiceImpl(
       RulesManager rulesManager,
       RulesValidator rulesValidator,
       FeatureCachingClient featureCachingClient,
-      DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter) {
+      DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter,
+      RulesMigrationManager rulesMigrationManager) {
     this.rulesManager = rulesManager;
     this.rulesValidator = rulesValidator;
     this.featureCachingClient = featureCachingClient;
     this.edgeDecisionConverter = edgeDecisionConverter;
+    this.rulesMigrationManager = rulesMigrationManager;
   }
 
   @Override
@@ -38,12 +42,10 @@ public class DetectionExclusionConfigServiceImpl
     try {
       RequestContext context = RequestContext.CURRENT.get();
       rulesValidator.validateOrThrow(context, request);
-
       GetDetectionExclusionRulesResponse response =
           GetDetectionExclusionRulesResponse.newBuilder()
               .addAllRules(rulesManager.getDetectionExclusionRules(context, request.getFilter()))
               .build();
-
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -84,16 +86,17 @@ public class DetectionExclusionConfigServiceImpl
       StreamObserver<CreateDetectionExclusionRuleResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
+      CreateDetectionExclusionRuleRequest migratedCreateRuleRequest =
+          rulesMigrationManager.migrateCreateDetectionExclusionRuleRequest(request);
       List<DetectionExclusionRule> existingRules = getExistingRules(context);
-      rulesValidator.validateOrThrow(context, request, existingRules);
-
+      rulesValidator.validateOrThrow(context, migratedCreateRuleRequest, existingRules);
+      DetectionExclusionRule detectionExclusionRule =
+          rulesManager.createDetectionExclusionRule(
+              context,
+              migratedCreateRuleRequest.getRuleScope(),
+              migratedCreateRuleRequest.getRuleInfo());
       CreateDetectionExclusionRuleResponse response =
-          CreateDetectionExclusionRuleResponse.newBuilder()
-              .setRule(
-                  rulesManager.createDetectionExclusionRule(
-                      context, request.getRuleScope(), request.getRuleInfo()))
-              .build();
-
+          CreateDetectionExclusionRuleResponse.newBuilder().setRule(detectionExclusionRule).build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -108,14 +111,15 @@ public class DetectionExclusionConfigServiceImpl
       StreamObserver<BulkUpsertDetectionExclusionRulesResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
-      rulesValidator.validateOrThrowBulkUpsertRequest(context, request.getRulesList());
-
+      BulkUpsertDetectionExclusionRulesRequest migratedBulkUpsertRulesRequest =
+          rulesMigrationManager.migrateBulkUpsertDetectionExclusionRulesRequest(request);
+      rulesValidator.validateOrThrowBulkUpsertRequest(
+          context, migratedBulkUpsertRulesRequest.getRulesList());
+      List<DetectionExclusionRule> existingRules =
+          rulesManager.bulkUpsertDetectionExclusionRule(
+              context, migratedBulkUpsertRulesRequest.getRulesList());
       BulkUpsertDetectionExclusionRulesResponse response =
-          BulkUpsertDetectionExclusionRulesResponse.newBuilder()
-              .addAllRules(
-                  rulesManager.bulkUpsertDetectionExclusionRule(context, request.getRulesList()))
-              .build();
-
+          BulkUpsertDetectionExclusionRulesResponse.newBuilder().addAllRules(existingRules).build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {
@@ -130,14 +134,14 @@ public class DetectionExclusionConfigServiceImpl
       StreamObserver<UpdateDetectionExclusionRuleResponse> responseObserver) {
     try {
       RequestContext context = RequestContext.CURRENT.get();
+      UpdateDetectionExclusionRuleRequest migratedUpdateRuleRequest =
+          rulesMigrationManager.migrateUpdateDetectionExclusionRuleRequest(request);
       List<DetectionExclusionRule> existingRules = getExistingRules(context);
-      rulesValidator.validateOrThrow(context, request, existingRules);
-
+      rulesValidator.validateOrThrow(context, migratedUpdateRuleRequest, existingRules);
+      DetectionExclusionRule rule =
+          rulesManager.updateDetectionExclusionRule(context, migratedUpdateRuleRequest.getRule());
       UpdateDetectionExclusionRuleResponse response =
-          UpdateDetectionExclusionRuleResponse.newBuilder()
-              .setRule(rulesManager.updateDetectionExclusionRule(context, request.getRule()))
-              .build();
-
+          UpdateDetectionExclusionRuleResponse.newBuilder().setRule(rule).build();
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception exception) {

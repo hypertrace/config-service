@@ -3,6 +3,8 @@ package ai.traceable.detection.exclusion.config.service.v1.rules.migration;
 import ai.traceable.anomaly.config.service.exclusion.handlers.AnomalyExclusionRuleConfigStore;
 import ai.traceable.anomaly.config.service.v1.exclusion.AnomalyExclusionRuleConfig;
 import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
+import ai.traceable.detection.exclusion.config.service.v1.BulkUpsertDetectionExclusionRulesRequest;
+import ai.traceable.detection.exclusion.config.service.v1.CreateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionCondition;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionConfigServiceConfig;
 import ai.traceable.detection.exclusion.config.service.v1.DetectionExclusionMigrationConfig;
@@ -12,6 +14,7 @@ import ai.traceable.detection.exclusion.config.service.v1.ExclusionTarget;
 import ai.traceable.detection.exclusion.config.service.v1.GetRulesFilter;
 import ai.traceable.detection.exclusion.config.service.v1.RuleSource;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
+import ai.traceable.detection.exclusion.config.service.v1.UpdateDetectionExclusionRuleRequest;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
 import ai.traceable.platform.actor.v1.Actor;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
@@ -44,11 +47,14 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   private final DetectionExclusionRuleConverter ruleConverter;
   private final ActorServiceClient actorServiceClient;
   private final DetectionExclusionConfigServiceConfig config;
+  private final DetectionExclusionRuleEvaluationPointsMigrator ruleEvaluationPointsMigrator;
 
   private final Set<ContextualKey<Void>> migrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> changeLog2MigrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> changeLog3MigrationCompletedTenantsSet = new HashSet<>();
   private final Set<ContextualKey<Void>> changeLog4MigrationCompletedTenantsSet = new HashSet<>();
+  private final Set<ContextualKey<Void>> ruleEvaluationPointsMigrationCompletedTenantsSet =
+      new HashSet<>();
 
   @Inject
   public DetectionExclusionRulesMigrationManager(
@@ -58,7 +64,8 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
       DetectionExclusionMigrationStore migrationStore,
       DetectionExclusionRuleConverter ruleConverter,
       ActorServiceClient actorServiceClient,
-      DetectionExclusionConfigServiceConfig config) {
+      DetectionExclusionConfigServiceConfig config,
+      DetectionExclusionRuleEvaluationPointsMigrator ruleEvaluationPointsMigrator) {
     this.featureCachingClient = featureCachingClient;
     this.newRulesStore = newRulesStore;
     this.oldRulesStore = oldRulesStore;
@@ -66,6 +73,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     this.ruleConverter = ruleConverter;
     this.actorServiceClient = actorServiceClient;
     this.config = config;
+    this.ruleEvaluationPointsMigrator = ruleEvaluationPointsMigrator;
   }
 
   @Override
@@ -124,7 +132,7 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
             .collect(Collectors.toUnmodifiableList());
 
     // rules present in both stores
-    // need to be conditionally overridden if latest update is by old api
+    // and need to be conditionally overridden if the latest update is through the old api
     List<DetectionExclusionRule> oldRulesToUpdate =
         Sets.intersection(oldRuleObjects.keySet(), newRuleObjects.keySet()).stream()
             .filter(
@@ -211,6 +219,73 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
     } else {
       updateDetectionExclusionRulesFromChangeLog4(requestContext, migrationConfig);
     }
+  }
+
+  @Override
+  public CreateDetectionExclusionRuleRequest migrateCreateDetectionExclusionRuleRequest(
+      CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest) {
+    return ruleEvaluationPointsMigrator.migrateCreateDetectionExclusionRuleRequest(
+        createDetectionExclusionRuleRequest);
+  }
+
+  @Override
+  public UpdateDetectionExclusionRuleRequest migrateUpdateDetectionExclusionRuleRequest(
+      UpdateDetectionExclusionRuleRequest updateDetectionExclusionRuleRequest) {
+    return ruleEvaluationPointsMigrator.migrateUpdateDetectionExclusionRuleRequest(
+        updateDetectionExclusionRuleRequest);
+  }
+
+  @Override
+  public BulkUpsertDetectionExclusionRulesRequest migrateBulkUpsertDetectionExclusionRulesRequest(
+      BulkUpsertDetectionExclusionRulesRequest bulkUpsertDetectionExclusionRulesRequest) {
+    return ruleEvaluationPointsMigrator.migrateBulkUpsertDetectionExclusionRulesRequest(
+        bulkUpsertDetectionExclusionRulesRequest);
+  }
+
+  @Override
+  public void migrateForRuleEvaluationPointsIfApplicable(RequestContext requestContext) {
+    if (config.isRuleEvaluationPointsMigrationDisabled()) {
+      return;
+    }
+    ContextualKey<Void> contextualKey = requestContext.buildInternalContextualKey();
+    if (ruleEvaluationPointsMigrationCompletedTenantsSet.contains(contextualKey)) {
+      return;
+    }
+    DetectionExclusionMigrationConfig detectionExclusionMigrationConfig =
+        migrationStore
+            .getData(requestContext)
+            .orElse(DetectionExclusionMigrationConfig.getDefaultInstance());
+    if (detectionExclusionMigrationConfig.getRuleEvaluationPointsMigrationCompleted()) {
+      ruleEvaluationPointsMigrationCompletedTenantsSet.add(contextualKey);
+    } else {
+      updateDetectionExclusionRulesWithRuleEvaluationPoints(
+          requestContext, detectionExclusionMigrationConfig);
+    }
+  }
+
+  private void updateDetectionExclusionRulesWithRuleEvaluationPoints(
+      RequestContext requestContext, DetectionExclusionMigrationConfig migrationConfig) {
+    List<DetectionExclusionRule> updatedRules =
+        newRulesStore.getAllConfigData(requestContext).stream()
+            .filter(rule -> rule.getRuleInfo().toBuilder().getRuleEvaluationPointsList().isEmpty())
+            .map(
+                rule ->
+                    rule.toBuilder()
+                        .setRuleInfo(
+                            rule.getRuleInfo().toBuilder()
+                                .addAllRuleEvaluationPoints(
+                                    ruleEvaluationPointsMigrator.getRuleEvaluationPoints(
+                                        rule.getRuleInfo())))
+                        .build())
+            .collect(Collectors.toUnmodifiableList());
+    if (!updatedRules.isEmpty()) {
+      newRulesStore.upsertObjects(requestContext, updatedRules);
+    }
+    migrationStore.upsertObject(
+        requestContext,
+        migrationConfig.toBuilder().setRuleEvaluationPointsMigrationCompleted(true).build());
+    ruleEvaluationPointsMigrationCompletedTenantsSet.add(
+        requestContext.buildInternalContextualKey());
   }
 
   private void updateDetectionExclusionRulesFromChangeLog2(

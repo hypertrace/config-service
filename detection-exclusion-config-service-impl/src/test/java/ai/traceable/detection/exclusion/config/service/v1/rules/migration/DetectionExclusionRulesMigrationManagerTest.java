@@ -40,6 +40,8 @@ import ai.traceable.detection.exclusion.config.service.v1.ScopeCondition;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEvent;
 import ai.traceable.detection.exclusion.config.service.v1.SystemDefinedEventFamily;
 import ai.traceable.detection.exclusion.config.service.v1.rules.DetectionExclusionRulesStore;
+import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
+import ai.traceable.detection.exclusion.config.service.v1.rules.modsec.ExclusionModsecRulesSupportChecker;
 import ai.traceable.platform.config.provider.common.clients.ActorServiceClient;
 import com.typesafe.config.ConfigFactory;
 import java.time.Instant;
@@ -77,6 +79,7 @@ class DetectionExclusionRulesMigrationManagerTest {
   private DetectionExclusionMigrationStore migrationStore =
       mock(DetectionExclusionMigrationStore.class);
   private DetectionExclusionRulesMigrationManager migrationManager;
+  private ExclusionModsecRulesSupportChecker exclusionModsecRulesSupportChecker;
 
   @BeforeEach
   void setup() {
@@ -84,6 +87,9 @@ class DetectionExclusionRulesMigrationManagerTest {
     newRulesStore = mock(DetectionExclusionRulesStore.class);
     oldRulesStore = mock(AnomalyExclusionRuleConfigStore.class);
     migrationStore = mock(DetectionExclusionMigrationStore.class);
+    RulesManager rulesManager = mock(RulesManager.class);
+    ExclusionModsecRulesSupportChecker exclusionModsecRulesSupportChecker =
+        mock(ExclusionModsecRulesSupportChecker.class);
     ActorServiceClient actorServiceClient = mock(ActorServiceClient.class);
     when(actorServiceClient.getActorsByEntityIds(any(), any())).thenReturn(List.of());
 
@@ -95,7 +101,8 @@ class DetectionExclusionRulesMigrationManagerTest {
             migrationStore,
             new DetectionExclusionRuleConverter(),
             actorServiceClient,
-            new DetectionExclusionConfigServiceConfig(ConfigFactory.empty()));
+            new DetectionExclusionConfigServiceConfig(ConfigFactory.empty()),
+            new DetectionExclusionRuleEvaluationPointsMigrator());
   }
 
   @Test
@@ -248,8 +255,7 @@ class DetectionExclusionRulesMigrationManagerTest {
     verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
-            argThat(list -> list.size() == 1 && verifySsti("id3a", list.get(0))));
+            eq(requestContext), argThat(list -> list.size() == 1 && verifySsti(list.get(0))));
 
     resetStores();
     migrationManager.migrateFromChangeLog3IfApplicable(requestContext);
@@ -276,22 +282,21 @@ class DetectionExclusionRulesMigrationManagerTest {
     verify(newRulesStore, times(1)).upsertObjects(eq(requestContext), any());
     verify(newRulesStore, times(1))
         .upsertObjects(
-            eq(requestContext),
-            argThat(list -> list.size() == 1 && verifyHidden("id3a", list.get(0))));
+            eq(requestContext), argThat(list -> list.size() == 1 && verifyHidden(list.get(0))));
 
     resetStores();
     migrationManager.migrateFromChangeLog4IfApplicable(requestContext);
     verifyZeroInteractionWithRulesStore(true);
   }
 
-  private boolean verifyHidden(String id, DetectionExclusionRule rule) {
-    assertEquals(id, rule.getId());
+  private boolean verifyHidden(DetectionExclusionRule rule) {
+    assertEquals("id3a", rule.getId());
     assertTrue(rule.getRuleInfo().getRuleStatus().getHidden());
     return true;
   }
 
-  private boolean verifySsti(String id, DetectionExclusionRule rule) {
-    assertEquals(id, rule.getId());
+  private boolean verifySsti(DetectionExclusionRule rule) {
+    assertEquals("id3a", rule.getId());
     assertTrue(
         rule.getRuleInfo().getConditionsList().stream()
             .flatMap(

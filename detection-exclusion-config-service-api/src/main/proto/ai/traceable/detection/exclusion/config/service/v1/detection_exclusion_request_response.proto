@@ -80,6 +80,8 @@ message DetectionExclusionMigrationConfig {
   bool change_log_3_migration_completed = 3;
   // marking rules with source conditions as hidden
   bool change_log_4_migration_completed = 4;
+  // migration with respect to the addition of rule evaluation points
+  bool rule_evaluation_points_migration_completed = 5;
 }
 
 message GetExclusionModsecRulesRequest {

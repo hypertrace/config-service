@@ -9,7 +9,7 @@ public class DetectionExclusionRuleConditionModule extends AbstractModule {
   protected void configure() {
     Multibinder<DetectionExclusionRuleConditionConverter> multiBinder =
         Multibinder.newSetBinder(binder(), DetectionExclusionRuleConditionConverter.class);
-    multiBinder.addBinding().to(DetectionExclusionRuleIpTypeConditionConverter.class);
+    multiBinder.addBinding().to(DetectionExclusionRuleIpLocationTypeConditionConverter.class);
     multiBinder.addBinding().to(DetectionExclusionRuleAttributeMatchConditionConverter.class);
     multiBinder.addBinding().to(DetectionExclusionRuleIpAddressConditionConverter.class);
     multiBinder.addBinding().to(DetectionExclusionRuleRegionConditionConverter.class);

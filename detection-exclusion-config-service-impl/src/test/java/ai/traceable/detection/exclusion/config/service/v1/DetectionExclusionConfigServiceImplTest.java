@@ -14,6 +14,7 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesManager;
 import ai.traceable.detection.exclusion.config.service.v1.rules.RulesValidator;
 import ai.traceable.detection.exclusion.config.service.v1.rules.edge.decision.DetectionExclusionRuleEdgeDecisionConverter;
+import ai.traceable.detection.exclusion.config.service.v1.rules.migration.RulesMigrationManager;
 import ai.traceable.edge.decision.config.service.v1.EdgeDecisionEngineConfig;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -30,6 +31,7 @@ class DetectionExclusionConfigServiceImplTest {
   private FeatureCachingClient featureCachingClient;
   private DetectionExclusionRuleEdgeDecisionConverter edgeDecisionConverter;
   private DetectionExclusionConfigServiceImpl detectionExclusionConfigService;
+  private RulesMigrationManager mockRulesMigrationManager;
   private final RequestContext requestContext = RequestContext.forTenantId("tenantId");
 
   @BeforeEach
@@ -38,9 +40,14 @@ class DetectionExclusionConfigServiceImplTest {
     rulesValidator = mock(RulesValidator.class);
     featureCachingClient = mock(FeatureCachingClient.class);
     edgeDecisionConverter = mock(DetectionExclusionRuleEdgeDecisionConverter.class);
+    mockRulesMigrationManager = mock(RulesMigrationManager.class);
     detectionExclusionConfigService =
         new DetectionExclusionConfigServiceImpl(
-            rulesManager, rulesValidator, featureCachingClient, edgeDecisionConverter);
+            rulesManager,
+            rulesValidator,
+            featureCachingClient,
+            edgeDecisionConverter,
+            mockRulesMigrationManager);
   }
 
   @Test
@@ -61,6 +68,8 @@ class DetectionExclusionConfigServiceImplTest {
                 RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE));
     List<DetectionExclusionRule> allRules =
         List.of(platformRule, inlineRule, edgeRule, multipleRuleEvaluationPointsRule);
+
+    doNothing().when(mockRulesMigrationManager).migrateForRuleEvaluationPointsIfApplicable(any());
     when(rulesManager.getDetectionExclusionRules(eq(requestContext), any()))
         .thenAnswer(
             invocation -> {
@@ -189,12 +198,21 @@ class DetectionExclusionConfigServiceImplTest {
     StreamObserver<CreateDetectionExclusionRuleResponse> streamObserver =
         mock(StreamObserver.class);
 
+    CreateDetectionExclusionRuleRequest migratedRequest =
+        CreateDetectionExclusionRuleRequest.newBuilder()
+            .setRuleScope(DetectionExclusionRuleScope.getDefaultInstance())
+            .setRuleInfo(DetectionExclusionRuleInfo.getDefaultInstance())
+            .build();
+    when(mockRulesMigrationManager.migrateCreateDetectionExclusionRuleRequest(request))
+        .thenReturn(migratedRequest);
     when(rulesManager.createDetectionExclusionRule(eq(requestContext), any(), any()))
         .thenReturn(detectionExclusionRule);
 
     // validation throws error
     Exception exception = Status.INVALID_ARGUMENT.asRuntimeException();
-    doThrow(exception).when(rulesValidator).validateOrThrow(eq(requestContext), eq(request), any());
+    doThrow(exception)
+        .when(rulesValidator)
+        .validateOrThrow(eq(requestContext), eq(migratedRequest), any());
 
     requestContext.run(
         () ->
@@ -202,7 +220,9 @@ class DetectionExclusionConfigServiceImplTest {
     verify(streamObserver, times(1)).onError(exception);
 
     // validation succeeds
-    doNothing().when(rulesValidator).validateOrThrow(eq(requestContext), eq(request), any());
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrow(eq(requestContext), eq(migratedRequest), any());
 
     requestContext.run(
         () ->
@@ -223,12 +243,18 @@ class DetectionExclusionConfigServiceImplTest {
     StreamObserver<UpdateDetectionExclusionRuleResponse> streamObserver =
         mock(StreamObserver.class);
 
+    UpdateDetectionExclusionRuleRequest migratedRequest =
+        UpdateDetectionExclusionRuleRequest.newBuilder().setRule(detectionExclusionRule).build();
+    when(mockRulesMigrationManager.migrateUpdateDetectionExclusionRuleRequest(request))
+        .thenReturn(migratedRequest);
     when(rulesManager.updateDetectionExclusionRule(eq(requestContext), any()))
         .thenReturn(detectionExclusionRule);
 
     // validation throws error
     Exception exception = Status.INVALID_ARGUMENT.asRuntimeException();
-    doThrow(exception).when(rulesValidator).validateOrThrow(eq(requestContext), eq(request), any());
+    doThrow(exception)
+        .when(rulesValidator)
+        .validateOrThrow(eq(requestContext), eq(migratedRequest), any());
 
     requestContext.run(
         () ->
@@ -236,7 +262,9 @@ class DetectionExclusionConfigServiceImplTest {
     verify(streamObserver, times(1)).onError(exception);
 
     // validation succeeds
-    doNothing().when(rulesValidator).validateOrThrow(eq(requestContext), eq(request), any());
+    doNothing()
+        .when(rulesValidator)
+        .validateOrThrow(eq(requestContext), eq(migratedRequest), any());
 
     requestContext.run(
         () ->
@@ -666,10 +694,24 @@ class DetectionExclusionConfigServiceImplTest {
     StreamObserver<BulkUpsertDetectionExclusionRulesResponse> streamObserver =
         mock(StreamObserver.class);
 
+    UpsertDetectionExclusionRuleData ruleData =
+        UpsertDetectionExclusionRuleData.newBuilder()
+            .setRuleInfo(DetectionExclusionRuleInfo.getDefaultInstance())
+            .build();
+    BulkUpsertDetectionExclusionRulesRequest migratedRequest =
+        BulkUpsertDetectionExclusionRulesRequest.newBuilder().addRules(ruleData).build();
+
+    when(mockRulesMigrationManager.migrateBulkUpsertDetectionExclusionRulesRequest(request))
+        .thenReturn(migratedRequest);
+    List<DetectionExclusionRule> existingRules =
+        List.of(DetectionExclusionRule.getDefaultInstance());
+    when(rulesManager.bulkUpsertDetectionExclusionRule(eq(requestContext), any()))
+        .thenReturn(existingRules);
+
     // validation succeeds
     doNothing()
         .when(rulesValidator)
-        .validateOrThrowBulkUpsertRequest(requestContext, request.getRulesList());
+        .validateOrThrowBulkUpsertRequest(eq(requestContext), eq(migratedRequest.getRulesList()));
 
     requestContext.run(
         () ->
@@ -677,7 +719,10 @@ class DetectionExclusionConfigServiceImplTest {
                 request, streamObserver));
     verify(rulesManager, times(1)).bulkUpsertDetectionExclusionRule(eq(requestContext), any());
     verify(streamObserver, times(1))
-        .onNext(BulkUpsertDetectionExclusionRulesResponse.getDefaultInstance());
+        .onNext(
+            BulkUpsertDetectionExclusionRulesResponse.newBuilder()
+                .addAllRules(existingRules)
+                .build());
     verify(streamObserver, times(1)).onCompleted();
   }
 
