@@ -11,11 +11,12 @@ import com.typesafe.config.ConfigRenderOptions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.SneakyThrows;
 
 public class CustomSignatureConfigServiceConfig {
   private final Config config;
-  private final List<CustomSignatureRule> defaultCustomSignatureRules;
+  @Getter private final List<CustomSignatureRule> defaultCustomSignatureRules;
   private static final String CUSTOM_SIGNATURE_CONFIG_SERVICE = "custom.signature.config.service";
   private static final String DEFAULT_CUSTOM_SIGNATURE_RULES_CONFIG_PATH =
       "defaultCustomSignatureRules";
@@ -25,6 +26,11 @@ public class CustomSignatureConfigServiceConfig {
   private static final String EDS_CONVERSION_ENABLED_CONFIG_PATH = "edsConversionEnabled";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
+  private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
+  private static final String RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY =
+      "ruleEvaluationPoints." + MIGRATION_DISABLED_KEY;
+
+  @Getter private final boolean ruleEvaluationPointsMigrationDisabled;
 
   public CustomSignatureConfigServiceConfig(Config config) {
     this.config =
@@ -32,6 +38,9 @@ public class CustomSignatureConfigServiceConfig {
             ? config.getConfig(CUSTOM_SIGNATURE_CONFIG_SERVICE)
             : ConfigFactory.empty();
     this.defaultCustomSignatureRules = loadDefaultCustomSignatureRules();
+    this.ruleEvaluationPointsMigrationDisabled =
+        config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
+            && config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
   }
 
   private List<CustomSignatureRule> loadDefaultCustomSignatureRules() {
@@ -45,10 +54,6 @@ public class CustomSignatureConfigServiceConfig {
         convertToCustomSignatureRules(
             ConfigFactory.parseResources(DEFAULT_CUSTOM_SIGNATURE_RULES_FILE_PATH)
                 .getConfigList(DEFAULT_CUSTOM_SIGNATURE_RULES_CONFIG_PATH)));
-    return defaultCustomSignatureRules;
-  }
-
-  public List<CustomSignatureRule> getDefaultCustomSignatureRules() {
     return defaultCustomSignatureRules;
   }
 

@@ -524,3 +524,8 @@ enum IpAbuseVelocity {
   IP_ABUSE_VELOCITY_MEDIUM = 2;
   IP_ABUSE_VELOCITY_HIGH = 3;
 }
+
+message CustomSignatureMigrationConfig {
+  // migration with respect to rule evaluation points
+  bool rule_evaluation_points_migration_completed = 1;
+}

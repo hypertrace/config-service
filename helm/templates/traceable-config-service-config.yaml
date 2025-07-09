@@ -132,6 +132,7 @@ data:
         {{- .Values.traceableConfigServiceConfig.customSignatureConfigService.defaultCustomSignatureRules | nindent 8 }}
       {{- end }}
       edsConversionEnabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.edsConversionEnabled }}
+      ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.customSignatureConfigService.ruleEvaluationPoints.migrationDisabled }}
     }
     bot.config.service {
         default.policies = {{ toJson .Values.traceableConfigServiceConfig.botConfigService.defaultPolicies }}
@@ -292,6 +293,7 @@ data:
       migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.migrationDisabled }}
       changeLog2.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.changeLog2.migrationDisabled }}
       changeLog3.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.changeLog3.migrationDisabled }}
+      ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.detectionExclusionConfigService.ruleEvaluationPoints.migrationDisabled }}
       {{- if .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules }}
       defaultDetectionExclusionRules =
         {{- .Values.traceableConfigServiceConfig.detectionExclusionConfigService.defaultDetectionExclusionRules | nindent 8 }}
@@ -299,6 +301,7 @@ data:
     }
     rate.limiting.config.service {
       changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.changeLog1.migrationDisabled }}
+      ruleEvaluationPoints.migrationDisabled = {{ .Values.traceableConfigServiceConfig.rateLimitingConfigService.ruleEvaluationPoints.migrationDisabled }}
     }
     iprange.config.service {
       changeLog1.migrationDisabled = {{ .Values.traceableConfigServiceConfig.iprangeConfigService.changeLog1.migrationDisabled }}

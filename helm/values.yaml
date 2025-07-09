@@ -358,6 +358,8 @@ traceableConfigServiceConfig:
     modsecurity:
       ruleVersion: MODSEC_RULE_VERSION_V3
     edsConversionEnabled: false
+    ruleEvaluationPoints:
+      migrationDisabled: true
     #    defaultCustomSignatureRules: |-
     #    [
     #     {
