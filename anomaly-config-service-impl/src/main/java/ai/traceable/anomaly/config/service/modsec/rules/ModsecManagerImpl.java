@@ -70,15 +70,18 @@ public class ModsecManagerImpl implements ModsecManager {
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
 
-    ScopedAnomalyConfigStatus globalConfig =
-        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            requestContext, anomalyConfigScope);
-    RuleVersion currentVersion =
-        globalConfig.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion();
-
+    ScopedAnomalyConfigStatus globalConfig;
+    RuleVersion currentVersion;
     if (rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION)) {
       // Platform is tenant-agnostic
       globalConfig = ScopedAnomalyConfigStatus.getDefaultInstance();
+      currentVersion = RuleVersion.getDefaultInstance();
+    } else {
+      globalConfig =
+          globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+              requestContext, anomalyConfigScope);
+      currentVersion =
+          globalConfig.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion();
     }
 
     subRuleTypes =
