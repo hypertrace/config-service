@@ -6,6 +6,8 @@
 # module specific owners
 anomaly-config-service-registry/src/test/resources/modsec @piyushroshan @soujanyanmbri
 anomaly-config-service-registry/src/main/resources/modsec/crs @piyushroshan @soujanyanmbri
+anomaly-config-service-registry/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
+anomaly-config-service-api/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
 anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
 api-spec-config-service-api/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
 api-spec-config-service-impl/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
