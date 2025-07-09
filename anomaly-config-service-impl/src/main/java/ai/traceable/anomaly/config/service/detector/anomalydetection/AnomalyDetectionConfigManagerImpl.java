@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.GlobalTestingModeResolver;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
@@ -53,6 +54,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private final List<AnomalyDetectionConfig> defaultApiProtectionDetectionConfigs;
   private final WafConfigResolver wafConfigResolver;
+  private final GlobalTestingModeResolver globalTestingModeResolver;
 
   @Inject
   public AnomalyDetectionConfigManagerImpl(
@@ -62,7 +64,8 @@ public class AnomalyDetectionConfigManagerImpl
       DetectorConfigServiceConfig config,
       ConfigChangeEventGenerator configChangeEventGenerator,
       GlobalAnomalyConfigStatusManager anomalyConfigStatusManager,
-      WafConfigResolver wafConfigResolver) {
+      WafConfigResolver wafConfigResolver,
+      GlobalTestingModeResolver globalTestingModeResolver) {
     super(
         configServiceBlockingStub,
         ANOMALY_DETECTION_CONFIG_NAMESPACE,
@@ -73,6 +76,7 @@ public class AnomalyDetectionConfigManagerImpl
     this.defaultApiProtectionDetectionConfigs = config.getDefaultApiProtectionDetectionConfigs();
     this.globalAnomalyConfigStatusManager = anomalyConfigStatusManager;
     this.wafConfigResolver = wafConfigResolver;
+    this.globalTestingModeResolver = globalTestingModeResolver;
   }
 
   @Override
@@ -82,13 +86,26 @@ public class AnomalyDetectionConfigManagerImpl
       GetAnomalyDetectionConfigsFilter filter) {
     Map<String, ScopedAnomalyDetectionConfig> configMap =
         getFilteredConfigMap(requestContext, filter.getApplicableScopesList());
-    return getResolvedConfig(
-        requestContext,
-        configMap,
-        configScope,
-        anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
-            getTenantId(requestContext), configScope),
-        filter);
+    ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig =
+        getResolvedConfig(
+            requestContext,
+            configMap,
+            configScope,
+            anomalyConfigScopeUtils.getContextsWithIncreasingPriority(
+                getTenantId(requestContext), configScope),
+            filter);
+
+    Optional<ScopedAnomalyConfigStatus> globalConfigStatus =
+        Optional.ofNullable(
+            globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+                requestContext, configScope));
+
+    Optional<ScopedAnomalyDetectionConfig>
+        resolvedScopedAnomalyDetectionConfigWithGlobalTestingMode =
+            globalTestingModeResolver.resolveGlobalTestingMode(
+                scopedAnomalyDetectionConfig, globalConfigStatus);
+    return resolvedScopedAnomalyDetectionConfigWithGlobalTestingMode.orElse(
+        scopedAnomalyDetectionConfig);
   }
 
   @Override
@@ -159,7 +176,25 @@ public class AnomalyDetectionConfigManagerImpl
     Map<String, ScopedAnomalyDetectionConfig> anomalyDetectionConfigMap =
         getFilteredConfigMap(requestContext, filter.getApplicableScopesList());
 
-    return getResolvedConfigs(requestContext, anomalyDetectionConfigMap, filter);
+    List<ScopedAnomalyConfigStatus> globalConfigStatuses =
+        globalAnomalyConfigStatusManager.getAllScopedAnomalyConfigStatusConfigs(
+            requestContext, filter.getApplicableScopesList());
+
+    Map<AnomalyConfigScope, ScopedAnomalyConfigStatus> globalConfigStatusMap =
+        globalConfigStatuses.stream()
+            .collect(
+                Collectors.toMap(ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
+
+    return getResolvedConfigs(requestContext, anomalyDetectionConfigMap, filter).stream()
+        .map(
+            resolvedConfig ->
+                globalTestingModeResolver
+                    .resolveGlobalTestingMode(
+                        resolvedConfig,
+                        Optional.ofNullable(
+                            globalConfigStatusMap.get(resolvedConfig.getConfigScope())))
+                    .orElse(resolvedConfig))
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
@@ -462,7 +497,9 @@ public class AnomalyDetectionConfigManagerImpl
           .build();
     }
 
-    return resolvedConfig;
+    Optional<ScopedAnomalyDetectionConfig> resolvedScopedAnomalyDetectionConfig =
+        globalTestingModeResolver.resolveGlobalTestingMode(resolvedConfig, globalConfigStatus);
+    return resolvedScopedAnomalyDetectionConfig.orElse(resolvedConfig);
   }
 
   private List<AnomalyDetectionConfig> disableAnomalyDetectionConfigs(

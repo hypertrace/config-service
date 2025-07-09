@@ -144,8 +144,7 @@ class RuleVersionManagerImplTest {
             currentVersionCaptor.capture(), previousVersionCaptor.capture()))
         .thenReturn(webAppRulesChangeLogBuilder.build());
     RulesChangeLog result =
-        ruleVersionManager.getRulesChangeLog(
-            requestContext, ruleType, currentVersion, previousVersion);
+        ruleVersionManager.getRulesChangeLog(ruleType, currentVersion, previousVersion);
     verify(webAppProtectionRulesProvider)
         .getWebAppRulesChangeLog(any(WebAppRulesVersion.class), any(WebAppRulesVersion.class));
     assertEquals("1.1.0", currentVersionCaptor.getValue().getVersion());
@@ -285,8 +284,7 @@ class RuleVersionManagerImplTest {
         .thenReturn(webAppRulesChangeLogBuilder.build());
 
     RulesChangeLog result =
-        ruleVersionManager.getRulesChangeLog(
-            requestContext, ruleType, currentVersion, previousVersion);
+        ruleVersionManager.getRulesChangeLog(ruleType, currentVersion, previousVersion);
     assertNotNull(result);
     assertEquals("1.9.0", result.getVersionUpdated().getOldVersion().getVersion());
     assertEquals(
@@ -471,8 +469,7 @@ class RuleVersionManagerImplTest {
         .thenReturn(apiProtectRulesChangeLogBuilder.build());
 
     RulesChangeLog result =
-        ruleVersionManager.getRulesChangeLog(
-            requestContext, ruleType, currentVersion, previousVersion);
+        ruleVersionManager.getRulesChangeLog(ruleType, currentVersion, previousVersion);
 
     assertNotNull(result);
 

@@ -14,9 +14,11 @@ import ai.traceable.anomaly.config.service.common.AnomalyConfigScopeUtils;
 import ai.traceable.anomaly.config.service.common.AnomalySubRuleConfigUtils;
 import ai.traceable.anomaly.config.service.detector.DetectorConfigServiceConfig;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.AnomalyDetectionConfigHandler;
+import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.GlobalTestingModeResolver;
 import ai.traceable.anomaly.config.service.detector.anomalydetection.handler.ModsecConfigHandler;
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
+import ai.traceable.anomaly.config.service.global.version.RuleVersionManager;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
@@ -133,6 +135,8 @@ public class AnomalyDetectionConfigManagerTest {
 
   private GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private RuleInfoManager ruleInfoManager;
+  private RuleVersionManager ruleVersionManager;
+  private GlobalTestingModeResolver globalTestingModeResolver;
 
   @BeforeEach
   public void setup() throws IOException {
@@ -145,6 +149,7 @@ public class AnomalyDetectionConfigManagerTest {
     configServiceBlockingStub = ConfigServiceGrpc.newBlockingStub(mockConfigService.channel());
     detectorConfigServiceConfig = mock(DetectorConfigServiceConfig.class);
     anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
+    globalTestingModeResolver = mock(GlobalTestingModeResolver.class);
     when(detectorConfigServiceConfig.getDefaultWafDetectionConfigs()).thenReturn(List.of());
     when(detectorConfigServiceConfig.getDefaultApiProtectionDetectionConfigs())
         .thenReturn(List.of());
@@ -175,9 +180,11 @@ public class AnomalyDetectionConfigManagerTest {
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
     ruleInfoManager = mock(RuleInfoManager.class);
+    ruleVersionManager = mock(RuleVersionManager.class);
     wafConfigResolver =
         new WafConfigResolver(
             ruleInfoManager, detectorConfigServiceConfig, new ModsecConfigHandler());
+
     this.configManager =
         spy(
             new AnomalyDetectionConfigManagerImpl(
@@ -187,7 +194,8 @@ public class AnomalyDetectionConfigManagerTest {
                 detectorConfigServiceConfig,
                 mock(ConfigChangeEventGenerator.class),
                 globalAnomalyConfigStatusManager,
-                wafConfigResolver));
+                wafConfigResolver,
+                globalTestingModeResolver));
   }
 
   @AfterEach
@@ -563,7 +571,8 @@ public class AnomalyDetectionConfigManagerTest {
             config,
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            wafConfigResolver);
+            wafConfigResolver,
+            globalTestingModeResolver);
 
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.addAll(config.getDefaultWafDetectionConfigs());
@@ -640,7 +649,8 @@ public class AnomalyDetectionConfigManagerTest {
             config,
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            new WafConfigResolver(ruleInfoManager, config, new ModsecConfigHandler()));
+            new WafConfigResolver(ruleInfoManager, config, new ModsecConfigHandler()),
+            globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
         config.getDefaultWafDetectionConfigs().get(1).toBuilder()
@@ -729,7 +739,8 @@ public class AnomalyDetectionConfigManagerTest {
             getDefaultConfig(),
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            wafConfigResolver);
+            wafConfigResolver,
+            globalTestingModeResolver);
     AnomalySubRuleConfig oldStyleConfig =
         AnomalySubRuleConfig.newBuilder()
             .setSubRuleId("old-style-config")
@@ -886,7 +897,8 @@ public class AnomalyDetectionConfigManagerTest {
             config,
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            wafConfigResolver);
+            wafConfigResolver,
+            globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
@@ -993,7 +1005,8 @@ public class AnomalyDetectionConfigManagerTest {
             config,
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            wafConfigResolver);
+            wafConfigResolver,
+            globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()
@@ -1092,7 +1105,8 @@ public class AnomalyDetectionConfigManagerTest {
             config,
             mock(ConfigChangeEventGenerator.class),
             globalAnomalyConfigStatusManager,
-            wafConfigResolver);
+            wafConfigResolver,
+            globalTestingModeResolver);
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.add(
         AnomalyDetectionConfig.newBuilder()

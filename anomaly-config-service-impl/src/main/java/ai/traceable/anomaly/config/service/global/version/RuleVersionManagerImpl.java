@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.hypertrace.core.grpcutils.context.RequestContext;
 
 public class RuleVersionManagerImpl implements RuleVersionManager {
 
@@ -110,10 +109,7 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
 
   @Override
   public RulesChangeLog getRulesChangeLog(
-      RequestContext requestContext,
-      RuleType ruleType,
-      RuleVersion currentVersion,
-      RuleVersion previousVersion) {
+      RuleType ruleType, RuleVersion currentVersion, RuleVersion previousVersion) {
     switch (ruleType) {
       case RULE_TYPE_WEB_APPLICATION:
         return getWebAppRulesChangeLog(currentVersion, previousVersion);

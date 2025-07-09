@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import com.google.protobuf.Message;
 import org.junit.jupiter.api.Test;
 
 class AnomalySubRuleConfigUtilsTest {
@@ -119,5 +120,116 @@ class AnomalySubRuleConfigUtilsTest {
     assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK, result.getAnomalyRuleAction());
     assertTrue(result.hasBlockingEnabled());
     assertTrue(result.getBlockingEnabled());
+  }
+
+  @Test
+  void testHandleMergedConfigChange_withNewFields() {
+    AnomalySubRuleConfig fallback =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule1")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
+            .setInternal(false)
+            .build();
+
+    AnomalySubRuleConfig request =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule1")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)
+            .setInternal(true)
+            .build();
+    Message mergedMessage = AnomalyConfigServiceUtils.mergeConfigs(fallback, request);
+    AnomalySubRuleConfig mergedConfig = (AnomalySubRuleConfig) mergedMessage;
+    AnomalySubRuleConfig result =
+        AnomalySubRuleConfigUtils.handleMergedConfigChange(mergedConfig, request);
+    assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK, result.getAnomalyRuleAction());
+    assertTrue(result.getInternal());
+    assertTrue(result.hasConfigStatus());
+    assertTrue(result.getBlockingEnabled());
+    assertTrue(result.getConfigStatus().getInternal());
+  }
+
+  @Test
+  void testHandleMergedConfigChange_withOldFields() {
+    AnomalySubRuleConfig fallback =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule2")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
+            .build();
+
+    AnomalySubRuleConfig request =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule2")
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .setBlockingEnabled(true)
+            .build();
+    Message mergedMessage = AnomalyConfigServiceUtils.mergeConfigs(fallback, request);
+    AnomalySubRuleConfig mergedConfig = (AnomalySubRuleConfig) mergedMessage;
+    AnomalySubRuleConfig result =
+        AnomalySubRuleConfigUtils.handleMergedConfigChange(mergedConfig, request);
+    assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE, result.getAnomalyRuleAction());
+    assertTrue(result.getConfigStatus().getDisabled());
+    assertTrue(result.getBlockingEnabled());
+  }
+
+  @Test
+  void testHandleMergedConfigChange_withBothFields() {
+    AnomalySubRuleConfig fallback =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule3")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
+            .setInternal(false)
+            .build();
+
+    AnomalySubRuleConfig request =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule3")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .build();
+    Message mergedMessage = AnomalyConfigServiceUtils.mergeConfigs(fallback, request);
+    AnomalySubRuleConfig mergedConfig = (AnomalySubRuleConfig) mergedMessage;
+    AnomalySubRuleConfig result =
+        AnomalySubRuleConfigUtils.handleMergedConfigChange(mergedConfig, request);
+    assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK, result.getAnomalyRuleAction());
+    assertTrue(result.hasConfigStatus());
+  }
+
+  @Test
+  void testHandleMergedConfigChange_withNoFields() {
+    AnomalySubRuleConfig merged =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule4")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
+            .setInternal(false)
+            .build();
+
+    AnomalySubRuleConfig request = AnomalySubRuleConfig.newBuilder().setSubRuleId("rule4").build();
+    AnomalySubRuleConfig result =
+        AnomalySubRuleConfigUtils.handleMergedConfigChange(merged, request);
+    assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, result.getAnomalyRuleAction());
+    assertFalse(result.getInternal());
+  }
+
+  @Test
+  void testHandleMergedConfigChange_withConflictingFields() {
+    AnomalySubRuleConfig fallback =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule5")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)
+            .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+            .setBlockingEnabled(false)
+            .build();
+
+    AnomalySubRuleConfig request =
+        AnomalySubRuleConfig.newBuilder()
+            .setSubRuleId("rule5")
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)
+            .build();
+    Message mergedMessage = AnomalyConfigServiceUtils.mergeConfigs(fallback, request);
+    AnomalySubRuleConfig mergedConfig = (AnomalySubRuleConfig) mergedMessage;
+    AnomalySubRuleConfig result =
+        AnomalySubRuleConfigUtils.handleMergedConfigChange(mergedConfig, request);
+    assertEquals(AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR, result.getAnomalyRuleAction());
+    assertFalse(result.getBlockingEnabled());
   }
 }

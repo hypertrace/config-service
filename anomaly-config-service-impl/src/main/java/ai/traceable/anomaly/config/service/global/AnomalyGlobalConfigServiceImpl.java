@@ -263,7 +263,6 @@ public class AnomalyGlobalConfigServiceImpl
           GetRulesChangeLogResponse.newBuilder()
               .setRulesChangeLog(
                   ruleVersionManager.getRulesChangeLog(
-                      RequestContext.CURRENT.get(),
                       request.getRuleType(),
                       request.getCurrentVersion(),
                       request.getPreviousVersion()))
