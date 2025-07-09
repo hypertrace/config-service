@@ -7,6 +7,7 @@ import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -79,7 +80,7 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
     deleteObject(ctx, id);
   }
 
-  private boolean matchesFilter(Certificate certificate, CertificateFilter filter) {
+  protected boolean matchesFilter(Certificate certificate, CertificateFilter filter) {
     // Filter by IDs if specified
     if (filter.getIdsCount() > 0 && !filter.getIdsList().contains(certificate.getId())) {
       return false;
@@ -87,9 +88,20 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
 
     // Filter by domain names if specified
     if (filter.getDomainNamesCount() > 0) {
+      List<String> filterDomains = filter.getDomainNamesList();
       boolean matchesDomain =
           certificate.getMetadata().getDomainNamesList().stream()
-              .anyMatch(filter.getDomainNamesList()::contains);
+              .anyMatch(
+                  certDomain ->
+                      // Check for exact match
+                      filterDomains.contains(certDomain)
+                          ||
+                          // Check for wildcard domain match
+                          (certDomain.startsWith("*.")
+                              && filterDomains.stream()
+                                  .anyMatch(
+                                      filterDomain ->
+                                          filterDomain.endsWith(certDomain.substring(1)))));
       if (!matchesDomain) {
         return false;
       }
@@ -101,12 +113,15 @@ public class CertificateConfigStore extends IdentifiedObjectStore<Certificate> {
 
       // Filter by regions if specified
       if (awsFilter.getRegionsCount() > 0) {
-        boolean matchesRegion =
+        // Get all AWS regions from the certificate as a Set for efficient lookups
+        Set<String> certificateRegions =
             certificate.getStorageList().stream()
                 .filter(CertificateStorageDetails::hasAws)
-                .anyMatch(
-                    storage -> awsFilter.getRegionsList().contains(storage.getAws().getRegion()));
-        if (!matchesRegion) {
+                .map(storage -> storage.getAws().getRegion())
+                .collect(Collectors.toSet());
+
+        // Check if all filter regions are present in the certificate
+        if (!certificateRegions.containsAll(awsFilter.getRegionsList())) {
           return false;
         }
       }
