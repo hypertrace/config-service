@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
@@ -34,6 +35,7 @@ public class AnomalyDetectionConfigHandler {
 
   private final CredentialStuffingDetectionConfigHandler credentialStuffingDetectionConfigHandler;
   private final AccountTakeoverDetectionConfigHandler accountTakeoverDetectionConfigHandler;
+  private final GenAiDetectionConfigHandler genAiDetectionConfigHandler;
 
   @Inject
   public AnomalyDetectionConfigHandler(
@@ -41,7 +43,8 @@ public class AnomalyDetectionConfigHandler {
       SessionRulesRegistry sessionRulesRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
-      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
+      GenAiRulesRegistry genAiRulesRegistry) {
     this.apiDefinitionConfigHandler = new ApiDefinitionConfigHandler(apiDefinitionRegistry);
     this.sessionDefinitionConfigHandler = new SessionDefinitionConfigHandler(sessionRulesRegistry);
     this.apiStateBasedConfigHandler = new ApiStateBasedConfigHandler();
@@ -54,6 +57,7 @@ public class AnomalyDetectionConfigHandler {
         new CredentialStuffingDetectionConfigHandler(credentialStuffingRulesRegistry);
     this.accountTakeoverDetectionConfigHandler =
         new AccountTakeoverDetectionConfigHandler(accountTakeoverRulesRegistry);
+    this.genAiDetectionConfigHandler = new GenAiDetectionConfigHandler(genAiRulesRegistry);
   }
 
   public Value convert(ScopedAnomalyDetectionConfig config) throws InvalidProtocolBufferException {
@@ -117,6 +121,10 @@ public class AnomalyDetectionConfigHandler {
               AnomalyDetectionConfig.AnomalyDetectionConfigCase
                   .ACCOUNT_TAKEOVER_ANOMALY_DETECTION_CONFIG);
           break;
+        case ANOMALY_DETECTION_CONFIG_TYPE_GEN_AI:
+          configCases.add(
+              AnomalyDetectionConfig.AnomalyDetectionConfigCase.GEN_AI_ANOMALY_DETECTION_CONFIG);
+          break;
         default:
           break;
       }
@@ -146,6 +154,8 @@ public class AnomalyDetectionConfigHandler {
             credentialStuffingDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
         .addAllAnomalyDetectionConfigs(
             accountTakeoverDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
+        .addAllAnomalyDetectionConfigs(
+            genAiDetectionConfigHandler.merge(preferredConfig, fallbackConfig))
         .build();
   }
 
@@ -188,6 +198,9 @@ public class AnomalyDetectionConfigHandler {
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     anomalyDetectionConfigs =
         accountTakeoverDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
+            anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
+    anomalyDetectionConfigs =
+        genAiDetectionConfigHandler.deleteWholeAnomalyDetectionConfig(
             anomalyDetectionConfigs, detectionConfigsToDelete, deletedConfigBuilder);
     filteredConfigBuilder.addAllAnomalyDetectionConfigs(anomalyDetectionConfigs);
     return filteredConfigBuilder.build();

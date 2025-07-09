@@ -24,6 +24,8 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
@@ -77,13 +79,15 @@ public class AnomalyDetectionConfigManagerTest {
       new CredentialStuffingRulesRegistryImpl(configConverter);
   private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry =
       new AccountTakeoverRulesRegistryImpl(configConverter);
+  private final GenAiRulesRegistry genAiRulesRegistry = new GenAiRulesRegistryImpl(configConverter);
   private AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
           apiDefinitionRegistry,
           sessionRulesRegistry,
           volumetricRulesRegistry,
           credentialStuffingRulesRegistry,
-          accountTakeoverRulesRegistry);
+          accountTakeoverRulesRegistry,
+          genAiRulesRegistry);
   private WafConfigResolver wafConfigResolver;
   private AnomalyDetectionConfigManager configManager;
   private final AnomalyEnvironmentScope environmentScope =

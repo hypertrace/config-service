@@ -19,6 +19,7 @@ enum AnomalyDetectionConfigType {
   ANOMALY_DETECTION_CONFIG_TYPE_CUSTOM_RULES = 6;
   ANOMALY_DETECTION_CONFIG_TYPE_VOLUMETRIC = 7;
   ANOMALY_DETECTION_CONFIG_TYPE_CREDENTIAL_STUFFING = 8;
+  ANOMALY_DETECTION_CONFIG_TYPE_GEN_AI = 9;
 }
 
 message AnomalyCategoryConfig {
@@ -137,6 +138,7 @@ message AnomalyDetectionConfig {
     VolumetricAnomalyDetectionConfig volumetric_anomaly_detection_config = 11;
     CredentialStuffingAnomalyDetectionConfig credential_anomaly_detection_config = 12 [deprecated = true];
     AccountTakeoverAnomalyDetectionConfig account_takeover_anomaly_detection_config = 13;
+    GenAiAnomalyDetectionConfig gen_ai_anomaly_detection_config = 14;
   }
 }
 
@@ -273,6 +275,34 @@ message AccountTakeoverAnomalyDetectionConfig {
   }
   AnomalySubRuleConfigMap sub_rule_configs = 3;
 }
+
+message GenAiAnomalyDetectionConfig {
+  string anomaly_rule_id = 1;
+  oneof config {
+    PromptTextEvasionAndMisdirectionAnomalyDetectionConfig prompt_text_evasion_and_misdirection = 2;
+    PromptInjectionAnomalyDetectionConfig prompt_injection = 3;
+    LlmRateLimitingAnomalyDetectionConfig llm_rate_limiting = 4;
+    PiiDetectedInPromptAnomalyDetectionConfig pii_detected_in_prompt = 5;
+    LlmInputExplosionAnomalyDetectionConfig llm_input_explosion = 6;
+    LlmModelGovernanceAnomalyDetectionConfig llm_model_governance = 7;
+    CodeDetectedInPromptAnomalyDetectionConfig code_detected_in_prompt = 8;
+  }
+  AnomalySubRuleConfigMap sub_rule_configs = 9;
+}
+
+message PromptTextEvasionAndMisdirectionAnomalyDetectionConfig {}
+
+message PromptInjectionAnomalyDetectionConfig {}
+
+message LlmRateLimitingAnomalyDetectionConfig {}
+
+message PiiDetectedInPromptAnomalyDetectionConfig {}
+
+message LlmInputExplosionAnomalyDetectionConfig {}
+
+message LlmModelGovernanceAnomalyDetectionConfig {}
+
+message CodeDetectedInPromptAnomalyDetectionConfig {}
 
 message CredentialStuffingAnomalyConfig {
   CredentialStuffingTuningConfigList credential_stuffing_tuning_config_list = 1;

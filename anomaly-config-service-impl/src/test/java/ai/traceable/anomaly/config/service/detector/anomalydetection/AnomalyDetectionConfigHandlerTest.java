@@ -12,6 +12,8 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
@@ -45,13 +47,15 @@ public class AnomalyDetectionConfigHandlerTest {
       new CredentialStuffingRulesRegistryImpl(configConverter);
   private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry =
       new AccountTakeoverRulesRegistryImpl(configConverter);
+  private final GenAiRulesRegistry genAiRulesRegistry = new GenAiRulesRegistryImpl(configConverter);
   private final AnomalyDetectionConfigHandler detectionConfigConverter =
       new AnomalyDetectionConfigHandler(
           apiDefinitionRegistry,
           sessionRulesRegistry,
           volumetricRulesRegistry,
           credentialStuffingRulesRegistry,
-          accountTakeoverRulesRegistry);
+          accountTakeoverRulesRegistry,
+          genAiRulesRegistry);
 
   @Test
   void testModsecConfigConvert() throws InvalidProtocolBufferException {
@@ -989,6 +993,158 @@ public class AnomalyDetectionConfigHandlerTest {
     assertTrue(detectionConfig2.getConfigStatus().getInternal());
   }
 
+  @Test
+  void testGenAiDetectionConfigsConvert() throws InvalidProtocolBufferException {
+    ScopedAnomalyDetectionConfig config1 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder()
+                            .setDisabled(true)
+                            .setInternal(true)
+                            .build())
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("promptTextEvasionAndMisdirection")
+                            .setPromptTextEvasionAndMisdirection(
+                                PromptTextEvasionAndMisdirectionAnomalyDetectionConfig
+                                    .getDefaultInstance())
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr1",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr1")
+                                            .setConfigStatus(
+                                                AnomalyConfigStatusChange.newBuilder()
+                                                    .setDisabled(false)
+                                                    .setInternal(true))
+                                            .build())
+                                    .putSubRuleConfigs(
+                                        "sr2",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr2")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_LATENT))
+                                            .build())
+                                    .build())))
+            .build();
+
+    ScopedAnomalyDetectionConfig config2 =
+        ScopedAnomalyDetectionConfig.newBuilder()
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setCategoryConfig(
+                        AnomalyCategoryConfig.newBuilder()
+                            .setEventCategory(AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT)
+                            .setEventScoreCategory(
+                                AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW))
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setPromptTextEvasionAndMisdirection(
+                                PromptTextEvasionAndMisdirectionAnomalyDetectionConfig
+                                    .getDefaultInstance())
+                            .setSubRuleConfigs(
+                                AnomalySubRuleConfigMap.newBuilder()
+                                    .putSubRuleConfigs(
+                                        "sr1",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr1")
+                                            .setConfigStatus(
+                                                AnomalyConfigStatusChange.newBuilder()
+                                                    .setDisabled(true)
+                                                    .setInternal(false))
+                                            .build())
+                                    .putSubRuleConfigs(
+                                        "sr2",
+                                        AnomalySubRuleConfig.newBuilder()
+                                            .setSubRuleId("sr2")
+                                            .setCategoryConfig(
+                                                AnomalyCategoryConfig.newBuilder()
+                                                    .setEventCategory(
+                                                        AnomalyEventCategory
+                                                            .ANOMALY_EVENT_CATEGORY_MALICIOUS))
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .addAnomalyDetectionConfigs(
+                AnomalyDetectionConfig.newBuilder()
+                    .setConfigStatus(
+                        AnomalyConfigStatusChange.newBuilder().setInternal(true).setDisabled(false))
+                    .setGenAiAnomalyDetectionConfig(
+                        GenAiAnomalyDetectionConfig.newBuilder()
+                            .setAnomalyRuleId("promptInjection")
+                            .build())
+                    .build())
+            .build();
+
+    Value value = detectionConfigConverter.convert(config1);
+    assertEquals(config1, detectionConfigConverter.convert(value));
+
+    ScopedAnomalyDetectionConfig mergedConfig = detectionConfigConverter.merge(config2, config1);
+
+    AnomalyDetectionConfig detectionConfig =
+        getAnomalyDetectionConfig(
+            mergedConfig.getAnomalyDetectionConfigsList(),
+            GenAiAnomalyDetectionConfig.ConfigCase.PROMPT_INJECTION);
+
+    assertFalse(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        GenAiAnomalyDetectionConfig.ConfigCase.PROMPT_INJECTION,
+        detectionConfig.getGenAiAnomalyDetectionConfig().getConfigCase());
+
+    detectionConfig =
+        getAnomalyDetectionConfig(
+            mergedConfig.getAnomalyDetectionConfigsList(),
+            GenAiAnomalyDetectionConfig.ConfigCase.PROMPT_TEXT_EVASION_AND_MISDIRECTION);
+
+    assertTrue(detectionConfig.getConfigStatus().getDisabled());
+    assertTrue(detectionConfig.getConfigStatus().getInternal());
+    assertEquals(
+        AnomalyConfigStatusChange.newBuilder().setDisabled(true).setInternal(false).build(),
+        detectionConfig
+            .getGenAiAnomalyDetectionConfig()
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr1")
+            .getConfigStatus());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_MALICIOUS,
+        detectionConfig
+            .getGenAiAnomalyDetectionConfig()
+            .getSubRuleConfigs()
+            .getSubRuleConfigsMap()
+            .get("sr2")
+            .getCategoryConfig()
+            .getEventCategory());
+    assertEquals(
+        AnomalyEventCategory.ANOMALY_EVENT_CATEGORY_LATENT,
+        detectionConfig.getCategoryConfig().getEventCategory());
+    assertEquals(
+        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_LOW,
+        detectionConfig.getCategoryConfig().getEventScoreCategory());
+    ScopedAnomalyDetectionConfig.Builder deletedConfigBuilder =
+        ScopedAnomalyDetectionConfig.newBuilder();
+    deletedConfigBuilder.setConfigScope(config1.getConfigScope());
+
+    List<AnomalyDetectionConfig> detectionConfigsToDelete = new ArrayList<>();
+    detectionConfigsToDelete.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setGenAiAnomalyDetectionConfig(GenAiAnomalyDetectionConfig.getDefaultInstance())
+            .build());
+
+    ScopedAnomalyDetectionConfig deleteConfig =
+        detectionConfigConverter.deleteWholeAnomalyDetectionConfigs(
+            config1, detectionConfigsToDelete, deletedConfigBuilder);
+    assertEquals(0, deleteConfig.getAnomalyDetectionConfigsList().size());
+  }
+
   private AnomalyDetectionConfig getAnomalyDetectionConfig(
       List<AnomalyDetectionConfig> detectionConfigs,
       ApiDefinitionMetadataAnomalyDetectionConfig.ConfigCase configCase) {
@@ -1009,6 +1165,16 @@ public class AnomalyDetectionConfigHandlerTest {
           .getSessionDefinitionMetadataAnomalyDetectionConfig()
           .getConfigCase()
           .equals(configCase)) return detectionConfig;
+    }
+    return null;
+  }
+
+  private AnomalyDetectionConfig getAnomalyDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs,
+      GenAiAnomalyDetectionConfig.ConfigCase configCase) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig.getGenAiAnomalyDetectionConfig().getConfigCase().equals(configCase))
+        return detectionConfig;
     }
     return null;
   }

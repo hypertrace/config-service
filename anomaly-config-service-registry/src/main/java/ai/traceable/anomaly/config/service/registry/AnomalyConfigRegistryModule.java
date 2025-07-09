@@ -6,6 +6,8 @@ import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
@@ -23,5 +25,6 @@ public class AnomalyConfigRegistryModule extends AbstractModule {
     bind(VolumetricRulesRegistry.class).to(VolumetricRulesRegistryImpl.class);
     bind(CredentialStuffingRulesRegistry.class).to(CredentialStuffingRulesRegistryImpl.class);
     bind(AccountTakeoverRulesRegistry.class).to(AccountTakeoverRulesRegistryImpl.class);
+    bind(GenAiRulesRegistry.class).to(GenAiRulesRegistryImpl.class);
   }
 }
