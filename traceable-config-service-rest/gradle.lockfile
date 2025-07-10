@@ -1,12 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2194=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.645=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.645=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-policy-config-service-api:0.37.645=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.645=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.645=testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2178=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.640=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.640=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-policy-config-service-api:0.37.640=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.640=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.640=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:fraud-engine-api:0.1.905=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:fraud-engine-models:0.1.905=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:risk-decision-service-api:0.1.251=testCompileClasspath,testRuntimeClasspath

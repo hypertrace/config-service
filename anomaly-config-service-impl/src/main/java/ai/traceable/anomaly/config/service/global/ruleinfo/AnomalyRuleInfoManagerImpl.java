@@ -30,6 +30,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
   private final CredentialStuffingRulesRegistry credentialStuffingRulesRegistry;
   private final AccountTakeoverRulesRegistry accountTakeoverRulesRegistry;
   private final WebAppRuleInfoProvider webAppRuleInfoProvider;
+  private final AiAppRuleInfoProvider aiAppRuleInfoProvider;
   private final FeatureCachingClient featureCachingClient;
 
   @Inject
@@ -41,6 +42,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
       AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
       WebAppRuleInfoProvider webAppRuleInfoProvider,
+      AiAppRuleInfoProvider aiAppRuleInfoProvider,
       FeatureCachingClient featureCachingClient) {
     this.apiDefinitionRegistry = apiDefinitionRegistry;
     this.modsecRulesRegistry = modsecRulesRegistry;
@@ -49,6 +51,7 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
     this.credentialStuffingRulesRegistry = credentialStuffingRulesRegistry;
     this.accountTakeoverRulesRegistry = accountTakeoverRulesRegistry;
     this.webAppRuleInfoProvider = webAppRuleInfoProvider;
+    this.aiAppRuleInfoProvider = aiAppRuleInfoProvider;
     this.featureCachingClient = featureCachingClient;
   }
 
@@ -122,6 +125,9 @@ public class AnomalyRuleInfoManagerImpl implements RuleInfoManager {
                       credentialStuffingRulesRegistry.getCredentialStuffingRuleInfos().values());
                   ruleInfos.addAll(
                       accountTakeoverRulesRegistry.getAccountTakeoverRuleInfos().values());
+                  break;
+                case ANOMALY_EVENT_FAMILY_GEN_AI:
+                  ruleInfos.addAll(aiAppRuleInfoProvider.getAiAppRuleInfo());
                   break;
                 default:
                   throw new IllegalArgumentException(

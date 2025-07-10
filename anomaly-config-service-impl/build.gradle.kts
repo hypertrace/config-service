@@ -32,6 +32,7 @@ dependencies {
   implementation(commonLibs.traceable.licensemetering.api)
   implementation(commonLibs.traceable.protection.rules.webapp)
   implementation(commonLibs.traceable.protection.rules.apiprotect)
+  implementation(commonLibs.traceable.protection.rules.aiapp)
   implementation(commonLibs.traceable.protection.engine.config.webapp)
   implementation(commonLibs.traceable.protection.engine.processor.secrules)
 
