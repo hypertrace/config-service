@@ -11,6 +11,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
+import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
 import ai.traceable.anomaly.config.service.v1.global.ModsecGlobalConfig;
@@ -127,6 +128,8 @@ public class GlobalAnomalyConfigStatusManagerImpl
                       .setMinConfidenceLevel(config.getMinConfidenceLevel())
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
                       .build())
+              .setGlobalGenAiConfig(
+                  GlobalGenAiConfig.newBuilder().setDisabled(configStatus.getDisabled()))
               .build());
     }
     return Collections.unmodifiableList(resolvedConfigs);
@@ -250,6 +253,11 @@ public class GlobalAnomalyConfigStatusManagerImpl
       if (!scopedAnomalyConfigStatusChange.getApiGlobalConfig().hasDisabled()) {
         builder
             .getApiGlobalConfigBuilder()
+            .setDisabled(scopedAnomalyConfigStatusChange.getConfigStatus().getDisabled());
+      }
+      if (!scopedAnomalyConfigStatusChange.getGlobalGenAiConfigChange().hasDisabled()) {
+        builder
+            .getGlobalGenAiConfigChangeBuilder()
             .setDisabled(scopedAnomalyConfigStatusChange.getConfigStatus().getDisabled());
       }
     }

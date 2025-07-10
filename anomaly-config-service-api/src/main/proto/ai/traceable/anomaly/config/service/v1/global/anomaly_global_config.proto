@@ -94,6 +94,7 @@ message ScopedAnomalyConfigStatus {
   ApiGlobalConfig api_global_config = 7 [deprecated = true];
   GlobalModsecConfig global_modsec_config = 8;
   GlobalApiConfig global_api_config = 9;
+  GlobalGenAiConfig global_gen_ai_config = 10;
 }
 
 // any addition here requires update in ScopedGlobalConfigStatusChangeConverter logic
@@ -107,6 +108,7 @@ message ScopedAnomalyConfigStatusChange {
   ApiGlobalConfig api_global_config = 7 [deprecated = true];
   GlobalModsecConfigChange global_modsec_config_change = 8;
   GlobalApiConfigChange global_api_config_change = 9;
+  GlobalGenAiConfigChange global_gen_ai_config_change = 10;
 }
 
 message GlobalModsecConfigChange {
@@ -143,6 +145,14 @@ message GlobalApiConfig {
   ApiDefaultConfigsType default_configs_type = 2;
   bool enabled_for_exit_spans = 3;
   RuleVersionData rule_version_data = 4;
+}
+
+message GlobalGenAiConfigChange {
+  optional bool disabled = 1;
+}
+
+message GlobalGenAiConfig {
+  bool disabled = 1;
 }
 
 enum CorazaEngineVersion {

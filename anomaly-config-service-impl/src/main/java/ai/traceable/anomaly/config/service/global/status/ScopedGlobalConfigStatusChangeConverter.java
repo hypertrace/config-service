@@ -9,6 +9,7 @@ import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.RuleVersionDataChange;
 import ai.traceable.anomaly.config.service.v1.global.ApiDefaultConfigsType;
+import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfigChange;
 import ai.traceable.anomaly.config.service.v1.global.ModsecDefaultConfigsType;
@@ -73,6 +74,9 @@ public class ScopedGlobalConfigStatusChangeConverter {
                         ? defaultConfig.getApiDefaultConfigsType()
                         : config.getApiGlobalConfig().getDefaultConfigsType())
                 .build())
+        .setGlobalGenAiConfig(
+            GlobalGenAiConfig.newBuilder()
+                .setDisabled(config.getGlobalApiConfigChange().getDisabled()))
         .build();
   }
 

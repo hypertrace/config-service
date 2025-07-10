@@ -484,12 +484,17 @@ public class AnomalyDetectionConfigManagerImpl
         globalConfigStatus
             .flatMap(status -> Optional.of(status.getApiGlobalConfig().getDisabled()))
             .orElse(false);
-    if (globalModsecConfigDisabled || apiGlobalConfigDisabled) {
+    boolean genAiGlobalConfigDisabled =
+        globalConfigStatus
+            .flatMap(status -> Optional.of(status.getGlobalGenAiConfig().getDisabled()))
+            .orElse(false);
+    if (globalModsecConfigDisabled || apiGlobalConfigDisabled || genAiGlobalConfigDisabled) {
       List<AnomalyDetectionConfig> resolvedAnomalyDetectionConfigs =
           disableAnomalyDetectionConfigs(
               resolvedConfig.getAnomalyDetectionConfigsList(),
               globalModsecConfigDisabled,
-              apiGlobalConfigDisabled);
+              apiGlobalConfigDisabled,
+              genAiGlobalConfigDisabled);
 
       return resolvedConfig.toBuilder()
           .clearAnomalyDetectionConfigs()
@@ -505,13 +510,16 @@ public class AnomalyDetectionConfigManagerImpl
   private List<AnomalyDetectionConfig> disableAnomalyDetectionConfigs(
       List<AnomalyDetectionConfig> detectionConfigs,
       boolean modsecGlobalConfigDisabled,
-      boolean apiGlobalConfigDisabled) {
+      boolean apiGlobalConfigDisabled,
+      boolean genAiGlobalConfigDisabled) {
     return detectionConfigs.stream()
         .map(
             config -> {
               if (((config.hasModsecurityAnomalyDetectionConfig() && modsecGlobalConfigDisabled)
                       || (!config.hasModsecurityAnomalyDetectionConfig()
-                          && apiGlobalConfigDisabled))
+                          && !config.hasGenAiAnomalyDetectionConfig()
+                          && apiGlobalConfigDisabled)
+                      || (config.hasGenAiAnomalyDetectionConfig() && genAiGlobalConfigDisabled))
                   && !config.getConfigStatus().getDisabled()) {
                 AnomalyConfigStatusChange disableConfigStatus =
                     config.getConfigStatus().toBuilder().setDisabled(true).build();
