@@ -15,6 +15,7 @@ import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribu
 import ai.traceable.threatmanagement.config.service.v1.StatusCodeThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionType;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
+import ai.traceable.threatmanagement.config.service.v1.ThreatScoreDecay;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateSecurityEventScoreContributionRequest;
@@ -23,6 +24,9 @@ import ai.traceable.threatmanagement.config.service.v1.UpdateStatusCodeThreatSco
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigRequest.ExpirationDetails;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreDecayRequest;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -112,6 +116,16 @@ class ThreatManagementConfigRequestValidator {
         this.validateThreatAutoBlockingExpirationDetails(request.getExpirationDetails());
       default:
     }
+  }
+
+  public void validateOrThrow(RequestContext requestContext) {
+    this.validateRequestContext(requestContext);
+  }
+
+  public void validateOrThrow(
+      RequestContext requestContext, UpdateThreatScoreDecayRequest request) {
+    this.validateRequestContext(requestContext);
+    this.validateThreatScoreDecay(request.getThreatScoreDecay());
   }
 
   public void validateRequestContext(RequestContext requestContext) {
@@ -243,5 +257,33 @@ class ThreatManagementConfigRequestValidator {
                     config.getErrorStatusCodeRegex(), config));
           }
         });
+  }
+
+  private void validateThreatScoreDecay(ThreatScoreDecay threatScoreDecay) {
+    if (!threatScoreDecay.hasDecayAfterDuration()) {
+      throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription("decay_after_duration must be set"));
+    }
+    if (!threatScoreDecay.hasDecayValue()) {
+      throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription("decay_value must be set"));
+    }
+
+    if (threatScoreDecay.getDecayValue().hasPercentageDecayValue()) {
+      float percentageValue = threatScoreDecay.getDecayValue().getPercentageDecayValue();
+      if (percentageValue >= 100.0f) {
+        throw new StatusRuntimeException(
+            Status.INVALID_ARGUMENT.withDescription(
+                "percentage_decay_value must be less than 100"));
+      }
+    }
+
+    if (threatScoreDecay.getDecayValue().hasAbsoluteDecayValue()) {
+      float absoluteValue = threatScoreDecay.getDecayValue().getAbsoluteDecayValue();
+      if (absoluteValue >= 100.0f) {
+        throw new StatusRuntimeException(
+            Status.INVALID_ARGUMENT.withDescription("absolute_decay_value must be less than 100"));
+      }
+    }
   }
 }

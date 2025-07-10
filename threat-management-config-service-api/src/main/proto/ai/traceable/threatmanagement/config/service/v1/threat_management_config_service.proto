@@ -10,6 +10,7 @@ import "ai/traceable/threatmanagement/config/service/v1/status_code_score_contri
 import "ai/traceable/threatmanagement/config/service/v1/threat_auto_blocking.proto";
 import "ai/traceable/threatmanagement/config/service/v1/threat_score_bound.proto";
 import "ai/traceable/threatmanagement/config/service/v1/threat_score_config.proto";
+import "ai/traceable/threatmanagement/config/service/v1/threat_score_decay.proto";
 
 option java_multiple_files = true;
 
@@ -17,6 +18,10 @@ service ThreatManagementConfigService {
   rpc GetThreatScoreBound(GetThreatScoreBoundRequest) returns (GetThreatScoreBoundResponse) {}
 
   rpc UpdateThreatScoreBound(UpdateThreatScoreBoundRequest) returns (UpdateThreatScoreBoundResponse) {}
+
+  rpc GetThreatScoreDecay(GetThreatScoreDecayRequest) returns (GetThreatScoreDecayResponse) {}
+
+  rpc UpdateThreatScoreDecay(UpdateThreatScoreDecayRequest) returns (UpdateThreatScoreDecayResponse) {}
 
   rpc GetSecurityEventScoreContribution(GetSecurityEventScoreContributionRequest) returns (GetSecurityEventScoreContributionResponse) {}
 

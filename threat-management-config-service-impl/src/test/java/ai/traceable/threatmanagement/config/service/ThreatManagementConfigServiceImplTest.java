@@ -15,6 +15,7 @@ import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeC
 import ai.traceable.threatmanagement.config.service.ipreputation.IpReputationThreatScoreConfigManager;
 import ai.traceable.threatmanagement.config.service.statuscode.StatusCodeThreatScoreConfigsManager;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
+import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreDecayManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
@@ -185,6 +186,7 @@ class ThreatManagementConfigServiceImplTest {
   @Mock private ThreatAutoBlockingManager threatAutoBlockingManager;
   @Mock private IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager;
   @Mock private StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager;
+  @Mock private ThreatScoreDecayManager threatScoreDecayManager;
 
   private ThreatManagementConfigServiceImpl threatManagementConfigService;
   private ThreatManagementConfigServiceConfig mockConfig;
@@ -239,7 +241,8 @@ class ThreatManagementConfigServiceImplTest {
             securityEventTypeContributionManager,
             threatAutoBlockingManager,
             ipReputationThreatScoreConfigManager,
-            statusCodeThreatScoreConfigsManager);
+            statusCodeThreatScoreConfigsManager,
+            threatScoreDecayManager);
   }
 
   @Nested

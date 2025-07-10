@@ -7,5 +7,6 @@ public class ThreatScoreModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(ThreatScoreManager.class).to(DefaultThreatScoreManager.class);
+    bind(ThreatScoreDecayManager.class).to(DefaultThreatScoreDecayManager.class);
   }
 }

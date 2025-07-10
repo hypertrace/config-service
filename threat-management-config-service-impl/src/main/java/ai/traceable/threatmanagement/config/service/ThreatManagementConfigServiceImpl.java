@@ -6,6 +6,7 @@ import ai.traceable.threatmanagement.config.service.eventtype.SecurityEventTypeC
 import ai.traceable.threatmanagement.config.service.ipreputation.IpReputationThreatScoreConfigManager;
 import ai.traceable.threatmanagement.config.service.statuscode.StatusCodeThreatScoreConfigsManager;
 import ai.traceable.threatmanagement.config.service.threatautoblocking.ThreatAutoBlockingManager;
+import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreDecayManager;
 import ai.traceable.threatmanagement.config.service.threatscore.ThreatScoreManager;
 import ai.traceable.threatmanagement.config.service.v1.AnomalyScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.GetAnomalyScoreContributionRequest;
@@ -24,6 +25,8 @@ import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundReques
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreBoundResponse;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigRequest;
 import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreConfigResponse;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreDecayRequest;
+import ai.traceable.threatmanagement.config.service.v1.GetThreatScoreDecayResponse;
 import ai.traceable.threatmanagement.config.service.v1.IpReputationThreatScoreConfig;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventScoreContribution;
 import ai.traceable.threatmanagement.config.service.v1.SecurityEventTypeContribution;
@@ -32,6 +35,7 @@ import ai.traceable.threatmanagement.config.service.v1.ThreatAutoBlockingActionC
 import ai.traceable.threatmanagement.config.service.v1.ThreatManagementConfigServiceGrpc.ThreatManagementConfigServiceImplBase;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreBound;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreConfig;
+import ai.traceable.threatmanagement.config.service.v1.ThreatScoreDecay;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateAnomalyScoreContributionResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateIpReputationThreatScoreConfigRequest;
@@ -46,6 +50,8 @@ import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingC
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatAutoBlockingConfigResponse;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundRequest;
 import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreBoundResponse;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreDecayRequest;
+import ai.traceable.threatmanagement.config.service.v1.UpdateThreatScoreDecayResponse;
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +67,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
   private final ThreatAutoBlockingManager threatAutoBlockingManager;
   private final IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager;
   private final StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager;
+  private final ThreatScoreDecayManager threatScoreDecayManager;
 
   @Inject
   ThreatManagementConfigServiceImpl(
@@ -71,7 +78,8 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       SecurityEventTypeContributionManager securityEventTypeContributionManager,
       ThreatAutoBlockingManager threatAutoBlockingManager,
       IpReputationThreatScoreConfigManager ipReputationThreatScoreConfigManager,
-      StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager) {
+      StatusCodeThreatScoreConfigsManager statusCodeThreatScoreConfigsManager,
+      ThreatScoreDecayManager threatScoreDecayManager) {
     this.requestValidator = requestValidator;
     this.threatScoreManager = threatScoreManager;
     this.securityEventScoreContributionManager = securityEventScoreContributionManager;
@@ -80,6 +88,7 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
     this.threatAutoBlockingManager = threatAutoBlockingManager;
     this.ipReputationThreatScoreConfigManager = ipReputationThreatScoreConfigManager;
     this.statusCodeThreatScoreConfigsManager = statusCodeThreatScoreConfigsManager;
+    this.threatScoreDecayManager = threatScoreDecayManager;
   }
 
   @Override
@@ -460,6 +469,57 @@ class ThreatManagementConfigServiceImpl extends ThreatManagementConfigServiceImp
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error("Unable to get threat score config for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getThreatScoreDecay(
+      GetThreatScoreDecayRequest request,
+      StreamObserver<GetThreatScoreDecayResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateOrThrow(requestContext);
+
+      ThreatScoreDecay threatScoreDecay =
+          threatScoreDecayManager.getThreatScoreDecay(requestContext, request.getScope());
+      ThreatScoreDecay defaultThreatScoreDecay =
+          threatScoreDecayManager.getDefaultThreatScoreDecay();
+
+      responseObserver.onNext(
+          GetThreatScoreDecayResponse.newBuilder()
+              .setThreatScoreDecay(threatScoreDecay)
+              .setDefaultThreatScoreDecay(defaultThreatScoreDecay)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to get threat score decay for request: {}", request, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void updateThreatScoreDecay(
+      UpdateThreatScoreDecayRequest request,
+      StreamObserver<UpdateThreatScoreDecayResponse> responseObserver) {
+    try {
+      RequestContext requestContext = RequestContext.CURRENT.get();
+      requestValidator.validateOrThrow(requestContext, request);
+
+      ThreatScoreDecay threatScoreDecay =
+          threatScoreDecayManager.upsertThreatScoreDecay(
+              requestContext, request.getThreatScoreDecay());
+      ThreatScoreDecay defaultThreatScoreDecay =
+          threatScoreDecayManager.getDefaultThreatScoreDecay();
+
+      responseObserver.onNext(
+          UpdateThreatScoreDecayResponse.newBuilder()
+              .setThreatScoreDecay(threatScoreDecay)
+              .setDefaultThreatScoreDecay(defaultThreatScoreDecay)
+              .build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Unable to update threat score decay for request {}", request, e);
       responseObserver.onError(e);
     }
   }
