@@ -113,6 +113,11 @@ class DashboardStore
         .getData();
   }
 
+  Dashboard updateDashboardRolesAssignments(
+      RequestContext requestContext, Dashboard updatedDashboard) {
+    return this.upsertObject(requestContext, updatedDashboard).getData();
+  }
+
   private boolean isSystemOrUserDashboard(RequestContext requestContext, Dashboard dashboard) {
     return dashboard.hasUiReference()
             && !Pattern.matches(guidRegexPattern, dashboard.getUiReference())

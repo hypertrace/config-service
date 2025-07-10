@@ -8,6 +8,8 @@ import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.dashboard.config.service.v1.CreateDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.Dashboard;
 import ai.traceable.dashboard.config.service.v1.DashboardConfigServiceGrpc;
+import ai.traceable.dashboard.config.service.v1.DashboardPrincipal;
+import ai.traceable.dashboard.config.service.v1.DashboardRoleAssignments;
 import ai.traceable.dashboard.config.service.v1.DeleteDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.GetDashboardsRequest;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardRequest;
@@ -46,6 +48,11 @@ class DashboardConfigServiceImplTest {
           .setAuthor("tester12@new.com")
           .setJson("json-data-blob")
           .setUiReference("home")
+          .setRoleAssignments(
+              DashboardRoleAssignments.newBuilder()
+                  .addOwners(
+                      DashboardPrincipal.newBuilder().setUserEmail("tester12@new.com").build())
+                  .build())
           .build();
 
   static Dashboard SAMPLE_DASHBOARD_2 =
@@ -56,6 +63,18 @@ class DashboardConfigServiceImplTest {
           .setDescription("another dashboard to test")
           .setUiReference("protection")
           .setJson("json-data-blob")
+          .setRoleAssignments(
+              DashboardRoleAssignments.newBuilder()
+                  .addViewers(
+                      DashboardPrincipal.newBuilder().setUserEmail("user1@example.com").build())
+                  .addViewers(
+                      DashboardPrincipal.newBuilder()
+                          .setAllAuthenticatedUsers(com.google.protobuf.Empty.getDefaultInstance())
+                          .build())
+                  .addEditors(
+                      DashboardPrincipal.newBuilder().setUserEmail("user2@example.com").build())
+                  .addOwners(DashboardPrincipal.newBuilder().setUserEmail("dev@xyz.com").build())
+                  .build())
           .build();
 
   @BeforeEach
@@ -72,12 +91,15 @@ class DashboardConfigServiceImplTest {
         .addService(
             new DashboardConfigServiceImpl(
                 mockValidator,
-                new DashboardStore(
-                    ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel()),
-                    mockConfigChangeEventGenerator),
-                mockUuidGenerator,
-                timestampConverter,
-                mockClock))
+                new DashboardManager(
+                    mockValidator,
+                    new DashboardStore(
+                        ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel()),
+                        mockConfigChangeEventGenerator),
+                    new DashboardAccessUtils(),
+                    mockUuidGenerator,
+                    timestampConverter,
+                    mockClock)))
         .start();
     stub =
         DashboardConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())
