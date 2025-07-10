@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import ai.traceable.ratelimiting.service.v2.RateLimitingConfigServiceConfig;
 import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
@@ -13,15 +14,30 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RateLimitingConfigServiceConfigTest {
   private final RateLimitingRulesValidator rulesValidator = new RateLimitingRulesValidator();
+  private RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig;
+
+  @BeforeEach
+  void setup() {
+    Config mockConfig = mock(Config.class);
+    Config mockNestedConfig = mock(Config.class);
+
+    when(mockConfig.getConfig("rate.limiting.config.service")).thenReturn(mockNestedConfig);
+
+    when(mockNestedConfig.hasPath("changeLog1.migrationDisabled")).thenReturn(true);
+    when(mockNestedConfig.getBoolean("changeLog1.migrationDisabled")).thenReturn(true);
+    when(mockNestedConfig.hasPath("ruleEvaluationPoints.migrationDisabled")).thenReturn(true);
+    when(mockNestedConfig.getBoolean("ruleEvaluationPoints.migrationDisabled")).thenReturn(true);
+
+    rateLimitingConfigServiceConfig = new RateLimitingConfigServiceConfig(mockConfig);
+  }
 
   @Test
   void testConfig() {
-    RateLimitingConfigServiceConfig rateLimitingConfigServiceConfig =
-        new RateLimitingConfigServiceConfig(mock(Config.class));
     List<RateLimitingRule> rateLimitingRules =
         rateLimitingConfigServiceConfig.getDefaultRateLimitingRules();
     assertDefaultRateLimitingRules(rateLimitingRules);

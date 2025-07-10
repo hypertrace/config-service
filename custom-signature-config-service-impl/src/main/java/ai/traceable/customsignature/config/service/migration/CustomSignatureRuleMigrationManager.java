@@ -27,18 +27,12 @@ public class CustomSignatureRuleMigrationManager {
 
   public CreateCustomSignatureRuleRequest migrateCreateCustomSignatureRuleRequest(
       CreateCustomSignatureRuleRequest createCustomSignatureRuleRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return createCustomSignatureRuleRequest;
-    }
     return customSignatureRuleEvaluationPointsMigrator.migrateCreateCustomSignatureRuleRequest(
         createCustomSignatureRuleRequest);
   }
 
   public UpdateCustomSignatureRuleRequest migrateUpdateCustomSignatureRuleRequest(
       UpdateCustomSignatureRuleRequest updateCustomSignatureRuleRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return updateCustomSignatureRuleRequest;
-    }
     return customSignatureRuleEvaluationPointsMigrator.migrateUpdateCustomSignatureRuleRequest(
         updateCustomSignatureRuleRequest);
   }

@@ -224,9 +224,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   @Override
   public CreateDetectionExclusionRuleRequest migrateCreateDetectionExclusionRuleRequest(
       CreateDetectionExclusionRuleRequest createDetectionExclusionRuleRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return createDetectionExclusionRuleRequest;
-    }
     return ruleEvaluationPointsMigrator.migrateCreateDetectionExclusionRuleRequest(
         createDetectionExclusionRuleRequest);
   }
@@ -234,9 +231,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   @Override
   public UpdateDetectionExclusionRuleRequest migrateUpdateDetectionExclusionRuleRequest(
       UpdateDetectionExclusionRuleRequest updateDetectionExclusionRuleRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return updateDetectionExclusionRuleRequest;
-    }
     return ruleEvaluationPointsMigrator.migrateUpdateDetectionExclusionRuleRequest(
         updateDetectionExclusionRuleRequest);
   }
@@ -244,9 +238,6 @@ public class DetectionExclusionRulesMigrationManager implements RulesMigrationMa
   @Override
   public BulkUpsertDetectionExclusionRulesRequest migrateBulkUpsertDetectionExclusionRulesRequest(
       BulkUpsertDetectionExclusionRulesRequest bulkUpsertDetectionExclusionRulesRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return bulkUpsertDetectionExclusionRulesRequest;
-    }
     return ruleEvaluationPointsMigrator.migrateBulkUpsertDetectionExclusionRulesRequest(
         bulkUpsertDetectionExclusionRulesRequest);
   }

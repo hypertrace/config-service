@@ -45,20 +45,21 @@ public class DetectionExclusionConfigServiceConfig {
             ? config.getConfig(DETECTION_EXCLUSION_CONFIG_KEY)
             : ConfigFactory.empty();
     migrationDisabled =
-        config.hasPath(MIGRATION_DISABLED_KEY) && config.getBoolean(MIGRATION_DISABLED_KEY);
+        this.config.hasPath(MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(MIGRATION_DISABLED_KEY);
     changeLog2MigrationDisabled =
-        config.hasPath(CHANGE_LOG_2_MIGRATION_DISABLED_KEY)
-            && config.getBoolean(CHANGE_LOG_2_MIGRATION_DISABLED_KEY);
+        this.config.hasPath(CHANGE_LOG_2_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(CHANGE_LOG_2_MIGRATION_DISABLED_KEY);
     changeLog3MigrationDisabled =
-        config.hasPath(CHANGE_LOG_3_MIGRATION_DISABLED_KEY)
-            && config.getBoolean(CHANGE_LOG_3_MIGRATION_DISABLED_KEY);
+        this.config.hasPath(CHANGE_LOG_3_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(CHANGE_LOG_3_MIGRATION_DISABLED_KEY);
     changeLog4MigrationDisabled =
-        config.hasPath(CHANGE_LOG_4_MIGRATION_DISABLED_KEY)
-            && config.getBoolean(CHANGE_LOG_4_MIGRATION_DISABLED_KEY);
+        this.config.hasPath(CHANGE_LOG_4_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(CHANGE_LOG_4_MIGRATION_DISABLED_KEY);
     this.defaultDetectionExclusionRules = loadDefaultDetectionExclusionRules();
     this.ruleEvaluationPointsMigrationDisabled =
-        config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
-            && config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
+        this.config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
   }
 
   private List<DetectionExclusionRule> loadDefaultDetectionExclusionRules() {

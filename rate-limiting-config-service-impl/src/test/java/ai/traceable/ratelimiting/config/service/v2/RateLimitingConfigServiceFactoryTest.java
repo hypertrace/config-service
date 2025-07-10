@@ -22,10 +22,15 @@ class RateLimitingConfigServiceFactoryTest {
   void testResolveBindings() {
     Channel mockChannel = mock(Channel.class);
     Config mockConfig = mock(Config.class);
+    Config rateLimitingConfig = mock(Config.class);
     GrpcChannelRegistry mockGrpcChannelRegistry = mock(GrpcChannelRegistry.class);
     FeatureCachingClient featureCachingClient = mock(FeatureCachingClient.class);
     ConfigChangeEventGenerator mockConfigChangeEventGenerator =
         mock(ConfigChangeEventGenerator.class);
+
+    when(mockConfig.getConfig("rate.limiting.config.service")).thenReturn(rateLimitingConfig);
+    when(rateLimitingConfig.hasPath("changeLog1.migrationDisabled")).thenReturn(true);
+    when(rateLimitingConfig.hasPath("ruleEvaluationPoints.migrationDisabled")).thenReturn(true);
 
     when(mockConfig.getConfig("entity.service"))
         .thenReturn(

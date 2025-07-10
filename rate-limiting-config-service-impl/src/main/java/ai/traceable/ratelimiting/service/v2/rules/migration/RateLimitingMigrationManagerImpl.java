@@ -52,9 +52,6 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
   @Override
   public CreateRateLimitingRuleRequest migrateCreateRateLimitingRuleRequest(
       CreateRateLimitingRuleRequest createRateLimitingRuleRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return createRateLimitingRuleRequest;
-    }
     return ruleEvaluationPointsMigrator.migrateCreateRateLimitingRuleRequest(
         createRateLimitingRuleRequest);
   }
@@ -62,9 +59,6 @@ public class RateLimitingMigrationManagerImpl implements RateLimitingMigrationMa
   @Override
   public UpdateRateLimitingRuleRequest migrateUpdateRateLimitingRuleRequest(
       UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest) {
-    if (config.isRuleEvaluationPointsMigrationDisabled()) {
-      return updateRateLimitingRuleRequest;
-    }
     return ruleEvaluationPointsMigrator.migrateUpdateRateLimitingRuleRequest(
         updateRateLimitingRuleRequest);
   }

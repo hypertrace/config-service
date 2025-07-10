@@ -52,11 +52,11 @@ public class RateLimitingConfigServiceConfig {
             .flatMap(Collection::stream)
             .collect(Collectors.toUnmodifiableList());
     changeLog1MigrationDisabled =
-        config.hasPath(CHANGE_LOG_1_MIGRATION_DISABLED_KEY)
-            && config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
+        this.config.hasPath(CHANGE_LOG_1_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(CHANGE_LOG_1_MIGRATION_DISABLED_KEY);
     ruleEvaluationPointsMigrationDisabled =
-        config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
-            && config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
+        this.config.hasPath(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY)
+            && this.config.getBoolean(RULE_EVALUATION_POINTS_MIGRATION_DISABLED_KEY);
   }
 
   private List<RateLimitingRule> convert(List<? extends Config> configList) {
