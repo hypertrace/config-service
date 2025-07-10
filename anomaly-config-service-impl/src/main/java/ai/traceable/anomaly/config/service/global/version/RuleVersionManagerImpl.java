@@ -167,7 +167,8 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
 
     RulesChangeLog.Builder changeLogBuilder =
         RulesChangeLog.newBuilder()
-            .setVersionUpdated(getRuleVersionUpdateDetails(currentVersion, previousVersion));
+            .setVersionUpdated(getRuleVersionUpdateDetails(currentVersion, previousVersion))
+            .setRuleType(RuleType.RULE_TYPE_WEB_APPLICATION);
     if (!webAppRulesChangeLog.getThreatTypeChangesList().isEmpty()) {
       changeLogBuilder.addAllThreatTypeChanges(
           getWebAppThreatTypeChanges(webAppRulesChangeLog.getThreatTypeChangesList()));
@@ -187,7 +188,8 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
 
     RulesChangeLog.Builder changeLogBuilder =
         RulesChangeLog.newBuilder()
-            .setVersionUpdated(getRuleVersionUpdateDetails(currentVersion, previousVersion));
+            .setVersionUpdated(getRuleVersionUpdateDetails(currentVersion, previousVersion))
+            .setRuleType(RuleType.RULE_TYPE_API_PROTECTION);
 
     if (!apiProtectRulesChangeLog.getThreatTypeChangesList().isEmpty()) {
       changeLogBuilder.addAllThreatTypeChanges(
