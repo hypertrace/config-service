@@ -1,10 +1,21 @@
 package ai.traceable.anomaly.config.service.global.ruleinfo;
 
-import ai.traceable.anomaly.config.service.v1.*;
-import ai.traceable.protection.rules.aiapp.v1.*;
-import ai.traceable.protection.rules.webapp.v1.*;
+import ai.traceable.anomaly.config.service.v1.AnomalyEventDetails;
+import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalySeverityLevel;
+import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
+import ai.traceable.protection.rules.aiapp.v1.AiAppRules;
+import ai.traceable.protection.rules.aiapp.v1.AiAppRulesProvider;
+import ai.traceable.protection.rules.aiapp.v1.AiAppSeverity;
+import ai.traceable.protection.rules.aiapp.v1.AiAppThreatDetails;
+import ai.traceable.protection.rules.aiapp.v1.AiAppThreatLabel;
+import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRule;
+import ai.traceable.protection.rules.aiapp.v1.AiAppThreatRuleDefinition;
+import ai.traceable.protection.rules.aiapp.v1.AiAppThreatType;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +42,8 @@ public class AiAppRuleInfoProviderImpl implements AiAppRuleInfoProvider {
     }
     for (AiAppThreatType threatType : aiAppRules.getThreatTypesList()) {
       String typeId = threatType.getTypeId();
-      List<AiAppThreatRule> rulesForType = rulesByTypeId.get(typeId);
+      List<AiAppThreatRule> rulesForType =
+          rulesByTypeId.getOrDefault(typeId, Collections.emptyList());
       AiAppThreatDetails threatDetails = threatType.getThreatDetails();
       AnomalyRuleInfo.Builder anomalyRuleInfoBuilder =
           AnomalyRuleInfo.newBuilder()
