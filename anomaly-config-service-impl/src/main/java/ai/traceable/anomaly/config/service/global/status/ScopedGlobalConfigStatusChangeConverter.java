@@ -76,7 +76,10 @@ public class ScopedGlobalConfigStatusChangeConverter {
                 .build())
         .setGlobalGenAiConfig(
             GlobalGenAiConfig.newBuilder()
-                .setDisabled(config.getGlobalApiConfigChange().getDisabled()))
+                .setDisabled(
+                    config.getGlobalApiConfigChange().hasDisabled()
+                        ? config.getGlobalApiConfigChange().getDisabled()
+                        : defaultConfig.isGenAiDisabled()))
         .build();
   }
 

@@ -35,6 +35,7 @@ public class AnomalyGlobalConfigServiceConfig {
   private static final String ENVIRONMENT_SCOPE_MODSEC_DEFAULT_CONFIG_TYPE =
       "modsecGlobalConfig.environmentDefaultConfigType";
   private static final String API_DEFAULT_CONFIG_TYPE = "apiGlobalConfig.defaultConfigsType";
+  private static final String GEN_AI_DEFAULT_DISABLED = "globalGenAiConfig.disabled";
 
   private final boolean disabled;
   private final boolean internal;
@@ -45,6 +46,7 @@ public class AnomalyGlobalConfigServiceConfig {
   @Getter private final RuleVersion oldWebAppStableVersion;
   @Getter private final ModsecDefaultConfigsType envScopeModsecDefaultConfigsType;
   @Getter private final ApiDefaultConfigsType apiDefaultConfigsType;
+  @Getter private final boolean genAiDisabled;
 
   public AnomalyGlobalConfigServiceConfig(Config config) {
     this.disabled = config.getBoolean(DISABLED_CONFIG_PATH);
@@ -75,6 +77,8 @@ public class AnomalyGlobalConfigServiceConfig {
         config.hasPath(API_DEFAULT_CONFIG_TYPE)
             ? config.getEnum(ApiDefaultConfigsType.class, API_DEFAULT_CONFIG_TYPE)
             : ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED;
+    this.genAiDisabled =
+        config.hasPath(GEN_AI_DEFAULT_DISABLED) && config.getBoolean(GEN_AI_DEFAULT_DISABLED);
     if (config.hasPath(CONFIDENCE_CONFIG_PATH)) {
       this.minConfidenceLevel =
           config.getEnum(AnomalyConfidenceLevel.class, CONFIDENCE_CONFIG_PATH);

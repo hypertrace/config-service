@@ -144,6 +144,7 @@ public class GlobalAnomalyConfigStatusManagerTest {
                     + "  modsecGlobalConfig.ruleVersion.newWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
                     + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersion = \"1.0.0\"\n"
                     + "  modsecGlobalConfig.ruleVersion.oldWebAppStableVersionPublishedDate = \"2023-01-01T00:00:00Z\"\n"
+                    + "  globalGenAiConfig.disabled = true\n"
                     + "  licenseTiers = [\n"
                     + "    {\n"
                     + "        tier = TIER_TEAM_TRIAL\n"

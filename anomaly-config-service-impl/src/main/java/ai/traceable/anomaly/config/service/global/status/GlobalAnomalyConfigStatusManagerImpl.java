@@ -129,7 +129,7 @@ public class GlobalAnomalyConfigStatusManagerImpl
                       .setDefaultConfigsType(config.getModsecDefaultConfigsType())
                       .build())
               .setGlobalGenAiConfig(
-                  GlobalGenAiConfig.newBuilder().setDisabled(configStatus.getDisabled()))
+                  GlobalGenAiConfig.newBuilder().setDisabled(config.isGenAiDisabled()))
               .build());
     }
     return Collections.unmodifiableList(resolvedConfigs);
