@@ -20,11 +20,15 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusCh
 import ai.traceable.license.metering.service.api.v1.LicenseInfo;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -35,11 +39,23 @@ import org.hypertrace.config.objectstore.IdentifiedObjectStore;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 public class GlobalAnomalyConfigStatusManagerImpl
     extends IdentifiedObjectStore<ScopedAnomalyConfigStatusChange>
     implements GlobalAnomalyConfigStatusManager {
+  private static final String SCOPED_ANOMALY_GLOBAL_CONFIG_ACTION_TIMER =
+      "scoped.anomaly.global.config.action.timer";
+  private static final String TENANT_ID_TAG = "tenantId";
+  private static final String ACTION_TAG = "action";
+  private static final String SCOPE_TAG = "scope";
+  private static final String ANOMALY_DETECTION_TYPE_TAG = "anomalyDetectionType";
+  private static final Map<Tags, Timer> TIMER_MAP = new ConcurrentHashMap<>();
+  private static final String DISABLED = "Disabled";
+  private static final String ENABLED = "Enabled";
+  private static final String ANOMALY_DETECTION_TYPE_WAF = "Waf";
+  private static final String ANOMALY_DETECTION_TYPE_API_PROTECTION = "Api Protection";
 
   private final AnomalyGlobalConfigServiceConfig config;
   private final ScopedGlobalConfigStatusChangeConverter configConverter;
@@ -172,22 +188,41 @@ public class GlobalAnomalyConfigStatusManagerImpl
   @Override
   public ScopedAnomalyConfigStatusChange updateScopedAnomalyConfigStatus(
       RequestContext requestContext, ScopedAnomalyConfigStatusChange scopedConfigStatusChange) {
+    String anomalyDetectionType = null;
+    String action = null;
+    if (scopedConfigStatusChange.getGlobalModsecConfigChange().hasDisabled()) {
+      action =
+          scopedConfigStatusChange.getGlobalModsecConfigChange().getDisabled() ? DISABLED : ENABLED;
+      anomalyDetectionType = ANOMALY_DETECTION_TYPE_WAF;
+    } else if (scopedConfigStatusChange.getGlobalApiConfigChange().hasDisabled()) {
+      action =
+          scopedConfigStatusChange.getGlobalApiConfigChange().getDisabled() ? DISABLED : ENABLED;
+      anomalyDetectionType = ANOMALY_DETECTION_TYPE_API_PROTECTION;
+    }
 
-    return upsertObject(
-            requestContext,
-            getData(requestContext, getContextFromData(scopedConfigStatusChange))
-                .map(
-                    existing -> {
-                      ScopedAnomalyConfigStatusChange merged =
-                          configConverter.merge(scopedConfigStatusChange, existing);
-                      return GlobalAnomalyConfigStatusUtils.handleMergedConfigChange(
-                          merged, scopedConfigStatusChange);
-                    })
-                .orElseGet(
-                    () ->
-                        GlobalAnomalyConfigStatusUtils.handleMergedConfigChange(
-                            scopedConfigStatusChange, scopedConfigStatusChange)))
-        .getData();
+    ScopedAnomalyConfigStatusChange scopedAnomalyConfigStatusChange =
+        getData(requestContext, getContextFromData(scopedConfigStatusChange))
+            .map(
+                existing -> {
+                  ScopedAnomalyConfigStatusChange merged =
+                      configConverter.merge(scopedConfigStatusChange, existing);
+                  return GlobalAnomalyConfigStatusUtils.handleMergedConfigChange(
+                      merged, scopedConfigStatusChange);
+                })
+            .orElseGet(
+                () ->
+                    GlobalAnomalyConfigStatusUtils.handleMergedConfigChange(
+                        scopedConfigStatusChange, scopedConfigStatusChange));
+    if (action != null) {
+      String tenantId = requestContext.getTenantId().orElseThrow();
+      return getTimer(
+              tenantId,
+              action,
+              anomalyDetectionType,
+              getScopeString(scopedConfigStatusChange.getConfigScope(), tenantId))
+          .record(() -> upsertObject(requestContext, scopedAnomalyConfigStatusChange).getData());
+    }
+    return upsertObject(requestContext, scopedAnomalyConfigStatusChange).getData();
   }
 
   @Override
@@ -319,5 +354,46 @@ public class GlobalAnomalyConfigStatusManagerImpl
         scopedAnomalyConfigStatusChangeMap,
         applicableScopesList,
         ScopedAnomalyConfigStatusChange::getConfigScope);
+  }
+
+  private Timer getTimer(
+      String tenantId, String action, String anomalyDetectionType, String scope) {
+    Tags metricTags =
+        Tags.of(
+            TENANT_ID_TAG,
+            tenantId,
+            ACTION_TAG,
+            action,
+            ANOMALY_DETECTION_TYPE_TAG,
+            anomalyDetectionType,
+            SCOPE_TAG,
+            scope);
+
+    return TIMER_MAP.computeIfAbsent(
+        metricTags,
+        id ->
+            PlatformMetricsRegistry.registerTimer(
+                SCOPED_ANOMALY_GLOBAL_CONFIG_ACTION_TIMER,
+                metricTags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue))));
+  }
+
+  private String getScopeString(AnomalyConfigScope configScope, String tenantId) {
+    switch (configScope.getScopeCase()) {
+      case CUSTOMER_SCOPE:
+        return "Customer ID: " + tenantId;
+      case ENVIRONMENT_SCOPE:
+        return "Environment ID: " + configScope.getEnvironmentScope().getEnvironmentId();
+      case SERVICE_SCOPE:
+        return "Service ID: " + configScope.getServiceScope().getId();
+      case API_SCOPE:
+        return "Api ID: " + configScope.getApiScope().getId();
+      case BACKEND_SCOPE:
+        return "Backend Scope ID: " + configScope.getBackendScope().getId();
+      case BACKEND_API_SCOPE:
+        return "Backend Api Scope ID:" + configScope.getBackendApiScope().getId();
+      default:
+        throw new RuntimeException(
+            String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
+    }
   }
 }

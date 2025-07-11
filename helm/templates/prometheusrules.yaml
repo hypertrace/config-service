@@ -27,6 +27,19 @@ spec:
             {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+        - alert: ScopedAnomalyGlobalConfigurationChange
+          annotations:
+            summary: 'Scoped Anomaly Global Configuration Change'
+            message: 'Scoped Anomaly Global Configuration changed to {{`{{ $labels.operation}}`}} for {{`{{ $labels.anomalyDetectionType}}`}} policies for customer:{{`{{ $labels.tenantId }}`}}'
+          expr: sum(scoped_anomaly_global_config_action_timer_seconds_max) by (tenantId, action, anomalyDetectionType) > 0
+          for: 0m
+          labels:
+            severity: SEV2
+            repository: config-service
+            team: protection
+            {{- with .Values.prometheusRule.additionalRuleLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
         - alert: ApiNamingRulesLimitExceeded
           annotations:
             summary: 'The total number of API Naming Rules created is too high.'
