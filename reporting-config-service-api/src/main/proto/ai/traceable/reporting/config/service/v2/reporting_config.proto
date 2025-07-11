@@ -21,6 +21,7 @@ message CommonConfigurationDetails {
   SchedulingDetails scheduling_details = 4;
   NotificationDetails notification_details = 5;
   Format format = 6;
+  bool async_download_enabled = 8;
 }
 
 message SchedulingDetails {
