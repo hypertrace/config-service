@@ -1,5 +1,6 @@
 package ai.traceable.edge.decision.config.service.supplier.categorized.bots;
 
+import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotAction;
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyEdgeDecisionRulesFilter;
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceGrpc.CategorizedBotConfigPolicyServiceBlockingStub;
 import ai.traceable.bot.categorized.policy.service.v1.GetCategorizedBotConfigPolicyEdgeDecisionRulesRequest;
@@ -49,7 +50,13 @@ public class CategorizedBotsEdgeDecisionEngineConfigSupplier
                                         .newBuilder()
                                         .setCategorizedBotConfigPolicyEdgeDecisionRulesFilter(
                                             CategorizedBotConfigPolicyEdgeDecisionRulesFilter
-                                                .getDefaultInstance())
+                                                .newBuilder()
+                                                .addAllowedActions(
+                                                    CategorizedBotAction
+                                                        .CATEGORIZED_BOT_ACTION_BLOCK)
+                                                .addAllowedActions(
+                                                    CategorizedBotAction
+                                                        .CATEGORIZED_BOT_ACTION_ALLOW))
                                         .build()))
                     .getEdgeDecisionEngineConfig())
         .orElseGet(EdgeDecisionEngineConfig::getDefaultInstance);
