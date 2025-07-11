@@ -183,6 +183,13 @@ message FraudPolicy {
   google.protobuf.Value additional_fields = 103;
 }
 
+message FraudPolicyTemplate {
+  string id = 1;
+  string name = 2;
+  FraudPolicy fraud_policy_template = 3;
+  repeated string restricted_fields = 4;
+}
+
 message FraudWatcherPolicy {
   // what is the policy to be evaluated
   FraudPolicy watcher_policy = 1;
