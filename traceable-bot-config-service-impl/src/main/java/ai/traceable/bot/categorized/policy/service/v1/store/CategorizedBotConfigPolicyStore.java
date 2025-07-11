@@ -47,6 +47,7 @@ public class CategorizedBotConfigPolicyStore
 
     final var policyIds = filter.getCategorizedBotConfigPolicyIdsList();
     final var envIds = filter.getEnvironmentIdsList();
+    final var allowedActions = filter.getAllowedActionsList();
 
     final boolean matchesPolicyId = policyIds.isEmpty() || policyIds.contains(policy.getId());
     final boolean matchesEnvId =
@@ -64,8 +65,15 @@ public class CategorizedBotConfigPolicyStore
                     .getCategorizedBotPolicyScope()
                     .getEnvironmentScope()
                     .getEnvironmentIdsList());
+    final boolean matchesAllowedActions =
+        allowedActions.isEmpty()
+            || allowedActions.contains(
+                policy
+                    .getCategorizedBotPolicyDetails()
+                    .getCategorizedBotPolicyActionConfig()
+                    .getBotAction());
 
-    return matchesPolicyId && matchesEnvId;
+    return matchesPolicyId && matchesEnvId && matchesAllowedActions;
   }
 
   @Override

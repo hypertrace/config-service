@@ -89,6 +89,13 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                                         .getCategorizedBotConfigPolicyEdgeDecisionRulesFilter()
                                         .getCategorizedBotConfigPolicyIdsList()
                                     : Collections.emptyList())
+                            .addAllAllowedActions(
+                                getCategorizedBotConfigPolicyEdgeDecisionRulesRequest
+                                        .hasCategorizedBotConfigPolicyEdgeDecisionRulesFilter()
+                                    ? getCategorizedBotConfigPolicyEdgeDecisionRulesRequest
+                                        .getCategorizedBotConfigPolicyEdgeDecisionRulesFilter()
+                                        .getAllowedActionsList()
+                                    : Collections.emptyList())
                             .build())
                     .build())
             .getCategorizedBotConfigPoliciesList();
