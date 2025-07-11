@@ -241,9 +241,17 @@ message Clause {
 }
 
 message LhsRhsKeysExpression {
-  MatchExpression lhs_key_expression = 1;
-  MatchExpression rhs_key_expression = 2;
+  MatchExpression lhs_key_expression = 1 [deprecated = true];
+  MatchExpression rhs_key_expression = 2 [deprecated = true];
   MatchOperator match_operator = 3;
+  oneof lhs_expression {
+    MatchExpression key_lhs_expression = 4;
+    StringCondition attribute_lhs_expression = 5;
+  }
+  oneof rhs_expression {
+    MatchExpression key_rhs_expression = 6;
+    StringCondition attribute_rhs_expression = 7;
+  }
 }
 
 message CustomSecRule {
