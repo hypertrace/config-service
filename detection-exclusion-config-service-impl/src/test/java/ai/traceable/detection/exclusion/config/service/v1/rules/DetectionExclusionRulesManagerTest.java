@@ -222,7 +222,7 @@ class DetectionExclusionRulesManagerTest {
     // deleting detection exclusion rule
     assertDoesNotThrow(() -> rulesManager.deleteDetectionExclusionRule(requestContext, "id"));
 
-    // rule not present after deletion
+    // rule absent after deletion
     assertFalse(
         rulesManager
             .getDetectionExclusionRules(requestContext, GetRulesFilter.getDefaultInstance())

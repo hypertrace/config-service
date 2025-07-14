@@ -14,6 +14,7 @@ public final class ModsecRulesSupportChecker {
     if (Objects.isNull(clauseGroup)) {
       return true;
     }
+
     for (Clause clause : clauseGroup.getClausesList()) {
       // following clauses cannot be converted to inline rule.
       if (clause.hasAttributeKeyValueExpression()
@@ -26,9 +27,11 @@ public final class ModsecRulesSupportChecker {
           || clause.hasEmailDomainExpression()
           || clause.hasUserAgentExpression()
           || clause.hasRequestScannerTypeExpression()
-          || clause.hasClauseGroup()) {
+          || clause.hasClauseGroup()
+          || clause.hasLhsRhsKeysExpression()) {
         return false;
       }
+
       // response-cookie metadata is not supported in modsec
       if (clause
               .getKeyValueExpression()
@@ -45,6 +48,7 @@ public final class ModsecRulesSupportChecker {
         return false;
       }
     }
+
     return true;
   }
 }

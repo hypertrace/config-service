@@ -15,7 +15,8 @@ public interface ModsecRulesManager {
       RequestContext requestContext,
       List<CustomSignatureRule> customSignatureRules,
       CustomModsecRuleVersion customModsecRuleVersion,
-      boolean includeAllPartialModsecRules);
+      boolean includeAllPartialModsecRules,
+      List<String> serviceNames);
 
   Status validateModsecRule(String ruleName, RuleDefinition ruleDefinition);
 

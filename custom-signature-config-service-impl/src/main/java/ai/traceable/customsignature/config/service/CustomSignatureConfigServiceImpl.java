@@ -193,7 +193,11 @@ public class CustomSignatureConfigServiceImpl
           rulesManager.getCustomSignatureRules(context, request.getFilter());
       GetCustomSignatureModsecRulesResponse response =
           modsecRulesManager.getModsecRules(
-              context, rules, request.getRuleVersion(), request.getIncludeAllPartialModsecRules());
+              context,
+              rules,
+              request.getRuleVersion(),
+              request.getIncludeAllPartialModsecRules(),
+              request.getServiceNamesList());
       responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {

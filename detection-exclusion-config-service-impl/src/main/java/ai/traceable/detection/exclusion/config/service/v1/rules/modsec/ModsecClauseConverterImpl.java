@@ -78,7 +78,7 @@ public class ModsecClauseConverterImpl implements ModsecClauseConverter {
       RequestContext requestContext, DetectionExclusionCondition condition, Deque<Clause> clauses) {
     var scopeCondition = condition.getScopeCondition();
     if (scopeCondition.hasUrlScope()) {
-      // Adding URL clauses at the beginning since they are cheaper to evaluate
+      // Adding URL clauses at the beginning since they are less expensive to evaluate
       buildUrlRegexClause(
               scopeCondition.getUrlScope().getUrlRegexesList(), scopeCondition.getExclude())
           .forEach(clauses::addFirst);

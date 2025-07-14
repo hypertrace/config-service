@@ -393,7 +393,7 @@ class CustomSignatureConfigServiceImplTest {
         GetCustomSignatureModsecRulesResponse.newBuilder()
             .addInlineRules(CustomSignatureInlineRule.newBuilder().setRule(edgeRule).build())
             .build();
-    when(modsecRulesManager.getModsecRules(any(), eq(allRules), any(), eq(false)))
+    when(modsecRulesManager.getModsecRules(any(), eq(allRules), any(), eq(false), eq(List.of())))
         .thenReturn(modsecResponse);
     StreamObserver<GetCustomSignatureModsecRulesResponse> responseObserver =
         mock(StreamObserver.class);
@@ -421,7 +421,7 @@ class CustomSignatureConfigServiceImplTest {
         GetCustomSignatureModsecRulesResponse.newBuilder()
             .addInlineRules(CustomSignatureInlineRule.newBuilder().setRule(edgeRule).build())
             .build();
-    when(modsecRulesManager.getModsecRules(any(), eq(edgeRules), any(), eq(false)))
+    when(modsecRulesManager.getModsecRules(any(), eq(edgeRules), any(), eq(false), eq(List.of())))
         .thenReturn(filteredResponse);
     GetCustomSignatureModsecRulesRequest filteredRequest =
         GetCustomSignatureModsecRulesRequest.newBuilder()
@@ -458,7 +458,7 @@ class CustomSignatureConfigServiceImplTest {
     when(rulesValidator.validate(any(GetCustomSignatureModsecRulesRequest.class)))
         .thenReturn(Status.OK);
     when(rulesManager.getCustomSignatureRules(any(), any())).thenReturn(allRules);
-    when(modsecRulesManager.getModsecRules(any(), any(), any(), anyBoolean()))
+    when(modsecRulesManager.getModsecRules(any(), any(), any(), anyBoolean(), eq(List.of())))
         .thenThrow(new RuntimeException("ModSec manager error"));
     GrpcClientRequestContextUtil.executeInTenantContext(TENANT_ID, successRunnable);
     verify(responseObserver, times(1))

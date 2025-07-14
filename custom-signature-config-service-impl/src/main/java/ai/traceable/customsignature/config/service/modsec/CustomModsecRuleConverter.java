@@ -1,5 +1,7 @@
 package ai.traceable.customsignature.config.service.modsec;
 
+import static ai.traceable.config.utils.RegexValidator.validateRegex;
+
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
@@ -7,6 +9,7 @@ import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
 import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
+import ai.traceable.customsignature.config.service.v1.ScopeExpression;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecKeyValueMatchClause;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecMatchExpression;
 import ai.traceable.modsecurity.rule.api.v1.CustomModsecRule;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class CustomModsecRuleConverter {
 
   private final ModsecRuleConverter modsecRuleConverter;
+  private static final String OR_REGEX_DELIMITER = "|";
 
   @Inject
   public CustomModsecRuleConverter(ModsecRuleConverter modsecRuleConverter) {
@@ -78,6 +82,8 @@ public class CustomModsecRuleConverter {
         return convert(clause.getKeyValueExpression());
       case CUSTOM_SEC_RULE:
         return convert(clause.getCustomSecRule().getInputSecRule());
+      case SCOPE_EXPRESSION:
+        return convert(clause.getScopeExpression());
       default:
         throw new IllegalArgumentException("Unknown clause case: " + clause.getClauseCase());
     }
@@ -152,6 +158,40 @@ public class CustomModsecRuleConverter {
       builder.setRequestMetadata(getRequestKeyValueMatchMetadata(expression.getTag()));
     }
     return CustomModsecRuleClause.newBuilder().setKeyValueMatchClause(builder).build();
+  }
+
+  private CustomModsecRuleClause convert(ScopeExpression scopeExpression) {
+    boolean excludeMatch = scopeExpression.getExclude();
+    CustomModsecRuleClause.Builder customModsecRuleClauseBuilder =
+        CustomModsecRuleClause.newBuilder();
+
+    if (scopeExpression.hasUrlScope()) {
+      String combinedUrlRegex =
+          String.join(OR_REGEX_DELIMITER, scopeExpression.getUrlScope().getUrlRegexesList());
+      validateRegex(combinedUrlRegex);
+      CustomModsecMatchExpression.MatchOperator customModsecMatchExpressionOperator =
+          excludeMatch
+              ? CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX
+              : CustomModsecMatchExpression.MatchOperator.MATCH_OPERATOR_MATCHES_REGEX;
+      CustomModsecValueMatchClause customModsecValueMatchClause =
+          CustomModsecValueMatchClause.newBuilder()
+              .setRequestValueMetadata(RequestValueMatchMetadata.REQUEST_VALUE_MATCH_METADATA_URL)
+              .setValueMatchExpression(
+                  CustomModsecMatchExpression.newBuilder()
+                      .setValueMatchOperator(customModsecMatchExpressionOperator)
+                      .setMatchValue(combinedUrlRegex))
+              .build();
+      customModsecRuleClauseBuilder.setValueMatchClause(customModsecValueMatchClause);
+
+    } else if (scopeExpression.hasEntityScope()
+        && scopeExpression.getEntityScope().getEntityType()
+            == ScopeExpression.EntityType.ENTITY_TYPE_SERVICE) {
+      // TODO : will be done as a part of separate PR that exclusively deals with changes
+      // corresponding to
+      // service-name in both config-service and blocking-config-service
+    }
+
+    return customModsecRuleClauseBuilder.build();
   }
 
   private CustomModsecMatchExpression convert(MatchOperator operator, String matchValue) {
