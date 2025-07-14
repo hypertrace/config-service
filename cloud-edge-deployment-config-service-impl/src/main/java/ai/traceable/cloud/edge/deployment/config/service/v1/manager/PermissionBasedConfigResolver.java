@@ -85,6 +85,9 @@ public class PermissionBasedConfigResolver {
       if (newConfig.hasCloudEdgeDeploymentInputConfig()) {
         updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
             newConfig.getCloudEdgeDeploymentInputConfig());
+        updatedConfigBuilder
+            .getCloudEdgeDeployedOutputConfigBuilder()
+            .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
       }
       if (newConfig.hasCloudEdgeDeployedOutputConfig()) {
         updatedConfigBuilder.setCloudEdgeDeployedOutputConfig(
