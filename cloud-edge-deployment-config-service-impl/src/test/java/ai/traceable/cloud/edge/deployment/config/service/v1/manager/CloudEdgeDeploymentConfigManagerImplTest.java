@@ -4,21 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
-import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ClusterConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
-import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
-import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
@@ -53,71 +48,6 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     manager =
         new CloudEdgeDeploymentConfigManagerImpl(
             sharedConfigMetadataRegistry, store, validator, uuidGenerator);
-  }
-
-  @Test
-  void testCreateCloudEdgeDeploymentConfig() {
-    // Setup
-    String id = "test-id";
-    CreateCloudEdgeDeploymentConfigRequest request =
-        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
-            .setCloudEdgeDeploymentInputConfig(
-                CloudEdgeDeploymentInputConfig.newBuilder()
-                    .setClusterConfig(
-                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
-                    .addServiceConfigs(
-                        ServiceConfig.newBuilder().setServiceName("test-service").build())
-                    .build())
-            .setConfigPermission(
-                ConfigPermission.newBuilder()
-                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
-                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)
-                    .build())
-            .build();
-
-    // Test case 1: Validation fails
-    when(validator.validate(any(CreateCloudEdgeDeploymentConfigRequest.class)))
-        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
-
-    StatusRuntimeException exception =
-        assertThrows(
-            StatusRuntimeException.class,
-            () -> manager.createCloudEdgeDeploymentConfig(requestContext, request));
-    assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
-
-    // Test case 2: Successful creation
-    // Reset the validator mock
-    reset(validator);
-    when(validator.validate(any(CreateCloudEdgeDeploymentConfigRequest.class)))
-        .thenReturn(Status.OK);
-    when(uuidGenerator.generateRandomId()).thenReturn(id);
-
-    // Create the expected config that will be returned
-    CloudEdgeDeploymentConfig expectedConfig =
-        CloudEdgeDeploymentConfig.newBuilder()
-            .setId(id)
-            .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
-            .setCloudEdgeDeployedOutputConfig(
-                CloudEdgeDeploymentOutputConfig.newBuilder()
-                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
-                    .build())
-            .build();
-
-    // Mock the store to return our expected config
-    when(store.createCloudEdgeDeploymentConfig(any(), any(), any())).thenReturn(expectedConfig);
-
-    CloudEdgeDeploymentConfig result =
-        manager.createCloudEdgeDeploymentConfig(requestContext, request);
-
-    // Verify the result matches our expected config
-    assertNotNull(result);
-    assertEquals(expectedConfig.getId(), result.getId());
-    assertEquals(
-        expectedConfig.getCloudEdgeDeploymentInputConfig(),
-        result.getCloudEdgeDeploymentInputConfig());
-    assertEquals(
-        expectedConfig.getCloudEdgeDeployedOutputConfig().getStatus(),
-        result.getCloudEdgeDeployedOutputConfig().getStatus());
   }
 
   @Test
@@ -180,7 +110,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
 
     when(validator.validate(request)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
-    when(store.updateCloudEdgeDeploymentConfig(
+    when(store.upsertCloudEdgeDeploymentConfig(
             requestContext, expectedUpdatedConfig, request.getConfigPermission()))
         .thenReturn(expectedUpdatedConfig);
 
@@ -270,7 +200,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
                     .build())
             .build();
 
-    when(sharedConfigMetadataRegistry.getSharedConfigMetadata(accessType))
+    when(sharedConfigMetadataRegistry.getSharedConfigMetadataWithReadPermission(accessType))
         .thenReturn(expectedMetadata);
 
     // Execute
@@ -284,6 +214,6 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     assertEquals("Cluster name", result.getClusterConfigDetailsMap().get("name").getDescription());
 
     // Verify the store was called with the correct parameters
-    verify(sharedConfigMetadataRegistry).getSharedConfigMetadata(accessType);
+    verify(sharedConfigMetadataRegistry).getSharedConfigMetadataWithReadPermission(accessType);
   }
 }

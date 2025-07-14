@@ -78,6 +78,7 @@ dependencies {
   implementation(projects.genaiSystemDiscoveryConfigServiceImpl)
   implementation(projects.certificateManagementConfigServiceImpl)
   implementation(projects.httpEventCollectorIntegrationConfigServiceImpl)
+  implementation(projects.cloudEdgeDeploymentConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

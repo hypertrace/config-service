@@ -2,8 +2,11 @@ package ai.traceable.cloud.edge.deployment.config.service.v1;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.manager.CloudEdgeDeploymentConfigManager;
 import ai.traceable.cloud.edge.deployment.config.service.v1.manager.CloudEdgeDeploymentConfigManagerImpl;
+import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
+import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistryImpl;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import io.grpc.BindableService;
 import io.grpc.Channel;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
@@ -21,7 +24,9 @@ public class CloudEdgeDeploymentConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    bind(BindableService.class).to(CloudEdgeDeploymentConfigServiceImpl.class);
     bind(CloudEdgeDeploymentConfigManager.class).to(CloudEdgeDeploymentConfigManagerImpl.class);
+    bind(SharedConfigMetadataRegistry.class).to(SharedConfigMetadataRegistryImpl.class);
     bind(Channel.class).toInstance(channel);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
   }

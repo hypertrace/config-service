@@ -21,7 +21,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @Slf4j
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeploymentConfigManager {
-  private SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
+  private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
 
   private final CloudEdgeDeploymentConfigStore store;
   private final CloudEdgeDeploymentValidator validator;
@@ -43,7 +43,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
             .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
             .build();
 
-    return store.createCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission());
+    return store.upsertCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission());
   }
 
   @Override
@@ -71,13 +71,10 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
       // Update config
       CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
-      // Update input config if provided
       if (request.hasCloudEdgeDeploymentInputConfig()) {
         updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
             request.getCloudEdgeDeploymentInputConfig());
       }
-
-      // Update output config if provided
       if (request.hasCloudEdgeDeployedOutputConfig()) {
         updatedConfigBuilder.setCloudEdgeDeployedOutputConfig(
             request.getCloudEdgeDeployedOutputConfig());
@@ -85,7 +82,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
 
       CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
 
-      return store.updateCloudEdgeDeploymentConfig(
+      return store.upsertCloudEdgeDeploymentConfig(
           ctx, updatedConfig, request.getConfigPermission());
     } catch (Exception e) {
       throw new StatusRuntimeException(
@@ -123,6 +120,6 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   @Override
   public SharedConfigMetadata getSharedConfigMetadata(
       RequestContext ctx, ConfigAccessType accessType) {
-    return sharedConfigMetadataRegistry.getSharedConfigMetadata(accessType);
+    return sharedConfigMetadataRegistry.getSharedConfigMetadataWithReadPermission(accessType);
   }
 }

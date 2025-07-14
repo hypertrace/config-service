@@ -1,0 +1,97 @@
+- configKey: "maxPendingHttpRequest"
+  description: "Max Pending Http Requests for a service"
+  displayName: "Max Pending Http Requests"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "tcpConnectionTimeout"
+  description: "TCP Connection Timeout in seconds"
+  displayName: "TCP Connection Timeout(s)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "maxTcpConnections"
+  description: "Maximum number of TCP connections allowed for a service"
+  displayName: "Max TCP Connections"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "tcpIdleTimeout"
+  description: "TCP Idle Timeout in seconds"
+  displayName: "TCP Idle Timeout(s)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "probeInterval"
+  description: "Interval between TCP health probes in seconds"
+  displayName: "Probe Interval(s)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "maxProbes"
+  description: "Maximum number of TCP health probes to send"
+  displayName: "Max Probes"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "probeTimeout"
+  description: "Timeout for TCP health probes in seconds"
+  displayName: "Probe Timeout(s)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""

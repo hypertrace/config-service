@@ -3,6 +3,7 @@ package ai.traceable.cloud.edge.deployment.config.service.v1.store;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
+import ai.traceable.cloud.edge.deployment.config.service.v1.manager.PermissionBasedConfigResolver;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -23,16 +24,19 @@ public class CloudEdgeDeploymentConfigStore
 
   private static final String CLOUD_EDGE_DEPLOYMENT_CONFIG_NAMESPACE = "cloudEdgeDeploymentConfig";
   private static final String CLOUD_EDGE_DEPLOYMENT_CONFIG_RESOURCE_NAME = "cloud-edge-deployment";
+  private final PermissionBasedConfigResolver permissionBasedConfigResolver;
 
   @Inject
   public CloudEdgeDeploymentConfigStore(
       ConfigServiceBlockingStub configServiceBlockingStub,
-      ConfigChangeEventGenerator configChangeEventGenerator) {
+      ConfigChangeEventGenerator configChangeEventGenerator,
+      PermissionBasedConfigResolver permissionBasedConfigResolver) {
     super(
         configServiceBlockingStub,
         CLOUD_EDGE_DEPLOYMENT_CONFIG_NAMESPACE,
         CLOUD_EDGE_DEPLOYMENT_CONFIG_RESOURCE_NAME,
         configChangeEventGenerator);
+    this.permissionBasedConfigResolver = permissionBasedConfigResolver;
   }
 
   @SneakyThrows
@@ -62,19 +66,39 @@ public class CloudEdgeDeploymentConfigStore
     return config.getId();
   }
 
-  public CloudEdgeDeploymentConfig createCloudEdgeDeploymentConfig(
-      RequestContext ctx, CloudEdgeDeploymentConfig config, ConfigPermission permission) {
-
-    // Here you would handle permission-based storage logic if needed
-    return upsertObject(ctx, config).getData();
-  }
-
   public CloudEdgeDeploymentConfig getCloudEdgeDeploymentConfig(RequestContext ctx, String id) {
     return getData(ctx, id).orElse(null);
   }
 
   public List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
       RequestContext ctx, List<String> ids, ConfigAccessType readAccess) {
+    return getCloudEdgeDeploymentConfigs(ctx, ids).stream()
+        .map(
+            config ->
+                permissionBasedConfigResolver.getResolvedConfigForReadRequest(config, readAccess))
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  public CloudEdgeDeploymentConfig upsertCloudEdgeDeploymentConfig(
+      RequestContext ctx, CloudEdgeDeploymentConfig config, ConfigPermission permission) {
+    // Here you would handle permission-based storage logic if needed
+    CloudEdgeDeploymentConfig existingConfig =
+        getData(ctx, config.getId()).orElse(CloudEdgeDeploymentConfig.getDefaultInstance());
+    return permissionBasedConfigResolver.getResolvedConfigForReadRequest(
+        upsertObject(
+                ctx,
+                permissionBasedConfigResolver.getResolvedConfigForWriteRequest(
+                    config, existingConfig, permission.getWrite()))
+            .getData(),
+        permission.getRead());
+  }
+
+  public void deleteCloudEdgeDeploymentConfig(RequestContext ctx, String id) {
+    deleteObject(ctx, id);
+  }
+
+  private List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
+      RequestContext ctx, List<String> ids) {
     if (ids == null || ids.isEmpty()) {
       return getAllConfigData(ctx);
     } else {
@@ -83,15 +107,5 @@ public class CloudEdgeDeploymentConfigStore
           .filter(Objects::nonNull)
           .collect(Collectors.toList());
     }
-  }
-
-  public CloudEdgeDeploymentConfig updateCloudEdgeDeploymentConfig(
-      RequestContext ctx, CloudEdgeDeploymentConfig config, ConfigPermission permission) {
-    // Here you would handle permission-based storage logic if needed
-    return upsertObject(ctx, config).getData();
-  }
-
-  public void deleteCloudEdgeDeploymentConfig(RequestContext ctx, String id) {
-    deleteObject(ctx, id);
   }
 }

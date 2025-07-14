@@ -15,6 +15,7 @@ message ConfigValueDescriptor {
   ConfigConstraint constraint = 3; // Optional constraints for validation/rendering
   ConfigPermission config_permission = 4;
   repeated HelmConfigIdentifier identifiers = 5;
+  string config_key = 6;
 }
 
 message ConfigConstraint {

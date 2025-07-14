@@ -1,0 +1,83 @@
+- configKey: "idleTimeout"
+  description: "Idle Timeout"
+  displayName: "Idle Timeout(ms)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "maxConnectionDuration"
+  description: "Max connection duration for a  request"
+  displayName: "Max Connection Duration(ms)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "maxRequestsPerConnection"
+  description: "Maximum number of requests allowed per connection"
+  displayName: "Max Requests per Connection"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "requestHeaderTimeout"
+  description: "Timeout for receiving request headers"
+  displayName: "Request Header Timeout(s)"
+  constraint:
+    intRange:
+      min: 0
+      max: 100
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "requestTimeout"
+  description: "Timeout for the entire request"
+  displayName: "Request Timeout(s)"
+  constraint:
+    intRange:
+      min: 0
+      max: 300
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+
+- configKey: "maxHeaderCount"
+  description: "Maximum number of headers allowed in a request"
+  displayName: "Max Header Count"
+  constraint:
+    intRange:
+      min: 0
+      max: 1000
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""

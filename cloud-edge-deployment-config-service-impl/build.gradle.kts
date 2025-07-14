@@ -16,6 +16,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.jackson.yaml)
   implementation(commonLibs.guava)
 
   implementation(commonLibs.hypertrace.grpcutils.context)
