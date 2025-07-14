@@ -136,7 +136,7 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
             .build();
     return convertToRuleChangeLog(
         webAppProtectionRulesProvider.getWebAppRulesChangeLog(
-            currentWebAppRulesVersion, previousWebAppRulesVersion),
+            previousWebAppRulesVersion, currentWebAppRulesVersion),
         currentVersion,
         previousVersion);
   }

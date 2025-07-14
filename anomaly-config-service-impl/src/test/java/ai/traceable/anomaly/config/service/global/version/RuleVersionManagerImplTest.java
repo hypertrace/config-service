@@ -141,7 +141,7 @@ class RuleVersionManagerImplTest {
         ArgumentCaptor.forClass(WebAppRulesVersion.class);
 
     when(webAppProtectionRulesProvider.getWebAppRulesChangeLog(
-            currentVersionCaptor.capture(), previousVersionCaptor.capture()))
+            previousVersionCaptor.capture(), currentVersionCaptor.capture()))
         .thenReturn(webAppRulesChangeLogBuilder.build());
     RulesChangeLog result =
         ruleVersionManager.getRulesChangeLog(ruleType, currentVersion, previousVersion);
