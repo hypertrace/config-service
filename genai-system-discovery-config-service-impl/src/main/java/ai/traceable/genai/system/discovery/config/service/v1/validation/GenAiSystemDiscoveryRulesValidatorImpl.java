@@ -21,8 +21,11 @@ import ai.traceable.genai.system.discovery.config.service.v1.MatchGroupOperation
 import ai.traceable.genai.system.discovery.config.service.v1.StaticNameAction;
 import ai.traceable.genai.system.discovery.config.service.v1.UpdateGenAiSystemDiscoveryRuleRequest;
 import io.grpc.Status;
+import jakarta.inject.Inject;
+import lombok.AllArgsConstructor;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@AllArgsConstructor(onConstructor_ = {@Inject})
 public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscoveryRulesValidator {
   @Override
   public void validateOrThrow(
@@ -52,11 +55,10 @@ public class GenAiSystemDiscoveryRulesValidatorImpl implements GenAiSystemDiscov
         request, DeleteGenAiSystemDiscoveryRuleRequest.RULE_ID_FIELD_NUMBER);
   }
 
-  private void validateGenAiSystemDiscoveryRule(GenAiSystemDiscoveryRule genAiSystemDiscoveryRule) {
-    validateNonDefaultPresenceOrThrow(
-        genAiSystemDiscoveryRule, GenAiSystemDiscoveryRule.RULE_ID_FIELD_NUMBER);
-    validateGenAiSystemDiscoveryRuleData(
-        genAiSystemDiscoveryRule.getGenAiSystemDiscoveryRuleData());
+  @Override
+  public void validateGenAiSystemDiscoveryRule(GenAiSystemDiscoveryRule rule) {
+    validateNonDefaultPresenceOrThrow(rule, GenAiSystemDiscoveryRule.RULE_ID_FIELD_NUMBER);
+    validateGenAiSystemDiscoveryRuleData(rule.getGenAiSystemDiscoveryRuleData());
   }
 
   private void validateGenAiSystemDiscoveryRuleData(
