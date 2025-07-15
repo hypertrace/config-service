@@ -9,10 +9,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SharedConfigMetadataRegistryImpl implements SharedConfigMetadataRegistry {
-  private static final String CLUSTER_SHARED_CONFIG_METADATA_FILE_PATH =
-      "cluster-shared-config-metadata.yaml";
-  private static final String SERVICE_SHARED_CONFIG_METADATA_FILE_PATH =
-      "service-shared-config-metadata.yaml";
+  static final String CLUSTER_SHARED_CONFIG_METADATA_FILE_PATH =
+      "cluster_shared_config_metadata.yaml";
+  static final String SERVICE_SHARED_CONFIG_METADATA_FILE_PATH =
+      "service_shared_config_metadata.yaml";
   private final Map<String, ConfigValueDescriptor> clusterConfigValueDescriptorMap;
   private final Map<String, ConfigValueDescriptor> serviceConfigValueDescriptorMap;
 

@@ -1,5 +1,7 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.shared.config;
 
+import static ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistryImpl.CLUSTER_SHARED_CONFIG_METADATA_FILE_PATH;
+import static ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistryImpl.SERVICE_SHARED_CONFIG_METADATA_FILE_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -82,10 +84,10 @@ class SharedConfigMetadataRegistryImplTest {
             .build();
 
     // Mock the parser to return our test descriptors
-    when(mockParser.loadConfigValueDescriptors("cluster-shared-config-metadata.yaml"))
+    when(mockParser.loadConfigValueDescriptors(CLUSTER_SHARED_CONFIG_METADATA_FILE_PATH))
         .thenReturn(Arrays.asList(globalReadGlobalWrite, globalReadTraceableWrite));
 
-    when(mockParser.loadConfigValueDescriptors("service-shared-config-metadata.yaml"))
+    when(mockParser.loadConfigValueDescriptors(SERVICE_SHARED_CONFIG_METADATA_FILE_PATH))
         .thenReturn(Arrays.asList(traceableReadGlobalWrite, traceableReadTraceableWrite));
 
     // Create the registry with our mock parser
@@ -182,9 +184,9 @@ class SharedConfigMetadataRegistryImplTest {
   @Test
   void testEmptyResults() {
     // Setup parser to return empty lists
-    when(mockParser.loadConfigValueDescriptors("cluster-shared-config-metadata.yaml"))
+    when(mockParser.loadConfigValueDescriptors(CLUSTER_SHARED_CONFIG_METADATA_FILE_PATH))
         .thenReturn(List.of());
-    when(mockParser.loadConfigValueDescriptors("service-shared-config-metadata.yaml"))
+    when(mockParser.loadConfigValueDescriptors(SERVICE_SHARED_CONFIG_METADATA_FILE_PATH))
         .thenReturn(List.of());
 
     // Create new registry with empty results
