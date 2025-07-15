@@ -82,8 +82,7 @@ public class CloudEdgeDeploymentConfigStore
   public CloudEdgeDeploymentConfig upsertCloudEdgeDeploymentConfig(
       RequestContext ctx, CloudEdgeDeploymentConfig config, ConfigPermission permission) {
     // Here you would handle permission-based storage logic if needed
-    CloudEdgeDeploymentConfig existingConfig =
-        getData(ctx, config.getId()).orElse(CloudEdgeDeploymentConfig.getDefaultInstance());
+    CloudEdgeDeploymentConfig existingConfig = getData(ctx, config.getId()).orElse(config);
     return permissionBasedConfigResolver.getResolvedConfigForReadRequest(
         upsertObject(
                 ctx,
