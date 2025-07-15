@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ai.traceable.graphql.autogen.schema.annotations.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option java_multiple_files = true;
+option java_package = "ai.traceable.graphql.autogen.annotations";
+
+// Define a custom option to mark a field as deprecated in GraphQL
+extend google.protobuf.FieldOptions {
+  bool graphql_deprecated = 50001;
+}
+
+// Define a custom option to specify the GraphQL field name
+extend google.protobuf.FieldOptions {
+  string graphql_field_name = 50002;
+}
+
+// Define a custom option to skip a field in GraphQL
+extend google.protobuf.FieldOptions {
+  bool graphql_skip = 50003;
+}
+
+// Adds a custom description to GQL field, important to make all MCP servers work
+extend google.protobuf.FieldOptions {
+  bool graphql_description = 50004;
+}
