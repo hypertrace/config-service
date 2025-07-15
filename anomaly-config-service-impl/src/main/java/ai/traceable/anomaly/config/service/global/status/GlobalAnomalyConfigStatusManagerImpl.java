@@ -264,12 +264,15 @@ public class GlobalAnomalyConfigStatusManagerImpl
             .map(
                 configStatus ->
                     configStatus
-                        .getModsecGlobalConfig()
+                        .getGlobalModsecConfigChange()
                         .getDefaultConfigsType()
                         .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_UNSPECIFIED))
             .orElse(true)) {
       builder
           .getModsecGlobalConfigBuilder()
+          .setDefaultConfigsType(config.getEnvScopeModsecDefaultConfigsType());
+      builder
+          .getGlobalModsecConfigBuilder()
           .setDefaultConfigsType(config.getEnvScopeModsecDefaultConfigsType());
     }
     return builder.build();

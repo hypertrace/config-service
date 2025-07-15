@@ -782,6 +782,72 @@ public class GlobalAnomalyConfigStatusManagerTest {
     assertEquals(ANOMALY_CONFIDENCE_LEVEL_HIGH, modsec.getMinConfidenceLevel());
   }
 
+  @Test
+  public void test_defaultConfigsType_setFromEnvironmentScope()
+      throws InvalidProtocolBufferException {
+    String tenantId = "tenant";
+    RequestContext requestContext = RequestContext.forTenantId(tenantId);
+
+    ScopedAnomalyConfigStatus response =
+        configStatusManager.getScopedAnomalyConfigStatus(requestContext, environmentConfigScope);
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT,
+        response.getGlobalModsecConfig().getDefaultConfigsType());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_ALL_ENVIRONMENT,
+        response.getModsecGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        response.getGlobalModsecConfig().getDisabled(),
+        response.getModsecGlobalConfig().getDisabled());
+    assertEquals(
+        response.getGlobalModsecConfig().getBlockingAvailableForRegularRules(),
+        response.getModsecGlobalConfig().getBlockingAvailableForRegularRules());
+    assertEquals(
+        response.getGlobalModsecConfig().getUseTestRules(),
+        response.getModsecGlobalConfig().getUseTestRules());
+    assertEquals(
+        response.getGlobalModsecConfig().getMinConfidenceLevel(),
+        response.getModsecGlobalConfig().getMinConfidenceLevel());
+    assertEquals(
+        response.getGlobalModsecConfig().getModsecEvaluationEngineConfig(),
+        response.getModsecGlobalConfig().getModsecEvaluationEngineConfig());
+
+    updateAnomalyConfigStatus(
+        requestContext,
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(environmentConfigScope)
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setDefaultConfigsType(
+                        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING)
+                    .build())
+            .build());
+
+    response =
+        configStatusManager.getScopedAnomalyConfigStatus(requestContext, environmentConfigScope);
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING,
+        response.getGlobalModsecConfig().getDefaultConfigsType());
+    assertEquals(
+        ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING,
+        response.getModsecGlobalConfig().getDefaultConfigsType());
+    assertEquals(
+        response.getGlobalModsecConfig().getDisabled(),
+        response.getModsecGlobalConfig().getDisabled());
+    assertEquals(
+        response.getGlobalModsecConfig().getBlockingAvailableForRegularRules(),
+        response.getModsecGlobalConfig().getBlockingAvailableForRegularRules());
+    assertEquals(
+        response.getGlobalModsecConfig().getUseTestRules(),
+        response.getModsecGlobalConfig().getUseTestRules());
+    assertEquals(
+        response.getGlobalModsecConfig().getMinConfidenceLevel(),
+        response.getModsecGlobalConfig().getMinConfidenceLevel());
+    assertEquals(
+        response.getGlobalModsecConfig().getModsecEvaluationEngineConfig(),
+        response.getModsecGlobalConfig().getModsecEvaluationEngineConfig());
+  }
+
   private ScopedAnomalyConfigStatusChange upsertApiConfigStatus(
       AnomalyConfigStatusChange configStatus) throws InvalidProtocolBufferException {
     ScopedAnomalyConfigStatusChange scopedConfig =
