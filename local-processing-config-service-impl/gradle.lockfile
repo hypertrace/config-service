@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2263=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2265=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.featureflag:feature-flag-service-api:0.7.0=runtimeClasspath,testRuntimeClasspath
 ai.traceable.license.metering.service:license-metering-service-api:0.1.79=runtimeClasspath,testRuntimeClasspath
 ai.traceable.platform-gateway:api-utils:0.8.102=runtimeClasspath,testRuntimeClasspath
@@ -28,7 +28,6 @@ com.fasterxml.woodstox:woodstox-core:5.4.0=runtimeClasspath,testRuntimeClasspath
 com.github.f4b6a3:uuid-creator:5.3.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.luben:zstd-jni:1.5.6-3=runtimeClasspath,testRuntimeClasspath
 com.github.rholder:guava-retrying:2.0.0=runtimeClasspath,testRuntimeClasspath
-com.github.stephenc.jcip:jcip-annotations:1.0-1=runtimeClasspath,testRuntimeClasspath
 com.google.android:annotations:4.1.1.4=runtimeClasspath,testRuntimeClasspath
 com.google.api-client:google-api-client-jackson2:1.32.2=runtimeClasspath,testRuntimeClasspath
 com.google.api-client:google-api-client:1.32.2=runtimeClasspath,testRuntimeClasspath
@@ -79,7 +78,7 @@ com.helger:profiler:1.1.1=runtimeClasspath,testRuntimeClasspath
 com.jayway.jsonpath:json-path:2.9.0=runtimeClasspath,testRuntimeClasspath
 com.jcraft:jsch:0.1.55=runtimeClasspath,testRuntimeClasspath
 com.lmax:disruptor:3.4.2=runtimeClasspath,testRuntimeClasspath
-com.nimbusds:nimbus-jose-jwt:9.37.3=runtimeClasspath,testRuntimeClasspath
+com.nimbusds:nimbus-jose-jwt:10.3.1=runtimeClasspath,testRuntimeClasspath
 com.typesafe:config:1.4.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 commons-beanutils:commons-beanutils:1.11.0=runtimeClasspath,testRuntimeClasspath
 commons-cli:commons-cli:1.5.0=runtimeClasspath,testRuntimeClasspath
@@ -162,7 +161,7 @@ org.apache.avro:avro:1.11.4=compileClasspath,runtimeClasspath,testCompileClasspa
 org.apache.commons:commons-compress:1.26.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.commons:commons-configuration2:2.10.1=runtimeClasspath,testRuntimeClasspath
 org.apache.commons:commons-csv:1.10.0=runtimeClasspath,testRuntimeClasspath
-org.apache.commons:commons-lang3:3.14.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.apache.commons:commons-lang3:3.18.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.commons:commons-math3:3.6.1=runtimeClasspath,testRuntimeClasspath
 org.apache.commons:commons-text:1.11.0=runtimeClasspath,testRuntimeClasspath
 org.apache.curator:curator-client:5.2.0=runtimeClasspath,testRuntimeClasspath

@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2263=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2265=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-api:0.3.33=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:coraza-waf-service-client:0.3.33=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.platform:jni-modsecurity:0.1.132=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -67,7 +67,7 @@ net.bytebuddy:byte-buddy:1.15.4=testCompileClasspath,testRuntimeClasspath
 net.minidev:accessors-smart:2.5.2=runtimeClasspath,testRuntimeClasspath
 net.minidev:json-smart:2.5.2=runtimeClasspath,testRuntimeClasspath
 org.apache.commons:commons-csv:1.10.0=runtimeClasspath,testRuntimeClasspath
-org.apache.commons:commons-lang3:3.13.0=runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.apache.commons:commons-lang3:3.18.0=runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-api:2.20.0=runtimeClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-core:2.20.0=runtimeClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0=runtimeClasspath,testRuntimeClasspath

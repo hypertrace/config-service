@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2263=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2265=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
 ai.traceable.config.service:fraud-policy-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
@@ -70,7 +70,7 @@ net.bytebuddy:byte-buddy-agent:1.14.15=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.15.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.avro:avro:1.11.4=testCompileClasspath,testRuntimeClasspath
 org.apache.commons:commons-compress:1.26.2=testCompileClasspath,testRuntimeClasspath
-org.apache.commons:commons-lang3:3.14.0=testCompileClasspath,testRuntimeClasspath
+org.apache.commons:commons-lang3:3.18.0=testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.checkerframework:checker-qual:3.42.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.codehaus.mojo:animal-sniffer-annotations:1.24=runtimeClasspath,testRuntimeClasspath

@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2263=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2265=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath,testRuntimeClasspath
@@ -53,7 +53,7 @@ net.bytebuddy:byte-buddy:1.15.4=testCompileClasspath,testRuntimeClasspath
 net.minidev:accessors-smart:2.5.2=runtimeClasspath,testRuntimeClasspath
 net.minidev:json-smart:2.5.2=runtimeClasspath,testRuntimeClasspath
 org.apache.commons:commons-csv:1.10.0=runtimeClasspath,testRuntimeClasspath
-org.apache.commons:commons-lang3:3.13.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.apache.commons:commons-lang3:3.18.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.kafka:kafka-clients:7.7.0-ccs=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.checkerframework:checker-qual:3.42.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
