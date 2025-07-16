@@ -36,6 +36,7 @@ import io.grpc.StatusRuntimeException;
 import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -212,11 +213,16 @@ public class RateLimitingRulesManagerTest {
 
     List<RateLimitingRuleData> ruleDataList =
         List.of(
-            buildRateLimitingRuleData("rule1", Category.CATEGORY_RATE_LIMITING, false),
             buildRateLimitingRuleData(
-                "rule2", Category.CATEGORY_RATE_LIMITING, RuleConfigScope.newBuilder().build()),
+                "rule1", Category.CATEGORY_RATE_LIMITING, false, Map.of("k1", "v1")),
+            buildRateLimitingRuleData(
+                "rule2",
+                Category.CATEGORY_RATE_LIMITING,
+                RuleConfigScope.newBuilder().build(),
+                Map.of("k2", "v2")),
             buildRateLimitingRuleData("rule3", Category.CATEGORY_RATE_LIMITING, scope),
-            buildRateLimitingRuleData("rule4", Category.CATEGORY_DATA_EXFILTRATION, true));
+            buildRateLimitingRuleData(
+                "rule4", Category.CATEGORY_DATA_EXFILTRATION, true, Map.of("k2", "v2")));
 
     when(uuidGenerator.generateRandomId())
         .thenReturn("id1")
@@ -333,6 +339,26 @@ public class RateLimitingRulesManagerTest {
                 .build());
     assertEquals(1, rules.size());
     assertEquals(new HashSet<>(expectedRules.subList(1, 2)), new HashSet<>(rules));
+
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .putAllLabels(Map.of("k1", "v1"))
+                .build());
+    assertEquals(1, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(0, 1)), new HashSet<>(rules));
+
+    rules =
+        rulesManager.getRateLimitingRules(
+            requestContext,
+            GetRateLimitingRulesFilter.newBuilder()
+                .addCategories(Category.CATEGORY_RATE_LIMITING)
+                .putAllLabels(Map.of("k1", "", "k2", ""))
+                .build());
+    assertEquals(2, rules.size());
+    assertEquals(new HashSet<>(expectedRules.subList(0, 2)), new HashSet<>(rules));
   }
 
   @Test
@@ -508,6 +534,13 @@ public class RateLimitingRulesManagerTest {
   }
 
   private RateLimitingRuleData buildRateLimitingRuleData(
+      String name, Category category, boolean setExpiry, Map<String, String> labels) {
+    return buildRateLimitingRuleData(name, category, setExpiry).toBuilder()
+        .putAllLabels(labels)
+        .build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData(
       String name, Category category, boolean setExpiry) {
     TransactionActionConfig.Builder transactionActionConfigBuilder =
         TransactionActionConfig.newBuilder()
@@ -548,6 +581,13 @@ public class RateLimitingRulesManagerTest {
     return RateLimitingRule.newBuilder()
         .setId(id)
         .setData(buildRateLimitingRuleData(name, category, scope))
+        .build();
+  }
+
+  private RateLimitingRuleData buildRateLimitingRuleData(
+      String name, Category category, RuleConfigScope scope, Map<String, String> labels) {
+    return buildRateLimitingRuleData(name, category, scope).toBuilder()
+        .putAllLabels(labels)
         .build();
   }
 

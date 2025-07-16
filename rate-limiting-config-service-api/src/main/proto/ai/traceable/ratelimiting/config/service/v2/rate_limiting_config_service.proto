@@ -27,6 +27,7 @@ message GetRateLimitingRulesFilter {
   optional bool disabled = 3;
   optional bool filter_edge_decision_rules = 4 [deprecated = true];
   repeated RuleEvaluationPoint rule_evaluation_points = 5;
+  map<string, string> labels = 6;
 }
 
 message GetRateLimitingModsecRulesFilter {

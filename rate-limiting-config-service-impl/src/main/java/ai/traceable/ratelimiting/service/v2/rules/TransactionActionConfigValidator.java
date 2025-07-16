@@ -32,7 +32,8 @@ public class TransactionActionConfigValidator {
               "Threshold condition should not be present in rate limiting rule : %n%s, if transaction action config is present",
               data));
     }
-    if (!data.getCategory().equals(Category.CATEGORY_DATA_EXFILTRATION)) {
+    if (!data.getCategory().equals(Category.CATEGORY_DATA_EXFILTRATION)
+        && !data.getCategory().equals(Category.CATEGORY_AI_APP_PROTECTION)) {
       validatorUtils.throwInvalidArgumentException(
           String.format(
               "Invalid category : %n%s if transaction action config is present",
@@ -44,13 +45,14 @@ public class TransactionActionConfigValidator {
               "Action is not set in transaction action config: %s",
               data.getTransactionActionConfig()));
     }
-    if (!isUrlScopePresent(data.getCondition())) {
+    if (data.getCategory().equals(Category.CATEGORY_DATA_EXFILTRATION)
+        && !isUrlScopePresent(data.getCondition())) {
       validatorUtils.throwInvalidArgumentException(
           String.format(
               "Transaction Action Config should have a url-scope condition : %s",
               data.getCondition()));
     }
-    validateConditionForTransactionActionConfig(data.getCondition());
+    validateConditionForTransactionActionConfig(data.getCategory(), data.getCondition());
   }
 
   private boolean isUrlScopePresent(Condition condition) {
@@ -67,13 +69,14 @@ public class TransactionActionConfigValidator {
     return false;
   }
 
-  private void validateConditionForTransactionActionConfig(Condition condition) {
+  private void validateConditionForTransactionActionConfig(Category category, Condition condition) {
     switch (condition.getConditionCase()) {
       case LEAF_CONDITION:
-        validateLeafConditionForTransactionActionConfig(condition.getLeafCondition());
+        validateLeafConditionForTransactionActionConfig(category, condition.getLeafCondition());
         break;
       case COMPOSITE_CONDITION:
-        validateCompositeConditionForTransactionBasedConfig(condition.getCompositeCondition());
+        validateCompositeConditionForTransactionBasedConfig(
+            category, condition.getCompositeCondition());
         break;
       default:
         validatorUtils.throwInvalidArgumentException(
@@ -84,16 +87,21 @@ public class TransactionActionConfigValidator {
   }
 
   private void validateCompositeConditionForTransactionBasedConfig(
-      CompositeCondition compositeCondition) {
+      Category category, CompositeCondition compositeCondition) {
     validateNonDefaultPresenceOrThrow(compositeCondition, CompositeCondition.OPERATOR_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(compositeCondition, CompositeCondition.CHILDREN_FIELD_NUMBER);
-    compositeCondition.getChildrenList().forEach(this::validateConditionForTransactionActionConfig);
+    compositeCondition
+        .getChildrenList()
+        .forEach(
+            leafCondition -> validateConditionForTransactionActionConfig(category, leafCondition));
   }
 
-  private void validateLeafConditionForTransactionActionConfig(LeafCondition leafCondition) {
+  private void validateLeafConditionForTransactionActionConfig(
+      Category category, LeafCondition leafCondition) {
     switch (leafCondition.getConditionCase()) {
       case SCOPE_CONDITION:
-        validateScopeConditionForTransactionActionConfig(leafCondition.getScopeCondition());
+        validateScopeConditionForTransactionActionConfig(
+            category, leafCondition.getScopeCondition());
         break;
       case DATATYPE_CONDITION:
         validateDatatypeConditionForTransactionActionConfig(leafCondition.getDatatypeCondition());
@@ -281,17 +289,23 @@ public class TransactionActionConfigValidator {
     }
   }
 
-  private void validateScopeConditionForTransactionActionConfig(ScopeCondition scopeCondition) {
-    if (scopeCondition.hasLabelScope()) {
+  private void validateScopeConditionForTransactionActionConfig(
+      Category category, ScopeCondition scopeCondition) {
+    if (category.equals(Category.CATEGORY_DATA_EXFILTRATION) && scopeCondition.hasLabelScope()) {
       validatorUtils.throwInvalidArgumentException(
           String.format(
               "Invalid scope condition : %s for transaction action config", scopeCondition));
     }
     if (scopeCondition.hasEntityScope()) {
-      if (!scopeCondition
-          .getEntityScope()
-          .getEntityType()
-          .equals(ScopeCondition.EntityType.ENTITY_TYPE_SERVICE)) {
+      validateNonDefaultPresenceOrThrow(
+          scopeCondition.getEntityScope(), ScopeCondition.EntityScope.ENTITY_TYPE_FIELD_NUMBER);
+      validateNonDefaultPresenceOrThrow(
+          scopeCondition.getEntityScope(), ScopeCondition.EntityScope.ENTITY_IDS_FIELD_NUMBER);
+      if (category.equals(Category.CATEGORY_DATA_EXFILTRATION)
+          && !scopeCondition
+              .getEntityScope()
+              .getEntityType()
+              .equals(ScopeCondition.EntityType.ENTITY_TYPE_SERVICE)) {
         validatorUtils.throwInvalidArgumentException(
             String.format(
                 "Invalid scope condition : %s for transaction action config", scopeCondition));

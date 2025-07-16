@@ -1,6 +1,7 @@
 package ai.traceable.ratelimiting.service.v2.rules;
 
 import static ai.traceable.ratelimiting.config.service.v2.Action.MatchCategory.MATCH_CATEGORY_REQUEST;
+import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_AI_APP_PROTECTION;
 import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_DATA_EXFILTRATION;
 import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_ENUMERATION;
 import static ai.traceable.ratelimiting.config.service.v2.Category.CATEGORY_RATE_LIMITING;
@@ -62,7 +63,8 @@ public class RateLimitingRulesValidator implements RulesValidator {
                   Set.of(
                       ROLLING_WINDOW_THRESHOLD_CONFIG,
                       DYNAMIC_THRESHOLD_CONFIG,
-                      VALUE_BASED_THRESHOLD_CONFIG));
+                      VALUE_BASED_THRESHOLD_CONFIG),
+              CATEGORY_AI_APP_PROTECTION, Set.of(ROLLING_WINDOW_THRESHOLD_CONFIG));
 
   @Override
   public void validateOrThrow(RequestContext requestContext, GetRateLimitingRulesRequest request) {

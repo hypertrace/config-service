@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -104,7 +105,23 @@ public class RateLimitingRulesStore
         .filter(
             rule -> !filter.hasDisabled() || filter.getDisabled() != rule.getData().getEnabled())
         .filter(
-            rule -> filterRuleOnRuleEvaluationPoints(rule, filter.getRuleEvaluationPointsList()));
+            rule -> filterRuleOnRuleEvaluationPoints(rule, filter.getRuleEvaluationPointsList()))
+        .filter(rule -> filterRuleOnLabels(rule, filter.getLabelsMap()));
+  }
+
+  private boolean filterRuleOnLabels(RateLimitingRule rule, Map<String, String> labels) {
+    if (labels.isEmpty()) {
+      return true;
+    }
+    Map<String, String> ruleLabels = rule.getData().getLabelsMap();
+    return labels.entrySet().stream()
+        .anyMatch(
+            entry -> {
+              String key = entry.getKey();
+              String value = entry.getValue();
+              return ruleLabels.containsKey(key)
+                  && (StringUtils.isEmpty(value) || ruleLabels.get(key).equals(value));
+            });
   }
 
   private boolean filterRuleOnCategory(RateLimitingRule rule, List<Category> categoryList) {

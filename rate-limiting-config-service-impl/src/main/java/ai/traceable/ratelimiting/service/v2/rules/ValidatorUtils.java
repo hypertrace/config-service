@@ -453,7 +453,9 @@ public class ValidatorUtils {
   private void validateDatatypeCondition(DatatypeCondition datatypeCondition) {
     if (datatypeCondition.getDatasetIdsList().isEmpty()
         && datatypeCondition.getDatatypeIdsList().isEmpty()
-        && datatypeCondition.getDatatypeMatching().equals(DATA_SENSITIVITY_LEVEL_UNSPECIFIED)) {
+        && datatypeCondition
+            .getMinDataSensitivityLevel()
+            .equals(DATA_SENSITIVITY_LEVEL_UNSPECIFIED)) {
       throwInvalidArgumentException(
           String.format(
               "Invalid condition for type %s:%n %s",
