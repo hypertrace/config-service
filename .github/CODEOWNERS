@@ -4,8 +4,8 @@
 * @GurtejSohi @aaron-steinfeld @pavan-traceable @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @anujgoyal1 @SrikarMannepalli @sunilgattupalle @surajpuvvada @RishabhB99
 
 # module specific owners
-anomaly-config-service-registry/src/test/resources/modsec @piyushroshan @soujanyanmbri
-anomaly-config-service-registry/src/main/resources/modsec/crs @piyushroshan @soujanyanmbri
+anomaly-config-service-registry/src/test/resources/modsec @sidharth-jain23 @singhalprerana
+anomaly-config-service-registry/src/main/resources/modsec/crs @sidharth-jain23 @singhalprerana
 anomaly-config-service-registry/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
 anomaly-config-service-api/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
 anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
