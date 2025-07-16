@@ -21,6 +21,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "tpa.modsec-processing-disabled",
                 FeatureFlagValue.newBuilder().setBoolean(false).getDefaultInstanceForType())
+            .putValues(
+                "enricher.genai-detection-v2",
+                FeatureFlagValue.newBuilder().setBoolean(false).getDefaultInstanceForType())
             .build());
     responseObserver.onCompleted();
   }

@@ -10,7 +10,17 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor_ = @Inject)
 class AgentVersionManager {
   private static final String CONTENT_TYPE_PARSE_RULE_SUPPORT_MIN_TPA_VERSION = "1.39.0-rc.0";
+  private static final String SSE_DATA_PARSING_RULE_SUPPORT_MIN_TPA_VERSION = "1.59.0-dev.20";
   SemanticVersioningComparator versionComparator;
+
+  boolean isSseDataParsingRulesSupported(AgentCapabilities agentCapabilities) {
+    return this.getTpaVersion(agentCapabilities)
+        .map(
+            version ->
+                versionComparator.isVersionSupported(
+                    version, SSE_DATA_PARSING_RULE_SUPPORT_MIN_TPA_VERSION))
+        .orElse(false);
+  }
 
   boolean isContentTypeParseRuleSupported(AgentCapabilities agentCapabilities) {
     return this.getTpaVersion(agentCapabilities)

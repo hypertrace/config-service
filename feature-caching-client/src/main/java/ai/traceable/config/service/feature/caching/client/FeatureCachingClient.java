@@ -42,6 +42,8 @@ public class FeatureCachingClient {
       false;
   private static final boolean DEFAULT_TRACEABLE_EDGE_DECISION_FLAG_VALUE = false;
   private static final boolean DEFAULT_WAAP_VERSIONING_FLAG_VALUE = false;
+  private static final boolean DEFAULT_GENAI_DETECTION_V2_VALUE = false;
+
   private static final String DATA_CLASSIFICATION_ENHANCED_OBFUSCATION_FLAG =
       "data-classification.enhanced-obfuscation";
   private static final String DATA_CLASSIFICATION_FILTERED_OVERRIDES_FLAG =
@@ -62,6 +64,7 @@ public class FeatureCachingClient {
   private static final String TRACEABLE_EDGE_DECISION_FLAG = "traceable-edge.edge-decision";
   private static final String CONFIG_SERVICE_WAAP_RULES_VERSIONING =
       "config-service.waap-rules-versioning";
+  private static final String GENAI_DETECTION_V2_FLAG = "enricher.genai-detection-v2";
 
   private static final List<String> ALL_FLAGS_TO_FETCH =
       List.of(
@@ -79,7 +82,8 @@ public class FeatureCachingClient {
           RASP_INSPECTION,
           THREAT_SCORING_NOTIFICATION_RULE_MIGRATION_FLAG,
           TRACEABLE_EDGE_DECISION_FLAG,
-          CONFIG_SERVICE_WAAP_RULES_VERSIONING);
+          CONFIG_SERVICE_WAAP_RULES_VERSIONING,
+          GENAI_DETECTION_V2_FLAG);
   private final FeatureFlagServiceBlockingStub featureFlagStub;
   private final LoadingCache<ContextualKey<Void>, Map<String, Boolean>> featureFlagCache;
   private final Duration featureFlagRequestTimeout;
@@ -102,6 +106,18 @@ public class FeatureCachingClient {
                     CacheLoader.from(this::getFeatureFlagMap),
                     Executors.newFixedThreadPool(
                         config.getThreadPoolSize(), this.buildThreadFactory())));
+  }
+
+  public boolean isGenAiDetectionV2Enabled(RequestContext requestContext) {
+    try {
+      return requireNonNull(
+          this.featureFlagCache
+              .get(requestContext.buildInternalContextualKey())
+              .get(GENAI_DETECTION_V2_FLAG));
+    } catch (Exception exception) {
+      log.error("Failed to retrieve current feature flag value for Genai Detection V2", exception);
+      return DEFAULT_GENAI_DETECTION_V2_VALUE;
+    }
   }
 
   public boolean isThreatScoringNotificationRuleMigrationEnabled(RequestContext requestContext) {

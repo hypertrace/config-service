@@ -5,6 +5,7 @@ import ai.traceable.external.data.classification.config.service.v1.DataType;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -16,6 +17,8 @@ class ExternalDataClassificationConfig {
       "external.data.classification.config.service";
   private static final String DATA_PARSING_RULES =
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".data.parsing.rules";
+  private static final String SSE_DATA_PARSING_RULES =
+      EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + "sse.data.parsing.rules";
   private static final String DEFAULT_EXTERNAL_DATA_TYPES =
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".default.external.data.types";
   private static final String CACHE_THREAD_POOL_SIZE =
@@ -26,6 +29,7 @@ class ExternalDataClassificationConfig {
       EXTERNAL_DATA_CLASSIFICATION_CONFIG_SERVICE + ".cache.maxSize";
 
   @Getter List<DataParsingRule> defaultDataParsingRules;
+  @Getter List<DataParsingRule> defaultSseDataParsingRules;
   @Getter List<DataType> defaultExternalDataTypes;
   @Getter int cacheThreadPoolSize;
   @Getter Duration cacheRefreshDuration;
@@ -33,13 +37,23 @@ class ExternalDataClassificationConfig {
 
   ExternalDataClassificationConfig(Config config) {
     this.defaultDataParsingRules =
-        config.getObjectList(DATA_PARSING_RULES).stream()
-            .map(this::buildDataParsingRuleFromConfig)
-            .collect(Collectors.toUnmodifiableList());
+        config.hasPath(DATA_PARSING_RULES)
+            ? config.getObjectList(DATA_PARSING_RULES).stream()
+                .map(this::buildDataParsingRuleFromConfig)
+                .collect(Collectors.toUnmodifiableList())
+            : Collections.emptyList();
+    this.defaultSseDataParsingRules =
+        config.hasPath(SSE_DATA_PARSING_RULES)
+            ? config.getObjectList(SSE_DATA_PARSING_RULES).stream()
+                .map(this::buildDataParsingRuleFromConfig)
+                .collect(Collectors.toUnmodifiableList())
+            : Collections.emptyList();
     this.defaultExternalDataTypes =
-        config.getObjectList(DEFAULT_EXTERNAL_DATA_TYPES).stream()
-            .map(this::buildDataTypeFromConfig)
-            .collect(Collectors.toUnmodifiableList());
+        config.hasPath(DEFAULT_EXTERNAL_DATA_TYPES)
+            ? config.getObjectList(DEFAULT_EXTERNAL_DATA_TYPES).stream()
+                .map(this::buildDataTypeFromConfig)
+                .collect(Collectors.toUnmodifiableList())
+            : Collections.emptyList();
     this.cacheThreadPoolSize = config.getInt(CACHE_THREAD_POOL_SIZE);
     this.cacheRefreshDuration = config.getDuration(CACHE_REFRESH);
     this.cacheMaxSize = config.getInt(CACHE_MAX_SIZE);
