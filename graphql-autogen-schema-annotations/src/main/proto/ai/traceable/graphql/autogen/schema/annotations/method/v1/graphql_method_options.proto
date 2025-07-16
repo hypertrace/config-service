@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ai.traceable.graphql.autogen.schema.annotations.method.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option java_multiple_files = true;
+option java_package = "ai.traceable.graphql.autogen.annotations.method";
+
+// Define a custom option to mark a method as deprecated in GraphQL
+extend google.protobuf.MethodOptions {
+  bool graphql_deprecated = 50101;
+}
+
+// Define a custom option to specify the GraphQL method name
+extend google.protobuf.MethodOptions {
+  string graphql_field_name = 50102;
+}
+
+// Define a custom option to skip a method in GraphQL
+extend google.protobuf.MethodOptions {
+  bool graphql_skip = 50103;
+}
+
+// Adds a custom description to GQL method, important for documenting RPC methods
+extend google.protobuf.MethodOptions {
+  string graphql_description = 50104;
+}
