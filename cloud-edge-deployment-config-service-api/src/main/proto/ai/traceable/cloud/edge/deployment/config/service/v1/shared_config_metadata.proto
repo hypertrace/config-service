@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package ai.traceable.cloud.edge.deployment.config.service.v1;
 
+import "google/protobuf/struct.proto";
+
 option java_multiple_files = true;
 
 message SharedConfigMetadata {
@@ -16,6 +18,7 @@ message ConfigValueDescriptor {
   ConfigPermission config_permission = 4;
   repeated HelmConfigIdentifier identifiers = 5;
   string config_key = 6;
+  google.protobuf.Value default_value = 7;
 }
 
 message ConfigConstraint {
