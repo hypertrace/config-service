@@ -38,16 +38,16 @@ class SharedConfigMetadataParserTest {
 
     // Verify
     assertNotNull(descriptors);
-    assertEquals(6, descriptors.size());
+    assertEquals(7, descriptors.size());
 
     // Verify first descriptor (idleTimeout)
     ConfigValueDescriptor idleTimeoutDescriptor = descriptors.get(0);
     assertEquals("Idle Timeout", idleTimeoutDescriptor.getDescription());
-    assertEquals("Idle Timeout(ms)", idleTimeoutDescriptor.getDisplayName());
+    assertEquals("Idle Timeout(s)", idleTimeoutDescriptor.getDisplayName());
     assertTrue(idleTimeoutDescriptor.hasConstraint());
     assertTrue(idleTimeoutDescriptor.getConstraint().hasIntRange());
-    assertEquals(0, idleTimeoutDescriptor.getConstraint().getIntRange().getMin());
-    assertEquals(100, idleTimeoutDescriptor.getConstraint().getIntRange().getMax());
+    assertEquals(1, idleTimeoutDescriptor.getConstraint().getIntRange().getMin());
+    assertEquals(120, idleTimeoutDescriptor.getConstraint().getIntRange().getMax());
     assertEquals(
         ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
         idleTimeoutDescriptor.getConfigPermission().getRead());
@@ -62,11 +62,11 @@ class SharedConfigMetadataParserTest {
     ConfigValueDescriptor maxConnectionDurationDescriptor = descriptors.get(1);
     assertEquals(
         "Max connection duration for a  request", maxConnectionDurationDescriptor.getDescription());
-    assertEquals("Max Connection Duration(ms)", maxConnectionDurationDescriptor.getDisplayName());
+    assertEquals("Max Connection Duration(s)", maxConnectionDurationDescriptor.getDisplayName());
     assertTrue(maxConnectionDurationDescriptor.hasConstraint());
     assertTrue(maxConnectionDurationDescriptor.getConstraint().hasIntRange());
-    assertEquals(0, maxConnectionDurationDescriptor.getConstraint().getIntRange().getMin());
-    assertEquals(100, maxConnectionDurationDescriptor.getConstraint().getIntRange().getMax());
+    assertEquals(60, maxConnectionDurationDescriptor.getConstraint().getIntRange().getMin());
+    assertEquals(86400, maxConnectionDurationDescriptor.getConstraint().getIntRange().getMax());
     assertEquals(
         ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
         maxConnectionDurationDescriptor.getConfigPermission().getRead());

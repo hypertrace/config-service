@@ -1,65 +1,69 @@
 - configKey: "idleTimeout"
   description: "Idle Timeout"
-  displayName: "Idle Timeout(ms)"
+  displayName: "Idle Timeout(s)"
   constraint:
     intRange:
-      min: 0
-      max: 100
+      min: 1
+      max: 120
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
     write: CONFIG_ACCESS_TYPE_GLOBAL
   identifiers:
     - chartName: ""
       chartPath: ""
+  default_value: 60
 
 - configKey: "maxConnectionDuration"
   description: "Max connection duration for a  request"
-  displayName: "Max Connection Duration(ms)"
+  displayName: "Max Connection Duration(s)"
   constraint:
     intRange:
-      min: 0
-      max: 100
+      min: 60
+      max: 86400
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
     write: CONFIG_ACCESS_TYPE_GLOBAL
   identifiers:
     - chartName: ""
       chartPath: ""
+  default_value: 3600
 
 - configKey: "maxRequestsPerConnection"
   description: "Maximum number of requests allowed per connection"
   displayName: "Max Requests per Connection"
   constraint:
     intRange:
-      min: 0
-      max: 100
+      min: 1
+      max: 10000
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
     write: CONFIG_ACCESS_TYPE_GLOBAL
   identifiers:
     - chartName: ""
       chartPath: ""
+  default_value: 1000
 
 - configKey: "requestHeaderTimeout"
   description: "Timeout for receiving request headers"
   displayName: "Request Header Timeout(s)"
   constraint:
     intRange:
-      min: 0
-      max: 100
+      min: 1
+      max: 60
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
     write: CONFIG_ACCESS_TYPE_GLOBAL
   identifiers:
     - chartName: ""
       chartPath: ""
+  default_value: 2
 
 - configKey: "requestTimeout"
   description: "Timeout for the entire request"
   displayName: "Request Timeout(s)"
   constraint:
     intRange:
-      min: 0
+      min: 1
       max: 300
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
@@ -67,17 +71,30 @@
   identifiers:
     - chartName: ""
       chartPath: ""
+  default_value: 5
 
 - configKey: "maxHeaderCount"
   description: "Maximum number of headers allowed in a request"
   displayName: "Max Header Count"
   constraint:
     intRange:
-      min: 0
-      max: 1000
+      min: 1
+      max: 500
   configPermission:
     read: CONFIG_ACCESS_TYPE_GLOBAL
     write: CONFIG_ACCESS_TYPE_GLOBAL
   identifiers:
     - chartName: ""
       chartPath: ""
+  default_value: 100
+
+- configKey: "headerCaseInsensitivity"
+  description: "Whether header names are case-insensitive"
+  displayName: "Header Case Insensitivity"
+  configPermission:
+    read: CONFIG_ACCESS_TYPE_GLOBAL
+    write: CONFIG_ACCESS_TYPE_GLOBAL
+  identifiers:
+    - chartName: ""
+      chartPath: ""
+  default_value: true
