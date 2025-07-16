@@ -45,7 +45,7 @@ public class CategorizedBotConfigDetailsToEdgeDecisionVariablesTranslator {
                               .getBotSubCategoryName());
                     })
                 .collect(Collectors.joining())
-            + " {} ";
+            + " {'botId' : ''} ";
     return VariableDerivationMapping.newBuilder()
         .setName("tcBot")
         .addRules(

@@ -266,7 +266,7 @@ public class CategorizedBotConfigPolicyToEdgeDecisionTranslator {
                             GenericMatchCondition.newBuilder()
                                 .setJexlExpression(
                                     JexlExpressionConfig.newBuilder()
-                                        .setJexlExpression("tcBot['botId'] != null")
+                                        .setJexlExpression("tcBot['botId'] != ''")
                                         .build())
                                 .build())
                         .build())
