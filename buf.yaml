@@ -76,6 +76,7 @@ modules:
   - path: waf-provider-integration-service-api/src/main/proto
   - path: genai-config-service-api/src/main/proto
   - path: http-event-collector-integration-config-service-api/src/main/proto
+  - path: cloud-bot-deployment-config-service-api/src/main/proto
   - path: cloud-edge-deployment-config-service-api/src/main/proto
   - path: genai-system-discovery-config-service-api/src/main/proto
   - path: graphql-autogen-schema-annotations/src/main/proto

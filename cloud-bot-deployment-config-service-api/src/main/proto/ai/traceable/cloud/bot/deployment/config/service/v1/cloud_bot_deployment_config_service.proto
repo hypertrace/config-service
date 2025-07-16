@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package ai.traceable.cloud.bot.deployment.config.service.v1;
+
+import "ai/traceable/cloud/bot/deployment/config/service/v1/cloud_bot_deployment_config.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "ai/traceable/graphql/autogen/schema/annotations/method/v1/graphql_method_options.proto";
+
+option java_multiple_files = true;
+
+service CloudBotDeploymentConfigService {
+  rpc CreateCloudBotDeploymentConfig(CreateCloudBotDeploymentConfigRequest) returns (CreateCloudBotDeploymentConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Create a new bot protection deployment configuration";
+  }
+  rpc UpdateCloudBotDeploymentConfig(UpdateCloudBotDeploymentConfigRequest) returns (UpdateCloudBotDeploymentConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Update an existing bot protection deployment configuration";
+  }
+  // To be used by SEs for deployment status updates
+  rpc UpdateCloudBotDeploymentStatus(UpdateCloudBotDeploymentStatusRequest) returns (UpdateCloudBotDeploymentStatusResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "An internal API for traceable users to update the deployment status of a bot protection configuration";
+  }
+  rpc DeleteCloudBotDeploymentConfig(DeleteCloudBotDeploymentConfigRequest) returns (DeleteCloudBotDeploymentConfigResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Delete a bot protection deployment configuration";
+  }
+  rpc GetCloudBotDeploymentConfigs(GetCloudBotDeploymentConfigsRequest) returns (GetCloudBotDeploymentConfigsResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Retrieve bot protection deployment configurations by their IDs";
+  }
+}
+
+message CreateCloudBotDeploymentConfigRequest {
+  CloudBotDeploymentConfigInput cloud_bot_deployment_config_input = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Input configuration for creating a new bot protection deployment"];
+}
+
+message CreateCloudBotDeploymentConfigResponse {
+  CloudBotDeploymentConfig cloud_bot_deployment = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The created bot protection deployment configuration"];
+}
+
+message UpdateCloudBotDeploymentConfigRequest {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier of the bot protection deployment configuration"];
+  CloudBotDeploymentConfigInput cloud_bot_deployment_config_input = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated configuration for the bot protection deployment"];
+}
+
+message UpdateCloudBotDeploymentConfigResponse {
+  CloudBotDeploymentConfig cloud_bot_deployment = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The updated bot protection deployment configuration"];
+}
+
+message UpdateCloudBotDeploymentStatusRequest {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier of the bot protection deployment configuration"];
+  CloudBotDeploymentStatus cloud_bot_deployment_status = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated status information for the deployment"];
+  CaptchaProviderDetails captcha_provider_details = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated CAPTCHA provider details"];
+}
+
+message UpdateCloudBotDeploymentStatusResponse {
+  CloudBotDeploymentConfig cloud_bot_deployment = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The updated bot protection deployment configuration"];
+}
+
+message GetCloudBotDeploymentConfigsRequest {
+  repeated string ids = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of unique identifiers for the requested configurations"];
+}
+
+message GetCloudBotDeploymentConfigsResponse {
+  repeated CloudBotDeploymentConfig cloud_bot_deployments = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "List of retrieved bot protection deployment configurations"];
+}
+
+message DeleteCloudBotDeploymentConfigRequest {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier of the bot protection deployment configuration"];
+}
+
+message DeleteCloudBotDeploymentConfigResponse {
+  // Empty response
+}
