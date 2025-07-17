@@ -263,6 +263,89 @@ class PermissionBasedConfigResolverTest {
     assertEquals(
         DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
         result.getCloudEdgeDeployedOutputConfig().getStatus());
+
+    // Verify that the last applied input config is set correctly
+    assertTrue(result.hasLastAppliedInputConfig());
+    assertEquals(
+        result.getCloudEdgeDeploymentInputConfig().getClusterConfig().getClusterName(),
+        result.getLastAppliedInputConfig().getClusterConfig().getClusterName());
+    assertEquals(
+        result.getCloudEdgeDeploymentInputConfig().getClusterConfig().getEnvironmentName(),
+        result.getLastAppliedInputConfig().getClusterConfig().getEnvironmentName());
+  }
+
+  @Test
+  void testLastAppliedInputConfigSetWhenDeploymentSuccessful() {
+    // Create a new config with deployment status as DEPLOYED_SUCCESSFULLY
+    CloudEdgeDeploymentConfig newConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder()
+                            .setClusterName("new-cluster")
+                            .setEnvironmentName("stage")
+                            .build())
+                    .build())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    // Create an existing config with different values
+    CloudEdgeDeploymentConfig existingConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder()
+                            .setClusterName("old-cluster")
+                            .setEnvironmentName("dev")
+                            .build())
+                    .build())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+                    .build())
+            .build();
+
+    // Execute with traceable access
+    CloudEdgeDeploymentConfig result =
+        resolver.getResolvedConfigForWriteRequest(
+            newConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+
+    // Verify the last applied input config is set when deployment status is DEPLOYED_SUCCESSFULLY
+    assertTrue(result.hasLastAppliedInputConfig());
+    assertEquals(
+        "new-cluster", result.getLastAppliedInputConfig().getClusterConfig().getClusterName());
+    assertEquals(
+        "stage", result.getLastAppliedInputConfig().getClusterConfig().getEnvironmentName());
+
+    // Create another config with IN_PROGRESS status
+    CloudEdgeDeploymentConfig inProgressConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("another-cluster").build())
+                    .build())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+                    .build())
+            .build();
+
+    // Execute with traceable access but with IN_PROGRESS status
+    CloudEdgeDeploymentConfig resultInProgress =
+        resolver.getResolvedConfigForWriteRequest(
+            inProgressConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+
+    // Verify the last applied input config is NOT set when status is not DEPLOYED_SUCCESSFULLY
+    assertFalse(resultInProgress.hasLastAppliedInputConfig());
   }
 
   @Test
@@ -399,5 +482,90 @@ class PermissionBasedConfigResolverTest {
             .getGenericConfig()
             .getFieldsMap();
     assertEquals(0, resultServiceFields.size());
+  }
+
+  @Test
+  void testLastAppliedInputConfigPreservedWhenConfigChangedToInProgress() {
+    // Create an initial config with DEPLOYED_SUCCESSFULLY status and a last applied input config
+    CloudEdgeDeploymentInputConfig initialInputConfig =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(
+                ClusterConfig.newBuilder()
+                    .setClusterName("original-cluster")
+                    .setEnvironmentName("prod")
+                    .build())
+            .build();
+
+    CloudEdgeDeploymentConfig existingConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
+            .setCloudEdgeDeploymentInputConfig(initialInputConfig)
+            .setLastAppliedInputConfig(
+                initialInputConfig) // This was set during previous successful deployment
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    // Create a new config with changes that will set status to IN_PROGRESS
+    CloudEdgeDeploymentInputConfig newInputConfig =
+        CloudEdgeDeploymentInputConfig.newBuilder()
+            .setClusterConfig(
+                ClusterConfig.newBuilder()
+                    .setClusterName("modified-cluster")
+                    .setEnvironmentName("prod")
+                    .build())
+            .build();
+
+    CloudEdgeDeploymentConfig newConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
+            .setCloudEdgeDeploymentInputConfig(newInputConfig)
+            .build();
+
+    // Execute with traceable access
+    CloudEdgeDeploymentConfig result =
+        resolver.getResolvedConfigForWriteRequest(
+            newConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+
+    // Verify that the input config has been updated
+    assertEquals(
+        "modified-cluster",
+        result.getCloudEdgeDeploymentInputConfig().getClusterConfig().getClusterName());
+
+    // Verify that the status is now IN_PROGRESS
+    assertEquals(
+        DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS,
+        result.getCloudEdgeDeployedOutputConfig().getStatus());
+
+    // Verify that the last applied input config is preserved from the previous successful
+    // deployment
+    assertTrue(result.hasLastAppliedInputConfig());
+    assertEquals(
+        "original-cluster", result.getLastAppliedInputConfig().getClusterConfig().getClusterName());
+
+    // Now simulate a successful deployment of the modified config
+    CloudEdgeDeploymentConfig deployedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
+            .setCloudEdgeDeploymentInputConfig(result.getCloudEdgeDeploymentInputConfig())
+            .setLastAppliedInputConfig(result.getLastAppliedInputConfig())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    // Execute with traceable access to mark as deployed
+    CloudEdgeDeploymentConfig finalResult =
+        resolver.getResolvedConfigForWriteRequest(
+            deployedConfig, result, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+
+    // Verify that the last applied input config is updated to the new input config
+    assertTrue(finalResult.hasLastAppliedInputConfig());
+    assertEquals(
+        "modified-cluster",
+        finalResult.getLastAppliedInputConfig().getClusterConfig().getClusterName());
   }
 }
