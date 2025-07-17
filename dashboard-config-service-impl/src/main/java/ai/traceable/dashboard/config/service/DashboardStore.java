@@ -7,13 +7,10 @@ import com.google.protobuf.Value;
 import com.google.protobuf.util.Timestamps;
 import com.google.protobuf.util.Values;
 import jakarta.inject.Inject;
-import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.hypertrace.config.objectstore.ContextualConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -63,21 +60,6 @@ class DashboardStore
   @Override
   protected String getContextFromData(Dashboard data) {
     return data.getId();
-  }
-
-  @Override
-  public Optional<ContextualConfigObject<Dashboard>> getObject(
-      RequestContext requestContext, String id) {
-    return super.getObject(requestContext, id)
-        .filter(dashboard -> isSystemOrUserDashboard(requestContext, dashboard.getData()));
-  }
-
-  @Override
-  public List<ContextualConfigObject<Dashboard>> getAllObjects(
-      RequestContext requestContext, GetDashboardsRequest.DashboardFilter filter) {
-    return super.getAllObjects(requestContext, filter).stream()
-        .filter(dashboard -> isSystemOrUserDashboard(requestContext, dashboard.getData()))
-        .collect(Collectors.toUnmodifiableList());
   }
 
   @Override
