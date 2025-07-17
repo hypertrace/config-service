@@ -11,6 +11,7 @@ message CloudEdgeDeploymentConfig {
   string id = 1;
   CloudEdgeDeploymentInputConfig cloud_edge_deployment_input_config = 2;
   CloudEdgeDeploymentOutputConfig cloud_edge_deployed_output_config = 3;
+  CloudEdgeDeploymentInputConfig last_applied_input_config = 4;
 }
 
 message CloudEdgeDeploymentInputConfig {
