@@ -203,14 +203,6 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
     return changeLogBuilder.build();
   }
 
-  private ThreatTypeUpdateDetails.ThreatTypeUpdate createNameUpdate(
-      String oldValue, String newValue) {
-    StringValueUpdate nameUpdated = createStringValueUpdate(oldValue, newValue);
-    return ThreatTypeUpdateDetails.ThreatTypeUpdate.newBuilder()
-        .setNameUpdated(nameUpdated)
-        .build();
-  }
-
   private void setThreatTypeChanges(
       ThreatTypeChange.Builder builder,
       @Nullable List<String> idsRemoved,
@@ -266,6 +258,44 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
   private List<ApiProtectRulesVersionType> convertToApiProtectRulesVersionType(
       List<RuleVersionType> types) {
     return types.stream().map(API_PROTECT_VERSION_MAP::get).collect(Collectors.toList());
+  }
+
+  private void handleWebAppThreatTypeUpdate(
+      ThreatTypeUpdateDetails.ThreatTypeUpdate.Builder builder,
+      WebAppThreatTypeUpdateDetails.ThreatTypeUpdate update) {
+    switch (update.getUpdateCase()) {
+      case NAME_UPDATED:
+        builder.setNameUpdated(
+            createStringValueUpdate(
+                update.getNameUpdated().getOldValue(), update.getNameUpdated().getNewValue()));
+        break;
+      case THREAT_LABEL_UPDATED:
+        builder.setThreatLabelUpdated(processWebAppKeyValueUpdate(update.getThreatLabelUpdated()));
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Invalid change case for ThreatTypeUpdate")
+            .asRuntimeException();
+    }
+  }
+
+  private void handleApiProtectThreatTypeUpdate(
+      ThreatTypeUpdateDetails.ThreatTypeUpdate.Builder builder,
+      ApiProtectThreatTypeUpdateDetails.ThreatTypeUpdate update) {
+    switch (update.getUpdateCase()) {
+      case NAME_UPDATED:
+        builder.setNameUpdated(
+            createStringValueUpdate(
+                update.getNameUpdated().getOldValue(), update.getNameUpdated().getNewValue()));
+        break;
+      case THREAT_LABEL_UPDATED:
+        builder.setThreatLabelUpdated(processApiKeyValueUpdate(update.getThreatLabelUpdated()));
+        break;
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Invalid change case for ThreatTypeUpdate")
+            .asRuntimeException();
+    }
   }
 
   private void handleWebAppRuleUpdate(
@@ -468,13 +498,10 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
 
           for (WebAppThreatTypeUpdateDetails.ThreatTypeUpdate webAppUpdate :
               webAppDetails.getUpdatesList()) {
-            if (webAppUpdate.hasNameUpdated()) {
-              ThreatTypeUpdateDetails.ThreatTypeUpdate update =
-                  createNameUpdate(
-                      webAppUpdate.getNameUpdated().getOldValue(),
-                      webAppUpdate.getNameUpdated().getNewValue());
-              detailsBuilder.addUpdates(update);
-            }
+            ThreatTypeUpdateDetails.ThreatTypeUpdate.Builder updateBuilder =
+                ThreatTypeUpdateDetails.ThreatTypeUpdate.newBuilder();
+            handleWebAppThreatTypeUpdate(updateBuilder, webAppUpdate);
+            detailsBuilder.addUpdates(updateBuilder.build());
           }
           threatTypeChangeBuilder.setThreatTypeUpdated(detailsBuilder.build());
           break;
@@ -599,15 +626,12 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
           ThreatTypeUpdateDetails.Builder detailsBuilder =
               ThreatTypeUpdateDetails.newBuilder().setThreatTypeId(apiDetails.getThreatTypeId());
 
-          for (ApiProtectThreatTypeUpdateDetails.ThreatTypeUpdate apiUpdate :
+          for (ApiProtectThreatTypeUpdateDetails.ThreatTypeUpdate apiProtectUpdate :
               apiDetails.getUpdatesList()) {
-            if (apiUpdate.hasNameUpdated()) {
-              ThreatTypeUpdateDetails.ThreatTypeUpdate update =
-                  createNameUpdate(
-                      apiUpdate.getNameUpdated().getOldValue(),
-                      apiUpdate.getNameUpdated().getNewValue());
-              detailsBuilder.addUpdates(update);
-            }
+            ThreatTypeUpdateDetails.ThreatTypeUpdate.Builder updateBuilder =
+                ThreatTypeUpdateDetails.ThreatTypeUpdate.newBuilder();
+            handleApiProtectThreatTypeUpdate(updateBuilder, apiProtectUpdate);
+            detailsBuilder.addUpdates(updateBuilder.build());
           }
           threatTypeChangeBuilder.setThreatTypeUpdated(detailsBuilder.build());
           break;

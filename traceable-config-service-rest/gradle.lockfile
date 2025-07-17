@@ -1,12 +1,12 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2265=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:fraud-policy-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
-ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.669=testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2281=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-config-service-api:0.37.680=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-datamodel-derivation-config-service-api:0.37.680=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:fraud-policy-config-service-api:0.37.680=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-datamodel-config-service-api:0.37.680=testCompileClasspath,testRuntimeClasspath
+ai.traceable.config.service:traceable-edge-decision-config-service-api:0.37.680=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:fraud-engine-api:0.1.917=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:fraud-engine-models:0.1.917=testCompileClasspath,testRuntimeClasspath
 ai.traceable.fraud-engine:risk-decision-service-api:0.1.251=testCompileClasspath,testRuntimeClasspath
@@ -89,7 +89,7 @@ org.glassfish.jersey.core:jersey-common:3.1.7=compileClasspath,runtimeClasspath,
 org.glassfish.jersey.core:jersey-server:3.1.7=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey.inject:jersey-hk2:3.1.7=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.glassfish.jersey:jersey-bom:3.1.7=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.hypertrace.bom:hypertrace-bom:0.3.49=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.hypertrace.bom:hypertrace-bom:0.3.50=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-client-utils:0.13.14=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.grpcutils:grpc-context-utils:0.13.14=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.hypertrace.core.kafkastreams.framework:kafka-bom:0.6.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath

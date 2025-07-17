@@ -15,21 +15,26 @@ import ai.traceable.anomaly.config.service.v1.global.ThreatTypeChange;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRuleAvailableVersions;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRulesChangeLog;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRulesVersion;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRulesVersionUpdateDetails;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRuleChange;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRuleUpdateDetails;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatTypeChange;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatTypeUpdateDetails;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectionRulesProvider;
+import ai.traceable.protection.rules.webapp.v1.StringKeyValueUpdate;
 import ai.traceable.protection.rules.webapp.v1.StringList;
+import ai.traceable.protection.rules.webapp.v1.StringValueUpdate;
 import ai.traceable.protection.rules.webapp.v1.WebAppProtectionRulesProvider;
 import ai.traceable.protection.rules.webapp.v1.WebAppRuleAvailableVersions;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesChangeLog;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersion;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersionType;
+import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersionUpdateDetails;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleChange;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleUpdateDetails;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeChange;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeUpdateDetails;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeUpdateDetails.ThreatTypeUpdate;
 import java.util.Arrays;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -192,6 +197,162 @@ class RuleVersionManagerImplTest {
     }
     assertTrue(foundRuleAdditions, "Did not find rule additions in the result");
     assertTrue(foundRuleUpdate, "Did not find rule update in the result");
+  }
+
+  @Test
+  void testWebAppThreatTypeLabelUpdate() {
+    RuleVersion currentVersion =
+        RuleVersion.newBuilder()
+            .setVersion("3.0.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_BETA)
+            .build();
+    RuleVersion previousVersion =
+        RuleVersion.newBuilder()
+            .setVersion("2.5.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+
+    WebAppRulesChangeLog webAppChangeLog =
+        WebAppRulesChangeLog.newBuilder()
+            .setVersionUpdated(
+                WebAppRulesVersionUpdateDetails.newBuilder()
+                    .setOldVersion(WebAppRulesVersion.newBuilder().setVersion("2.5.0").build())
+                    .setNewVersion(WebAppRulesVersion.newBuilder().setVersion("3.0.0").build())
+                    .build())
+            .addThreatTypeChanges(
+                WebAppThreatTypeChange.newBuilder()
+                    .setThreatTypeUpdated(
+                        WebAppThreatTypeUpdateDetails.newBuilder()
+                            .setThreatTypeId("crs_102")
+                            .addUpdates(
+                                ThreatTypeUpdate.newBuilder()
+                                    .setThreatLabelUpdated(
+                                        StringKeyValueUpdate.newBuilder()
+                                            .setKey("severity")
+                                            .setValueUpdated(
+                                                StringValueUpdate.newBuilder()
+                                                    .setOldValue("medium")
+                                                    .setNewValue("high")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    when(webAppProtectionRulesProvider.getWebAppRulesChangeLog(any(), any()))
+        .thenReturn(webAppChangeLog);
+
+    RulesChangeLog result =
+        ruleVersionManager.getRulesChangeLog(
+            RuleType.RULE_TYPE_WEB_APPLICATION, currentVersion, previousVersion);
+
+    assertNotNull(result);
+    assertEquals(1, result.getThreatTypeChangesCount());
+    ThreatTypeChange change = result.getThreatTypeChanges(0);
+    assertTrue(change.hasThreatTypeUpdated());
+    assertEquals("crs_102", change.getThreatTypeUpdated().getThreatTypeId());
+    assertEquals(1, change.getThreatTypeUpdated().getUpdatesCount());
+    assertTrue(change.getThreatTypeUpdated().getUpdates(0).hasThreatLabelUpdated());
+    assertEquals(
+        "severity", change.getThreatTypeUpdated().getUpdates(0).getThreatLabelUpdated().getKey());
+    assertTrue(
+        change.getThreatTypeUpdated().getUpdates(0).getThreatLabelUpdated().hasValueUpdated());
+    assertEquals(
+        "medium",
+        change
+            .getThreatTypeUpdated()
+            .getUpdates(0)
+            .getThreatLabelUpdated()
+            .getValueUpdated()
+            .getOldValue());
+    assertEquals(
+        "high",
+        change
+            .getThreatTypeUpdated()
+            .getUpdates(0)
+            .getThreatLabelUpdated()
+            .getValueUpdated()
+            .getNewValue());
+  }
+
+  @Test
+  void testApiProtectThreatTypeLabelUpdate() {
+    RuleVersion currentVersion =
+        RuleVersion.newBuilder()
+            .setVersion("3.0.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_BETA)
+            .build();
+    RuleVersion previousVersion =
+        RuleVersion.newBuilder()
+            .setVersion("2.5.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+
+    ApiProtectRulesChangeLog apiChangeLog =
+        ApiProtectRulesChangeLog.newBuilder()
+            .setVersionUpdated(
+                ApiProtectRulesVersionUpdateDetails.newBuilder()
+                    .setOldVersion(ApiProtectRulesVersion.newBuilder().setVersion("2.5.0").build())
+                    .setNewVersion(ApiProtectRulesVersion.newBuilder().setVersion("3.0.0").build())
+                    .build())
+            .addThreatTypeChanges(
+                ApiProtectThreatTypeChange.newBuilder()
+                    .setThreatTypeUpdated(
+                        ApiProtectThreatTypeUpdateDetails.newBuilder()
+                            .setThreatTypeId("api_930")
+                            .addUpdates(
+                                ApiProtectThreatTypeUpdateDetails.ThreatTypeUpdate.newBuilder()
+                                    .setThreatLabelUpdated(
+                                        ai.traceable.protection.rules.apiprotect.v1
+                                            .StringKeyValueUpdate.newBuilder()
+                                            .setKey("severity")
+                                            .setValueUpdated(
+                                                ai.traceable.protection.rules.apiprotect.v1
+                                                    .StringValueUpdate.newBuilder()
+                                                    .setOldValue("low")
+                                                    .setNewValue("medium")
+                                                    .build())
+                                            .build())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
+    when(apiProtectionRulesProvider.getApiProtectRulesChangeLog(any(), any()))
+        .thenReturn(apiChangeLog);
+
+    RulesChangeLog result =
+        ruleVersionManager.getRulesChangeLog(
+            RuleType.RULE_TYPE_API_PROTECTION, currentVersion, previousVersion);
+
+    assertNotNull(result);
+    assertEquals(1, result.getThreatTypeChangesCount());
+    ThreatTypeChange change = result.getThreatTypeChanges(0);
+    assertTrue(change.hasThreatTypeUpdated());
+    assertEquals("api_930", change.getThreatTypeUpdated().getThreatTypeId());
+    assertEquals(1, change.getThreatTypeUpdated().getUpdatesCount());
+    assertTrue(change.getThreatTypeUpdated().getUpdates(0).hasThreatLabelUpdated());
+    assertEquals(
+        "severity", change.getThreatTypeUpdated().getUpdates(0).getThreatLabelUpdated().getKey());
+    assertTrue(
+        change.getThreatTypeUpdated().getUpdates(0).getThreatLabelUpdated().hasValueUpdated());
+    assertEquals(
+        "low",
+        change
+            .getThreatTypeUpdated()
+            .getUpdates(0)
+            .getThreatLabelUpdated()
+            .getValueUpdated()
+            .getOldValue());
+    assertEquals(
+        "medium",
+        change
+            .getThreatTypeUpdated()
+            .getUpdates(0)
+            .getThreatLabelUpdated()
+            .getValueUpdated()
+            .getNewValue());
   }
 
   @Test
@@ -382,7 +543,6 @@ class RuleVersionManagerImplTest {
 
   @Test
   void testGetRulesChangeLogApiProtect() {
-    RequestContext requestContext = mock(RequestContext.class);
     RuleType ruleType = RuleType.RULE_TYPE_API_PROTECTION;
     RuleVersion currentVersion =
         RuleVersion.newBuilder()

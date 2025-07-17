@@ -199,6 +199,7 @@ message ThreatTypeUpdateDetails {
   message ThreatTypeUpdate {
     oneof update {
       StringValueUpdate name_updated = 1;
+      StringKeyValueUpdate threat_label_updated = 2;
     }
   }
 }
