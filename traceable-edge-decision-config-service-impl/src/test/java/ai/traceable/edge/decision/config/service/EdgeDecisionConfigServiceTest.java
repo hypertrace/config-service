@@ -471,7 +471,8 @@ class EdgeDecisionConfigServiceTest {
                                         GenericMatchCondition.newBuilder()
                                             .setJexlExpression(
                                                 JexlExpressionConfig.newBuilder()
-                                                    .setJexlExpression("tcBot['botId'] != ''")
+                                                    .setJexlExpression(
+                                                        "tcBot != null && tcBot['botId'] != ''")
                                                     .build())
                                             .build())
                                     .build())
