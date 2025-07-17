@@ -408,4 +408,68 @@ class CloudEdgeDeploymentValidatorTest {
     Status status = validator.validate(request);
     assertTrue(status.isOk());
   }
+
+  @Test
+  void testValidateInputConfig_WithDuplicateServiceNames() {
+    // Create a request with duplicate service names
+    CreateCloudEdgeDeploymentConfigRequest request =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder().setServiceName("duplicate-service").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder().setServiceName("duplicate-service").build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify
+    Status status = validator.validate(request);
+    assertFalse(status.isOk());
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
+    assertEquals(
+        "Duplicate service name found: duplicate-service. Service names must be unique.",
+        status.getDescription());
+  }
+
+  @Test
+  void testValidateInputConfig_WithUniqueServiceNames() {
+    // Setup mock data
+    SharedConfigMetadata metadata = SharedConfigMetadata.newBuilder().build();
+    when(sharedConfigMetadataRegistry.getSharedConfigMetadataWithWritePermission(
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL))
+        .thenReturn(metadata);
+
+    // Create a request with unique service names
+    CreateCloudEdgeDeploymentConfigRequest request =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder().setServiceName("service-1").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder().setServiceName("service-2").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder().setServiceName("service-3").build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify - should be OK since all service names are unique
+    Status status = validator.validate(request);
+    assertTrue(status.isOk());
+  }
 }

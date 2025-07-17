@@ -14,6 +14,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ClusterConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
+import ai.traceable.cloud.edge.deployment.config.service.v1.RegionConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceAdvancedConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
@@ -220,10 +221,25 @@ class PermissionBasedConfigResolverTest {
     // Create a new config with changes
     CloudEdgeDeploymentConfig newConfig =
         CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
             .setCloudEdgeDeploymentInputConfig(
                 CloudEdgeDeploymentInputConfig.newBuilder()
                     .setClusterConfig(
-                        ClusterConfig.newBuilder().setClusterName("updated-cluster").build())
+                        ClusterConfig.newBuilder()
+                            .setClusterName("updated-cluster")
+                            .setEnvironmentName("prod")
+                            .addPrimaryRegions(
+                                RegionConfig.newBuilder().setAwsRegion("us-east-1").build())
+                            .setAdvancedConfig(
+                                ClusterAdvancedConfig.newBuilder()
+                                    .setGenericConfig(
+                                        Struct.newBuilder()
+                                            .putFields(
+                                                "traceable-key",
+                                                Value.newBuilder().setStringValue("value").build())
+                                            .build())
+                                    .build())
+                            .build())
                     .build())
             .setCloudEdgeDeployedOutputConfig(
                 CloudEdgeDeploymentOutputConfig.newBuilder()
@@ -243,19 +259,40 @@ class PermissionBasedConfigResolverTest {
         "updated-cluster",
         result.getCloudEdgeDeploymentInputConfig().getClusterConfig().getClusterName());
     assertEquals(
+        "prod", result.getCloudEdgeDeploymentInputConfig().getClusterConfig().getEnvironmentName());
+    assertEquals(
         DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
         result.getCloudEdgeDeployedOutputConfig().getStatus());
   }
 
   @Test
   void testGetResolvedConfigForWriteRequest_GlobalAccess() {
-    // Create a new config with changes
-    CloudEdgeDeploymentConfig newConfig =
+
+    Struct existingGenericConfig =
+        Struct.newBuilder()
+            .putFields(
+                "traceable-key", Value.newBuilder().setStringValue("existing-traceable").build())
+            .putFields("global-key", Value.newBuilder().setStringValue("existing-global").build())
+            .build();
+
+    Struct newGenericConfig =
+        Struct.newBuilder()
+            .putFields("global-key", Value.newBuilder().setStringValue("updated-global").build())
+            .build();
+
+    CloudEdgeDeploymentConfig existingConfig =
         CloudEdgeDeploymentConfig.newBuilder()
+            .setId("test-config-id")
             .setCloudEdgeDeploymentInputConfig(
                 CloudEdgeDeploymentInputConfig.newBuilder()
                     .setClusterConfig(
-                        ClusterConfig.newBuilder().setClusterName("updated-cluster").build())
+                        ClusterConfig.newBuilder()
+                            .setClusterName("old-cluster")
+                            .setAdvancedConfig(
+                                ClusterAdvancedConfig.newBuilder()
+                                    .setGenericConfig(existingGenericConfig)
+                                    .build())
+                            .build())
                     .build())
             .setCloudEdgeDeployedOutputConfig(
                 CloudEdgeDeploymentOutputConfig.newBuilder()
@@ -263,22 +300,41 @@ class PermissionBasedConfigResolverTest {
                     .build())
             .build();
 
+    // Create a new config with changes
+    CloudEdgeDeploymentConfig newConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder()
+                            .setClusterName("updated-cluster")
+                            .setAdvancedConfig(
+                                ClusterAdvancedConfig.newBuilder()
+                                    .setGenericConfig(newGenericConfig)
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+
     // Execute with global access
     CloudEdgeDeploymentConfig result =
         resolver.getResolvedConfigForWriteRequest(
-            newConfig, fullConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL);
+            newConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL);
 
-    // Verify - global access should merge the configs
     assertNotNull(result);
-    assertEquals("test-config-id", result.getId());
+    ClusterConfig resultCluster = result.getCloudEdgeDeploymentInputConfig().getClusterConfig();
+
+    // Name should be updated
+    assertEquals("updated-cluster", resultCluster.getClusterName());
+
+    // Generic config should merge respecting access
+    Map<String, Value> mergedFields =
+        resultCluster.getAdvancedConfig().getGenericConfig().getFieldsMap();
     assertEquals(
-        "updated-cluster",
-        result.getCloudEdgeDeploymentInputConfig().getClusterConfig().getClusterName());
+        "existing-traceable", mergedFields.get("traceable-key").getStringValue()); // preserved
+    assertEquals("updated-global", mergedFields.get("global-key").getStringValue()); // updated
 
-    // The advanced configs should still be present from the existing config
-    assertTrue(result.getCloudEdgeDeploymentInputConfig().getClusterConfig().hasAdvancedConfig());
-
-    // The output config should not be updated with global access
+    // Output config status should be reset to IN_PROGRESS
     assertEquals(
         DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS,
         result.getCloudEdgeDeployedOutputConfig().getStatus());
