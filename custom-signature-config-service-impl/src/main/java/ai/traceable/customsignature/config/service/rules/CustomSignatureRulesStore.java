@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
@@ -27,6 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hypertrace.config.objectstore.ConfigObject;
 import org.hypertrace.config.objectstore.IdentifiedObjectStoreWithFilter;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -144,7 +146,28 @@ public class CustomSignatureRulesStore
         .filter(
             filteredRule ->
                 filterRuleOnRuleEvaluationPoints(
-                    filteredRule, filter.getRuleEvaluationPointsList()));
+                    filteredRule, filter.getRuleEvaluationPointsList()))
+        .filter(filteredRule -> filterRuleOnCategories(filteredRule, filter.getCategoriesList()))
+        .filter(filteredRule -> filterRuleOnLabels(filteredRule, filter.getLabelsMap()));
+  }
+
+  private boolean filterRuleOnCategories(CustomSignatureRule rule, List<Category> categories) {
+    return categories.isEmpty() || categories.contains(rule.getCategory());
+  }
+
+  private boolean filterRuleOnLabels(CustomSignatureRule rule, Map<String, String> labels) {
+    if (labels.isEmpty()) {
+      return true;
+    }
+    Map<String, String> ruleLabels = rule.getDefinition().getLabelsMap();
+    return labels.entrySet().stream()
+        .anyMatch(
+            entry -> {
+              String key = entry.getKey();
+              String value = entry.getValue();
+              return ruleLabels.containsKey(key)
+                  && (StringUtils.isEmpty(value) || ruleLabels.get(key).equals(value));
+            });
   }
 
   private boolean filterRuleOnSource(CustomSignatureRule rule, List<RuleSource> ruleSources) {

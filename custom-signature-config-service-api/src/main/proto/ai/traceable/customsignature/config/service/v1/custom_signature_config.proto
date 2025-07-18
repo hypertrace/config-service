@@ -17,6 +17,7 @@ message CreateCustomSignatureRuleRequest {
   bool internal = 7;
   RuleSource rule_source = 8;
   bool hidden = 9;
+  Category category = 10;
 }
 
 message CreateCustomSignatureRuleResponse {
@@ -83,9 +84,11 @@ message GetRulesFilter {
   optional bool contains_sec_rule_clause = 6;
   repeated RuleSource rule_sources = 7;
   // rules having all these label keys will pass the filter
-  repeated string label_keys = 8;
+  repeated string label_keys = 8 [deprecated = true];
   optional bool filter_edge_decision_rules = 9 [deprecated = true];
   repeated RuleEvaluationPoint rule_evaluation_points = 10;
+  repeated Category categories = 11;
+  map<string, string> labels = 12;
 }
 
 message CustomSignatureRule {
@@ -100,6 +103,7 @@ message CustomSignatureRule {
   RuleScope rule_scope = 9;
   RuleSource rule_source = 10;
   bool hidden = 11;
+  Category category = 12;
 }
 
 message CustomSignatureRuleDetails {
@@ -114,6 +118,12 @@ message CustomSignatureRuleDetails {
   ExpiryDetails blocking_expiry_details = 8;
   RuleScope rule_scope = 9;
   map<string, string> labels = 10;
+}
+
+enum Category {
+  CATEGORY_UNSPECIFIED = 0;
+  CATEGORY_CUSTOM_SIGNATURE = 1;
+  CATEGORY_AI_APP_PROTECTION = 2;
 }
 
 message CustomSignatureInlineRule {

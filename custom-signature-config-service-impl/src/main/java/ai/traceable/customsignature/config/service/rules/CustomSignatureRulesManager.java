@@ -55,7 +55,8 @@ public class CustomSignatureRulesManager implements RulesManager {
             .setRuleScope(createRuleRequest.getRuleScope())
             .setDisabled(false)
             .setInternal(createRuleRequest.getInternal())
-            .setRuleSource(createRuleRequest.getRuleSource());
+            .setRuleSource(createRuleRequest.getRuleSource())
+            .setCategory(createRuleRequest.getCategory());
 
     if (createRuleRequest.hasBlockingExpiryDetails()) {
       updateExpiryDetails(customSignatureRuleBuilder, createRuleRequest.getBlockingExpiryDetails());

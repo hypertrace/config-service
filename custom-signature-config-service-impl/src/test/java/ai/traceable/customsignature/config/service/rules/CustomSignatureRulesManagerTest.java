@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.AttributeKeyValueExpression;
+import ai.traceable.customsignature.config.service.v1.Category;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -121,6 +122,7 @@ class CustomSignatureRulesManagerTest {
                             RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
                 .setRuleScope(getRuleScope(List.of("dev", "prod")))
                 .setRuleSource(RuleSource.RULE_SOURCE_SYSTEM)
+                .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
                 .build(),
             CustomSignatureRule.newBuilder()
                 .setId("id2")
@@ -132,6 +134,7 @@ class CustomSignatureRulesManagerTest {
                         .addRuleEvaluationPoints(
                             RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
                 .setRuleScope(getRuleScope(List.of("dev")))
+                .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
                 .build(),
             CustomSignatureRule.newBuilder()
                 .setId("id3")
@@ -144,6 +147,7 @@ class CustomSignatureRulesManagerTest {
                         .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                         .addRuleEvaluationPoints(
                             RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+                .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
                 .build(),
             CustomSignatureRule.newBuilder()
                 .setId("id4")
@@ -166,6 +170,7 @@ class CustomSignatureRulesManagerTest {
                         .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                         .addRuleEvaluationPoints(
                             RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+                .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
                 .build());
 
     when(rulesManager.generateRuleId())
@@ -178,13 +183,26 @@ class CustomSignatureRulesManagerTest {
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name-1")
             .setRuleSource(RuleSource.RULE_SOURCE_SYSTEM)
+            .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
             .build());
     rulesManager.createCustomSignatureRule(
-        requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-2").build());
+        requestContext,
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name-2")
+            .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
+            .build());
     rulesManager.createCustomSignatureRule(
-        requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-3").build());
+        requestContext,
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name-3")
+            .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+            .build());
     rulesManager.createCustomSignatureRule(
-        requestContext, CreateCustomSignatureRuleRequest.newBuilder().setName("name-4").build());
+        requestContext,
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("name-4")
+            .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
+            .build());
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(0));
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(1));
     rulesManager.updateCustomSignatureRule(requestContext, expectedRules.get(2));
@@ -239,6 +257,7 @@ class CustomSignatureRulesManagerTest {
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                     .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+            .setCategory(Category.CATEGORY_AI_APP_PROTECTION)
             .build();
     assertEquals(5, results.size());
     assertTrue(results.contains(expectedRules.get(0)));
@@ -355,6 +374,29 @@ class CustomSignatureRulesManagerTest {
             requestContext, GetRulesFilter.newBuilder().addLabelKeys("label-key-3").build());
     assertEquals(1, results.size());
     assertEquals(expectedRules.get(2), results.get(0));
+
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext, GetRulesFilter.newBuilder().putLabels("label-key-3", "").build());
+    assertEquals(1, results.size());
+    assertEquals(expectedRules.get(2), results.get(0));
+
+    // Filter on category
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().addCategories(Category.CATEGORY_CUSTOM_SIGNATURE).build());
+    assertEquals(2, results.size());
+    assertTrue(results.contains(expectedRules.get(0)));
+    assertTrue(results.contains(expectedRules.get(1)));
+
+    results =
+        rulesManager.getCustomSignatureRules(
+            requestContext,
+            GetRulesFilter.newBuilder().addCategories(Category.CATEGORY_AI_APP_PROTECTION).build());
+    assertEquals(2, results.size());
+    assertTrue(results.contains(expectedRules.get(2)));
+    assertTrue(results.contains(expectedRule));
   }
 
   @Test
@@ -369,6 +411,7 @@ class CustomSignatureRulesManagerTest {
             .setEffect(RuleEffect.getDefaultInstance())
             .setRuleScope(getRuleScope(List.of("dev")))
             .setInternal(true)
+            .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
             .build();
     CreateCustomSignatureRuleRequest createRuleRequest =
         CreateCustomSignatureRuleRequest.newBuilder()
@@ -376,6 +419,7 @@ class CustomSignatureRulesManagerTest {
             .setRuleScope(getRuleScope(List.of("dev")))
             .setDefinition(testRuleDefinition)
             .setInternal(true)
+            .setCategory(Category.CATEGORY_CUSTOM_SIGNATURE)
             .build();
     assertEquals(
         customSignatureRule,
