@@ -205,18 +205,22 @@ dependencies {
   integrationTestImplementation(commonLibs.commons.lang)
   integrationTestImplementation(commonLibs.traceable.modsecurity.jni)
   integrationTestImplementation(commonLibs.traceable.coraza.wafServiceClient)
+  integrationTestImplementation(projects.customSignatureConfigServiceImpl)
+  integrationTestImplementation(projects.detectionExclusionConfigServiceImpl)
+  integrationTestImplementation(projects.rateLimitingConfigServiceImpl)
+  integrationTestImplementation(localLibs.hypertrace.configservice.objectstore)
 }
 
 application {
   mainClass.set("org.hypertrace.core.serviceframework.PlatformServiceLauncher")
 }
 
-// Config for gw run to be able to run this locally. Just execute gw run here on Intellij or on the console.
+// Config for gw run to be able to run this locally. Execute gw run here on Intellij or on the console.
 tasks.run<JavaExec> {
   jvmArgs = listOf("-Dservice.name=${project.name}")
 }
 
-// Customize integration test report to include source of service-impl
+// Customize an integration test report to include a source of service-impl
 tasks.jacocoIntegrationTestReport {
   sourceSets(project(":traceable-config-service").sourceSets.getByName("main"))
 }
