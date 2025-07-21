@@ -91,7 +91,10 @@ message MTCaptchaDetails {
 // Details for JWT signing keys used for token generation and verification
 message JWTSigningKeyDetails {
   oneof key_type {
-    SymmetricKey symmetric_key = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Symmetric key method used for signing and verification"];
+    SymmetricKey symmetric_key = 1 [
+      (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Symmetric key method used for signing and verification",
+      (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true
+    ];
     AsymmetricKey asymmetric_key = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Asymmetric key pair used for signing and verification"];
   }
 }
