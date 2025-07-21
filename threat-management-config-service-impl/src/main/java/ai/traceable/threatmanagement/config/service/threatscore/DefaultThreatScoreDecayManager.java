@@ -4,11 +4,13 @@ import static ai.traceable.threatmanagement.config.service.constants.ThreatManag
 import static ai.traceable.threatmanagement.config.service.constants.ThreatManagementConfigConstants.THREAT_SCORE_DECAY_CONFIG_RESOURCE_NAME;
 
 import ai.traceable.threatmanagement.config.service.ThreatManagementConfigServiceConfig;
+import ai.traceable.threatmanagement.config.service.v1.DecayValue;
 import ai.traceable.threatmanagement.config.service.v1.ScopeConfig;
 import ai.traceable.threatmanagement.config.service.v1.ThreatScoreDecay;
 import com.google.inject.Inject;
 import com.google.protobuf.Value;
 import io.grpc.Status;
+import java.time.Duration;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -60,8 +62,21 @@ class DefaultThreatScoreDecayManager extends IdentifiedObjectStore<ThreatScoreDe
 
   @Override
   public ThreatScoreDecay getDefaultThreatScoreDecay() {
-    // TODO: Provide sensible defaults or fetch from config
-    return ThreatScoreDecay.newBuilder().build();
+
+    Duration defaultThreatDecayAfterDuration = this.config.getDefaultThreatDecayAfterDuration();
+    com.google.protobuf.Duration protoDuration =
+        com.google.protobuf.Duration.newBuilder()
+            .setSeconds(defaultThreatDecayAfterDuration.getSeconds())
+            .setNanos(defaultThreatDecayAfterDuration.getNano())
+            .build();
+
+    return ThreatScoreDecay.newBuilder()
+        .setDecayAfterDuration(protoDuration)
+        .setDecayValue(
+            DecayValue.newBuilder()
+                .setPercentageDecayValue(this.config.getDefaultThreatDecayPercentageValue())
+                .build())
+        .build();
   }
 
   @Override

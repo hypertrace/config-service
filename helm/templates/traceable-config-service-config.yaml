@@ -398,6 +398,13 @@ data:
       request.timeout = {{ .Values.traceableConfigServiceConfig.attributeServiceConfig.request.timeout }}
     }
     
+    threat.management.config.service {
+      decay {
+        percentage.value = {{ .Values.threatManagementConfig.decay.percentageValue | default 14 }}
+        after.duration = {{ .Values.threatManagementConfig.decay.afterDuration | default "1d" }}
+      }
+    }
+    
     fraud.datamodel.derivation.config.service = {
       default.derivation.configs = {{- .Values.fraudDataModelDerivationConfigService.defaultFraudDataModelDerivations | indent 6 }}
     }

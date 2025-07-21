@@ -2,6 +2,7 @@ package ai.traceable.threatmanagement.config.service;
 
 import ai.traceable.threatmanagement.config.service.v1.EventConfidenceLevel;
 import com.typesafe.config.Config;
+import java.time.Duration;
 
 public class ThreatManagementConfigServiceConfig {
   private static final String DEFAULT_THREAT_UPPER_BOUND_LOW_SCORE_KEY =
@@ -31,6 +32,14 @@ public class ThreatManagementConfigServiceConfig {
   private static final String
       DEFAULT_SECURITY_EVENT_CONTRIBUTION_MINIMUM_EVENT_CONFIDENCE_LEVEL_KEY =
           "threat.management.config.service.security.event.contribution.score.minimumEventConfidenceLevel";
+
+  private static final String DEFAULT_THREAT_DECAY_AFTER_DURATION_KEY =
+      "threat.management.config.service.decay.after.duration";
+  private static final String DEFAULT_THREAT_DECAY_PERCENTAGE_VALUE_KEY =
+      "threat.management.config.service.decay.percentage.value";
+
+  private static final Float DEFAULT_THREAT_DECAY_PERCENTAGE_VALUE_DEFAULT = 14f;
+  private static final Duration DEFAULT_THREAT_DECAY_AFTER_DURATION_DEFAULT = Duration.ofDays(1);
 
   private final Config config;
 
@@ -89,5 +98,19 @@ public class ThreatManagementConfigServiceConfig {
   public EventConfidenceLevel getMinimumEventConfidenceLevel() {
     return EventConfidenceLevel.valueOf(
         config.getString(DEFAULT_SECURITY_EVENT_CONTRIBUTION_MINIMUM_EVENT_CONFIDENCE_LEVEL_KEY));
+  }
+
+  public Duration getDefaultThreatDecayAfterDuration() {
+    if (config.hasPath(DEFAULT_THREAT_DECAY_AFTER_DURATION_KEY)) {
+      return config.getDuration(DEFAULT_THREAT_DECAY_AFTER_DURATION_KEY);
+    }
+    return DEFAULT_THREAT_DECAY_AFTER_DURATION_DEFAULT;
+  }
+
+  public float getDefaultThreatDecayPercentageValue() {
+    if (config.hasPath(DEFAULT_THREAT_DECAY_PERCENTAGE_VALUE_KEY)) {
+      return (float) config.getDouble(DEFAULT_THREAT_DECAY_PERCENTAGE_VALUE_KEY);
+    }
+    return DEFAULT_THREAT_DECAY_PERCENTAGE_VALUE_DEFAULT;
   }
 }

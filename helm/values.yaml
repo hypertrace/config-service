@@ -47,6 +47,12 @@ service:
     port: 50105
     maxHeaderSize: 32KiB
 
+# Threat Management Configuration
+threatManagementConfig:
+  decay:
+    percentageValue: 14
+    afterDuration: "1d"
+
 # coraza-waf-service container
 corazaWafService:
   name: coraza-waf-service
