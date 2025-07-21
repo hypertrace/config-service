@@ -4,6 +4,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentC
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
@@ -12,16 +13,30 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.validator.CloudEdgeD
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.hypertrace.core.serviceframework.metrics.PlatformMetricsRegistry;
 
 @Slf4j
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeploymentConfigManager {
   private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
+
+  private static final String TENANT_ID_TAG = "tenantId";
+  private static final String CONFIG_ID_TAG = "deploymentId";
+  private static final String DEPLOYMENT_STATUS_TAG = "deploymentStatus";
+  private static final String CLOUD_EDGE_DEPLOYMENT_STATUS_ACTION_TIMER =
+      "cloud.edge.deployment.status.action.timer";
+  private static final Map<Tags, Timer> TIMER_MAP = new ConcurrentHashMap<>();
 
   private final CloudEdgeDeploymentConfigStore store;
   private final CloudEdgeDeploymentValidator validator;
@@ -43,7 +58,13 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
             .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
             .build();
 
-    return store.upsertCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission());
+    return getTimer(
+            ctx.getTenantId().orElseThrow(),
+            id,
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS.name())
+        .record(
+            () ->
+                store.upsertCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission()));
   }
 
   @Override
@@ -82,6 +103,19 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
 
       CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
 
+      if (existingConfig.hasCloudEdgeDeployedOutputConfig()
+          && !DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS.equals(
+              existingConfig.getCloudEdgeDeployedOutputConfig().getStatus())) {
+        return getTimer(
+                ctx.getTenantId().orElseThrow(),
+                id,
+                DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS.name())
+            .record(
+                () ->
+                    store.upsertCloudEdgeDeploymentConfig(
+                        ctx, updatedConfig, request.getConfigPermission()));
+      }
+
       return store.upsertCloudEdgeDeploymentConfig(
           ctx, updatedConfig, request.getConfigPermission());
     } catch (Exception e) {
@@ -109,7 +143,8 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     }
 
     try {
-      store.deleteCloudEdgeDeploymentConfig(ctx, id);
+      getTimer(ctx.getTenantId().orElseThrow(), id, "DEPLOYMENT_DELETED")
+          .record(() -> store.deleteCloudEdgeDeploymentConfig(ctx, id));
     } catch (Exception e) {
       throw new StatusRuntimeException(
           Status.INTERNAL.withDescription(
@@ -121,5 +156,23 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   public SharedConfigMetadata getSharedConfigMetadata(
       RequestContext ctx, ConfigAccessType accessType) {
     return sharedConfigMetadataRegistry.getSharedConfigMetadataWithReadPermission(accessType);
+  }
+
+  private Timer getTimer(String tenantId, String configId, String deploymentStatus) {
+    Tags metricTags =
+        Tags.of(
+            TENANT_ID_TAG,
+            tenantId,
+            DEPLOYMENT_STATUS_TAG,
+            deploymentStatus,
+            CONFIG_ID_TAG,
+            configId);
+
+    return TIMER_MAP.computeIfAbsent(
+        metricTags,
+        id ->
+            PlatformMetricsRegistry.registerTimer(
+                CLOUD_EDGE_DEPLOYMENT_STATUS_ACTION_TIMER,
+                metricTags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue))));
   }
 }

@@ -89,15 +89,13 @@ public class PermissionBasedConfigResolver {
     CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
     if (accessType.equals(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)) {
-      applyFullOverride(updatedConfigBuilder, newConfig);
-      return updatedConfigBuilder.build();
+      return applyFullOverride(updatedConfigBuilder, newConfig);
     }
 
-    applyAdvanceConfigMerge(updatedConfigBuilder, newConfig);
-    return updatedConfigBuilder.build();
+    return applyAdvanceConfigMerge(updatedConfigBuilder, newConfig);
   }
 
-  private void applyFullOverride(
+  private CloudEdgeDeploymentConfig applyFullOverride(
       CloudEdgeDeploymentConfig.Builder updatedConfigBuilder, CloudEdgeDeploymentConfig newConfig) {
 
     if (newConfig.hasCloudEdgeDeploymentInputConfig()) {
@@ -119,9 +117,11 @@ public class PermissionBasedConfigResolver {
             updatedConfigBuilder.getCloudEdgeDeploymentInputConfig());
       }
     }
+
+    return updatedConfigBuilder.build();
   }
 
-  private void applyAdvanceConfigMerge(
+  private CloudEdgeDeploymentConfig applyAdvanceConfigMerge(
       CloudEdgeDeploymentConfig.Builder updatedConfigBuilder, CloudEdgeDeploymentConfig newConfig) {
 
     CloudEdgeDeploymentInputConfig.Builder existingInputBuilder =
@@ -142,6 +142,8 @@ public class PermissionBasedConfigResolver {
     updatedConfigBuilder
         .getCloudEdgeDeployedOutputConfigBuilder()
         .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
+
+    return updatedConfigBuilder.build();
   }
 
   private ClusterConfig buildMergedClusterConfig(

@@ -30,7 +30,7 @@ spec:
         - alert: ScopedAnomalyGlobalConfigurationChange
           annotations:
             summary: 'Scoped Anomaly Global Configuration Change'
-            message: 'Scoped Anomaly Global Configuration changed to {{`{{ $labels.operation}}`}} for {{`{{ $labels.anomalyDetectionType}}`}} policies for customer:{{`{{ $labels.tenantId }}`}}'
+            message: 'Scoped Anomaly Global Configuration changed to {{`{{ $labels.action}}`}} for {{`{{ $labels.anomalyDetectionType}}`}} policies for customer:{{`{{ $labels.tenantId }}`}}'
           expr: sum(scoped_anomaly_global_config_action_timer_seconds_max) by (tenantId, action, anomalyDetectionType) > 0
           for: 0m
           labels:
@@ -50,6 +50,19 @@ spec:
             severity: warning
             repository: config-service
             team: catalog
+            {{- with .Values.prometheusRule.additionalRuleLabels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        - alert: CloudEdgeDeploymentConfigStatusChange
+          annotations:
+            summary: 'Cloud Edge Deployment Config Status Change'
+            message: 'Cloud Edge Deployment Config status changed to {{`{{ $labels.deploymentStatus}}`}} for config id: {{`{{ $labels.configId}}`}} for customer: {{`{{ $labels.tenantId }}`}}'
+          expr: sum(cloud_edge_deployment_status_action_timer_seconds_max) by (tenantId, configId, deploymentStatus) > 0
+          for: 0m
+          labels:
+            severity: warning
+            repository: config-service
+            team: protection
             {{- with .Values.prometheusRule.additionalRuleLabels }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

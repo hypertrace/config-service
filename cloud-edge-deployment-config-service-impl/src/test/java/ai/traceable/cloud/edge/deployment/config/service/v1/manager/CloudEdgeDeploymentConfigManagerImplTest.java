@@ -127,6 +127,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
   void testDeleteCloudEdgeDeploymentConfig() {
     // Setup
     String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
     DeleteCloudEdgeDeploymentConfigRequest expectedRequest =
         DeleteCloudEdgeDeploymentConfigRequest.newBuilder().setId(id).build();
 

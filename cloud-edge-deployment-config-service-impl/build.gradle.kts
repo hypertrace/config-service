@@ -21,6 +21,7 @@ dependencies {
 
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)
+  implementation(commonLibs.hypertrace.framework.metrics.jakarta)
   implementation(localLibs.hypertrace.configservice.protoconverter)
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)
