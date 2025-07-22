@@ -9,6 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
@@ -33,6 +34,7 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
@@ -92,11 +94,15 @@ class WebAppEvaluationConfigContextManagerImplTest {
   private RequestContext requestContext;
   private CachedApiMappingProvider apiMappingProvider;
   private CachedServiceMappingProvider serviceMappingProvider;
+  private FeatureCachingClient featureCachingClient;
+  private WebAppRuleInfoProvider webAppRuleInfoProvider;
 
   @BeforeEach
   void setUp() {
     apiMappingProvider = mock(CachedApiMappingProvider.class);
     serviceMappingProvider = mock(CachedServiceMappingProvider.class);
+    featureCachingClient = mock(FeatureCachingClient.class);
+    webAppRuleInfoProvider = mock(WebAppRuleInfoProvider.class);
     ApiIdentifierEntity apiEntity =
         new ApiIdentifierEntity(API_ID, API_NAME, "/api-path", List.of("/api/path/.*"), List.of());
     when(apiMappingProvider.getApiIdentifierEntities(any(RequestContext.class), anySet()))
@@ -181,6 +187,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
             modsecRulesRegistry,
             anomalyDetectionConfigManager,
             globalAnomalyConfigStatusManager,
+            featureCachingClient,
+            webAppRuleInfoProvider,
             ModsecRuleVersion.MODSEC_RULE_VERSION_CORAZA_V3,
             serviceMappingProvider,
             apiMappingProvider);

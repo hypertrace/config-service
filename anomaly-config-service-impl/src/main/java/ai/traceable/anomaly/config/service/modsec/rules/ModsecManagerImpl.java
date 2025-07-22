@@ -187,9 +187,15 @@ public class ModsecManagerImpl implements ModsecManager {
     if (subRuleTypes.size() == 1) {
       builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
     } else {
-      builder.aggregatedModsecBlob(
-          modsecRulesRegistry.getModsecCrsRulesBlob(
-              subRuleTypes, modsecRuleVersion, Set.of(), useTestModsecRules));
+      if (ruleVersion != null && !ruleVersion.getVersion().isEmpty()) {
+        builder.aggregatedModsecBlob(
+            webAppRuleInfoProvider.getCrsRulesBlob(
+                subRuleTypes, modsecRuleVersion, Set.of(), ruleVersion, includeDirectives));
+      } else {
+        builder.aggregatedModsecBlob(
+            modsecRulesRegistry.getModsecCrsRulesBlob(
+                subRuleTypes, modsecRuleVersion, Set.of(), useTestModsecRules));
+      }
     }
 
     return builder.build();

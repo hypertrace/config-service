@@ -4,6 +4,7 @@ import static ai.traceable.anomaly.config.service.modsec.Utils.getModsecAnomalyR
 import static ai.traceable.anomaly.config.service.modsec.Utils.getSubRuleConfigMap;
 
 import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDetectionConfigManager;
+import ai.traceable.anomaly.config.service.global.ruleinfo.WebAppRuleInfoProvider;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
@@ -24,6 +25,7 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.modsec.GetWebAppEvaluationConfigContextRequest;
 import ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion;
 import ai.traceable.anomaly.config.service.v1.modsec.RuleEvaluationPoint;
+import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
@@ -87,6 +89,8 @@ public class WebAppEvaluationConfigContextManagerImpl
   private final ModsecRulesRegistry modsecRulesRegistry;
   private final AnomalyDetectionConfigManager anomalyDetectionConfigManager;
   private final GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
+  private final FeatureCachingClient featureCachingClient;
+  private final WebAppRuleInfoProvider webAppRuleInfoProvider;
   private final ModsecRuleVersion defaultModsecRuleVersion;
   private final CachedServiceMappingProvider cachedServiceMappingProvider;
   private final CachedApiMappingProvider cachedApiMappingProvider;
@@ -97,6 +101,8 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRulesRegistry modsecRulesRegistry,
       AnomalyDetectionConfigManager anomalyDetectionConfigManager,
       GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager,
+      FeatureCachingClient featureCachingClient,
+      WebAppRuleInfoProvider webAppRuleInfoProvider,
       ModsecRuleVersion defaultModsecRuleVersion,
       CachedServiceMappingProvider cachedServiceMappingProvider,
       CachedApiMappingProvider cachedApiMappingProvider) {
@@ -104,6 +110,8 @@ public class WebAppEvaluationConfigContextManagerImpl
     this.modsecRulesRegistry = modsecRulesRegistry;
     this.anomalyDetectionConfigManager = anomalyDetectionConfigManager;
     this.globalAnomalyConfigStatusManager = globalAnomalyConfigStatusManager;
+    this.featureCachingClient = featureCachingClient;
+    this.webAppRuleInfoProvider = webAppRuleInfoProvider;
     this.defaultModsecRuleVersion = defaultModsecRuleVersion;
     this.cachedServiceMappingProvider = cachedServiceMappingProvider;
     this.cachedApiMappingProvider = cachedApiMappingProvider;
@@ -141,9 +149,10 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
 
       boolean useTestRules = scopedAnomalyConfigStatus.getGlobalModsecConfig().getUseTestRules();
+
       RuleVersionData ruleVersionData =
           scopedAnomalyConfigStatus.getGlobalModsecConfig().getRuleVersionData();
-      RuleVersion ruleVersion = ruleVersionData.getCurrentVersion();
+      RuleVersion ruleVersion = getRuleVersion(ruleVersionData, requestContext);
       List<AnomalySubRuleType> anomalySubRuleTypes =
           getAnomalySubRuleTypes(
               scopedAnomalyConfigStatus,
@@ -162,7 +171,8 @@ public class WebAppEvaluationConfigContextManagerImpl
                 modsecRuleVersion,
                 request.getRuleEvaluationPoint(),
                 useTestRules,
-                scopeContextMap.get(configScope));
+                scopeContextMap.get(configScope),
+                ruleVersion);
 
         webAppEvaluationConfig.ifPresent(webAppEvaluationConfigs::add);
 
@@ -236,10 +246,15 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRuleVersion modsecRuleVersion,
       RuleEvaluationPoint ruleEvaluationPoint,
       boolean useTestRules,
-      ScopeContext scopeContext) {
+      ScopeContext scopeContext,
+      RuleVersion ruleVersion) {
     Set<String> disabledRuleIds =
         getDisabledModsecRuleIds(
-            scopedAnomalyDetectionConfig, modsecRuleVersion, ruleEvaluationPoint, useTestRules);
+            scopedAnomalyDetectionConfig,
+            modsecRuleVersion,
+            ruleEvaluationPoint,
+            useTestRules,
+            ruleVersion);
     if (disabledRuleIds.isEmpty()) {
       return Optional.empty();
     }
@@ -254,12 +269,19 @@ public class WebAppEvaluationConfigContextManagerImpl
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
       ModsecRuleVersion modsecRuleVersion,
       RuleEvaluationPoint ruleEvaluationPoint,
-      boolean useTestRules) {
+      boolean useTestRules,
+      RuleVersion ruleVersion) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
         getModsecAnomalyRuleConfigMap(scopedAnomalyDetectionConfig);
-    Map<String, AnomalyRuleInfo> ruleInfoMap =
-        modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
-
+    Map<String, AnomalyRuleInfo> ruleInfoMap;
+    if (ruleVersion != RuleVersion.getDefaultInstance()) {
+      ruleInfoMap =
+          webAppRuleInfoProvider.getWebAppRuleInfo(ruleVersion).stream()
+              .collect(
+                  Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, Function.identity()));
+    } else {
+      ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
+    }
     // The disabled modsec rule ids should be ordered to ensure that
     // the blob doesn't keep changing on repeated calls
     Set<String> disabledModsecRuleIds = new TreeSet<>();
@@ -517,5 +539,13 @@ public class WebAppEvaluationConfigContextManagerImpl
         .collect(
             Collectors.toUnmodifiableMap(
                 ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
+  }
+
+  private RuleVersion getRuleVersion(
+      RuleVersionData ruleVersionData, RequestContext requestContext) {
+    if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)) {
+      return ruleVersionData.getCurrentVersion();
+    }
+    return RuleVersion.getDefaultInstance();
   }
 }
