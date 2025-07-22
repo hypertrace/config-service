@@ -183,21 +183,7 @@ message FraudPolicy {
   google.protobuf.Value additional_fields = 103;
   // store context information about substitution variables (used in
   // conjunction with template id)
-  repeated NameValue template_overrides = 104;
-}
-
-message NameValue {
-  // substitution variables to used for the template materialization
-  string name = 1;
-  string value = 2;
-}
-
-message FraudPolicyTemplate {
-  string template_id = 1;
-  repeated NameValue default_template_variables = 2;
-  // complete policy reference with placeholders
-  // the materialized fraud policy is overridden over the previous one
-  FraudPolicy fraud_policy_template = 3;
+  repeated ai.traceable.fraud.query.model.v1.TypedParam template_overrides = 104;
 }
 
 message FraudWatcherPolicy {
