@@ -26,19 +26,17 @@ enum TemplateType {
   TEMPLATE_TYPE_DERIVATION_CONFIG = 2;
 }
 
-/*
-Example:
-Template (Fraud Policy): {
-  template_id: "fraud-policy-1"
-  template_string: "{ \"name\": \"fraud-policy-1\" }"
-  template_type: TEMPLATE_TYPE_FRAUD_POLICY
-  default_template_variables: { name: "name", primitive_val: "fraud-policy-1", type: FIELD_TYPE_STR }
-  dependency_templates: ["{
-      template_id: "derivation-config-1"
-      template_string: "{ \"name\": \"fraud-policy-1\" }"
-      template_type: TEMPLATE_TYPE_DERIVATION_CONFIG
-      default_template_variables: { name: "name", primitive_val: "derivation-config-1" , type: FIELD_TYPE_STR }
-      dependency_templates: []
-    }"]
-}
- */
+//  Example:
+//  Template (Fraud Policy): {
+//    template_id: "fraud-policy-1"
+//    template_string: "{ \"name\": \"fraud-policy-1\" }"
+//    template_type: TEMPLATE_TYPE_FRAUD_POLICY
+//    default_template_variables: { name: "name", primitive_val: "fraud-policy-1", type: FIELD_TYPE_STR }
+//    dependency_templates: ["{
+//      template_id: "derivation-config-1"
+//      template_string: "{ \"name\": \"fraud-policy-1\" }"
+//      template_type: TEMPLATE_TYPE_DERIVATION_CONFIG
+//      default_template_variables: { name: "name", primitive_val: "derivation-config-1" , type: FIELD_TYPE_STR }
+//      dependency_templates: []
+//    }"]
+//  }
