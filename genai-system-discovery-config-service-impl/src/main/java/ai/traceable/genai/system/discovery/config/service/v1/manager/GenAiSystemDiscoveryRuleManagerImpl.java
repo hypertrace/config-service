@@ -39,10 +39,6 @@ public class GenAiSystemDiscoveryRuleManagerImpl implements GenAiSystemDiscovery
   @Override
   public List<GenAiSystemDiscoveryRule> getGenAiSystemDiscoveryRules(
       RequestContext requestContext, GetGenAiSystemDiscoveryRulesFilter filter) {
-    if (GetGenAiSystemDiscoveryRulesFilter.getDefaultInstance().equals(filter)) {
-      return mergeGenAiSystemDiscoveryRules(
-          genAiSystemDiscoveryRuleStore.getAllConfigData(requestContext));
-    }
     return mergeGenAiSystemDiscoveryRules(
         filter, genAiSystemDiscoveryRuleStore.getAllConfigData(requestContext, filter));
   }
