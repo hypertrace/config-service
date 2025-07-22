@@ -302,7 +302,11 @@ message LlmInputExplosionAnomalyDetectionConfig {}
 
 message LlmModelGovernanceAnomalyDetectionConfig {}
 
-message CodeDetectedInPromptAnomalyDetectionConfig {}
+message CodeDetectedInPromptAnomalyDetectionConfig {
+  // map containing applicable crs-sub-rule-ids where key is the crs-rule-id
+  // crs-rule-id maps to the sub-rule-id of code-detected threat-type
+  map<string, StringList> crs_sub_rule_ids_map = 1;
+}
 
 message CredentialStuffingAnomalyConfig {
   CredentialStuffingTuningConfigList credential_stuffing_tuning_config_list = 1;

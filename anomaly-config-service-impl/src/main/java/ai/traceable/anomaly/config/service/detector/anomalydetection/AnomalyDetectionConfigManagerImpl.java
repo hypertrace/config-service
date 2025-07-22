@@ -53,6 +53,7 @@ public class AnomalyDetectionConfigManagerImpl
   private final AnomalyConfigScopeUtils anomalyConfigScopeUtils;
   private final GlobalAnomalyConfigStatusManager globalAnomalyConfigStatusManager;
   private final List<AnomalyDetectionConfig> defaultApiProtectionDetectionConfigs;
+  private final List<AnomalyDetectionConfig> defaultGenAiDetectionConfigs;
   private final WafConfigResolver wafConfigResolver;
   private final GlobalTestingModeResolver globalTestingModeResolver;
 
@@ -74,6 +75,7 @@ public class AnomalyDetectionConfigManagerImpl
     this.anomalyDetectionConfigHandler = anomalyDetectionConfigHandler;
     this.anomalyConfigScopeUtils = anomalyConfigScopeUtils;
     this.defaultApiProtectionDetectionConfigs = config.getDefaultApiProtectionDetectionConfigs();
+    this.defaultGenAiDetectionConfigs = config.getDefaultGenAiDetectionConfigs();
     this.globalAnomalyConfigStatusManager = anomalyConfigStatusManager;
     this.wafConfigResolver = wafConfigResolver;
     this.globalTestingModeResolver = globalTestingModeResolver;
@@ -247,6 +249,7 @@ public class AnomalyDetectionConfigManagerImpl
             .addAllAnomalyDetectionConfigs(
                 getDefaultApiProtectionDetectionConfigs(
                     scopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+            .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
             .build());
 
     return scopedAnomalyDetectionConfigs.stream()
@@ -428,6 +431,7 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   getDefaultApiProtectionDetectionConfigs(
                       globalScopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+              .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
               .build();
       // tenant resolution not needed as env profile is at higher precedence
       contextsWithIncreasingPriority.remove(tenantId);
@@ -444,6 +448,7 @@ public class AnomalyDetectionConfigManagerImpl
               .addAllAnomalyDetectionConfigs(
                   getDefaultApiProtectionDetectionConfigs(
                       globalScopedAnomalyConfigStatus.getApiGlobalConfig().getDefaultConfigsType()))
+              .addAllAnomalyDetectionConfigs(defaultGenAiDetectionConfigs)
               .build();
     }
     return anomalyDetectionConfig;

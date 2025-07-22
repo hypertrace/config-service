@@ -151,6 +151,7 @@ public class AnomalyDetectionConfigManagerTest {
     anomalyConfigScopeUtils = new AnomalyConfigScopeUtils();
     globalTestingModeResolver = mock(GlobalTestingModeResolver.class);
     when(detectorConfigServiceConfig.getDefaultWafDetectionConfigs()).thenReturn(List.of());
+    when(detectorConfigServiceConfig.getDefaultGenAiDetectionConfigs()).thenReturn(List.of());
     when(detectorConfigServiceConfig.getDefaultApiProtectionDetectionConfigs())
         .thenReturn(List.of());
     globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
@@ -577,6 +578,7 @@ public class AnomalyDetectionConfigManagerTest {
     List<AnomalyDetectionConfig> defaultDetectionConfigs = new ArrayList<>();
     defaultDetectionConfigs.addAll(config.getDefaultWafDetectionConfigs());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultGenAiDetectionConfigs());
 
     GetAnomalyDetectionConfigsFilter filter =
         GetAnomalyDetectionConfigsFilter.newBuilder()
@@ -682,6 +684,7 @@ public class AnomalyDetectionConfigManagerTest {
             .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
             .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultGenAiDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
         .thenReturn(
             ScopedAnomalyConfigStatus.newBuilder()
@@ -946,6 +949,7 @@ public class AnomalyDetectionConfigManagerTest {
                     .build())
             .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultGenAiDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
         .thenReturn(
             ScopedAnomalyConfigStatus.newBuilder()
@@ -1046,6 +1050,7 @@ public class AnomalyDetectionConfigManagerTest {
             .build());
 
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultGenAiDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
         .thenReturn(
             ScopedAnomalyConfigStatus.newBuilder()
@@ -1130,6 +1135,7 @@ public class AnomalyDetectionConfigManagerTest {
                     .build())
             .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultGenAiDetectionConfigs());
     when(ruleInfoManager.getModsecAnomalyRuleInfo(any(), any(), any(), anyBoolean()))
         .thenReturn(
             List.of(
@@ -1232,6 +1238,7 @@ public class AnomalyDetectionConfigManagerTest {
                     .build())
             .build());
     defaultDetectionConfigs.addAll(config.getDefaultApiProtectionDetectionConfigs());
+    defaultDetectionConfigs.addAll(config.getDefaultGenAiDetectionConfigs());
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
             requestContext, environmentConfigScope))
         .thenReturn(
@@ -1590,6 +1597,22 @@ public class AnomalyDetectionConfigManagerTest {
                 + "      }\n"
                 + "    }\n"
                 + "]\n"
+                + "genAiDetectionConfigs = [\n"
+                + "    {\n"
+                + "      genAiAnomalyDetectionConfig = {\n"
+                + "        codeDetectedInPrompt = {\n"
+                + "          crsSubRuleIdsMap = {\n"
+                + "            crs_941 = {\n"
+                + "                values = [\"crs_9410170\", \"crs_9410160\", \"crs_941110\"]\n"
+                + "            }\n"
+                + "            crs_942 = {\n"
+                + "                values = [\"crs_9420190\", \"crs_9420291\"]\n"
+                + "            }\n"
+                + "          }\n"
+                + "        }\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
                 + "volumetricDetectionConfigs = [\n"
                 + " {\n"
                 + "   configStatus = {\n"

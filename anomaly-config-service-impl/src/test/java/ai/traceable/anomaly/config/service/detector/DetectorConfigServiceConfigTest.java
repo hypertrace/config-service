@@ -10,6 +10,7 @@ import ai.traceable.anomaly.config.service.registry.credentialstuffing.Credentia
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.detector.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
@@ -17,6 +18,7 @@ import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetecti
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
 import com.typesafe.config.ConfigFactory;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
@@ -112,6 +114,22 @@ public class DetectorConfigServiceConfigTest {
                   + "      }\n"
                   + "    }\n"
                   + "]\n"
+                  + "genAiDetectionConfigs = [\n"
+                  + "    {\n"
+                  + "      genAiAnomalyDetectionConfig = {\n"
+                  + "        codeDetectedInPrompt = {\n"
+                  + "          crsSubRuleIdsMap = {\n"
+                  + "            crs_941 = {\n"
+                  + "                values = [\"crs_9410170\", \"crs_9410160\", \"crs_941110\"]\n"
+                  + "            }\n"
+                  + "            crs_942 = {\n"
+                  + "                values = [\"crs_9420190\", \"crs_9420291\"]\n"
+                  + "            }\n"
+                  + "          }\n"
+                  + "        }\n"
+                  + "      }\n"
+                  + "    }\n"
+                  + "  ]\n"
                   + "credentialStuffingDetectionConfigs = [\n"
                   + " {\n"
                   + "   configStatus = {\n"
@@ -234,6 +252,18 @@ public class DetectorConfigServiceConfigTest {
     detectionConfig =
         getCredentialStuffingDetectionConfig(apiProtectionDetectionConfigs, "credentialStuffing");
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
+
+    List<AnomalyDetectionConfig> genAiDetectionConfigs = CONFIG.getDefaultGenAiDetectionConfigs();
+    assertEquals(1, genAiDetectionConfigs.size());
+    Map<String, StringList> crsSubRuleIdsMap =
+        genAiDetectionConfigs
+            .get(0)
+            .getGenAiAnomalyDetectionConfig()
+            .getCodeDetectedInPrompt()
+            .getCrsSubRuleIdsMapMap();
+    assertEquals(2, crsSubRuleIdsMap.size());
+    assertEquals(3, crsSubRuleIdsMap.get("crs_941").getValuesCount());
+    assertEquals(2, crsSubRuleIdsMap.get("crs_942").getValuesCount());
   }
 
   @Test

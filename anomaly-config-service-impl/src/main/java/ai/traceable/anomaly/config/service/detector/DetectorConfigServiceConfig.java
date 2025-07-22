@@ -20,6 +20,7 @@ public class DetectorConfigServiceConfig {
   private static final String SESSION_DEFINITION_DETECTION_CONFIGS_PATH =
       "sessionDefinitionDetectionConfigs";
   private static final String CUSTOM_RULES_DETECTION_CONFIGS_PATH = "customRulesDetectionConfigs";
+  private static final String GEN_AI_DETECTION_CONFIGS_PATH = "genAiDetectionConfigs";
   private static final String VOLUMETRIC_DETECTION_CONFIGS_PATH = "volumetricDetectionConfigs";
   private static final String CREDENTIAL_STUFFING_DETECTION_CONFIGS_PATH =
       "credentialStuffingDetectionConfigs";
@@ -28,6 +29,7 @@ public class DetectorConfigServiceConfig {
 
   private final List<AnomalyDetectionConfig> wafDetectionConfigs;
   private final List<AnomalyDetectionConfig> apiProtectionDetectionConfigs;
+  private final List<AnomalyDetectionConfig> genAiDetectionConfigs;
 
   private final ConfigConverter configConverter = new ConfigConverter();
 
@@ -41,6 +43,10 @@ public class DetectorConfigServiceConfig {
     this.wafDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
+    this.genAiDetectionConfigs =
+        configConverter.convertToAnomalyDetectionConfigs(
+            config.getConfigList(GEN_AI_DETECTION_CONFIGS_PATH));
+
     List<AnomalyDetectionConfig> apiProtectionDetectionConfigs = new ArrayList<>();
     apiProtectionDetectionConfigs.addAll(
         loadDefaultApiDefinitionDetectionConfigs(
@@ -104,6 +110,10 @@ public class DetectorConfigServiceConfig {
 
   public List<AnomalyDetectionConfig> getDefaultWafDetectionConfigs() {
     return wafDetectionConfigs;
+  }
+
+  public List<AnomalyDetectionConfig> getDefaultGenAiDetectionConfigs() {
+    return genAiDetectionConfigs;
   }
 
   public List<AnomalyDetectionConfig> getDefaultApiProtectionDetectionConfigs() {
