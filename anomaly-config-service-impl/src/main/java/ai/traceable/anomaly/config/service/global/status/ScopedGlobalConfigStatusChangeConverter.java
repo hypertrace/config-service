@@ -172,14 +172,17 @@ public class ScopedGlobalConfigStatusChangeConverter {
         builder.setMinConfidenceLevel(globalModsecConfigChange.getMinConfidenceLevel());
       }
     }
-    builder.setRuleVersionData(
-        RuleVersionData.newBuilder()
-            .setCurrentVersion(ruleVersions.getKey())
-            .setPreviousVersion(ruleVersions.getValue())
-            .setRuleTestingMode(
-                getRuleTestingMode(globalModsecConfigChange.getRuleVersionDataChange()))
-            .build());
-
+    RuleVersionData.Builder ruleVersionDataBuilder = RuleVersionData.newBuilder();
+    if (globalModsecConfigChange.getRuleVersionDataChange().hasExperimentalVersion()) {
+      ruleVersionDataBuilder.setExperimentalVersion(
+          globalModsecConfigChange.getRuleVersionDataChange().getExperimentalVersion());
+    }
+    ruleVersionDataBuilder
+        .setCurrentVersion(ruleVersions.getKey())
+        .setPreviousVersion(ruleVersions.getValue())
+        .setRuleTestingMode(getRuleTestingMode(globalModsecConfigChange.getRuleVersionDataChange()))
+        .build();
+    builder.setRuleVersionData(ruleVersionDataBuilder.build());
     return builder.build();
   }
 

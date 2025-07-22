@@ -17,6 +17,16 @@ message UpdateScopedAnomalyGlobalConfigStatusResponse {
   ScopedAnomalyConfigStatusChange scoped_config = 1;
 }
 
+message DeleteRuleVersionConfigTypeRequest {
+  AnomalyConfigScope config_scope = 1;
+  RuleType rule_type = 2;
+  repeated RuleVersionConfigType rule_version_config_types = 3;
+}
+
+message DeleteRuleVersionConfigTypeResponse {
+  ScopedAnomalyConfigStatusChange scoped_config = 1;
+}
+
 message GetScopedAnomalyGlobalConfigStatusRequest {
   AnomalyConfigScope config_scope = 1;
 }
@@ -124,7 +134,7 @@ message GlobalModsecConfigChange {
 
 message GlobalModsecConfig {
   bool blocking_available_for_regular_rules = 1;
-  bool use_test_rules = 2;
+  bool use_test_rules = 2 [deprecated = true];
   bool disabled = 3;
   ModsecDefaultConfigsType default_configs_type = 4;
   AnomalyConfidenceLevel min_confidence_level = 5;

@@ -10,6 +10,8 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.RuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersionConfigType;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
@@ -234,6 +236,45 @@ public class GlobalAnomalyConfigStatusManagerImpl
             getTenantId(RequestContext.CURRENT.get()), scope));
   }
 
+  @Override
+  public ScopedAnomalyConfigStatusChange deleteRuleVersionConfigType(
+      RequestContext requestContext,
+      AnomalyConfigScope scope,
+      List<RuleVersionConfigType> ruleVersionConfigTypes,
+      RuleType ruleType) {
+    String context =
+        anomalyConfigScopeUtils.getContextFromAnomalyConfigScope(
+            getTenantId(RequestContext.CURRENT.get()), scope);
+    Optional<ScopedAnomalyConfigStatusChange> existingConfig = getData(requestContext, context);
+
+    if (existingConfig.isEmpty()) {
+      return ScopedAnomalyConfigStatusChange.getDefaultInstance();
+    }
+
+    ScopedAnomalyConfigStatusChange.Builder updatedConfig = existingConfig.get().toBuilder();
+    boolean needsUpdate = false;
+
+    for (RuleVersionConfigType configType : ruleVersionConfigTypes) {
+      switch (configType) {
+        case RULE_VERSION_CONFIG_TYPE_STABLE:
+          needsUpdate |= clearStableVersion(updatedConfig, ruleType);
+          break;
+        case RULE_VERSION_CONFIG_TYPE_OVERRIDE:
+          needsUpdate |= clearOverrideVersion(updatedConfig, ruleType);
+          break;
+        case RULE_VERSION_CONFIG_TYPE_EXPERIMENTAL:
+          needsUpdate |= clearExperimentalVersion(updatedConfig, ruleType);
+          break;
+        default:
+          throw new IllegalArgumentException("Unsupported config type: " + configType.name());
+      }
+    }
+
+    return needsUpdate
+        ? upsertObject(requestContext, updatedConfig.build()).getData()
+        : existingConfig.get();
+  }
+
   private ScopedAnomalyConfigStatus getResolvedConfig(
       RequestContext requestContext,
       Map<String, ScopedAnomalyConfigStatusChange> configMap,
@@ -398,5 +439,61 @@ public class GlobalAnomalyConfigStatusManagerImpl
         throw new RuntimeException(
             String.format("Invalid scope found: {%s}", configScope.getScopeCase()));
     }
+  }
+
+  private boolean clearStableVersion(
+      ScopedAnomalyConfigStatusChange.Builder config, RuleType ruleType) {
+    if (ruleType == RuleType.RULE_TYPE_WEB_APPLICATION
+        && config.getGlobalModsecConfigChange().getRuleVersionDataChange().hasStableVersion()) {
+      config
+          .getGlobalModsecConfigChangeBuilder()
+          .getRuleVersionDataChangeBuilder()
+          .clearStableVersion();
+      return true;
+    } else if (ruleType == RuleType.RULE_TYPE_API_PROTECTION
+        && config.getGlobalApiConfigChange().getRuleVersionDataChange().hasStableVersion()) {
+      config
+          .getGlobalApiConfigChangeBuilder()
+          .getRuleVersionDataChangeBuilder()
+          .clearStableVersion();
+      return true;
+    }
+    return false;
+  }
+
+  private boolean clearOverrideVersion(
+      ScopedAnomalyConfigStatusChange.Builder config, RuleType ruleType) {
+    if (ruleType == RuleType.RULE_TYPE_WEB_APPLICATION
+        && config.getGlobalModsecConfigChange().getRuleVersionDataChange().hasOverrideVersion()) {
+      config
+          .getGlobalModsecConfigChangeBuilder()
+          .getRuleVersionDataChangeBuilder()
+          .clearOverrideVersion();
+      return true;
+    } else if (ruleType == RuleType.RULE_TYPE_API_PROTECTION
+        && config.getGlobalApiConfigChange().getRuleVersionDataChange().hasOverrideVersion()) {
+      config
+          .getGlobalApiConfigChangeBuilder()
+          .getRuleVersionDataChangeBuilder()
+          .clearOverrideVersion();
+      return true;
+    }
+    return false;
+  }
+
+  private boolean clearExperimentalVersion(
+      ScopedAnomalyConfigStatusChange.Builder config, RuleType ruleType) {
+    if (ruleType == RuleType.RULE_TYPE_WEB_APPLICATION
+        && config
+            .getGlobalModsecConfigChange()
+            .getRuleVersionDataChange()
+            .hasExperimentalVersion()) {
+      config
+          .getGlobalModsecConfigChangeBuilder()
+          .getRuleVersionDataChangeBuilder()
+          .clearExperimentalVersion();
+      return true;
+    }
+    return false;
   }
 }

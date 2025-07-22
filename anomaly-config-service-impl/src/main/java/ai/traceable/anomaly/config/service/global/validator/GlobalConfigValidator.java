@@ -1,5 +1,6 @@
 package ai.traceable.anomaly.config.service.global.validator;
 
+import ai.traceable.anomaly.config.service.v1.global.DeleteRuleVersionConfigTypeRequest;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
@@ -24,4 +25,6 @@ public interface GlobalConfigValidator {
   Status validate(GetAvailableRuleVersionsRequest request);
 
   Status validate(GetRulesChangeLogRequest request);
+
+  Status validate(DeleteRuleVersionConfigTypeRequest request);
 }

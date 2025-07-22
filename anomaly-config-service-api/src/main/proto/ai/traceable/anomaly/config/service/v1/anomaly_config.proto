@@ -231,12 +231,14 @@ message RuleVersionDataChange {
   RuleVersion stable_version = 1;
   RuleVersion override_version = 2;
   RuleTestingMode rule_testing_mode = 3;
+  RuleVersion experimental_version = 4;
 }
 
 message RuleVersionData {
   RuleVersion current_version = 1;
   RuleVersion previous_version = 2;
   RuleTestingMode rule_testing_mode = 3;
+  RuleVersion experimental_version = 4;
 }
 
 message RuleVersion {
@@ -265,6 +267,13 @@ enum RuleTestingMode {
   RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES = 2;
   RULE_TESTING_MODE_ENABLED_FOR_UPDATED_RULES = 3;
   RULE_TESTING_MODE_ENABLED_FOR_NEW_AND_UPDATED_RULES = 4;
+}
+
+enum RuleVersionConfigType {
+  RULE_VERSION_CONFIG_TYPE_UNSPECIFIED = 0;
+  RULE_VERSION_CONFIG_TYPE_STABLE = 1;
+  RULE_VERSION_CONFIG_TYPE_OVERRIDE = 2;
+  RULE_VERSION_CONFIG_TYPE_EXPERIMENTAL = 3;
 }
 
 message StringList {

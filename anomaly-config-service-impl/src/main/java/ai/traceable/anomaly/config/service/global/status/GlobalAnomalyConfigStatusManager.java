@@ -1,6 +1,8 @@
 package ai.traceable.anomaly.config.service.global.status;
 
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.RuleType;
+import ai.traceable.anomaly.config.service.v1.RuleVersionConfigType;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import java.util.List;
@@ -25,4 +27,10 @@ public interface GlobalAnomalyConfigStatusManager {
 
   void deleteScopedAnomalyGlobalConfigStatus(
       RequestContext requestContext, AnomalyConfigScope scope);
+
+  ScopedAnomalyConfigStatusChange deleteRuleVersionConfigType(
+      RequestContext requestContext,
+      AnomalyConfigScope scope,
+      List<RuleVersionConfigType> ruleVersionConfigTypes,
+      RuleType ruleType);
 }

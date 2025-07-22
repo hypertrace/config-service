@@ -12,6 +12,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
+import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
@@ -140,11 +141,9 @@ public class WebAppEvaluationConfigContextManagerImpl
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
 
       boolean useTestRules = scopedAnomalyConfigStatus.getGlobalModsecConfig().getUseTestRules();
-      RuleVersion ruleVersion =
-          scopedAnomalyConfigStatus
-              .getGlobalModsecConfig()
-              .getRuleVersionData()
-              .getCurrentVersion();
+      RuleVersionData ruleVersionData =
+          scopedAnomalyConfigStatus.getGlobalModsecConfig().getRuleVersionData();
+      RuleVersion ruleVersion = ruleVersionData.getCurrentVersion();
       List<AnomalySubRuleType> anomalySubRuleTypes =
           getAnomalySubRuleTypes(
               scopedAnomalyConfigStatus,

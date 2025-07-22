@@ -5,6 +5,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyEventFamily;
 import ai.traceable.anomaly.config.service.v1.RuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersionType;
 import ai.traceable.anomaly.config.service.v1.global.AvailableRuleVersionsFilter;
+import ai.traceable.anomaly.config.service.v1.global.DeleteRuleVersionConfigTypeRequest;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
@@ -114,5 +115,31 @@ public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidato
           "Both current and previous rule versions must be specified");
     }
     return Status.OK;
+  }
+
+  public Status validate(DeleteRuleVersionConfigTypeRequest request) {
+    if (!request.hasConfigScope()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Delete RuleVersion Config Type should have a valid config scope.");
+    }
+    if (request.getRuleVersionConfigTypesList().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Delete RuleVersion Config Type should have at least one rule version config type.");
+    }
+    request.getRuleVersionConfigTypesList().stream()
+        .forEach(
+            ruleVersionConfigType -> {
+              if (ruleVersionConfigType.equals(RuleType.RULE_TYPE_UNSPECIFIED)) {
+                throw Status.INVALID_ARGUMENT
+                    .withDescription(
+                        String.format("Rule type: %s not defined", ruleVersionConfigType))
+                    .asRuntimeException();
+              }
+            });
+    if (request.getRuleType().equals(RuleType.RULE_TYPE_UNSPECIFIED)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format("Rule type: %s not defined", request.getRuleType()));
+    }
+    return anomalyConfigValidator.validate(request.getConfigScope());
   }
 }

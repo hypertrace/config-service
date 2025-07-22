@@ -5,6 +5,8 @@ import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStat
 import ai.traceable.anomaly.config.service.global.validator.AnomalyGlobalConfigServiceValidator;
 import ai.traceable.anomaly.config.service.global.version.RuleVersionManager;
 import ai.traceable.anomaly.config.service.v1.global.AnomalyGlobalConfigServiceGrpc;
+import ai.traceable.anomaly.config.service.v1.global.DeleteRuleVersionConfigTypeRequest;
+import ai.traceable.anomaly.config.service.v1.global.DeleteRuleVersionConfigTypeResponse;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAllScopedAnomalyGlobalConfigStatusRequest;
@@ -21,6 +23,7 @@ import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfi
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusResponse;
+import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.UpdateScopedAnomalyGlobalConfigStatusResponse;
 import io.grpc.Status;
@@ -215,6 +218,34 @@ public class AnomalyGlobalConfigServiceImpl
       anomalyConfigStatusManager.deleteScopedAnomalyGlobalConfigStatus(
           RequestContext.CURRENT.get(), request.getConfigScope());
       responseObserver.onNext(DeleteScopedAnomalyGlobalConfigStatusResponse.newBuilder().build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void deleteRuleVersionConfigType(
+      DeleteRuleVersionConfigTypeRequest request,
+      StreamObserver<DeleteRuleVersionConfigTypeResponse> responseObserver) {
+    Status status = globalValidator.validate(request);
+    if (!status.isOk()) {
+      log.error(
+          "Delete Rule Version Config Type Request is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    try {
+      ScopedAnomalyConfigStatusChange updatedConfig =
+          anomalyConfigStatusManager.deleteRuleVersionConfigType(
+              RequestContext.CURRENT.get(),
+              request.getConfigScope(),
+              request.getRuleVersionConfigTypesList(),
+              request.getRuleType());
+      responseObserver.onNext(
+          DeleteRuleVersionConfigTypeResponse.newBuilder().setScopedConfig(updatedConfig).build());
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error(e.getMessage(), e);

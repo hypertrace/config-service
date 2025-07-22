@@ -70,18 +70,16 @@ public class ModsecManagerImpl implements ModsecManager {
       boolean removeDisabledRules,
       AnomalyConfigScope anomalyConfigScope) {
 
-    ScopedAnomalyConfigStatus globalConfig;
-    RuleVersion currentVersion;
+    ScopedAnomalyConfigStatus globalConfig =
+        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            requestContext, anomalyConfigScope);
+    RuleVersion currentVersion =
+        globalConfig.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion();
+    boolean isWAAPVersioningEnabledForTenant =
+        featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext);
     if (rulesTarget.equals(ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_PLATFORM_DETECTION)) {
       // Platform is tenant-agnostic
       globalConfig = ScopedAnomalyConfigStatus.getDefaultInstance();
-      currentVersion = RuleVersion.getDefaultInstance();
-    } else {
-      globalConfig =
-          globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-              requestContext, anomalyConfigScope);
-      currentVersion =
-          globalConfig.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion();
     }
 
     subRuleTypes =
@@ -103,7 +101,9 @@ public class ModsecManagerImpl implements ModsecManager {
               checkBlockingStatus,
               anomalyConfigScope,
               modsecRuleVersion,
-              useTestRules);
+              useTestRules,
+              isWAAPVersioningEnabledForTenant,
+              currentVersion);
     } else {
       disabledModsecRuleIds = Set.of();
     }
@@ -115,7 +115,7 @@ public class ModsecManagerImpl implements ModsecManager {
                 Collectors.toUnmodifiableMap(
                     Function.identity(),
                     subRuleType -> {
-                      if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
+                      if (isWAAPVersioningEnabledForTenant
                           && currentVersion != null
                           && !currentVersion.getVersion().isEmpty()) {
                         return webAppRuleInfoProvider.getCrsRulesBlob(
@@ -136,7 +136,7 @@ public class ModsecManagerImpl implements ModsecManager {
     if (subRuleTypes.size() == 1) {
       builder.aggregatedModsecBlob(modsecBlobsForRuleTypes.get(subRuleTypes.get(0)));
     } else {
-      if (featureCachingClient.isWAAPVersioningEnabledForTenant(requestContext)
+      if (isWAAPVersioningEnabledForTenant
           && currentVersion != null
           && !currentVersion.getVersion().isEmpty()) {
         builder.aggregatedModsecBlob(
@@ -200,12 +200,24 @@ public class ModsecManagerImpl implements ModsecManager {
       boolean checkBlockingStatus,
       AnomalyConfigScope anomalyConfigScope,
       ModsecRuleVersion modsecRuleVersion,
-      boolean useTestRules) {
+      boolean useTestRules,
+      boolean isWAAPVersioningEnabledForTenant,
+      RuleVersion currentVersion) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
         getAnomalyRuleConfigMap(requestContext, anomalyConfigScope);
-    Map<String, AnomalyRuleInfo> ruleInfoMap =
-        modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
-
+    Map<String, AnomalyRuleInfo> ruleInfoMap;
+    if (isWAAPVersioningEnabledForTenant
+        && currentVersion != null
+        && !currentVersion.getVersion().isEmpty()) {
+      List<AnomalyRuleInfo> webAppRuleInfo =
+          webAppRuleInfoProvider.getWebAppRuleInfo(currentVersion);
+      ruleInfoMap =
+          webAppRuleInfo.stream()
+              .collect(
+                  Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, Function.identity()));
+    } else {
+      ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
+    }
     // The disabled modsec rule ids should be ordered to ensure that
     // the blob doesn't keep changing on repeated calls
     Set<String> disabledModsecRuleIds = new TreeSet<>();
