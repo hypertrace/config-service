@@ -6,6 +6,8 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.Protocol;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
@@ -89,6 +91,17 @@ public class CloudEdgeDeploymentValidator {
         return Status.INVALID_ARGUMENT.withDescription(
             String.format(
                 "Duplicate service name found: %s. Service names must be unique.", serviceName));
+      }
+
+      // Validate that if protocol is HTTPS, certificate ID cannot be null/empty
+      for (DomainConfig domainConfig : serviceConfig.getDomainConfigsList()) {
+        if (domainConfig.getProtocol() == Protocol.PROTOCOL_HTTPS
+            && domainConfig.getCertificateId().isEmpty()) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              String.format(
+                  "HTTPS protocol requires a certificate ID for domain %s in service %s",
+                  domainConfig.getDomainName(), serviceName));
+        }
       }
     }
 

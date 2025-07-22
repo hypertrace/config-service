@@ -472,4 +472,104 @@ class CloudEdgeDeploymentValidatorTest {
     Status status = validator.validate(request);
     assertTrue(status.isOk());
   }
+
+  @Test
+  void testValidateInputConfig_HttpsProtocolRequiresCertificateId() {
+    // Setup mock data
+    SharedConfigMetadata metadata = SharedConfigMetadata.newBuilder().build();
+    when(sharedConfigMetadataRegistry.getSharedConfigMetadataWithWritePermission(
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL))
+        .thenReturn(metadata);
+
+    // Test case 1: HTTPS protocol without certificate ID (invalid)
+    CreateCloudEdgeDeploymentConfigRequest invalidRequest =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("test-service")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName("example.com")
+                                    .setProtocol(Protocol.PROTOCOL_HTTPS)
+                                    .setCertificateId("") // Empty certificate ID
+                                    .build())
+                            .build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify
+    Status invalidStatus = validator.validate(invalidRequest);
+    assertFalse(invalidStatus.isOk());
+    assertEquals(Status.Code.INVALID_ARGUMENT, invalidStatus.getCode());
+    assertEquals(
+        "HTTPS protocol requires a certificate ID for domain example.com in service test-service",
+        invalidStatus.getDescription());
+
+    // Test case 2: HTTPS protocol with certificate ID (valid)
+    CreateCloudEdgeDeploymentConfigRequest validRequest =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("test-service")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName("example.com")
+                                    .setProtocol(Protocol.PROTOCOL_HTTPS)
+                                    .setCertificateId("cert-123") // Valid certificate ID
+                                    .build())
+                            .build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify
+    Status validStatus = validator.validate(validRequest);
+    assertTrue(validStatus.isOk());
+
+    // Test case 3: HTTP protocol without certificate ID (valid)
+    CreateCloudEdgeDeploymentConfigRequest httpRequest =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("test-service")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName("example.com")
+                                    .setProtocol(Protocol.PROTOCOL_HTTP)
+                                    .setCertificateId("") // Empty certificate ID is fine for HTTP
+                                    .build())
+                            .build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify
+    Status httpStatus = validator.validate(httpRequest);
+    assertTrue(httpStatus.isOk());
+  }
 }
