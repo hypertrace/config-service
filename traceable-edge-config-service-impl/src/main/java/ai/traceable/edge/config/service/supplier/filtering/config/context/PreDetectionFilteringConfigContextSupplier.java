@@ -25,7 +25,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class PreDetectionFilteringConfigContextSupplier implements TraceableEdgeConfigSupplier {
   private static final String CONFIG_TYPE =
-      PreDetectionFilteringConfigContextSupplier.class.getSimpleName();
+      PreDetectionFilteringConfigContext.class.getSimpleName();
   private static final ProtectionFilteringRulesFilter CATEGORY_FILTER =
       ProtectionFilteringRulesFilter.newBuilder()
           .setRuleCategory(PROTECTION_FILTERING_RULE_CATEGORY_PRE_DETECTION)

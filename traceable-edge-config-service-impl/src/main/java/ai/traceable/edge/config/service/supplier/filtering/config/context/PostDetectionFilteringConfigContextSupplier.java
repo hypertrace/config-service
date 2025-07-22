@@ -28,7 +28,7 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class PostDetectionFilteringConfigContextSupplier implements TraceableEdgeConfigSupplier {
   private static final String CONFIG_TYPE =
-      PostDetectionFilteringConfigContextSupplier.class.getSimpleName();
+      PostDetectionFilteringConfigContext.class.getSimpleName();
   private static final ProtectionFilteringRulesFilter CATEGORY_FILTER =
       ProtectionFilteringRulesFilter.newBuilder()
           .setRuleCategory(PROTECTION_FILTERING_RULE_CATEGORY_POST_DETECTION)
