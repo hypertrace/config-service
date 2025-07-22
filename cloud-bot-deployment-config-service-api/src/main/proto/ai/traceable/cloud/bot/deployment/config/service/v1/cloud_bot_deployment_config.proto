@@ -90,24 +90,22 @@ message MTCaptchaDetails {
 
 // Details for JWT signing keys used for token generation and verification
 message JWTSigningKeyDetails {
-  oneof key_type {
-    SymmetricKey symmetric_key = 1 [
-      (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Symmetric key method used for signing and verification",
-      (ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true
-    ];
-    AsymmetricKey asymmetric_key = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Asymmetric key pair used for signing and verification"];
+  // Private key is hidden from GraphQL for security reasons
+  EncryptedText encrypted_private_key = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+  string public_key_pem = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Public key in PEM format used for JWT verification"];
+  JWTSigningAlgorithm algorithm = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Algorithm used for JWT signing"];
+
+  enum JWTSigningAlgorithm {
+    JWT_SIGNING_ALGORITHM_UNSPECIFIED = 0;
+    JWT_SIGNING_ALGORITHM_RS256 = 1;
   }
 }
 
-message AsymmetricKey {
-  // Private key is hidden from GraphQL for security reasons
-  string private_key_pem = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
-  string public_key_pem = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Public key in PEM format used for JWT verification"];
-}
-
-message SymmetricKey {
-  // Private key is hidden from GraphQL for security reasons
-  string private_key_pem = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_skip) = true];
+message EncryptedText {
+  // Key used for encryption
+  string key_id = 1;
+  // Encrypted raw private key used for JWT signing
+  string value = 2;
 }
 
 message UrlRule {
