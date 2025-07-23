@@ -85,6 +85,9 @@ public class CloudEdgeDeploymentValidator {
       ConfigPermission configPermission) {
 
     Set<String> serviceNames = new HashSet<>();
+    // Set to track domain names across all service configs
+    Set<String> domainNames = new HashSet<>();
+
     for (ServiceConfig serviceConfig : cloudEdgeDeploymentInputConfig.getServiceConfigsList()) {
       String serviceName = serviceConfig.getServiceName();
       if (!serviceNames.add(serviceName)) {
@@ -93,14 +96,23 @@ public class CloudEdgeDeploymentValidator {
                 "Duplicate service name found: %s. Service names must be unique.", serviceName));
       }
 
-      // Validate that if protocol is HTTPS, certificate ID cannot be null/empty
+      // validate domain uniqueness across all services
       for (DomainConfig domainConfig : serviceConfig.getDomainConfigsList()) {
+        String domainName = domainConfig.getDomainName();
+        if (!domainNames.add(domainName)) {
+          return Status.INVALID_ARGUMENT.withDescription(
+              String.format(
+                  "Duplicate domain name found: %s. Domain names must be unique across all service configurations.",
+                  domainName));
+        }
+
+        // Also validate that if protocol is HTTPS, certificate ID cannot be null/empty
         if (domainConfig.getProtocol() == Protocol.PROTOCOL_HTTPS
             && domainConfig.getCertificateId().isEmpty()) {
           return Status.INVALID_ARGUMENT.withDescription(
               String.format(
                   "HTTPS protocol requires a certificate ID for domain %s in service %s",
-                  domainConfig.getDomainName(), serviceName));
+                  domainName, serviceName));
         }
       }
     }

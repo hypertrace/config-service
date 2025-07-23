@@ -572,4 +572,92 @@ class CloudEdgeDeploymentValidatorTest {
     Status httpStatus = validator.validate(httpRequest);
     assertTrue(httpStatus.isOk());
   }
+
+  @Test
+  void testValidateInputConfig_WithDuplicateDomainNames() {
+    // Setup mock data
+    SharedConfigMetadata metadata = SharedConfigMetadata.newBuilder().build();
+    when(sharedConfigMetadataRegistry.getSharedConfigMetadataWithWritePermission(
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL))
+        .thenReturn(metadata);
+
+    // Test case 1: Duplicate domain names across different services (invalid)
+    CreateCloudEdgeDeploymentConfigRequest invalidRequest =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("service-1")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName("duplicate-domain.com")
+                                    .setProtocol(Protocol.PROTOCOL_HTTP)
+                                    .build())
+                            .build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("service-2")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName(
+                                        "duplicate-domain.com") // Same domain name as in service-1
+                                    .setProtocol(Protocol.PROTOCOL_HTTP)
+                                    .build())
+                            .build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify
+    Status invalidStatus = validator.validate(invalidRequest);
+    assertFalse(invalidStatus.isOk());
+    assertEquals(Status.Code.INVALID_ARGUMENT, invalidStatus.getCode());
+    assertEquals(
+        "Duplicate domain name found: duplicate-domain.com. Domain names must be unique across all service configurations.",
+        invalidStatus.getDescription());
+
+    // Test case 2: Unique domain names across different services (valid)
+    CreateCloudEdgeDeploymentConfigRequest validRequest =
+        CreateCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .setClusterConfig(
+                        ClusterConfig.newBuilder().setClusterName("test-cluster").build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("service-1")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName("service1-domain.com")
+                                    .setProtocol(Protocol.PROTOCOL_HTTP)
+                                    .build())
+                            .build())
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .setServiceName("service-2")
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder()
+                                    .setDomainName("service2-domain.com") // Different domain name
+                                    .setProtocol(Protocol.PROTOCOL_HTTP)
+                                    .build())
+                            .build())
+                    .build())
+            .setConfigPermission(
+                ConfigPermission.newBuilder()
+                    .setRead(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .setWrite(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+                    .build())
+            .build();
+
+    // Validate and verify
+    Status validStatus = validator.validate(validRequest);
+    assertTrue(validStatus.isOk());
+  }
 }
