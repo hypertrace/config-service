@@ -38,6 +38,7 @@ message UpdateCloudEdgeDeploymentConfigResponse {
 message GetCloudEdgeDeploymentConfigsRequest {
   repeated string ids = 1;
   ConfigAccessType read_access = 2;
+  repeated string certificate_ids = 3; // Filter deployments that use these certificate IDs
 }
 
 message GetCloudEdgeDeploymentConfigsResponse {
