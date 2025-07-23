@@ -14,6 +14,7 @@ import ai.traceable.azure.devops.integration.config.service.AzureDevopsIntegrati
 import ai.traceable.bot.categorized.config.service.v1.CategorizedBotConfigServiceFactory;
 import ai.traceable.bot.categorized.policy.service.v1.CategorizedBotConfigPolicyServiceFactory;
 import ai.traceable.certificate.management.config.service.v1.CertificateManagementConfigServiceFactory;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceFactory;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigServiceFactory;
 import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceFactory;
 import ai.traceable.dashboard.config.service.DashboardConfigServiceFactory;
@@ -348,6 +349,9 @@ public class TraceableInternalConfigServiceFactory implements GrpcPlatformServic
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 CloudEdgeDeploymentConfigServiceFactory.build(
+                    providers.getLocalChannel(), providers.getChangeEventGenerator())),
+            wrap(
+                CloudBotDeploymentConfigServiceFactory.build(
                     providers.getLocalChannel(), providers.getChangeEventGenerator())),
             wrap(
                 HttpEventCollectorIntegrationConfigServiceFactory.build(

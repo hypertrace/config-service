@@ -1,0 +1,253 @@
+package ai.traceable.config.service;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaProviderDetails;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaType;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigServiceGrpc.CloudBotDeploymentConfigServiceBlockingStub;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
+import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploymentConfigRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
+import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.GetCloudBotDeploymentConfigsRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
+import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
+import java.util.List;
+import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
+import org.hypertrace.core.grpcutils.context.RequestContext;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+class CloudBotDeploymentConfigServiceIntegrationTest
+    extends TraceableConfigServiceIntegrationTestBase {
+  private static CloudBotDeploymentConfigServiceBlockingStub cloudBotDeploymentConfigServiceStub;
+
+  @BeforeAll
+  static void init() {
+    cloudBotDeploymentConfigServiceStub =
+        CloudBotDeploymentConfigServiceGrpc.newBlockingStub(channelForInternalServices)
+            .withCallCredentials(
+                RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Test
+  public void testCreateAndGetCloudBotDeploymentConfig() {
+    // Create a cloud bot deployment config
+    CloudBotDeploymentConfig createdConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .createCloudBotDeploymentConfig(
+                            CreateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Verify the created config
+    assertNotNull(createdConfig.getId());
+    assertEquals("Test Site", createdConfig.getSiteConfig().getSiteName());
+    assertEquals(
+        ClusterStatus.CLUSTER_STATUS_PROVISIONING,
+        createdConfig.getCloudBotDeploymentStatus().getClusterStatus());
+
+    // Get the created config
+    List<CloudBotDeploymentConfig> configs =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .getCloudBotDeploymentConfigs(
+                            GetCloudBotDeploymentConfigsRequest.newBuilder()
+                                .addIds(createdConfig.getId())
+                                .build())
+                        .getCloudBotDeploymentsList());
+
+    // Verify the retrieved config
+    assertEquals(1, configs.size());
+    CloudBotDeploymentConfig retrievedConfig = configs.get(0);
+    assertEquals(createdConfig.getId(), retrievedConfig.getId());
+    assertEquals(
+        createdConfig.getSiteConfig().getSiteName(), retrievedConfig.getSiteConfig().getSiteName());
+  }
+
+  @Test
+  public void testUpdateCloudBotDeploymentConfig() {
+    // Create a cloud bot deployment config
+    CloudBotDeploymentConfig createdConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .createCloudBotDeploymentConfig(
+                            CreateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Update the config
+    CloudBotDeploymentConfigInput updatedInput =
+        CloudBotDeploymentConfigInput.newBuilder()
+            .setSiteConfig(
+                createdConfig.getSiteConfig().toBuilder()
+                    .setSiteName("Updated Test Site")
+                    .setCaptchaConfig(
+                        CaptchaConfig.newBuilder()
+                            .setEnabled(true)
+                            .setCaptchaType(CaptchaType.CAPTCHA_TYPE_VISUAL)))
+            .setDeploymentDetails(
+                DeploymentDetails.newBuilder()
+                    .setEnvironment("production-2")
+                    .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_EDGE)
+                    .setEdgeDeploymentConfig(
+                        EdgeDeploymentConfig.newBuilder().setCloudEdgeDeploymentId("abc")))
+            .build();
+
+    CloudBotDeploymentConfig updatedConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .updateCloudBotDeploymentConfig(
+                            UpdateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setId(createdConfig.getId())
+                                .setCloudBotDeploymentConfigInput(updatedInput)
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Verify the updated config
+    assertEquals(createdConfig.getId(), updatedConfig.getId());
+    assertEquals("Updated Test Site", updatedConfig.getSiteConfig().getSiteName());
+
+    // Verify that the site key and JWT signing details are preserved
+    assertEquals(
+        createdConfig.getSiteConfig().getSiteKey(), updatedConfig.getSiteConfig().getSiteKey());
+    assertEquals(
+        createdConfig.getSiteConfig().getJwtSigningDetails(),
+        updatedConfig.getSiteConfig().getJwtSigningDetails());
+    assertEquals(
+        createdConfig.getSiteConfig().getDomainsList(),
+        updatedConfig.getSiteConfig().getDomainsList());
+  }
+
+  @Test
+  public void testUpdateCloudBotDeploymentStatus() {
+    // Create a cloud bot deployment config
+    CloudBotDeploymentConfig createdConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .createCloudBotDeploymentConfig(
+                            CreateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Update the deployment status
+    CloudBotDeploymentStatus updatedStatus =
+        CloudBotDeploymentStatus.newBuilder()
+            .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY)
+            .build();
+
+    CaptchaProviderDetails captchaProviderDetails =
+        CaptchaProviderDetails.newBuilder()
+            .setMtCaptcha(MTCaptchaDetails.newBuilder().setSiteKey("mt-captcha-key").build())
+            .build();
+
+    CloudBotDeploymentConfig statusUpdatedConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .updateCloudBotDeploymentStatus(
+                            UpdateCloudBotDeploymentStatusRequest.newBuilder()
+                                .setId(createdConfig.getId())
+                                .setCloudBotDeploymentStatus(updatedStatus)
+                                .setCaptchaProviderDetails(captchaProviderDetails)
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Verify the updated status
+    assertEquals(createdConfig.getId(), statusUpdatedConfig.getId());
+    assertEquals(
+        ClusterStatus.CLUSTER_STATUS_READY,
+        statusUpdatedConfig.getCloudBotDeploymentStatus().getClusterStatus());
+    assertEquals(
+        "mt-captcha-key",
+        statusUpdatedConfig
+            .getSiteConfig()
+            .getCaptchaProviderDetails()
+            .getMtCaptcha()
+            .getSiteKey());
+  }
+
+  @Test
+  public void testDeleteCloudBotDeploymentConfig() {
+    // Create a cloud bot deployment config
+    CloudBotDeploymentConfig createdConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .createCloudBotDeploymentConfig(
+                            CreateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Delete the config
+    RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                cloudBotDeploymentConfigServiceStub.deleteCloudBotDeploymentConfig(
+                    DeleteCloudBotDeploymentConfigRequest.newBuilder()
+                        .setId(createdConfig.getId())
+                        .build()));
+
+    // Get all configs and verify the deleted config is not present
+    List<CloudBotDeploymentConfig> allConfigs =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .getCloudBotDeploymentConfigs(
+                            GetCloudBotDeploymentConfigsRequest.getDefaultInstance())
+                        .getCloudBotDeploymentsList());
+
+    boolean configFound =
+        allConfigs.stream().anyMatch(config -> config.getId().equals(createdConfig.getId()));
+
+    assertFalse(configFound, "Deleted config should not be present in the list of all configs");
+  }
+
+  private CloudBotDeploymentConfigInput createConfigInputWithName() {
+    return CloudBotDeploymentConfigInput.newBuilder()
+        .setSiteConfig(
+            SiteConfig.newBuilder()
+                .setSiteName("Test Site")
+                .addDomains("example.com")
+                .setCaptchaConfig(
+                    CaptchaConfig.newBuilder()
+                        .setEnabled(true)
+                        .setCaptchaType(CaptchaType.CAPTCHA_TYPE_VISUAL)))
+        .setDeploymentDetails(
+            DeploymentDetails.newBuilder()
+                .setEnvironment("staging")
+                .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_EDGE)
+                .setEdgeDeploymentConfig(
+                    EdgeDeploymentConfig.newBuilder().setCloudEdgeDeploymentId("xzy")))
+        .build();
+  }
+}

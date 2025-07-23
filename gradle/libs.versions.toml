@@ -19,3 +19,4 @@ hypertrace-configservice-partitioner-config-impl = { module = "org.hypertrace.co
 traceable-risk-decision-service-api = { module = "ai.traceable.fraud-engine:risk-decision-service-api", version = "0.1.251" }
 
 automaton = { module = "dk.brics.automaton:automaton", version = "1.11-8"}
+domain-validation = { module = "commons-validator:commons-validator", version = "1.10.0"}

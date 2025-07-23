@@ -79,6 +79,7 @@ dependencies {
   implementation(projects.certificateManagementConfigServiceImpl)
   implementation(projects.httpEventCollectorIntegrationConfigServiceImpl)
   implementation(projects.cloudEdgeDeploymentConfigServiceImpl)
+  implementation(projects.cloudBotDeploymentConfigServiceImpl)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

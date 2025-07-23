@@ -180,6 +180,7 @@ dependencies {
   integrationTestImplementation(projects.apiAttributeOverrideServiceApi)
   integrationTestImplementation(projects.blockingConfigServiceApi)
   integrationTestImplementation(projects.blockingConfigServiceImpl)
+  integrationTestImplementation(projects.cloudBotDeploymentConfigServiceApi)
   integrationTestImplementation(projects.customSignatureConfigServiceApi)
   integrationTestImplementation(projects.localProcessingConfigServiceApi)
   integrationTestImplementation(projects.localProcessingConfigServiceImpl)
