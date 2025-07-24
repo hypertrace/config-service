@@ -1,8 +1,9 @@
-package ai.traceable.dashboard.config.service;
+package ai.traceable.dashboard.config.service.validation;
 
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
 import static org.hypertrace.config.validation.GrpcValidatorUtils.validateRequestContextOrThrow;
 
+import ai.traceable.dashboard.config.service.utils.DashboardAccessUtils;
 import ai.traceable.dashboard.config.service.v1.CreateDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.Dashboard;
 import ai.traceable.dashboard.config.service.v1.DeleteDashboardRequest;

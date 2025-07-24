@@ -2,6 +2,8 @@ package ai.traceable.dashboard.config.service;
 
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.dashboard.config.service.notification.EmailSender;
+import ai.traceable.dashboard.config.service.utils.DashboardAccessUtils;
 import ai.traceable.dashboard.config.service.v1.CreateDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.Dashboard;
 import ai.traceable.dashboard.config.service.v1.DashboardPrincipal;
@@ -12,15 +14,21 @@ import ai.traceable.dashboard.config.service.v1.GetDashboardsRequest;
 import ai.traceable.dashboard.config.service.v1.GetDashboardsResponse;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardRoleAssignmentsRequest;
+import ai.traceable.dashboard.config.service.validation.DashboardConfigServiceValidator;
 import com.google.common.collect.ImmutableList;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 
+@Slf4j
 @AllArgsConstructor(onConstructor_ = @Inject)
 public class DashboardManager {
 
@@ -30,6 +38,7 @@ public class DashboardManager {
   private final UuidGenerator uuidGenerator;
   private final TimestampConverter timestampConverter;
   private final Clock clock;
+  private final EmailSender emailSender;
 
   public GetDashboardsResponse getDashboards(
       RequestContext requestContext, GetDashboardsRequest request) {
@@ -115,6 +124,7 @@ public class DashboardManager {
             .setLastUpdatedTimestamp(timestampConverter.convert(clock.instant()));
     dashboardBuilder.setRoleAssignments(request.getRoleAssignments());
     Dashboard updatedDashboard = dashboardBuilder.build();
+    sendInvitation(requestContext, existingDashboard, request);
     return this.dashboardStore.updateDashboardRolesAssignments(requestContext, updatedDashboard);
   }
 
@@ -148,6 +158,51 @@ public class DashboardManager {
       RequestContext requestContext,
       Dashboard dashboard,
       UpdateDashboardRoleAssignmentsRequest updateRequest) {
-    // TODO: in separate PR
+
+    Set<String> newlyAddedEmails =
+        findNewlyAddedEmails(dashboard.getRoleAssignments(), updateRequest.getRoleAssignments());
+
+    sendInvitationEmails(requestContext, dashboard, newlyAddedEmails);
+  }
+
+  private Set<String> findNewlyAddedEmails(
+      DashboardRoleAssignments existingRoleAssignments,
+      DashboardRoleAssignments newRoleAssignments) {
+
+    Set<String> existingEmails = getAllUserEmails(existingRoleAssignments);
+    Set<String> newEmails = getAllUserEmails(newRoleAssignments);
+
+    newEmails.removeAll(existingEmails);
+    return newEmails;
+  }
+
+  private Set<String> getAllUserEmails(DashboardRoleAssignments roleAssignments) {
+    Set<String> emails = new HashSet<>();
+    emails.addAll(extractUserEmails(roleAssignments.getOwnersList()));
+    emails.addAll(extractUserEmails(roleAssignments.getEditorsList()));
+    emails.addAll(extractUserEmails(roleAssignments.getViewersList()));
+    return emails;
+  }
+
+  private void sendInvitationEmails(
+      RequestContext requestContext, Dashboard dashboard, Set<String> recipientEmails) {
+
+    if (!recipientEmails.isEmpty()) {
+      List<String> emailsToInvite = new ArrayList<>(recipientEmails);
+      log.info(
+          "Sending dashboard invitation emails to {} new recipients for dashboard: {}",
+          emailsToInvite.size(),
+          dashboard.getId());
+      emailSender.sendEmails(requestContext, emailsToInvite, dashboard);
+    }
+  }
+
+  private Set<String> extractUserEmails(List<DashboardPrincipal> principals) {
+    return principals.stream()
+        .filter(
+            principal ->
+                principal.getPrincipalCase() == DashboardPrincipal.PrincipalCase.USER_EMAIL)
+        .map(DashboardPrincipal::getUserEmail)
+        .collect(Collectors.toSet());
   }
 }

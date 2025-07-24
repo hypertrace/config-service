@@ -33,7 +33,7 @@ jobs:
       - name: Validate chart
         uses: hypertrace/github-actions/validate-charts@main
         with:
-          extra-args: --set global.env=dev
+          extra-args: --set global.env=dev --set global.appEndpoint=app
   build:
     runs-on: self-hosted-x64-small
     steps:

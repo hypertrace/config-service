@@ -1,4 +1,4 @@
-package ai.traceable.dashboard.config.service;
+package ai.traceable.dashboard.config.service.utils;
 
 import ai.traceable.dashboard.config.service.v1.Dashboard;
 import ai.traceable.dashboard.config.service.v1.DashboardPrincipal;
@@ -32,11 +32,11 @@ public class DashboardAccessUtils {
     return hasRole(userEmail, dashboard, DashboardRole.OWNER) && !isSystemDashboard(dashboard);
   }
 
-  boolean hasDeleteAccess(String userEmail, Dashboard dashboard) {
+  public boolean hasDeleteAccess(String userEmail, Dashboard dashboard) {
     return hasRole(userEmail, dashboard, DashboardRole.OWNER);
   }
 
-  boolean hasReadAccess(String userEmail, Dashboard dashboard) {
+  public boolean hasReadAccess(String userEmail, Dashboard dashboard) {
     return hasRole(userEmail, dashboard, DashboardRole.VIEWER);
   }
 

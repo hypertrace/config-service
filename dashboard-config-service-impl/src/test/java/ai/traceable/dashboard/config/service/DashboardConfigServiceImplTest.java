@@ -5,6 +5,8 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.utils.TimestampConverter;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.dashboard.config.service.notification.EmailSender;
+import ai.traceable.dashboard.config.service.utils.DashboardAccessUtils;
 import ai.traceable.dashboard.config.service.v1.CreateDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.Dashboard;
 import ai.traceable.dashboard.config.service.v1.DashboardConfigServiceGrpc;
@@ -13,6 +15,7 @@ import ai.traceable.dashboard.config.service.v1.DashboardRoleAssignments;
 import ai.traceable.dashboard.config.service.v1.DeleteDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.GetDashboardsRequest;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardRequest;
+import ai.traceable.dashboard.config.service.validation.DashboardConfigServiceValidator;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -36,6 +39,7 @@ class DashboardConfigServiceImplTest {
   @Mock UuidGenerator mockUuidGenerator;
   TimestampConverter timestampConverter;
   @Mock Clock mockClock;
+  @Mock EmailSender mockEmailSender;
   RequestContext testRequestContext;
 
   DashboardConfigServiceGrpc.DashboardConfigServiceBlockingStub stub;
@@ -99,7 +103,8 @@ class DashboardConfigServiceImplTest {
                     new DashboardAccessUtils(),
                     mockUuidGenerator,
                     timestampConverter,
-                    mockClock)))
+                    mockClock,
+                    mockEmailSender)))
         .start();
     stub =
         DashboardConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel())

@@ -18,6 +18,8 @@ dependencies {
   implementation(localLibs.hypertrace.configservice.changeeventgenerator)
   implementation(localLibs.hypertrace.configservice.objectstore)
   implementation(projects.configUtils)
+  implementation(commonLibs.traceable.notification.messageApi)
+  implementation(commonLibs.hypertrace.eventstore)
 
   annotationProcessor(commonLibs.lombok)
   compileOnly(commonLibs.lombok)

@@ -12,6 +12,7 @@ import ai.traceable.dashboard.config.service.v1.UpdateDashboardRequest;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardResponse;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardRoleAssignmentsRequest;
 import ai.traceable.dashboard.config.service.v1.UpdateDashboardRoleAssignmentsResponse;
+import ai.traceable.dashboard.config.service.validation.DashboardConfigServiceValidator;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
