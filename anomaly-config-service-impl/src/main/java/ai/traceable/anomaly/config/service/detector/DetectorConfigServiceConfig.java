@@ -4,6 +4,7 @@ import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeo
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -39,13 +40,21 @@ public class DetectorConfigServiceConfig {
       SessionRulesRegistry sessionDefinitionRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
-      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
+      GenAiRulesRegistry genAiRulesRegistry) {
     this.wafDetectionConfigs =
         configConverter.convertToAnomalyDetectionConfigs(
             config.getConfigList(MODSEC_DETECTION_CONFIGS_PATH));
     this.genAiDetectionConfigs =
-        configConverter.convertToAnomalyDetectionConfigs(
-            config.getConfigList(GEN_AI_DETECTION_CONFIGS_PATH));
+        loadDefaultGenAiDetectionConfigs(
+            config,
+            genAiRulesRegistry.getGenAiRuleIdToConfigMap().values().stream()
+                .map(
+                    detectionConfig ->
+                        AnomalyDetectionConfig.newBuilder()
+                            .setGenAiAnomalyDetectionConfig(detectionConfig)
+                            .build())
+                .collect(Collectors.toList()));
 
     List<AnomalyDetectionConfig> apiProtectionDetectionConfigs = new ArrayList<>();
     apiProtectionDetectionConfigs.addAll(
@@ -261,6 +270,32 @@ public class DetectorConfigServiceConfig {
             detectionConfig -> {
               String ruleId =
                   detectionConfig.getAccountTakeoverAnomalyDetectionConfig().getAnomalyRuleId();
+              if (configMap.containsKey(ruleId)) {
+                return detectionConfig.toBuilder().mergeFrom(configMap.get(ruleId)).build();
+              }
+              return detectionConfig;
+            })
+        .collect(Collectors.toList());
+  }
+
+  private List<AnomalyDetectionConfig> loadDefaultGenAiDetectionConfigs(
+      Config config, List<AnomalyDetectionConfig> genAiDetectionRegistryConfigs) {
+    List<AnomalyDetectionConfig> detectionConfigs =
+        configConverter.convertToAnomalyDetectionConfigs(
+            config.getConfigList(GEN_AI_DETECTION_CONFIGS_PATH));
+
+    Map<String, AnomalyDetectionConfig> configMap =
+        detectionConfigs.stream()
+            .collect(
+                Collectors.toMap(
+                    anomalyDetectionConfig ->
+                        anomalyDetectionConfig.getGenAiAnomalyDetectionConfig().getAnomalyRuleId(),
+                    anomalyDetectionConfig -> anomalyDetectionConfig));
+
+    return genAiDetectionRegistryConfigs.stream()
+        .map(
+            detectionConfig -> {
+              String ruleId = detectionConfig.getGenAiAnomalyDetectionConfig().getAnomalyRuleId();
               if (configMap.containsKey(ruleId)) {
                 return detectionConfig.toBuilder().mergeFrom(configMap.get(ruleId)).build();
               }

@@ -1,5 +1,7 @@
 package ai.traceable.anomaly.config.service.detector;
 
+import static ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_HIGH;
+import static ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -7,13 +9,14 @@ import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeo
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.common.ConfigConverter;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistryImpl;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
-import ai.traceable.anomaly.config.service.v1.StringList;
 import ai.traceable.anomaly.config.service.v1.detector.AbuseVelocity;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
-import ai.traceable.anomaly.config.service.v1.detector.AnomalyEventScoreCategory;
+import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
+import ai.traceable.anomaly.config.service.v1.detector.CodeDetectedInPromptThreatRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.EmailDomainAnomalyConfig;
 import ai.traceable.anomaly.config.service.v1.detector.CustomRulesAnomalyDetectionConfig.IpTypeAnomalyConfig;
 import com.typesafe.config.ConfigFactory;
@@ -117,16 +120,39 @@ public class DetectorConfigServiceConfigTest {
                   + "genAiDetectionConfigs = [\n"
                   + "    {\n"
                   + "      genAiAnomalyDetectionConfig = {\n"
+                  + "        anomalyRuleId = \"codeDetectedInPrompt\"\n"
                   + "        codeDetectedInPrompt = {\n"
-                  + "          crsSubRuleIdsMap = {\n"
-                  + "            crs_941 = {\n"
+                  + "          threatRuleConfigs = [\n"
+                  + "            {\n"
+                  + "              threatRuleId = \"crs_941\"\n"
+                  + "              subRuleIds = {\n"
                   + "                values = [\"crs_9410170\", \"crs_9410160\", \"crs_941110\"]\n"
+                  + "              }\n"
+                  + "            }\n"
+                  + "            {\n"
+                  + "              threatRuleId = \"crs_942\"\n"
+                  + "              subRuleIds = {\n"
+                  + "                values = [\"crs_9420190\", \"crs_9420291\"]\n"
+                  + "              }\n"
+                  + "            }\n"
+                  + "          ]"
+                  + "        }\n"
+                  + "        subRuleConfigs = {\n"
+                  + "          subRuleConfigs = {\n"
+                  + "            crs_941 = {\n"
+                  + "              subRuleId = \"crs_932\"\n"
+                  + "              categoryConfig = {\n"
+                  + "                eventScoreCategory = ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM\n"
+                  + "              }\n"
                   + "            }\n"
                   + "            crs_942 = {\n"
-                  + "                values = [\"crs_9420190\", \"crs_9420291\"]\n"
+                  + "              subRuleId = \"crs_932\"\n"
+                  + "              categoryConfig = {\n"
+                  + "                eventScoreCategory = ANOMALY_EVENT_SCORE_CATEGORY_HIGH\n"
+                  + "              }\n"
                   + "            }\n"
                   + "          }\n"
-                  + "        }\n"
+                  + "        }"
                   + "      }\n"
                   + "    }\n"
                   + "  ]\n"
@@ -185,7 +211,8 @@ public class DetectorConfigServiceConfigTest {
           new SessionRulesRegistryImpl(new ConfigConverter()),
           new VolumetricRulesRegistryImpl(new ConfigConverter()),
           new CredentialStuffingRulesRegistryImpl(new ConfigConverter()),
-          new AccountTakeoverRulesRegistryImpl(new ConfigConverter()));
+          new AccountTakeoverRulesRegistryImpl(new ConfigConverter()),
+          new GenAiRulesRegistryImpl(new ConfigConverter()));
 
   @Test
   void testConfig() {
@@ -254,16 +281,25 @@ public class DetectorConfigServiceConfigTest {
     assertEquals(configStatus3, detectionConfig.getConfigStatus());
 
     List<AnomalyDetectionConfig> genAiDetectionConfigs = CONFIG.getDefaultGenAiDetectionConfigs();
-    assertEquals(1, genAiDetectionConfigs.size());
-    Map<String, StringList> crsSubRuleIdsMap =
-        genAiDetectionConfigs
-            .get(0)
+    detectionConfig = getGenAiDetectionConfig(genAiDetectionConfigs, "codeDetectedInPrompt");
+    List<CodeDetectedInPromptThreatRuleConfig> threatRuleConfigs =
+        detectionConfig
             .getGenAiAnomalyDetectionConfig()
             .getCodeDetectedInPrompt()
-            .getCrsSubRuleIdsMapMap();
-    assertEquals(2, crsSubRuleIdsMap.size());
-    assertEquals(3, crsSubRuleIdsMap.get("crs_941").getValuesCount());
-    assertEquals(2, crsSubRuleIdsMap.get("crs_942").getValuesCount());
+            .getThreatRuleConfigsList();
+    Map<String, AnomalySubRuleConfig> subRuleConfigMap =
+        detectionConfig.getGenAiAnomalyDetectionConfig().getSubRuleConfigs().getSubRuleConfigsMap();
+    assertEquals(2, threatRuleConfigs.size());
+    assertEquals("crs_941", threatRuleConfigs.get(0).getThreatRuleId());
+    assertEquals(3, threatRuleConfigs.get(0).getSubRuleIds().getValuesCount());
+    assertEquals("crs_942", threatRuleConfigs.get(1).getThreatRuleId());
+    assertEquals(2, threatRuleConfigs.get(1).getSubRuleIds().getValuesCount());
+    assertEquals(
+        ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM,
+        subRuleConfigMap.get("crs_941").getCategoryConfig().getEventScoreCategory());
+    assertEquals(
+        ANOMALY_EVENT_SCORE_CATEGORY_HIGH,
+        subRuleConfigMap.get("crs_942").getCategoryConfig().getEventScoreCategory());
   }
 
   @Test
@@ -284,7 +320,7 @@ public class DetectorConfigServiceConfigTest {
             .findFirst()
             .orElse(null);
     assertEquals(
-        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_HIGH,
+        ANOMALY_EVENT_SCORE_CATEGORY_HIGH,
         detectionConfig.getCategoryConfig().getEventScoreCategory());
 
     EmailDomainAnomalyConfig emailDomainConfig =
@@ -304,7 +340,7 @@ public class DetectorConfigServiceConfigTest {
             .findFirst()
             .orElse(null);
     assertEquals(
-        AnomalyEventScoreCategory.ANOMALY_EVENT_SCORE_CATEGORY_HIGH,
+        ANOMALY_EVENT_SCORE_CATEGORY_HIGH,
         detectionConfig.getCategoryConfig().getEventScoreCategory());
 
     IpTypeAnomalyConfig ipTypeConfig =
@@ -367,6 +403,16 @@ public class DetectorConfigServiceConfigTest {
       List<AnomalyDetectionConfig> detectionConfigs, String ruleId) {
     for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
       if (detectionConfig.getCredentialAnomalyDetectionConfig().getAnomalyRuleId().equals(ruleId)) {
+        return detectionConfig;
+      }
+    }
+    return null;
+  }
+
+  private AnomalyDetectionConfig getGenAiDetectionConfig(
+      List<AnomalyDetectionConfig> detectionConfigs, String ruleId) {
+    for (AnomalyDetectionConfig detectionConfig : detectionConfigs) {
+      if (detectionConfig.getGenAiAnomalyDetectionConfig().getAnomalyRuleId().equals(ruleId)) {
         return detectionConfig;
       }
     }

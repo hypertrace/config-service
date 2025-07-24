@@ -303,9 +303,14 @@ message LlmInputExplosionAnomalyDetectionConfig {}
 message LlmModelGovernanceAnomalyDetectionConfig {}
 
 message CodeDetectedInPromptAnomalyDetectionConfig {
-  // map containing applicable crs-sub-rule-ids where key is the crs-rule-id
+  // list containing applicable crs-sub-rule-ids where threat_rule_id is the crs-rule-id
   // crs-rule-id maps to the sub-rule-id of code-detected threat-type
-  map<string, StringList> crs_sub_rule_ids_map = 1;
+  repeated CodeDetectedInPromptThreatRuleConfig threat_rule_configs = 1;
+}
+
+message CodeDetectedInPromptThreatRuleConfig {
+  string threat_rule_id = 1;
+  StringList sub_rule_ids = 2;
 }
 
 message CredentialStuffingAnomalyConfig {

@@ -5,6 +5,7 @@ import ai.traceable.anomaly.config.service.detector.anomalydetection.AnomalyDete
 import ai.traceable.anomaly.config.service.registry.accounttakeover.AccountTakeoverRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.apidef.ApiDefinitionRegistry;
 import ai.traceable.anomaly.config.service.registry.credentialstuffing.CredentialStuffingRulesRegistry;
+import ai.traceable.anomaly.config.service.registry.genai.GenAiRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistry;
 import ai.traceable.anomaly.config.service.registry.volumetric.VolumetricRulesRegistry;
 import com.google.inject.AbstractModule;
@@ -34,7 +35,8 @@ public class DetectorConfigServiceModule extends AbstractModule {
       SessionRulesRegistry sessionDefinitionRegistry,
       VolumetricRulesRegistry volumetricRulesRegistry,
       CredentialStuffingRulesRegistry credentialStuffingRulesRegistry,
-      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry) {
+      AccountTakeoverRulesRegistry accountTakeoverRulesRegistry,
+      GenAiRulesRegistry genAiRulesRegistry) {
 
     return new DetectorConfigServiceConfig(
         config.getDetectorConfigServiceConfig(),
@@ -42,6 +44,7 @@ public class DetectorConfigServiceModule extends AbstractModule {
         sessionDefinitionRegistry,
         volumetricRulesRegistry,
         credentialStuffingRulesRegistry,
-        accountTakeoverRulesRegistry);
+        accountTakeoverRulesRegistry,
+        genAiRulesRegistry);
   }
 }

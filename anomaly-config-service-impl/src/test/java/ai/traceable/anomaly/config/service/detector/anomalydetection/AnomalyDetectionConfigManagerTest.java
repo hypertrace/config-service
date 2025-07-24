@@ -1600,16 +1600,39 @@ public class AnomalyDetectionConfigManagerTest {
                 + "genAiDetectionConfigs = [\n"
                 + "    {\n"
                 + "      genAiAnomalyDetectionConfig = {\n"
+                + "        anomalyRuleId = \"codeDetectedInPrompt\"\n"
                 + "        codeDetectedInPrompt = {\n"
-                + "          crsSubRuleIdsMap = {\n"
-                + "            crs_941 = {\n"
+                + "          threatRuleConfigs = [\n"
+                + "            {\n"
+                + "              threatRuleId = \"crs_941\"\n"
+                + "              subRuleIds = {\n"
                 + "                values = [\"crs_9410170\", \"crs_9410160\", \"crs_941110\"]\n"
+                + "              }\n"
                 + "            }\n"
-                + "            crs_942 = {\n"
+                + "            {\n"
+                + "              threatRuleId = \"crs_942\"\n"
+                + "              subRuleIds = {\n"
                 + "                values = [\"crs_9420190\", \"crs_9420291\"]\n"
+                + "              }\n"
+                + "            }\n"
+                + "          ]"
+                + "        }\n"
+                + "      subRuleConfigs = {\n"
+                + "        subRuleConfigs = {\n"
+                + "          crs_941 = {\n"
+                + "            subRuleId = \"crs_941\"\n"
+                + "            categoryConfig = {\n"
+                + "              eventScoreCategory = ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM\n"
+                + "            }\n"
+                + "          }\n"
+                + "          crs_942 = {\n"
+                + "            subRuleId = \"crs_942\"\n"
+                + "            categoryConfig = {\n"
+                + "              eventScoreCategory = ANOMALY_EVENT_SCORE_CATEGORY_MEDIUM\n"
                 + "            }\n"
                 + "          }\n"
                 + "        }\n"
+                + "      }"
                 + "      }\n"
                 + "    }\n"
                 + "  ]\n"
@@ -1679,7 +1702,8 @@ public class AnomalyDetectionConfigManagerTest {
         new SessionRulesRegistryImpl(new ConfigConverter()),
         new VolumetricRulesRegistryImpl(new ConfigConverter()),
         new CredentialStuffingRulesRegistryImpl(new ConfigConverter()),
-        new AccountTakeoverRulesRegistryImpl(new ConfigConverter()));
+        new AccountTakeoverRulesRegistryImpl(new ConfigConverter()),
+        new GenAiRulesRegistryImpl(new ConfigConverter()));
   }
 
   private AnomalyDetectionConfig getModsecRuleConfig(
