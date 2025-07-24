@@ -200,6 +200,8 @@
   eventLabels:
     MITRE_TACTIC: TA0001
     MITRE_TECHNIQUE: T1189
+    CWE: 79
+    OWASP_API_2019: API8
   eventDetails:
     description: |
       Cross-Site Scripting (XSS) is the misuse of untrusted user input in web applications. Key aspects include:
@@ -1773,6 +1775,8 @@
   eventLabels:
     MITRE_TACTIC: TA0001
     MITRE_TECHNIQUE: T1190
+    CWE: 89
+    OWASP_API_2019: API8
   eventDetails:
     description: |
       A pattern indicative of SQL injection attack is detected. SQL injection is a code injection technique that exploits a security vulnerability in an application's software.
@@ -2850,6 +2854,8 @@
   eventLabels:
     MITRE_TACTIC: TA0002
     MITRE_TECHNIQUE: T1059.004
+    CWE: 78
+    OWASP_API_2019: API8
   eventDetails:
     description: "A PHP attack occurs when an attacker injects malicious code into an application, exploiting weaknesses in how PHP processes input, allowing the attacker to execute arbitrary commands on the server."
     mitigation: "To mitigate PHP injection attacks, ensure proper input validation and sanitization. Use prepared statements with parameterized queries for database interactions. Regularly update PHP and all related dependencies to the latest versions to patch known vulnerabilities. Use frameworks that provide built-in protection against injection attacks."
@@ -3149,6 +3155,7 @@
   eventLabels:
     MITRE_TACTIC: TA0002
     MITRE_TECHNIQUE: T1059.004
+    OWASP_API_2019: API8
   eventDetails:
     description: "Remote Code Execution (RCE) attacks allow an attacker to run malicious code on a remote system. By exploiting input validation flaws, the attacker can execute arbitrary commands on the server. This leads to control over the system, allowing the attacker to access sensitive data, install malware, escalate privileges, or move to other systems in the network, potentially causing severe damage or disruption."
     mitigation: "To mitigate RCE attacks, validate and sanitize all user inputs. Avoid using user input in system commands where possible. Regularly update and patch your systems to fix known vulnerabilities."
@@ -3818,6 +3825,7 @@
   eventLabels:
     MITRE_TACTIC: TA0005
     MITRE_TECHNIQUE: T1620
+    OWASP_API_2019: API8
   eventDetails:
     description: |
       Java application attacks target vulnerabilities in Java-based applications, frameworks, or runtime environments. These attacks often exploit insecure deserialization, improper input validation, or outdated dependencies.
