@@ -6,17 +6,17 @@
 # module specific owners
 anomaly-config-service-registry/src/test/resources/modsec @sidharth-jain23 @singhalprerana
 anomaly-config-service-registry/src/main/resources/modsec/crs @sidharth-jain23 @singhalprerana
-anomaly-config-service-registry/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
-anomaly-config-service-api/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
-anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23
+anomaly-config-service-registry/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23 @bhubam
+anomaly-config-service-api/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23 @bhubam
+anomaly-config-service-impl/src @GurtejSohi @aaron-steinfeld @skjindal93 @singhalprerana @avinashkolluru @saxenakshitiz @SrikarMannepalli @RishabhB99 @sidharth-jain23 @bhubam
 api-spec-config-service-api/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
 api-spec-config-service-impl/src @sanket-mundra @rutvij-menavlikar @aman-bansal @suresh-prakash @skjindal93
-detection-exclusion-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
+detection-exclusion-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
 rate-limiting-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @saxenakshitiz
-custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
-malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
-iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
-region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99
+custom-signature-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
+malicious-sources-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
+iprange-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
+region-config-service-impl/src @singhalprerana @avinashkolluru @aaron-steinfeld @pavan-traceable @RishabhB99 @bhubam
 fraud-datamodel-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
 fraud-datamodel-derivation-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
 fraud-policy-config-service-api/src @sunilgattupalle @surajpuvvada @avinashkolluru @vinaysrini @abhishek-yadav-tracable
@@ -54,3 +54,13 @@ jira-integration-config-service-impl/src @murari54 @Kunal-8789 @sanketkar24 @Gg-
 genai-system-discovery-config-service-api/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 genai-system-discovery-config-service-impl/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
 genai-system-discovery-client/src @aaron-steinfeld @skjindal93 @sanket-mundra @Vaibhav090420
+cloud-bot-deployment-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+cloud-edge-deployment-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+certificate-management-config-service-api @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+certificate-management-config-service-impl @singhalprerana @avinashkolluru @saxenakshitiz @bhubam
+session-identification-config-service-api @singhalprerana @avinashkolluru @aaron-steinfeld @bhubam
+session-identification-config-service-impl @singhalprerana @avinashkolluru @aaron-steinfeld @bhubam
+threat-scoring-config-service-api @singhalprerana @avinashkolluru @bhubam
+threat-scoring-config-service-impl @singhalprerana @avinashkolluru @bhubam
+data-protection-config-service-api @singhalprerana @avinashkolluru @bhubam
+data-protection-config-service-impl @singhalprerana @avinashkolluru @bhubam
