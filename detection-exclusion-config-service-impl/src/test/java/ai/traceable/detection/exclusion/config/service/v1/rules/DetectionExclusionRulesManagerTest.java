@@ -76,9 +76,9 @@ class DetectionExclusionRulesManagerTest {
         new ThresholdExceededDetectionExclusionRuleStore(
             configServiceBlockingStub, mockConfigChangeEventGenerator);
     uuidGenerator = mock(UuidGenerator.class);
+    exclusionModsecRulesManager = mock(ExclusionModsecRulesManager.class);
     RulesMigrationManager rulesMigrationManager =
         mock(DetectionExclusionRulesMigrationManager.class);
-    exclusionModsecRulesManager = mock(ExclusionModsecRulesManager.class);
     rulesManager =
         new DetectionExclusionRulesManager(
             rulesStore,

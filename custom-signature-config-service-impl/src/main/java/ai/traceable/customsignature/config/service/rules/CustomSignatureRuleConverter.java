@@ -5,7 +5,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
-class CustomSignatureRuleConverter {
+public class CustomSignatureRuleConverter {
 
   public CustomSignatureRule convert(Value ruleConfig) throws InvalidProtocolBufferException {
     CustomSignatureRule.Builder builder = CustomSignatureRule.newBuilder();
