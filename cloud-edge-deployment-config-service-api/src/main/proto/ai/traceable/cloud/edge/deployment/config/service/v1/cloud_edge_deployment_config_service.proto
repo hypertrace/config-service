@@ -36,9 +36,14 @@ message UpdateCloudEdgeDeploymentConfigResponse {
 }
 
 message GetCloudEdgeDeploymentConfigsRequest {
-  repeated string ids = 1;
+  repeated string ids = 1 [deprecated = true];
   ConfigAccessType read_access = 2;
-  repeated string certificate_ids = 3; // Filter deployments that use these certificate IDs
+  GetCloudEdgeDeploymentConfigsFilter filter = 3;
+}
+
+message GetCloudEdgeDeploymentConfigsFilter {
+  repeated string ids = 1;
+  repeated string certificate_ids = 2;
 }
 
 message GetCloudEdgeDeploymentConfigsResponse {
