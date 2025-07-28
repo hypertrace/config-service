@@ -10,7 +10,7 @@ public interface CloudEdgeDeploymentConfigManager {
       RequestContext ctx, CreateCloudEdgeDeploymentConfigRequest request);
 
   List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
-      RequestContext ctx, List<String> ids, ConfigAccessType accessType);
+      RequestContext ctx, GetCloudEdgeDeploymentConfigsFilter filter, ConfigAccessType accessType);
 
   CloudEdgeDeploymentConfig updateCloudEdgeDeploymentConfig(
       RequestContext ctx, String id, UpdateCloudEdgeDeploymentConfigRequest request);

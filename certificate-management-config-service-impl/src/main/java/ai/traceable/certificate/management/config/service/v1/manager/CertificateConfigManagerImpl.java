@@ -2,6 +2,7 @@ package ai.traceable.certificate.management.config.service.v1.manager;
 
 import ai.traceable.certificate.management.config.service.v1.*;
 import ai.traceable.certificate.management.config.service.v1.store.CertificateConfigStore;
+import ai.traceable.certificate.management.config.service.v1.validator.CertificateUsageValidator;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -18,6 +19,7 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
   private final CertificateConfigStore store;
   private final CertificateValidator validator;
   private final UuidGenerator uuidGenerator;
+  private final CertificateUsageValidator certificateUsageValidator;
 
   @Override
   public Certificate createCertificate(RequestContext ctx, CreateCertificateRequest request) {
@@ -130,7 +132,7 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
       throw validationStatus.asRuntimeException();
     }
 
-    // Check if certificate exists and delete it
+    // Check if the certificate exists
     Certificate certificate = store.getCertificate(ctx, id);
     if (certificate == null) {
       throw Status.NOT_FOUND
@@ -138,6 +140,13 @@ public class CertificateConfigManagerImpl implements CertificateConfigManager {
           .asRuntimeException();
     }
 
+    // Validate that the certificate is not in use by any cloud-edge deployment
+    Status usageValidationStatus = certificateUsageValidator.validateCertificateNotInUse(ctx, id);
+    if (!usageValidationStatus.isOk()) {
+      throw usageValidationStatus.asRuntimeException();
+    }
+
+    // Delete the certificate
     try {
       store.deleteCertificate(ctx, id);
     } catch (Exception e) {

@@ -5,6 +5,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
@@ -67,10 +68,9 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
                 store.upsertCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission()));
   }
 
-  @Override
   public List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
-      RequestContext ctx, List<String> ids, ConfigAccessType accessType) {
-    return store.getCloudEdgeDeploymentConfigs(ctx, ids, accessType);
+      RequestContext ctx, GetCloudEdgeDeploymentConfigsFilter filter, ConfigAccessType accessType) {
+    return store.getCloudEdgeDeploymentConfigs(ctx, filter, accessType);
   }
 
   @Override

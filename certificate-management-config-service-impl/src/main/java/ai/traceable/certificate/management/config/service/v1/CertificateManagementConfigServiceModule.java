@@ -2,6 +2,9 @@ package ai.traceable.certificate.management.config.service.v1;
 
 import ai.traceable.certificate.management.config.service.v1.manager.CertificateConfigManager;
 import ai.traceable.certificate.management.config.service.v1.manager.CertificateConfigManagerImpl;
+import ai.traceable.certificate.management.config.service.v1.validator.CertificateUsageValidator;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigServiceGrpc;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigServiceGrpc.CloudEdgeDeploymentConfigServiceBlockingStub;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
@@ -28,11 +31,19 @@ public class CertificateManagementConfigServiceModule extends AbstractModule {
     bind(Channel.class).toInstance(channel);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(CertificateConfigManager.class).to(CertificateConfigManagerImpl.class);
+    bind(CertificateUsageValidator.class);
   }
 
   @Provides
   ConfigServiceBlockingStub provideConfigStub() {
     return ConfigServiceGrpc.newBlockingStub(this.channel)
+        .withCallCredentials(
+            RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
+  }
+
+  @Provides
+  CloudEdgeDeploymentConfigServiceBlockingStub provideCloudEdgeDeploymentConfigStub() {
+    return CloudEdgeDeploymentConfigServiceGrpc.newBlockingStub(this.channel)
         .withCallCredentials(
             RequestContextClientCallCredsProviderFactory.getClientCallCredsProvider().get());
   }

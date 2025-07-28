@@ -24,6 +24,7 @@ import ai.traceable.certificate.management.config.service.v1.StringList;
 import ai.traceable.certificate.management.config.service.v1.StringMap;
 import ai.traceable.certificate.management.config.service.v1.UpdateCertificateRequest;
 import ai.traceable.certificate.management.config.service.v1.store.CertificateConfigStore;
+import ai.traceable.certificate.management.config.service.v1.validator.CertificateUsageValidator;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
@@ -43,6 +44,8 @@ class CertificateConfigManagerImplTest {
 
   @Mock private CertificateValidator validator;
 
+  @Mock private CertificateUsageValidator certificateUsageValidator;
+
   @Mock private UuidGenerator uuidGenerator;
 
   @Mock private RequestContext requestContext;
@@ -52,7 +55,9 @@ class CertificateConfigManagerImplTest {
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
-    manager = new CertificateConfigManagerImpl(store, validator, uuidGenerator);
+    manager =
+        new CertificateConfigManagerImpl(
+            store, validator, uuidGenerator, certificateUsageValidator);
   }
 
   @Test
@@ -429,12 +434,15 @@ class CertificateConfigManagerImplTest {
 
     when(validator.validate(any(DeleteCertificateRequest.class))).thenReturn(Status.OK);
     when(store.getCertificate(requestContext, id)).thenReturn(existingCertificate);
+    when(certificateUsageValidator.validateCertificateNotInUse(eq(requestContext), eq(id)))
+        .thenReturn(Status.OK);
 
     manager.deleteCertificate(requestContext, id);
 
     verify(validator).validate(any(DeleteCertificateRequest.class));
     verify(store).getCertificate(requestContext, id);
     verify(store).deleteCertificate(requestContext, id);
+    verify(certificateUsageValidator).validateCertificateNotInUse(eq(requestContext), eq(id));
   }
 
   @Test
@@ -452,6 +460,37 @@ class CertificateConfigManagerImplTest {
     verify(validator).validate(any(DeleteCertificateRequest.class));
     verify(store).getCertificate(requestContext, id);
     verify(store, never()).deleteCertificate(any(), any());
+    verify(certificateUsageValidator, never()).validateCertificateNotInUse(any(), any());
+  }
+
+  @Test
+  void testDeleteCertificate_InUse() {
+    String id = "cert-123";
+    Certificate existingCertificate =
+        Certificate.newBuilder()
+            .setId(id)
+            .setMetadata(createValidMetadata())
+            .addStorage(createValidStorageDetails())
+            .build();
+
+    when(validator.validate(any(DeleteCertificateRequest.class))).thenReturn(Status.OK);
+    when(store.getCertificate(requestContext, id)).thenReturn(existingCertificate);
+    when(certificateUsageValidator.validateCertificateNotInUse(eq(requestContext), eq(id)))
+        .thenReturn(
+            Status.FAILED_PRECONDITION.withDescription(
+                "Certificate with ID "
+                    + id
+                    + " is in use by cloud-edge deployment deployment-123 and cannot be deleted"));
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class, () -> manager.deleteCertificate(requestContext, id));
+
+    assertEquals(Status.Code.FAILED_PRECONDITION, exception.getStatus().getCode());
+    verify(validator).validate(any(DeleteCertificateRequest.class));
+    verify(store).getCertificate(requestContext, id);
+    verify(store, never()).deleteCertificate(any(), any());
+    verify(certificateUsageValidator).validateCertificateNotInUse(eq(requestContext), eq(id));
   }
 
   private CertificateMetadata createValidMetadata() {

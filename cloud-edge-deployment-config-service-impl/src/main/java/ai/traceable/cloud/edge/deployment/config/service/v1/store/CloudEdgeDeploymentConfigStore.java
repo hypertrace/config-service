@@ -1,8 +1,13 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.store;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
+import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.manager.PermissionBasedConfigResolver;
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
@@ -71,12 +76,52 @@ public class CloudEdgeDeploymentConfigStore
   }
 
   public List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
-      RequestContext ctx, List<String> ids, ConfigAccessType readAccess) {
-    return getCloudEdgeDeploymentConfigs(ctx, ids).stream()
+      RequestContext ctx, GetCloudEdgeDeploymentConfigsFilter filter, ConfigAccessType readAccess) {
+    return getAllConfigData(ctx).stream()
+        .filter(config -> matchesFilter(config, filter))
         .map(
             config ->
                 permissionBasedConfigResolver.getResolvedConfigForReadRequest(config, readAccess))
         .collect(Collectors.toUnmodifiableList());
+  }
+
+  private boolean matchesFilter(
+      CloudEdgeDeploymentConfig config, GetCloudEdgeDeploymentConfigsFilter filter) {
+    if (filter.getIdsCount() > 0 && !filter.getIdsList().contains(config.getId())) {
+      return false;
+    }
+
+    if (filter.getCertificateIdsCount() > 0
+        && !isCertificateInUse(config, filter.getCertificateIdsList())) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private boolean isCertificateInUse(
+      CloudEdgeDeploymentConfig deployment, List<String> certificateIds) {
+    CloudEdgeDeploymentInputConfig inputConfig = deployment.getCloudEdgeDeploymentInputConfig();
+
+    // Check all service configs
+    for (ServiceConfig serviceConfig : inputConfig.getServiceConfigsList()) {
+      // Check domain configs for certificate usage
+      for (DomainConfig domainConfig : serviceConfig.getDomainConfigsList()) {
+        if (certificateIds.contains(domainConfig.getCertificateId())) {
+          return true;
+        }
+      }
+
+      // Check origin configs for certificate usage
+      for (OriginConfig originConfig : serviceConfig.getOriginConfigsList()) {
+        if (originConfig.hasCertificateId()
+            && certificateIds.contains(originConfig.getCertificateId())) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   public CloudEdgeDeploymentConfig upsertCloudEdgeDeploymentConfig(

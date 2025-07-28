@@ -14,6 +14,9 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
+import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
@@ -173,13 +176,106 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     CloudEdgeDeploymentConfig config2 = CloudEdgeDeploymentConfig.newBuilder().setId("id2").build();
     List<CloudEdgeDeploymentConfig> expectedConfigs = Arrays.asList(config1, config2);
 
-    when(store.getCloudEdgeDeploymentConfigs(requestContext, ids, accessType))
+    // Create filter with IDs
+    GetCloudEdgeDeploymentConfigsFilter filter =
+        GetCloudEdgeDeploymentConfigsFilter.newBuilder().addAllIds(ids).build();
+
+    when(store.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType))
         .thenReturn(expectedConfigs);
 
     // Execute and verify
     List<CloudEdgeDeploymentConfig> result =
-        manager.getCloudEdgeDeploymentConfigs(requestContext, ids, accessType);
+        manager.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType);
 
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    assertEquals("id1", result.get(0).getId());
+    assertEquals("id2", result.get(1).getId());
+  }
+
+  @Test
+  void testGetCloudEdgeDeploymentConfigsFilteredByCertificateIds() {
+    // Setup
+    List<String> ids = Arrays.asList("id1", "id2", "id3");
+    List<String> certificateIds = Arrays.asList("cert1", "cert2");
+    ConfigAccessType accessType = ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL;
+
+    // Create configs with different certificate usage patterns
+    // Config1: Has cert1 in domain config
+    CloudEdgeDeploymentConfig config1 =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("id1")
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .addDomainConfigs(
+                                DomainConfig.newBuilder().setCertificateId("cert1").build())
+                            .build())
+                    .build())
+            .build();
+
+    // Config2: Has cert2 in origin config
+    CloudEdgeDeploymentConfig config2 =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("id2")
+            .setCloudEdgeDeploymentInputConfig(
+                CloudEdgeDeploymentInputConfig.newBuilder()
+                    .addServiceConfigs(
+                        ServiceConfig.newBuilder()
+                            .addOriginConfigs(
+                                OriginConfig.newBuilder().setCertificateId("cert2").build())
+                            .build())
+                    .build())
+            .build();
+
+    // Create filter with IDs and certificate IDs
+    GetCloudEdgeDeploymentConfigsFilter filter =
+        GetCloudEdgeDeploymentConfigsFilter.newBuilder()
+            .addAllIds(ids)
+            .addAllCertificateIds(certificateIds)
+            .build();
+
+    // Only configs with matching certificate IDs should be returned by the store
+    List<CloudEdgeDeploymentConfig> expectedFilteredConfigs = Arrays.asList(config1, config2);
+
+    when(store.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType))
+        .thenReturn(expectedFilteredConfigs);
+
+    // Execute
+    List<CloudEdgeDeploymentConfig> result =
+        manager.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType);
+
+    // Verify that only configs with matching certificate IDs are returned
+    assertNotNull(result);
+    assertEquals(2, result.size());
+    assertTrue(result.stream().anyMatch(config -> config.getId().equals("id1")));
+    assertTrue(result.stream().anyMatch(config -> config.getId().equals("id2")));
+    assertTrue(result.stream().noneMatch(config -> config.getId().equals("id3")));
+  }
+
+  @Test
+  void testGetCloudEdgeDeploymentConfigsWithEmptyCertificateIdsList() {
+    // Setup
+    List<String> ids = Arrays.asList("id1", "id2");
+    ConfigAccessType accessType = ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL;
+
+    CloudEdgeDeploymentConfig config1 = CloudEdgeDeploymentConfig.newBuilder().setId("id1").build();
+    CloudEdgeDeploymentConfig config2 = CloudEdgeDeploymentConfig.newBuilder().setId("id2").build();
+    List<CloudEdgeDeploymentConfig> expectedConfigs = Arrays.asList(config1, config2);
+
+    // Create filter with IDs but no certificate IDs
+    GetCloudEdgeDeploymentConfigsFilter filter =
+        GetCloudEdgeDeploymentConfigsFilter.newBuilder().addAllIds(ids).build();
+
+    when(store.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType))
+        .thenReturn(expectedConfigs);
+
+    // Execute with filter that has no certificate IDs
+    List<CloudEdgeDeploymentConfig> result =
+        manager.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType);
+
+    // Verify that all configs are returned when certificate IDs list is empty
     assertNotNull(result);
     assertEquals(2, result.size());
     assertEquals("id1", result.get(0).getId());
