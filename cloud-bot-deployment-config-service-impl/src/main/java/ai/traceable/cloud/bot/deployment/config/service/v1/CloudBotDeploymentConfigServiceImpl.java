@@ -109,6 +109,22 @@ public class CloudBotDeploymentConfigServiceImpl extends CloudBotDeploymentConfi
   }
 
   @Override
+  public void rotateApiToken(
+      RotateApiTokenRequest request, StreamObserver<RotateApiTokenResponse> responseObserver) {
+    RequestContext ctx = RequestContext.CURRENT.get();
+    try {
+      CloudBotDeploymentConfig config =
+          cloudBotDeploymentConfigManager.rotateApiToken(ctx, request.getId());
+      responseObserver.onNext(
+          RotateApiTokenResponse.newBuilder().setCloudBotDeployment(config).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error("Rotate API token failed with request: {} and context: {}", request, ctx, e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
   public void getCloudBotDeploymentConfigs(
       GetCloudBotDeploymentConfigsRequest request,
       StreamObserver<GetCloudBotDeploymentConfigsResponse> responseObserver) {

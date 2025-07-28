@@ -2,7 +2,9 @@ package ai.traceable.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaProviderDetails;
@@ -20,6 +22,8 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.GetCloudBotDeploymentConfigsRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
+import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.RotateApiTokenRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
@@ -51,7 +55,7 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                     cloudBotDeploymentConfigServiceStub
                         .createCloudBotDeploymentConfig(
                             CreateCloudBotDeploymentConfigRequest.newBuilder()
-                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .setCloudBotDeploymentConfigInput(createConfigInput())
                                 .build())
                         .getCloudBotDeployment());
 
@@ -92,7 +96,7 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                     cloudBotDeploymentConfigServiceStub
                         .createCloudBotDeploymentConfig(
                             CreateCloudBotDeploymentConfigRequest.newBuilder()
-                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .setCloudBotDeploymentConfigInput(createConfigInput())
                                 .build())
                         .getCloudBotDeployment());
 
@@ -151,7 +155,7 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                     cloudBotDeploymentConfigServiceStub
                         .createCloudBotDeploymentConfig(
                             CreateCloudBotDeploymentConfigRequest.newBuilder()
-                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .setCloudBotDeploymentConfigInput(createConfigInput())
                                 .build())
                         .getCloudBotDeployment());
 
@@ -203,7 +207,7 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                     cloudBotDeploymentConfigServiceStub
                         .createCloudBotDeploymentConfig(
                             CreateCloudBotDeploymentConfigRequest.newBuilder()
-                                .setCloudBotDeploymentConfigInput(createConfigInputWithName())
+                                .setCloudBotDeploymentConfigInput(createConfigInput())
                                 .build())
                         .getCloudBotDeployment());
 
@@ -232,8 +236,70 @@ class CloudBotDeploymentConfigServiceIntegrationTest
     assertFalse(configFound, "Deleted config should not be present in the list of all configs");
   }
 
-  private CloudBotDeploymentConfigInput createConfigInputWithName() {
+  @Test
+  public void testRotateApiToken() {
+    // Create a cloud bot deployment config
+    DeploymentDetails deploymentDetails =
+        DeploymentDetails.newBuilder()
+            .setEnvironment("IB")
+            .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND)
+            .setOobDeploymentConfig(
+                OobDeploymentConfig.newBuilder().setTraceableCaptchaDomain("captcha.traceable.ai"))
+            .build();
+    CloudBotDeploymentConfig createdConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .createCloudBotDeploymentConfig(
+                            CreateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setCloudBotDeploymentConfigInput(
+                                    createConfigInput().toBuilder()
+                                        .setDeploymentDetails(deploymentDetails))
+                                .build())
+                        .getCloudBotDeployment());
+
+    // Store the original API token
+    String originalToken =
+        createdConfig.getDeploymentDetails().getOobDeploymentConfig().getApiToken().getKeyValue();
+
+    // Rotate the API token
+    CloudBotDeploymentConfig rotatedConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .rotateApiToken(
+                            RotateApiTokenRequest.newBuilder().setId(createdConfig.getId()).build())
+                        .getCloudBotDeployment());
+
+    // Verify the rotated token
+    String newToken =
+        rotatedConfig.getDeploymentDetails().getOobDeploymentConfig().getApiToken().getKeyValue();
+    String previousToken =
+        rotatedConfig
+            .getDeploymentDetails()
+            .getOobDeploymentConfig()
+            .getPreviousApiToken()
+            .getKeyValue();
+
+    assertNotEquals(originalToken, newToken, "New token should be different from original token");
+    assertEquals(originalToken, previousToken, "Previous token should match original token");
+
+    // Verify the previous token has an expiry timestamp
+    assertTrue(
+        rotatedConfig
+                .getDeploymentDetails()
+                .getOobDeploymentConfig()
+                .getPreviousApiToken()
+                .getExpiryTimestampMillis()
+            > System.currentTimeMillis(),
+        "Previous token should have an expiry timestamp");
+  }
+
+  private CloudBotDeploymentConfigInput createConfigInput() {
     return CloudBotDeploymentConfigInput.newBuilder()
+        .setEnabled(true)
         .setSiteConfig(
             SiteConfig.newBuilder()
                 .setSiteName("Test Site")

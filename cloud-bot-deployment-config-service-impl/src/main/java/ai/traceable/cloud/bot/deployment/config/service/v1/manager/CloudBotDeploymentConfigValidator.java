@@ -3,11 +3,11 @@ package ai.traceable.cloud.bot.deployment.config.service.v1.manager;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaProviderDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaType;
+import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentConfigInput;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
-import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
@@ -15,6 +15,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,8 @@ public class CloudBotDeploymentConfigValidator {
     return Status.OK;
   }
 
-  public Status validate(UpdateCloudBotDeploymentConfigRequest request) {
+  public Status validate(
+      UpdateCloudBotDeploymentConfigRequest request, CloudBotDeploymentConfig existingConfig) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Cloud bot deployment config ID cannot be empty");
@@ -71,10 +73,36 @@ public class CloudBotDeploymentConfigValidator {
       return status;
     }
 
+    if (input.getDeploymentDetails().getDeploymentMode()
+        != existingConfig.getDeploymentDetails().getDeploymentMode()) {
+      throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription("Cannot change deployment mode"));
+    }
+
+    // Do not allow users to update site-key config
+    if (!input.getSiteConfig().getSiteKey().isEmpty()
+        && !input
+            .getSiteConfig()
+            .getSiteKey()
+            .equals(existingConfig.getSiteConfig().getSiteKey())) {
+      throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription("Cannot change site key id"));
+    }
+
+    // Protecting change is list of domains as it is passed to MTCaptcha as well
+    if (!input
+        .getSiteConfig()
+        .getDomainsList()
+        .equals(existingConfig.getSiteConfig().getDomainsList())) {
+      throw new StatusRuntimeException(
+          Status.INVALID_ARGUMENT.withDescription("Cannot change list of domains to be protected"));
+    }
+
     return Status.OK;
   }
 
-  public Status validate(UpdateCloudBotDeploymentStatusRequest request) {
+  public Status validate(
+      UpdateCloudBotDeploymentStatusRequest request, CloudBotDeploymentConfig existingConfig) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Cloud bot deployment config ID cannot be empty");
@@ -94,11 +122,18 @@ public class CloudBotDeploymentConfigValidator {
       }
     }
 
+    if (existingConfig.getDeploymentDetails().getDeploymentMode()
+            == DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND
+        && !request.hasTraceableCaptchaDomain()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Traceable bot deployment cluster domain cannot be empty for OOB deployment");
+    }
+
     return Status.OK;
   }
 
-  public Status validate(DeleteCloudBotDeploymentConfigRequest request) {
-    if (request.getId().isEmpty()) {
+  Status validateId(String id) {
+    if (id.isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Cloud bot deployment config ID cannot be empty");
     }
@@ -112,6 +147,11 @@ public class CloudBotDeploymentConfigValidator {
 
     if (siteConfig.getDomainsCount() == 0) {
       return Status.INVALID_ARGUMENT.withDescription("At least one domain must be specified");
+    }
+
+    if (siteConfig.getDomainsCount() > 6) {
+      // Due to limitation from MTCaptcha
+      return Status.INVALID_ARGUMENT.withDescription("At max of six domains is supported");
     }
 
     // Validate each domain

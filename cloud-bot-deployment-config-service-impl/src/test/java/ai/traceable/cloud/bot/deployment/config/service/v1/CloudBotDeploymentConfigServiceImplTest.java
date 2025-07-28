@@ -44,12 +44,10 @@ class CloudBotDeploymentConfigServiceImplTest {
     StreamObserver<CreateCloudBotDeploymentConfigResponse> responseStreamObserver =
         mock(StreamObserver.class);
 
-    Runnable runnable =
+    REQUEST_CONTEXT.run(
         () ->
             cloudBotDeploymentConfigService.createCloudBotDeploymentConfig(
-                request, responseStreamObserver);
-
-    REQUEST_CONTEXT.run(runnable);
+                request, responseStreamObserver));
 
     verify(responseStreamObserver, times(1))
         .onNext(
@@ -76,12 +74,10 @@ class CloudBotDeploymentConfigServiceImplTest {
     StreamObserver<UpdateCloudBotDeploymentConfigResponse> responseStreamObserver =
         mock(StreamObserver.class);
 
-    Runnable runnable =
+    REQUEST_CONTEXT.run(
         () ->
             cloudBotDeploymentConfigService.updateCloudBotDeploymentConfig(
-                request, responseStreamObserver);
-
-    REQUEST_CONTEXT.run(runnable);
+                request, responseStreamObserver));
 
     verify(responseStreamObserver, times(1))
         .onNext(
@@ -110,12 +106,10 @@ class CloudBotDeploymentConfigServiceImplTest {
     StreamObserver<UpdateCloudBotDeploymentStatusResponse> responseStreamObserver =
         mock(StreamObserver.class);
 
-    Runnable runnable =
+    REQUEST_CONTEXT.run(
         () ->
             cloudBotDeploymentConfigService.updateCloudBotDeploymentStatus(
-                request, responseStreamObserver);
-
-    REQUEST_CONTEXT.run(runnable);
+                request, responseStreamObserver));
 
     verify(responseStreamObserver, times(1))
         .onNext(
@@ -134,16 +128,33 @@ class CloudBotDeploymentConfigServiceImplTest {
     StreamObserver<DeleteCloudBotDeploymentConfigResponse> responseStreamObserver =
         mock(StreamObserver.class);
 
-    Runnable runnable =
+    REQUEST_CONTEXT.run(
         () ->
             cloudBotDeploymentConfigService.deleteCloudBotDeploymentConfig(
-                request, responseStreamObserver);
-
-    REQUEST_CONTEXT.run(runnable);
+                request, responseStreamObserver));
 
     verify(cloudBotDeploymentConfigManager, times(1)).deleteCloudBotDeploymentConfig(any(), eq(id));
     verify(responseStreamObserver, times(1))
         .onNext(DeleteCloudBotDeploymentConfigResponse.getDefaultInstance());
+    verify(responseStreamObserver, times(1)).onCompleted();
+  }
+
+  @Test
+  void rotateKeyCloudBotDeploymentConfig() {
+    String id = "config-123";
+    RotateApiTokenRequest request = RotateApiTokenRequest.newBuilder().setId(id).build();
+
+    StreamObserver<RotateApiTokenResponse> responseStreamObserver = mock(StreamObserver.class);
+
+    CloudBotDeploymentConfig mockConfig = mock(CloudBotDeploymentConfig.class);
+    when(cloudBotDeploymentConfigManager.rotateApiToken(any(), eq(id))).thenReturn(mockConfig);
+
+    REQUEST_CONTEXT.run(
+        () -> cloudBotDeploymentConfigService.rotateApiToken(request, responseStreamObserver));
+
+    verify(cloudBotDeploymentConfigManager, times(1)).rotateApiToken(any(), eq(id));
+    verify(responseStreamObserver, times(1))
+        .onNext(RotateApiTokenResponse.newBuilder().setCloudBotDeployment(mockConfig).build());
     verify(responseStreamObserver, times(1)).onCompleted();
   }
 
@@ -162,12 +173,10 @@ class CloudBotDeploymentConfigServiceImplTest {
     StreamObserver<GetCloudBotDeploymentConfigsResponse> responseStreamObserver =
         mock(StreamObserver.class);
 
-    Runnable runnable =
+    REQUEST_CONTEXT.run(
         () ->
             cloudBotDeploymentConfigService.getCloudBotDeploymentConfigs(
-                request, responseStreamObserver);
-
-    REQUEST_CONTEXT.run(runnable);
+                request, responseStreamObserver));
 
     verify(responseStreamObserver, times(1))
         .onNext(

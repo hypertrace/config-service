@@ -7,6 +7,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import io.grpc.BindableService;
 import io.grpc.Channel;
+import java.time.Clock;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc;
 import org.hypertrace.config.service.v1.ConfigServiceGrpc.ConfigServiceBlockingStub;
@@ -25,6 +26,7 @@ public class CloudBotDeploymentConfigServiceModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    bind(Clock.class).toInstance(Clock.systemUTC());
     bind(BindableService.class).to(CloudBotDeploymentConfigServiceImpl.class);
     bind(Channel.class).toInstance(channel);
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);

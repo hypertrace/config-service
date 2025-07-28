@@ -6,17 +6,19 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentCon
 import ai.traceable.cloud.bot.deployment.config.service.v1.CloudBotDeploymentStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
-import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig.Builder;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
+import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
+import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -31,6 +33,7 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
   private final CloudBotDeploymentConfigValidator validator;
   private final UuidGenerator uuidGenerator;
   private final KeyPairGenerator keyPairGenerator;
+  private final Clock clock;
 
   @Override
   public CloudBotDeploymentConfig createCloudBotDeploymentConfig(
@@ -70,12 +73,14 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     // Create a new config with provisioning status
     CloudBotDeploymentConfig config =
         CloudBotDeploymentConfig.newBuilder()
+            .setEnabled(input.getEnabled())
             .setId(id)
             .setSiteConfig(siteConfigBuilder)
             .setDeploymentDetails(input.getDeploymentDetails())
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setClusterStatus(ClusterStatus.CLUSTER_STATUS_PROVISIONING))
+            .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(this.clock.millis() / 1000))
             .build();
 
     return store.createCloudBotDeploymentConfig(ctx, config);
@@ -84,16 +89,11 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
   @Override
   public CloudBotDeploymentConfig updateCloudBotDeploymentConfig(
       RequestContext ctx, String id, UpdateCloudBotDeploymentConfigRequest request) {
-    Status validationStatus = validator.validate(request);
+    CloudBotDeploymentConfig existingConfig = this.getCloudBotDeploymentConfig(ctx, id);
+
+    Status validationStatus = validator.validate(request, existingConfig);
     if (!validationStatus.isOk()) {
       throw new StatusRuntimeException(validationStatus);
-    }
-
-    // Check if config with the given ID exists
-    CloudBotDeploymentConfig existingConfig = store.getCloudBotDeploymentConfig(ctx, id);
-    if (existingConfig == null) {
-      throw new StatusRuntimeException(
-          Status.NOT_FOUND.withDescription("Cloud bot deployment config not found"));
     }
 
     try {
@@ -111,6 +111,10 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
       updatedConfigBuilder.setSiteConfig(
           getUpdatedSiteConfig(existingConfig.getSiteConfig(), requestedInput.getSiteConfig()));
 
+      updatedConfigBuilder
+          .setEnabled(requestedInput.getEnabled())
+          .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(this.clock.millis() / 1000));
+
       // Save and return updated config
       return store.updateCloudBotDeploymentConfig(ctx, updatedConfigBuilder.build());
     } catch (StatusRuntimeException e) {
@@ -127,18 +131,6 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     // Start with existing changes
     SiteConfig.Builder updatedSiteConfig = existingSiteConfig.toBuilder();
 
-    if (!requestedSiteConfig.getSiteKey().isEmpty()
-        && !existingSiteConfig.getSiteKey().equals(requestedSiteConfig.getSiteKey())) {
-      throw new StatusRuntimeException(
-          Status.INVALID_ARGUMENT.withDescription("Cannot change site key id"));
-    }
-
-    // Protecting change is list of domains as it is passed to MTCaptcha as well
-    if (!existingSiteConfig.getDomainsList().equals(requestedSiteConfig.getDomainsList())) {
-      throw new StatusRuntimeException(
-          Status.INVALID_ARGUMENT.withDescription("Cannot change list of domains to be protected"));
-    }
-
     updatedSiteConfig.setSiteName(requestedSiteConfig.getSiteName());
     if (requestedSiteConfig.getCaptchaConfig() != updatedSiteConfig.getCaptchaConfig()) {
       updatedSiteConfig.setCaptchaConfig(requestedSiteConfig.getCaptchaConfig());
@@ -152,11 +144,6 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
   private DeploymentDetails updateDeploymentDetails(
       DeploymentDetails existingDetails, DeploymentDetails requestedDetails) {
-    if (requestedDetails.getDeploymentMode() != existingDetails.getDeploymentMode()) {
-      throw new StatusRuntimeException(
-          Status.INVALID_ARGUMENT.withDescription("Cannot change deployment mode"));
-    }
-
     // Start with existing changes
     DeploymentDetails.Builder updatedDetails = existingDetails.toBuilder();
     updatedDetails.setEnvironment(requestedDetails.getEnvironment());
@@ -172,16 +159,11 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
   @Override
   public CloudBotDeploymentConfig updateCloudBotDeploymentStatus(
       RequestContext ctx, String id, UpdateCloudBotDeploymentStatusRequest request) {
-    Status validationStatus = validator.validate(request);
+    CloudBotDeploymentConfig existingConfig = this.getCloudBotDeploymentConfig(ctx, id);
+
+    Status validationStatus = validator.validate(request, existingConfig);
     if (!validationStatus.isOk()) {
       throw new StatusRuntimeException(validationStatus);
-    }
-
-    // Check if config with the given ID exists
-    CloudBotDeploymentConfig existingConfig = store.getCloudBotDeploymentConfig(ctx, id);
-    if (existingConfig == null) {
-      throw new StatusRuntimeException(
-          Status.NOT_FOUND.withDescription("Cloud bot deployment config not found"));
     }
 
     try {
@@ -212,20 +194,13 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
   @Override
   public void deleteCloudBotDeploymentConfig(RequestContext ctx, String id) {
-    DeleteCloudBotDeploymentConfigRequest request =
-        DeleteCloudBotDeploymentConfigRequest.newBuilder().setId(id).build();
-    Status validationStatus = validator.validate(request);
+    Status validationStatus = validator.validateId(id);
     if (!validationStatus.isOk()) {
       throw validationStatus.asRuntimeException();
     }
 
     // Check if config exists
-    CloudBotDeploymentConfig config = store.getCloudBotDeploymentConfig(ctx, id);
-    if (config == null) {
-      throw Status.NOT_FOUND
-          .withDescription("Cloud bot deployment config not found with id: " + id)
-          .asRuntimeException();
-    }
+    this.getCloudBotDeploymentConfig(ctx, id);
 
     try {
       store.deleteCloudBotDeploymentConfig(ctx, id);
@@ -237,6 +212,58 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
   }
 
   @Override
+  public CloudBotDeploymentConfig rotateApiToken(RequestContext ctx, String id) {
+    Status validationStatus = validator.validateId(id);
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
+
+    try {
+      CloudBotDeploymentConfig existingConfig = this.getCloudBotDeploymentConfig(ctx, id);
+
+      // Check if this is an out-of-band deployment
+      if (existingConfig.getDeploymentDetails().getDeploymentMode()
+          != DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND) {
+        throw new StatusRuntimeException(
+            Status.INVALID_ARGUMENT.withDescription(
+                "API token rotation is only supported for out-of-band deployments"));
+      }
+
+      Builder updatedOobConfigBuilder =
+          existingConfig.getDeploymentDetails().getOobDeploymentConfig().toBuilder();
+
+      // Set current token as previous token for 7 days
+      if (updatedOobConfigBuilder.hasApiToken()) {
+        long expiryTimeMillis = System.currentTimeMillis() + (7 * 24 * 60 * 60 * 1000); // 7 days
+        updatedOobConfigBuilder.setPreviousApiToken(
+            ApiToken.newBuilder()
+                .setKeyValue(updatedOobConfigBuilder.getApiToken().getKeyValue())
+                .setExpiryTimestampMillis(expiryTimeMillis)
+                .build());
+      }
+
+      // Set new api token
+      updatedOobConfigBuilder.setApiToken(
+          ApiToken.newBuilder().setKeyValue(uuidGenerator.generateRandomId()).build());
+
+      // Create the updated config
+      CloudBotDeploymentConfig updatedConfig =
+          existingConfig.toBuilder()
+              .setDeploymentDetails(
+                  existingConfig.getDeploymentDetails().toBuilder()
+                      .setOobDeploymentConfig(updatedOobConfigBuilder))
+              .build();
+
+      return store.updateCloudBotDeploymentConfig(ctx, updatedConfig);
+    } catch (StatusRuntimeException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new StatusRuntimeException(
+          Status.INTERNAL.withDescription("Failed to rotate API token: " + e.getMessage()));
+    }
+  }
+
+  @Override
   public List<CloudBotDeploymentConfig> getCloudBotDeploymentConfigs(
       RequestContext ctx, List<String> ids) {
     if (ids.isEmpty()) {
@@ -244,7 +271,17 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     }
 
     return ids.stream()
-        .map(id -> store.getCloudBotDeploymentConfig(ctx, id))
+        .map(id -> this.getCloudBotDeploymentConfig(ctx, id))
         .collect(Collectors.toList());
+  }
+
+  private CloudBotDeploymentConfig getCloudBotDeploymentConfig(RequestContext ctx, String id) {
+    // Get the existing config
+    CloudBotDeploymentConfig existingConfig = store.getCloudBotDeploymentConfig(ctx, id);
+    if (existingConfig == null) {
+      throw new StatusRuntimeException(
+          Status.NOT_FOUND.withDescription("Cloud bot deployment config not found: " + id));
+    }
+    return existingConfig;
   }
 }

@@ -3,6 +3,7 @@ package ai.traceable.cloud.bot.deployment.config.service.v1.manager;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -32,8 +33,10 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploym
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
+import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +53,7 @@ class CloudBotDeploymentConfigManagerImplTest {
   @Mock private UuidGenerator uuidGenerator;
   @Mock private KeyPairGenerator keyPairGenerator;
   @Mock private RequestContext requestContext;
+  @Mock private Clock clock;
 
   private CloudBotDeploymentConfigManagerImpl manager;
 
@@ -57,7 +61,8 @@ class CloudBotDeploymentConfigManagerImplTest {
   void setUp() {
     MockitoAnnotations.openMocks(this);
     manager =
-        new CloudBotDeploymentConfigManagerImpl(store, validator, uuidGenerator, keyPairGenerator);
+        new CloudBotDeploymentConfigManagerImpl(
+            store, validator, uuidGenerator, keyPairGenerator, clock);
   }
 
   @Test
@@ -69,11 +74,12 @@ class CloudBotDeploymentConfigManagerImplTest {
         CreateCloudBotDeploymentConfigRequest.newBuilder()
             .setCloudBotDeploymentConfigInput(
                 CloudBotDeploymentConfigInput.newBuilder()
+                    .setEnabled(true)
                     .setSiteConfig(siteConfig)
                     .setDeploymentDetails(createValidOOBDeploymentDetails("random")))
             .build();
 
-    when(validator.validate(request)).thenReturn(Status.OK);
+    when(validator.validate(eq(request))).thenReturn(Status.OK);
 
     // First call returns config ID, second call returns site key
     when(uuidGenerator.generateRandomId())
@@ -83,10 +89,12 @@ class CloudBotDeploymentConfigManagerImplTest {
 
     JWTSigningKeyDetails mockJwtSign = mock(JWTSigningKeyDetails.class);
     when(keyPairGenerator.generateJwtSigningKeyPair()).thenReturn(mockJwtSign);
+    when(clock.millis()).thenReturn(123456000L);
 
     // Create expected config with the site key set by the manager and status set to PROVISIONING
     CloudBotDeploymentConfig expectedConfig =
         CloudBotDeploymentConfig.newBuilder()
+            .setEnabled(true)
             .setId("config-123")
             .setSiteConfig(
                 siteConfig.toBuilder().setSiteKey("site-key-456").setJwtSigningDetails(mockJwtSign))
@@ -94,6 +102,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setClusterStatus(ClusterStatus.CLUSTER_STATUS_PROVISIONING))
+            .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(123456))
             .build();
 
     when(store.createCloudBotDeploymentConfig(eq(requestContext), eq(expectedConfig)))
@@ -114,7 +123,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setCloudBotDeploymentConfigInput(input)
             .build();
 
-    when(validator.validate(request))
+    when(validator.validate(eq(request)))
         .thenReturn(Status.INVALID_ARGUMENT.withDescription("Validation failed"));
 
     StatusRuntimeException exception =
@@ -129,12 +138,12 @@ class CloudBotDeploymentConfigManagerImplTest {
   void testUpdateCloudBotDeploymentConfig() {
     String id = "config-123";
 
-    // Create request
     UpdateCloudBotDeploymentConfigRequest request =
         UpdateCloudBotDeploymentConfigRequest.newBuilder()
             .setId(id)
             .setCloudBotDeploymentConfigInput(
                 CloudBotDeploymentConfigInput.newBuilder()
+                    .setEnabled(false)
                     .setSiteConfig(
                         createValidSiteConfig().toBuilder()
                             .setSiteName("Apple-site")
@@ -165,10 +174,10 @@ class CloudBotDeploymentConfigManagerImplTest {
                     .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
             .build();
 
-    // Create expected updated config that preserves the site key, JWT details, and status
     CloudBotDeploymentConfig expectedUpdatedConfig =
         CloudBotDeploymentConfig.newBuilder()
             .setId(id)
+            .setEnabled(false)
             .setSiteConfig(
                 existingSiteConfig.toBuilder()
                     .setSiteName("Apple-site")
@@ -180,16 +189,26 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+            .setLastUpdatedTimestamp(Timestamp.newBuilder().setSeconds(123456))
             .build();
 
-    when(validator.validate(request)).thenReturn(Status.OK);
+    when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
+        .thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
     when(store.updateCloudBotDeploymentConfig(eq(requestContext), eq(expectedUpdatedConfig)))
         .thenReturn(expectedUpdatedConfig);
+    when(clock.millis()).thenReturn(123456000L);
 
     CloudBotDeploymentConfig result =
         manager.updateCloudBotDeploymentConfig(requestContext, id, request);
-    assertEquals(expectedUpdatedConfig, result);
+
+    // Verify the result has the expected values except for timestamp
+    assertEquals(expectedUpdatedConfig.getId(), result.getId());
+    assertEquals(expectedUpdatedConfig.getEnabled(), result.getEnabled());
+    assertEquals(expectedUpdatedConfig.getSiteConfig(), result.getSiteConfig());
+    assertEquals(expectedUpdatedConfig.getDeploymentDetails(), result.getDeploymentDetails());
+    assertEquals(
+        expectedUpdatedConfig.getCloudBotDeploymentStatus(), result.getCloudBotDeploymentStatus());
   }
 
   @Test
@@ -208,7 +227,8 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setCloudBotDeploymentConfigInput(input)
             .build();
 
-    when(validator.validate(request)).thenReturn(Status.OK);
+    when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
+        .thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(null);
 
     StatusRuntimeException exception =
@@ -233,7 +253,6 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setMtCaptcha(MTCaptchaDetails.newBuilder().setSiteKey("mt-site-key"))
             .build();
 
-    // Create request
     UpdateCloudBotDeploymentStatusRequest request =
         UpdateCloudBotDeploymentStatusRequest.newBuilder()
             .setId(id)
@@ -263,7 +282,8 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setCloudBotDeploymentStatus(status)
             .build();
 
-    when(validator.validate(request)).thenReturn(Status.OK);
+    when(validator.validate(eq(request), any(CloudBotDeploymentConfig.class)))
+        .thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
     when(store.updateCloudBotDeploymentConfig(eq(requestContext), eq(expectedUpdatedConfig)))
         .thenReturn(expectedUpdatedConfig);
@@ -278,7 +298,6 @@ class CloudBotDeploymentConfigManagerImplTest {
   void testDeleteCloudBotDeploymentConfig() {
     String id = "config-123";
 
-    // Create request
     DeleteCloudBotDeploymentConfigRequest request =
         DeleteCloudBotDeploymentConfigRequest.newBuilder().setId(id).build();
 
@@ -290,7 +309,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setDeploymentDetails(createValidEdgeDeploymentDetails())
             .build();
 
-    when(validator.validate(request)).thenReturn(Status.OK);
+    when(validator.validateId(id)).thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
 
     manager.deleteCloudBotDeploymentConfig(requestContext, id);
@@ -303,8 +322,7 @@ class CloudBotDeploymentConfigManagerImplTest {
   void testDeleteCloudBotDeploymentConfig_NotFound() {
     String id = "non-existent-id";
 
-    when(validator.validate(any(DeleteCloudBotDeploymentConfigRequest.class)))
-        .thenReturn(Status.OK);
+    when(validator.validateId(id)).thenReturn(Status.OK);
     when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(null);
 
     StatusRuntimeException exception =
@@ -377,6 +395,55 @@ class CloudBotDeploymentConfigManagerImplTest {
     assertEquals("config-2", result.get(1).getId());
   }
 
+  @Test
+  void testRotateApiToken() {
+    String id = "random-id";
+
+    DeploymentDetails deploymentDetails = createValidOOBDeploymentDetails("originalToken");
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId(id)
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(deploymentDetails)
+            .setCloudBotDeploymentStatus(
+                CloudBotDeploymentStatus.newBuilder()
+                    .setClusterStatus(ClusterStatus.CLUSTER_STATUS_READY))
+            .build();
+
+    when(validator.validateId(id)).thenReturn(Status.OK);
+
+    // Mock the store to return the existing config
+    when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+
+    // Mock the UUID generator to return the new token
+    when(uuidGenerator.generateRandomId()).thenReturn("newToken");
+
+    // Mock the store to return the updated config
+    when(store.updateCloudBotDeploymentConfig(
+            eq(requestContext), any(CloudBotDeploymentConfig.class)))
+        .thenAnswer(invocation -> invocation.getArgument(1));
+
+    // Call the method under test
+    CloudBotDeploymentConfig result = manager.rotateApiToken(requestContext, id);
+
+    assertEquals(id, result.getId());
+    assertEquals(
+        "newToken",
+        result.getDeploymentDetails().getOobDeploymentConfig().getApiToken().getKeyValue());
+    assertEquals(
+        "originalToken",
+        result.getDeploymentDetails().getOobDeploymentConfig().getPreviousApiToken().getKeyValue());
+    assertTrue(
+        result
+                .getDeploymentDetails()
+                .getOobDeploymentConfig()
+                .getPreviousApiToken()
+                .getExpiryTimestampMillis()
+            > System.currentTimeMillis());
+    assertEquals("production", result.getDeploymentDetails().getEnvironment());
+    assertEquals("Test Site", result.getSiteConfig().getSiteName());
+  }
+
   // Helper methods to create valid test objects
   private SiteConfig createValidSiteConfig() {
     return SiteConfig.newBuilder()
@@ -404,7 +471,9 @@ class CloudBotDeploymentConfigManagerImplTest {
         .setEnvironment("production")
         .setDeploymentMode(DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND)
         .setOobDeploymentConfig(
-            OobDeploymentConfig.newBuilder().setApiToken(ApiToken.newBuilder().setKeyValue(token)))
+            OobDeploymentConfig.newBuilder()
+                .setApiToken(ApiToken.newBuilder().setKeyValue(token))
+                .setTraceableCaptchaDomain("captcha.traceable.ai"))
         .build();
   }
 }

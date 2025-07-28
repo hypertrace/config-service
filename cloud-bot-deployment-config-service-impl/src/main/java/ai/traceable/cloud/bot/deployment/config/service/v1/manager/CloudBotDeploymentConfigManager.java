@@ -20,5 +20,7 @@ public interface CloudBotDeploymentConfigManager {
 
   void deleteCloudBotDeploymentConfig(RequestContext ctx, String id);
 
+  CloudBotDeploymentConfig rotateApiToken(RequestContext ctx, String id);
+
   List<CloudBotDeploymentConfig> getCloudBotDeploymentConfigs(RequestContext ctx, List<String> ids);
 }
