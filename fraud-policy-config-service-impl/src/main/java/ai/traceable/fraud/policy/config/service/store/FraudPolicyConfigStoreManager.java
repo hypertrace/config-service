@@ -115,7 +115,7 @@ public class FraudPolicyConfigStoreManager {
         fetchFraudPolicyList(requestContext, getFraudPolicyListRequest);
     if (fraudPolicyListResponse.getFraudPolicyListCount() == 0) {
       throw Status.NOT_FOUND
-          .withDescription("No fraud pollicy of id=" + request.getFraudPolicyId())
+          .withDescription("No fraud policy of id = " + request.getFraudPolicyId())
           .asException();
     }
     if (fraudPolicyListResponse.getFraudPolicyListCount() > 1) {

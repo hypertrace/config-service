@@ -18,6 +18,7 @@ message Template {
   // derivation configs are upserted before fraud policies
   // also the variables must flow from top down to the tree
   repeated string dependency_templates = 5; // reference to other templates
+  string version = 6; // tied to type-registry version
 }
 
 enum TemplateType {

@@ -6,10 +6,14 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.config.proto.utils.FieldMaskUtils;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.fraud.datamodel.config.service.v1.FieldValue;
+import ai.traceable.fraud.datamodel.config.service.v1.PrimitiveFieldValue;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.ApiAccessAnomalyConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStore;
 import ai.traceable.fraud.policy.config.service.store.FraudPolicyConfigStoreManager;
+import ai.traceable.fraud.policy.config.service.store.TemplateConfigStore;
+import ai.traceable.fraud.policy.config.service.store.TemplateConfigStoreManager;
 import ai.traceable.fraud.policy.config.service.v1.APISpec;
 import ai.traceable.fraud.policy.config.service.v1.ApiAccessAnomalyConfig;
 import ai.traceable.fraud.policy.config.service.v1.ApiCollection;
@@ -17,9 +21,12 @@ import ai.traceable.fraud.policy.config.service.v1.ApiReference;
 import ai.traceable.fraud.policy.config.service.v1.CorrelationKey;
 import ai.traceable.fraud.policy.config.service.v1.CreateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.CreateFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.CreateTemplateRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.DeleteFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.DeleteTemplateRequest;
+import ai.traceable.fraud.policy.config.service.v1.DeleteTemplateResponse;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicy;
 import ai.traceable.fraud.policy.config.service.v1.FraudPolicyConfigServiceGrpc;
 import ai.traceable.fraud.policy.config.service.v1.GetApiAccessAnomalyConfigRequest;
@@ -28,14 +35,20 @@ import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyListResponse;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyRequest;
 import ai.traceable.fraud.policy.config.service.v1.GetFraudPolicyResponse;
+import ai.traceable.fraud.policy.config.service.v1.GetTemplateListRequest;
+import ai.traceable.fraud.policy.config.service.v1.GetTemplateListResponse;
 import ai.traceable.fraud.policy.config.service.v1.GroupedConfig;
+import ai.traceable.fraud.policy.config.service.v1.Template;
 import ai.traceable.fraud.policy.config.service.v1.TimeObj;
 import ai.traceable.fraud.policy.config.service.v1.TimeUnit;
 import ai.traceable.fraud.policy.config.service.v1.TimeWindow;
 import ai.traceable.fraud.policy.config.service.v1.UpdateApiAccessAnomalyConfigRequest;
 import ai.traceable.fraud.policy.config.service.v1.UpdateFraudPolicyRequest;
+import ai.traceable.fraud.policy.config.service.v1.UpdateTemplateRequest;
 import ai.traceable.fraud.policy.config.service.validation.ApiAccessAnomalyConfigServiceRequestValidator;
 import ai.traceable.fraud.policy.config.service.validation.FraudPolicyConfigRequestValidator;
+import ai.traceable.fraud.policy.config.service.validation.TemplateConfigRequestValidator;
+import ai.traceable.fraud.query.model.v1.TypedParam;
 import com.google.protobuf.FieldMask;
 import java.util.List;
 import org.hypertrace.config.service.change.event.api.ConfigChangeEventGenerator;
@@ -60,7 +73,8 @@ class FraudPolicyConfigServiceImplTest {
 
   private FraudPolicyConfigServiceGrpc.FraudPolicyConfigServiceBlockingStub
       fraudPolicyConfigServiceBlockingStub;
-  private FraudPolicyConfigStoreManager storeManager;
+  private FraudPolicyConfigStoreManager fraudPolicyConfigStoreManager;
+  private TemplateConfigStoreManager templateConfigStoreManager;
   private ApiAccessAnomalyConfigStoreManager apiAccessAnomalyConfigStoreManager;
 
   private MockGenericConfigService mockGenericConfigService;
@@ -70,6 +84,9 @@ class FraudPolicyConfigServiceImplTest {
   @BeforeEach
   void setUp(TestInfo testInfo) {
     if (testInfo.getTags().contains("fraudPolicy")) {
+      this.mockGenericConfigService =
+          new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDeleteAll();
+    } else if (testInfo.getTags().contains("fraudTemplate")) {
       this.mockGenericConfigService =
           new MockGenericConfigService().mockUpsert().mockGet().mockGetAll().mockDeleteAll();
     } else if (testInfo.getTags().contains("apiAccessAnomaly")) {
@@ -82,17 +99,22 @@ class FraudPolicyConfigServiceImplTest {
   void beforeEach() {
     ConfigServiceGrpc.ConfigServiceBlockingStub genericStub =
         ConfigServiceGrpc.newBlockingStub(this.mockGenericConfigService.channel());
-    this.storeManager =
+    this.fraudPolicyConfigStoreManager =
         new FraudPolicyConfigStoreManager(
             new FraudPolicyConfigStore(genericStub, eventGenerator), uuidGenerator);
+    this.templateConfigStoreManager =
+        new TemplateConfigStoreManager(
+            new TemplateConfigStore(genericStub, eventGenerator), uuidGenerator);
     this.apiAccessAnomalyConfigStoreManager =
         new ApiAccessAnomalyConfigStoreManager(
             uuidGenerator, new ApiAccessAnomalyConfigStore(genericStub, eventGenerator));
     this.mockGenericConfigService
         .addService(
             new FraudPolicyConfigServiceImpl(
-                storeManager,
+                fraudPolicyConfigStoreManager,
                 new FraudPolicyConfigRequestValidator(),
+                templateConfigStoreManager,
+                new TemplateConfigRequestValidator(),
                 apiAccessAnomalyConfigStoreManager,
                 new ApiAccessAnomalyConfigServiceRequestValidator()))
         .start();
@@ -206,6 +228,79 @@ class FraudPolicyConfigServiceImplTest {
                 this.fraudPolicyConfigServiceBlockingStub.getFraudPolicyList(
                     GetFraudPolicyListRequest.newBuilder().setIncludeDisabled(true).build()));
     assertEquals(0, fraudPolicyListResponse.getFraudPolicyListCount());
+  }
+
+  @Test
+  @Tag("fraudTemplate")
+  public void testTemplateCRUD() {
+    RequestContext requestContext = buildRequestContext();
+    Template createdTemplate =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub
+                    .createTemplate(
+                        CreateTemplateRequest.newBuilder()
+                            .setTemplate(Template.newBuilder().build())
+                            .build())
+                    .getTemplate());
+    assertEquals(UUID_1, createdTemplate.getTemplateId());
+
+    Template template =
+        Template.newBuilder()
+            .setTemplateId(UUID_1)
+            .addDefaultTemplateVariables(
+                TypedParam.newBuilder()
+                    .setName("param-name")
+                    .setValue(
+                        FieldValue.newBuilder()
+                            .setPrimitiveVal(
+                                PrimitiveFieldValue.newBuilder()
+                                    .setStringVal("param-value")
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+    FieldMask output = FieldMaskUtils.generateFieldMask(template);
+    Assertions.assertEquals(6, output.getPathsCount());
+
+    Template updatedTemplate =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub
+                    .updateTemplate(
+                        UpdateTemplateRequest.newBuilder()
+                            .setTemplateId(UUID_1)
+                            .setTemplate(template)
+                            .build())
+                    .getTemplate());
+
+    assertEquals("param-name", updatedTemplate.getDefaultTemplateVariables(0).getName());
+    assertEquals(
+        "param-value",
+        updatedTemplate.getDefaultTemplateVariables(0).getValue().getPrimitiveVal().getStringVal());
+
+    GetTemplateListResponse templateListResponse =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub.getTemplateList(
+                    GetTemplateListRequest.getDefaultInstance()));
+    assertEquals(1, templateListResponse.getTemplateListCount());
+    assertEquals(UUID_1, templateListResponse.getTemplateList(0).getTemplateId());
+
+    DeleteTemplateResponse deleteTemplateResponse =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub.deleteTemplate(
+                    DeleteTemplateRequest.newBuilder().addTemplateIdList(UUID_1).build()));
+    assertEquals(1, deleteTemplateResponse.getTemplateListCount());
+    assertEquals(UUID_1, deleteTemplateResponse.getTemplateList(0).getTemplateId());
+
+    templateListResponse =
+        requestContext.call(
+            () ->
+                this.fraudPolicyConfigServiceBlockingStub.getTemplateList(
+                    GetTemplateListRequest.newBuilder().build()));
+    assertEquals(0, templateListResponse.getTemplateListCount());
   }
 
   @Test
