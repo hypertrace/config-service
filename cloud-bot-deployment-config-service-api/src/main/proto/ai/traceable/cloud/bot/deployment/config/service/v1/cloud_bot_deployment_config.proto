@@ -3,19 +3,23 @@ syntax = "proto3";
 package ai.traceable.cloud.bot.deployment.config.service.v1;
 
 import "ai/traceable/graphql/autogen/schema/annotations/field/v1/graphql_field_options.proto";
+import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
 // Main configuration for bot protection deployment
 message CloudBotDeploymentConfig {
+  bool enabled = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If deployment is enabled or not"];
   string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier for the bot deployment configuration"];
   SiteConfig site_config = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Site-specific configuration for bot protection"];
   DeploymentDetails deployment_details = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Details about how the bot protection is deployed"];
   CloudBotDeploymentStatus cloud_bot_deployment_status = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Information about the bot deployment status"];
+  google.protobuf.Timestamp last_updated_timestamp = 6 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unix timestamp of when the config was last updated"];
 }
 
 // Input configuration provided by users through the UI
 message CloudBotDeploymentConfigInput {
+  bool enabled = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If deployment is enabled or not"];
   SiteConfig site_config = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Site-specific configuration for bot protection"];
   DeploymentDetails deployment_details = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Details about how the bot protection is deployed"];
 }
@@ -51,6 +55,7 @@ message EdgeDeploymentConfig {
 message OobDeploymentConfig {
   ApiToken api_token = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Current active API token"];
   ApiToken previous_api_token = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Previous API token (to be rotated and will expire)"];
+  string traceable_captcha_domain = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Customer's traceable domain which should be used for bot protection related interaction"];
 }
 
 message ApiToken {
