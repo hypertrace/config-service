@@ -4,6 +4,7 @@ import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
+import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
 import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import java.util.List;
@@ -49,16 +50,7 @@ public class CustomSignatureRulesEdgeDecisionFilter {
             .getMatchCategory()
             .equals(MatchCategory.MATCH_CATEGORY_REQUEST);
       case LHS_RHS_KEYS_EXPRESSION:
-        return clause
-                .getLhsRhsKeysExpression()
-                .getLhsKeyExpression()
-                .getMatchCategory()
-                .equals(MatchCategory.MATCH_CATEGORY_REQUEST)
-            && clause
-                .getLhsRhsKeysExpression()
-                .getRhsKeyExpression()
-                .getMatchCategory()
-                .equals(MatchCategory.MATCH_CATEGORY_REQUEST);
+        return isCompatibleLhsRhsKeysExpression(clause.getLhsRhsKeysExpression());
       default:
         return true;
     }
@@ -71,5 +63,21 @@ public class CustomSignatureRulesEdgeDecisionFilter {
             && !ruleEffect.getEffectsList().isEmpty())
         || (ruleEffect.getEventType().equals(EventType.EVENT_TYPE_TESTING_DETECTION)
             && !ruleEffect.getEffectsList().isEmpty());
+  }
+
+  private static boolean isCompatibleLhsRhsKeysExpression(
+      LhsRhsKeysExpression lhsRhsKeysExpression) {
+    return areMatchCategoriesCompatible(
+            lhsRhsKeysExpression.getLhsKeyExpression().getMatchCategory(),
+            lhsRhsKeysExpression.getRhsKeyExpression().getMatchCategory())
+        || areMatchCategoriesCompatible(
+            lhsRhsKeysExpression.getKeyLhsExpression().getMatchCategory(),
+            lhsRhsKeysExpression.getKeyRhsExpression().getMatchCategory());
+  }
+
+  private static boolean areMatchCategoriesCompatible(
+      MatchCategory lhsMatchCategory, MatchCategory rhsMatchCategory) {
+    return lhsMatchCategory == MatchCategory.MATCH_CATEGORY_REQUEST
+        && rhsMatchCategory == MatchCategory.MATCH_CATEGORY_REQUEST;
   }
 }

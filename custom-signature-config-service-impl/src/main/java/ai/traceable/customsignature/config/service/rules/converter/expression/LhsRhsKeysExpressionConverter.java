@@ -25,6 +25,15 @@ public class LhsRhsKeysExpressionConverter implements CustomSignatureExpressionC
     boolean negationValue =
         lhsRhsKeysExpression.getMatchOperator() == MatchOperator.MATCH_OPERATOR_NOT_CONTAIN;
 
+    MatchExpression lhsMatchExpression =
+        lhsRhsKeysExpression.hasLhsKeyExpression()
+            ? lhsRhsKeysExpression.getLhsKeyExpression()
+            : lhsRhsKeysExpression.getKeyLhsExpression();
+    MatchExpression rhsMatchExpression =
+        lhsRhsKeysExpression.hasRhsKeyExpression()
+            ? lhsRhsKeysExpression.getRhsKeyExpression()
+            : lhsRhsKeysExpression.getKeyRhsExpression();
+
     return MatchCondition.newBuilder()
         .setGenericMatchCondition(
             GenericMatchCondition.newBuilder()
@@ -32,8 +41,8 @@ public class LhsRhsKeysExpressionConverter implements CustomSignatureExpressionC
                     JexlExpressionConfig.newBuilder()
                         .setJexlExpression(
                             buildJexlExpressionForLhsAndRhsKeyMatchExpressions(
-                                lhsRhsKeysExpression.getLhsKeyExpression(),
-                                lhsRhsKeysExpression.getRhsKeyExpression(),
+                                lhsMatchExpression,
+                                rhsMatchExpression,
                                 lhsRhsKeysExpression.getMatchOperator()))
                         .build())
                 .build())
