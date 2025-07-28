@@ -97,15 +97,14 @@ class ClauseGroupValidator {
   private static final Set<MatchOperator> NUMERIC_MATCH_OPERATORS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
-  private static final Set<MatchOperator>
-      SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION =
-          Set.of(
-              MATCH_OPERATOR_EQUALS,
-              MATCH_OPERATOR_NOT_EQUAL,
-              MATCH_OPERATOR_CONTAINS,
-              MATCH_OPERATOR_NOT_CONTAIN);
+  private static final Set<MatchOperator> SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_EXPRESSIONS =
+      Set.of(
+          MATCH_OPERATOR_EQUALS,
+          MATCH_OPERATOR_NOT_EQUAL,
+          MATCH_OPERATOR_CONTAINS,
+          MATCH_OPERATOR_NOT_CONTAIN);
 
-  private static final Set<MatchOperator> UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION =
+  private static final Set<MatchOperator> UNSUPPORTED_OPERATORS_FOR_LHS_RHS_EXPRESSIONS =
       Set.of(MATCH_OPERATOR_LESS_THAN, MATCH_OPERATOR_GREATER_THAN);
 
   public Status validateClauseGroup(ClauseGroup clauseGroup, EventType eventType) {
@@ -473,8 +472,10 @@ class ClauseGroupValidator {
 
   private Status validateAttributeKeyValueExpression(
       AttributeKeyValueExpression attributeKeyValueExpression) {
+    Status status;
+
     if (!attributeKeyValueExpression.hasKeyCondition()) {
-      Status status =
+      status =
           validateExpression(
               true,
               attributeKeyValueExpression.getMatchKey(),
@@ -488,24 +489,26 @@ class ClauseGroupValidator {
       }
       return Status.OK;
     }
-    validateStringCondition(attributeKeyValueExpression.getKeyCondition());
+
+    status = validateStringCondition(attributeKeyValueExpression.getKeyCondition());
+    if (status != Status.OK) {
+      return status;
+    }
     if (attributeKeyValueExpression.hasValueCondition()) {
-      validateStringCondition(attributeKeyValueExpression.getValueCondition());
+      return validateStringCondition(attributeKeyValueExpression.getValueCondition());
     }
 
     return Status.OK;
   }
 
-  private void validateStringCondition(StringCondition stringCondition) {
+  private Status validateStringCondition(StringCondition stringCondition) {
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.OPERATOR_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(stringCondition, StringCondition.VALUE_FIELD_NUMBER);
     if (MATCH_OPERATOR_MATCHES_REGEX.equals(stringCondition.getOperator())
         || MATCH_OPERATOR_NOT_MATCH_REGEX.equals(stringCondition.getOperator())) {
-      Status status = validateRegex(stringCondition.getValue());
-      if (!status.isOk()) {
-        throw status.asRuntimeException();
-      }
+      return validateRegex(stringCondition.getValue());
     }
+    return Status.OK;
   }
 
   private Status validateExpression(
@@ -577,48 +580,175 @@ class ClauseGroupValidator {
 
   private Status validateLhsRhsKeysExpression(
       LhsRhsKeysExpression lhsRhsKeysExpression, EventType eventType) {
+    Status status = validateLhsRhsMatchOperator(lhsRhsKeysExpression);
+    if (status != Status.OK) {
+      return status;
+    }
+
+    if (lhsRhsKeysExpression.hasLhsKeyExpression() || lhsRhsKeysExpression.hasRhsKeyExpression()) {
+      return validateDeprecatedLhsRhsFields(lhsRhsKeysExpression, eventType);
+    }
+
+    status = validateLhsRhsFieldsPresence(lhsRhsKeysExpression);
+    if (status != Status.OK) {
+      return status;
+    }
+
+    status = validateLhsRhsNotEqual(lhsRhsKeysExpression);
+    if (status != Status.OK) {
+      return status;
+    }
+
+    status = validateLhsOrRhsExpression(lhsRhsKeysExpression, eventType, true);
+    if (status != Status.OK) {
+      return status;
+    }
+
+    return validateLhsOrRhsExpression(lhsRhsKeysExpression, eventType, false);
+  }
+
+  private Status validateLhsRhsMatchOperator(LhsRhsKeysExpression lhsRhsKeysExpression) {
     validateNonDefaultPresenceOrThrow(
         lhsRhsKeysExpression, LhsRhsKeysExpression.MATCH_OPERATOR_FIELD_NUMBER);
-    if (!SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION.contains(
+    if (!SUPPORTED_FIRST_LEVEL_OPERATORS_FOR_LHS_RHS_EXPRESSIONS.contains(
         lhsRhsKeysExpression.getMatchOperator())) {
       return Status.INVALID_ARGUMENT.withDescription(
           "The first-level MatchOperator in LhsRhsKeysExpression must be one of: EQUALS, NOT_EQUAL, CONTAINS, or NOT_CONTAIN.");
     }
+    return Status.OK;
+  }
 
-    if (!lhsRhsKeysExpression.hasLhsKeyExpression()
-        || !lhsRhsKeysExpression.hasRhsKeyExpression()) {
+  private Status validateDeprecatedLhsRhsFields(
+      LhsRhsKeysExpression lhsRhsKeysExpression, EventType eventType) {
+    if ((!lhsRhsKeysExpression.hasLhsKeyExpression() && lhsRhsKeysExpression.hasRhsKeyExpression())
+        || (lhsRhsKeysExpression.hasLhsKeyExpression()
+            && !lhsRhsKeysExpression.hasRhsKeyExpression())) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Both LhsKeyExpression and RhsKeyExpression must be present.");
+          "LhsKeyExpression and RhsKeyExpression must either be both present or absent together.");
     }
 
     Status status;
     MatchExpression lhsKeyExpression = lhsRhsKeysExpression.getLhsKeyExpression();
     MatchExpression rhsKeyExpression = lhsRhsKeysExpression.getRhsKeyExpression();
 
-    if (VALUE_ONLY_MATCH_KEYS.contains(lhsKeyExpression.getMatchKey())
-        || VALUE_ONLY_MATCH_KEYS.contains(rhsKeyExpression.getMatchKey())) {
-      return Status.INVALID_ARGUMENT.withDescription(
-          "Comparison operations cannot be performed with value-only match keys.");
+    status = validateForValueOnlyMatchKeys(lhsKeyExpression.getMatchKey());
+    if (status != Status.OK) {
+      return status;
     }
+    status = validateForValueOnlyMatchKeys(rhsKeyExpression.getMatchKey());
+    if (status != Status.OK) {
+      return status;
+    }
+
     if (lhsKeyExpression.equals(rhsKeyExpression)) {
       return Status.INVALID_ARGUMENT.withDescription(
           "LhsKeyExpression cannot be the same as RhsKeyExpression.");
     }
-    if (UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION.contains(
-            lhsKeyExpression.getMatchOperator())
-        || UNSUPPORTED_OPERATORS_FOR_LHS_RHS_KEYS_EXPRESSION.contains(
-            rhsKeyExpression.getMatchOperator())) {
+
+    status = validateUnsupportedOperatorsForLhsRhsExpressions(lhsKeyExpression.getMatchOperator());
+    if (status != Status.OK) {
+      return status;
+    }
+    status = validateUnsupportedOperatorsForLhsRhsExpressions(rhsKeyExpression.getMatchOperator());
+    if (status != Status.OK) {
+      return status;
+    }
+
+    status = validateMatchExpression(lhsKeyExpression, eventType);
+    if (status != Status.OK) {
+      return status;
+    }
+    status = validateMatchExpression(rhsKeyExpression, eventType);
+    return status;
+  }
+
+  private Status validateLhsRhsFieldsPresence(LhsRhsKeysExpression lhsRhsKeysExpression) {
+    boolean hasLhsExpression =
+        lhsRhsKeysExpression.hasKeyLhsExpression()
+            || lhsRhsKeysExpression.hasAttributeLhsExpression();
+    boolean hasRhsExpression =
+        lhsRhsKeysExpression.hasKeyRhsExpression()
+            || lhsRhsKeysExpression.hasAttributeRhsExpression();
+    if (!hasLhsExpression || !hasRhsExpression) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "GREATER_THAN and LESS_THAN match operators are unsupported in case of LhsRhsKeysExpression.");
+          "LhsExpression and RhsExpression must either be both present or absent together.");
     }
+    return Status.OK;
+  }
 
-    if ((status = validateMatchExpression(lhsKeyExpression, eventType)) != Status.OK) {
+  private Status validateLhsRhsNotEqual(LhsRhsKeysExpression lhsRhsKeysExpression) {
+    if (lhsRhsKeysExpression.hasKeyLhsExpression()
+        && lhsRhsKeysExpression.hasKeyRhsExpression()
+        && lhsRhsKeysExpression
+            .getKeyLhsExpression()
+            .equals(lhsRhsKeysExpression.getKeyRhsExpression())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "KeyLhsExpression and KeyRhsExpression cannot be the same.");
+    }
+    if (lhsRhsKeysExpression.hasAttributeLhsExpression()
+        && lhsRhsKeysExpression.hasAttributeRhsExpression()
+        && lhsRhsKeysExpression
+            .getAttributeLhsExpression()
+            .equals(lhsRhsKeysExpression.getAttributeRhsExpression())) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "AttributeLhsExpression and AttributeRhsExpression cannot be the same.");
+    }
+    return Status.OK;
+  }
+
+  private Status validateLhsOrRhsExpression(
+      LhsRhsKeysExpression lhsRhsKeysExpression, EventType eventType, boolean isLhsExpression) {
+    Status status;
+
+    if (isLhsExpression
+        ? lhsRhsKeysExpression.hasKeyLhsExpression()
+        : lhsRhsKeysExpression.hasKeyRhsExpression()) {
+      MatchExpression matchExpression =
+          isLhsExpression
+              ? lhsRhsKeysExpression.getKeyLhsExpression()
+              : lhsRhsKeysExpression.getKeyRhsExpression();
+      status = validateForValueOnlyMatchKeys(matchExpression.getMatchKey());
+      if (status != Status.OK) {
+        return status;
+      }
+      status = validateUnsupportedOperatorsForLhsRhsExpressions(matchExpression.getMatchOperator());
+      if (status != Status.OK) {
+        return status;
+      }
+      status = validateMatchExpression(matchExpression, eventType);
+      return status;
+
+    } else if (isLhsExpression
+        ? lhsRhsKeysExpression.hasAttributeLhsExpression()
+        : lhsRhsKeysExpression.hasAttributeRhsExpression()) {
+      StringCondition attributeExpression =
+          isLhsExpression
+              ? lhsRhsKeysExpression.getAttributeLhsExpression()
+              : lhsRhsKeysExpression.getAttributeRhsExpression();
+      status = validateUnsupportedOperatorsForLhsRhsExpressions(attributeExpression.getOperator());
+      if (status != Status.OK) {
+        return status;
+      }
+      status = validateStringCondition(attributeExpression);
       return status;
     }
-    if ((status = validateMatchExpression(rhsKeyExpression, eventType)) != Status.OK) {
-      return status;
-    }
 
+    return Status.OK;
+  }
+
+  private Status validateForValueOnlyMatchKeys(MatchKey matchKey) {
+    if (VALUE_ONLY_MATCH_KEYS.contains(matchKey)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Comparison operations cannot be performed with value-only match keys.");
+    }
+    return Status.OK;
+  }
+
+  private Status validateUnsupportedOperatorsForLhsRhsExpressions(MatchOperator matchOperator) {
+    if (UNSUPPORTED_OPERATORS_FOR_LHS_RHS_EXPRESSIONS.contains(matchOperator)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "GREATER_THAN and LESS_THAN match operators are unsupported in case of LhsRhsExpression.");
+    }
     return Status.OK;
   }
 

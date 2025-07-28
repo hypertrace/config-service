@@ -24,6 +24,7 @@ import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RegionExpression;
 import ai.traceable.customsignature.config.service.v1.RequestScannerTypeExpression;
 import ai.traceable.customsignature.config.service.v1.ScopeExpression;
+import ai.traceable.customsignature.config.service.v1.StringCondition;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -361,7 +362,7 @@ public class ClauseGroupValidatorTest {
 
   @Test
   void testLhsRhsKeysExpressionClause() {
-    // invalid first level MatchOperator
+    // invalid first level MatchOperator (using the now deprecated flow)
     Clause lhsRhsKeysExpressionClause1 =
         getLhsRhsKeysExpressionClause(
             MatchOperator.MATCH_OPERATOR_MATCHES_REGEX,
@@ -376,7 +377,7 @@ public class ClauseGroupValidatorTest {
             lhsRhsKeysExpressionClause1, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
-    // invalid second level MatchOperator
+    // invalid second level MatchOperator (using the now deprecated flow)
     Clause lhsRhsKeysExpressionClause2 =
         getLhsRhsKeysExpressionClause(
             MatchOperator.MATCH_OPERATOR_EQUALS,
@@ -391,7 +392,7 @@ public class ClauseGroupValidatorTest {
             lhsRhsKeysExpressionClause2, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
-    // same LhsKeyExpression and RhsKeyExpression
+    // same LhsKeyExpression and RhsKeyExpression (using the now deprecated flow)
     Clause lhsRhsKeysExpressionClause3 =
         getLhsRhsKeysExpressionClause(
             MatchOperator.MATCH_OPERATOR_NOT_EQUAL,
@@ -406,7 +407,7 @@ public class ClauseGroupValidatorTest {
             lhsRhsKeysExpressionClause3, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
-    // value only MatchKeys
+    // value only MatchKeys (using the now deprecated flow)
     Clause lhsRhsKeysExpressionClause4 =
         getLhsRhsKeysExpressionClause(
             MatchOperator.MATCH_OPERATOR_CONTAINS,
@@ -421,8 +422,77 @@ public class ClauseGroupValidatorTest {
             lhsRhsKeysExpressionClause4, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
 
-    // valid case
-    Clause lhsRhsKeysExpressionClause5 =
+    // LhsKeyExpression is present, but RhsKeyExpression isn't (using the now deprecated flow)
+    Clause lhsRhsKeysExpression5 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                    .setLhsKeyExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_NAME)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                            .setValue(Value.newBuilder().setStringValue("str-value")))
+                    .clearRhsKeyExpression())
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpression5, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // LhsExpression is present, but RhsExpression isn't (using the newly added oneof fields)
+    Clause lhsRhsKeysExpression6 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setKeyLhsExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_COOKIE_NAME)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_NOT_CONTAIN)
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                            .setValue(Value.newBuilder().setStringValue("str-value-2")))
+                    .clearAttributeRhsExpression()
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS))
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpression6, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // RhsExpression is present, but LhsExpression isn't (using the newly added oneof fields)
+    Clause lhsRhsKeysExpression7 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .clearKeyLhsExpression()
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                    .setAttributeRhsExpression(
+                        getStringCondition(MatchOperator.MATCH_OPERATOR_CONTAINS, "str-value-3")))
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpression7, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // same AttributeLhsExpression and AttributeRhsExpression (using the newly added oneof fields)
+    Clause lhsRhsKeysExpressionClause8 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                    .setAttributeLhsExpression(
+                        getStringCondition(MatchOperator.MATCH_OPERATOR_CONTAINS, "str-value-1"))
+                    .setAttributeRhsExpression(
+                        getStringCondition(MatchOperator.MATCH_OPERATOR_CONTAINS, "str-value-1")))
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause8, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
+
+    // valid case 1 (using the now deprecated flow)
+    Clause lhsRhsKeysExpressionClause9 =
         getLhsRhsKeysExpressionClause(
             MatchOperator.MATCH_OPERATOR_EQUALS,
             MatchKey.MATCH_KEY_HEADER_NAME,
@@ -433,7 +503,27 @@ public class ClauseGroupValidatorTest {
             "rhs-match-value-3");
     status =
         clauseGroupValidator.validateClause(
-            lhsRhsKeysExpressionClause5, EventType.EVENT_TYPE_NORMAL_DETECTION);
+            lhsRhsKeysExpressionClause9, EventType.EVENT_TYPE_NORMAL_DETECTION);
+    assertEquals(Status.OK.getCode(), status.getCode());
+
+    // valid case 2 (using the newly added oneof fields)
+    Clause lhsRhsKeysExpressionClause10 =
+        Clause.newBuilder()
+            .setLhsRhsKeysExpression(
+                LhsRhsKeysExpression.newBuilder()
+                    .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                    .setAttributeLhsExpression(
+                        getStringCondition(MatchOperator.MATCH_OPERATOR_NOT_CONTAIN, "str-value-3"))
+                    .setKeyRhsExpression(
+                        MatchExpression.newBuilder()
+                            .setMatchKey(MatchKey.MATCH_KEY_COOKIE_NAME)
+                            .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
+                            .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
+                            .setValue(Value.newBuilder().setStringValue("str-value-4"))))
+            .build();
+    status =
+        clauseGroupValidator.validateClause(
+            lhsRhsKeysExpressionClause10, EventType.EVENT_TYPE_NORMAL_DETECTION);
     assertEquals(Status.OK.getCode(), status.getCode());
   }
 
@@ -473,6 +563,10 @@ public class ClauseGroupValidatorTest {
                 .setMatchOperator(matchOperator)
                 .setMatchValue(matchValue))
         .build();
+  }
+
+  private StringCondition getStringCondition(MatchOperator matchOperator, String value) {
+    return StringCondition.newBuilder().setOperator(matchOperator).setValue(value).build();
   }
 
   private Clause getRequestScannerTypeClause(List<String> scannerTypes) {
