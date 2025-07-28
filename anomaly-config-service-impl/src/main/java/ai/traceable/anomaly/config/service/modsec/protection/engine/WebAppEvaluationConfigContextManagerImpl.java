@@ -158,7 +158,10 @@ public class WebAppEvaluationConfigContextManagerImpl
               scopedAnomalyConfigStatus,
               request.getRuleEvaluationPoint(),
               request.getSubRuleTypesList());
-
+      // skip if no sub rules
+      if (anomalySubRuleTypes.isEmpty()) {
+        continue;
+      }
       if (!scopedAnomalyConfigStatus.equals(ScopedAnomalyConfigStatus.getDefaultInstance())) {
         secRuleProcessorConfigs.add(
             getSecRuleProcessorConfig(
@@ -412,6 +415,7 @@ public class WebAppEvaluationConfigContextManagerImpl
       switch (configScope.getScopeCase()) {
         case API_SCOPE:
           apiIds.add(configScope.getApiScope().getId());
+          serviceIds.add(configScope.getApiScope().getServiceScope().getId());
           break;
         case SERVICE_SCOPE:
           serviceIds.add(configScope.getServiceScope().getId());
@@ -455,6 +459,8 @@ public class WebAppEvaluationConfigContextManagerImpl
                                           .setId(scope.getEnvironmentScope().getEnvironmentId())
                                           .setName(scope.getEnvironmentScope().getEnvironmentId())
                                           .build())))
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
                   .build());
           break;
         case SERVICE_SCOPE:
@@ -475,6 +481,26 @@ public class WebAppEvaluationConfigContextManagerImpl
                                                   .map(ServiceIdentifierEntity::getServiceName)
                                                   .orElse(EMPTY_STRING))
                                           .build())))
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(
+                                              scope
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .setName(
+                                              scope
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
                   .build());
           break;
         case API_SCOPE:
@@ -495,6 +521,43 @@ public class WebAppEvaluationConfigContextManagerImpl
                                                   .map(ApiIdentifierEntity::getApiName)
                                                   .orElse(EMPTY_STRING))
                                           .build())))
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(scope.getApiScope().getServiceScope().getId())
+                                          .setName(
+                                              serviceEntities
+                                                  .get(
+                                                      scope.getApiScope().getServiceScope().getId())
+                                                  .map(ServiceIdentifierEntity::getServiceName)
+                                                  .orElse(EMPTY_STRING))
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder()
+                          .setEntityScope(
+                              EntityScope.newBuilder()
+                                  .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                                  .addEntities(
+                                      Entity.newBuilder()
+                                          .setId(
+                                              scope
+                                                  .getApiScope()
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .setName(
+                                              scope
+                                                  .getApiScope()
+                                                  .getServiceScope()
+                                                  .getEnvironmentScope()
+                                                  .getEnvironmentId())
+                                          .build())))
+                  .addScopes(
+                      Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
                   .build());
           break;
         default:

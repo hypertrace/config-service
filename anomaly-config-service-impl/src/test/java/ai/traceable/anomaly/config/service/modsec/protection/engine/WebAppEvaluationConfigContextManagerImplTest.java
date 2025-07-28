@@ -19,6 +19,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
@@ -38,6 +39,7 @@ import ai.traceable.config.service.feature.caching.client.FeatureCachingClient;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider;
 import ai.traceable.entity.fetcher.cache.CachedApiMappingProvider.ApiIdentifierEntity;
 import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider;
+import ai.traceable.entity.fetcher.cache.CachedServiceMappingProvider.ServiceIdentifierEntity;
 import ai.traceable.protection.engine.config.webapp.v1.SecRuleProcessorConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfig;
 import ai.traceable.protection.engine.config.webapp.v1.WebAppEvaluationConfigContext;
@@ -61,6 +63,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
   private static final String TENANT_ID = "test-tenant";
   private static final String API_ID = "test-api";
   private static final String API_NAME = "test-api-name";
+  private static final String SERVICE_ID = "test-service";
+  private static final String SERVICE_NAME = "test-service-name";
   private static final String ENVIRONMENT_ID = "test-env";
   private static final ScopeContext API_SCOPE_CONTEXT =
       ScopeContext.newBuilder()
@@ -71,6 +75,24 @@ class WebAppEvaluationConfigContextManagerImplTest {
                           .setEntityType(EntityType.ENTITY_TYPE_API)
                           .addEntities(
                               Entity.newBuilder().setId(API_ID).setName(API_NAME).build())))
+          .addScopes(
+              Scope.newBuilder()
+                  .setEntityScope(
+                      EntityScope.newBuilder()
+                          .setEntityType(EntityType.ENTITY_TYPE_SERVICE)
+                          .addEntities(
+                              Entity.newBuilder().setId(SERVICE_ID).setName(SERVICE_NAME).build())))
+          .addScopes(
+              Scope.newBuilder()
+                  .setEntityScope(
+                      EntityScope.newBuilder()
+                          .setEntityType(EntityType.ENTITY_TYPE_ENVIRONMENT)
+                          .addEntities(
+                              Entity.newBuilder()
+                                  .setId(ENVIRONMENT_ID)
+                                  .setName(ENVIRONMENT_ID)
+                                  .build())))
+          .addScopes(Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
           .build();
   private static final ScopeContext ENVIRONMENT_SCOPE_CONTEXT =
       ScopeContext.newBuilder()
@@ -84,6 +106,7 @@ class WebAppEvaluationConfigContextManagerImplTest {
                                   .setId(ENVIRONMENT_ID)
                                   .setName(ENVIRONMENT_ID)
                                   .build())))
+          .addScopes(Scope.newBuilder().setCustomerScope(CustomerScope.getDefaultInstance()))
           .build();
   private static final ScopeContext CUSTOMER_SCOPE_CONTEXT =
       ScopeContext.newBuilder()
@@ -107,6 +130,10 @@ class WebAppEvaluationConfigContextManagerImplTest {
         new ApiIdentifierEntity(API_ID, API_NAME, "/api-path", List.of("/api/path/.*"), List.of());
     when(apiMappingProvider.getApiIdentifierEntities(any(RequestContext.class), anySet()))
         .thenReturn(Map.of(API_ID, Optional.of(apiEntity)));
+    ServiceIdentifierEntity serviceEntity =
+        new ServiceIdentifierEntity(SERVICE_NAME, Optional.of(ENVIRONMENT_ID));
+    when(serviceMappingProvider.getServiceIdentifierEntities(any(RequestContext.class), anySet()))
+        .thenReturn(Map.of(SERVICE_ID, Optional.of(serviceEntity)));
 
     requestContext = RequestContext.forTenantId(TENANT_ID);
     ModsecManager modsecManager = mock(ModsecManager.class);
@@ -211,7 +238,17 @@ class WebAppEvaluationConfigContextManagerImplTest {
   private ScopedAnomalyDetectionConfig getApiScopedAnomalyDetectionConfig() {
     return ScopedAnomalyDetectionConfig.newBuilder()
         .setConfigScope(
-            AnomalyConfigScope.newBuilder().setApiScope(AnomalyApiScope.newBuilder().setId(API_ID)))
+            AnomalyConfigScope.newBuilder()
+                .setApiScope(
+                    AnomalyApiScope.newBuilder()
+                        .setId(API_ID)
+                        .setServiceScope(
+                            AnomalyServiceScope.newBuilder()
+                                .setId(SERVICE_ID)
+                                .setEnvironmentScope(
+                                    AnomalyEnvironmentScope.newBuilder()
+                                        .setEnvironmentId(ENVIRONMENT_ID))
+                                .build())))
         .addAnomalyDetectionConfigs(
             AnomalyDetectionConfig.newBuilder()
                 .setModsecurityAnomalyDetectionConfig(
