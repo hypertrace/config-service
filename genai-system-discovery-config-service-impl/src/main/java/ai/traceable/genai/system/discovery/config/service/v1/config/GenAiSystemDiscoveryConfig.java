@@ -9,6 +9,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import io.grpc.Status;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -33,11 +35,18 @@ public class GenAiSystemDiscoveryConfig {
   }
 
   private Map<String, GenAiSystemDiscoveryRule> buildDefaultGenAiSystemDiscoveryRuleMap() {
-    return ConfigFactory.parseResources(DEFAULT_GENAI_SYSTEM_DISCOVERY_RULES_FILE_PATH)
-        .getConfigList(GENAI_SYSTEM_DISCOVERY_RULES_PATH)
-        .stream()
-        .map(this::convert)
-        .collect(Collectors.toUnmodifiableMap(GenAiSystemDiscoveryRule::getRuleId, entry -> entry));
+    Map<String, GenAiSystemDiscoveryRule> map =
+        ConfigFactory.parseResources(DEFAULT_GENAI_SYSTEM_DISCOVERY_RULES_FILE_PATH)
+            .getConfigList(GENAI_SYSTEM_DISCOVERY_RULES_PATH)
+            .stream()
+            .map(this::convert)
+            .collect(
+                Collectors.toMap(
+                    GenAiSystemDiscoveryRule::getRuleId,
+                    entry -> entry,
+                    (existing, replacement) -> existing,
+                    LinkedHashMap::new));
+    return Collections.unmodifiableMap(map);
   }
 
   private GenAiSystemDiscoveryRule convert(Config config) {
