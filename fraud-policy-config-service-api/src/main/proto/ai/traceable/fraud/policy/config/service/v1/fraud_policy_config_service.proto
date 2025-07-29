@@ -4,7 +4,6 @@ package ai.traceable.fraud.policy.config.service.v1;
 
 import "ai/traceable/fraud/policy/config/service/v1/api_access_config.proto";
 import "ai/traceable/fraud/policy/config/service/v1/fraud_policy.proto";
-import "ai/traceable/fraud/policy/config/service/v1/template.proto";
 import "google/protobuf/field_mask.proto";
 
 option java_multiple_files = true;
@@ -16,12 +15,6 @@ service FraudPolicyConfigService {
   rpc DeleteFraudPolicy(DeleteFraudPolicyRequest) returns (DeleteFraudPolicyResponse) {}
   rpc GetFraudPolicyList(GetFraudPolicyListRequest) returns (GetFraudPolicyListResponse) {}
   rpc GetFraudPolicy(GetFraudPolicyRequest) returns (GetFraudPolicyResponse) {}
-  rpc CreateTemplate(CreateTemplateRequest) returns (CreateTemplateResponse) {}
-  rpc UpdateTemplate(UpdateTemplateRequest) returns (UpdateTemplateResponse) {}
-  rpc UpsertTemplate(UpsertTemplateRequest) returns (UpsertTemplateResponse) {}
-  rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse) {}
-  rpc GetTemplateList(GetTemplateListRequest) returns (GetTemplateListResponse) {}
-  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse) {}
   rpc GetApiAccessAnomalyConfigs(GetApiAccessAnomalyConfigsRequest) returns (GetApiAccessAnomalyConfigsResponse) {}
   rpc GetApiAccessAnomalyConfig(GetApiAccessAnomalyConfigRequest) returns (GetApiAccessAnomalyConfigResponse) {}
   rpc CreateApiAccessAnomalyConfig(CreateApiAccessAnomalyConfigRequest) returns (CreateApiAccessAnomalyConfigResponse) {}
@@ -80,57 +73,6 @@ message DeleteFraudPolicyRequest {
 
 message DeleteFraudPolicyResponse {
   repeated FraudPolicy fraud_policy_list = 1;
-}
-
-message CreateTemplateRequest {
-  ai.traceable.fraud.policy.config.service.v1.Template template = 1;
-}
-
-message CreateTemplateResponse {
-  ai.traceable.fraud.policy.config.service.v1.Template template = 1;
-}
-
-message UpdateTemplateRequest {
-  string template_id = 1;
-  ai.traceable.fraud.policy.config.service.v1.Template template = 2;
-  string current_version = 3;
-  google.protobuf.FieldMask update_mask = 4;
-}
-
-message UpdateTemplateResponse {
-  ai.traceable.fraud.policy.config.service.v1.Template template = 2;
-}
-
-message UpsertTemplateRequest {
-  ai.traceable.fraud.policy.config.service.v1.Template template = 1;
-}
-
-message UpsertTemplateResponse {
-  ai.traceable.fraud.policy.config.service.v1.Template template = 1;
-}
-
-message GetTemplateListRequest {
-  repeated string template_id = 1;
-}
-
-message GetTemplateListResponse {
-  repeated ai.traceable.fraud.policy.config.service.v1.Template template_list = 1;
-}
-
-message GetTemplateRequest {
-  string template_id = 1;
-}
-
-message GetTemplateResponse {
-  ai.traceable.fraud.policy.config.service.v1.Template template = 1;
-}
-
-message DeleteTemplateRequest {
-  repeated string template_id_list = 1;
-}
-
-message DeleteTemplateResponse {
-  repeated ai.traceable.fraud.policy.config.service.v1.Template template_list = 1;
 }
 
 message GetApiAccessAnomalyConfigRequest {
