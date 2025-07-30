@@ -8,6 +8,7 @@ import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER
 import static ai.traceable.ratelimiting.config.service.v2.UserAggregateType.USER_AGGREGATE_TYPE_PER_USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ai.traceable.ratelimiting.config.service.v2.Action;
@@ -16,6 +17,8 @@ import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesRequest;
+import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.IpAddressCondition;
@@ -337,5 +340,85 @@ class RateLimitingV2ConfigServiceIntegrationTest extends TraceableConfigServiceI
                         .setRulesFilter(getRateLimitingRulesFilter)
                         .build()))
         .getRulesList();
+  }
+
+  @Test
+  void testGetRateLimitingEdgeDecisionRules() {
+
+    // Create a rate limiting rule that is compatible with edge decision
+    RateLimitingRuleData rateLimitingRuleData =
+        ruleDataBuilder1
+            .setName("edge-decision-rule")
+            .setDescription("Edge decision compatible rule")
+            .setRuleStatus(RULE_SOURCE_TRACEABLE)
+            .setEnabled(true)
+            // Clear existing threshold action configs to ensure we have the right configuration
+            .clearThresholdActionConfigs()
+            // Add a threshold action config with a block action that has useThresholdDuration=true
+            // This is required for edge decision compatibility
+            .addThresholdActionConfigs(
+                ThresholdActionConfig.newBuilder()
+                    .addResourceAccessThresholdConfigs(
+                        ResourceAccessThresholdConfig.newBuilder()
+                            .setUserAggregateType(USER_AGGREGATE_TYPE_ACROSS_USERS)
+                            .setApiAggregateType(API_AGGREGATE_TYPE_ACROSS_ENDPOINTS)
+                            .setRollingWindowThresholdConfig(
+                                ResourceAccessThresholdConfig.RollingWindowThresholdConfig
+                                    .newBuilder()
+                                    .setCountAllowed(1000)
+                                    .setDurationIso("PT60S")))
+                    .addActions(
+                        Action.newBuilder()
+                            .setBlock(
+                                Action.Block.newBuilder()
+                                    .setEventSeverity(Action.EventSeverity.EVENT_SEVERITY_MEDIUM)
+                                    .setUseThresholdDuration(true))))
+            .build();
+
+    CreateRateLimitingRuleRequest createRequest =
+        CreateRateLimitingRuleRequest.newBuilder().setData(rateLimitingRuleData).build();
+
+    RateLimitingRule createdRule =
+        REQUEST_CONTEXT.call(
+            () ->
+                rateLimitingConfigServiceBlockingStub
+                    .createRateLimitingRule(createRequest)
+                    .getRule());
+
+    // Verify the rule was created
+    RateLimitingRule expectedRule =
+        RateLimitingRule.newBuilder()
+            .setId(createdRule.getId())
+            .setData(rateLimitingRuleData)
+            .build();
+    assertEquals(expectedRule, createdRule);
+
+    // Get edge decision rules
+    GetRateLimitingEdgeDecisionRulesRequest edgeDecisionRequest =
+        GetRateLimitingEdgeDecisionRulesRequest.newBuilder()
+            .setRulesFilter(GetRateLimitingRulesFilter.getDefaultInstance())
+            .build();
+
+    GetRateLimitingEdgeDecisionRulesResponse response =
+        REQUEST_CONTEXT.call(
+            () ->
+                rateLimitingConfigServiceBlockingStub.getRateLimitingEdgeDecisionRules(
+                    edgeDecisionRequest));
+
+    // Verify that we got a non-empty EdgeDecisionEngineConfig
+    assertNotNull(
+        response.getEdgeDecisionEngineConfig(), "EdgeDecisionEngineConfig should not be null");
+
+    // The MockFeatureFlagService has the "traceable-edge.edge-decision" flag set to true,
+    // so we should get EdgeDecisionEngineConfig with decision rules
+    assertTrue(
+        response.getEdgeDecisionEngineConfig().getDecisionRulesCount() > 0,
+        "EdgeDecisionEngineConfig should contain decision rules");
+
+    // Clean up - delete the rule
+    DeleteRateLimitingRuleRequest deleteRequest =
+        DeleteRateLimitingRuleRequest.newBuilder().setRuleId(createdRule.getId()).build();
+    REQUEST_CONTEXT.call(
+        () -> rateLimitingConfigServiceBlockingStub.deleteRateLimitingRule(deleteRequest));
   }
 }

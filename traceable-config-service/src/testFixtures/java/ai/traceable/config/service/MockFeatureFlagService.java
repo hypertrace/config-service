@@ -24,6 +24,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "enricher.genai-detection-v2",
                 FeatureFlagValue.newBuilder().setBoolean(false).getDefaultInstanceForType())
+            .putValues(
+                "traceable-edge.edge-decision",
+                FeatureFlagValue.newBuilder().setBoolean(true).build())
             .build());
     responseObserver.onCompleted();
   }
