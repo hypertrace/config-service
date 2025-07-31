@@ -27,6 +27,9 @@ public class MockFeatureFlagService extends FeatureFlagServiceImplBase {
             .putValues(
                 "traceable-edge.edge-decision",
                 FeatureFlagValue.newBuilder().setBoolean(true).build())
+            .putValues(
+                "ui.detection-exclusions-v2",
+                FeatureFlagValue.newBuilder().setBoolean(false).build())
             .build());
     responseObserver.onCompleted();
   }

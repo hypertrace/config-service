@@ -1,0 +1,20 @@
+{
+  "id": "rule-id",
+  "ruleInfo": {
+    "name": "rule-name",
+    "conditions": [{
+      "regionCondition": {
+        "regions": [{
+          "countryIsoCode": "IND"
+        }]
+      }
+    }, {
+      "eventCondition": {
+        "customRuleEvents": [{
+          "ruleFamily": "CUSTOM_RULE_FAMILY_RATE_LIMIT"
+        }]
+      }
+    }],
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+  }
+}

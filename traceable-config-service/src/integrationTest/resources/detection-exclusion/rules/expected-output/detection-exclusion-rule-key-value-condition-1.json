@@ -1,0 +1,33 @@
+{
+  "decisionRules": [{
+    "id": "rule-id",
+    "name": "rule-name",
+    "ruleScope": {
+    },
+    "ruleCategory": "EDGE_DECISION_RULE_CATEGORY_DETECTION_EXCLUSION",
+    "ruleStatus": {
+    },
+    "ruleDefinition": {
+      "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signatureRule": {
+        "matchCondition": {
+          "genericMatchCondition": {
+            "jexlExpression": {
+              "jexlExpression": "map:match($s.getRequestCookies(), predicate:matchesRegex(\u0027cookie.*\u0027), predicate:equals(\u0027val\u0027))"
+            }
+          }
+        }
+      }
+    },
+    "ruleDecision": {
+      "edgeDecisionType": "EDGE_DECISION_TYPE_EXCLUDE",
+      "edgeDecisionTargets": [{
+        "edgeDecisionType": "EDGE_DECISION_TYPE_BLOCK",
+        "edgeDecisionRuleTargets": [{
+          "edgeDecisionRuleCategory": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT"
+        }]
+      }]
+    },
+    "policyKind": "POLICY_KIND_WAF"
+  }]
+}

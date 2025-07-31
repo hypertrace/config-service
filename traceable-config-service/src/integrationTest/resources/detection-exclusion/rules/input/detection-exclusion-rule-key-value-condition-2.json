@@ -1,0 +1,24 @@
+{
+  "id": "rule-id",
+  "ruleInfo": {
+    "name": "rule-name",
+    "conditions": [{
+      "attributeMatchCondition": {
+        "keyMatchCondition": {
+          "metadata": "KEY_METADATA_REQUEST_HEADER",
+          "matchCondition": {
+            "operator": "MATCH_OPERATOR_NOT_EQUAL",
+            "value": "header"
+          }
+        }
+      }
+    }, {
+      "eventCondition": {
+        "customRuleEvents": [{
+          "ruleFamily": "CUSTOM_RULE_FAMILY_RATE_LIMIT"
+        }]
+      }
+    }],
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+  }
+}

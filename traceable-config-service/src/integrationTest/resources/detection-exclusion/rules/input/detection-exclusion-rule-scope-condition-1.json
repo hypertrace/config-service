@@ -1,0 +1,20 @@
+{
+  "id": "rule-id",
+  "ruleInfo": {
+    "name": "rule-name",
+    "conditions": [{
+      "scopeCondition": {
+        "urlScope": {
+          "urlRegexes": ["regex1", "regex2"]
+        }
+      }
+    }, {
+      "eventCondition": {
+        "customRuleEvents": [{
+          "ruleFamily": "CUSTOM_RULE_FAMILY_RATE_LIMIT"
+        }]
+      }
+    }],
+    "exclusionTargets": ["EXCLUSION_TARGET_BLOCK"]
+  }
+}

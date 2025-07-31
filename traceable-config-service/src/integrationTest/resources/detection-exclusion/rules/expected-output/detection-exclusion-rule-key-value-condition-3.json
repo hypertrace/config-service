@@ -1,0 +1,45 @@
+{
+  "decisionRules": [{
+    "id": "rule-id",
+    "name": "rule-name",
+    "ruleScope": {
+    },
+    "ruleCategory": "EDGE_DECISION_RULE_CATEGORY_DETECTION_EXCLUSION",
+    "ruleStatus": {
+    },
+    "ruleDefinition": {
+      "edgeInputKind": "EDGE_INPUT_KIND_HTTP_REQUEST",
+      "signatureRule": {
+        "matchCondition": {
+          "structuredMatchCondition": {
+            "lhs": {
+              "name": "lhs",
+              "type": "FIELD_TYPE_STR",
+              "rules": [{
+                "transformationConfig": {
+                  "jexlExpression": {
+                    "jexlExpression": "$s.getUrl()"
+                  }
+                }
+              }]
+            },
+            "binaryOperator": {
+              "regex": "regex",
+              "matchOperator": "MATCH_OPERATOR_LIKE"
+            }
+          }
+        }
+      }
+    },
+    "ruleDecision": {
+      "edgeDecisionType": "EDGE_DECISION_TYPE_EXCLUDE",
+      "edgeDecisionTargets": [{
+        "edgeDecisionType": "EDGE_DECISION_TYPE_BLOCK",
+        "edgeDecisionRuleTargets": [{
+          "edgeDecisionRuleCategory": "EDGE_DECISION_RULE_CATEGORY_RATE_LIMIT"
+        }]
+      }]
+    },
+    "policyKind": "POLICY_KIND_WAF"
+  }]
+}
