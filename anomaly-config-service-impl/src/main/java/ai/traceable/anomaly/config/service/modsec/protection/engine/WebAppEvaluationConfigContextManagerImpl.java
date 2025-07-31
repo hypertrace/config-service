@@ -148,8 +148,6 @@ public class WebAppEvaluationConfigContextManagerImpl
 
       ModsecRuleVersion modsecRuleVersion = getModsecRuleVersion(scopedAnomalyDetectionConfig);
 
-      boolean useTestRules = scopedAnomalyConfigStatus.getGlobalModsecConfig().getUseTestRules();
-
       RuleVersionData ruleVersionData =
           scopedAnomalyConfigStatus.getGlobalModsecConfig().getRuleVersionData();
       RuleVersion ruleVersion = getRuleVersion(ruleVersionData, requestContext);
@@ -173,7 +171,6 @@ public class WebAppEvaluationConfigContextManagerImpl
                 scopedAnomalyDetectionConfig,
                 modsecRuleVersion,
                 request.getRuleEvaluationPoint(),
-                useTestRules,
                 scopeContextMap.get(configScope),
                 ruleVersion);
 
@@ -183,7 +180,6 @@ public class WebAppEvaluationConfigContextManagerImpl
             getWebAppEvaluationRulesContext(
                 modsecRuleVersion,
                 anomalySubRuleTypes,
-                useTestRules,
                 ruleVersion,
                 scopeContextMap.get(configScope)));
       }
@@ -230,7 +226,6 @@ public class WebAppEvaluationConfigContextManagerImpl
   private WebAppEvaluationRulesContext getWebAppEvaluationRulesContext(
       ModsecRuleVersion modsecRuleVersion,
       List<AnomalySubRuleType> anomalySubRuleTypes,
-      boolean useTestRules,
       RuleVersion ruleVersion,
       ScopeContext scopeContext) {
 
@@ -239,7 +234,7 @@ public class WebAppEvaluationConfigContextManagerImpl
         .setCrsRulesBlob(
             modsecManager
                 .getModsecCrsRules(
-                    anomalySubRuleTypes, modsecRuleVersion, useTestRules, ruleVersion, false)
+                    anomalySubRuleTypes, modsecRuleVersion, false, ruleVersion, false)
                 .getAggregatedModsecBlob())
         .build();
   }
@@ -248,16 +243,11 @@ public class WebAppEvaluationConfigContextManagerImpl
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
       ModsecRuleVersion modsecRuleVersion,
       RuleEvaluationPoint ruleEvaluationPoint,
-      boolean useTestRules,
       ScopeContext scopeContext,
       RuleVersion ruleVersion) {
     Set<String> disabledRuleIds =
         getDisabledModsecRuleIds(
-            scopedAnomalyDetectionConfig,
-            modsecRuleVersion,
-            ruleEvaluationPoint,
-            useTestRules,
-            ruleVersion);
+            scopedAnomalyDetectionConfig, modsecRuleVersion, ruleEvaluationPoint, ruleVersion);
     if (disabledRuleIds.isEmpty()) {
       return Optional.empty();
     }
@@ -272,7 +262,6 @@ public class WebAppEvaluationConfigContextManagerImpl
       ScopedAnomalyDetectionConfig scopedAnomalyDetectionConfig,
       ModsecRuleVersion modsecRuleVersion,
       RuleEvaluationPoint ruleEvaluationPoint,
-      boolean useTestRules,
       RuleVersion ruleVersion) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
         getModsecAnomalyRuleConfigMap(scopedAnomalyDetectionConfig);
@@ -283,7 +272,7 @@ public class WebAppEvaluationConfigContextManagerImpl
               .collect(
                   Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, Function.identity()));
     } else {
-      ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
+      ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, false);
     }
     // The disabled modsec rule ids should be ordered to ensure that
     // the blob doesn't keep changing on repeated calls
