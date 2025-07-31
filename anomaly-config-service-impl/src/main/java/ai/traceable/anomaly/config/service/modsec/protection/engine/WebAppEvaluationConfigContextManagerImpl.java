@@ -9,6 +9,7 @@ import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStat
 import ai.traceable.anomaly.config.service.modsec.rules.ModsecManager;
 import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistry;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
@@ -306,11 +307,17 @@ public class WebAppEvaluationConfigContextManagerImpl
     switch (ruleEvaluationPoint) {
       case RULE_EVALUATION_POINT_EDGE:
         return detectionConfig.getConfigStatus().getDisabled()
-            || subRuleConfig.getConfigStatus().getDisabled()
-            || !subRuleConfig.getBlockingEnabled();
+            || subRuleConfig
+                .getAnomalyRuleAction()
+                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE)
+            || !subRuleConfig
+                .getAnomalyRuleAction()
+                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK);
       case RULE_EVALUATION_POINT_PLATFORM:
         return detectionConfig.getConfigStatus().getDisabled()
-            || subRuleConfig.getConfigStatus().getDisabled();
+            || subRuleConfig
+                .getAnomalyRuleAction()
+                .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE);
       default:
         throw new IllegalArgumentException(
             "Unsupported rule evaluation point: " + ruleEvaluationPoint);

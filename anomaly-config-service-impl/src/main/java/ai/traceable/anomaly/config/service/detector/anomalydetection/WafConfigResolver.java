@@ -131,7 +131,7 @@ public class WafConfigResolver {
       case MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_MONITORING:
         return isRuleAggressive(subRuleInfo.getSubRuleTypesList())
             ? buildDisabledAnomalySubRuleConfig(subRuleInfo)
-            : null;
+            : buildMonitorAnomalySubRuleConfig(subRuleInfo);
       case MODSEC_DEFAULT_CONFIGS_TYPE_RECOMMENDED: // Aggressive disabled, rest blocking
       case MODSEC_DEFAULT_CONFIGS_TYPE_STANDARD_BLOCKING:
         return isRuleAggressive(subRuleInfo.getSubRuleTypesList())
@@ -140,7 +140,7 @@ public class WafConfigResolver {
       case MODSEC_DEFAULT_CONFIGS_TYPE_STRICT: // Aggressive monitor, rest blocking
       case MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_BLOCKING:
         return isRuleAggressive(subRuleInfo.getSubRuleTypesList())
-            ? null
+            ? buildMonitorAnomalySubRuleConfig(subRuleInfo)
             : buildBlockingAnomalySubRule(subRuleInfo);
       default:
         return null;
@@ -173,6 +173,14 @@ public class WafConfigResolver {
     return AnomalySubRuleConfig.newBuilder()
         .setSubRuleId(subRuleInfo.getRuleId())
         .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true).build())
+        .build();
+  }
+
+  private AnomalySubRuleConfig buildMonitorAnomalySubRuleConfig(AnomalySubRuleInfo subRuleInfo) {
+    return AnomalySubRuleConfig.newBuilder()
+        .setSubRuleId(subRuleInfo.getRuleId())
+        .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(false).build())
+        .setBlockingEnabled(false)
         .build();
   }
 

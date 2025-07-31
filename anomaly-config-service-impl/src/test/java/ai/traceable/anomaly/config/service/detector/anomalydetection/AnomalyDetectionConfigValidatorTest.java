@@ -17,6 +17,7 @@ import ai.traceable.anomaly.config.service.registry.modsec.ModsecRulesRegistryIm
 import ai.traceable.anomaly.config.service.registry.session.SessionRulesRegistryImpl;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleType;
@@ -288,7 +289,7 @@ public class AnomalyDetectionConfigValidatorTest {
 
     subRuleConfig1 =
         AnomalySubRuleConfig.newBuilder()
-            .setBlockingEnabled(true)
+            .setAnomalyRuleAction(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)
             .setSubRuleId("crs_913100")
             .build();
     anomalyDetectionConfig1 =

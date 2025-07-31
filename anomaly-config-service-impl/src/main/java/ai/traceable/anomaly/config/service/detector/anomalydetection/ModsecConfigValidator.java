@@ -6,6 +6,7 @@ import static ai.traceable.anomaly.config.service.v1.AnomalySubRuleType.ANOMALY_
 import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
@@ -100,7 +101,9 @@ public class ModsecConfigValidator {
       String subRuleId = subRuleConfig.getSubRuleId();
       if (!blockingAvailableForRegularRules
           && aggressiveSubRuleIds.contains(subRuleId)
-          && subRuleConfig.getBlockingEnabled()) {
+          && subRuleConfig
+              .getAnomalyRuleAction()
+              .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)) {
         return Status.INVALID_ARGUMENT.withDescription(
             String.format("%s is an aggressive rule which can't be blocked", subRuleId));
       }

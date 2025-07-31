@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -676,6 +677,38 @@ public class AnomalyDetectionConfigManagerTest {
                                             .build())
                                     .setAnomalyRuleAction(
                                         AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE))
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(false)
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(false)
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule2")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(false)
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(false)
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
                             .build())
                     .build())
             .build());
@@ -1023,6 +1056,16 @@ public class AnomalyDetectionConfigManagerTest {
                             .setAnomalyRuleId("rule1")
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule1")
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(false)
+                                            .build())
+                                    .setBlockingEnabled(false)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")
                                     .setBlockingEnabled(true)
                                     .setAnomalyRuleAction(
@@ -1131,6 +1174,38 @@ public class AnomalyDetectionConfigManagerTest {
                                             .build())
                                     .setAnomalyRuleAction(
                                         AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE))
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(false)
+                                            .build())
+                                    .setBlockingEnabled(false)
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
+                            .build())
+                    .build())
+            .build());
+    defaultDetectionConfigs.add(
+        AnomalyDetectionConfig.newBuilder()
+            .setCategoryConfig(AnomalyCategoryConfig.getDefaultInstance())
+            .setConfigStatus(AnomalyConfigStatusChange.getDefaultInstance())
+            .setModsecurityAnomalyDetectionConfig(
+                ModsecurityAnomalyDetectionConfig.newBuilder()
+                    .setModsecAnomalyRule(
+                        ModsecurityAnomalyRuleConfig.newBuilder()
+                            .setAnomalyRuleId("rule2")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule2")
+                                    .setBlockingEnabled(false)
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(false)
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
                             .build())
                     .build())
             .build());
@@ -1176,9 +1251,7 @@ public class AnomalyDetectionConfigManagerTest {
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
                 .build());
-    when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
-            requestContext, customerConfigScope))
-        .thenReturn(
+    doReturn(
             ScopedAnomalyConfigStatus.newBuilder()
                 .setGlobalModsecConfig(
                     GlobalModsecConfig.newBuilder()
@@ -1189,7 +1262,9 @@ public class AnomalyDetectionConfigManagerTest {
                     ApiGlobalConfig.newBuilder()
                         .setDefaultConfigsType(
                             ApiDefaultConfigsType.API_DEFAULT_CONFIGS_TYPE_ONLY_API_DEF_ENABLED))
-                .build());
+                .build())
+        .when(globalAnomalyConfigStatusManager)
+        .getScopedAnomalyConfigStatus(requestContext, customerConfigScope);
 
     detectionConfigs =
         configManager
@@ -1210,6 +1285,16 @@ public class AnomalyDetectionConfigManagerTest {
                     .setModsecAnomalyRule(
                         ModsecurityAnomalyRuleConfig.newBuilder()
                             .setAnomalyRuleId("rule1")
+                            .addSubRuleConfigs(
+                                AnomalySubRuleConfig.newBuilder()
+                                    .setSubRuleId("subrule1")
+                                    .setBlockingEnabled(false)
+                                    .setConfigStatus(
+                                        AnomalyConfigStatusChange.newBuilder()
+                                            .setDisabled(false)
+                                            .build())
+                                    .setAnomalyRuleAction(
+                                        AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
                             .addSubRuleConfigs(
                                 AnomalySubRuleConfig.newBuilder()
                                     .setSubRuleId("subrule2")

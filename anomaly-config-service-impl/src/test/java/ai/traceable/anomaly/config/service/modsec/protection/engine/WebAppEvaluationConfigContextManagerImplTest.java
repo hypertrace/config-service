@@ -18,6 +18,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalyServiceScope;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
@@ -259,11 +260,13 @@ class WebAppEvaluationConfigContextManagerImplTest {
                                 .addSubRuleConfigs(
                                     AnomalySubRuleConfig.newBuilder()
                                         .setSubRuleId("subRule1")
-                                        .setBlockingEnabled(true))
+                                        .setAnomalyRuleAction(
+                                            AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
                                 .addSubRuleConfigs(
                                     AnomalySubRuleConfig.newBuilder()
                                         .setSubRuleId("subRule2")
-                                        .setBlockingEnabled(false)))))
+                                        .setAnomalyRuleAction(
+                                            AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)))))
         .addAnomalyDetectionConfigs(
             AnomalyDetectionConfig.newBuilder()
                 .setConfigStatus(AnomalyConfigStatusChange.newBuilder().setDisabled(true))
@@ -275,7 +278,8 @@ class WebAppEvaluationConfigContextManagerImplTest {
                                 .addSubRuleConfigs(
                                     AnomalySubRuleConfig.newBuilder()
                                         .setSubRuleId("subRule3")
-                                        .setBlockingEnabled(true)))))
+                                        .setAnomalyRuleAction(
+                                            AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK)))))
         .addAnomalyDetectionConfigs(
             AnomalyDetectionConfig.newBuilder()
                 .setModsecurityAnomalyDetectionConfig(
@@ -304,11 +308,13 @@ class WebAppEvaluationConfigContextManagerImplTest {
                                 .addSubRuleConfigs(
                                     AnomalySubRuleConfig.newBuilder()
                                         .setSubRuleId("subRule1")
-                                        .setBlockingEnabled(false))
+                                        .setAnomalyRuleAction(
+                                            AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR))
                                 .addSubRuleConfigs(
                                     AnomalySubRuleConfig.newBuilder()
                                         .setSubRuleId("subRule2")
-                                        .setBlockingEnabled(false)))))
+                                        .setAnomalyRuleAction(
+                                            AnomalyRuleAction.ANOMALY_RULE_ACTION_MONITOR)))))
         .build();
   }
 
