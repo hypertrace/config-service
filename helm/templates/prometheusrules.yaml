@@ -60,7 +60,7 @@ spec:
           expr: sum(cloud_edge_deployment_status_action_timer_seconds_max) by (tenantId, configId, deploymentStatus) > 0
           for: 0m
           labels:
-            severity: SEV3
+            severity: SEV2
             repository: config-service
             team: devops
             {{- with .Values.prometheusRule.additionalRuleLabels }}
