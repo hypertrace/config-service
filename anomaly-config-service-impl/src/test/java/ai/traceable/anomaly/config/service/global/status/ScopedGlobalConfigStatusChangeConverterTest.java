@@ -39,10 +39,8 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
     converter = new ScopedGlobalConfigStatusChangeConverter();
     defaultConfig = mock(AnomalyGlobalConfigServiceConfig.class);
 
-    when(defaultConfig.getNewWebAppStableVersion())
-        .thenReturn(getRuleVersion("1.2.0", RuleVersionType.RULE_VERSION_TYPE_STABLE));
-    when(defaultConfig.getOldWebAppStableVersion())
-        .thenReturn(getRuleVersion("1.1.0", RuleVersionType.RULE_VERSION_TYPE_STABLE));
+    when(defaultConfig.getNewWebAppStableVersion()).thenReturn(getRuleVersion("1.2.0"));
+    when(defaultConfig.getOldWebAppStableVersion()).thenReturn(getRuleVersion("1.1.0"));
     when(defaultConfig.getMinConfidenceLevel())
         .thenReturn(AnomalyConfidenceLevel.ANOMALY_CONFIDENCE_LEVEL_HIGH);
     when(defaultConfig.getModsecDefaultConfigsType())
@@ -133,6 +131,111 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
             null, GlobalModsecConfigChange.newBuilder().setDisabled(true).build()));
   }
 
+  @Test
+  void testConvertScopedConfigRuleVersions() {
+    String recentDate = "2025-07-14T00:00:00Z";
+    String oldDate = "2025-07-01T00:00:00Z";
+    RuleVersion v1 = getRuleVersion("1.0.0", oldDate);
+    RuleVersion v2 = getRuleVersion("2.0.0", recentDate);
+    RuleVersion v3 = getRuleVersion("3.0.0", recentDate);
+    RuleVersion override = getRuleVersion("override", "");
+    when(defaultConfig.getNewWebAppStableVersion()).thenReturn(v2);
+    when(defaultConfig.getOldWebAppStableVersion()).thenReturn(v1);
+
+    ScopedAnomalyConfigStatusChange config =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setRuleVersionDataChange(
+                        RuleVersionDataChange.newBuilder().setOverrideVersion(override).build())
+                    .build())
+            .build();
+
+    ScopedAnomalyConfigStatus result =
+        converter.convertScopedConfig(
+            config, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+
+    assertEquals(override, result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion());
+    assertEquals(v2, result.getGlobalModsecConfig().getRuleVersionData().getPreviousVersion());
+
+    // Case 2: Within 14 days of v2 release, current = v1
+    config =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setRuleVersionDataChange(
+                        RuleVersionDataChange.newBuilder().setStableVersion(v1).build())
+                    .build())
+            .build();
+
+    result =
+        converter.convertScopedConfig(
+            config, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+
+    assertEquals(v1, result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion());
+    assertEquals(v2, result.getGlobalModsecConfig().getRuleVersionData().getPreviousVersion());
+
+    // Case 3: Within 14 days of v2 release, current = v2
+    config =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setRuleVersionDataChange(
+                        RuleVersionDataChange.newBuilder().setStableVersion(v2).build())
+                    .build())
+            .build();
+
+    result =
+        converter.convertScopedConfig(
+            config, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+
+    assertEquals(v2, result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion());
+    assertEquals(v1, result.getGlobalModsecConfig().getRuleVersionData().getPreviousVersion());
+
+    // Release v3: v2 -> v3 transition
+    when(defaultConfig.getNewWebAppStableVersion()).thenReturn(v3);
+    when(defaultConfig.getOldWebAppStableVersion()).thenReturn(v2);
+
+    // Case 4: Within 14 days of v3 release, current = v2
+    config =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setRuleVersionDataChange(
+                        RuleVersionDataChange.newBuilder().setStableVersion(v2).build())
+                    .build())
+            .build();
+
+    result =
+        converter.convertScopedConfig(
+            config, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+
+    assertEquals(v2, result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion());
+    assertEquals(v3, result.getGlobalModsecConfig().getRuleVersionData().getPreviousVersion());
+
+    // Case 5: Within 14 days of v3 release, current = v1
+    config =
+        ScopedAnomalyConfigStatusChange.newBuilder()
+            .setConfigScope(getSampleScopes().get(0))
+            .setGlobalModsecConfigChange(
+                GlobalModsecConfigChange.newBuilder()
+                    .setRuleVersionDataChange(
+                        RuleVersionDataChange.newBuilder().setStableVersion(v1).build())
+                    .build())
+            .build();
+
+    result =
+        converter.convertScopedConfig(
+            config, defaultConfig, AnomalyConfigStatus.getDefaultInstance());
+
+    assertEquals(v3, result.getGlobalModsecConfig().getRuleVersionData().getCurrentVersion());
+    assertEquals(v2, result.getGlobalModsecConfig().getRuleVersionData().getPreviousVersion());
+  }
+
   private List<AnomalyConfigScope> getSampleScopes() {
     return List.of(
         AnomalyConfigScope.newBuilder()
@@ -150,11 +253,15 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
             .build());
   }
 
-  private RuleVersion getRuleVersion(String version, RuleVersionType type) {
+  private RuleVersion getRuleVersion(String version, String publishedDate) {
     return RuleVersion.newBuilder()
         .setVersion(version)
-        .setVersionType(type)
-        .setPublishedDate("2023-10-01")
+        .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+        .setPublishedDate(publishedDate)
         .build();
+  }
+
+  private RuleVersion getRuleVersion(String version) {
+    return getRuleVersion(version, "2023-10-01");
   }
 }

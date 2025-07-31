@@ -81,7 +81,8 @@ public class ModsecRulesRegistryTest {
                 List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
                 version,
                 Set.of(),
-                false);
+                false,
+                true);
         if (regularRulesCount == 0) {
           assertTrue(crsRulesBlob.isEmpty(), "Regular rules empty for version " + version);
         } else {
@@ -94,7 +95,11 @@ public class ModsecRulesRegistryTest {
       {
         String crsRulesBlob =
             modsecRulesRegistry.getModsecCrsRulesBlob(
-                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE), version, Set.of(), false);
+                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
+                version,
+                Set.of(),
+                false,
+                true);
         assertEquals(
             allRulesCount - safeRulesCount,
             crsRulesBlob.split(secRuleRemoveByIdKeyword).length - 1,
@@ -103,7 +108,11 @@ public class ModsecRulesRegistryTest {
       {
         String crsRulesBlob =
             modsecRulesRegistry.getModsecCrsRulesBlob(
-                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK), version, Set.of(), false);
+                List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
+                version,
+                Set.of(),
+                false,
+                true);
         // few rules in file not marked safe
         assertEquals(
             allRulesCount - blockingRulesCount,
@@ -144,7 +153,8 @@ public class ModsecRulesRegistryTest {
               List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
               ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
               Set.of(),
-              false);
+              false,
+              true);
       assertEquals(-1, crsRulesBlob.indexOf("SecArgumentsLimit 1000"));
     }
     {
@@ -153,7 +163,8 @@ public class ModsecRulesRegistryTest {
               List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
               ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS,
               Set.of(),
-              false);
+              false,
+              true);
       assertNotEquals(-1, crsRulesBlob.indexOf("SecArgumentsLimit 1000"));
     }
   }

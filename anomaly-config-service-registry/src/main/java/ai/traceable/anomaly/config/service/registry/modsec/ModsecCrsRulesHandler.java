@@ -111,7 +111,8 @@ public class ModsecCrsRulesHandler {
       String modsecCrsRulesFilePath,
       Map<String, AnomalyRuleInfo> modsecRules,
       List<AnomalySubRuleType> anomalySubRuleTypes,
-      Set<String> disabledModsecRuleIds) {
+      Set<String> disabledModsecRuleIds,
+      boolean includeDirectives) {
 
     // Ids to be removed should be ordered to ensure the ModSec blob doesn't keep changing on
     // subsequent calls.
@@ -135,6 +136,14 @@ public class ModsecCrsRulesHandler {
 
     if (anomalySubRuleInfoList.size() == idsToBeRemoved.size()) {
       return EMPTY_STRING;
+    }
+
+    if (!includeDirectives) {
+      return String.join(
+          NEWLINE_DELIMITER,
+          loadModsecCrsFileContents(modsecCrsInitializationRulesFilePath),
+          loadModsecCrsFileContents(modsecCrsRulesFilePath),
+          String.join(NEWLINE_DELIMITER, idsToBeRemoved));
     }
 
     return String.join(

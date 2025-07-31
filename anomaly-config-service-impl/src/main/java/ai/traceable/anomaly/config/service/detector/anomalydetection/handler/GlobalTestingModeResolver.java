@@ -165,6 +165,9 @@ public class GlobalTestingModeResolver {
   }
 
   private static boolean isDateAfter(String date1, String date2) {
+    if (date1.isEmpty() || date2.isEmpty()) {
+      return false;
+    }
     return date1.compareTo(date2) > 0;
   }
 }

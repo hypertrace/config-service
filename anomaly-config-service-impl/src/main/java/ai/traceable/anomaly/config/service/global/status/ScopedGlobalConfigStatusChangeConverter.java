@@ -17,10 +17,14 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Value;
-import java.util.AbstractMap;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.config.proto.converter.ConfigProtoConverter;
 
+@Slf4j
 public class ScopedGlobalConfigStatusChangeConverter {
 
   public Value convert(ScopedAnomalyConfigStatusChange config)
@@ -192,27 +196,45 @@ public class ScopedGlobalConfigStatusChangeConverter {
       final RuleVersion overrideVersion,
       final RuleVersion currentStableVersion) {
 
-    RuleVersion currentVersion;
-
     if (isNotNullOrDefault(overrideVersion)) {
-      currentVersion = overrideVersion;
-      return new AbstractMap.SimpleEntry<>(currentVersion, newStableVersion);
+      return new SimpleEntry<>(overrideVersion, newStableVersion);
     }
 
-    if (!newStableVersion.equals(oldStableVersion)) {
+    if (newStableVersion.equals(oldStableVersion)) {
+      return new SimpleEntry<>(newStableVersion, oldStableVersion);
+    }
+
+    if (isWithinTwoWeeks(
+        newStableVersion.getPublishedDate(), oldStableVersion.getPublishedDate())) {
       if (isNotNullOrDefault(currentStableVersion)
-          && currentStableVersion.equals(oldStableVersion)) {
-        currentVersion = oldStableVersion;
-      } else {
-        currentVersion = newStableVersion;
+          && (currentStableVersion.equals(newStableVersion)
+              || currentStableVersion.equals(oldStableVersion))) {
+        return new SimpleEntry<>(
+            currentStableVersion,
+            currentStableVersion.equals(oldStableVersion) ? newStableVersion : oldStableVersion);
       }
-    } else {
-      currentVersion = newStableVersion;
+      return new SimpleEntry<>(newStableVersion, oldStableVersion);
     }
-    RuleVersion previousVersion =
-        currentVersion.equals(newStableVersion) ? oldStableVersion : newStableVersion;
+    return new SimpleEntry<>(newStableVersion, newStableVersion);
+  }
 
-    return new AbstractMap.SimpleEntry<>(currentVersion, previousVersion);
+  private static boolean isWithinTwoWeeks(
+      String newStableVersionDate, String oldStableVersionDate) {
+    if (newStableVersionDate.isEmpty() || oldStableVersionDate.isEmpty()) {
+      return false;
+    }
+    try {
+      ZonedDateTime newStableVersionDateTime = ZonedDateTime.parse(newStableVersionDate);
+      ZonedDateTime oldStableVersionDateTime = ZonedDateTime.parse(oldStableVersionDate);
+      return Duration.between(oldStableVersionDateTime, newStableVersionDateTime).toDays() <= 14;
+    } catch (Exception e) {
+      log.error(
+          "Error parsing dates for newStableVersionDate: {} and oldStableVersionDate: {}",
+          newStableVersionDate,
+          oldStableVersionDate,
+          e);
+      return false;
+    }
   }
 
   private static boolean isNullOrDefault(final GlobalModsecConfigChange globalModsecConfigChange) {

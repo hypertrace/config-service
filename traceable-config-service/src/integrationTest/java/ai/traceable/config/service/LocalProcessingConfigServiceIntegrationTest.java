@@ -302,7 +302,8 @@ public class LocalProcessingConfigServiceIntegrationTest
         List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
         ModsecRuleVersion.MODSEC_RULE_VERSION_V3_SECARG_LIMITS_DETECTION_ONLY_MODE,
         disabledRuleIds,
-        false);
+        false,
+        true);
   }
 
   private void createAndGetCustomSignatureRule(EventType eventType) {

@@ -83,24 +83,28 @@ class ModsecManagerImplTest {
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_REGULAR),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of(),
-            false))
+            false,
+            true))
         .thenReturn("regular");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of(),
-            false))
+            false,
+            true))
         .thenReturn("safe");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of(),
-            false))
+            false,
+            true))
         .thenReturn("block");
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             argThat(list -> list.size() > 1),
             eq(ModsecRuleVersion.MODSEC_RULE_VERSION_V3),
             eq(Set.of()),
+            anyBoolean(),
             anyBoolean()))
         .thenReturn("combined");
 
@@ -185,14 +189,16 @@ class ModsecManagerImplTest {
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of("subRule1", "subRule2", "subRule4"),
-            false))
+            false,
+            true))
         .thenReturn("excluded_blocked");
 
     when(modsecRulesRegistry.getModsecCrsRulesBlob(
             List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_SAFE),
             ModsecRuleVersion.MODSEC_RULE_VERSION_V3,
             Set.of("subRule1", "subRule4"),
-            false))
+            false,
+            true))
         .thenReturn("excluded_safe");
 
     List<AnomalySubRuleType> subRuleTypes = List.of(AnomalySubRuleType.ANOMALY_SUB_RULE_TYPE_BLOCK);

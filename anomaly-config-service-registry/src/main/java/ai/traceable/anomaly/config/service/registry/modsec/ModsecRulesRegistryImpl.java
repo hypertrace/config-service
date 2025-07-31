@@ -55,7 +55,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
       List<AnomalySubRuleType> subRuleTypes,
       ModsecRuleVersion ruleVersion,
       Set<String> disabledModsecRuleIds,
-      boolean useTestRules) {
+      boolean useTestRules,
+      boolean includeDirectives) {
     ModsecCrsConfig modsecCrsConfig = getModsecCrsConfig(ruleVersion);
     // handle deprecated enums
     useTestRules = useTestRules || isModsecTestRuleVersion(ruleVersion);
@@ -65,7 +66,8 @@ public class ModsecRulesRegistryImpl implements ModsecRulesRegistry {
         useTestRules ? modsecCrsConfig.getTestRulesFilePath() : modsecCrsConfig.getRulesFilePath(),
         getModsecRuleInfos(ruleVersion, useTestRules),
         subRuleTypes,
-        disabledModsecRuleIds);
+        disabledModsecRuleIds,
+        includeDirectives);
   }
 
   @Override

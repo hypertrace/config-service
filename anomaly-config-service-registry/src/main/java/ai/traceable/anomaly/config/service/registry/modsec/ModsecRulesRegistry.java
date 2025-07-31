@@ -18,7 +18,8 @@ public interface ModsecRulesRegistry {
       List<AnomalySubRuleType> subRuleTypes,
       ModsecRuleVersion ruleVersion,
       Set<String> disabledModsecRuleIds,
-      boolean useTestRules);
+      boolean useTestRules,
+      boolean includeDirectives);
 
   //  Returns both directives and initialization
   String getModsecHeader(ModsecRuleVersion ruleVersion);

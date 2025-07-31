@@ -130,7 +130,11 @@ public class ModsecManagerImpl implements ModsecManager {
                             true);
                       } else {
                         return modsecRulesRegistry.getModsecCrsRulesBlob(
-                            List.of(subRuleType), modsecRuleVersion, disabledModsecRuleIds, false);
+                            List.of(subRuleType),
+                            modsecRuleVersion,
+                            disabledModsecRuleIds,
+                            false,
+                            true);
                       }
                     }));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
@@ -146,7 +150,7 @@ public class ModsecManagerImpl implements ModsecManager {
       } else {
         builder.aggregatedModsecBlob(
             modsecRulesRegistry.getModsecCrsRulesBlob(
-                subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, false));
+                subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, false, true));
       }
     }
 
@@ -181,7 +185,11 @@ public class ModsecManagerImpl implements ModsecManager {
                             includeDirectives);
                       } else {
                         return modsecRulesRegistry.getModsecCrsRulesBlob(
-                            List.of(subRuleType), modsecRuleVersion, Set.of(), useTestModsecRules);
+                            List.of(subRuleType),
+                            modsecRuleVersion,
+                            Set.of(),
+                            useTestModsecRules,
+                            includeDirectives);
                       }
                     }));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
@@ -195,7 +203,7 @@ public class ModsecManagerImpl implements ModsecManager {
       } else {
         builder.aggregatedModsecBlob(
             modsecRulesRegistry.getModsecCrsRulesBlob(
-                subRuleTypes, modsecRuleVersion, Set.of(), useTestModsecRules));
+                subRuleTypes, modsecRuleVersion, Set.of(), useTestModsecRules, includeDirectives));
       }
     }
 

@@ -46,7 +46,7 @@ public class WafIntegrationTest extends TraceableConfigServiceIntegrationTestBas
               || subRuleType.equals(AnomalySubRuleType.UNRECOGNIZED)) {
             assertTrue(
                 modsecRulesRegistry
-                    .getModsecCrsRulesBlob(List.of(subRuleType), version, Set.of(), false)
+                    .getModsecCrsRulesBlob(List.of(subRuleType), version, Set.of(), false, true)
                     .isEmpty());
           } else {
             if (version.name().contains("CORAZA")) {
@@ -54,7 +54,7 @@ public class WafIntegrationTest extends TraceableConfigServiceIntegrationTestBas
                 client.initWaf(
                     wafID,
                     modsecRulesRegistry.getModsecCrsRulesBlob(
-                        List.of(subRuleType), version, Set.of(), false));
+                        List.of(subRuleType), version, Set.of(), false, true));
               } catch (Exception e) {
                 fail("Failed for CORAZA version: " + version + " subRuleType: " + subRuleType, e);
               }
@@ -63,7 +63,7 @@ public class WafIntegrationTest extends TraceableConfigServiceIntegrationTestBas
                 assertNotNull(
                     RuleEngine.create(
                         modsecRulesRegistry.getModsecCrsRulesBlob(
-                            List.of(subRuleType), version, Set.of(), false)),
+                            List.of(subRuleType), version, Set.of(), false, true)),
                     "Failed for Modsec version: " + version + " subRuleType: " + subRuleType);
               }
             }
