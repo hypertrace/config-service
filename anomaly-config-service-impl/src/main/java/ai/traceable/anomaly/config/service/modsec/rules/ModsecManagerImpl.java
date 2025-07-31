@@ -61,6 +61,12 @@ public class ModsecManagerImpl implements ModsecManager {
     this.globalAnomalyConfigStatusManager = globalAnomalyConfigStatusManager;
   }
 
+  /**
+   * we are not taking useTest or experimental version in account here, as this is used in blocking
+   * config service and there is no point of fetching the experimental/test rules in blocking, so we
+   * are using useTest = false[deprecated flow] and version = current [ignoring the experimental
+   * version if set]
+   */
   @Override
   public ModsecCrsRules getModsecCrsRules(
       RequestContext requestContext,
@@ -88,9 +94,8 @@ public class ModsecManagerImpl implements ModsecManager {
       return new ModsecCrsRules(subRuleTypes);
     }
 
-    boolean useTestRules = globalConfig.getGlobalModsecConfig().getUseTestRules();
     Set<String> disabledModsecRuleIds;
-    if (removeDisabledRules && !useTestRules) {
+    if (removeDisabledRules) {
       boolean checkBlockingStatus =
           rulesTarget == ModsecCrsRulesTarget.MODSEC_CRS_RULES_TARGET_TA_BLOCKING
               || (subRuleTypes.size() == 1
@@ -101,7 +106,6 @@ public class ModsecManagerImpl implements ModsecManager {
               checkBlockingStatus,
               anomalyConfigScope,
               modsecRuleVersion,
-              useTestRules,
               isWAAPVersioningEnabledForTenant,
               currentVersion);
     } else {
@@ -126,10 +130,7 @@ public class ModsecManagerImpl implements ModsecManager {
                             true);
                       } else {
                         return modsecRulesRegistry.getModsecCrsRulesBlob(
-                            List.of(subRuleType),
-                            modsecRuleVersion,
-                            disabledModsecRuleIds,
-                            useTestRules);
+                            List.of(subRuleType), modsecRuleVersion, disabledModsecRuleIds, false);
                       }
                     }));
     builder.modsecBlobsForRuleTypes(modsecBlobsForRuleTypes);
@@ -145,7 +146,7 @@ public class ModsecManagerImpl implements ModsecManager {
       } else {
         builder.aggregatedModsecBlob(
             modsecRulesRegistry.getModsecCrsRulesBlob(
-                subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, useTestRules));
+                subRuleTypes, modsecRuleVersion, disabledModsecRuleIds, false));
       }
     }
 
@@ -206,7 +207,6 @@ public class ModsecManagerImpl implements ModsecManager {
       boolean checkBlockingStatus,
       AnomalyConfigScope anomalyConfigScope,
       ModsecRuleVersion modsecRuleVersion,
-      boolean useTestRules,
       boolean isWAAPVersioningEnabledForTenant,
       RuleVersion currentVersion) {
     Map<String, AnomalyDetectionConfig> anomalyRuleConfigMap =
@@ -222,7 +222,7 @@ public class ModsecManagerImpl implements ModsecManager {
               .collect(
                   Collectors.toUnmodifiableMap(AnomalyRuleInfo::getRuleId, Function.identity()));
     } else {
-      ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, useTestRules);
+      ruleInfoMap = modsecRulesRegistry.getModsecRuleInfos(modsecRuleVersion, false);
     }
     // The disabled modsec rule ids should be ordered to ensure that
     // the blob doesn't keep changing on repeated calls

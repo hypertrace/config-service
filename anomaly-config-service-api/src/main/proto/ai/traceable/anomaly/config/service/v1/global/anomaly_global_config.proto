@@ -62,7 +62,7 @@ message GetAllUnresolvedScopedAnomalyGlobalConfigStatusResponse {
 message GetAnomalyRuleInfosRequest {
   repeated AnomalyEventFamily event_families = 1;
   optional ai.traceable.anomaly.config.service.v1.modsec.ModsecRuleVersion modsec_rule_version = 2;
-  bool use_test_modsec_rules = 3;
+  bool use_test_modsec_rules = 3 [deprecated = true];
   RuleVersion version = 4 [deprecated = true];
   repeated AnomalyRuleTypeVersion rule_type_versions = 5;
 }

@@ -7,6 +7,7 @@ import ai.traceable.anomaly.config.service.global.ruleinfo.RuleInfoManager;
 import ai.traceable.anomaly.config.service.global.status.GlobalAnomalyConfigStatusManager;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
+import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.GetAnomalyDetectionConfigsFilter;
@@ -139,6 +140,7 @@ public class ModsecConfigValidator {
       RequestContext requestContext,
       AnomalyConfigScope configScope,
       GlobalModsecConfig globalModsecConfig) {
+    RuleVersionData ruleVersionData = globalModsecConfig.getRuleVersionData();
     ModsecRuleVersion modsecRuleVersion =
         anomalyDetectionConfigManager
             .getScopedAnomalyDetectionConfig(
@@ -174,7 +176,7 @@ public class ModsecConfigValidator {
     return ruleInfoManager.getModsecAnomalyRuleInfo(
         requestContext,
         modsecRuleVersion,
-        globalModsecConfig.getRuleVersionData().getCurrentVersion(),
+        ruleVersionData.getCurrentVersion(),
         globalModsecConfig.getUseTestRules());
   }
 

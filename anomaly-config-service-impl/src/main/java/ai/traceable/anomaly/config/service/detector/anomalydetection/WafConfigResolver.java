@@ -10,6 +10,7 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
 import ai.traceable.anomaly.config.service.v1.AnomalyRuleInfo;
 import ai.traceable.anomaly.config.service.v1.AnomalySubRuleInfo;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
+import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.ModsecurityAnomalyDetectionConfig;
@@ -65,12 +66,13 @@ public class WafConfigResolver {
             .equals(ModsecDefaultConfigsType.MODSEC_DEFAULT_CONFIGS_TYPE_STRICT_MONITORING)) {
       return defaultWafConfigs;
     }
+    RuleVersionData ruleVersionData = globalModsecConfig.getRuleVersionData();
     List<AnomalyDetectionConfig> anomalyDetectionConfigList =
         new ArrayList<>(
             getModsecAnomalyRuleInfos(
                     requestContext,
                     getModsecRuleVersion(configMap, contextsWithIncreasingPriority),
-                    globalModsecConfig.getRuleVersionData().getCurrentVersion(),
+                    ruleVersionData.getCurrentVersion(),
                     globalModsecConfig.getUseTestRules())
                 .stream()
                 .map(
@@ -161,10 +163,10 @@ public class WafConfigResolver {
   private List<AnomalyRuleInfo> getModsecAnomalyRuleInfos(
       RequestContext requestContext,
       ModsecRuleVersion modsecRuleVersion,
-      RuleVersion currentVersion,
+      RuleVersion ruleVersion,
       boolean useTestRules) {
     return ruleInfoManager.getModsecAnomalyRuleInfo(
-        requestContext, modsecRuleVersion, currentVersion, useTestRules);
+        requestContext, modsecRuleVersion, ruleVersion, useTestRules);
   }
 
   private AnomalySubRuleConfig buildDisabledAnomalySubRuleConfig(AnomalySubRuleInfo subRuleInfo) {
