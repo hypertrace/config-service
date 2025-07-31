@@ -454,6 +454,7 @@ class CloudBotDeploymentConfigManagerImplTest {
             CaptchaConfig.newBuilder()
                 .setEnabled(true)
                 .setCaptchaType(CaptchaType.CAPTCHA_TYPE_VISUAL))
+        .setIpWhitelistConfig(IpWhitelistConfig.newBuilder().addIpAddresses("1.2.3.4"))
         .build();
   }
 

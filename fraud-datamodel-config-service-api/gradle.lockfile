@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2375=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2482=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.fasterxml.jackson:jackson-bom:2.16.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.api.grpc:proto-google-common-protos:2.41.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.code.findbugs:jsr305:3.0.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
@@ -13,8 +13,8 @@ com.google.guava:guava:33.2.1-android=compileClasspath,runtimeClasspath,testComp
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.j2objc:j2objc-annotations:2.8=testRuntimeClasspath
 com.google.j2objc:j2objc-annotations:3.0.0=compileClasspath,testCompileClasspath
-com.google.protobuf:protobuf-java-util:3.25.5=testCompileClasspath,testRuntimeClasspath
-com.google.protobuf:protobuf-java:3.25.5=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.google.protobuf:protobuf-java-util:3.25.8=testCompileClasspath,testRuntimeClasspath
+com.google.protobuf:protobuf-java:3.25.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-api:1.68.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-bom:1.68.3=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.grpc:grpc-protobuf-lite:1.68.3=runtimeClasspath,testRuntimeClasspath

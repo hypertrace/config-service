@@ -3,6 +3,7 @@ package ai.traceable.edge.config.service;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.edge.config.service.supplier.CaptchaSiteKeyConfigSupplier;
 import ai.traceable.edge.config.service.supplier.ClientBotFingerprintPolicySupplier;
+import ai.traceable.edge.config.service.supplier.CloudBotDeploymentConfigSupplier;
 import ai.traceable.edge.config.service.supplier.EdgeDecisionEngineConfigSupplier;
 import ai.traceable.edge.config.service.supplier.FlowConfigSupplier;
 import ai.traceable.edge.config.service.supplier.InvisibleCaptchaPolicySupplier;
@@ -36,6 +37,7 @@ public class TraceableEdgeConfigService
       UuidGenerator uuidGenerator,
       EdgeDecisionEngineConfigSupplier edgeDecisionEngineConfigSupplier,
       CaptchaSiteKeyConfigSupplier captchaSiteKeyConfigSupplier,
+      CloudBotDeploymentConfigSupplier cloudBotDeploymentConfigSupplier,
       ClientBotFingerprintPolicySupplier clientBotFingerprintPolicySupplier,
       InvisibleCaptchaPolicySupplier invisibleCaptchaPolicySupplier,
       FlowConfigSupplier flowConfigSupplier,
@@ -48,6 +50,8 @@ public class TraceableEdgeConfigService
         edgeDecisionEngineConfigSupplier.getConfigType(), edgeDecisionEngineConfigSupplier);
     this.configSuppliersByType.put(
         captchaSiteKeyConfigSupplier.getConfigType(), captchaSiteKeyConfigSupplier);
+    this.configSuppliersByType.put(
+        cloudBotDeploymentConfigSupplier.getConfigType(), cloudBotDeploymentConfigSupplier);
     this.configSuppliersByType.put(
         clientBotFingerprintPolicySupplier.getConfigType(), clientBotFingerprintPolicySupplier);
     this.configSuppliersByType.put(flowConfigSupplier.getConfigType(), flowConfigSupplier);

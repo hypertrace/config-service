@@ -16,6 +16,7 @@ dependencies {
   implementation(commonLibs.protobuf.javautil)
   implementation(commonLibs.slf4j2.api)
   implementation(commonLibs.uuidcreator)
+  implementation(commonLibs.traceable.platform.ipUtils)
 
   implementation(commonLibs.hypertrace.grpcutils.context)
   implementation(commonLibs.hypertrace.grpcutils.client)

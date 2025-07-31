@@ -15,6 +15,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploym
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
@@ -465,5 +466,38 @@ class CloudBotDeploymentConfigValidatorTest {
             existingConfig);
     assertTrue(
         status.isOk(), "Valid status update with traceable captcha domain should pass validation");
+  }
+
+  @Test
+  void testValidateCreateCloudBotDeploymentConfigRequest_InvalidIpAddress() {
+    // Create a site config with invalid IP address in the whitelist
+    SiteConfig siteConfig =
+        SiteConfig.newBuilder()
+            .setSiteName("Test Site")
+            .setSiteKey("test-site-key")
+            .addDomains("example.com")
+            .setCaptchaConfig(
+                CaptchaConfig.newBuilder()
+                    .setEnabled(true)
+                    .setCaptchaType(CaptchaType.CAPTCHA_TYPE_VISUAL))
+            .setIpWhitelistConfig(
+                IpWhitelistConfig.newBuilder()
+                    .addIpAddresses("300.168.1.1") // Invalid IP address
+                    .build())
+            .build();
+
+    // Create a request with the invalid site config
+    CreateCloudBotDeploymentConfigRequest request =
+        CreateCloudBotDeploymentConfigRequest.newBuilder()
+            .setCloudBotDeploymentConfigInput(
+                CloudBotDeploymentConfigInput.newBuilder()
+                    .setEnabled(true)
+                    .setSiteConfig(siteConfig)
+                    .setDeploymentDetails(createValidDeploymentDetails()))
+            .build();
+
+    Status status = validator.validate(request);
+    assertFalse(status.isOk(), "Invalid IP address should fail validation");
+    assertEquals(Status.Code.INVALID_ARGUMENT, status.getCode());
   }
 }

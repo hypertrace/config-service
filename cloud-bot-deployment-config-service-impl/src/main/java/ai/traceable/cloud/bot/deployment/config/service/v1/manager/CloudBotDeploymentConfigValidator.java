@@ -1,5 +1,7 @@
 package ai.traceable.cloud.bot.deployment.config.service.v1.manager;
 
+import static ai.traceable.config.utils.RegexValidator.validateRegex;
+
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaProviderDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CaptchaType;
@@ -11,9 +13,13 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploym
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.RuleType;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.UrlRule;
+import ai.traceable.platform.utils.ip.IpValidationUtils;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
@@ -145,13 +151,13 @@ public class CloudBotDeploymentConfigValidator {
       return Status.INVALID_ARGUMENT.withDescription("Site name cannot be empty");
     }
 
-    if (siteConfig.getDomainsCount() == 0) {
-      return Status.INVALID_ARGUMENT.withDescription("At least one domain must be specified");
+    Status status = validate(siteConfig.getIpWhitelistConfig());
+    if (!status.isOk()) {
+      return status;
     }
 
-    if (siteConfig.getDomainsCount() > 6) {
-      // Due to limitation from MTCaptcha
-      return Status.INVALID_ARGUMENT.withDescription("At max of six domains is supported");
+    if (siteConfig.getDomainsCount() == 0) {
+      return Status.INVALID_ARGUMENT.withDescription("At least one domain must be specified");
     }
 
     // Validate each domain
@@ -175,7 +181,7 @@ public class CloudBotDeploymentConfigValidator {
     }
 
     if (siteConfig.hasCaptchaConfig()) {
-      Status status = validateCaptchaConfig(siteConfig.getCaptchaConfig());
+      status = validateCaptchaConfig(siteConfig.getCaptchaConfig());
       if (!status.isOk()) {
         return status;
       }
@@ -189,10 +195,26 @@ public class CloudBotDeploymentConfigValidator {
       return Status.INVALID_ARGUMENT.withDescription("Captcha type must be specified");
     }
 
+    if (captchaConfig.getEnabled()) {
+
+      for (UrlRule rule : captchaConfig.getUrlRulesList()) {
+        if (rule.getRuleType().equals(RuleType.RULE_TYPE_EXCLUDE_URL_REGEX)
+            || rule.getRuleType().equals(RuleType.RULE_TYPE_INCLUDE_URL_REGEX)) {
+
+          for (String urlRegex : rule.getValuesList()) {
+            Status status = validateRegex(urlRegex);
+            if (!status.isOk()) {
+              return status;
+            }
+          }
+        }
+      }
+    }
+
     return Status.OK;
   }
 
-  private Status validateDeploymentDetails(DeploymentDetails deploymentDetails) {
+  private static Status validateDeploymentDetails(DeploymentDetails deploymentDetails) {
     if (deploymentDetails.getEnvironment().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription("Environment cannot be empty");
     }
@@ -223,7 +245,7 @@ public class CloudBotDeploymentConfigValidator {
     return Status.OK;
   }
 
-  private Status validateEdgeDeploymentConfig(EdgeDeploymentConfig edgeConfig) {
+  private static Status validateEdgeDeploymentConfig(EdgeDeploymentConfig edgeConfig) {
     if (edgeConfig.getCloudEdgeDeploymentId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Associated cloud edge deployment ID cannot be empty");
@@ -232,7 +254,7 @@ public class CloudBotDeploymentConfigValidator {
     return Status.OK;
   }
 
-  private Status validateCloudBotDeploymentStatus(CloudBotDeploymentStatus status) {
+  private static Status validateCloudBotDeploymentStatus(CloudBotDeploymentStatus status) {
     if (status.getClusterStatus() == ClusterStatus.CLUSTER_STATUS_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription("Cluster status cannot be UNSPECIFIED");
     }
@@ -240,9 +262,29 @@ public class CloudBotDeploymentConfigValidator {
     return Status.OK;
   }
 
-  private Status validateCaptchaProviderDetails(CaptchaProviderDetails details) {
+  private static Status validateCaptchaProviderDetails(CaptchaProviderDetails details) {
     if (details.hasMtCaptcha() && details.getMtCaptcha().getSiteKey().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription("MTCaptcha site key cannot be empty");
+    }
+
+    return Status.OK;
+  }
+
+  private Status validate(IpWhitelistConfig ipWhitelistConfig) {
+    // Validate IP addresses
+    for (String ip : ipWhitelistConfig.getIpAddressesList()) {
+      if (!IpValidationUtils.isValidIpAddress(ip)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format("IP address %s not valid", ip));
+      }
+    }
+
+    // Validate IP ranges (CIDR notation)
+    for (String cidr : ipWhitelistConfig.getIpRangesList()) {
+      if (!IpValidationUtils.isValidSubnet(cidr)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            String.format("IP range %s not valid", cidr));
+      }
     }
 
     return Status.OK;

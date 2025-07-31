@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ai.traceable.bom:traceable-bom:0.4.2375=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ai.traceable.bom:traceable-bom:0.4.2482=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 aopalliance:aopalliance:1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.auth0:java-jwt:4.4.0=runtimeClasspath,testRuntimeClasspath
 com.auth0:jwks-rsa:0.22.0=runtimeClasspath,testRuntimeClasspath
@@ -24,8 +24,8 @@ com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava=comp
 com.google.inject:guice:7.0.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.j2objc:j2objc-annotations:2.8=runtimeClasspath,testRuntimeClasspath
 com.google.j2objc:j2objc-annotations:3.0.0=compileClasspath,testCompileClasspath
-com.google.protobuf:protobuf-java-util:3.25.5=runtimeClasspath,testRuntimeClasspath
-com.google.protobuf:protobuf-java:3.25.5=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.google.protobuf:protobuf-java-util:3.25.8=runtimeClasspath,testRuntimeClasspath
+com.google.protobuf:protobuf-java:3.25.8=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.re2j:re2j:1.7=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.jayway.jsonpath:json-path:2.9.0=runtimeClasspath,testRuntimeClasspath
 com.typesafe:config:1.4.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath

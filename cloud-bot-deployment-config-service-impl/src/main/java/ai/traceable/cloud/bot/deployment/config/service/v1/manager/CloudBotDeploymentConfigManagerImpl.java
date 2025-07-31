@@ -8,12 +8,15 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig.Builder;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
+import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
+import ai.traceable.platform.utils.ip.IpAddressParsingUtils.IpParsingResults;
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -21,6 +24,7 @@ import jakarta.inject.Inject;
 import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -54,6 +58,12 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
 
     // Generate a public-private key pair and set it for signing jwt
     siteConfigBuilder.setJwtSigningDetails(keyPairGenerator.generateJwtSigningKeyPair());
+
+    // Standardize ips
+    if (siteConfigBuilder.hasIpWhitelistConfig()) {
+      siteConfigBuilder.setIpWhitelistConfig(
+          standardizeIps(siteConfigBuilder.getIpWhitelistConfig()));
+    }
 
     // Set API token for out-of-band deployments
     if (input.getDeploymentDetails().getDeploymentMode()
@@ -283,5 +293,18 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
           Status.NOT_FOUND.withDescription("Cloud bot deployment config not found: " + id));
     }
     return existingConfig;
+  }
+
+  private static IpWhitelistConfig standardizeIps(IpWhitelistConfig ipWhitelistConfig) {
+    IpParsingResults ipParsingResults =
+        IpAddressParsingUtils.parseRawIpRange(
+            Stream.concat(
+                    ipWhitelistConfig.getIpAddressesList().stream(),
+                    ipWhitelistConfig.getIpRangesList().stream())
+                .collect(Collectors.toUnmodifiableList()));
+    return IpWhitelistConfig.newBuilder()
+        .addAllIpAddresses(ipParsingResults.getIpAddresses())
+        .addAllIpRanges(ipParsingResults.getIpRanges())
+        .build();
   }
 }

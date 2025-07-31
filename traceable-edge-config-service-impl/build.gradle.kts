@@ -8,6 +8,7 @@ dependencies {
   implementation(projects.configUtils)
   implementation(projects.anomalyConfigServiceApi)
   implementation(projects.traceableEdgeConfigServiceApi)
+  implementation(projects.cloudBotDeploymentConfigServiceApi)
   implementation(projects.traceableEdgeBotConfigServiceApi)
   implementation(projects.traceableEdgeDecisionConfigServiceApi)
 
