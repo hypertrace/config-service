@@ -21,7 +21,7 @@ spec:
           expr: sum(config_threat_autoblocking_action_timer_seconds_max) by (tenantId, operation) > 0
           for: 0m
           labels:
-            severity: SEV2
+            severity: SEV3
             repository: config-service
             team: common
             {{- with .Values.prometheusRule.additionalRuleLabels }}
@@ -34,7 +34,7 @@ spec:
           expr: sum(scoped_anomaly_global_config_action_timer_seconds_max) by (tenantId, action, anomalyDetectionType) > 0
           for: 0m
           labels:
-            severity: SEV2
+            severity: SEV3
             repository: config-service
             team: protection
             {{- with .Values.prometheusRule.additionalRuleLabels }}
