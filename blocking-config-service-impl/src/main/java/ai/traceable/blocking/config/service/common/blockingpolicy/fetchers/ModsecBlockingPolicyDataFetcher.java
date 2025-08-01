@@ -3,6 +3,7 @@ package ai.traceable.blocking.config.service.common.blockingpolicy.fetchers;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfigType;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
@@ -128,7 +129,11 @@ class ModsecBlockingPolicyDataFetcher implements BlockingPolicyDataFetcherBase {
                     .getModsecAnomalyRule()
                     .getSubRuleConfigsList()
                     .stream())
-        .filter(AnomalySubRuleConfig::getBlockingEnabled)
+        .filter(
+            anomalySubRuleConfig ->
+                anomalySubRuleConfig
+                    .getAnomalyRuleAction()
+                    .equals(AnomalyRuleAction.ANOMALY_RULE_ACTION_BLOCK))
         .map(AnomalySubRuleConfig::getSubRuleId)
         .map(this::generateBlockingDetails)
         .collect(Collectors.toUnmodifiableList());

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyCustomerScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyEnvironmentScope;
+import ai.traceable.anomaly.config.service.v1.AnomalyRuleAction;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalyDetectionConfig;
 import ai.traceable.anomaly.config.service.v1.detector.AnomalySubRuleConfig;
 import ai.traceable.anomaly.config.service.v1.detector.DetectorConfigServiceGrpc.DetectorConfigServiceBlockingStub;
@@ -187,11 +188,15 @@ class ModsecBlockingPolicyDataFetcherTest {
                                           ModsecurityAnomalyRuleConfig.newBuilder()
                                               .addSubRuleConfigs(
                                                   AnomalySubRuleConfig.newBuilder()
-                                                      .setBlockingEnabled(true)
+                                                      .setAnomalyRuleAction(
+                                                          AnomalyRuleAction
+                                                              .ANOMALY_RULE_ACTION_BLOCK)
                                                       .setSubRuleId("crs_123456"))
                                               .addSubRuleConfigs(
                                                   AnomalySubRuleConfig.newBuilder()
-                                                      .setBlockingEnabled(false)
+                                                      .setAnomalyRuleAction(
+                                                          AnomalyRuleAction
+                                                              .ANOMALY_RULE_ACTION_MONITOR)
                                                       .setSubRuleId("crs_111111"))))))
               .build();
 
