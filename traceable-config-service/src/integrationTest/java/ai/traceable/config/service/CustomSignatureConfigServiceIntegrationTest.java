@@ -2,6 +2,7 @@ package ai.traceable.config.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -16,10 +17,13 @@ import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleR
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetCustomSignatureEdgeDecisionRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureModsecRulesResponse;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
 import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
@@ -257,6 +261,65 @@ public class CustomSignatureConfigServiceIntegrationTest
             + "',severity:'CRITICAL',chain\"\n"
             + "SecRule REQUEST_HEADERS:x-real-ip \"@rx ^127\" \"capture,block,t:none\"",
         rulesResponse.getModsecRulesBlob());
+  }
+
+  @Test
+  void testGetCustomSignatureEdgeDecisionRules() {
+    // Create a compatible custom signature rule
+    CustomSignatureRule createdRule =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () ->
+                configServiceStub
+                    .createCustomSignatureRule(
+                        CreateCustomSignatureRuleRequest.newBuilder()
+                            .setName("rule-1")
+                            .setEffect(
+                                RuleEffect.newBuilder()
+                                    .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
+                                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_HIGH))
+                            .setDefinition(
+                                RuleDefinition.newBuilder()
+                                    .setClauseGroup(
+                                        ClauseGroup.newBuilder()
+                                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setIpAddressExpression(
+                                                        IpAddressExpression.newBuilder()
+                                                            .addAllIpAddresses(
+                                                                List.of("1.2.3.4", "2.3.4.5"))))))
+                            .setRuleScope(RuleScope.getDefaultInstance())
+                            .build())
+                    .getRule());
+    // validate
+    assertNotNull(createdRule);
+    assertNotNull(createdRule.getId());
+    // Get edge decision rules
+    GetCustomSignatureEdgeDecisionRulesRequest edgeDecisionRulesRequest =
+        GetCustomSignatureEdgeDecisionRulesRequest.newBuilder()
+            .setRulesFilter(
+                GetRulesFilter.newBuilder()
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+            .build();
+    GetCustomSignatureEdgeDecisionRulesResponse edgeDecisionRulesResponse =
+        GrpcClientRequestContextUtil.executeInTenantContext(
+            TENANT_ID,
+            () -> configServiceStub.getCustomSignatureEdgeDecisionRules(edgeDecisionRulesRequest));
+    // validate
+    assertNotNull(edgeDecisionRulesResponse);
+    assertNotNull(edgeDecisionRulesResponse.getEdgeDecisionEngineConfig());
+    assertFalse(
+        edgeDecisionRulesResponse.getEdgeDecisionEngineConfig().getDecisionRulesList().isEmpty());
+    assertEquals(
+        createdRule.getId(),
+        edgeDecisionRulesResponse.getEdgeDecisionEngineConfig().getDecisionRules(0).getId());
+    // Delete rule
+    GrpcClientRequestContextUtil.executeInTenantContext(
+        TENANT_ID,
+        () ->
+            configServiceStub.deleteCustomSignatureRule(
+                DeleteCustomSignatureRuleRequest.newBuilder().setId(createdRule.getId()).build()));
   }
 
   private List<CustomSignatureRule> createDefaultRules() {
