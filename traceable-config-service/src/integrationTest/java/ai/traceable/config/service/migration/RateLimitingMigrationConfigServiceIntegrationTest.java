@@ -391,8 +391,8 @@ public class RateLimitingMigrationConfigServiceIntegrationTest
     upsertRateLimitingRuleWithoutRuleEvaluationPoints();
     List<RateLimitingRule> fetchedRules = fetchAllRateLimitingRules();
 
-    // 13 default rules + 2 updated rules + 1 rule without any rule evaluation point initially
-    assertEquals(16, fetchedRules.size());
+    // 15 default rules + 2 updated rules + 1 rule without any rule evaluation point initially
+    assertEquals(18, fetchedRules.size());
 
     for (RateLimitingRule rateLimitingRule : fetchedRules) {
       assertFalse(rateLimitingRule.getData().getRuleEvaluationPointsList().isEmpty());

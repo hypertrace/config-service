@@ -22,11 +22,14 @@ public class RateLimitingConfigServiceConfig {
       "default-data-access-rules.conf";
   private static final String DEFAULT_RATE_LIMITING_RULES_FILE_PATH =
       "default-rate-limiting-rules.conf";
+  private static final String DEFAULT_AI_APP_PROTECTION_RULES_FILE_PATH =
+      "default-ai-app-protection-rules.conf";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
   private static final ConfigRenderOptions CONFIG_RENDER_CONCISE = ConfigRenderOptions.concise();
   private static final String ENUMERATION_RULES_PATH = "enumerationRules";
   private static final String DATA_ACCESS_RULES_PATH = "dataAccessRules";
   private static final String RATE_LIMITING_RULES_PATH = "rateLimitingRules";
+  private static final String AI_APP_PROTECTION_RULES_PATH = "aiAppProtectionRules";
   private static final String MIGRATION_DISABLED_KEY = "migrationDisabled";
   private static final String CHANGE_LOG_1_MIGRATION_DISABLED_KEY =
       "changeLog1." + MIGRATION_DISABLED_KEY;
@@ -48,7 +51,10 @@ public class RateLimitingConfigServiceConfig {
                         .getConfigList(DATA_ACCESS_RULES_PATH)),
                 this.convert(
                     ConfigFactory.parseResources(DEFAULT_RATE_LIMITING_RULES_FILE_PATH)
-                        .getConfigList(RATE_LIMITING_RULES_PATH)))
+                        .getConfigList(RATE_LIMITING_RULES_PATH)),
+                this.convert(
+                    ConfigFactory.parseResources(DEFAULT_AI_APP_PROTECTION_RULES_FILE_PATH)
+                        .getConfigList(AI_APP_PROTECTION_RULES_PATH)))
             .flatMap(Collection::stream)
             .collect(Collectors.toUnmodifiableList());
     changeLog1MigrationDisabled =
