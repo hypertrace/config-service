@@ -501,6 +501,7 @@ enum RuleSource {
   RULE_SOURCE_CUSTOMER = 1;
   RULE_SOURCE_TRACEABLE = 2;
   RULE_SOURCE_SYSTEM = 3;
+  RULE_SOURCE_DEFAULT = 4;
 }
 
 enum IpAddressExpressionType {
