@@ -25,6 +25,7 @@ import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.global.ScopedAnomalyConfigStatusChange;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.ZonedDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -133,8 +134,8 @@ public class ScopedGlobalConfigStatusChangeConverterTest {
 
   @Test
   void testConvertScopedConfigRuleVersions() {
-    String recentDate = "2025-07-14T00:00:00Z";
-    String oldDate = "2025-07-01T00:00:00Z";
+    String recentDate = ZonedDateTime.now().minusDays(3).toString();
+    String oldDate = ZonedDateTime.now().minusDays(20).toString();
     RuleVersion v1 = getRuleVersion("1.0.0", oldDate);
     RuleVersion v2 = getRuleVersion("2.0.0", recentDate);
     RuleVersion v3 = getRuleVersion("3.0.0", recentDate);

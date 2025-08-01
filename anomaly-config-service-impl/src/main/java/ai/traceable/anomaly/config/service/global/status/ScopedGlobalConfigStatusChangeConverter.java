@@ -204,8 +204,7 @@ public class ScopedGlobalConfigStatusChangeConverter {
       return new SimpleEntry<>(newStableVersion, oldStableVersion);
     }
 
-    if (isWithinTwoWeeks(
-        newStableVersion.getPublishedDate(), oldStableVersion.getPublishedDate())) {
+    if (isWithinTwoWeeks(newStableVersion.getPublishedDate())) {
       if (isNotNullOrDefault(currentStableVersion)
           && (currentStableVersion.equals(newStableVersion)
               || currentStableVersion.equals(oldStableVersion))) {
@@ -218,21 +217,16 @@ public class ScopedGlobalConfigStatusChangeConverter {
     return new SimpleEntry<>(newStableVersion, newStableVersion);
   }
 
-  private static boolean isWithinTwoWeeks(
-      String newStableVersionDate, String oldStableVersionDate) {
-    if (newStableVersionDate.isEmpty() || oldStableVersionDate.isEmpty()) {
+  private static boolean isWithinTwoWeeks(String newStableVersionDate) {
+    if (newStableVersionDate.isEmpty()) {
       return false;
     }
     try {
       ZonedDateTime newStableVersionDateTime = ZonedDateTime.parse(newStableVersionDate);
-      ZonedDateTime oldStableVersionDateTime = ZonedDateTime.parse(oldStableVersionDate);
-      return Duration.between(oldStableVersionDateTime, newStableVersionDateTime).toDays() <= 14;
+      ZonedDateTime currentDateTime = ZonedDateTime.now();
+      return Duration.between(newStableVersionDateTime, currentDateTime).toDays() <= 14;
     } catch (Exception e) {
-      log.error(
-          "Error parsing dates for newStableVersionDate: {} and oldStableVersionDate: {}",
-          newStableVersionDate,
-          oldStableVersionDate,
-          e);
+      log.error("Error parsing dates for newStableVersionDate: {}", newStableVersionDate, e);
       return false;
     }
   }
