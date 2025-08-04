@@ -17,6 +17,7 @@ import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.GetCustomSignatureRulesRequest;
+import ai.traceable.customsignature.config.service.v1.GetRulesFilter;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.MatchExpression;
@@ -26,6 +27,7 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.protobuf.Value;
 import com.typesafe.config.ConfigFactory;
@@ -182,6 +184,7 @@ public class CustomSignatureMigrationConfigServiceIntegrationTest
                             .setName("rule-without-any-evaluation-points")
                             .setDefinition(defaultRuleDefinition)
                             .setEffect(ruleEffect1)
+                            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
                             .build())
                     .getRule());
     assertTrue(
@@ -230,13 +233,7 @@ public class CustomSignatureMigrationConfigServiceIntegrationTest
                     .addEnvironmentIds("env-id"))
             .build());
 
-    List<CustomSignatureRule> fetchedRules =
-        GrpcClientRequestContextUtil.executeInTenantContext(
-            TENANT_ID,
-            () ->
-                customSignatureConfigServiceBlockingStub
-                    .getCustomSignatureRules(GetCustomSignatureRulesRequest.getDefaultInstance())
-                    .getRulesList());
+    List<CustomSignatureRule> fetchedRules = fetchAllCustomSignatureRules();
 
     assertEquals(2, fetchedRules.size());
 
@@ -253,7 +250,12 @@ public class CustomSignatureMigrationConfigServiceIntegrationTest
         TENANT_ID,
         () ->
             customSignatureConfigServiceBlockingStub
-                .getCustomSignatureRules(GetCustomSignatureRulesRequest.getDefaultInstance())
+                .getCustomSignatureRules(
+                    GetCustomSignatureRulesRequest.newBuilder()
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER))
+                        .build())
                 .getRulesList());
   }
 
@@ -267,6 +269,7 @@ public class CustomSignatureMigrationConfigServiceIntegrationTest
             .setDefinition(ruleDefinition)
             .setEffect(ruleEffect)
             .setRuleScope(ruleScope)
+            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
             .build();
 
     customSignatureRulesStore.upsertObjects(REQUEST_CONTEXT, List.of(customSignatureRule));

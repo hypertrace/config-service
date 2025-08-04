@@ -33,6 +33,7 @@ import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
+import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 import org.hypertrace.core.grpcutils.client.GrpcClientRequestContextUtil;
 import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProviderFactory;
@@ -48,6 +50,7 @@ import org.junit.jupiter.api.Test;
 
 public class CustomSignatureConfigServiceIntegrationTest
     extends TraceableConfigServiceIntegrationTestBase {
+  private static final int DEFAULT_RULES_COUNT = 2;
   private static CustomSignatureConfigServiceBlockingStub configServiceStub;
 
   @BeforeAll
@@ -60,20 +63,20 @@ public class CustomSignatureConfigServiceIntegrationTest
 
   @Test
   public void testCreateRule() {
-    assertTrue(fetchAllRules().isEmpty());
-    List<CustomSignatureRule> createdRules = createDefaultRules();
+    assertEquals(DEFAULT_RULES_COUNT, fetchAllRules().size());
+    List<CustomSignatureRule> createdRules = createRules();
     List<CustomSignatureRule> defaultRules =
         getDefaultRules(createdRules.get(0).getId(), createdRules.get(1).getId());
     assertEquals(defaultRules.get(0), createdRules.get(0));
     assertEquals(defaultRules.get(1), createdRules.get(1));
-    assertEquals(2, fetchAllRules().size());
+    assertEquals(2, fetchAllCreatedRules().size());
   }
 
   @Test()
   public void testUpdateRule() {
-    assertTrue(fetchAllRules().isEmpty());
-    List<CustomSignatureRule> createdRules = createDefaultRules();
-    List<CustomSignatureRule> fetchedRules = fetchAllRules();
+    assertEquals(DEFAULT_RULES_COUNT, fetchAllRules().size());
+    List<CustomSignatureRule> createdRules = createRules();
+    List<CustomSignatureRule> fetchedRules = fetchAllCreatedRules();
     assertEquals(2, fetchedRules.size());
     assertFalse(fetchedRules.get(0).getDisabled());
     assertFalse(fetchedRules.get(1).getDisabled());
@@ -82,7 +85,7 @@ public class CustomSignatureConfigServiceIntegrationTest
         CustomSignatureRule.newBuilder(createdRules.get(0)).setDisabled(true).build(),
         disableRule(createdRules.get(0)));
 
-    fetchedRules = fetchAllRules();
+    fetchedRules = fetchAllCreatedRules();
     assertEquals(2, fetchedRules.size());
     if (fetchedRules.get(0).getId().equals(createdRules.get(0).getId())) {
       assertTrue(fetchedRules.get(0).getDisabled());
@@ -95,9 +98,9 @@ public class CustomSignatureConfigServiceIntegrationTest
 
   @Test()
   public void testDeleteRule() {
-    assertTrue(fetchAllRules().isEmpty());
-    List<CustomSignatureRule> createdRules = createDefaultRules();
-    assertEquals(2, fetchAllRules().size());
+    assertEquals(DEFAULT_RULES_COUNT, fetchAllRules().size());
+    List<CustomSignatureRule> createdRules = createRules();
+    assertEquals(2, fetchAllCreatedRules().size());
     GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
@@ -105,16 +108,16 @@ public class CustomSignatureConfigServiceIntegrationTest
                 DeleteCustomSignatureRuleRequest.newBuilder()
                     .setId(createdRules.get(1).getId())
                     .build()));
-    List<CustomSignatureRule> fetchedRules = fetchAllRules();
+    List<CustomSignatureRule> fetchedRules = fetchAllCreatedRules();
     assertEquals(1, fetchedRules.size());
     assertEquals(createdRules.get(0).getId(), fetchedRules.get(0).getId());
   }
 
   @Test
   public void testGetRules() {
-    assertTrue(fetchAllRules().isEmpty());
-    List<CustomSignatureRule> createdRules = createDefaultRules();
-    assertEquals(2, fetchAllRules().size());
+    assertEquals(DEFAULT_RULES_COUNT, fetchAllRules().size());
+    List<CustomSignatureRule> createdRules = createRules();
+    assertEquals(2, fetchAllCreatedRules().size());
 
     List<CustomSignatureRule> fetchedRules =
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -126,6 +129,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                             .setFilter(
                                 GetRulesFilter.newBuilder()
                                     .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                                    .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
                                     .build())
                             .build())
                     .getRulesList());
@@ -141,7 +145,11 @@ public class CustomSignatureConfigServiceIntegrationTest
                 configServiceStub
                     .getCustomSignatureRules(
                         GetCustomSignatureRulesRequest.newBuilder()
-                            .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                            .setFilter(
+                                GetRulesFilter.newBuilder()
+                                    .setDisabled(true)
+                                    .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
+                                    .build())
                             .build())
                     .getRulesList());
     assertTrue(fetchedRules.isEmpty());
@@ -154,7 +162,11 @@ public class CustomSignatureConfigServiceIntegrationTest
                 configServiceStub
                     .getCustomSignatureRules(
                         GetCustomSignatureRulesRequest.newBuilder()
-                            .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                            .setFilter(
+                                GetRulesFilter.newBuilder()
+                                    .setDisabled(true)
+                                    .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
+                                    .build())
                             .build())
                     .getRulesList());
     assertEquals(1, fetchedRules.size());
@@ -188,9 +200,9 @@ public class CustomSignatureConfigServiceIntegrationTest
       fail("Failed to read waf directives file");
     }
 
-    assertTrue(fetchAllRules().isEmpty());
-    List<CustomSignatureRule> createdRules = createDefaultRules();
-    assertEquals(2, fetchAllRules().size());
+    assertTrue(fetchAllCreatedRules().isEmpty());
+    List<CustomSignatureRule> createdRules = createRules();
+    assertEquals(2, fetchAllCreatedRules().size());
 
     GetCustomSignatureModsecRulesResponse rulesResponse =
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -201,6 +213,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                         .setFilter(
                             GetRulesFilter.newBuilder()
                                 .addEventTypes(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                                .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
                                 .build())
                         .build()));
 
@@ -230,7 +243,11 @@ public class CustomSignatureConfigServiceIntegrationTest
             () ->
                 configServiceStub.getCustomSignatureModsecRules(
                     GetCustomSignatureModsecRulesRequest.newBuilder()
-                        .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .setDisabled(true)
+                                .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
+                                .build())
                         .build()));
     assertTrue(rulesResponse.getInlineRulesList().isEmpty());
     assertTrue(rulesResponse.getModsecRulesBlob().isEmpty());
@@ -242,7 +259,11 @@ public class CustomSignatureConfigServiceIntegrationTest
             () ->
                 configServiceStub.getCustomSignatureModsecRules(
                     GetCustomSignatureModsecRulesRequest.newBuilder()
-                        .setFilter(GetRulesFilter.newBuilder().setDisabled(true).build())
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .setDisabled(true)
+                                .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
+                                .build())
                         .build()));
     assertEquals(1, rulesResponse.getInlineRulesCount());
     assertTrue(rulesResponse.getInlineRules(0).getRule().getDisabled());
@@ -290,6 +311,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                                                             .addAllIpAddresses(
                                                                 List.of("1.2.3.4", "2.3.4.5"))))))
                             .setRuleScope(RuleScope.getDefaultInstance())
+                            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
                             .build())
                     .getRule());
     // validate
@@ -300,7 +322,8 @@ public class CustomSignatureConfigServiceIntegrationTest
         GetCustomSignatureEdgeDecisionRulesRequest.newBuilder()
             .setRulesFilter(
                 GetRulesFilter.newBuilder()
-                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER))
             .build();
     GetCustomSignatureEdgeDecisionRulesResponse edgeDecisionRulesResponse =
         GrpcClientRequestContextUtil.executeInTenantContext(
@@ -322,7 +345,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                 DeleteCustomSignatureRuleRequest.newBuilder().setId(createdRule.getId()).build()));
   }
 
-  private List<CustomSignatureRule> createDefaultRules() {
+  private List<CustomSignatureRule> createRules() {
     RuleDefinition definition = getDefaultDefinition();
 
     CustomSignatureRule rule1 =
@@ -340,6 +363,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                                     .build())
                             .setDefinition(definition)
                             .setRuleScope(RuleScope.newBuilder().build())
+                            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
                             .build())
                     .getRule());
 
@@ -358,6 +382,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                                     .build())
                             .setDefinition(definition)
                             .setRuleScope(RuleScope.newBuilder().build())
+                            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
                             .build())
                     .getRule());
     return List.of(rule1, rule2);
@@ -365,7 +390,9 @@ public class CustomSignatureConfigServiceIntegrationTest
 
   private CustomSignatureRule disableRule(CustomSignatureRule rule) {
     CustomSignatureRule updatedRule =
-        CustomSignatureRule.newBuilder(rule).setDisabled(true).build();
+        CustomSignatureRule.newBuilder(rule.toBuilder().clearRuleSource().build())
+            .setDisabled(true)
+            .build();
     return GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
@@ -376,11 +403,22 @@ public class CustomSignatureConfigServiceIntegrationTest
   }
 
   private List<CustomSignatureRule> fetchAllRules() {
+    return fetchAllRules(Collections.emptyList());
+  }
+
+  private List<CustomSignatureRule> fetchAllCreatedRules() {
+    return fetchAllRules(List.of(RuleSource.RULE_SOURCE_CUSTOMER));
+  }
+
+  private List<CustomSignatureRule> fetchAllRules(List<RuleSource> ruleSources) {
     return GrpcClientRequestContextUtil.executeInTenantContext(
         TENANT_ID,
         () ->
             configServiceStub
-                .getCustomSignatureRules(GetCustomSignatureRulesRequest.newBuilder().build())
+                .getCustomSignatureRules(
+                    GetCustomSignatureRulesRequest.newBuilder()
+                        .setFilter(GetRulesFilter.newBuilder().addAllRuleSources(ruleSources))
+                        .build())
                 .getRulesList());
   }
 
@@ -427,6 +465,7 @@ public class CustomSignatureConfigServiceIntegrationTest
                     .build())
             .setDefinition(definition)
             .setRuleScope(RuleScope.newBuilder().build())
+            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
             .build(),
         CustomSignatureRule.newBuilder()
             .setId(id2)
@@ -439,12 +478,13 @@ public class CustomSignatureConfigServiceIntegrationTest
                     .build())
             .setDefinition(definition)
             .setRuleScope(RuleScope.newBuilder().build())
+            .setRuleSource(RuleSource.RULE_SOURCE_CUSTOMER)
             .build());
   }
 
   private CustomSignatureRule updateExpiryTime(CustomSignatureRule rule) {
     CustomSignatureRule updatedRule =
-        CustomSignatureRule.newBuilder(rule)
+        CustomSignatureRule.newBuilder(rule.toBuilder().clearRuleSource().build())
             .setEffect(
                 rule.getEffect().toBuilder()
                     .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING))
@@ -473,7 +513,11 @@ public class CustomSignatureConfigServiceIntegrationTest
             configServiceStub
                 .getCustomSignatureRules(
                     GetCustomSignatureRulesRequest.newBuilder()
-                        .setFilter(GetRulesFilter.newBuilder().addEventTypes(eventType).build())
+                        .setFilter(
+                            GetRulesFilter.newBuilder()
+                                .addEventTypes(eventType)
+                                .addRuleSources(RuleSource.RULE_SOURCE_CUSTOMER)
+                                .build())
                         .build())
                 .getRulesList());
   }

@@ -38,7 +38,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 
-class CustomSignatureRulesValidator implements RulesValidator {
+public class CustomSignatureRulesValidator implements RulesValidator {
 
   private static final Set<EventType> INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES =
       Set.of(EventType.EVENT_TYPE_ALLOW, EVENT_TYPE_DETECTION_AND_BLOCKING);

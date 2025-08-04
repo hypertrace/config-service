@@ -22,6 +22,10 @@ public class CustomSignatureConfigServiceConfig {
       "defaultCustomSignatureRules";
   private static final String DEFAULT_CUSTOM_SIGNATURE_RULES_FILE_PATH =
       "default-custom-signature-rules.conf";
+  private static final String DEFAULT_AI_APP_PROTECTION_RULES_CONFIG_PATH =
+      "defaultAiAppProtectionRules";
+  private static final String DEFAULT_AI_APP_PROTECTION_RULES_FILE_PATH =
+      "default-ai-app-protection-rules.conf";
   private static final String MODSEC_RULE_VERSION_CONFIG = "modsecurity.rule.version";
   private static final String EDS_CONVERSION_ENABLED_CONFIG_PATH = "edsConversionEnabled";
   private static final JsonFormat.Parser JSON_PARSER = JsonFormat.parser().ignoringUnknownFields();
@@ -54,6 +58,10 @@ public class CustomSignatureConfigServiceConfig {
         convertToCustomSignatureRules(
             ConfigFactory.parseResources(DEFAULT_CUSTOM_SIGNATURE_RULES_FILE_PATH)
                 .getConfigList(DEFAULT_CUSTOM_SIGNATURE_RULES_CONFIG_PATH)));
+    defaultCustomSignatureRules.addAll(
+        convertToCustomSignatureRules(
+            ConfigFactory.parseResources(DEFAULT_AI_APP_PROTECTION_RULES_FILE_PATH)
+                .getConfigList(DEFAULT_AI_APP_PROTECTION_RULES_CONFIG_PATH)));
     return defaultCustomSignatureRules;
   }
 

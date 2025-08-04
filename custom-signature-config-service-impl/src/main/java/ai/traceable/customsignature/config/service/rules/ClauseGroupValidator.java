@@ -70,7 +70,7 @@ import io.grpc.Status;
 import java.util.List;
 import java.util.Set;
 
-class ClauseGroupValidator {
+public class ClauseGroupValidator {
 
   private static final String UTF_8_REGEX_PREFIX = "(*UTF8)";
 
