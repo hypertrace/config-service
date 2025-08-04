@@ -78,6 +78,12 @@ public class FilterExpressionBuilder {
       case RELATIONAL_OPERATOR_GTE:
         operator = RelationalOperator.GTE;
         break;
+      case RELATIONAL_OPERATOR_EXISTS:
+        operator = RelationalOperator.EXISTS;
+        break;
+      case RELATIONAL_OPERATOR_NOT_EXISTS:
+        operator = RelationalOperator.NOT_EXISTS;
+        break;
       case UNRECOGNIZED:
       default:
         throw Status.INVALID_ARGUMENT
