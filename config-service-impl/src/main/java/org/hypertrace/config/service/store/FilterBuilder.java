@@ -92,6 +92,14 @@ class FilterBuilder {
       case RELATIONAL_OPERATOR_GTE:
         return new Filter(
             Filter.Op.GTE, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
+      case RELATIONAL_OPERATOR_EXISTS:
+        return new Filter(
+            Filter.Op.EXISTS, buildConfigFieldPath(relationalFilter.getConfigJsonPath()), value);
+      case RELATIONAL_OPERATOR_NOT_EXISTS:
+        return new Filter(
+            Filter.Op.NOT_EXISTS,
+            buildConfigFieldPath(relationalFilter.getConfigJsonPath()),
+            value);
       case UNRECOGNIZED:
       default:
         throw Status.INVALID_ARGUMENT

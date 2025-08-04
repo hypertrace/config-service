@@ -84,6 +84,41 @@ public class FilterBuilderTest {
   }
 
   @Test
+  void testExistsAndNotExistsOperators() {
+    // Test EXISTS operator
+    Filter existsFilter =
+        Filter.newBuilder()
+            .setRelationalFilter(
+                RelationalFilter.newBuilder()
+                    .setConfigJsonPath("testField")
+                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EXISTS))
+            .build();
+
+    org.hypertrace.core.documentstore.Filter expectedExistsFilter =
+        new org.hypertrace.core.documentstore.Filter(
+            org.hypertrace.core.documentstore.Filter.Op.EXISTS, "config.testField", null);
+    assertEquals(
+        expectedExistsFilter.toString(),
+        filterBuilder.buildDocStoreFilter(existsFilter).toString());
+
+    // Test NOT_EXISTS operator
+    Filter notExistsFilter =
+        Filter.newBuilder()
+            .setRelationalFilter(
+                RelationalFilter.newBuilder()
+                    .setConfigJsonPath("anotherField")
+                    .setOperator(RelationalOperator.RELATIONAL_OPERATOR_NOT_EXISTS))
+            .build();
+
+    org.hypertrace.core.documentstore.Filter expectedNotExistsFilter =
+        new org.hypertrace.core.documentstore.Filter(
+            org.hypertrace.core.documentstore.Filter.Op.NOT_EXISTS, "config.anotherField", null);
+    assertEquals(
+        expectedNotExistsFilter.toString(),
+        filterBuilder.buildDocStoreFilter(notExistsFilter).toString());
+  }
+
+  @Test
   void buildDocStoreFilter3() {
     Filter filter =
         Filter.newBuilder()
