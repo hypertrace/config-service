@@ -334,11 +334,6 @@ public class GlobalAnomalyConfigStatusManagerImpl
             .getApiGlobalConfigBuilder()
             .setDisabled(scopedAnomalyConfigStatusChange.getConfigStatus().getDisabled());
       }
-      if (!scopedAnomalyConfigStatusChange.getGlobalGenAiConfigChange().hasDisabled()) {
-        builder
-            .getGlobalGenAiConfigChangeBuilder()
-            .setDisabled(scopedAnomalyConfigStatusChange.getConfigStatus().getDisabled());
-      }
     }
 
     if (scopedAnomalyConfigStatusChange.hasEnabledForExitSpans()) {
