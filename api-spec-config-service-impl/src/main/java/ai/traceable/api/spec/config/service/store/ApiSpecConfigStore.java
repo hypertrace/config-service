@@ -234,10 +234,7 @@ public class ApiSpecConfigStore
 
     // api_inspector_disabled
     if (filterInput.hasApiInspectorDisabled()) {
-      filters.add(
-          buildEqualsFilter(
-              API_INSPECTOR_DISABLED,
-              Value.newBuilder().setBoolValue(filterInput.getApiInspectorDisabled()).build()));
+      filters.add(buildApiInspectorFilter(filterInput.getApiInspectorDisabled()));
     }
 
     // reference_type
@@ -259,8 +256,7 @@ public class ApiSpecConfigStore
     }
 
     // spec_resolution_state_filter
-    if (filterInput.hasSpecResolutionStateFilter()
-        && !filterInput.getSpecResolutionStateFilter().getSpecResolutionStatesList().isEmpty()) {
+    if (filterInput.hasSpecResolutionStateFilter()) {
       filters.add(
           buildInFilter(
               OPENAPI_RESOLUTION_STATE_PATH,
@@ -268,7 +264,7 @@ public class ApiSpecConfigStore
     }
 
     // names
-    if (filterInput.hasNames() && !filterInput.getNames().getValuesList().isEmpty()) {
+    if (filterInput.hasNames()) {
       filters.add(buildInFilter(NAME, filterInput.getNames().getValuesList()));
     }
 
@@ -342,6 +338,41 @@ public class ApiSpecConfigStore
                 .setConfigJsonPath(path)
                 .setOperator(RelationalOperator.RELATIONAL_OPERATOR_EQ)
                 .setValue(value))
+        .build();
+  }
+
+  // Helper to create Api Inspector filter that deals with default values
+  private Filter buildApiInspectorFilter(boolean apiInspectorDisabled) {
+    Filter apiInspectorDisabledEqFilter =
+        buildEqualsFilter(
+            API_INSPECTOR_DISABLED, Value.newBuilder().setBoolValue(apiInspectorDisabled).build());
+    if (apiInspectorDisabled) {
+      return apiInspectorDisabledEqFilter;
+    } else {
+      return buildOrFilter(
+          buildNotExistsFilter(API_INSPECTOR_DISABLED), apiInspectorDisabledEqFilter);
+    }
+  }
+
+  // Helper to create NOT_EXISTS filter
+  private Filter buildNotExistsFilter(String path) {
+    return Filter.newBuilder()
+        .setRelationalFilter(
+            RelationalFilter.newBuilder()
+                .setConfigJsonPath(path)
+                .setOperator(RelationalOperator.RELATIONAL_OPERATOR_NOT_EXISTS)
+                .setValue(Value.getDefaultInstance()))
+        .build();
+  }
+
+  // Helper to create OR filter
+  private Filter buildOrFilter(Filter left, Filter right) {
+    return Filter.newBuilder()
+        .setLogicalFilter(
+            LogicalFilter.newBuilder()
+                .setOperator(LogicalOperator.LOGICAL_OPERATOR_OR)
+                .addOperands(left)
+                .addOperands(right))
         .build();
   }
 
