@@ -185,4 +185,23 @@ class CloudBotDeploymentConfigServiceImplTest {
                 .build());
     verify(responseStreamObserver, times(1)).onCompleted();
   }
+
+  @Test
+  void enableCloudBotDeployment() {
+    EnableCloudBotDeploymentRequest request =
+        EnableCloudBotDeploymentRequest.newBuilder().setId("config-123").setEnabled(true).build();
+
+    StreamObserver<EnableCloudBotDeploymentResponse> responseStreamObserver =
+        mock(StreamObserver.class);
+
+    REQUEST_CONTEXT.run(
+        () ->
+            cloudBotDeploymentConfigService.enableCloudBotDeployment(
+                request, responseStreamObserver));
+
+    verify(cloudBotDeploymentConfigManager, times(1)).enableCloudBotDeployment(any(), eq(request));
+    verify(responseStreamObserver, times(1))
+        .onNext(EnableCloudBotDeploymentResponse.getDefaultInstance());
+    verify(responseStreamObserver, times(1)).onCompleted();
+  }
 }

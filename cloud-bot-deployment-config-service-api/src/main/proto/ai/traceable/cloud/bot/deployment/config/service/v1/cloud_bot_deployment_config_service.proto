@@ -28,6 +28,9 @@ service CloudBotDeploymentConfigService {
   rpc RotateApiToken(RotateApiTokenRequest) returns (RotateApiTokenResponse) {
     option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Rotate the API token for an out-of-band deployment configuration";
   }
+  rpc EnableCloudBotDeployment(EnableCloudBotDeploymentRequest) returns (EnableCloudBotDeploymentResponse) {
+    option (ai.traceable.graphql.autogen.schema.annotations.method.v1.graphql_description) = "Enables/Disables cloud bot deployment";
+  }
 }
 
 message CreateCloudBotDeploymentConfigRequest {
@@ -80,4 +83,13 @@ message RotateApiTokenRequest {
 
 message RotateApiTokenResponse {
   CloudBotDeploymentConfig cloud_bot_deployment = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "The updated bot protection deployment configuration with rotated API token"];
+}
+
+message EnableCloudBotDeploymentRequest {
+  string id = 1 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Unique identifier of the bot protection deployment configuration"];
+  bool enabled = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "If deployment is enabled or not"];
+}
+
+message EnableCloudBotDeploymentResponse {
+  // Empty response
 }

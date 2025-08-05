@@ -20,6 +20,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploym
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.GetCloudBotDeploymentConfigsRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
@@ -295,6 +296,48 @@ class CloudBotDeploymentConfigServiceIntegrationTest
                 .getExpiryTimestampMillis()
             > System.currentTimeMillis(),
         "Previous token should have an expiry timestamp");
+  }
+
+  @Test
+  public void testEnableCloudBotDeployment() {
+    // Create a cloud bot deployment config (initially disabled)
+    CloudBotDeploymentConfig createdConfig =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .createCloudBotDeploymentConfig(
+                            CreateCloudBotDeploymentConfigRequest.newBuilder()
+                                .setCloudBotDeploymentConfigInput(createConfigInput())
+                                .build())
+                        .getCloudBotDeployment());
+
+    assertTrue(createdConfig.getEnabled(), "Config should initially be enabled");
+
+    // Enable the cloud bot deployment
+    RequestContext.forTenantId(TENANT_ID)
+        .call(
+            () ->
+                cloudBotDeploymentConfigServiceStub.enableCloudBotDeployment(
+                    EnableCloudBotDeploymentRequest.newBuilder()
+                        .setId(createdConfig.getId())
+                        .setEnabled(false)
+                        .build()));
+
+    // Get the config and verify it's now enabled
+    List<CloudBotDeploymentConfig> configs =
+        RequestContext.forTenantId(TENANT_ID)
+            .call(
+                () ->
+                    cloudBotDeploymentConfigServiceStub
+                        .getCloudBotDeploymentConfigs(
+                            GetCloudBotDeploymentConfigsRequest.newBuilder()
+                                .addIds(createdConfig.getId())
+                                .build())
+                        .getCloudBotDeploymentsList());
+
+    assertEquals(1, configs.size());
+    assertFalse(configs.get(0).getEnabled());
   }
 
   private CloudBotDeploymentConfigInput createConfigInput() {

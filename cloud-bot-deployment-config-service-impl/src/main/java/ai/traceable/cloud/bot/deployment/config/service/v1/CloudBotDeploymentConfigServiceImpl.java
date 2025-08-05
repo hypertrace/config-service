@@ -95,7 +95,6 @@ public class CloudBotDeploymentConfigServiceImpl extends CloudBotDeploymentConfi
     RequestContext ctx = RequestContext.CURRENT.get();
     try {
       cloudBotDeploymentConfigManager.deleteCloudBotDeploymentConfig(ctx, request.getId());
-
       responseObserver.onNext(DeleteCloudBotDeploymentConfigResponse.getDefaultInstance());
       responseObserver.onCompleted();
     } catch (Exception e) {
@@ -142,6 +141,25 @@ public class CloudBotDeploymentConfigServiceImpl extends CloudBotDeploymentConfi
       log.error(
           "Get cloud bot deployment configs failed with request: {} and context: {}",
           request,
+          ctx,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void enableCloudBotDeployment(
+      EnableCloudBotDeploymentRequest request,
+      StreamObserver<EnableCloudBotDeploymentResponse> responseObserver) {
+    RequestContext ctx = RequestContext.CURRENT.get();
+    try {
+      cloudBotDeploymentConfigManager.enableCloudBotDeployment(ctx, request);
+      responseObserver.onNext(EnableCloudBotDeploymentResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "EnableCloudBotDeployment request failed with id: {} and context: {}",
+          request.getId(),
           ctx,
           e);
       responseObserver.onError(e);

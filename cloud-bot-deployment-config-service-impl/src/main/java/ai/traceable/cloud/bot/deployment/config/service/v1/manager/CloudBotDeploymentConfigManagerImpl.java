@@ -8,6 +8,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.ClusterStatus;
 import ai.traceable.cloud.bot.deployment.config.service.v1.CreateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
+import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig.Builder;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
@@ -283,6 +284,29 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
     return ids.stream()
         .map(id -> this.getCloudBotDeploymentConfig(ctx, id))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public void enableCloudBotDeployment(
+      RequestContext ctx, EnableCloudBotDeploymentRequest request) {
+    Status validationStatus = validator.validateId(request.getId());
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
+
+    // Check if config exists
+    CloudBotDeploymentConfig existingConfig =
+        this.getCloudBotDeploymentConfig(ctx, request.getId());
+
+    try {
+      CloudBotDeploymentConfig updatedConfig =
+          existingConfig.toBuilder().setEnabled(request.getEnabled()).build();
+      store.updateCloudBotDeploymentConfig(ctx, updatedConfig);
+    } catch (Exception e) {
+      throw new StatusRuntimeException(
+          Status.INTERNAL.withDescription(
+              "Failed to execute enableCloudBotDeployment request: " + e.getMessage()));
+    }
   }
 
   private CloudBotDeploymentConfig getCloudBotDeploymentConfig(RequestContext ctx, String id) {

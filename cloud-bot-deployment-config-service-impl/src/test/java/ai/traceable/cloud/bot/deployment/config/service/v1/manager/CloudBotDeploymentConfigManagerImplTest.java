@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -24,6 +25,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.DeleteCloudBotDeploym
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EdgeDeploymentConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.JWTSigningKeyDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
@@ -442,6 +444,43 @@ class CloudBotDeploymentConfigManagerImplTest {
             > System.currentTimeMillis());
     assertEquals("production", result.getDeploymentDetails().getEnvironment());
     assertEquals("Test Site", result.getSiteConfig().getSiteName());
+  }
+
+  @Test
+  void testEnableCloudBotDeployment() {
+    String id = "config-123";
+    boolean enabled = true;
+
+    // Create a request
+    EnableCloudBotDeploymentRequest request =
+        EnableCloudBotDeploymentRequest.newBuilder().setId(id).setEnabled(enabled).build();
+
+    // Create an existing config
+    CloudBotDeploymentConfig existingConfig =
+        CloudBotDeploymentConfig.newBuilder()
+            .setId(id)
+            .setEnabled(false) // Initially disabled
+            .setSiteConfig(createValidSiteConfig())
+            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .build();
+
+    // Create the expected updated config
+    CloudBotDeploymentConfig updatedConfig = existingConfig.toBuilder().setEnabled(enabled).build();
+
+    when(validator.validateId(id)).thenReturn(Status.OK);
+    when(store.getCloudBotDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+    when(store.updateCloudBotDeploymentConfig(
+            eq(requestContext), any(CloudBotDeploymentConfig.class)))
+        .thenReturn(updatedConfig);
+
+    // Call the method under test
+    manager.enableCloudBotDeployment(requestContext, request);
+
+    // Verify the store was called with the correct updated config
+    verify(store)
+        .updateCloudBotDeploymentConfig(
+            eq(requestContext),
+            argThat(config -> config.getId().equals(id) && config.getEnabled() == enabled));
   }
 
   // Helper methods to create valid test objects
