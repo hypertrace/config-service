@@ -13,6 +13,7 @@ service CloudEdgeDeploymentConfigService {
   rpc DeleteCloudEdgeDeploymentConfig(DeleteCloudEdgeDeploymentConfigRequest) returns (DeleteCloudEdgeDeploymentConfigResponse) {} // api to delete deployment config from UI
   rpc GetCloudEdgeDeploymentConfigs(GetCloudEdgeDeploymentConfigsRequest) returns (GetCloudEdgeDeploymentConfigsResponse) {} // api to fetch config, used for both UI and helm generation
   rpc GetSharedConfigMetadata(GetSharedConfigMetadataRequest) returns (GetSharedConfigMetadataResponse) {} // api to fetch generic key-value map info coming from yaml
+  rpc RemoveCloudEdgeDeploymentConfig(RemoveCloudEdgeDeploymentConfigRequest) returns (RemoveCloudEdgeDeploymentConfigResponse) {} // api to request config removal
 }
 
 message CreateCloudEdgeDeploymentConfigRequest {
@@ -63,3 +64,10 @@ message DeleteCloudEdgeDeploymentConfigRequest {
 }
 
 message DeleteCloudEdgeDeploymentConfigResponse {}
+
+message RemoveCloudEdgeDeploymentConfigRequest {
+  string id = 1;
+  ConfigAccessType access_type = 2;
+}
+
+message RemoveCloudEdgeDeploymentConfigResponse {}
