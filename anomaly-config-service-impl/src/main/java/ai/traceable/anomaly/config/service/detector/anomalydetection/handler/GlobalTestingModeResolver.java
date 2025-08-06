@@ -32,18 +32,32 @@ public class GlobalTestingModeResolver {
     this.ruleVersionManager = ruleVersionManager;
   }
 
-  public Optional<ScopedAnomalyDetectionConfig> resolveGlobalTestingMode(
+  public ScopedAnomalyDetectionConfig resolveGlobalTestingModeAndUpdateDetectionConfig(
       ScopedAnomalyDetectionConfig resolvedConfig,
-      Optional<ScopedAnomalyConfigStatus> globalConfigStatus) {
+      Optional<ScopedAnomalyConfigStatus> globalConfigStatus,
+      Optional<ScopedAnomalyConfigStatus> customerScopedGlobalConfigStatus) {
     if (globalConfigStatus.isPresent()) {
       ScopedAnomalyConfigStatus status = globalConfigStatus.get();
       RuleVersionData globalModsecRuleVersionData =
           status.getGlobalModsecConfig().getRuleVersionData();
       if (canApplyRuleTestingMode(globalModsecRuleVersionData)) {
         RuleTestingMode ruleTestingMode = globalModsecRuleVersionData.getRuleTestingMode();
+        if (!status.getConfigScope().hasCustomerScope()
+            && ruleTestingMode.equals(
+                RuleTestingMode.RULE_TESTING_MODE_INHERIT_FROM_ALL_ENVIRONMENTS)) {
+          ruleTestingMode =
+              customerScopedGlobalConfigStatus
+                  .map(
+                      scopedAnomalyConfigStatus ->
+                          scopedAnomalyConfigStatus
+                              .getGlobalModsecConfig()
+                              .getRuleVersionData()
+                              .getRuleTestingMode())
+                  .orElse(RuleTestingMode.RULE_TESTING_MODE_ENABLED_FOR_NEW_RULES);
+        }
         if (ruleTestingMode.equals(RuleTestingMode.RULE_TESTING_MODE_DISABLED)
             || ruleTestingMode.equals(RuleTestingMode.RULE_TESTING_MODE_UNSPECIFIED)) {
-          return Optional.empty();
+          return resolvedConfig;
         }
         RulesChangeLog changelog =
             ruleVersionManager.getRulesChangeLog(
@@ -54,11 +68,11 @@ public class GlobalTestingModeResolver {
         Set<String> rulesToTest = getRuleIdsForTestingMode(ruleTestingMode, changelog);
 
         if (!rulesToTest.isEmpty()) {
-          return Optional.of(overrideActionToTestForRules(resolvedConfig, rulesToTest));
+          return overrideActionToTestForRules(resolvedConfig, rulesToTest);
         }
       }
     }
-    return Optional.empty();
+    return resolvedConfig;
   }
 
   private Set<String> getNewRuleIds(RulesChangeLog changelog) {
@@ -93,7 +107,7 @@ public class GlobalTestingModeResolver {
     return updatedRuleIds;
   }
 
-  public ScopedAnomalyDetectionConfig overrideActionToTestForRules(
+  private ScopedAnomalyDetectionConfig overrideActionToTestForRules(
       ScopedAnomalyDetectionConfig resolvedConfig, Set<String> rulesIds) {
     ScopedAnomalyDetectionConfig.Builder resultBuilder = resolvedConfig.toBuilder();
     List<AnomalyDetectionConfig> updatedConfigs = new ArrayList<>();

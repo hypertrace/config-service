@@ -102,12 +102,13 @@ public class AnomalyDetectionConfigManagerImpl
             globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
                 requestContext, configScope));
 
-    Optional<ScopedAnomalyDetectionConfig>
-        resolvedScopedAnomalyDetectionConfigWithGlobalTestingMode =
-            globalTestingModeResolver.resolveGlobalTestingMode(
-                scopedAnomalyDetectionConfig, globalConfigStatus);
-    return resolvedScopedAnomalyDetectionConfigWithGlobalTestingMode.orElse(
-        scopedAnomalyDetectionConfig);
+    Optional<ScopedAnomalyConfigStatus> customerScopedGlobalConfigStatus =
+        Optional.ofNullable(
+            globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+                requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE));
+
+    return globalTestingModeResolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+        scopedAnomalyDetectionConfig, globalConfigStatus, customerScopedGlobalConfigStatus);
   }
 
   @Override
@@ -131,7 +132,7 @@ public class AnomalyDetectionConfigManagerImpl
             globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
                 requestContext, configScope));
 
-    return getResolvedConfig(resolvedConfig, globalConfigStatus);
+    return getResolvedConfig(requestContext, resolvedConfig, globalConfigStatus);
   }
 
   @Override
@@ -154,6 +155,7 @@ public class AnomalyDetectionConfigManagerImpl
         .map(
             resolvedConfig ->
                 getResolvedConfig(
+                    requestContext,
                     resolvedConfig,
                     Optional.ofNullable(
                         globalConfigStatusMap.get(resolvedConfig.getConfigScope()))))
@@ -187,15 +189,17 @@ public class AnomalyDetectionConfigManagerImpl
             .collect(
                 Collectors.toMap(ScopedAnomalyConfigStatus::getConfigScope, Function.identity()));
 
+    ScopedAnomalyConfigStatus customerScopedGlobalConfigStatus =
+        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE);
+
     return getResolvedConfigs(requestContext, anomalyDetectionConfigMap, filter).stream()
         .map(
             resolvedConfig ->
-                globalTestingModeResolver
-                    .resolveGlobalTestingMode(
-                        resolvedConfig,
-                        Optional.ofNullable(
-                            globalConfigStatusMap.get(resolvedConfig.getConfigScope())))
-                    .orElse(resolvedConfig))
+                globalTestingModeResolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+                    resolvedConfig,
+                    Optional.ofNullable(globalConfigStatusMap.get(resolvedConfig.getConfigScope())),
+                    Optional.ofNullable(customerScopedGlobalConfigStatus)))
         .collect(Collectors.toUnmodifiableList());
   }
 
@@ -477,6 +481,7 @@ public class AnomalyDetectionConfigManagerImpl
    * https://traceableai.atlassian.net/wiki/spaces/Engineering/pages/1812234269/Internal+Excluded+Security+events
    */
   public ScopedAnomalyDetectionConfig getResolvedConfig(
+      RequestContext requestContext,
       ScopedAnomalyDetectionConfig resolvedConfig,
       Optional<ScopedAnomalyConfigStatus> globalConfigStatus) {
 
@@ -507,9 +512,12 @@ public class AnomalyDetectionConfigManagerImpl
           .build();
     }
 
-    Optional<ScopedAnomalyDetectionConfig> resolvedScopedAnomalyDetectionConfig =
-        globalTestingModeResolver.resolveGlobalTestingMode(resolvedConfig, globalConfigStatus);
-    return resolvedScopedAnomalyDetectionConfig.orElse(resolvedConfig);
+    ScopedAnomalyConfigStatus customerScopedGlobalConfigStatus =
+        globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(
+            requestContext, ANOMALY_CONFIG_CUSTOMER_SCOPE);
+
+    return globalTestingModeResolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+        resolvedConfig, globalConfigStatus, Optional.of(customerScopedGlobalConfigStatus));
   }
 
   private List<AnomalyDetectionConfig> disableAnomalyDetectionConfigs(

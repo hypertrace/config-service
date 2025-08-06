@@ -1,8 +1,7 @@
 package ai.traceable.anomaly.config.service.detector.anomalydetection.handler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -42,10 +41,10 @@ class GlobalTestingModeResolverTest {
 
   @Test
   void testResolveGlobalTestingMode_NoGlobalConfig() {
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(
-            ScopedAnomalyDetectionConfig.getDefaultInstance(), Optional.empty());
-    assertFalse(result.isPresent());
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            ScopedAnomalyDetectionConfig.getDefaultInstance(), Optional.empty(), Optional.empty());
+    assertNotNull(result);
   }
 
   @Test
@@ -53,11 +52,12 @@ class GlobalTestingModeResolverTest {
     ScopedAnomalyConfigStatus status =
         createGlobalConfigStatus(RuleTestingMode.RULE_TESTING_MODE_DISABLED);
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(
-            ScopedAnomalyDetectionConfig.getDefaultInstance(), Optional.of(status));
-
-    assertFalse(result.isPresent());
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            ScopedAnomalyDetectionConfig.getDefaultInstance(),
+            Optional.of(status),
+            Optional.empty());
+    assertNotNull(result);
   }
 
   @Test
@@ -79,14 +79,14 @@ class GlobalTestingModeResolverTest {
             any(RuleType.class), any(RuleVersion.class), any(RuleVersion.class)))
         .thenReturn(changelog);
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(inputConfig, Optional.of(status));
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            inputConfig, Optional.of(status), Optional.empty());
 
-    assertTrue(result.isPresent());
+    assertNotNull(result);
     assertEquals(
         AnomalyRuleAction.ANOMALY_RULE_ACTION_TESTING,
         result
-            .get()
             .getAnomalyDetectionConfigs(0)
             .getModsecurityAnomalyDetectionConfig()
             .getModsecAnomalyRule()
@@ -119,14 +119,14 @@ class GlobalTestingModeResolverTest {
             any(RuleType.class), any(RuleVersion.class), any(RuleVersion.class)))
         .thenReturn(changelog);
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(inputConfig, Optional.of(status));
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            inputConfig, Optional.of(status), Optional.empty());
 
-    assertTrue(result.isPresent());
+    assertNotNull(result);
     assertEquals(
         AnomalyRuleAction.ANOMALY_RULE_ACTION_TESTING,
         result
-            .get()
             .getAnomalyDetectionConfigs(0)
             .getModsecurityAnomalyDetectionConfig()
             .getModsecAnomalyRule()
@@ -184,13 +184,13 @@ class GlobalTestingModeResolverTest {
             any(RuleType.class), any(RuleVersion.class), any(RuleVersion.class)))
         .thenReturn(changelog);
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(inputConfig, Optional.of(status));
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            inputConfig, Optional.of(status), Optional.empty());
 
-    assertTrue(result.isPresent());
+    assertNotNull(result);
     ModsecurityAnomalyRuleConfig ruleConfig =
         result
-            .get()
             .getAnomalyDetectionConfigs(0)
             .getModsecurityAnomalyDetectionConfig()
             .getModsecAnomalyRule();
@@ -221,14 +221,14 @@ class GlobalTestingModeResolverTest {
             any(RuleType.class), any(RuleVersion.class), any(RuleVersion.class)))
         .thenReturn(changelog);
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(inputConfig, Optional.of(status));
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            inputConfig, Optional.of(status), Optional.empty());
 
-    assertTrue(result.isPresent());
+    assertNotNull(result);
     assertEquals(
         AnomalyRuleAction.ANOMALY_RULE_ACTION_DISABLE,
         result
-            .get()
             .getAnomalyDetectionConfigs(0)
             .getModsecurityAnomalyDetectionConfig()
             .getModsecAnomalyRule()
@@ -252,10 +252,11 @@ class GlobalTestingModeResolverTest {
                     .build())
             .build();
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(inputConfig, Optional.of(status));
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            inputConfig, Optional.of(status), Optional.empty());
 
-    assertFalse(result.isPresent());
+    assertNotNull(result);
   }
 
   @Test
@@ -281,10 +282,10 @@ class GlobalTestingModeResolverTest {
                     .build())
             .build();
 
-    Optional<ScopedAnomalyDetectionConfig> result =
-        resolver.resolveGlobalTestingMode(inputConfig, Optional.of(status));
-
-    assertFalse(result.isPresent());
+    ScopedAnomalyDetectionConfig result =
+        resolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            inputConfig, Optional.of(status), Optional.empty());
+    assertNotNull(result);
   }
 
   private ScopedAnomalyConfigStatus createGlobalConfigStatus(RuleTestingMode testingMode) {

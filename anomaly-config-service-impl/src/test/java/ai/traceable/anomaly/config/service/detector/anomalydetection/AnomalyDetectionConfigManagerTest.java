@@ -155,6 +155,9 @@ public class AnomalyDetectionConfigManagerTest {
     when(detectorConfigServiceConfig.getDefaultGenAiDetectionConfigs()).thenReturn(List.of());
     when(detectorConfigServiceConfig.getDefaultApiProtectionDetectionConfigs())
         .thenReturn(List.of());
+    when(globalTestingModeResolver.resolveGlobalTestingModeAndUpdateDetectionConfig(
+            any(), any(), any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     globalAnomalyConfigStatusManager = mock(GlobalAnomalyConfigStatusManager.class);
     when(globalAnomalyConfigStatusManager.getScopedAnomalyConfigStatus(any(), any()))
         .thenReturn(

@@ -10,8 +10,10 @@ import ai.traceable.anomaly.config.service.v1.AnomalyConfidenceLevel;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigScope;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatus;
 import ai.traceable.anomaly.config.service.v1.AnomalyConfigStatusChange;
+import ai.traceable.anomaly.config.service.v1.RuleTestingMode;
 import ai.traceable.anomaly.config.service.v1.RuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersionConfigType;
+import ai.traceable.anomaly.config.service.v1.RuleVersionData;
 import ai.traceable.anomaly.config.service.v1.global.ApiGlobalConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalGenAiConfig;
 import ai.traceable.anomaly.config.service.v1.global.GlobalModsecConfig;
@@ -316,6 +318,24 @@ public class GlobalAnomalyConfigStatusManagerImpl
           .getGlobalModsecConfigBuilder()
           .setDefaultConfigsType(config.getEnvScopeModsecDefaultConfigsType());
     }
+
+    if (configScope.hasEnvironmentScope()
+        && Optional.ofNullable(configMap.get(configScope.getEnvironmentScope().getEnvironmentId()))
+            .map(
+                configStatus ->
+                    configStatus
+                        .getGlobalModsecConfigChange()
+                        .getRuleVersionDataChange()
+                        .getRuleTestingMode()
+                        .equals(RuleTestingMode.RULE_TESTING_MODE_UNSPECIFIED))
+            .orElse(true)) {
+      RuleVersionData ruleVersionData =
+          builder.getGlobalModsecConfig().getRuleVersionData().toBuilder()
+              .setRuleTestingMode(RuleTestingMode.RULE_TESTING_MODE_INHERIT_FROM_ALL_ENVIRONMENTS)
+              .build();
+      builder.getGlobalModsecConfigBuilder().setRuleVersionData(ruleVersionData);
+    }
+
     return builder.build();
   }
 
