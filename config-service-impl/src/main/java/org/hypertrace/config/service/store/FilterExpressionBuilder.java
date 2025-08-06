@@ -1,5 +1,16 @@
 package org.hypertrace.config.service.store;
 
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EXISTS;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.GT;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.GTE;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.IN;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.LT;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.LTE;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NEQ;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NOT_EXISTS;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NOT_IN;
+
 import io.grpc.Status;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,17 +25,6 @@ import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
 import org.hypertrace.core.documentstore.expression.operators.LogicalOperator;
 import org.hypertrace.core.documentstore.expression.operators.RelationalOperator;
 import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
-
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EXISTS;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.GT;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.GTE;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.IN;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.LT;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.LTE;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NEQ;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NOT_EXISTS;
-import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NOT_IN;
 
 public class FilterExpressionBuilder {
   private static final String DEFAULT_CONSTANT_EXPRESSION_VALUE = "";
@@ -104,12 +104,12 @@ public class FilterExpressionBuilder {
             .asRuntimeException();
     }
 
-    if(EXISTS.equals(operator) || NOT_EXISTS.equals(operator)) {
+    if (EXISTS.equals(operator) || NOT_EXISTS.equals(operator)) {
       return RelationalExpression.of(
-              IdentifierExpression.of(
-                      ConfigServiceUtils.buildConfigFieldPath(relationalFilter.getConfigJsonPath())),
-              operator,
-              ConstantExpression.of(DEFAULT_CONSTANT_EXPRESSION_VALUE));
+          IdentifierExpression.of(
+              ConfigServiceUtils.buildConfigFieldPath(relationalFilter.getConfigJsonPath())),
+          operator,
+          ConstantExpression.of(DEFAULT_CONSTANT_EXPRESSION_VALUE));
     }
     return RelationalExpression.of(
         IdentifierExpression.of(
