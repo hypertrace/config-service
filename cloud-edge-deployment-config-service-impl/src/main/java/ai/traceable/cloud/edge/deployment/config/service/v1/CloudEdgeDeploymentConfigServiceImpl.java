@@ -121,6 +121,26 @@ public class CloudEdgeDeploymentConfigServiceImpl extends CloudEdgeDeploymentCon
   }
 
   @Override
+  public void cancelCloudEdgeDeploymentConfigAction(
+      CancelCloudEdgeDeploymentConfigActionRequest request,
+      StreamObserver<CancelCloudEdgeDeploymentConfigActionResponse> responseObserver) {
+    RequestContext ctx = RequestContext.CURRENT.get();
+    try {
+      cloudEdgeDeploymentConfigManager.cancelCloudEdgeDeploymentConfigAction(ctx, request);
+
+      responseObserver.onNext(CancelCloudEdgeDeploymentConfigActionResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Cancel cloud edge deployment config action failed with request: {} and context: {}",
+          request,
+          ctx,
+          e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
   public void getSharedConfigMetadata(
       GetSharedConfigMetadataRequest request,
       StreamObserver<GetSharedConfigMetadataResponse> responseObserver) {

@@ -1,6 +1,7 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.validator;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
@@ -75,6 +76,14 @@ public class CloudEdgeDeploymentValidator {
       }
     }
 
+    return Status.OK;
+  }
+
+  public Status validate(CancelCloudEdgeDeploymentConfigActionRequest request) {
+    if (request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Cloud edge deployment config ID cannot be empty");
+    }
     return Status.OK;
   }
 

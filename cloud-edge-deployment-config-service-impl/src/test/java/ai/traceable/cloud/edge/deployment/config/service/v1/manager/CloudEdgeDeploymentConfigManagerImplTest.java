@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
@@ -284,6 +286,118 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     assertEquals(2, result.size());
     assertEquals("id1", result.get(0).getId());
     assertEquals("id2", result.get(1).getId());
+  }
+
+  @Test
+  void testCancelCloudEdgeDeploymentConfigAction() {
+    // Setup
+    String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
+    CancelCloudEdgeDeploymentConfigActionRequest request =
+        CancelCloudEdgeDeploymentConfigActionRequest.newBuilder()
+            .setId(id)
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .build();
+
+    // Test case 1: Validation fails
+    when(validator.validate(request))
+        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.cancelCloudEdgeDeploymentConfigAction(requestContext, request));
+    assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
+
+    // Test case 2: Config not found
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(null);
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.cancelCloudEdgeDeploymentConfigAction(requestContext, request));
+    assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
+
+    // Test case 3: Action not allowed by validator
+    CloudEdgeDeploymentConfig configNotCancelable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configNotCancelable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_CANCEL_REMOVAL_REQUEST))
+        .thenThrow(
+            Status.PERMISSION_DENIED
+                .withDescription("This operation is not permitted")
+                .asRuntimeException());
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.cancelCloudEdgeDeploymentConfigAction(requestContext, request));
+    assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
+    assertTrue(exception.getStatus().getDescription().contains("not permitted"));
+
+    // Test case 4a: Successful cancellation of removal request
+    CloudEdgeDeploymentConfig configRemovalRequested =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_REQUESTED)
+                    .build())
+            .build();
+
+    CloudEdgeDeploymentConfig expectedUpdatedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configRemovalRequested);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_REQUESTED,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_CANCEL_REMOVAL_REQUEST))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY));
+
+    manager.cancelCloudEdgeDeploymentConfigAction(requestContext, request);
+
+    verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
+
+    // Test case 4b: Successful cancellation of change request
+    CloudEdgeDeploymentConfig configChangeRequested =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED)
+                    .build())
+            .build();
+
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configChangeRequested);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_CANCEL_CHANGE_REQUEST))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY));
+
+    manager.cancelCloudEdgeDeploymentConfigAction(requestContext, request);
+
+    verify(store, times(2)).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
   }
 
   @Test

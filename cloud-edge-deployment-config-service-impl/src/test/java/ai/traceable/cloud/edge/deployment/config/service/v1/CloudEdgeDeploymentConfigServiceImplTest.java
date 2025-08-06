@@ -199,6 +199,35 @@ class CloudEdgeDeploymentConfigServiceImplTest {
   }
 
   @Test
+  void testCancelCloudEdgeDeploymentConfigAction() {
+    CancelCloudEdgeDeploymentConfigActionRequest request =
+        CancelCloudEdgeDeploymentConfigActionRequest.newBuilder()
+            .setId("test-id")
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .build();
+
+    StreamObserver<CancelCloudEdgeDeploymentConfigActionResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    // Test case 1: When an exception occurs during cancellation
+    doThrow(new RuntimeException("Cancellation failed"))
+        .when(configManager)
+        .cancelCloudEdgeDeploymentConfigAction(any(), any());
+
+    configService.cancelCloudEdgeDeploymentConfigAction(request, responseObserver);
+    verify(responseObserver, times(1))
+        .onError(argThat(err -> err.getMessage().contains("Cancellation failed")));
+
+    // Test case 2: Successful cancellation
+    doNothing().when(configManager).cancelCloudEdgeDeploymentConfigAction(any(), any());
+
+    configService.cancelCloudEdgeDeploymentConfigAction(request, responseObserver);
+    verify(responseObserver, times(1))
+        .onNext(CancelCloudEdgeDeploymentConfigActionResponse.getDefaultInstance());
+    verify(responseObserver, times(1)).onCompleted();
+  }
+
+  @Test
   void testGetSharedConfigMetadata() {
     GetSharedConfigMetadataRequest request =
         GetSharedConfigMetadataRequest.newBuilder()

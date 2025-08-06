@@ -1,6 +1,7 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.manager;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
@@ -152,6 +153,41 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
           Status.INTERNAL.withDescription(
               "Failed to delete cloud edge deployment config: " + e.getMessage()));
     }
+  }
+
+  @Override
+  public void cancelCloudEdgeDeploymentConfigAction(
+      RequestContext ctx, CancelCloudEdgeDeploymentConfigActionRequest request) {
+    Status validationStatus = validator.validate(request);
+    if (!validationStatus.isOk()) {
+      throw validationStatus.asRuntimeException();
+    }
+
+    // Check if config exists
+    CloudEdgeDeploymentConfig existingConfig =
+        store.getCloudEdgeDeploymentConfig(ctx, request.getId());
+    if (existingConfig == null) {
+      throw Status.NOT_FOUND
+          .withDescription("Cloud edge deployment config not found with id: " + request.getId())
+          .asRuntimeException();
+    }
+
+    DeploymentStatus currentStatus = existingConfig.getCloudEdgeDeployedOutputConfig().getStatus();
+    Action action =
+        DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED.equals(currentStatus)
+            ? Action.ACTION_CANCEL_CHANGE_REQUEST
+            : Action.ACTION_CANCEL_REMOVAL_REQUEST;
+
+    DeploymentStatus updatedStatus =
+        validator
+            .validateActionAndGetNextStates(currentStatus, request.getAccessType(), action)
+            .get(0);
+
+    CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
+    updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(updatedStatus).build();
+
+    CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
+    store.upsertCloudEdgeDeploymentConfig(ctx, updatedConfig);
   }
 
   @Override
