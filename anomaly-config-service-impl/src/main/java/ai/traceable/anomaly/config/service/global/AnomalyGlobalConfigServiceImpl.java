@@ -17,6 +17,8 @@ import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsResponse;
+import ai.traceable.anomaly.config.service.v1.global.GetChangeLogDocRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetChangeLogDocResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetRulesChangeLogRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetRulesChangeLogResponse;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
@@ -294,6 +296,33 @@ public class AnomalyGlobalConfigServiceImpl
           GetRulesChangeLogResponse.newBuilder()
               .setRulesChangeLog(
                   ruleVersionManager.getRulesChangeLog(
+                      request.getRuleType(),
+                      request.getCurrentVersion(),
+                      request.getPreviousVersion()))
+              .build();
+      responseObserver.onNext(response);
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(e.getMessage(), e);
+      responseObserver.onError(e);
+    }
+  }
+
+  @Override
+  public void getChangeLogDoc(
+      GetChangeLogDocRequest request, StreamObserver<GetChangeLogDocResponse> responseObserver) {
+    Status status = globalValidator.validate(request);
+    if (!status.isOk()) {
+      log.error("Get Rules Change Log Doc Request is not valid: {}", status.getDescription());
+      responseObserver.onError(status.asException());
+      return;
+    }
+
+    try {
+      GetChangeLogDocResponse response =
+          GetChangeLogDocResponse.newBuilder()
+              .setChangeLog(
+                  ruleVersionManager.getChangeLogDoc(
                       request.getRuleType(),
                       request.getCurrentVersion(),
                       request.getPreviousVersion()))

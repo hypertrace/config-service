@@ -90,6 +90,16 @@ message GetRulesChangeLogResponse {
   RulesChangeLog rules_change_log = 1;
 }
 
+message GetChangeLogDocRequest {
+  RuleType rule_type = 1;
+  RuleVersion current_version = 2;
+  RuleVersion previous_version = 3;
+}
+
+message GetChangeLogDocResponse {
+  ChangeLog change_log = 1;
+}
+
 message GetAllAnomalyGlobalConfigStatusFilter {
   repeated AnomalyConfigScope applicable_scopes = 1;
 }

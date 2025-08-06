@@ -247,6 +247,25 @@ message RuleVersion {
   string published_date = 3;
 }
 
+message ChangeLog {
+  RuleType rule_type = 1;
+  RuleVersion current_version = 2;
+  RuleVersion previous_version = 3;
+  StringList highlights = 4;
+  ChangeLogTable added_rules_table = 5;
+  ChangeLogTable updated_rules_table = 6;
+  ChangeLogTable removed_rules_table = 7;
+}
+
+message ChangeLogTable {
+  repeated string column_names = 1;
+  repeated ChangeLogRow rows = 2;
+}
+
+message ChangeLogRow {
+  map<string, string> values = 1;
+}
+
 enum RuleType {
   RULE_TYPE_UNSPECIFIED = 0;
   RULE_TYPE_WEB_APPLICATION = 1;

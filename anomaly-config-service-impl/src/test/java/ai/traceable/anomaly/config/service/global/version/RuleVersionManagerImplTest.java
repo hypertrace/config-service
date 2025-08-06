@@ -3,6 +3,7 @@ package ai.traceable.anomaly.config.service.global.version;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import ai.traceable.anomaly.config.service.v1.ChangeLog;
 import ai.traceable.anomaly.config.service.v1.RuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionType;
@@ -27,14 +28,21 @@ import ai.traceable.protection.rules.webapp.v1.StringValueUpdate;
 import ai.traceable.protection.rules.webapp.v1.WebAppProtectionRulesProvider;
 import ai.traceable.protection.rules.webapp.v1.WebAppRuleAvailableVersions;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesChangeLog;
+import ai.traceable.protection.rules.webapp.v1.WebAppRulesData;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersion;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersionType;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersionUpdateDetails;
+import ai.traceable.protection.rules.webapp.v1.WebAppSeverity;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatRule;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleChange;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleDefinition;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleUpdateDetails;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleUpdateDetails.ThreatRuleUpdate;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatType;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeChange;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeUpdateDetails;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeUpdateDetails.ThreatTypeUpdate;
+import ai.traceable.protection.rules.webapp.v1.WebAppVersionedRules;
 import java.util.Arrays;
 import java.util.List;
 import org.hypertrace.core.grpcutils.context.RequestContext;
@@ -46,7 +54,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 class RuleVersionManagerImplTest {
-
   @Mock private WebAppProtectionRulesProvider webAppProtectionRulesProvider;
   @Mock private ApiProtectionRulesProvider apiProtectionRulesProvider;
   @InjectMocks private RuleVersionManagerImpl ruleVersionManager;
@@ -539,6 +546,126 @@ class RuleVersionManagerImplTest {
     assertTrue(foundRuleAdditions, "Did not find rule additions");
     assertTrue(foundRuleRemovals, "Did not find rule removals");
     assertTrue(foundRuleUpdate, "Did not find rule update");
+  }
+
+  @Test
+  void testGetChangeLogDocWebApp() {
+    RuleVersion currentVersion =
+        RuleVersion.newBuilder()
+            .setVersion("3.0.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_BETA)
+            .build();
+
+    RuleVersion previousVersion =
+        RuleVersion.newBuilder()
+            .setVersion("2.5.0")
+            .setVersionType(RuleVersionType.RULE_VERSION_TYPE_STABLE)
+            .build();
+
+    WebAppRulesChangeLog webAppRulesChangeLog =
+        WebAppRulesChangeLog.newBuilder()
+            .setVersionUpdated(
+                WebAppRulesVersionUpdateDetails.newBuilder()
+                    .setOldVersion(
+                        WebAppRulesVersion.newBuilder()
+                            .setVersion(previousVersion.getVersion())
+                            .setVersionType(
+                                WebAppRulesVersionType.WEB_APP_RULES_VERSION_TYPE_STABLE)
+                            .build())
+                    .setNewVersion(
+                        WebAppRulesVersion.newBuilder()
+                            .setVersion(currentVersion.getVersion())
+                            .setVersionType(WebAppRulesVersionType.WEB_APP_RULES_VERSION_TYPE_BETA)
+                            .setVersionHighlights("Added new XSS rules")
+                            .build())
+                    .build())
+            .addRuleChanges(
+                WebAppThreatRuleChange.newBuilder()
+                    .setRuleIdsRemoved(StringList.newBuilder().addValues("crs_1239876").build())
+                    .build())
+            .addRuleChanges(
+                WebAppThreatRuleChange.newBuilder()
+                    .setRuleIdsAdded(
+                        StringList.newBuilder()
+                            .addValues("crs_1234567")
+                            .addValues("crs_1235679")
+                            .build()))
+            .addRuleChanges(
+                WebAppThreatRuleChange.newBuilder()
+                    .setRuleUpdated(
+                        WebAppThreatRuleUpdateDetails.newBuilder()
+                            .setRuleId("crs_123657")
+                            .addUpdates(
+                                ThreatRuleUpdate.newBuilder().setSignatureUpdated(true).build()))
+                    .build())
+            .build();
+
+    WebAppVersionedRules webAppVersionedRule =
+        WebAppVersionedRules.newBuilder()
+            .setRulesData(
+                WebAppRulesData.newBuilder()
+                    .addThreatTypes(
+                        WebAppThreatType.newBuilder().setTypeId("crs_123").setTypeName("Type Name"))
+                    .addThreatRules(
+                        WebAppThreatRule.newBuilder()
+                            .setThreatRuleId("crs_1234567")
+                            .setRuleDefinition(
+                                WebAppThreatRuleDefinition.newBuilder()
+                                    .setRuleName("Threat Rule Name 1")
+                                    .setThreatTypeId("crs_123")
+                                    .setSeverity(WebAppSeverity.WEB_APP_SEVERITY_CRITICAL)
+                                    .build()))
+                    .addThreatRules(
+                        WebAppThreatRule.newBuilder()
+                            .setThreatRuleId("crs_1235679")
+                            .setRuleDefinition(
+                                WebAppThreatRuleDefinition.newBuilder()
+                                    .setRuleName("Threat Rule Name 2")
+                                    .setThreatTypeId("crs_123")
+                                    .setSeverity(WebAppSeverity.WEB_APP_SEVERITY_HIGH)
+                                    .build()))
+                    .addThreatRules(
+                        WebAppThreatRule.newBuilder()
+                            .setThreatRuleId("crs_1239876")
+                            .setRuleDefinition(
+                                WebAppThreatRuleDefinition.newBuilder()
+                                    .setRuleName("Threat Rule Name 3")
+                                    .setThreatTypeId("crs_123")
+                                    .setSeverity(WebAppSeverity.WEB_APP_SEVERITY_LOW)
+                                    .build()))
+                    .addThreatRules(
+                        WebAppThreatRule.newBuilder()
+                            .setThreatRuleId("crs_123657")
+                            .setRuleDefinition(
+                                WebAppThreatRuleDefinition.newBuilder()
+                                    .setRuleName("Threat Rule Name 4")
+                                    .setThreatTypeId("crs_123")
+                                    .setSeverity(WebAppSeverity.WEB_APP_SEVERITY_MEDIUM)
+                                    .build()))
+                    .build())
+            .build();
+
+    when(webAppProtectionRulesProvider.getWebAppRulesChangeLog(any(), any()))
+        .thenReturn(webAppRulesChangeLog);
+    when(webAppProtectionRulesProvider.getWebAppVersionedRules(any()))
+        .thenReturn(List.of(webAppVersionedRule));
+
+    ChangeLog result =
+        ruleVersionManager.getChangeLogDoc(
+            RuleType.RULE_TYPE_WEB_APPLICATION, currentVersion, previousVersion);
+
+    assertNotNull(result);
+    assertEquals(RuleType.RULE_TYPE_WEB_APPLICATION, result.getRuleType());
+    assertEquals(currentVersion, result.getCurrentVersion());
+    assertEquals(previousVersion, result.getPreviousVersion());
+    assertEquals("Added new XSS rules", result.getHighlights().getValues(0));
+    assertEquals(2, result.getAddedRulesTable().getRowsList().size());
+    assertEquals(1, result.getRemovedRulesTable().getRowsList().size());
+    assertEquals(1, result.getUpdatedRulesTable().getRowsList().size());
+    verify(webAppProtectionRulesProvider)
+        .getWebAppRulesChangeLog(
+            argThat(version -> version.getVersion().equals(previousVersion.getVersion())),
+            argThat(version -> version.getVersion().equals(currentVersion.getVersion())));
   }
 
   @Test

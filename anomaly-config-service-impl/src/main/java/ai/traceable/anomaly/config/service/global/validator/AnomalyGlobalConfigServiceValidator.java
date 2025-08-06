@@ -9,6 +9,7 @@ import ai.traceable.anomaly.config.service.v1.global.DeleteRuleVersionConfigType
 import ai.traceable.anomaly.config.service.v1.global.DeleteScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAnomalyRuleInfosRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetAvailableRuleVersionsRequest;
+import ai.traceable.anomaly.config.service.v1.global.GetChangeLogDocRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetRulesChangeLogRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetScopedAnomalyGlobalConfigStatusRequest;
 import ai.traceable.anomaly.config.service.v1.global.GetUnresolvedScopedAnomalyGlobalConfigStatusRequest;
@@ -141,5 +142,17 @@ public class AnomalyGlobalConfigServiceValidator implements GlobalConfigValidato
           String.format("Rule type: %s not defined", request.getRuleType()));
     }
     return anomalyConfigValidator.validate(request.getConfigScope());
+  }
+
+  public Status validate(GetChangeLogDocRequest request) {
+    if (request.getRuleType().equals(RuleType.RULE_TYPE_UNSPECIFIED)) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          String.format("Rule type: %s not defined", request.getRuleType()));
+    }
+    if (!request.hasCurrentVersion() || !request.hasPreviousVersion()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Both current and previous rule versions must be specified");
+    }
+    return Status.OK;
   }
 }

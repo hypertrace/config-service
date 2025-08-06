@@ -1,5 +1,11 @@
 package ai.traceable.anomaly.config.service.global.version;
 
+import static ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleType.WEB_APP_THREAT_RULE_TYPE_AGGRESSIVE;
+
+import ai.traceable.anomaly.config.service.v1.ChangeLog;
+import ai.traceable.anomaly.config.service.v1.ChangeLogRow;
+import ai.traceable.anomaly.config.service.v1.ChangeLogTable;
+import ai.traceable.anomaly.config.service.v1.ChangeLogTable.Builder;
 import ai.traceable.anomaly.config.service.v1.RuleType;
 import ai.traceable.anomaly.config.service.v1.RuleVersion;
 import ai.traceable.anomaly.config.service.v1.RuleVersionType;
@@ -19,10 +25,15 @@ import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRuleAvailableVersio
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRulesChangeLog;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRulesVersion;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectRulesVersionType;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRule;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRuleChange;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRuleType;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRuleUpdateDetails;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatType;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatTypeChange;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatTypeUpdateDetails;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectVersionedRules;
+import ai.traceable.protection.rules.apiprotect.v1.ApiProtectVersionedRulesFilter;
 import ai.traceable.protection.rules.apiprotect.v1.ApiProtectionRulesProvider;
 import ai.traceable.protection.rules.webapp.v1.WebAppProtectionRulesProvider;
 import ai.traceable.protection.rules.webapp.v1.WebAppRuleAvailableVersions;
@@ -30,16 +41,23 @@ import ai.traceable.protection.rules.webapp.v1.WebAppRuleAvailableVersionsFilter
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesChangeLog;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersion;
 import ai.traceable.protection.rules.webapp.v1.WebAppRulesVersionType;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatRule;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleChange;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleUpdateDetails;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatRuleUpdateDetails.ThreatRuleUpdate;
+import ai.traceable.protection.rules.webapp.v1.WebAppThreatType;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeChange;
 import ai.traceable.protection.rules.webapp.v1.WebAppThreatTypeUpdateDetails;
+import ai.traceable.protection.rules.webapp.v1.WebAppVersionedRules;
+import ai.traceable.protection.rules.webapp.v1.WebAppVersionedRulesFilter;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
@@ -47,6 +65,11 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
 
   private final WebAppProtectionRulesProvider webAppProtectionRulesProvider;
   private final ApiProtectionRulesProvider apiProtectionRulesProvider;
+  private static final String THREAT_TYPE = "Threat Type";
+  private static final String THREAT_RULE = "Threat Rule";
+  private static final String IS_AGGRESSIVE = "Is Aggressive";
+  private static final String IS_STANDARD = "Is Standard";
+  private static final String SEVERITY = "Severity";
   private static final BiMap<RuleVersionType, WebAppRulesVersionType> WEB_APP_VERSION_MAP =
       ImmutableBiMap.<RuleVersionType, WebAppRulesVersionType>builder()
           .put(
@@ -122,6 +145,21 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
     }
   }
 
+  @Override
+  public ChangeLog getChangeLogDoc(
+      RuleType ruleType, RuleVersion currentVersion, RuleVersion previousVersion) {
+    switch (ruleType) {
+      case RULE_TYPE_WEB_APPLICATION:
+        return getWebAppChangeLogDoc(currentVersion, previousVersion);
+      case RULE_TYPE_API_PROTECTION:
+        return getApiProtectChangeLogDoc(currentVersion, previousVersion);
+      default:
+        throw Status.INVALID_ARGUMENT
+            .withDescription("Invalid rule type: " + ruleType)
+            .asRuntimeException();
+    }
+  }
+
   private RulesChangeLog getWebAppRulesChangeLog(
       RuleVersion currentVersion, RuleVersion previousVersion) {
     WebAppRulesVersion currentWebAppRulesVersion =
@@ -158,6 +196,74 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
             currentApiProtectRulesVersion, previousApiProtectRulesVersion),
         currentVersion,
         previousVersion);
+  }
+
+  private ChangeLog getWebAppChangeLogDoc(RuleVersion currentVersion, RuleVersion previousVersion) {
+    WebAppRulesChangeLog webAppRulesChangeLog =
+        webAppProtectionRulesProvider.getWebAppRulesChangeLog(
+            WebAppRulesVersion.newBuilder()
+                .setVersion(previousVersion.getVersion())
+                .setVersionType(WEB_APP_VERSION_MAP.get(previousVersion.getVersionType()))
+                .build(),
+            WebAppRulesVersion.newBuilder()
+                .setVersion(currentVersion.getVersion())
+                .setVersionType(WEB_APP_VERSION_MAP.get(currentVersion.getVersionType()))
+                .build());
+    WebAppVersionedRules webAppVersionedRule =
+        webAppProtectionRulesProvider
+            .getWebAppVersionedRules(
+                WebAppVersionedRulesFilter.newBuilder()
+                    .addRulesVersions(currentVersion.getVersion())
+                    .addRulesVersionTypes(WEB_APP_VERSION_MAP.get(currentVersion.getVersionType()))
+                    .build())
+            .get(0);
+
+    ChangeLog.Builder builder =
+        ChangeLog.newBuilder()
+            .setRuleType(RuleType.RULE_TYPE_WEB_APPLICATION)
+            .setCurrentVersion(currentVersion)
+            .setPreviousVersion(previousVersion)
+            .setHighlights(
+                getCurrentVersionHighlights(
+                    webAppRulesChangeLog
+                        .getVersionUpdated()
+                        .getNewVersion()
+                        .getVersionHighlights()));
+    return populateChangeLogTables(webAppRulesChangeLog, webAppVersionedRule, builder);
+  }
+
+  private ChangeLog getApiProtectChangeLogDoc(
+      RuleVersion currentVersion, RuleVersion previousVersion) {
+    ApiProtectRulesChangeLog apiProtectRulesChangeLog =
+        apiProtectionRulesProvider.getApiProtectRulesChangeLog(
+            ApiProtectRulesVersion.newBuilder()
+                .setVersion(currentVersion.getVersion())
+                .setVersionType(API_PROTECT_VERSION_MAP.get(currentVersion.getVersionType()))
+                .build(),
+            ApiProtectRulesVersion.newBuilder()
+                .setVersion(previousVersion.getVersion())
+                .setVersionType(API_PROTECT_VERSION_MAP.get(previousVersion.getVersionType()))
+                .build());
+    ApiProtectVersionedRules apiProtectVersionedRule =
+        apiProtectionRulesProvider
+            .getApiProtectVersionedRules(
+                ApiProtectVersionedRulesFilter.newBuilder()
+                    .addRuleVersions(currentVersion.getVersion())
+                    .build())
+            .get(0);
+
+    ChangeLog.Builder builder =
+        ChangeLog.newBuilder()
+            .setRuleType(RuleType.RULE_TYPE_API_PROTECTION)
+            .setCurrentVersion(currentVersion)
+            .setPreviousVersion(previousVersion)
+            .setHighlights(
+                getCurrentVersionHighlights(
+                    apiProtectRulesChangeLog
+                        .getVersionUpdated()
+                        .getNewVersion()
+                        .getVersionHighlights()));
+    return populateChangeLogTables(apiProtectRulesChangeLog, apiProtectVersionedRule, builder);
   }
 
   private RulesChangeLog convertToRuleChangeLog(
@@ -643,5 +749,288 @@ public class RuleVersionManagerImpl implements RuleVersionManager {
       threatTypeChanges.add(threatTypeChangeBuilder.build());
     }
     return threatTypeChanges;
+  }
+
+  private ChangeLog populateChangeLogTables(
+      WebAppRulesChangeLog webAppRulesChangeLog,
+      WebAppVersionedRules webAppVersionedRule,
+      ChangeLog.Builder builder) {
+
+    Map<String, WebAppThreatRule> threatRuleIdToRuleMap =
+        webAppVersionedRule.getRulesData().getThreatRulesList().stream()
+            .collect(Collectors.toMap(WebAppThreatRule::getThreatRuleId, Function.identity()));
+
+    Map<String, WebAppThreatType> threatTypeIdToRuleMap =
+        webAppVersionedRule.getRulesData().getThreatTypesList().stream()
+            .collect(Collectors.toMap(WebAppThreatType::getTypeId, Function.identity()));
+
+    Builder addedRuleTableBuilder = getTableBuilder();
+    Builder removedRuleTableBuilder = getTableBuilder();
+    Builder updatedRuleTableBuilder = getTableBuilder();
+
+    for (WebAppThreatRuleChange threatRuleChange : webAppRulesChangeLog.getRuleChangesList()) {
+      ChangeLogRow.Builder rowBuilder = ChangeLogRow.newBuilder();
+
+      switch (threatRuleChange.getChangeCase()) {
+        case RULE_IDS_REMOVED:
+          for (String id : threatRuleChange.getRuleIdsRemoved().getValuesList()) {
+            rowBuilder
+                .putValues(
+                    THREAT_TYPE,
+                    threatTypeIdToRuleMap
+                        .get(threatRuleIdToRuleMap.get(id).getRuleDefinition().getThreatTypeId())
+                        .getTypeName())
+                .putValues(
+                    THREAT_RULE, threatRuleIdToRuleMap.get(id).getRuleDefinition().getRuleName())
+                .putValues(
+                    IS_AGGRESSIVE,
+                    threatRuleIdToRuleMap
+                            .get(id)
+                            .getRuleDefinition()
+                            .getRuleType()
+                            .equals(WEB_APP_THREAT_RULE_TYPE_AGGRESSIVE)
+                        ? "Yes"
+                        : "No")
+                .putValues(
+                    SEVERITY,
+                    threatRuleIdToRuleMap
+                        .get(id)
+                        .getRuleDefinition()
+                        .getSeverity()
+                        .name()
+                        .substring(17));
+            removedRuleTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+        case RULE_IDS_ADDED:
+          for (String id : threatRuleChange.getRuleIdsAdded().getValuesList()) {
+            rowBuilder
+                .putValues(
+                    THREAT_TYPE,
+                    threatTypeIdToRuleMap
+                        .get(threatRuleIdToRuleMap.get(id).getRuleDefinition().getThreatTypeId())
+                        .getTypeName())
+                .putValues(
+                    THREAT_RULE, threatRuleIdToRuleMap.get(id).getRuleDefinition().getRuleName())
+                .putValues(
+                    IS_AGGRESSIVE,
+                    threatRuleIdToRuleMap
+                            .get(id)
+                            .getRuleDefinition()
+                            .getRuleType()
+                            .equals(WEB_APP_THREAT_RULE_TYPE_AGGRESSIVE)
+                        ? "Yes"
+                        : "No")
+                .putValues(
+                    SEVERITY,
+                    threatRuleIdToRuleMap
+                        .get(id)
+                        .getRuleDefinition()
+                        .getSeverity()
+                        .name()
+                        .substring(17));
+            addedRuleTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+        case RULE_UPDATED:
+          WebAppThreatRuleUpdateDetails details = threatRuleChange.getRuleUpdated();
+          for (ThreatRuleUpdate threatRuleUpdate : details.getUpdatesList()) {
+            if (threatRuleUpdate.hasSignatureUpdated()) {
+              rowBuilder
+                  .putValues(
+                      THREAT_TYPE,
+                      threatTypeIdToRuleMap
+                          .get(
+                              threatRuleIdToRuleMap
+                                  .get(details.getRuleId())
+                                  .getRuleDefinition()
+                                  .getThreatTypeId())
+                          .getTypeName())
+                  .putValues(
+                      THREAT_RULE,
+                      threatRuleIdToRuleMap
+                          .get(details.getRuleId())
+                          .getRuleDefinition()
+                          .getRuleName())
+                  .putValues(
+                      IS_AGGRESSIVE,
+                      threatRuleIdToRuleMap
+                              .get(details.getRuleId())
+                              .getRuleDefinition()
+                              .getRuleType()
+                              .equals(WEB_APP_THREAT_RULE_TYPE_AGGRESSIVE)
+                          ? "Yes"
+                          : "No")
+                  .putValues(
+                      SEVERITY,
+                      threatRuleIdToRuleMap
+                          .get(details.getRuleId())
+                          .getRuleDefinition()
+                          .getSeverity()
+                          .name()
+                          .substring(17));
+              updatedRuleTableBuilder.addRows(rowBuilder.build());
+            }
+          }
+          break;
+      }
+    }
+
+    return builder
+        .setAddedRulesTable(addedRuleTableBuilder)
+        .setRemovedRulesTable(removedRuleTableBuilder)
+        .setUpdatedRulesTable(updatedRuleTableBuilder)
+        .build();
+  }
+
+  private static Builder getTableBuilder() {
+    return ChangeLogTable.newBuilder()
+        .addColumnNames(THREAT_TYPE)
+        .addColumnNames(THREAT_RULE)
+        .addColumnNames(IS_AGGRESSIVE)
+        .addColumnNames(SEVERITY);
+  }
+
+  private ChangeLog populateChangeLogTables(
+      ApiProtectRulesChangeLog apiProtectRulesChangeLog,
+      ApiProtectVersionedRules apiProtectVersionedRules,
+      ChangeLog.Builder builder) {
+
+    Map<String, ApiProtectThreatRule> threatRuleIdToRuleMap =
+        apiProtectVersionedRules.getRulesData().getThreatRulesList().stream()
+            .collect(Collectors.toMap(ApiProtectThreatRule::getRuleId, Function.identity()));
+
+    Map<String, ApiProtectThreatType> threatTypeIdToRuleMap =
+        apiProtectVersionedRules.getRulesData().getThreatTypesList().stream()
+            .collect(Collectors.toMap(ApiProtectThreatType::getTypeId, Function.identity()));
+
+    Builder addedRuleTableBuilder = getTableBuilder();
+    Builder removedRuleTableBuilder = getTableBuilder();
+    Builder updatedRuleTableBuilder = getTableBuilder();
+
+    for (ApiProtectThreatRuleChange threatRuleChange :
+        apiProtectRulesChangeLog.getRuleChangesList()) {
+      ChangeLogRow.Builder rowBuilder = ChangeLogRow.newBuilder();
+
+      switch (threatRuleChange.getChangeCase()) {
+        case RULE_IDS_REMOVED:
+          for (String id : threatRuleChange.getRuleIdsRemoved().getValuesList()) {
+            rowBuilder
+                .putValues(
+                    THREAT_TYPE,
+                    threatTypeIdToRuleMap
+                        .get(threatRuleIdToRuleMap.get(id).getRuleDefinition().getThreatTypeId())
+                        .getTypeName())
+                .putValues(
+                    THREAT_RULE, threatRuleIdToRuleMap.get(id).getRuleDefinition().getRuleName())
+                .putValues(
+                    IS_STANDARD,
+                    threatRuleIdToRuleMap
+                            .get(id)
+                            .getRuleDefinition()
+                            .getRuleType()
+                            .equals(ApiProtectThreatRuleType.API_PROTECT_THREAT_RULE_TYPE_STANDARD)
+                        ? "Yes"
+                        : "No")
+                .putValues(
+                    SEVERITY,
+                    threatRuleIdToRuleMap
+                        .get(id)
+                        .getRuleDefinition()
+                        .getSeverity()
+                        .name()
+                        .substring(21));
+            removedRuleTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+        case RULE_IDS_ADDED:
+          for (String id : threatRuleChange.getRuleIdsAdded().getValuesList()) {
+            rowBuilder
+                .putValues(
+                    THREAT_TYPE,
+                    threatTypeIdToRuleMap
+                        .get(threatRuleIdToRuleMap.get(id).getRuleDefinition().getThreatTypeId())
+                        .getTypeName())
+                .putValues(
+                    THREAT_RULE, threatRuleIdToRuleMap.get(id).getRuleDefinition().getRuleName())
+                .putValues(
+                    IS_STANDARD,
+                    threatRuleIdToRuleMap
+                            .get(id)
+                            .getRuleDefinition()
+                            .getRuleType()
+                            .equals(ApiProtectThreatRuleType.API_PROTECT_THREAT_RULE_TYPE_STANDARD)
+                        ? "Yes"
+                        : "No")
+                .putValues(
+                    SEVERITY,
+                    threatRuleIdToRuleMap
+                        .get(id)
+                        .getRuleDefinition()
+                        .getSeverity()
+                        .name()
+                        .substring(21));
+            addedRuleTableBuilder.addRows(rowBuilder.build());
+          }
+          break;
+        case RULE_UPDATED:
+          ApiProtectThreatRuleUpdateDetails details = threatRuleChange.getRuleUpdated();
+          for (ai.traceable.protection.rules.apiprotect.v1.ApiProtectThreatRuleUpdateDetails
+                  .ThreatRuleUpdate
+              threatRuleUpdate : details.getUpdatesList()) {
+            if (threatRuleUpdate.hasLogicUpdated()) {
+              rowBuilder
+                  .putValues(
+                      THREAT_TYPE,
+                      threatTypeIdToRuleMap
+                          .get(
+                              threatRuleIdToRuleMap
+                                  .get(details.getRuleId())
+                                  .getRuleDefinition()
+                                  .getThreatTypeId())
+                          .getTypeName())
+                  .putValues(
+                      THREAT_RULE,
+                      threatRuleIdToRuleMap
+                          .get(details.getRuleId())
+                          .getRuleDefinition()
+                          .getRuleName())
+                  .putValues(
+                      IS_STANDARD,
+                      threatRuleIdToRuleMap
+                              .get(details.getRuleId())
+                              .getRuleDefinition()
+                              .getRuleType()
+                              .equals(
+                                  ApiProtectThreatRuleType.API_PROTECT_THREAT_RULE_TYPE_STANDARD)
+                          ? "Yes"
+                          : "No")
+                  .putValues(
+                      SEVERITY,
+                      threatRuleIdToRuleMap
+                          .get(details.getRuleId())
+                          .getRuleDefinition()
+                          .getSeverity()
+                          .name()
+                          .substring(21));
+              updatedRuleTableBuilder.addRows(rowBuilder.build());
+            }
+          }
+          break;
+      }
+    }
+
+    return builder
+        .setAddedRulesTable(addedRuleTableBuilder)
+        .setRemovedRulesTable(removedRuleTableBuilder)
+        .setUpdatedRulesTable(updatedRuleTableBuilder)
+        .build();
+  }
+
+  private StringList getCurrentVersionHighlights(String highlights) {
+    if (highlights == null || highlights.isEmpty()) {
+      return StringList.getDefaultInstance();
+    }
+    return StringList.newBuilder().addAllValues(List.of(highlights.split("\\n"))).build();
   }
 }
