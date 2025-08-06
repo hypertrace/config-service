@@ -28,6 +28,7 @@ dependencies {
 
   testImplementation(commonLibs.junit.jupiter)
   testImplementation(commonLibs.mockito.core)
+  testImplementation(commonLibs.mockito.junit)
   testImplementation(testFixtures(localLibs.hypertrace.configservice.api))
 }
 

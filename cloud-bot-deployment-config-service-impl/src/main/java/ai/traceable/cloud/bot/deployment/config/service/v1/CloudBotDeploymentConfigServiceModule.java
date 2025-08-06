@@ -5,6 +5,7 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.manager.CloudBotDeplo
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.typesafe.config.Config;
 import io.grpc.BindableService;
 import io.grpc.Channel;
 import java.time.Clock;
@@ -16,11 +17,13 @@ import org.hypertrace.core.grpcutils.client.RequestContextClientCallCredsProvide
 public class CloudBotDeploymentConfigServiceModule extends AbstractModule {
 
   private final Channel channel;
+  private final Config config;
   private final ConfigChangeEventGenerator configChangeEventGenerator;
 
   CloudBotDeploymentConfigServiceModule(
-      Channel channel, ConfigChangeEventGenerator configChangeEventGenerator) {
+      Channel channel, Config config, ConfigChangeEventGenerator configChangeEventGenerator) {
     this.channel = channel;
+    this.config = config;
     this.configChangeEventGenerator = configChangeEventGenerator;
   }
 
@@ -32,6 +35,7 @@ public class CloudBotDeploymentConfigServiceModule extends AbstractModule {
     bind(ConfigChangeEventGenerator.class).toInstance(configChangeEventGenerator);
     bind(CloudBotDeploymentConfigManager.class).to(CloudBotDeploymentConfigManagerImpl.class);
     bind(UuidGenerator.class).toInstance(new UuidGenerator());
+    bind(Config.class).toInstance(config);
   }
 
   @Provides

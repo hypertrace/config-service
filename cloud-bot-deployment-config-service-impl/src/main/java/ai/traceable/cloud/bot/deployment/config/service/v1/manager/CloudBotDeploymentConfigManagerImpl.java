@@ -10,10 +10,12 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.DeploymentMode;
 import ai.traceable.cloud.bot.deployment.config.service.v1.EnableCloudBotDeploymentRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.IpWhitelistConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig.Builder;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.encryption.KeyPairGenerator;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
 import ai.traceable.platform.utils.ip.IpAddressParsingUtils;
@@ -192,6 +194,23 @@ public class CloudBotDeploymentConfigManagerImpl implements CloudBotDeploymentCo
             existingConfig.getSiteConfig().toBuilder()
                 .setCaptchaProviderDetails(request.getCaptchaProviderDetails())
                 .build());
+      }
+
+      if (existingConfig.getDeploymentDetails().getDeploymentMode()
+          == DeploymentMode.DEPLOYMENT_MODE_OUT_OF_BAND) {
+        OobDeploymentConfig oobDeploymentConfig =
+            existingConfig.getDeploymentDetails().getOobDeploymentConfig().toBuilder()
+                .setTraceableCaptchaDomain(request.getTraceableCaptchaDomain())
+                .build();
+        updatedConfigBuilder.setDeploymentDetails(
+            existingConfig.getDeploymentDetails().toBuilder()
+                .setOobDeploymentConfig(oobDeploymentConfig));
+      }
+
+      if (request.hasLabelsUpdate()) {
+        updatedConfigBuilder.setSiteConfig(
+            updatedConfigBuilder.getSiteConfig().toBuilder()
+                .putAllLabels(request.getLabelsUpdate().getMapMap()));
       }
 
       CloudBotDeploymentConfig updatedConfig = updatedConfigBuilder.build();

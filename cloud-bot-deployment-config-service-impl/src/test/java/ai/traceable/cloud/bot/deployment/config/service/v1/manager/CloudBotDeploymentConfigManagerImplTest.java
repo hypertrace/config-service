@@ -31,8 +31,10 @@ import ai.traceable.cloud.bot.deployment.config.service.v1.JWTSigningKeyDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.MTCaptchaDetails;
 import ai.traceable.cloud.bot.deployment.config.service.v1.OobDeploymentConfig;
 import ai.traceable.cloud.bot.deployment.config.service.v1.SiteConfig;
+import ai.traceable.cloud.bot.deployment.config.service.v1.StringMap;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentConfigRequest;
 import ai.traceable.cloud.bot.deployment.config.service.v1.UpdateCloudBotDeploymentStatusRequest;
+import ai.traceable.cloud.bot.deployment.config.service.v1.encryption.KeyPairGenerator;
 import ai.traceable.cloud.bot.deployment.config.service.v1.store.CloudBotDeploymentConfigStore;
 import ai.traceable.config.utils.UuidGenerator;
 import com.google.protobuf.Timestamp;
@@ -42,6 +44,7 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -260,6 +263,8 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setId(id)
             .setCloudBotDeploymentStatus(status)
             .setCaptchaProviderDetails(captchaProviderDetails)
+            .setTraceableCaptchaDomain("captcha.us1.traceable.ai")
+            .setLabelsUpdate(StringMap.newBuilder().putMap("region", "us-west-1"))
             .build();
 
     // Create existing config
@@ -267,7 +272,7 @@ class CloudBotDeploymentConfigManagerImplTest {
         CloudBotDeploymentConfig.newBuilder()
             .setId(id)
             .setSiteConfig(createValidSiteConfig())
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+            .setDeploymentDetails(createValidOOBDeploymentDetails("abc"))
             .setCloudBotDeploymentStatus(
                 CloudBotDeploymentStatus.newBuilder()
                     .setClusterStatus(ClusterStatus.CLUSTER_STATUS_PROVISIONING))
@@ -279,8 +284,13 @@ class CloudBotDeploymentConfigManagerImplTest {
             .setId(id)
             .setSiteConfig(
                 createValidSiteConfig().toBuilder()
-                    .setCaptchaProviderDetails(captchaProviderDetails))
-            .setDeploymentDetails(createValidEdgeDeploymentDetails())
+                    .setCaptchaProviderDetails(captchaProviderDetails)
+                    .putAllLabels(Map.of("region", "us-west-1")))
+            .setDeploymentDetails(
+                createValidOOBDeploymentDetails("abc").toBuilder()
+                    .setOobDeploymentConfig(
+                        existingConfig.getDeploymentDetails().getOobDeploymentConfig().toBuilder()
+                            .setTraceableCaptchaDomain("captcha.us1.traceable.ai")))
             .setCloudBotDeploymentStatus(status)
             .build();
 

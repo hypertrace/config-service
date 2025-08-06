@@ -144,3 +144,7 @@ enum ClusterStatus {
   CLUSTER_STATUS_READY = 2;
   CLUSTER_STATUS_ERROR = 3;
 }
+
+message StringMap {
+  map<string, string> map = 1;
+}

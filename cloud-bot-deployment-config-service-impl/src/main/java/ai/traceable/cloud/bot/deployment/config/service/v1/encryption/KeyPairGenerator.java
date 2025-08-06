@@ -1,4 +1,4 @@
-package ai.traceable.cloud.bot.deployment.config.service.v1.manager;
+package ai.traceable.cloud.bot.deployment.config.service.v1.encryption;
 
 import ai.traceable.cloud.bot.deployment.config.service.v1.EncryptedText;
 import ai.traceable.cloud.bot.deployment.config.service.v1.JWTSigningKeyDetails;
@@ -15,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 public class KeyPairGenerator {
   private static final int RSA_KEY_SIZE = 2048;
   private final java.security.KeyPairGenerator rsaKeyPairGenerator;
+  private final CloudBotEncryptionConfig cloudBotEncryptionConfig;
 
   @Inject
-  public KeyPairGenerator() {
+  public KeyPairGenerator(CloudBotEncryptionConfig cloudBotEncryptionConfig) {
+    this.cloudBotEncryptionConfig = cloudBotEncryptionConfig;
     try {
       // Initialize RSA key pair generator
       this.rsaKeyPairGenerator = java.security.KeyPairGenerator.getInstance("RSA");
@@ -36,10 +38,13 @@ public class KeyPairGenerator {
       // Convert public key to PEM format
       String publicKeyPem = convertToPem(keyPair.getPublic(), "PUBLIC KEY");
 
+      // Convert private key to PEM format and encrypt it
+      String privateKeyPem = convertToPem(keyPair.getPrivate(), "PRIVATE KEY");
+      EncryptedText encryptedPrivateKey = cloudBotEncryptionConfig.encrypt(privateKeyPem);
+
       // Create and return the JWT signing key details
       return JWTSigningKeyDetails.newBuilder()
-          .setEncryptedPrivateKey(
-              EncryptedText.newBuilder().setKeyId("").setValue(keyPair.getPrivate().toString()))
+          .setEncryptedPrivateKey(encryptedPrivateKey)
           .setPublicKeyPem(publicKeyPem)
           .setAlgorithm(JWTSigningAlgorithm.JWT_SIGNING_ALGORITHM_RS256)
           .build();

@@ -55,6 +55,7 @@ message UpdateCloudBotDeploymentStatusRequest {
   CloudBotDeploymentStatus cloud_bot_deployment_status = 2 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated status information for the deployment"];
   CaptchaProviderDetails captcha_provider_details = 3 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Updated CAPTCHA provider details"];
   optional string traceable_captcha_domain = 4 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Customer's traceable domain which should be used for bot protection related interaction in OOB case"];
+  StringMap labels_update = 5 [(ai.traceable.graphql.autogen.schema.annotations.field.v1.graphql_description) = "Optional Labels update to give additional inputs to bot service"];
 }
 
 message UpdateCloudBotDeploymentStatusResponse {
