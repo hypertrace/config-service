@@ -7,6 +7,7 @@ import org.hypertrace.config.service.ConfigServiceUtils;
 import org.hypertrace.config.service.v1.Filter;
 import org.hypertrace.config.service.v1.LogicalFilter;
 import org.hypertrace.config.service.v1.RelationalFilter;
+import org.hypertrace.core.documentstore.expression.impl.ConstantExpression;
 import org.hypertrace.core.documentstore.expression.impl.IdentifierExpression;
 import org.hypertrace.core.documentstore.expression.impl.LogicalExpression;
 import org.hypertrace.core.documentstore.expression.impl.RelationalExpression;
@@ -14,7 +15,19 @@ import org.hypertrace.core.documentstore.expression.operators.LogicalOperator;
 import org.hypertrace.core.documentstore.expression.operators.RelationalOperator;
 import org.hypertrace.core.documentstore.expression.type.FilterTypeExpression;
 
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EQ;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.EXISTS;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.GT;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.GTE;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.IN;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.LT;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.LTE;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NEQ;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NOT_EXISTS;
+import static org.hypertrace.core.documentstore.expression.operators.RelationalOperator.NOT_IN;
+
 public class FilterExpressionBuilder {
+  private static final String DEFAULT_CONSTANT_EXPRESSION_VALUE = "";
 
   public FilterTypeExpression buildFilterTypeExpression(Filter filter) {
     switch (filter.getTypeCase()) {
@@ -55,34 +68,34 @@ public class FilterExpressionBuilder {
     RelationalOperator operator;
     switch (relationalFilter.getOperator()) {
       case RELATIONAL_OPERATOR_EQ:
-        operator = RelationalOperator.EQ;
+        operator = EQ;
         break;
       case RELATIONAL_OPERATOR_NEQ:
-        operator = RelationalOperator.NEQ;
+        operator = NEQ;
         break;
       case RELATIONAL_OPERATOR_IN:
-        operator = RelationalOperator.IN;
+        operator = IN;
         break;
       case RELATIONAL_OPERATOR_NOT_IN:
-        operator = RelationalOperator.NOT_IN;
+        operator = NOT_IN;
         break;
       case RELATIONAL_OPERATOR_LT:
-        operator = RelationalOperator.LT;
+        operator = LT;
         break;
       case RELATIONAL_OPERATOR_GT:
-        operator = RelationalOperator.GT;
+        operator = GT;
         break;
       case RELATIONAL_OPERATOR_LTE:
-        operator = RelationalOperator.LTE;
+        operator = LTE;
         break;
       case RELATIONAL_OPERATOR_GTE:
-        operator = RelationalOperator.GTE;
+        operator = GTE;
         break;
       case RELATIONAL_OPERATOR_EXISTS:
-        operator = RelationalOperator.EXISTS;
+        operator = EXISTS;
         break;
       case RELATIONAL_OPERATOR_NOT_EXISTS:
-        operator = RelationalOperator.NOT_EXISTS;
+        operator = NOT_EXISTS;
         break;
       case UNRECOGNIZED:
       default:
@@ -91,6 +104,13 @@ public class FilterExpressionBuilder {
             .asRuntimeException();
     }
 
+    if(EXISTS.equals(operator) || NOT_EXISTS.equals(operator)) {
+      return RelationalExpression.of(
+              IdentifierExpression.of(
+                      ConfigServiceUtils.buildConfigFieldPath(relationalFilter.getConfigJsonPath())),
+              operator,
+              ConstantExpression.of(DEFAULT_CONSTANT_EXPRESSION_VALUE));
+    }
     return RelationalExpression.of(
         IdentifierExpression.of(
             ConfigServiceUtils.buildConfigFieldPath(relationalFilter.getConfigJsonPath())),
