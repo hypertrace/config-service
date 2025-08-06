@@ -1,20 +1,25 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.validator;
 
+import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Protocol;
+import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
+import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import io.grpc.Status;
 import jakarta.inject.Inject;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -24,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor_ = {@Inject})
 public class CloudEdgeDeploymentValidator {
   private final SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
+  private final StateTransitionsRegistry stateTransitionsRegistry;
 
   public Status validate(CreateCloudEdgeDeploymentConfigRequest request) {
     if (!request.hasCloudEdgeDeploymentInputConfig()) {
@@ -73,6 +79,14 @@ public class CloudEdgeDeploymentValidator {
   }
 
   public Status validate(DeleteCloudEdgeDeploymentConfigRequest request) {
+    if (request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Cloud edge deployment config ID cannot be empty");
+    }
+    return Status.OK;
+  }
+
+  public Status validate(RemoveCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Cloud edge deployment config ID cannot be empty");
@@ -150,5 +164,16 @@ public class CloudEdgeDeploymentValidator {
       }
     }
     return Status.OK;
+  }
+
+  public List<DeploymentStatus> validateActionAndGetNextStates(
+      DeploymentStatus currentStatus, ConfigAccessType accessType, Action action) {
+    if (!stateTransitionsRegistry.isActionAllowed(currentStatus, accessType, action)) {
+      throw Status.PERMISSION_DENIED
+          .withDescription("This operation is not permitted")
+          .asRuntimeException();
+    }
+
+    return stateTransitionsRegistry.getNextStates(currentStatus, accessType, action);
   }
 }

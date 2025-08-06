@@ -12,7 +12,6 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.manager.PermissionBa
 import com.google.protobuf.Value;
 import jakarta.inject.Inject;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
@@ -141,15 +140,8 @@ public class CloudEdgeDeploymentConfigStore
     deleteObject(ctx, id);
   }
 
-  private List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
-      RequestContext ctx, List<String> ids) {
-    if (ids == null || ids.isEmpty()) {
-      return getAllConfigData(ctx);
-    } else {
-      return ids.stream()
-          .map(id -> getCloudEdgeDeploymentConfig(ctx, id))
-          .filter(Objects::nonNull)
-          .collect(Collectors.toList());
-    }
+  public CloudEdgeDeploymentConfig upsertCloudEdgeDeploymentConfig(
+      RequestContext ctx, CloudEdgeDeploymentConfig config) {
+    return upsertObject(ctx, config).getData();
   }
 }

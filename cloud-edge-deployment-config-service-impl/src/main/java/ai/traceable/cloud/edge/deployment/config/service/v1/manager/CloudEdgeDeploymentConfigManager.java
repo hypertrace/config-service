@@ -18,4 +18,7 @@ public interface CloudEdgeDeploymentConfigManager {
   void deleteCloudEdgeDeploymentConfig(RequestContext ctx, String id);
 
   SharedConfigMetadata getSharedConfigMetadata(RequestContext ctx, ConfigAccessType accessType);
+
+  void removeCloudEdgeDeploymentConfig(
+      RequestContext ctx, RemoveCloudEdgeDeploymentConfigRequest request);
 }

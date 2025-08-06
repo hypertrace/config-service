@@ -235,4 +235,33 @@ class CloudEdgeDeploymentConfigServiceImplTest {
             GetSharedConfigMetadataResponse.newBuilder().setSharedConfigMetadata(metadata).build());
     verify(responseObserver, times(1)).onCompleted();
   }
+
+  @Test
+  void testRemoveCloudEdgeDeploymentConfig() {
+    RemoveCloudEdgeDeploymentConfigRequest request =
+        RemoveCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId("test-id")
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .build();
+
+    StreamObserver<RemoveCloudEdgeDeploymentConfigResponse> responseObserver =
+        mock(StreamObserver.class);
+
+    // Test case 1: When an exception occurs during removal request
+    doThrow(new RuntimeException("Removal request failed"))
+        .when(configManager)
+        .removeCloudEdgeDeploymentConfig(any(), any());
+
+    configService.removeCloudEdgeDeploymentConfig(request, responseObserver);
+    verify(responseObserver, times(1))
+        .onError(argThat(err -> err.getMessage().contains("Removal request failed")));
+
+    // Test case 2: Successful removal request
+    doNothing().when(configManager).removeCloudEdgeDeploymentConfig(any(), any());
+
+    configService.removeCloudEdgeDeploymentConfig(request, responseObserver);
+    verify(responseObserver, times(1))
+        .onNext(RemoveCloudEdgeDeploymentConfigResponse.getDefaultInstance());
+    verify(responseObserver, times(1)).onCompleted();
+  }
 }

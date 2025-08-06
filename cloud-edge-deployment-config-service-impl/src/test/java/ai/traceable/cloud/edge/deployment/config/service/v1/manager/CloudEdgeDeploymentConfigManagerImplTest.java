@@ -7,16 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ClusterConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
@@ -312,5 +316,97 @@ class CloudEdgeDeploymentConfigManagerImplTest {
 
     // Verify the store was called with the correct parameters
     verify(sharedConfigMetadataRegistry).getSharedConfigMetadataWithReadPermission(accessType);
+  }
+
+  @Test
+  void testRemoveCloudEdgeDeploymentConfig() {
+    // Setup
+    String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
+    RemoveCloudEdgeDeploymentConfigRequest request =
+        RemoveCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId(id)
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .build();
+
+    // Test case 1: Validation fails
+    when(validator.validate(request))
+        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.removeCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
+
+    // Test case 2: Config not found
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(null);
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.removeCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
+
+    // Test case 3: Action not allowed by state transition registry
+    CloudEdgeDeploymentConfig configNotRemovable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configNotRemovable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_REQUEST_REMOVAL))
+        .thenThrow(
+            Status.PERMISSION_DENIED
+                .withDescription("You are not allowed to perform this action")
+                .asRuntimeException());
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.removeCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
+    assertTrue(
+        exception.getStatus().getDescription().contains("not allowed to perform this action"));
+
+    // Test case 4: Successful removal request
+    CloudEdgeDeploymentConfig configRemovable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configRemovable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_REQUEST_REMOVAL))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_REQUESTED));
+
+    CloudEdgeDeploymentConfig expectedUpdatedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_REQUESTED)
+                    .build())
+            .build();
+
+    manager.removeCloudEdgeDeploymentConfig(requestContext, request);
+
+    verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
   }
 }

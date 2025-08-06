@@ -79,6 +79,15 @@ public class StateTransitionsRegistryImpl implements StateTransitionsRegistry {
   }
 
   @Override
+  public List<DeploymentStatus> getNextStates(
+      DeploymentStatus currentState, ConfigAccessType accessType, Action action) {
+    return Optional.ofNullable(
+            deploymentStatusTuplesMap.get(new DeploymentStatusTuple(currentState, accessType)))
+        .map(value -> value.getOrDefault(action, List.of()))
+        .orElse(List.of());
+  }
+
+  @Override
   public Map<Action, List<DeploymentStatus>> getActionsMap(
       DeploymentStatus currentState, ConfigAccessType accessType) {
     return Optional.ofNullable(

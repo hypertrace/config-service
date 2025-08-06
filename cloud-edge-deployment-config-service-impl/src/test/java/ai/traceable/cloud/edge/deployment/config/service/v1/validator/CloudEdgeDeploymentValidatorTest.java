@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import ai.traceable.cloud.edge.deployment.config.service.v1.*;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
+import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import com.google.protobuf.Struct;
 import com.google.protobuf.Value;
 import io.grpc.Status;
@@ -21,12 +22,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CloudEdgeDeploymentValidatorTest {
   @Mock private SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
+  @Mock private StateTransitionsRegistry stateTransitionsRegistry;
 
   private CloudEdgeDeploymentValidator validator;
 
   @BeforeEach
   void setUp() {
-    validator = new CloudEdgeDeploymentValidator(sharedConfigMetadataRegistry);
+    validator =
+        new CloudEdgeDeploymentValidator(sharedConfigMetadataRegistry, stateTransitionsRegistry);
   }
 
   @Test

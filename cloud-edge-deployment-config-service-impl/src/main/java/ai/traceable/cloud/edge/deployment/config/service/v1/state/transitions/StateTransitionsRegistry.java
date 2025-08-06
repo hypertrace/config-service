@@ -10,6 +10,9 @@ public interface StateTransitionsRegistry {
   boolean isActionAllowed(
       DeploymentStatus currentState, ConfigAccessType accessType, Action action);
 
+  List<DeploymentStatus> getNextStates(
+      DeploymentStatus currentState, ConfigAccessType accessType, Action action);
+
   Map<Action, List<DeploymentStatus>> getActionsMap(
       DeploymentStatus currentState, ConfigAccessType accessType);
 }

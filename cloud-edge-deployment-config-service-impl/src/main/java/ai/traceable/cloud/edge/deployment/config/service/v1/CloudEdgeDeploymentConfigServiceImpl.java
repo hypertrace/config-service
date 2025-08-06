@@ -138,4 +138,24 @@ public class CloudEdgeDeploymentConfigServiceImpl extends CloudEdgeDeploymentCon
       responseObserver.onError(e);
     }
   }
+
+  @Override
+  public void removeCloudEdgeDeploymentConfig(
+      RemoveCloudEdgeDeploymentConfigRequest request,
+      StreamObserver<RemoveCloudEdgeDeploymentConfigResponse> responseObserver) {
+    RequestContext ctx = RequestContext.CURRENT.get();
+    try {
+      cloudEdgeDeploymentConfigManager.removeCloudEdgeDeploymentConfig(ctx, request);
+
+      responseObserver.onNext(RemoveCloudEdgeDeploymentConfigResponse.getDefaultInstance());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      log.error(
+          "Remove cloud edge deployment config failed with request: {} and context: {}",
+          request,
+          ctx,
+          e);
+      responseObserver.onError(e);
+    }
+  }
 }
