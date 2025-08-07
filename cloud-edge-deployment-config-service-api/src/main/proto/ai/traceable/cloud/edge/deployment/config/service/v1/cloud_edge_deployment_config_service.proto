@@ -15,6 +15,8 @@ service CloudEdgeDeploymentConfigService {
   rpc GetSharedConfigMetadata(GetSharedConfigMetadataRequest) returns (GetSharedConfigMetadataResponse) {} // api to fetch generic key-value map info coming from yaml
   rpc RemoveCloudEdgeDeploymentConfig(RemoveCloudEdgeDeploymentConfigRequest) returns (RemoveCloudEdgeDeploymentConfigResponse) {} // api to request config removal
   rpc CancelCloudEdgeDeploymentConfigAction(CancelCloudEdgeDeploymentConfigActionRequest) returns (CancelCloudEdgeDeploymentConfigActionResponse) {} // api to cancel last config action
+  rpc HoldCloudEdgeDeploymentConfig(HoldCloudEdgeDeploymentConfigRequest) returns (HoldCloudEdgeDeploymentConfigResponse) {} // api to hold deployment request
+  rpc DeployCloudEdgeDeploymentConfig(DeployCloudEdgeDeploymentConfigRequest) returns (DeployCloudEdgeDeploymentConfigResponse) {} // api to request deployment for existing config
 }
 
 message CreateCloudEdgeDeploymentConfigRequest {
@@ -62,6 +64,7 @@ message GetSharedConfigMetadataResponse {
 
 message DeleteCloudEdgeDeploymentConfigRequest {
   string id = 1;
+  ConfigAccessType access_type = 2;
 }
 
 message DeleteCloudEdgeDeploymentConfigResponse {}
@@ -79,3 +82,17 @@ message CancelCloudEdgeDeploymentConfigActionRequest {
 }
 
 message CancelCloudEdgeDeploymentConfigActionResponse {}
+
+message HoldCloudEdgeDeploymentConfigRequest {
+  string id = 1;
+  ConfigAccessType access_type = 2;
+}
+
+message HoldCloudEdgeDeploymentConfigResponse {}
+
+message DeployCloudEdgeDeploymentConfigRequest {
+  string id = 1;
+  ConfigAccessType access_type = 2;
+}
+
+message DeployCloudEdgeDeploymentConfigResponse {}
