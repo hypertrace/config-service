@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package ai.traceable.google.secops.integration.config.service.v1;
+
+import "ai/traceable/google/secops/integration/config/service/v1/google_secops_config.proto";
+
+option java_multiple_files = true;
+
+service GoogleSecOpsIntegrationConfigService {
+  rpc CreateGoogleSecopsIntegration(CreateGoogleSecopsIntegrationRequest) returns (CreateGoogleSecopsIntegrationResponse) {}
+  rpc UpdateGoogleSecopsIntegration(UpdateGoogleSecopsIntegrationRequest) returns (UpdateGoogleSecopsIntegrationResponse) {}
+  rpc GetGoogleSecopsIntegrations(GetGoogleSecopsIntegrationsRequest) returns (GetGoogleSecopsIntegrationsResponse) {}
+  rpc DeleteGoogleSecopsIntegration(DeleteGoogleSecopsIntegrationRequest) returns (DeleteGoogleSecopsIntegrationResponse) {}
+  rpc GetGoogleSecopsIntegrationRegions(GetGoogleSecopsIntegrationRegionsRequest) returns (GetGoogleSecopsIntegrationRegionsResponse) {}
+}
+
+message CreateGoogleSecopsIntegrationRequest {
+  GoogleSecopsIntegrationDetails integration_details = 1;
+}
+
+message CreateGoogleSecopsIntegrationResponse {
+  GoogleSecopsIntegration integration = 1;
+}
+
+message UpdateGoogleSecopsIntegrationRequest {
+  GoogleSecopsIntegration integration = 1;
+}
+
+message UpdateGoogleSecopsIntegrationResponse {
+  GoogleSecopsIntegration integration = 1;
+}
+
+message GetGoogleSecopsIntegrationsRequest {
+  GoogleSecopsIntegrationsFilter filter = 1;
+}
+
+message GetGoogleSecopsIntegrationsResponse {
+  repeated GoogleSecopsIntegration integrations = 1;
+}
+
+message DeleteGoogleSecopsIntegrationRequest {
+  string id = 1;
+}
+
+message DeleteGoogleSecopsIntegrationResponse {}
+
+message GetGoogleSecopsIntegrationRegionsRequest {}
+
+message GetGoogleSecopsIntegrationRegionsResponse {
+  repeated ChronicleRegion regions = 1;
+}

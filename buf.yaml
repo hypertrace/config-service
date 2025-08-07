@@ -80,3 +80,4 @@ modules:
   - path: cloud-edge-deployment-config-service-api/src/main/proto
   - path: genai-system-discovery-config-service-api/src/main/proto
   - path: graphql-autogen-schema-annotations/src/main/proto
+  - path: google-secops-integration-config-service-api/src/main/proto

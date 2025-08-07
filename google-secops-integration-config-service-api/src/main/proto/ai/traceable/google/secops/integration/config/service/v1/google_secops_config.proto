@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package ai.traceable.google.secops.integration.config.service.v1;
+
+option java_multiple_files = true;
+
+message GoogleSecopsIntegrationsFilter {
+  repeated string ids = 1;
+}
+
+message GoogleSecopsIntegrationDetails {
+  string name = 1;
+  optional string description = 2;
+  GcpAuthCredentials auth_credentials = 3;
+  ChronicleRegion region = 4;
+}
+
+message GoogleSecopsIntegration {
+  string id = 1;
+  GoogleSecopsIntegrationDetails integration_details = 2;
+}
+
+enum ChronicleRegion {
+  CHRONICLE_REGION_UNSPECIFIED = 0;
+  // Multi-Region
+  CHRONICLE_REGION_US = 1;
+  CHRONICLE_REGION_EU = 2;
+
+  // Individual Regions
+  CHRONICLE_REGION_ASIA_SOUTH1 = 3;     // Mumbai
+  CHRONICLE_REGION_ASIA_SOUTHEAST1 = 4; // Singapore
+  CHRONICLE_REGION_ASIA_NORTHEAST1 = 5; // Tokyo
+  CHRONICLE_REGION_AUSTRALIA_SOUTHEAST1 = 6; // Sydney
+  CHRONICLE_REGION_EUROPE_WEST2 = 7;    // London
+  CHRONICLE_REGION_EUROPE_WEST3 = 8;    // Frankfurt
+  CHRONICLE_REGION_EUROPE_WEST6 = 9;    // Zurich
+  CHRONICLE_REGION_EUROPE_WEST9 = 10;   // Paris
+  CHRONICLE_REGION_EUROPE_WEST12 = 11;  // Turin
+  CHRONICLE_REGION_ME_CENTRAL1 = 12;    // Doha
+  CHRONICLE_REGION_ME_CENTRAL2 = 13;    // Dammam
+  CHRONICLE_REGION_ME_WEST1 = 14;       // Tel Aviv
+  CHRONICLE_REGION_NORTHAMERICA_NORTHEAST2 = 15; // Canada
+  CHRONICLE_REGION_SOUTHAMERICA_EAST1 = 16; // São Paulo
+}
+
+message GcpAuthCredentials {
+  EncryptedText encrypted_service_account_key = 1; // service account key of Json format.
+  message EncryptedText {
+    string key_id = 1; // Key used to encrypt the symmetric key
+    string value = 2;
+    string symmetric_key = 3; // symmetric key which is used to encrypt and decrypt value.
+  }
+}
