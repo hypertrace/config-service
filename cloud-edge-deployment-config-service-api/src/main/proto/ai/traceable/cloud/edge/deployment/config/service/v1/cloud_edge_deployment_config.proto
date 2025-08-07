@@ -24,6 +24,7 @@ message CloudEdgeDeploymentOutputConfig {
   string health_check_url = 2;
   repeated string ips_to_be_whitelisted = 3;
   DeploymentStatus status = 4;
+  string comment = 5;
 }
 
 enum DeploymentStatus {
