@@ -4,6 +4,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentC
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
 import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
@@ -123,15 +124,26 @@ public class CloudEdgeDeploymentConfigStore
     return false;
   }
 
+  public CloudEdgeDeploymentConfig insertCloudEdgeDeploymentConfig(
+      RequestContext ctx,
+      CloudEdgeDeploymentConfig config,
+      ConfigPermission permission,
+      DeploymentStatus status) {
+    return upsertObject(ctx, config).getData();
+  }
+
   public CloudEdgeDeploymentConfig upsertCloudEdgeDeploymentConfig(
-      RequestContext ctx, CloudEdgeDeploymentConfig config, ConfigPermission permission) {
+      RequestContext ctx,
+      CloudEdgeDeploymentConfig config,
+      ConfigPermission permission,
+      DeploymentStatus status) {
     // Here you would handle permission-based storage logic if needed
     CloudEdgeDeploymentConfig existingConfig = getData(ctx, config.getId()).orElse(config);
     return permissionBasedConfigResolver.getResolvedConfigForReadRequest(
         upsertObject(
                 ctx,
                 permissionBasedConfigResolver.getResolvedConfigForWriteRequest(
-                    config, existingConfig, permission.getWrite()))
+                    config, existingConfig, permission.getWrite(), status))
             .getData(),
         permission.getRead());
   }

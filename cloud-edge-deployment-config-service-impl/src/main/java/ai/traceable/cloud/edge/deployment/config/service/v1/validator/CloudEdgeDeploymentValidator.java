@@ -185,4 +185,18 @@ public class CloudEdgeDeploymentValidator {
 
     return stateTransitionsRegistry.getNextStates(currentStatus, accessType, action);
   }
+
+  public void validateUpdatedStatus(
+      DeploymentStatus currentStatus,
+      ConfigAccessType accessType,
+      Action action,
+      DeploymentStatus updatedStatus) {
+    List<DeploymentStatus> allowedNextStates =
+        stateTransitionsRegistry.getNextStates(currentStatus, accessType, action);
+    if (!allowedNextStates.contains(updatedStatus)) {
+      throw Status.PERMISSION_DENIED
+          .withDescription("This operation is not permitted")
+          .asRuntimeException();
+    }
+  }
 }

@@ -84,27 +84,28 @@ public class PermissionBasedConfigResolver {
   public CloudEdgeDeploymentConfig getResolvedConfigForWriteRequest(
       CloudEdgeDeploymentConfig newConfig,
       CloudEdgeDeploymentConfig existingConfig,
-      ConfigAccessType accessType) {
+      ConfigAccessType accessType,
+      DeploymentStatus status) {
 
     CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
     if (accessType.equals(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)) {
-      return applyFullOverride(updatedConfigBuilder, newConfig);
+      return applyFullOverride(updatedConfigBuilder, newConfig, status);
     }
 
-    return applyAdvanceConfigMerge(updatedConfigBuilder, newConfig);
+    return applyAdvanceConfigMerge(updatedConfigBuilder, newConfig, status);
   }
 
   private CloudEdgeDeploymentConfig applyFullOverride(
-      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder, CloudEdgeDeploymentConfig newConfig) {
+      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder,
+      CloudEdgeDeploymentConfig newConfig,
+      DeploymentStatus status) {
 
     if (newConfig.hasCloudEdgeDeploymentInputConfig()) {
       updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
           newConfig.getCloudEdgeDeploymentInputConfig());
 
-      updatedConfigBuilder
-          .getCloudEdgeDeployedOutputConfigBuilder()
-          .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
+      updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(status);
     }
 
     if (newConfig.hasCloudEdgeDeployedOutputConfig()) {
@@ -122,7 +123,9 @@ public class PermissionBasedConfigResolver {
   }
 
   private CloudEdgeDeploymentConfig applyAdvanceConfigMerge(
-      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder, CloudEdgeDeploymentConfig newConfig) {
+      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder,
+      CloudEdgeDeploymentConfig newConfig,
+      DeploymentStatus status) {
 
     CloudEdgeDeploymentInputConfig.Builder existingInputBuilder =
         updatedConfigBuilder.getCloudEdgeDeploymentInputConfigBuilder();
@@ -139,9 +142,7 @@ public class PermissionBasedConfigResolver {
             newConfig.getCloudEdgeDeploymentInputConfig().getServiceConfigsList());
     existingInputBuilder.clearServiceConfigs().addAllServiceConfigs(mergedServices);
 
-    updatedConfigBuilder
-        .getCloudEdgeDeployedOutputConfigBuilder()
-        .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
+    updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(status);
 
     return updatedConfigBuilder.build();
   }

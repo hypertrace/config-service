@@ -46,6 +46,12 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   private final CloudEdgeDeploymentValidator validator;
   private final UuidGenerator uuidGenerator;
 
+  private static final List<DeploymentStatus> notifiableDeploymentStatuses =
+      List.of(
+          DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED,
+          DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED,
+          DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_REQUESTED);
+
   @Override
   public CloudEdgeDeploymentConfig createCloudEdgeDeploymentConfig(
       RequestContext ctx, CreateCloudEdgeDeploymentConfigRequest request) {
@@ -62,13 +68,24 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
             .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
             .build();
 
-    return getTimer(
-            ctx.getTenantId().orElseThrow(),
-            id,
-            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS.name())
-        .record(
-            () ->
-                store.upsertCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission()));
+    DeploymentStatus currentStatus = null;
+    DeploymentStatus updatedStatus =
+        validator
+            .validateActionAndGetNextStates(
+                null, request.getConfigPermission().getWrite(), Action.ACTION_CREATE)
+            .get(0);
+
+    if (!notifiableDeploymentStatuses.contains(currentStatus)
+        && notifiableDeploymentStatuses.contains(updatedStatus)) {
+      return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
+          .record(
+              () ->
+                  store.upsertCloudEdgeDeploymentConfig(
+                      ctx, config, request.getConfigPermission(), updatedStatus));
+    }
+
+    return store.upsertCloudEdgeDeploymentConfig(
+        ctx, config, request.getConfigPermission(), updatedStatus);
   }
 
   public List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
@@ -91,37 +108,51 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
           Status.NOT_FOUND.withDescription("Cloud edge deployment config not found"));
     }
 
+    DeploymentStatus currentStatus = existingConfig.getCloudEdgeDeployedOutputConfig().getStatus();
+    DeploymentStatus updatedStatus = null;
+
+    // Update config
+    CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
+
+    if (request.hasCloudEdgeDeploymentInputConfig()) {
+      Action action = Action.ACTION_EDIT;
+      updatedStatus =
+          validator
+              .validateActionAndGetNextStates(
+                  currentStatus, request.getConfigPermission().getWrite(), action)
+              .get(0);
+      updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
+          request.getCloudEdgeDeploymentInputConfig());
+    } else if (request.hasCloudEdgeDeployedOutputConfig()) {
+      Action action = Action.ACTION_UPDATE_STATUS;
+      validator.validateUpdatedStatus(
+          currentStatus,
+          request.getConfigPermission().getWrite(),
+          action,
+          request.getCloudEdgeDeployedOutputConfig().getStatus());
+      updatedStatus = request.getCloudEdgeDeployedOutputConfig().getStatus();
+      updatedConfigBuilder.setCloudEdgeDeployedOutputConfig(
+          request.getCloudEdgeDeployedOutputConfig());
+    }
+
+    CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
+
     try {
-      // Update config
-      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
-      if (request.hasCloudEdgeDeploymentInputConfig()) {
-        updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
-            request.getCloudEdgeDeploymentInputConfig());
-      }
-      if (request.hasCloudEdgeDeployedOutputConfig()) {
-        updatedConfigBuilder.setCloudEdgeDeployedOutputConfig(
-            request.getCloudEdgeDeployedOutputConfig());
-      }
-
-      CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
-
-      if (existingConfig.hasCloudEdgeDeployedOutputConfig()
-          && !DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS.equals(
-              existingConfig.getCloudEdgeDeployedOutputConfig().getStatus())) {
-        return getTimer(
-                ctx.getTenantId().orElseThrow(),
-                id,
-                DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS.name())
+      if (!notifiableDeploymentStatuses.contains(currentStatus)
+          && notifiableDeploymentStatuses.contains(updatedStatus)) {
+        DeploymentStatus finalUpdatedStatus = updatedStatus;
+        return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
             .record(
                 () ->
                     store.upsertCloudEdgeDeploymentConfig(
-                        ctx, updatedConfig, request.getConfigPermission()));
+                        ctx, updatedConfig, request.getConfigPermission(), finalUpdatedStatus));
       }
 
       return store.upsertCloudEdgeDeploymentConfig(
-          ctx, updatedConfig, request.getConfigPermission());
+          ctx, updatedConfig, request.getConfigPermission(), updatedStatus);
     } catch (Exception e) {
+
       throw new StatusRuntimeException(
           Status.INTERNAL.withDescription(
               "Failed to update cloud edge deployment config: " + e.getMessage()));
@@ -145,9 +176,14 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
           .asRuntimeException();
     }
 
+    // TODO: Add access type field in delete request
+    validator.validateActionAndGetNextStates(
+        config.getCloudEdgeDeployedOutputConfig().getStatus(),
+        ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+        Action.ACTION_DELETE);
+
     try {
-      getTimer(ctx.getTenantId().orElseThrow(), id, "DEPLOYMENT_DELETED")
-          .record(() -> store.deleteCloudEdgeDeploymentConfig(ctx, id));
+      store.deleteCloudEdgeDeploymentConfig(ctx, id);
     } catch (Exception e) {
       throw new StatusRuntimeException(
           Status.INTERNAL.withDescription(

@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,6 +66,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
   void testUpdateCloudEdgeDeploymentConfig() {
     // Setup
     String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
     UpdateCloudEdgeDeploymentConfigRequest request =
         UpdateCloudEdgeDeploymentConfigRequest.newBuilder()
             .setId(id)
@@ -100,7 +104,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
             () -> manager.updateCloudEdgeDeploymentConfig(requestContext, id, request));
     assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
 
-    // Test case 3: Successful update
+    // Test case 3: Successful update with deployment status change
     CloudEdgeDeploymentConfig existingConfig =
         CloudEdgeDeploymentConfig.newBuilder()
             .setId(id)
@@ -109,18 +113,37 @@ class CloudEdgeDeploymentConfigManagerImplTest {
                     .setClusterConfig(
                         ClusterConfig.newBuilder().setClusterName("old-cluster").build())
                     .build())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
             .build();
 
     CloudEdgeDeploymentConfig expectedUpdatedConfig =
         CloudEdgeDeploymentConfig.newBuilder()
             .setId(id)
             .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED)
+                    .build())
             .build();
 
+    // Mock the validator to return CHANGE_REQUESTED status for the ACTION_EDIT action
     when(validator.validate(request)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            Action.ACTION_EDIT))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED));
+
+    // Mock the store upsert method
     when(store.upsertCloudEdgeDeploymentConfig(
-            requestContext, expectedUpdatedConfig, request.getConfigPermission()))
+            eq(requestContext),
+            any(CloudEdgeDeploymentConfig.class),
+            eq(request.getConfigPermission()),
+            eq(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED)))
         .thenReturn(expectedUpdatedConfig);
 
     CloudEdgeDeploymentConfig result =
@@ -130,6 +153,19 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     assertEquals(id, result.getId());
     assertEquals(
         request.getCloudEdgeDeploymentInputConfig(), result.getCloudEdgeDeploymentInputConfig());
+
+    // Verify that the validator and store methods were called with correct parameters
+    verify(validator)
+        .validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            Action.ACTION_EDIT);
+    verify(store)
+        .upsertCloudEdgeDeploymentConfig(
+            eq(requestContext),
+            any(CloudEdgeDeploymentConfig.class),
+            eq(request.getConfigPermission()),
+            eq(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED));
   }
 
   @Test
@@ -160,12 +196,51 @@ class CloudEdgeDeploymentConfigManagerImplTest {
             () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
     assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
 
-    // Test case 3: Successful deletion
+    // Test case 3: Action validation fails
     CloudEdgeDeploymentConfig existingConfig =
-        CloudEdgeDeploymentConfig.newBuilder().setId(id).build();
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+                    .build())
+            .build();
 
     when(validator.validate(expectedRequest)).thenReturn(Status.OK);
     when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(existingConfig);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            Action.ACTION_DELETE))
+        .thenThrow(
+            Status.PERMISSION_DENIED
+                .withDescription("Delete operation not permitted")
+                .asRuntimeException());
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.deleteCloudEdgeDeploymentConfig(requestContext, id));
+    assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
+    assertTrue(exception.getStatus().getDescription().contains("not permitted"));
+
+    // Test case 4: Successful deletion
+    reset(validator, store);
+    CloudEdgeDeploymentConfig existingConfigSuccess =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD)
+                    .build())
+            .build();
+    when(validator.validate(expectedRequest)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(existingConfigSuccess);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            Action.ACTION_DELETE))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_UNSPECIFIED));
 
     manager.deleteCloudEdgeDeploymentConfig(requestContext, id);
 

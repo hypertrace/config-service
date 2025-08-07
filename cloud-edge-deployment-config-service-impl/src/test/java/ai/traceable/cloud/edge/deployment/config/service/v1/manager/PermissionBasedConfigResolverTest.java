@@ -250,7 +250,10 @@ class PermissionBasedConfigResolverTest {
     // Execute with traceable access
     CloudEdgeDeploymentConfig result =
         resolver.getResolvedConfigForWriteRequest(
-            newConfig, fullConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+            newConfig,
+            fullConfig,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED);
 
     // Verify - traceable access should replace the entire config
     assertNotNull(result);
@@ -315,7 +318,10 @@ class PermissionBasedConfigResolverTest {
     // Execute with traceable access
     CloudEdgeDeploymentConfig result =
         resolver.getResolvedConfigForWriteRequest(
-            newConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+            newConfig,
+            existingConfig,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY);
 
     // Verify the last applied input config is set when deployment status is DEPLOYED_SUCCESSFULLY
     assertTrue(result.hasLastAppliedInputConfig());
@@ -342,7 +348,10 @@ class PermissionBasedConfigResolverTest {
     // Execute with traceable access but with IN_PROGRESS status
     CloudEdgeDeploymentConfig resultInProgress =
         resolver.getResolvedConfigForWriteRequest(
-            inProgressConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+            inProgressConfig,
+            existingConfig,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
 
     // Verify the last applied input config is NOT set when status is not DEPLOYED_SUCCESSFULLY
     assertFalse(resultInProgress.hasLastAppliedInputConfig());
@@ -402,7 +411,10 @@ class PermissionBasedConfigResolverTest {
     // Execute with global access
     CloudEdgeDeploymentConfig result =
         resolver.getResolvedConfigForWriteRequest(
-            newConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL);
+            newConfig,
+            existingConfig,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
 
     assertNotNull(result);
     ClusterConfig resultCluster = result.getCloudEdgeDeploymentInputConfig().getClusterConfig();
@@ -417,7 +429,7 @@ class PermissionBasedConfigResolverTest {
         "existing-traceable", mergedFields.get("traceable-key").getStringValue()); // preserved
     assertEquals("updated-global", mergedFields.get("global-key").getStringValue()); // updated
 
-    // Output config status should be reset to IN_PROGRESS
+    // Output config status should be set to IN_PROGRESS
     assertEquals(
         DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS,
         result.getCloudEdgeDeployedOutputConfig().getStatus());
@@ -527,7 +539,10 @@ class PermissionBasedConfigResolverTest {
     // Execute with traceable access
     CloudEdgeDeploymentConfig result =
         resolver.getResolvedConfigForWriteRequest(
-            newConfig, existingConfig, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+            newConfig,
+            existingConfig,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS);
 
     // Verify that the input config has been updated
     assertEquals(
@@ -560,7 +575,10 @@ class PermissionBasedConfigResolverTest {
     // Execute with traceable access to mark as deployed
     CloudEdgeDeploymentConfig finalResult =
         resolver.getResolvedConfigForWriteRequest(
-            deployedConfig, result, ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE);
+            deployedConfig,
+            result,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE,
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY);
 
     // Verify that the last applied input config is updated to the new input config
     assertTrue(finalResult.hasLastAppliedInputConfig());
