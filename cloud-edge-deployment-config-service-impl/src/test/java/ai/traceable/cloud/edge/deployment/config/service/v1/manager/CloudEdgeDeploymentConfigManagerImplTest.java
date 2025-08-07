@@ -21,9 +21,11 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeployCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
+import ai.traceable.cloud.edge.deployment.config.service.v1.HoldCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
@@ -595,6 +597,188 @@ class CloudEdgeDeploymentConfigManagerImplTest {
             .build();
 
     manager.removeCloudEdgeDeploymentConfig(requestContext, request);
+
+    verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
+  }
+
+  @Test
+  void testHoldCloudEdgeDeploymentConfig() {
+    // Setup
+    String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
+    HoldCloudEdgeDeploymentConfigRequest request =
+        HoldCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId(id)
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .build();
+
+    // Test case 1: Validation fails
+    when(validator.validate(request))
+        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.holdCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
+
+    // Test case 2: Config not found
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(null);
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.holdCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
+
+    // Test case 3: Action not allowed by state transition registry
+    CloudEdgeDeploymentConfig configNotRemovable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configNotRemovable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_HOLD))
+        .thenThrow(
+            Status.PERMISSION_DENIED
+                .withDescription("This operation is not permitted")
+                .asRuntimeException());
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.holdCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
+    assertTrue(exception.getStatus().getDescription().contains("not permitted"));
+
+    // Test case 4: Successful removal request
+    CloudEdgeDeploymentConfig configRemovable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configRemovable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_HOLD))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD));
+
+    CloudEdgeDeploymentConfig expectedUpdatedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD)
+                    .build())
+            .build();
+
+    manager.holdCloudEdgeDeploymentConfig(requestContext, request);
+
+    verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
+  }
+
+  @Test
+  void testDeployCloudEdgeDeploymentConfig() {
+    // Setup
+    String id = "test-id";
+    requestContext = RequestContext.forTenantId("tenant-id");
+    DeployCloudEdgeDeploymentConfigRequest request =
+        DeployCloudEdgeDeploymentConfigRequest.newBuilder()
+            .setId(id)
+            .setAccessType(ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL)
+            .build();
+
+    // Test case 1: Validation fails
+    when(validator.validate(request))
+        .thenReturn(Status.INVALID_ARGUMENT.withDescription("Invalid input"));
+
+    StatusRuntimeException exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.deployCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.INVALID_ARGUMENT, exception.getStatus().getCode());
+
+    // Test case 2: Config not found
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(null);
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.deployCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.NOT_FOUND, exception.getStatus().getCode());
+
+    // Test case 3: Action not allowed by state transition registry
+    CloudEdgeDeploymentConfig configNotRemovable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configNotRemovable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_DEPLOY))
+        .thenThrow(
+            Status.PERMISSION_DENIED
+                .withDescription("This operation is not permitted")
+                .asRuntimeException());
+
+    exception =
+        assertThrows(
+            StatusRuntimeException.class,
+            () -> manager.deployCloudEdgeDeploymentConfig(requestContext, request));
+    assertEquals(Status.Code.PERMISSION_DENIED, exception.getStatus().getCode());
+    assertTrue(exception.getStatus().getDescription().contains("not permitted"));
+
+    // Test case 4: Successful removal request
+    CloudEdgeDeploymentConfig configRemovable =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD)
+                    .build())
+            .build();
+
+    when(validator.validate(request)).thenReturn(Status.OK);
+    when(store.getCloudEdgeDeploymentConfig(requestContext, id)).thenReturn(configRemovable);
+    when(validator.validateActionAndGetNextStates(
+            DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD,
+            ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL,
+            Action.ACTION_DEPLOY))
+        .thenReturn(List.of(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED));
+
+    CloudEdgeDeploymentConfig expectedUpdatedConfig =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder()
+                    .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_REQUESTED)
+                    .build())
+            .build();
+
+    manager.deployCloudEdgeDeploymentConfig(requestContext, request);
 
     verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
   }

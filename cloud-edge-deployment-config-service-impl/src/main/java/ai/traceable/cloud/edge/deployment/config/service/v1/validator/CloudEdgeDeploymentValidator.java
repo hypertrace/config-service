@@ -8,8 +8,10 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigPermission;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigValueDescriptor;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.DeployCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.HoldCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Protocol;
 import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
@@ -96,6 +98,22 @@ public class CloudEdgeDeploymentValidator {
   }
 
   public Status validate(RemoveCloudEdgeDeploymentConfigRequest request) {
+    if (request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Cloud edge deployment config ID cannot be empty");
+    }
+    return Status.OK;
+  }
+
+  public Status validate(HoldCloudEdgeDeploymentConfigRequest request) {
+    if (request.getId().isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription(
+          "Cloud edge deployment config ID cannot be empty");
+    }
+    return Status.OK;
+  }
+
+  public Status validate(DeployCloudEdgeDeploymentConfigRequest request) {
     if (request.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Cloud edge deployment config ID cannot be empty");

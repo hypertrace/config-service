@@ -24,4 +24,10 @@ public interface CloudEdgeDeploymentConfigManager {
 
   void removeCloudEdgeDeploymentConfig(
       RequestContext ctx, RemoveCloudEdgeDeploymentConfigRequest request);
+
+  void holdCloudEdgeDeploymentConfig(
+      RequestContext ctx, HoldCloudEdgeDeploymentConfigRequest request);
+
+  void deployCloudEdgeDeploymentConfig(
+      RequestContext ctx, DeployCloudEdgeDeploymentConfigRequest request);
 }
