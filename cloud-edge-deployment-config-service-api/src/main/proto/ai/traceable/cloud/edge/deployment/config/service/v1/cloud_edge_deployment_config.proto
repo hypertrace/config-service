@@ -27,6 +27,12 @@ message CloudEdgeDeploymentOutputConfig {
   string comment = 5;
 }
 
+message CloudEdgeDeploymentConfigWithActions {
+  CloudEdgeDeploymentConfig cloud_edge_deployment_config = 1;
+  repeated Action allowed_actions = 2;
+  repeated DeploymentStatus allowed_statuses = 3;
+}
+
 enum DeploymentStatus {
   DEPLOYMENT_STATUS_UNSPECIFIED = 0;
   DEPLOYMENT_STATUS_IN_PROGRESS = 1;
