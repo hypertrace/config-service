@@ -96,7 +96,7 @@ class CustomSignatureRulesManagerTest {
             ruleConverter,
             mock(ConfigChangeEventGenerator.class),
             config);
-    this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore));
+    this.rulesManager = spy(new CustomSignatureRulesManager(rulesStore, config));
     requestContext = RequestContext.forTenantId("default tenant");
   }
 

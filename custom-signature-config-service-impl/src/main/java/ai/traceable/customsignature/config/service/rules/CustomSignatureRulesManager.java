@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static ai.traceable.platform.utils.ip.IpAddressParsingUtils.parseRawIpRange;
 
+import ai.traceable.customsignature.config.service.CustomSignatureConfigServiceConfig;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
@@ -26,10 +27,13 @@ import org.hypertrace.core.grpcutils.context.RequestContext;
 public class CustomSignatureRulesManager implements RulesManager {
 
   private final CustomSignatureRulesStore rulesStore;
+  private final List<CustomSignatureRule> defaultCustomSignatureRules;
 
   @Inject
-  public CustomSignatureRulesManager(CustomSignatureRulesStore rulesStore) {
+  public CustomSignatureRulesManager(
+      CustomSignatureRulesStore rulesStore, CustomSignatureConfigServiceConfig config) {
     this.rulesStore = rulesStore;
+    this.defaultCustomSignatureRules = config.getDefaultCustomSignatureRules();
   }
 
   @Override
@@ -97,7 +101,10 @@ public class CustomSignatureRulesManager implements RulesManager {
   private Optional<CustomSignatureRule> getCustomSignatureRule(
       RequestContext requestContext, String ruleId) {
     try {
-      return rulesStore.getData(requestContext, ruleId);
+      return defaultCustomSignatureRules.stream()
+          .filter(rule -> rule.getId().equals(ruleId))
+          .findFirst()
+          .or(() -> rulesStore.getData(requestContext, ruleId));
     } catch (Exception e) {
       return Optional.empty();
     }
