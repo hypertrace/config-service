@@ -1,5 +1,7 @@
 package ai.traceable.cloud.edge.deployment.config.service.v1.validator;
 
+import static org.hypertrace.config.validation.GrpcValidatorUtils.validateNonDefaultPresenceOrThrow;
+
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
@@ -11,7 +13,10 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeplo
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeployCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.HealthCheckDetails;
+import ai.traceable.cloud.edge.deployment.config.service.v1.HealthCheckSettings;
 import ai.traceable.cloud.edge.deployment.config.service.v1.HoldCloudEdgeDeploymentConfigRequest;
+import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Protocol;
 import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
@@ -20,6 +25,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeplo
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import jakarta.inject.Inject;
 import java.util.HashSet;
 import java.util.List;
@@ -156,6 +162,14 @@ public class CloudEdgeDeploymentValidator {
                   domainName, serviceName));
         }
       }
+      try {
+        serviceConfig.getOriginConfigsList().forEach(this::validateOriginConfig);
+        if (serviceConfig.hasHealthCheckDetails()) {
+          validateHealthCheckDetails(serviceConfig.getHealthCheckDetails());
+        }
+      } catch (StatusRuntimeException ex) {
+        return ex.getStatus();
+      }
     }
 
     SharedConfigMetadata sharedConfigMetadata =
@@ -191,6 +205,42 @@ public class CloudEdgeDeploymentValidator {
       }
     }
     return Status.OK;
+  }
+
+  private void validateOriginConfig(OriginConfig originConfig) {
+    if (originConfig.hasHealthCheckDetails()) {
+      throw Status.INVALID_ARGUMENT
+          .withDescription(
+              String.format("Health check cannot be configured at origin config: %s", originConfig))
+          .asRuntimeException();
+    }
+    validateNonDefaultPresenceOrThrow(originConfig, OriginConfig.PROTOCOL_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(originConfig, OriginConfig.PORT_FIELD_NUMBER);
+    if (originConfig.hasHostName()) {
+      validateNonDefaultPresenceOrThrow(originConfig, OriginConfig.HOST_NAME_FIELD_NUMBER);
+    } else if (originConfig.hasIp()) {
+      validateNonDefaultPresenceOrThrow(originConfig, OriginConfig.IP_FIELD_NUMBER);
+    }
+  }
+
+  private void validateHealthCheckDetails(HealthCheckDetails healthCheckDetails) {
+    validateNonDefaultPresenceOrThrow(healthCheckDetails, HealthCheckDetails.PROTOCOL_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        healthCheckDetails, HealthCheckDetails.HEALTH_CHECK_PATH_FIELD_NUMBER);
+    validateHealthCheckSettings(healthCheckDetails.getHealthCheckSettings());
+  }
+
+  private void validateHealthCheckSettings(HealthCheckSettings healthCheckSettings) {
+    validateNonDefaultPresenceOrThrow(
+        healthCheckSettings, HealthCheckSettings.HEALTHY_THRESHOLD_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        healthCheckSettings, HealthCheckSettings.UNHEALTHY_THRESHOLD_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        healthCheckSettings, HealthCheckSettings.SUCCESS_CODES_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        healthCheckSettings, HealthCheckSettings.INTERVAL_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        healthCheckSettings, HealthCheckSettings.TIMEOUT_FIELD_NUMBER);
   }
 
   public List<DeploymentStatus> validateActionAndGetNextStates(

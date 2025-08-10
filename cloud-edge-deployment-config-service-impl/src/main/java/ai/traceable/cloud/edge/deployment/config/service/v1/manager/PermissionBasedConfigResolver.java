@@ -194,6 +194,7 @@ public class PermissionBasedConfigResolver {
         .addAllOriginConfigs(incoming.getOriginConfigsList())
         .setAdvancedConfig(
             ServiceAdvancedConfig.newBuilder().setGenericConfig(mergedGenericConfig).build())
+        .setHealthCheckDetails(incoming.getHealthCheckDetails())
         .build();
   }
 }

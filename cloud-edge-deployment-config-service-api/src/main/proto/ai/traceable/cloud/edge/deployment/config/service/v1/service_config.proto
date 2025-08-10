@@ -12,6 +12,7 @@ message ServiceConfig {
   repeated DomainConfig domain_configs = 2;
   repeated OriginConfig origin_configs = 3;
   ServiceAdvancedConfig advanced_config = 4;
+  HealthCheckDetails health_check_details = 5;
 }
 
 message DomainConfig {
