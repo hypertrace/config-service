@@ -51,6 +51,7 @@ import ai.traceable.ratelimiting.config.service.v2.RequestScannerTypeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig.RollingWindowThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
@@ -3203,6 +3204,382 @@ public class RateLimitingRulesValidatorTest {
             MatchOperator.MATCH_OPERATOR_NOT_CONTAIN,
             "rhs-key-value-4");
     assertDoesNotThrow(() -> validatorUtils.validateKeyValueCondition(keyValueCondition4));
+  }
+
+  @Test
+  void testCreateRateLimitingRuleRequestWithRuleEvaluationPoints() {
+    RuleStatus ruleStatus =
+        RuleStatus.newBuilder()
+            .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    RuleConfigScope ruleConfigScope =
+        RuleConfigScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id"))
+            .build();
+
+    TransactionActionConfig transactionActionForBlockingWithoutThresholdDuration =
+        TransactionActionConfig.newBuilder()
+            .setAction(
+                Action.newBuilder()
+                    .setBlock(
+                        Block.newBuilder()
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                            .setDurationIso("duration-iso")))
+            .build();
+    TransactionActionConfig inlineAgentIncompatibleTransactionActionConfig =
+        TransactionActionConfig.newBuilder()
+            .setAction(
+                Action.newBuilder()
+                    .setAlert(
+                        Action.Alert.newBuilder()
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)))
+            .build();
+
+    ThresholdActionConfig edgeIncompatibleThresholdActionConfig =
+        ThresholdActionConfig.newBuilder()
+            .addActions(
+                Action.newBuilder()
+                    .setAllow(Action.Allow.newBuilder().setDurationIso("duration-iso")))
+            .addResourceAccessThresholdConfigs(
+                ResourceAccessThresholdConfig.newBuilder()
+                    .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                    .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                    .setRollingWindowThresholdConfig(
+                        RollingWindowThresholdConfig.newBuilder()
+                            .setCountAllowed(1000)
+                            .setDurationIso("duration-iso")))
+            .build();
+
+    RegionCondition regionCondition = buildRegionCondition(List.of("IN", "US"));
+    ScopeCondition scopeCondition =
+        ScopeCondition.newBuilder()
+            .setUrlScope(ScopeCondition.UrlScope.newBuilder().addUrlRegexes("url-regex"))
+            .build();
+
+    // invalid case - rule with PLATFORM as the rule evaluation point
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest1 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-1")
+                    .setDescription("description-1")
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setEnabled(true)
+                    .setRuleStatus(ruleStatus)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setRegionCondition(regionCondition)))
+                    .setTransactionActionConfig(
+                        transactionActionForBlockingWithoutThresholdDuration)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest1, List.of()));
+
+    // invalid case - rule with EDGE as the rule evaluation point
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest2 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-2")
+                    .setDescription("description-2")
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                    .setEnabled(true)
+                    .setRuleStatus(ruleStatus)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setScopeCondition(scopeCondition)))
+                    .addThresholdActionConfigs(edgeIncompatibleThresholdActionConfig)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest2, List.of()));
+
+    // invalid case - rule with INLINE_TRACING_AGENT as the rule evaluation point
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest3 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-3")
+                    .setDescription("description-3")
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setEnabled(true)
+                    .setRuleStatus(ruleStatus)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setRegionCondition(regionCondition)))
+                    .setTransactionActionConfig(inlineAgentIncompatibleTransactionActionConfig)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest3, List.of()));
+
+    // valid case - rule with no rule evaluation points
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest4 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-4")
+                    .setDescription("description-4")
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                    .setRuleStatus(ruleStatus)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setScopeCondition(scopeCondition)))
+                    .setTransactionActionConfig(inlineAgentIncompatibleTransactionActionConfig)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest4, List.of()));
+
+    // valid case - rule with all rule evaluation points
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest5 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-5")
+                    .setDescription("description-5")
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setRuleStatus(ruleStatus)
+                    .setRuleConfigScope(ruleConfigScope)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setRegionCondition(regionCondition)))
+                    .addThresholdActionConfigs(
+                        ThresholdActionConfig.newBuilder()
+                            .addResourceAccessThresholdConfigs(
+                                ResourceAccessThresholdConfig.newBuilder()
+                                    .setApiAggregateType(
+                                        ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                                    .setUserAggregateType(
+                                        UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                                    .setRollingWindowThresholdConfig(
+                                        RollingWindowThresholdConfig.newBuilder()
+                                            .setCountAllowed(1000)
+                                            .setDurationIso("duration-iso")))
+                            .addActions(
+                                Action.newBuilder()
+                                    .setBlock(
+                                        Block.newBuilder()
+                                            .setDurationIso("duration-iso")
+                                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW))))
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest5, List.of()));
+  }
+
+  @Test
+  void testUpdateRateLimitingRuleRequestWithRuleEvaluationPoints() {
+    RuleStatus ruleStatus =
+        RuleStatus.newBuilder()
+            .setRuleCreationSource(RuleStatus.RuleSource.RULE_SOURCE_TRACEABLE)
+            .build();
+    RuleConfigScope ruleConfigScope =
+        RuleConfigScope.newBuilder()
+            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env-id"))
+            .build();
+
+    TransactionActionConfig transactionActionForBlockingWithoutThresholdDuration =
+        TransactionActionConfig.newBuilder()
+            .setAction(
+                Action.newBuilder()
+                    .setBlock(
+                        Block.newBuilder()
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+                            .setDurationIso("duration-iso")))
+            .build();
+    TransactionActionConfig inlineAgentIncompatibleTransactionActionConfig =
+        TransactionActionConfig.newBuilder()
+            .setAction(
+                Action.newBuilder()
+                    .setAlert(
+                        Action.Alert.newBuilder()
+                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)))
+            .build();
+
+    ThresholdActionConfig edgeIncompatibleThresholdActionConfig =
+        ThresholdActionConfig.newBuilder()
+            .addActions(
+                Action.newBuilder()
+                    .setAllow(Action.Allow.newBuilder().setDurationIso("duration-iso")))
+            .addResourceAccessThresholdConfigs(
+                ResourceAccessThresholdConfig.newBuilder()
+                    .setApiAggregateType(ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                    .setUserAggregateType(UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                    .setRollingWindowThresholdConfig(
+                        RollingWindowThresholdConfig.newBuilder()
+                            .setCountAllowed(1000)
+                            .setDurationIso("duration-iso")))
+            .build();
+
+    RegionCondition regionCondition = buildRegionCondition(List.of("IN", "US"));
+    ScopeCondition scopeCondition =
+        ScopeCondition.newBuilder()
+            .setUrlScope(ScopeCondition.UrlScope.newBuilder().addUrlRegexes("url-regex"))
+            .build();
+
+    // invalid case - rule with PLATFORM as the rule evaluation point
+    UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest1 =
+        UpdateRateLimitingRuleRequest.newBuilder()
+            .setRuleId("rule-id-1")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-1")
+                    .setDescription("description-1")
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setEnabled(true)
+                    .setRuleStatus(ruleStatus)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setRegionCondition(regionCondition)))
+                    .setTransactionActionConfig(
+                        transactionActionForBlockingWithoutThresholdDuration)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, updateRateLimitingRuleRequest1, List.of()));
+
+    // invalid case - rule with EDGE as the rule evaluation point
+    UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest2 =
+        UpdateRateLimitingRuleRequest.newBuilder()
+            .setRuleId("rule-id-2")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-2")
+                    .setDescription("description-2")
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                    .setEnabled(true)
+                    .setRuleStatus(ruleStatus)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setScopeCondition(scopeCondition)))
+                    .addThresholdActionConfigs(edgeIncompatibleThresholdActionConfig)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, updateRateLimitingRuleRequest2, List.of()));
+
+    // invalid case - rule with INLINE_TRACING_AGENT as the rule evaluation point
+    CreateRateLimitingRuleRequest createRateLimitingRuleRequest3 =
+        CreateRateLimitingRuleRequest.newBuilder()
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-3")
+                    .setDescription("description-3")
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setEnabled(true)
+                    .setRuleStatus(ruleStatus)
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setRegionCondition(regionCondition)))
+                    .setTransactionActionConfig(inlineAgentIncompatibleTransactionActionConfig)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertThrows(
+        StatusRuntimeException.class,
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, createRateLimitingRuleRequest3, List.of()));
+
+    // valid case - rule with no rule evaluation points
+    UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest4 =
+        UpdateRateLimitingRuleRequest.newBuilder()
+            .setRuleId("rule-id-4")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-4")
+                    .setDescription("description-4")
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
+                    .setRuleStatus(RuleStatus.getDefaultInstance())
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setScopeCondition(scopeCondition)))
+                    .setTransactionActionConfig(inlineAgentIncompatibleTransactionActionConfig)
+                    .setRuleConfigScope(ruleConfigScope))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, updateRateLimitingRuleRequest4, List.of()));
+
+    // valid case - rule with all rule evaluation points
+    UpdateRateLimitingRuleRequest updateRateLimitingRuleRequest5 =
+        UpdateRateLimitingRuleRequest.newBuilder()
+            .setRuleId("rule-id-5")
+            .setData(
+                RateLimitingRuleData.newBuilder()
+                    .setName("name-5")
+                    .setDescription("description-5")
+                    .setCategory(Category.CATEGORY_RATE_LIMITING)
+                    .setRuleStatus(RuleStatus.getDefaultInstance())
+                    .setRuleConfigScope(ruleConfigScope)
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder().setRegionCondition(regionCondition)))
+                    .addThresholdActionConfigs(
+                        ThresholdActionConfig.newBuilder()
+                            .addResourceAccessThresholdConfigs(
+                                ResourceAccessThresholdConfig.newBuilder()
+                                    .setApiAggregateType(
+                                        ApiAggregateType.API_AGGREGATE_TYPE_PER_ENDPOINT)
+                                    .setUserAggregateType(
+                                        UserAggregateType.USER_AGGREGATE_TYPE_PER_USER)
+                                    .setRollingWindowThresholdConfig(
+                                        RollingWindowThresholdConfig.newBuilder()
+                                            .setCountAllowed(1000)
+                                            .setDurationIso("duration-iso")))
+                            .addActions(
+                                Action.newBuilder()
+                                    .setBlock(
+                                        Block.newBuilder()
+                                            .setDurationIso("duration-iso")
+                                            .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW))))
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE))
+            .build();
+    assertDoesNotThrow(
+        () ->
+            rulesValidator.validateOrThrow(
+                requestContext, updateRateLimitingRuleRequest5, List.of()));
   }
 
   private KeyValueCondition getLhsRhsKeysCondition(

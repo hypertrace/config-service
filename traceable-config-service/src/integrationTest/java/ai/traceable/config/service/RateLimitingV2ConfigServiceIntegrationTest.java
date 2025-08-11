@@ -17,6 +17,7 @@ import ai.traceable.ratelimiting.config.service.v2.CompositeCondition;
 import ai.traceable.ratelimiting.config.service.v2.Condition;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.DeleteRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.config.service.v2.EnvironmentScope;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesRequest;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingEdgeDecisionRulesResponse;
 import ai.traceable.ratelimiting.config.service.v2.GetRateLimitingRulesFilter;
@@ -30,9 +31,12 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingConfigServiceGrpc
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
+import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
 import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
+import ai.traceable.ratelimiting.config.service.v2.ScopeCondition;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
+import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import java.util.List;
 import java.util.Map;
@@ -68,10 +72,7 @@ class RateLimitingV2ConfigServiceIntegrationTest extends TraceableConfigServiceI
       RateLimitingRuleData.newBuilder()
           .setCategory(Category.CATEGORY_RATE_LIMITING)
           .setEnabled(false)
-          .addAllRuleEvaluationPoints(
-              List.of(
-                  RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
-                  RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
+          .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
           .setCondition(
               Condition.newBuilder()
                   .setCompositeCondition(
@@ -285,12 +286,31 @@ class RateLimitingV2ConfigServiceIntegrationTest extends TraceableConfigServiceI
     CreateRateLimitingRuleRequest createRequest =
         CreateRateLimitingRuleRequest.newBuilder()
             .setData(
-                ruleDataBuilder1
-                    .setName("rule")
-                    .setDescription("description")
+                RateLimitingRuleData.newBuilder()
+                    .setName("rule3")
+                    .setDescription("description3")
+                    .setCategory(Category.CATEGORY_DATA_EXFILTRATION)
                     .setRuleStatus(RULE_SOURCE_TRACEABLE)
-                    .addAllRuleEvaluationPoints(
-                        List.of(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)))
+                    .setRuleConfigScope(
+                        RuleConfigScope.newBuilder()
+                            .setEnvironmentScope(
+                                EnvironmentScope.newBuilder().addEnvironmentIds("env-id")))
+                    .setCondition(
+                        Condition.newBuilder()
+                            .setLeafCondition(
+                                LeafCondition.newBuilder()
+                                    .setScopeCondition(
+                                        ScopeCondition.newBuilder()
+                                            .setUrlScope(
+                                                ScopeCondition.UrlScope.newBuilder()
+                                                    .addUrlRegexes("url-regex")))))
+                    .setTransactionActionConfig(
+                        TransactionActionConfig.newBuilder()
+                            .setAction(
+                                Action.newBuilder()
+                                    .setAllow(Action.Allow.newBuilder().setDurationIso("PT60S"))))
+                    .addRuleEvaluationPoints(
+                        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT))
             .build();
     RateLimitingRule rateLimitingRule =
         REQUEST_CONTEXT

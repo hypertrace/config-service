@@ -36,10 +36,14 @@ import ai.traceable.ratelimiting.config.service.v2.RateLimitingRule;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.ResourceAccessThresholdConfig;
 import ai.traceable.ratelimiting.config.service.v2.RuleConfigScope;
+import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
 import ai.traceable.ratelimiting.config.service.v2.RuleStatus;
 import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
+import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.UserAggregateType;
+import ai.traceable.ratelimiting.service.v2.rules.modsec.ModsecRuleSupportChecker;
+import ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter;
 import io.grpc.Status;
 import java.util.List;
 import java.util.Map;
@@ -184,6 +188,7 @@ public class RateLimitingRulesValidator implements RulesValidator {
       validateCondition(data.getCondition());
       checkConversionToEdgeDecisionRules(data);
     }
+    validateRuleEvaluationPoints(data);
   }
 
   private void validateRuleConfigScope(RuleConfigScope scope) {
@@ -502,5 +507,57 @@ public class RateLimitingRulesValidator implements RulesValidator {
                     "Agent modification must specify a valid modification type.");
               }
             });
+  }
+
+  private void validateRuleEvaluationPoints(RateLimitingRuleData rateLimitingRuleData) {
+    List<RuleEvaluationPoint> ruleEvaluationPoints =
+        rateLimitingRuleData.getRuleEvaluationPointsList();
+    List<ThresholdActionConfig> thresholdActionConfigs =
+        rateLimitingRuleData.getThresholdActionConfigsList();
+    TransactionActionConfig transactionActionConfig =
+        rateLimitingRuleData.getTransactionActionConfig();
+
+    if (ruleEvaluationPoints.contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
+        && containsBlockingForDurationBasedActionConfig(
+            thresholdActionConfigs, transactionActionConfig)) {
+      validatorUtils.throwInvalidArgumentException(
+          "Rule evaluation point platform is not supported for any blocking actions.");
+    }
+
+    if (ruleEvaluationPoints.contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)
+        && !RateLimitingRulesEdgeDecisionFilter.meetsEdgeDecisionRequirements(
+            rateLimitingRuleData)) {
+      validatorUtils.throwInvalidArgumentException(
+          "Rule evaluation point edge is not supported for the given rule configuration.");
+    }
+
+    if (ruleEvaluationPoints.contains(
+            RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)
+        && !ModsecRuleSupportChecker.meetsInlineTracingAgentActionRequirements(
+            transactionActionConfig)) {
+      validatorUtils.throwInvalidArgumentException(
+          "Rule evaluation point inline tracing agent is not supported for the given transaction action configuration.");
+    }
+  }
+
+  public static boolean containsBlockingForDurationBasedActionConfig(
+      List<ThresholdActionConfig> thresholdActionConfigs,
+      TransactionActionConfig transactionActionConfig) {
+    return containsBlockingForDurationBasedThresholdActionConfig(thresholdActionConfigs)
+        || containsBlockingForDurationBasedTransactionActionConfig(transactionActionConfig);
+  }
+
+  public static boolean containsBlockingForDurationBasedThresholdActionConfig(
+      List<ThresholdActionConfig> thresholdActionConfigs) {
+    return thresholdActionConfigs.stream()
+        .flatMap(thresholdActionConfig -> thresholdActionConfig.getActionsList().stream())
+        .filter(Action::hasBlock)
+        .map(Action::getBlock)
+        .anyMatch(Action.Block::hasUseThresholdDuration);
+  }
+
+  public static boolean containsBlockingForDurationBasedTransactionActionConfig(
+      TransactionActionConfig transactionActionConfig) {
+    return transactionActionConfig.hasAction() && transactionActionConfig.getAction().hasBlock();
   }
 }

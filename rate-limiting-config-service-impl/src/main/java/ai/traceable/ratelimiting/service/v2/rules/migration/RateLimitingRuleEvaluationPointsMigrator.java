@@ -1,12 +1,10 @@
 package ai.traceable.ratelimiting.service.v2.rules.migration;
 
-import ai.traceable.ratelimiting.config.service.v2.Action;
 import ai.traceable.ratelimiting.config.service.v2.CreateRateLimitingRuleRequest;
 import ai.traceable.ratelimiting.config.service.v2.RateLimitingRuleData;
 import ai.traceable.ratelimiting.config.service.v2.RuleEvaluationPoint;
-import ai.traceable.ratelimiting.config.service.v2.ThresholdActionConfig;
-import ai.traceable.ratelimiting.config.service.v2.TransactionActionConfig;
 import ai.traceable.ratelimiting.config.service.v2.UpdateRateLimitingRuleRequest;
+import ai.traceable.ratelimiting.service.v2.rules.RateLimitingRulesValidator;
 import ai.traceable.ratelimiting.service.v2.rules.modsec.ModsecRuleSupportChecker;
 import ai.traceable.ratelimiting.service.v2.rules.shared.RateLimitingRulesEdgeDecisionFilter;
 import java.util.ArrayList;
@@ -56,7 +54,8 @@ public class RateLimitingRuleEvaluationPointsMigrator {
     List<RuleEvaluationPoint> ruleEvaluationPoints = new ArrayList<>();
 
     // check for platform rule evaluation point
-    if (!containsBlockingForDurationBasedActionConfig(ruleData)) {
+    if (!RateLimitingRulesValidator.containsBlockingForDurationBasedActionConfig(
+        ruleData.getThresholdActionConfigsList(), ruleData.getTransactionActionConfig())) {
       ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM);
     }
 
@@ -73,28 +72,5 @@ public class RateLimitingRuleEvaluationPointsMigrator {
       }
     }
     return ruleEvaluationPoints;
-  }
-
-  private boolean containsBlockingForDurationBasedActionConfig(RateLimitingRuleData ruleData) {
-    return containsBlockingForDurationBasedThresholdActionConfig(
-            ruleData.getThresholdActionConfigsList())
-        || containsBlockingForDurationBasedTransactionActionConfig(
-            ruleData.getTransactionActionConfig());
-  }
-
-  private boolean containsBlockingForDurationBasedThresholdActionConfig(
-      List<ThresholdActionConfig> thresholdActionConfigs) {
-    return thresholdActionConfigs.stream()
-        .flatMap(thresholdActionConfig -> thresholdActionConfig.getActionsList().stream())
-        .filter(Action::hasBlock)
-        .map(Action::getBlock)
-        .anyMatch(Action.Block::getUseThresholdDuration);
-  }
-
-  private boolean containsBlockingForDurationBasedTransactionActionConfig(
-      TransactionActionConfig transactionActionConfig) {
-    return transactionActionConfig.hasAction()
-        && transactionActionConfig.getAction().hasBlock()
-        && transactionActionConfig.getAction().getBlock().getUseThresholdDuration();
   }
 }
