@@ -9,6 +9,7 @@ import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationDetails
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationDetailsResponse;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryRequest;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryResponse;
+import ai.traceable.integration.config.service.snyk.v1.SnykBaseUrls;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegration;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegrationServiceGrpc;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationRequest;
@@ -163,10 +164,24 @@ public class SnykIntegrationConfigServiceImpl
   }
 
   private SnykIntegration buildSnykIntegrationConfig(CreateSnykIntegrationRequest request) {
-    return SnykIntegration.newBuilder().setApiToken(request.getApiToken()).build();
+    return SnykIntegration.newBuilder()
+        .setApiToken(request.getApiToken())
+        .setSnykBaseUrls(
+            SnykBaseUrls.newBuilder()
+                .setAppBaseUrl(request.getSnykBaseUrls().getAppBaseUrl())
+                .setApiBaseUrl(request.getSnykBaseUrls().getApiBaseUrl())
+                .build())
+        .build();
   }
 
   private SnykIntegration buildUpdatedSnykIntegrationConfig(UpdateSnykIntegrationRequest request) {
-    return SnykIntegration.newBuilder().setApiToken(request.getApiToken()).build();
+    return SnykIntegration.newBuilder()
+        .setApiToken(request.getApiToken())
+        .setSnykBaseUrls(
+            SnykBaseUrls.newBuilder()
+                .setAppBaseUrl(request.getSnykBaseUrls().getAppBaseUrl())
+                .setApiBaseUrl(request.getSnykBaseUrls().getApiBaseUrl())
+                .build())
+        .build();
   }
 }

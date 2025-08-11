@@ -26,12 +26,14 @@ message GetSnykIntegrationDetailsResponse {
 
 message CreateSnykIntegrationRequest {
   EncryptedText api_token = 1;
+  SnykBaseUrls snyk_base_urls = 2;
 }
 
 message CreateSnykIntegrationResponse {}
 
 message UpdateSnykIntegrationRequest {
   EncryptedText api_token = 1;
+  SnykBaseUrls snyk_base_urls = 2;
 }
 
 message UpdateSnykIntegrationResponse {}

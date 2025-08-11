@@ -11,6 +11,7 @@ import ai.traceable.integration.config.service.snyk.v1.DeleteSnykIntegrationRequ
 import ai.traceable.integration.config.service.snyk.v1.EncryptedText;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationDetailsRequest;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryRequest;
+import ai.traceable.integration.config.service.snyk.v1.SnykBaseUrls;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationRequest;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -100,6 +101,29 @@ class SnykIntegrationConfigRequestValidatorTest {
                 CreateSnykIntegrationRequest.newBuilder()
                     .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").build())
                     .build()));
+    // TODO: Uncomment when implemented in request validator
+    //    assertInvalidArgStatusContaining(
+    //        "api_url",
+    //        () ->
+    //            requestValidator.validateOrThrow(
+    //                mockRequestContext,
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .setEndpoints(SnykEndpoints.newBuilder().setAppUrl("appUrl").build())
+    //                    .build()));
+    //    assertInvalidArgStatusContaining(
+    //        "app_url",
+    //        () ->
+    //            requestValidator.validateOrThrow(
+    //                mockRequestContext,
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .setEndpoints(SnykEndpoints.newBuilder().setApiUrl("apiUrl").build())
+    //                    .build()));
 
     assertDoesNotThrow(
         () ->
@@ -108,6 +132,11 @@ class SnykIntegrationConfigRequestValidatorTest {
                 CreateSnykIntegrationRequest.newBuilder()
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(
+                        SnykBaseUrls.newBuilder()
+                            .setApiBaseUrl("apiUrl")
+                            .setAppBaseUrl("appUrl")
+                            .build())
                     .build()));
   }
 
@@ -144,6 +173,29 @@ class SnykIntegrationConfigRequestValidatorTest {
                 CreateSnykIntegrationRequest.newBuilder()
                     .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").build())
                     .build()));
+    // TODO: Uncomment when implemented in request validator
+    //    assertInvalidArgStatusContaining(
+    //        "api_url",
+    //        () ->
+    //            requestValidator.validateOrThrow(
+    //                mockRequestContext,
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .setEndpoints(SnykEndpoints.newBuilder().setAppUrl("appUrl").build())
+    //                    .build()));
+    //    assertInvalidArgStatusContaining(
+    //        "app_url",
+    //        () ->
+    //            requestValidator.validateOrThrow(
+    //                mockRequestContext,
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .setEndpoints(SnykEndpoints.newBuilder().setApiUrl("apiUrl").build())
+    //                    .build()));
 
     assertDoesNotThrow(
         () ->
@@ -152,6 +204,11 @@ class SnykIntegrationConfigRequestValidatorTest {
                 UpdateSnykIntegrationRequest.newBuilder()
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(
+                        SnykBaseUrls.newBuilder()
+                            .setApiBaseUrl("apiUrl")
+                            .setAppBaseUrl("appUrl")
+                            .build())
                     .build()));
   }
 

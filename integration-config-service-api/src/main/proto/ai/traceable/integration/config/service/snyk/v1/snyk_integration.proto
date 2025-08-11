@@ -6,9 +6,15 @@ option java_multiple_files = true;
 
 message SnykIntegration {
   EncryptedText api_token = 1;
+  SnykBaseUrls snyk_base_urls = 2;
 }
 
 message EncryptedText {
   string key_id = 1;
   string value = 2;
+}
+
+message SnykBaseUrls {
+  string app_base_url = 1;
+  string api_base_url = 2;
 }

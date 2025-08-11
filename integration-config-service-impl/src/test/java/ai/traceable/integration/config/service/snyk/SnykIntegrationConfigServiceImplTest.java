@@ -13,6 +13,7 @@ import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationDetails
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationDetailsResponse;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryRequest;
 import ai.traceable.integration.config.service.snyk.v1.GetSnykIntegrationSummaryResponse;
+import ai.traceable.integration.config.service.snyk.v1.SnykBaseUrls;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegration;
 import ai.traceable.integration.config.service.snyk.v1.SnykIntegrationServiceGrpc;
 import ai.traceable.integration.config.service.snyk.v1.UpdateSnykIntegrationRequest;
@@ -71,18 +72,58 @@ class SnykIntegrationConfigServiceImplTest {
         () ->
             snykIntegrationServiceBlockingStub.updateSnykIntegration(
                 UpdateSnykIntegrationRequest.getDefaultInstance()));
+    // TODO: Uncomment when implemented in request validator
+    //    assertThrows(
+    //        RuntimeException.class,
+    //        () ->
+    //            snykIntegrationServiceBlockingStub.createSnykIntegration(
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .build()));
+    //
+    //    assertThrows(
+    //        RuntimeException.class,
+    //        () ->
+    //            snykIntegrationServiceBlockingStub.createSnykIntegration(
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .setEndpoints(SnykEndpoints.newBuilder().setApiUrl("apiUrl").build())
+    //                    .build()));
+    //    assertThrows(
+    //        RuntimeException.class,
+    //        () ->
+    //            snykIntegrationServiceBlockingStub.createSnykIntegration(
+    //                CreateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+    //                    .setEndpoints(SnykEndpoints.newBuilder().setAppUrl("appUrl").build())
+    //                    .build()));
+
     assertEquals(
         CreateSnykIntegrationResponse.getDefaultInstance(),
         snykIntegrationServiceBlockingStub.createSnykIntegration(
             CreateSnykIntegrationRequest.newBuilder()
                 .setApiToken(EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                .setSnykBaseUrls(
+                    SnykBaseUrls.newBuilder()
+                        .setApiBaseUrl("apiUrl")
+                        .setAppBaseUrl("appUrl")
+                        .build())
                 .build()));
+
     assertEquals(
         GetSnykIntegrationDetailsResponse.newBuilder()
             .setSnykIntegration(
                 SnykIntegration.newBuilder()
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId").setValue("value").build())
+                    .setSnykBaseUrls(
+                        SnykBaseUrls.newBuilder().setApiBaseUrl("apiUrl").setAppBaseUrl("appUrl"))
                     .build())
             .build(),
         snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
@@ -91,12 +132,27 @@ class SnykIntegrationConfigServiceImplTest {
         GetSnykIntegrationSummaryResponse.getDefaultInstance(),
         snykIntegrationServiceBlockingStub.getSnykIntegrationSummary(
             GetSnykIntegrationSummaryRequest.getDefaultInstance()));
+    // TODO: Uncomment when implemented in request validator
+    //    assertThrows(
+    //        RuntimeException.class,
+    //        () ->
+    //            snykIntegrationServiceBlockingStub.updateSnykIntegration(
+    //                UpdateSnykIntegrationRequest.newBuilder()
+    //                    .setApiToken(
+    //
+    // EncryptedText.newBuilder().setKeyId("keyId1").setValue("value").build())
+    //                    .build()));
     assertEquals(
         UpdateSnykIntegrationResponse.newBuilder().build(),
         snykIntegrationServiceBlockingStub.updateSnykIntegration(
             UpdateSnykIntegrationRequest.newBuilder()
                 .setApiToken(
                     EncryptedText.newBuilder().setKeyId("keyId1").setValue("value").build())
+                .setSnykBaseUrls(
+                    SnykBaseUrls.newBuilder()
+                        .setApiBaseUrl("apiUrl1")
+                        .setAppBaseUrl("appUrl1")
+                        .build())
                 .build()));
     assertEquals(
         GetSnykIntegrationDetailsResponse.newBuilder()
@@ -104,6 +160,11 @@ class SnykIntegrationConfigServiceImplTest {
                 SnykIntegration.newBuilder()
                     .setApiToken(
                         EncryptedText.newBuilder().setKeyId("keyId1").setValue("value").build())
+                    .setSnykBaseUrls(
+                        SnykBaseUrls.newBuilder()
+                            .setApiBaseUrl("apiUrl1")
+                            .setAppBaseUrl("appUrl1")
+                            .build())
                     .build())
             .build(),
         snykIntegrationServiceBlockingStub.getSnykIntegrationDetails(
