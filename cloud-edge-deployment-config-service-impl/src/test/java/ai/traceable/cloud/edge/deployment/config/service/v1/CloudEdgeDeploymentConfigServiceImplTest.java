@@ -173,7 +173,7 @@ class CloudEdgeDeploymentConfigServiceImplTest {
     // Test case 1: When an exception occurs during retrieval
     doThrow(new RuntimeException("Retrieval failed"))
         .when(configManager)
-        .getCloudEdgeDeploymentConfigs(any(), any(), any());
+        .getCloudEdgeDeploymentConfigsWithActions(any(), any(), any());
 
     configService.getCloudEdgeDeploymentConfigs(request, responseObserver);
     verify(responseObserver, times(1))
@@ -185,16 +185,30 @@ class CloudEdgeDeploymentConfigServiceImplTest {
     CloudEdgeDeploymentConfig config2 =
         CloudEdgeDeploymentConfig.newBuilder().setId("test-id-2").build();
 
-    doReturn(Arrays.asList(config1, config2))
+    CloudEdgeDeploymentConfigWithActions configWithActions1 =
+        CloudEdgeDeploymentConfigWithActions.newBuilder()
+            .setCloudEdgeDeploymentConfig(config1)
+            .addAllowedActions(Action.ACTION_VIEW)
+            .build();
+    CloudEdgeDeploymentConfigWithActions configWithActions2 =
+        CloudEdgeDeploymentConfigWithActions.newBuilder()
+            .setCloudEdgeDeploymentConfig(config2)
+            .addAllowedActions(Action.ACTION_VIEW)
+            .build();
+
+    GetCloudEdgeDeploymentConfigsResponse managerResponse =
+        GetCloudEdgeDeploymentConfigsResponse.newBuilder()
+            .addAllCloudEdgeDeployments(Arrays.asList(config1, config2))
+            .addAllCloudEdgeDeploymentsWithActions(
+                Arrays.asList(configWithActions1, configWithActions2))
+            .build();
+
+    doReturn(managerResponse)
         .when(configManager)
-        .getCloudEdgeDeploymentConfigs(any(), any(), any());
+        .getCloudEdgeDeploymentConfigsWithActions(any(), any(), any());
 
     configService.getCloudEdgeDeploymentConfigs(request, responseObserver);
-    verify(responseObserver, times(1))
-        .onNext(
-            GetCloudEdgeDeploymentConfigsResponse.newBuilder()
-                .addAllCloudEdgeDeployments(Arrays.asList(config1, config2))
-                .build());
+    verify(responseObserver, times(1)).onNext(managerResponse);
     verify(responseObserver, times(1)).onCompleted();
   }
 

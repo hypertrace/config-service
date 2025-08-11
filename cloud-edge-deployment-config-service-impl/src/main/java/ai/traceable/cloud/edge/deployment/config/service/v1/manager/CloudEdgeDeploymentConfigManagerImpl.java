@@ -3,17 +3,20 @@ package ai.traceable.cloud.edge.deployment.config.service.v1.manager;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeployCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsResponse;
 import ai.traceable.cloud.edge.deployment.config.service.v1.HoldCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
+import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.store.CloudEdgeDeploymentConfigStore;
 import ai.traceable.cloud.edge.deployment.config.service.v1.validator.CloudEdgeDeploymentValidator;
 import ai.traceable.config.utils.UuidGenerator;
@@ -47,6 +50,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   private final CloudEdgeDeploymentConfigStore store;
   private final CloudEdgeDeploymentValidator validator;
   private final UuidGenerator uuidGenerator;
+  private final StateTransitionsRegistry stateTransitionsRegistry;
 
   private static final List<DeploymentStatus> notifiableDeploymentStatuses =
       List.of(
@@ -77,8 +81,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
                 null, request.getConfigPermission().getWrite(), Action.ACTION_CREATE)
             .get(0);
 
-    if (!notifiableDeploymentStatuses.contains(currentStatus)
-        && notifiableDeploymentStatuses.contains(updatedStatus)) {
+    if (notifiableDeploymentStatuses.contains(updatedStatus)) {
       return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
           .record(
               () ->
@@ -93,6 +96,40 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
   public List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
       RequestContext ctx, GetCloudEdgeDeploymentConfigsFilter filter, ConfigAccessType accessType) {
     return store.getCloudEdgeDeploymentConfigs(ctx, filter, accessType);
+  }
+
+  public GetCloudEdgeDeploymentConfigsResponse getCloudEdgeDeploymentConfigsWithActions(
+      RequestContext ctx, GetCloudEdgeDeploymentConfigsFilter filter, ConfigAccessType accessType) {
+
+    List<CloudEdgeDeploymentConfig> configs =
+        getCloudEdgeDeploymentConfigs(ctx, filter, accessType);
+    List<CloudEdgeDeploymentConfigWithActions> configsWithActions =
+        configs.stream()
+            .map(
+                config -> {
+                  var status = config.getCloudEdgeDeployedOutputConfig().getStatus();
+                  var actionsMap = stateTransitionsRegistry.getActionsMap(status, accessType);
+
+                  var builder =
+                      CloudEdgeDeploymentConfigWithActions.newBuilder()
+                          .setCloudEdgeDeploymentConfig(config);
+
+                  actionsMap.forEach(
+                      (action, states) -> {
+                        builder.addAllowedActions(action);
+                        if (action == Action.ACTION_UPDATE_STATUS) {
+                          builder.addAllAllowedStatuses(states);
+                        }
+                      });
+                  builder.addAllowedActions(Action.ACTION_VIEW);
+                  return builder.build();
+                })
+            .collect(Collectors.toList());
+
+    return GetCloudEdgeDeploymentConfigsResponse.newBuilder()
+        .addAllCloudEdgeDeployments(configs)
+        .addAllCloudEdgeDeploymentsWithActions(configsWithActions)
+        .build();
   }
 
   @Override

@@ -81,14 +81,11 @@ public class CloudEdgeDeploymentConfigServiceImpl extends CloudEdgeDeploymentCon
       }
 
       // Use the combined filter for all requests
-      java.util.List<CloudEdgeDeploymentConfig> configs =
-          cloudEdgeDeploymentConfigManager.getCloudEdgeDeploymentConfigs(
+      GetCloudEdgeDeploymentConfigsResponse response =
+          cloudEdgeDeploymentConfigManager.getCloudEdgeDeploymentConfigsWithActions(
               ctx, filterBuilder.build(), request.getReadAccess());
 
-      responseObserver.onNext(
-          GetCloudEdgeDeploymentConfigsResponse.newBuilder()
-              .addAllCloudEdgeDeployments(configs)
-              .build());
+      responseObserver.onNext(response);
       responseObserver.onCompleted();
     } catch (Exception e) {
       log.error(

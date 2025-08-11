@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentInputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ClusterConfig;
@@ -25,6 +26,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.DeployCloudEdgeDeplo
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeploymentStatus;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DomainConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsFilter;
+import ai.traceable.cloud.edge.deployment.config.service.v1.GetCloudEdgeDeploymentConfigsResponse;
 import ai.traceable.cloud.edge.deployment.config.service.v1.HoldCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.OriginConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.RemoveCloudEdgeDeploymentConfigRequest;
@@ -32,13 +34,16 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.ServiceConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.SharedConfigMetadata;
 import ai.traceable.cloud.edge.deployment.config.service.v1.UpdateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.shared.config.SharedConfigMetadataRegistry;
+import ai.traceable.cloud.edge.deployment.config.service.v1.state.transitions.StateTransitionsRegistry;
 import ai.traceable.cloud.edge.deployment.config.service.v1.store.CloudEdgeDeploymentConfigStore;
 import ai.traceable.cloud.edge.deployment.config.service.v1.validator.CloudEdgeDeploymentValidator;
 import ai.traceable.config.utils.UuidGenerator;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.hypertrace.core.grpcutils.context.RequestContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +59,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
   @Mock private SharedConfigMetadataRegistry sharedConfigMetadataRegistry;
   @Mock private UuidGenerator uuidGenerator;
   @Mock private RequestContext requestContext;
+  @Mock private StateTransitionsRegistry stateTransitionsRegistry;
 
   private CloudEdgeDeploymentConfigManagerImpl manager;
 
@@ -61,7 +67,11 @@ class CloudEdgeDeploymentConfigManagerImplTest {
   void setUp() {
     manager =
         new CloudEdgeDeploymentConfigManagerImpl(
-            sharedConfigMetadataRegistry, store, validator, uuidGenerator);
+            sharedConfigMetadataRegistry,
+            store,
+            validator,
+            uuidGenerator,
+            stateTransitionsRegistry);
   }
 
   @Test
@@ -781,5 +791,96 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     manager.deployCloudEdgeDeploymentConfig(requestContext, request);
 
     verify(store).upsertCloudEdgeDeploymentConfig(requestContext, expectedUpdatedConfig);
+  }
+
+  @Test
+  void testGetCloudEdgeDeploymentConfigsWithActions() {
+    // Setup
+    List<String> ids = Arrays.asList("id1", "id2");
+    ConfigAccessType accessType = ConfigAccessType.CONFIG_ACCESS_TYPE_GLOBAL;
+
+    // Create configs with output configs containing status
+    CloudEdgeDeploymentOutputConfig outputConfig1 =
+        CloudEdgeDeploymentOutputConfig.newBuilder()
+            .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY)
+            .build();
+    CloudEdgeDeploymentOutputConfig outputConfig2 =
+        CloudEdgeDeploymentOutputConfig.newBuilder()
+            .setStatus(DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS)
+            .build();
+
+    CloudEdgeDeploymentConfig config1 =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("id1")
+            .setCloudEdgeDeployedOutputConfig(outputConfig1)
+            .build();
+    CloudEdgeDeploymentConfig config2 =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId("id2")
+            .setCloudEdgeDeployedOutputConfig(outputConfig2)
+            .build();
+    List<CloudEdgeDeploymentConfig> configs = Arrays.asList(config1, config2);
+
+    // Create filter with IDs
+    GetCloudEdgeDeploymentConfigsFilter filter =
+        GetCloudEdgeDeploymentConfigsFilter.newBuilder().addAllIds(ids).build();
+
+    // Mock store to return configs
+    when(store.getCloudEdgeDeploymentConfigs(requestContext, filter, accessType))
+        .thenReturn(configs);
+
+    // Mock state transitions registry to return actions map
+    Map<Action, List<DeploymentStatus>> actionsMap1 = new HashMap<>();
+    actionsMap1.put(
+        Action.ACTION_EDIT, Arrays.asList(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED));
+    actionsMap1.put(
+        Action.ACTION_UPDATE_STATUS,
+        Arrays.asList(
+            DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED,
+            DeploymentStatus.DEPLOYMENT_STATUS_REMOVAL_REQUESTED));
+
+    Map<Action, List<DeploymentStatus>> actionsMap2 = new HashMap<>();
+    actionsMap2.put(Action.ACTION_HOLD, Arrays.asList(DeploymentStatus.DEPLOYMENT_STATUS_ON_HOLD));
+
+    when(stateTransitionsRegistry.getActionsMap(
+            DeploymentStatus.DEPLOYMENT_STATUS_DEPLOYED_SUCCESSFULLY, accessType))
+        .thenReturn(actionsMap1);
+    when(stateTransitionsRegistry.getActionsMap(
+            DeploymentStatus.DEPLOYMENT_STATUS_IN_PROGRESS, accessType))
+        .thenReturn(actionsMap2);
+
+    // Execute
+    GetCloudEdgeDeploymentConfigsResponse response =
+        manager.getCloudEdgeDeploymentConfigsWithActions(requestContext, filter, accessType);
+
+    // Verify
+    assertNotNull(response);
+
+    // Verify original configs are included
+    assertEquals(2, response.getCloudEdgeDeploymentsCount());
+    assertEquals("id1", response.getCloudEdgeDeployments(0).getId());
+    assertEquals("id2", response.getCloudEdgeDeployments(1).getId());
+
+    // Verify configs with actions
+    assertEquals(2, response.getCloudEdgeDeploymentsWithActionsCount());
+
+    // Verify first config with actions
+    CloudEdgeDeploymentConfigWithActions configWithActions1 =
+        response.getCloudEdgeDeploymentsWithActions(0);
+    assertEquals("id1", configWithActions1.getCloudEdgeDeploymentConfig().getId());
+    assertEquals(3, configWithActions1.getAllowedActionsCount()); // 2 from map + ACTION_VIEW
+    assertTrue(configWithActions1.getAllowedActionsList().contains(Action.ACTION_EDIT));
+    assertTrue(configWithActions1.getAllowedActionsList().contains(Action.ACTION_UPDATE_STATUS));
+    assertTrue(configWithActions1.getAllowedActionsList().contains(Action.ACTION_VIEW));
+    assertEquals(2, configWithActions1.getAllowedStatusesCount());
+
+    // Verify second config with actions
+    CloudEdgeDeploymentConfigWithActions configWithActions2 =
+        response.getCloudEdgeDeploymentsWithActions(1);
+    assertEquals("id2", configWithActions2.getCloudEdgeDeploymentConfig().getId());
+    assertEquals(2, configWithActions2.getAllowedActionsCount()); // 1 from map + ACTION_VIEW
+    assertTrue(configWithActions2.getAllowedActionsList().contains(Action.ACTION_HOLD));
+    assertTrue(configWithActions2.getAllowedActionsList().contains(Action.ACTION_VIEW));
+    assertEquals(0, configWithActions2.getAllowedStatusesCount());
   }
 }
