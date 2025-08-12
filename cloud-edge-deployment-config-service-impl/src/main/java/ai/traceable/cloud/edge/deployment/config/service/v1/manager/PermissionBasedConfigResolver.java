@@ -84,28 +84,23 @@ public class PermissionBasedConfigResolver {
   public CloudEdgeDeploymentConfig getResolvedConfigForWriteRequest(
       CloudEdgeDeploymentConfig newConfig,
       CloudEdgeDeploymentConfig existingConfig,
-      ConfigAccessType accessType,
-      DeploymentStatus status) {
+      ConfigAccessType accessType) {
 
     CloudEdgeDeploymentConfig.Builder updatedConfigBuilder = existingConfig.toBuilder();
 
     if (accessType.equals(ConfigAccessType.CONFIG_ACCESS_TYPE_TRACEABLE)) {
-      return applyFullOverride(updatedConfigBuilder, newConfig, status);
+      return applyFullOverride(updatedConfigBuilder, newConfig);
     }
 
-    return applyAdvanceConfigMerge(updatedConfigBuilder, newConfig, status);
+    return applyAdvanceConfigMerge(updatedConfigBuilder, newConfig);
   }
 
   private CloudEdgeDeploymentConfig applyFullOverride(
-      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder,
-      CloudEdgeDeploymentConfig newConfig,
-      DeploymentStatus status) {
+      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder, CloudEdgeDeploymentConfig newConfig) {
 
     if (newConfig.hasCloudEdgeDeploymentInputConfig()) {
       updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
           newConfig.getCloudEdgeDeploymentInputConfig());
-
-      updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(status);
     }
 
     if (newConfig.hasCloudEdgeDeployedOutputConfig()) {
@@ -123,9 +118,7 @@ public class PermissionBasedConfigResolver {
   }
 
   private CloudEdgeDeploymentConfig applyAdvanceConfigMerge(
-      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder,
-      CloudEdgeDeploymentConfig newConfig,
-      DeploymentStatus status) {
+      CloudEdgeDeploymentConfig.Builder updatedConfigBuilder, CloudEdgeDeploymentConfig newConfig) {
 
     CloudEdgeDeploymentInputConfig.Builder existingInputBuilder =
         updatedConfigBuilder.getCloudEdgeDeploymentInputConfigBuilder();
@@ -142,7 +135,9 @@ public class PermissionBasedConfigResolver {
             newConfig.getCloudEdgeDeploymentInputConfig().getServiceConfigsList());
     existingInputBuilder.clearServiceConfigs().addAllServiceConfigs(mergedServices);
 
-    updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(status);
+    updatedConfigBuilder
+        .getCloudEdgeDeployedOutputConfigBuilder()
+        .setStatus(newConfig.getCloudEdgeDeployedOutputConfig().getStatus());
 
     return updatedConfigBuilder.build();
   }

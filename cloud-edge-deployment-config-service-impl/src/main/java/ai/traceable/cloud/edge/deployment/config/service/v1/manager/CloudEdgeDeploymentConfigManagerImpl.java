@@ -4,6 +4,7 @@ import ai.traceable.cloud.edge.deployment.config.service.v1.Action;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CancelCloudEdgeDeploymentConfigActionRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentConfigWithActions;
+import ai.traceable.cloud.edge.deployment.config.service.v1.CloudEdgeDeploymentOutputConfig;
 import ai.traceable.cloud.edge.deployment.config.service.v1.ConfigAccessType;
 import ai.traceable.cloud.edge.deployment.config.service.v1.CreateCloudEdgeDeploymentConfigRequest;
 import ai.traceable.cloud.edge.deployment.config.service.v1.DeleteCloudEdgeDeploymentConfigRequest;
@@ -66,31 +67,31 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
       throw new StatusRuntimeException(validationStatus);
     }
 
-    // Generate a unique ID
-    String id = uuidGenerator.generateRandomId();
-    CloudEdgeDeploymentConfig config =
-        CloudEdgeDeploymentConfig.newBuilder()
-            .setId(id)
-            .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
-            .build();
-
-    DeploymentStatus currentStatus = null;
     DeploymentStatus updatedStatus =
         validator
             .validateActionAndGetNextStates(
                 null, request.getConfigPermission().getWrite(), Action.ACTION_CREATE)
             .get(0);
 
+    // Generate a unique ID
+    String id = uuidGenerator.generateRandomId();
+    CloudEdgeDeploymentConfig config =
+        CloudEdgeDeploymentConfig.newBuilder()
+            .setId(id)
+            .setCloudEdgeDeploymentInputConfig(request.getCloudEdgeDeploymentInputConfig())
+            .setCloudEdgeDeployedOutputConfig(
+                CloudEdgeDeploymentOutputConfig.newBuilder().setStatus(updatedStatus).build())
+            .build();
+
     if (notifiableDeploymentStatuses.contains(updatedStatus)) {
       return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
           .record(
               () ->
                   store.upsertCloudEdgeDeploymentConfig(
-                      ctx, config, request.getConfigPermission(), updatedStatus));
+                      ctx, config, request.getConfigPermission()));
     }
 
-    return store.upsertCloudEdgeDeploymentConfig(
-        ctx, config, request.getConfigPermission(), updatedStatus);
+    return store.upsertCloudEdgeDeploymentConfig(ctx, config, request.getConfigPermission());
   }
 
   public List<CloudEdgeDeploymentConfig> getCloudEdgeDeploymentConfigs(
@@ -162,6 +163,7 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
               .get(0);
       updatedConfigBuilder.setCloudEdgeDeploymentInputConfig(
           request.getCloudEdgeDeploymentInputConfig());
+      updatedConfigBuilder.getCloudEdgeDeployedOutputConfigBuilder().setStatus(updatedStatus);
     } else if (request.hasCloudEdgeDeployedOutputConfig()) {
       Action action = Action.ACTION_UPDATE_STATUS;
       validator.validateUpdatedStatus(
@@ -177,19 +179,17 @@ public class CloudEdgeDeploymentConfigManagerImpl implements CloudEdgeDeployment
     CloudEdgeDeploymentConfig updatedConfig = updatedConfigBuilder.build();
 
     try {
-
       if (!notifiableDeploymentStatuses.contains(currentStatus)
           && notifiableDeploymentStatuses.contains(updatedStatus)) {
-        DeploymentStatus finalUpdatedStatus = updatedStatus;
         return getTimer(ctx.getTenantId().orElseThrow(), id, updatedStatus.name())
             .record(
                 () ->
                     store.upsertCloudEdgeDeploymentConfig(
-                        ctx, updatedConfig, request.getConfigPermission(), finalUpdatedStatus));
+                        ctx, updatedConfig, request.getConfigPermission()));
       }
 
       return store.upsertCloudEdgeDeploymentConfig(
-          ctx, updatedConfig, request.getConfigPermission(), updatedStatus);
+          ctx, updatedConfig, request.getConfigPermission());
     } catch (Exception e) {
 
       throw new StatusRuntimeException(

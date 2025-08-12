@@ -154,8 +154,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
     when(store.upsertCloudEdgeDeploymentConfig(
             eq(requestContext),
             any(CloudEdgeDeploymentConfig.class),
-            eq(request.getConfigPermission()),
-            eq(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED)))
+            eq(request.getConfigPermission())))
         .thenReturn(expectedUpdatedConfig);
 
     CloudEdgeDeploymentConfig result =
@@ -176,8 +175,7 @@ class CloudEdgeDeploymentConfigManagerImplTest {
         .upsertCloudEdgeDeploymentConfig(
             eq(requestContext),
             any(CloudEdgeDeploymentConfig.class),
-            eq(request.getConfigPermission()),
-            eq(DeploymentStatus.DEPLOYMENT_STATUS_CHANGE_REQUESTED));
+            eq(request.getConfigPermission()));
   }
 
   @Test
