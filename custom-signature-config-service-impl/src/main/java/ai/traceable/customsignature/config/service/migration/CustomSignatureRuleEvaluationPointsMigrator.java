@@ -3,12 +3,12 @@ package ai.traceable.customsignature.config.service.migration;
 import ai.traceable.customsignature.config.service.modsec.ModsecRulesSupportChecker;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesEdgeDecisionFilter;
 import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesManager;
+import ai.traceable.customsignature.config.service.rules.CustomSignatureRulesValidator;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
-import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
 import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import jakarta.inject.Inject;
@@ -56,6 +56,10 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
                 .build());
   }
 
+  public List<CustomSignatureRule> migrateRules(List<CustomSignatureRule> existingRules) {
+    return existingRules.stream().map(this::migrateRule).collect(Collectors.toList());
+  }
+
   private <T> T migrateRequest(
       T request,
       Function<T, RuleEffect> effectExtractor,
@@ -74,10 +78,6 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
         effect.toBuilder().addAllRuleEvaluationPoints(evaluationPoints).build();
 
     return requestUpdater.apply(request, updatedEffect);
-  }
-
-  public List<CustomSignatureRule> migrateRules(List<CustomSignatureRule> existingRules) {
-    return existingRules.stream().map(this::migrateRule).collect(Collectors.toList());
   }
 
   private CustomSignatureRule migrateRule(CustomSignatureRule rule) {
@@ -124,24 +124,12 @@ public class CustomSignatureRuleEvaluationPointsMigrator {
       EventType ruleEventType = ruleEffect.getEventType();
       if (ruleEventType == EventType.EVENT_TYPE_ALLOW
           || ruleEventType == EventType.EVENT_TYPE_DETECTION_AND_BLOCKING
-          || isRuleOfEventTypeAlertAndContainsHeaderInjection(ruleEffect)) {
+          || CustomSignatureRulesValidator.isRuleOfEventTypeAlertAndContainsHeaderInjection(
+              ruleEffect)) {
         ruleEvaluationPoints.add(RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT);
       }
     }
 
     return ruleEvaluationPoints;
-  }
-
-  private boolean isRuleOfEventTypeAlertAndContainsHeaderInjection(
-      RuleEffect customSignatureRuleEffect) {
-    EventType ruleEventType = customSignatureRuleEffect.getEventType();
-    return ruleEventType == EventType.EVENT_TYPE_NORMAL_DETECTION
-        && customSignatureRuleEffect.getEffectsList().stream()
-            .filter(RuleEffectWithModifications::hasAgentRuleEffect)
-            .map(RuleEffectWithModifications::getAgentRuleEffect)
-            .flatMap(agentRuleEffect -> agentRuleEffect.getAgentModificationsList().stream())
-            .anyMatch(
-                agentModification ->
-                    agentModification != null && agentModification.hasHeaderInjection());
   }
 }

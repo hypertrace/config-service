@@ -85,7 +85,6 @@ public class CustomSignatureRulesManager implements RulesManager {
     customSignatureRuleBuilder.setRuleSource(originalRule.get().getRuleSource());
     customSignatureRuleBuilder.setDefinition(
         processRuleDefinition(customSignatureRule.getDefinition()));
-
     return upsertConfig(requestContext, customSignatureRuleBuilder.build());
   }
 

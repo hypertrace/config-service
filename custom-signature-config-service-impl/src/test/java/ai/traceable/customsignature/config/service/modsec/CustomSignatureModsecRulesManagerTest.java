@@ -72,7 +72,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 
-public class CustomSignatureModsecRulesManagerTest {
+class CustomSignatureModsecRulesManagerTest {
 
   private static final int EXPIRY_TIMESTAMP_MILLIS = 12345678;
   private static final String EXPIRY_DURATION = "P3M";
@@ -467,6 +467,7 @@ public class CustomSignatureModsecRulesManagerTest {
     when(mockDirectivesManager.getModsecHeader(ModsecRuleVersion.MODSEC_RULE_VERSION_V3))
         .thenReturn("");
     CustomModsecRuleConverter customModsecRuleConverter = mock(CustomModsecRuleConverter.class);
+
     CustomSignatureModsecRulesManager modsecRulesManager =
         new CustomSignatureModsecRulesManager(
             customModsecRuleConverter,
@@ -476,6 +477,7 @@ public class CustomSignatureModsecRulesManagerTest {
     when(customModsecRuleConverter.getValidatedModsecRule(
             anyLong(), anyString(), anyString(), anyList()))
         .thenReturn("SecRule");
+
     CustomSignatureRule ruleWithModsecConvertibleClause =
         CustomSignatureRule.newBuilder()
             .setId(UUID.randomUUID().toString())
@@ -491,12 +493,9 @@ public class CustomSignatureModsecRulesManagerTest {
                                             .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
                                             .setMatchKey(MatchKey.MATCH_KEY_URL)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
-                                            .setMatchValue("/foo")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue("/foo")))))
             .build();
+
     CustomSignatureRule ruleWithConvertibleAndNonConvertibleClause =
         CustomSignatureRule.newBuilder()
             .setId(UUID.randomUUID().toString())
@@ -512,20 +511,18 @@ public class CustomSignatureModsecRulesManagerTest {
                                             .setMatchCategory(MatchCategory.MATCH_CATEGORY_REQUEST)
                                             .setMatchKey(MatchKey.MATCH_KEY_URL)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_CONTAINS)
-                                            .setMatchValue("/foo")
-                                            .build()))
+                                            .setMatchValue("/foo")))
                             .addClauses(
                                 Clause.newBuilder()
                                     .setIpOrganisationExpression(
                                         IpOrganisationExpression.getDefaultInstance()))
-                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                            .build())
-                    .build())
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
             .build();
 
     List<CustomSignatureRule> rules = new ArrayList<>();
     rules.add(ruleWithModsecConvertibleClause);
     rules.add(ruleWithConvertibleAndNonConvertibleClause);
+
     GetCustomSignatureModsecRulesResponse response =
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),
@@ -534,6 +531,7 @@ public class CustomSignatureModsecRulesManagerTest {
             true,
             List.of());
     assertEquals(2, response.getInlineRulesList().size());
+
     response =
         modsecRulesManager.getModsecRules(
             RequestContext.forTenantId(TENANT_ID),

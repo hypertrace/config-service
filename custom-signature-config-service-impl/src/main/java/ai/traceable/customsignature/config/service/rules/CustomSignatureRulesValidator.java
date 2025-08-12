@@ -12,6 +12,7 @@ import ai.traceable.customsignature.config.service.v1.AgentRuleEffect;
 import ai.traceable.customsignature.config.service.v1.BodyModification;
 import ai.traceable.customsignature.config.service.v1.Clause;
 import ai.traceable.customsignature.config.service.v1.ClauseGroup;
+import ai.traceable.customsignature.config.service.v1.ClauseOperator;
 import ai.traceable.customsignature.config.service.v1.CreateCustomSignatureRuleRequest;
 import ai.traceable.customsignature.config.service.v1.CustomSignatureRule;
 import ai.traceable.customsignature.config.service.v1.DeleteCustomSignatureRuleRequest;
@@ -28,6 +29,7 @@ import ai.traceable.customsignature.config.service.v1.MatchCategory;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
 import ai.traceable.customsignature.config.service.v1.RuleEffectWithModifications;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
@@ -42,11 +44,9 @@ public class CustomSignatureRulesValidator implements RulesValidator {
 
   private static final Set<EventType> INVALID_RESPONSE_AND_ATTRIBUTE_EVENT_TYPES =
       Set.of(EventType.EVENT_TYPE_ALLOW, EVENT_TYPE_DETECTION_AND_BLOCKING);
-
   private static final Integer CUSTOM_LABELS_LIMIT = 5;
 
   private final ModsecRulesManager modsecRulesManager;
-
   private final ClauseGroupValidator clauseGroupValidator;
 
   @Inject
@@ -72,47 +72,53 @@ public class CustomSignatureRulesValidator implements RulesValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule should have a valid effect.");
     }
-    Status status;
+
     ClauseGroup clauseGroup = request.getDefinition().getClauseGroup();
-    if ((status =
-            validateRuleEffect(
-                request.getEffect(), hasResponseOrAttribute(clauseGroup.getClausesList())))
-        != Status.OK) {
+
+    Status status =
+        validateRuleEffect(
+            request.getEffect(), hasResponseOrAttribute(clauseGroup.getClausesList()), clauseGroup);
+    if (status != Status.OK) {
       return status;
     }
 
-    if ((status =
-            validateRuleDefinition(request.getDefinition(), request.getEffect().getEventType()))
-        != Status.OK) {
+    status = validateRuleDefinition(request.getDefinition(), request.getEffect().getEventType());
+    if (status != Status.OK) {
       return status;
     }
 
-    if ((status = validateExpiry(request.getEffect(), request.getBlockingExpiryDetails()))
-        != Status.OK) {
+    status = validateExpiry(request.getEffect(), request.getBlockingExpiryDetails());
+    if (status != Status.OK) {
       return status;
     }
 
-    if ((status = validateRuleScope(request.getRuleScope())) != Status.OK) {
+    status = validateRuleScope(request.getRuleScope());
+    if (status != Status.OK) {
       return status;
     }
+
     if (ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup)
         && modsecRulesManager.containsModsecConvertibleClauses(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(request.getName(), request.getDefinition());
     }
+
     return Status.OK;
   }
 
   @Override
   public Status validate(UpdateCustomSignatureRuleRequest request) {
     CustomSignatureRule rule = request.getRule();
+
     if (rule.getId().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Update custom signature rule should have a valid id.");
     }
+
     if (rule.getName().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Update custom signature rule should have a valid name.");
     }
+
     if (!rule.getRuleSource().equals(RuleSource.RULE_SOURCE_UNSPECIFIED)) {
       throw Status.INVALID_ARGUMENT
           .withDescription(
@@ -124,37 +130,43 @@ public class CustomSignatureRulesValidator implements RulesValidator {
 
     if (!rule.hasDefinition()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Create custom signature rule should have a valid definition.");
+          "Update custom signature rule should have a valid definition.");
     }
 
     if (!rule.hasEffect()) {
       return Status.INVALID_ARGUMENT.withDescription(
-          "Create custom signature rule should have a valid effect.");
+          "Update custom signature rule should have a valid effect.");
     }
-    Status status;
-    List<Clause> clauses = rule.getDefinition().getClauseGroup().getClausesList();
+
+    ClauseGroup clauseGroup = rule.getDefinitionOrBuilder().getClauseGroup();
+    List<Clause> clauses = clauseGroup.getClausesList();
     boolean hasResponseOrAttribute = hasResponseOrAttribute(clauses);
-    if ((status = validateRuleEffect(rule.getEffect(), hasResponseOrAttribute)) != Status.OK) {
+
+    Status status = validateRuleEffect(rule.getEffect(), hasResponseOrAttribute, clauseGroup);
+    if (status != Status.OK) {
       return status;
     }
 
-    if ((status = validateRuleDefinition(rule.getDefinition(), rule.getEffect().getEventType()))
-        != Status.OK) {
+    status = validateRuleDefinition(rule.getDefinition(), rule.getEffect().getEventType());
+    if (status != Status.OK) {
       return status;
     }
 
-    if ((status = validateExpiry(rule.getEffect(), rule.getBlockingExpiryDetails())) != Status.OK) {
+    status = validateExpiry(rule.getEffect(), rule.getBlockingExpiryDetails());
+    if (status != Status.OK) {
       return status;
     }
 
-    if ((status = validateRuleScope(rule.getRuleScope())) != Status.OK) {
+    status = validateRuleScope(rule.getRuleScope());
+    if (status != Status.OK) {
       return status;
     }
-    ClauseGroup clauseGroup = rule.getDefinition().getClauseGroup();
+
     if (ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup)
         && modsecRulesManager.containsModsecConvertibleClauses(clauseGroup)) {
       return modsecRulesManager.validateModsecRule(rule.getName(), rule.getDefinition());
     }
+
     return Status.OK;
   }
 
@@ -184,6 +196,16 @@ public class CustomSignatureRulesValidator implements RulesValidator {
     return validateFilter(request.getFilter());
   }
 
+  public static boolean isRuleOfEventTypeAlertAndContainsHeaderInjection(RuleEffect ruleEffect) {
+    EventType ruleEventType = ruleEffect.getEventType();
+    return ruleEventType == EventType.EVENT_TYPE_NORMAL_DETECTION
+        && ruleEffect.getEffectsList().stream()
+            .filter(RuleEffectWithModifications::hasAgentRuleEffect)
+            .map(RuleEffectWithModifications::getAgentRuleEffect)
+            .flatMap(agentRuleEffect -> agentRuleEffect.getAgentModificationsList().stream())
+            .anyMatch(AgentModification::hasHeaderInjection);
+  }
+
   private Status validateFilter(GetRulesFilter rulesFilter) {
     if (rulesFilter.hasFilterEdgeDecisionRules() && !rulesFilter.getFilterEdgeDecisionRules()) {
       return Status.INVALID_ARGUMENT.withDescription(
@@ -193,7 +215,9 @@ public class CustomSignatureRulesValidator implements RulesValidator {
   }
 
   private Status validateRuleEffect(
-      RuleEffect ruleEffect, boolean hasMatchCategoryResponseOrAttributeKeyValueExpression) {
+      RuleEffect ruleEffect,
+      boolean hasMatchCategoryResponseOrAttributeKeyValueExpression,
+      ClauseGroup clauseGroup) {
     EventType eventType = ruleEffect.getEventType();
     if (eventType == EventType.EVENT_TYPE_UNSPECIFIED) {
       return Status.INVALID_ARGUMENT.withDescription(
@@ -219,7 +243,60 @@ public class CustomSignatureRulesValidator implements RulesValidator {
               "Custom signature rule with a response category or a attribute clause is not compatible with the specified event type %s.",
               ruleEffect.getEventType()));
     }
+
+    Status status = validateForRuleEvaluationPoints(ruleEffect, clauseGroup);
+    if (status != Status.OK) {
+      return status;
+    }
+
     ruleEffect.getEffectsList().forEach(this::validateRuleEffectWithModification);
+
+    return Status.OK;
+  }
+
+  private Status validateForRuleEvaluationPoints(RuleEffect ruleEffect, ClauseGroup clauseGroup) {
+    List<RuleEvaluationPoint> ruleEvaluationPoints = ruleEffect.getRuleEvaluationPointsList();
+
+    if (ruleEvaluationPoints.isEmpty()) {
+      return Status.INVALID_ARGUMENT.withDescription("RuleEvaluationPoints cannot be empty.");
+    }
+
+    if (ruleEvaluationPoints.contains(RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE)) {
+      if (!CustomSignatureRulesEdgeDecisionFilter.isConvertibleRule(ruleEffect, clauseGroup)) {
+        return Status.INVALID_ARGUMENT.withDescription("Rule is not EDGE-compatible.");
+      }
+    }
+
+    if (ruleEvaluationPoints.contains(
+        RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT)) {
+      /*
+       * ModSec rules only support AND operators for clause groups.
+       * OR operators are unsupported as they are computationally expensive in ModSec's rule evaluation engine.
+       */
+      if (clauseGroup.getClauseOperator() == ClauseOperator.CLAUSE_OPERATOR_OR) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Rules evaluated at INLINE_TRACING_AGENT cannot have OR clause operator.");
+      }
+
+      if (clauseGroup.getClausesList().stream().anyMatch(Clause::hasClauseGroup)) {
+        return Status.INVALID_ARGUMENT.withDescription(
+            "Rules evaluated at INLINE_TRACING_AGENT cannot have nested clauses.");
+      }
+
+      if (!ModsecRulesSupportChecker.isInlineRuleMappingSupported(clauseGroup)) {
+        return Status.INVALID_ARGUMENT.withDescription("Rule is not AGENT-compatible.");
+      }
+
+      EventType eventType = ruleEffect.getEventType();
+      boolean isCompatibleEventType =
+          eventType == EVENT_TYPE_ALLOW
+              || eventType == EVENT_TYPE_DETECTION_AND_BLOCKING
+              || isRuleOfEventTypeAlertAndContainsHeaderInjection(ruleEffect);
+      if (!isCompatibleEventType) {
+        return Status.INVALID_ARGUMENT.withDescription("Rule is not AGENT-compatible");
+      }
+    }
+
     return Status.OK;
   }
 
@@ -277,10 +354,12 @@ public class CustomSignatureRulesValidator implements RulesValidator {
     if (ruleDefinition.getLabelsMap().size() > CustomSignatureRulesValidator.CUSTOM_LABELS_LIMIT) {
       return Status.INVALID_ARGUMENT.withDescription("Custom labels limit exceeded");
     }
+
     if (!ruleDefinition.hasClauseGroup()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Create custom signature rule definition should have a valid clause group.");
     }
+
     return clauseGroupValidator.validateClauseGroup(ruleDefinition.getClauseGroup(), eventType);
   }
 

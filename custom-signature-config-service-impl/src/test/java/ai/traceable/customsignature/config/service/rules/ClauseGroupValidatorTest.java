@@ -33,7 +33,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ClauseGroupValidatorTest {
+class ClauseGroupValidatorTest {
 
   private ClauseGroupValidator clauseGroupValidator;
 

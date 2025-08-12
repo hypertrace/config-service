@@ -29,12 +29,12 @@ import org.junit.jupiter.api.Test;
 
 class DetectionExclusionRulesValidatorTest {
 
-  private DetectionExclusionConditionValidator conditionValidator;
   private DetectionExclusionRulesValidator detectionExclusionRulesValidator;
 
   @BeforeEach
   void setUp() {
-    conditionValidator = mock(DetectionExclusionConditionValidator.class);
+    DetectionExclusionConditionValidator conditionValidator =
+        mock(DetectionExclusionConditionValidator.class);
     doNothing().when(conditionValidator).validateRuleCondition(any(), any());
     detectionExclusionRulesValidator = new DetectionExclusionRulesValidator(conditionValidator);
   }
@@ -201,7 +201,7 @@ class DetectionExclusionRulesValidatorTest {
                               .build())));
       assertTrue(throwable.getMessage().contains("Rule with name ruleName already exists"));
     }
-    // throws INVALID_ARGUMENT if rule creation source is not unspecified.
+    // throws INVALID_ARGUMENT if a rule creation source is specified.
     {
       UpdateDetectionExclusionRuleRequest request =
           UpdateDetectionExclusionRuleRequest.newBuilder()

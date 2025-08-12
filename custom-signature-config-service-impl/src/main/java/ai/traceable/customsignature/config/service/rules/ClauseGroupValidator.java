@@ -68,6 +68,7 @@ import com.google.re2j.Pattern;
 import com.google.re2j.PatternSyntaxException;
 import io.grpc.Status;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class ClauseGroupValidator {
@@ -112,17 +113,21 @@ public class ClauseGroupValidator {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Definition clause group should have a valid clause operator.");
     }
+
     if (clauseGroup.getClausesList().isEmpty()) {
       return Status.INVALID_ARGUMENT.withDescription(
           "Custom Signature Rule Definition clause group should have at least one clause.");
     }
 
-    Status status;
-    for (Clause clause : clauseGroup.getClausesList()) {
-      if ((status = validateClause(clause, eventType)) != Status.OK) {
-        return status;
-      }
+    Optional<Status> errorStatus =
+        clauseGroup.getClausesList().stream()
+            .map(clause -> validateClause(clause, eventType))
+            .filter(status -> status != Status.OK)
+            .findFirst();
+    if (errorStatus.isPresent()) {
+      return errorStatus.get();
     }
+
     // custom signature rule containing SecRule clause should not have OR operator or nested clauses
     // since that's not yet supported in platform
     // examples of such rules:
@@ -135,6 +140,7 @@ public class ClauseGroupValidator {
           "Custom Signature Rule Definition clause group with sec rule clause "
               + "should not have nested clauses or OR operator.");
     }
+
     return Status.OK;
   }
 
@@ -310,7 +316,7 @@ public class ClauseGroupValidator {
     for (IpConnectionType ipConnectionType :
         ipConnectionTypeExpression.getIpConnectionTypesList()) {
       Status status = validateIpConnectionType(ipConnectionType);
-      if (!status.isOk()) {
+      if (status != Status.OK) {
         return status;
       }
     }
@@ -383,7 +389,7 @@ public class ClauseGroupValidator {
     validateNonDefaultPresenceOrThrow(ipTypeExpression, IpTypeExpression.IP_TYPES_FIELD_NUMBER);
     for (IpType ipType : ipTypeExpression.getIpTypesList()) {
       Status status = validateIpType(ipType);
-      if (!status.isOk()) {
+      if (status != Status.OK) {
         return status;
       }
     }
@@ -482,11 +488,13 @@ public class ClauseGroupValidator {
               attributeKeyValueExpression.getKeyMatchOperator(),
               attributeKeyValueExpression.getMatchValue(),
               attributeKeyValueExpression.getValueMatchOperator());
-      if (!status.isOk()) {
+
+      if (status != Status.OK) {
         return Status.INVALID_ARGUMENT.withDescription(
             String.format(
                 "Invalid attribute key value expression : %s", attributeKeyValueExpression));
       }
+
       return Status.OK;
     }
 

@@ -2,6 +2,7 @@ package ai.traceable.customsignature.config.service.rules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -19,6 +20,9 @@ import ai.traceable.customsignature.config.service.v1.EnvironmentScope;
 import ai.traceable.customsignature.config.service.v1.EventSeverity;
 import ai.traceable.customsignature.config.service.v1.EventType;
 import ai.traceable.customsignature.config.service.v1.ExpiryDetails;
+import ai.traceable.customsignature.config.service.v1.IpAddressExpression;
+import ai.traceable.customsignature.config.service.v1.IpType;
+import ai.traceable.customsignature.config.service.v1.IpTypeExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueExpression;
 import ai.traceable.customsignature.config.service.v1.KeyValueTag;
 import ai.traceable.customsignature.config.service.v1.LhsRhsKeysExpression;
@@ -28,19 +32,21 @@ import ai.traceable.customsignature.config.service.v1.MatchKey;
 import ai.traceable.customsignature.config.service.v1.MatchOperator;
 import ai.traceable.customsignature.config.service.v1.RuleDefinition;
 import ai.traceable.customsignature.config.service.v1.RuleEffect;
+import ai.traceable.customsignature.config.service.v1.RuleEvaluationPoint;
 import ai.traceable.customsignature.config.service.v1.RuleScope;
 import ai.traceable.customsignature.config.service.v1.RuleSource;
 import ai.traceable.customsignature.config.service.v1.UpdateCustomSignatureRuleRequest;
 import com.google.protobuf.Value;
 import io.grpc.Status;
 import io.grpc.Status.Code;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-public class CustomSignatureRulesValidatorTest {
+class CustomSignatureRulesValidatorTest {
 
   private static final String ZERO_EXPIRY_DURATION = "P0DT0H0M";
   private static final String NON_ZERO_EXPIRY_DURATION = "P2DT3H4M";
@@ -91,7 +97,7 @@ public class CustomSignatureRulesValidatorTest {
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
-            .setDefinition(RuleDefinition.newBuilder().build())
+            .setDefinition(RuleDefinition.getDefaultInstance())
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid effect");
@@ -99,8 +105,8 @@ public class CustomSignatureRulesValidatorTest {
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
-            .setDefinition(RuleDefinition.newBuilder().build())
-            .setEffect(RuleEffect.newBuilder().build())
+            .setDefinition(RuleDefinition.getDefaultInstance())
+            .setEffect(RuleEffect.getDefaultInstance())
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid event type");
@@ -124,9 +130,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchKey("name")
                                             .setValueMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue("traceable")
-                                            .build()))
-                            .build()))
+                                            .setMatchValue("traceable")))))
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_ALLOW)
@@ -141,13 +145,14 @@ public class CustomSignatureRulesValidatorTest {
         RuleEffect.newBuilder()
             .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
             .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
 
     request =
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
             .setEffect(ruleEffect)
-            .setDefinition(RuleDefinition.newBuilder().build())
+            .setDefinition(RuleDefinition.getDefaultInstance())
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid clause group");
@@ -158,7 +163,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(
                 RuleDefinition.newBuilder()
-                    .setClauseGroup(ClauseGroup.newBuilder().build())
+                    .setClauseGroup(ClauseGroup.getDefaultInstance())
                     .build())
             .build();
     status = rulesValidator.validate(request);
@@ -172,8 +177,7 @@ public class CustomSignatureRulesValidatorTest {
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
                         ClauseGroup.newBuilder()
-                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                            .build())
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND))
                     .build())
             .build();
     status = rulesValidator.validate(request);
@@ -188,9 +192,7 @@ public class CustomSignatureRulesValidatorTest {
                     .setClauseGroup(
                         ClauseGroup.newBuilder()
                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                            .addClauses(Clause.newBuilder().build())
-                            .build())
-                    .build())
+                            .addClauses(Clause.getDefaultInstance())))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "Clause expression");
@@ -206,10 +208,7 @@ public class CustomSignatureRulesValidatorTest {
                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
                             .addClauses(
                                 Clause.newBuilder()
-                                    .setMatchExpression(MatchExpression.newBuilder().build())
-                                    .build())
-                            .build())
-                    .build())
+                                    .setMatchExpression(MatchExpression.getDefaultInstance()))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid match key");
@@ -227,11 +226,7 @@ public class CustomSignatureRulesValidatorTest {
                                 Clause.newBuilder()
                                     .setMatchExpression(
                                         MatchExpression.newBuilder()
-                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid match operator");
@@ -252,11 +247,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_MATCHES_REGEX)
-                                            .setMatchValue("**invalid")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue("**invalid")))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "Invalid Regex Value");
@@ -276,11 +267,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -291,7 +278,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                    .build())
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -303,11 +290,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -319,7 +302,7 @@ public class CustomSignatureRulesValidatorTest {
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-                    .build())
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -331,11 +314,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -344,7 +323,9 @@ public class CustomSignatureRulesValidatorTest {
         CreateCustomSignatureRuleRequest.newBuilder()
             .setName("name")
             .setEffect(
-                RuleEffect.newBuilder().setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION).build())
+                RuleEffect.newBuilder()
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -356,11 +337,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid event severity");
@@ -376,10 +353,8 @@ public class CustomSignatureRulesValidatorTest {
                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
                             .addClauses(
                                 Clause.newBuilder()
-                                    .setKeyValueExpression(KeyValueExpression.newBuilder().build())
-                                    .build())
-                            .build())
-                    .build())
+                                    .setKeyValueExpression(
+                                        KeyValueExpression.getDefaultInstance()))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid tag");
@@ -397,11 +372,7 @@ public class CustomSignatureRulesValidatorTest {
                                 Clause.newBuilder()
                                     .setKeyValueExpression(
                                         KeyValueExpression.newBuilder()
-                                            .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid match key");
@@ -420,11 +391,7 @@ public class CustomSignatureRulesValidatorTest {
                                     .setKeyValueExpression(
                                         KeyValueExpression.newBuilder()
                                             .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
-                                            .setMatchKey("key")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchKey("key")))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid key match operator");
@@ -445,11 +412,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
                                             .setMatchKey("key")
                                             .setKeyMatchOperator(
-                                                MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                                MatchOperator.MATCH_OPERATOR_EQUALS)))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid match value");
@@ -471,11 +434,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchKey("key")
                                             .setKeyMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue("value")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue("value")))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "valid value match operator");
@@ -499,11 +458,7 @@ public class CustomSignatureRulesValidatorTest {
                                                 MatchOperator.MATCH_OPERATOR_EQUALS)
                                             .setMatchValue("inva**lid")
                                             .setValueMatchOperator(
-                                                MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                                MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "Invalid Regex Value");
@@ -514,7 +469,8 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
-                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -528,11 +484,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchValue("101")
                                             .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
                                             .setMatchOperator(
-                                                MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                                MatchOperator.MATCH_OPERATOR_GREATER_THAN)))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -543,7 +495,8 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
-                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -557,11 +510,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
                                             .setMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-                                            .setMatchValue("value")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue("value")))))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "numerical value for match operator");
@@ -586,11 +535,7 @@ public class CustomSignatureRulesValidatorTest {
                                                 MatchOperator.MATCH_OPERATOR_EQUALS)
                                             .setMatchValue("(*UTF8)or\\p{Cyrillic}something")
                                             .setValueMatchOperator(
-                                                MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                                MatchOperator.MATCH_OPERATOR_NOT_MATCH_REGEX)))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -601,7 +546,8 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
-                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION))
+                    .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -615,11 +561,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchKey(MatchKey.MATCH_KEY_BODY_SIZE)
                                             .setMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-                                            .setMatchValue("100.1")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue("100.1")))))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -638,10 +580,7 @@ public class CustomSignatureRulesValidatorTest {
                                     .setKeyMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
                                     .setMatchValue("value")
                                     .setValueMatchOperator(
-                                        MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-                                    .build())
-                            .build())
-                    .build())
+                                        MatchOperator.MATCH_OPERATOR_GREATER_THAN))))
             .build();
 
     request =
@@ -658,7 +597,7 @@ public class CustomSignatureRulesValidatorTest {
             .setName("name")
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
-            .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("1234").build())
+            .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("1234"))
             .build();
     status = rulesValidator.validate(request);
     assertInvalidArgument(status, "Blocking expiry duration can't be parsed");
@@ -669,7 +608,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
             .setBlockingExpiryDetails(
-                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Code.OK, status.getCode());
@@ -685,8 +624,9 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
             .setBlockingExpiryDetails(
-                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
-            .setRuleScope(RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION))
+            .setRuleScope(
+                RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
             .build();
     status = rulesValidator.validate(request);
     assertEquals(Status.INVALID_ARGUMENT.getCode(), status.getCode());
@@ -698,7 +638,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
             .setBlockingExpiryDetails(
-                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION))
             .setRuleScope(
                 RuleScope.newBuilder()
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
@@ -713,7 +653,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
             .setBlockingExpiryDetails(
-                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build())
+                ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION))
             .setRuleScope(
                 RuleScope.newBuilder()
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev")))
@@ -730,6 +670,7 @@ public class CustomSignatureRulesValidatorTest {
         RuleEffect.newBuilder()
             .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
             .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
 
     CreateCustomSignatureRuleRequest createRequest =
@@ -872,8 +813,7 @@ public class CustomSignatureRulesValidatorTest {
   public void testValidateUpdateRule() {
     CustomSignatureRule rule;
     Status status;
-
-    status = rulesValidator.validate(UpdateCustomSignatureRuleRequest.newBuilder().build());
+    status = rulesValidator.validate(UpdateCustomSignatureRuleRequest.getDefaultInstance());
     assertInvalidArgument(status, "valid id");
 
     rule = CustomSignatureRule.newBuilder().setId("id").build();
@@ -892,7 +832,7 @@ public class CustomSignatureRulesValidatorTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
-            .setDefinition(RuleDefinition.newBuilder().build())
+            .setDefinition(RuleDefinition.getDefaultInstance())
             .build();
     status =
         rulesValidator.validate(
@@ -903,8 +843,8 @@ public class CustomSignatureRulesValidatorTest {
         CustomSignatureRule.newBuilder()
             .setId("id")
             .setName("name")
-            .setDefinition(RuleDefinition.newBuilder().build())
-            .setEffect(RuleEffect.newBuilder().build())
+            .setDefinition(RuleDefinition.getDefaultInstance())
+            .setEffect(RuleEffect.getDefaultInstance())
             .build();
     status =
         rulesValidator.validate(
@@ -926,13 +866,12 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchCategory(MatchCategory.MATCH_CATEGORY_RESPONSE)
                                             .setMatchKey(MatchKey.MATCH_KEY_HOST)
-                                            .setMatchValue("traceable")
-                                            .build()))
-                            .build()))
+                                            .setMatchValue("traceable")))))
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW))
+                    .setEventSeverity(EventSeverity.EVENT_SEVERITY_LOW)
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .build();
     status =
         rulesValidator.validate(
@@ -945,6 +884,7 @@ public class CustomSignatureRulesValidatorTest {
         RuleEffect.newBuilder()
             .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
             .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
 
     rule =
@@ -952,7 +892,7 @@ public class CustomSignatureRulesValidatorTest {
             .setId("id")
             .setName("name")
             .setEffect(ruleEffect)
-            .setDefinition(RuleDefinition.newBuilder().build())
+            .setDefinition(RuleDefinition.getDefaultInstance())
             .build();
     status =
         rulesValidator.validate(
@@ -966,7 +906,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(
                 RuleDefinition.newBuilder()
-                    .setClauseGroup(ClauseGroup.newBuilder().build())
+                    .setClauseGroup(ClauseGroup.getDefaultInstance())
                     .build())
             .build();
     status =
@@ -983,8 +923,7 @@ public class CustomSignatureRulesValidatorTest {
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
                         ClauseGroup.newBuilder()
-                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                            .build())
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND))
                     .build())
             .build();
     status =
@@ -1002,9 +941,7 @@ public class CustomSignatureRulesValidatorTest {
                     .setClauseGroup(
                         ClauseGroup.newBuilder()
                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
-                            .addClauses(Clause.newBuilder().build())
-                            .build())
-                    .build())
+                            .addClauses(Clause.getDefaultInstance())))
             .build();
     status =
         rulesValidator.validate(
@@ -1023,10 +960,7 @@ public class CustomSignatureRulesValidatorTest {
                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
                             .addClauses(
                                 Clause.newBuilder()
-                                    .setMatchExpression(MatchExpression.newBuilder().build())
-                                    .build())
-                            .build())
-                    .build())
+                                    .setMatchExpression(MatchExpression.getDefaultInstance()))))
             .build();
     status =
         rulesValidator.validate(
@@ -1047,11 +981,7 @@ public class CustomSignatureRulesValidatorTest {
                                 Clause.newBuilder()
                                     .setMatchExpression(
                                         MatchExpression.newBuilder()
-                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1074,11 +1004,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1092,7 +1018,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_DETECTION_AND_BLOCKING)
-                    .build())
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -1104,11 +1030,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1123,7 +1045,7 @@ public class CustomSignatureRulesValidatorTest {
                 RuleEffect.newBuilder()
                     .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
                     .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
-                    .build())
+                    .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
             .setDefinition(
                 RuleDefinition.newBuilder()
                     .setClauseGroup(
@@ -1135,11 +1057,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1163,11 +1081,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1186,10 +1100,8 @@ public class CustomSignatureRulesValidatorTest {
                             .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
                             .addClauses(
                                 Clause.newBuilder()
-                                    .setKeyValueExpression(KeyValueExpression.newBuilder().build())
-                                    .build())
-                            .build())
-                    .build())
+                                    .setKeyValueExpression(
+                                        KeyValueExpression.getDefaultInstance()))))
             .build();
     status =
         rulesValidator.validate(
@@ -1210,11 +1122,7 @@ public class CustomSignatureRulesValidatorTest {
                                 Clause.newBuilder()
                                     .setKeyValueExpression(
                                         KeyValueExpression.newBuilder()
-                                            .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1236,11 +1144,7 @@ public class CustomSignatureRulesValidatorTest {
                                     .setKeyValueExpression(
                                         KeyValueExpression.newBuilder()
                                             .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
-                                            .setMatchKey("key")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchKey("key")))))
             .build();
     status =
         rulesValidator.validate(
@@ -1264,11 +1168,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setTag(KeyValueTag.KEY_VALUE_TAG_HEADER)
                                             .setMatchKey("key")
                                             .setKeyMatchOperator(
-                                                MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                                MatchOperator.MATCH_OPERATOR_EQUALS)))))
             .build();
     status =
         rulesValidator.validate(
@@ -1293,11 +1193,7 @@ public class CustomSignatureRulesValidatorTest {
                                             .setMatchKey("key")
                                             .setKeyMatchOperator(
                                                 MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue("value")
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue("value")))))
             .build();
     status =
         rulesValidator.validate(
@@ -1318,10 +1214,7 @@ public class CustomSignatureRulesValidatorTest {
                                     .setKeyMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
                                     .setMatchValue("value")
                                     .setValueMatchOperator(
-                                        MatchOperator.MATCH_OPERATOR_GREATER_THAN)
-                                    .build())
-                            .build())
-                    .build())
+                                        MatchOperator.MATCH_OPERATOR_GREATER_THAN))))
             .build();
     rule =
         CustomSignatureRule.newBuilder()
@@ -1341,8 +1234,7 @@ public class CustomSignatureRulesValidatorTest {
             .setName("name")
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
-            .setBlockingExpiryDetails(
-                ExpiryDetails.newBuilder().setExpiryDuration("invalid").build())
+            .setBlockingExpiryDetails(ExpiryDetails.newBuilder().setExpiryDuration("invalid"))
             .build();
 
     status =
@@ -1357,7 +1249,7 @@ public class CustomSignatureRulesValidatorTest {
             .setEffect(ruleEffect)
             .setDefinition(validRuleDefinition)
             .setBlockingExpiryDetails(
-                ExpiryDetails.newBuilder().setExpiryDuration(ZERO_EXPIRY_DURATION).build())
+                ExpiryDetails.newBuilder().setExpiryDuration(ZERO_EXPIRY_DURATION))
             .build();
     UpdateCustomSignatureRuleRequest request =
         UpdateCustomSignatureRuleRequest.newBuilder().setRule(rule).build();
@@ -1385,12 +1277,10 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE))))
                     .build())
-            .setRuleScope(RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.newBuilder()))
+            .setRuleScope(
+                RuleScope.newBuilder().setEnvironmentScope(EnvironmentScope.getDefaultInstance()))
             .build();
     status =
         rulesValidator.validate(
@@ -1414,11 +1304,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .setRuleScope(
                 RuleScope.newBuilder()
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("")))
@@ -1445,11 +1331,7 @@ public class CustomSignatureRulesValidatorTest {
                                         MatchExpression.newBuilder()
                                             .setMatchKey(MatchKey.MATCH_KEY_HEADER_VALUE)
                                             .setMatchOperator(MatchOperator.MATCH_OPERATOR_EQUALS)
-                                            .setMatchValue(HEADER_MATCH_VALUE)
-                                            .build())
-                                    .build())
-                            .build())
-                    .build())
+                                            .setMatchValue(HEADER_MATCH_VALUE)))))
             .setRuleScope(
                 RuleScope.newBuilder()
                     .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev")))
@@ -1464,7 +1346,7 @@ public class CustomSignatureRulesValidatorTest {
   public void testValidateDeleteRule() {
     Status status;
 
-    status = rulesValidator.validate(DeleteCustomSignatureRuleRequest.newBuilder().build());
+    status = rulesValidator.validate(DeleteCustomSignatureRuleRequest.getDefaultInstance());
     assertInvalidArgument(status, "valid id");
 
     status =
@@ -1478,12 +1360,13 @@ public class CustomSignatureRulesValidatorTest {
         RuleEffect.newBuilder()
             .setEventType(EventType.EVENT_TYPE_NORMAL_DETECTION)
             .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+            .addRuleEvaluationPoints(RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM)
             .build();
     ExpiryDetails expiryDetails =
         ExpiryDetails.newBuilder().setExpiryDuration(NON_ZERO_EXPIRY_DURATION).build();
     RuleScope ruleScope =
         RuleScope.newBuilder()
-            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev").build())
+            .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("dev"))
             .build();
 
     CreateCustomSignatureRuleRequest validCreateRequest1 =
@@ -1594,6 +1477,402 @@ public class CustomSignatureRulesValidatorTest {
             .build();
     status = rulesValidator.validate(invalidCreateRequest2);
     assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+  }
+
+  @Test
+  void testCreateRuleRequestWithRuleEvaluationPoints() {
+    CreateCustomSignatureRuleRequest request;
+    Status status;
+    RuleScope ruleScope = getRuleScope();
+    RuleEffect ruleEffect1 = getRuleEffectWithInlineAgentRuleEvaluationPoint();
+    RuleEffect ruleEffect2 = getRuleEffectWithoutInlineAgentRuleEvaluationPoint();
+
+    // invalid request - nested clause group in a clause for inline tracing agent as 1 of the rule
+    // evaluation points
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("rule-name")
+            .setDescription("rule-description")
+            .setEffect(ruleEffect1)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpTypeExpression(
+                                        IpTypeExpression.newBuilder()
+                                            .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setClauseGroup(
+                                        ClauseGroup.newBuilder()
+                                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setMatchExpression(
+                                                        MatchExpression.newBuilder()
+                                                            .setMatchKey(MatchKey.MATCH_KEY_URL)
+                                                            .setMatchOperator(
+                                                                MatchOperator
+                                                                    .MATCH_OPERATOR_CONTAINS)
+                                                            .setMatchCategory(
+                                                                MatchCategory
+                                                                    .MATCH_CATEGORY_REQUEST)
+                                                            .setValue(
+                                                                Value.newBuilder()
+                                                                    .setStringValue("url-value"))))
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setIpAddressExpression(
+                                                        IpAddressExpression.newBuilder()
+                                                            .addIpAddresses("1.2.3.4")))))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+            .setRuleScope(ruleScope)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertSame(
+        "Rules evaluated at INLINE_TRACING_AGENT cannot have nested clauses.",
+        status.getDescription());
+
+    // invalid request - OR clause operator for inline tracing agent as 1 of the rule evaluation
+    // points
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("rule-name")
+            .setDescription("rule-description")
+            .setEffect(ruleEffect1)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpTypeExpression(
+                                        IpTypeExpression.newBuilder()
+                                            .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4")))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)))
+            .setRuleScope(ruleScope)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertSame(
+        "Rules evaluated at INLINE_TRACING_AGENT cannot have OR clause operator.",
+        status.getDescription());
+
+    // valid request - no nested clause groups for inline tracing agent as 1 of the rule evaluation
+    // points
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("rule-name")
+            .setDescription("rule-description")
+            .setEffect(ruleEffect1)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpTypeExpression(
+                                        IpTypeExpression.newBuilder()
+                                            .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4")))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+            .setRuleScope(ruleScope)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    // valid request - nested clause groups without INLINE_TRACING_AGENT as 1 of the rule evaluation
+    // points
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("rule-name")
+            .setDescription("rule-description")
+            .setEffect(ruleEffect2)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpTypeExpression(
+                                        IpTypeExpression.newBuilder()
+                                            .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setClauseGroup(
+                                        ClauseGroup.newBuilder()
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setIpAddressExpression(
+                                                        IpAddressExpression.newBuilder()
+                                                            .addIpAddresses("1.2.3.4")))
+                                            .addClauses(
+                                                Clause.newBuilder()
+                                                    .setMatchExpression(
+                                                        MatchExpression.newBuilder()
+                                                            .setMatchKey(
+                                                                MatchKey.MATCH_KEY_HEADER_VALUE)
+                                                            .setMatchOperator(
+                                                                MatchOperator.MATCH_OPERATOR_EQUALS)
+                                                            .setMatchValue("header-value")))
+                                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+            .setRuleScope(ruleScope)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    // valid request - OR clause operator without inline tracing agent as 1 of the rule evaluation
+    // points
+    request =
+        CreateCustomSignatureRuleRequest.newBuilder()
+            .setName("rule-name")
+            .setDescription("rule-description")
+            .setEffect(ruleEffect2)
+            .setDefinition(
+                RuleDefinition.newBuilder()
+                    .setClauseGroup(
+                        ClauseGroup.newBuilder()
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpTypeExpression(
+                                        IpTypeExpression.newBuilder()
+                                            .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                            .addClauses(
+                                Clause.newBuilder()
+                                    .setIpAddressExpression(
+                                        IpAddressExpression.newBuilder().addIpAddresses("1.2.3.4")))
+                            .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)))
+            .setRuleScope(ruleScope)
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+  }
+
+  @Test
+  void testUpdateRuleRequestWithRuleEvaluationPoints() {
+    UpdateCustomSignatureRuleRequest request;
+    Status status;
+    RuleEffect ruleEffect1 = getRuleEffectWithInlineAgentRuleEvaluationPoint();
+    RuleEffect ruleEffect2 = getRuleEffectWithoutInlineAgentRuleEvaluationPoint();
+    RuleScope ruleScope = getRuleScope();
+
+    // invalid request - nested clause group in a clause for inline tracing agent as 1 of the rule
+    // evaluation points
+    request =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("rule-id")
+                    .setName("rule-name")
+                    .setDescription("rule-description")
+                    .setEffect(ruleEffect1)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpTypeExpression(
+                                                IpTypeExpression.newBuilder()
+                                                    .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setClauseGroup(
+                                                ClauseGroup.newBuilder()
+                                                    .setClauseOperator(
+                                                        ClauseOperator.CLAUSE_OPERATOR_AND)
+                                                    .addClauses(
+                                                        Clause.newBuilder()
+                                                            .setIpAddressExpression(
+                                                                IpAddressExpression.newBuilder()
+                                                                    .addIpAddresses("1.2.3.4")))))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+                    .setRuleScope(ruleScope))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertSame(
+        "Rules evaluated at INLINE_TRACING_AGENT cannot have nested clauses.",
+        status.getDescription());
+
+    // invalid request - OR clause operator for inline tracing agent as 1 of the rule evaluation
+    // points
+    request =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("rule-id")
+                    .setName("rule-name")
+                    .setDescription("rule-description")
+                    .setEffect(ruleEffect1)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpTypeExpression(
+                                                IpTypeExpression.newBuilder()
+                                                    .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpAddressExpression(
+                                                IpAddressExpression.newBuilder()
+                                                    .addIpAddresses("1.2.3.4")))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)))
+                    .setRuleScope(ruleScope))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.INVALID_ARGUMENT, status.getCode());
+    assertSame(
+        "Rules evaluated at INLINE_TRACING_AGENT cannot have OR clause operator.",
+        status.getDescription());
+
+    // valid request - no nested clause groups for inline tracing agent as 1 of the rule evaluation
+    // points
+    request =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("rule-id")
+                    .setName("rule-name")
+                    .setDescription("rule-description")
+                    .setEffect(ruleEffect1)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpTypeExpression(
+                                                IpTypeExpression.newBuilder()
+                                                    .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpAddressExpression(
+                                                IpAddressExpression.newBuilder()
+                                                    .addIpAddresses("1.2.3.4")))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+                    .setRuleScope(ruleScope))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    // valid request - nested clause groups without INLINE_TRACING_AGENT as 1 of the rule evaluation
+    // points
+    request =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("rule-id")
+                    .setName("rule-name")
+                    .setDescription("rule-description")
+                    .setEffect(ruleEffect2)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpTypeExpression(
+                                                IpTypeExpression.newBuilder()
+                                                    .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setClauseGroup(
+                                                ClauseGroup.newBuilder()
+                                                    .addClauses(
+                                                        Clause.newBuilder()
+                                                            .setIpAddressExpression(
+                                                                IpAddressExpression.newBuilder()
+                                                                    .addIpAddresses("1.2.3.4")))
+                                                    .addClauses(
+                                                        Clause.newBuilder()
+                                                            .setMatchExpression(
+                                                                MatchExpression.newBuilder()
+                                                                    .setMatchKey(
+                                                                        MatchKey
+                                                                            .MATCH_KEY_HEADER_VALUE)
+                                                                    .setMatchOperator(
+                                                                        MatchOperator
+                                                                            .MATCH_OPERATOR_EQUALS)
+                                                                    .setMatchValue("header-value")))
+                                                    .setClauseOperator(
+                                                        ClauseOperator.CLAUSE_OPERATOR_OR)))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_AND)))
+                    .setRuleScope(ruleScope))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+
+    // valid request - OR clause operator without inline tracing agent as 1 of the rule evaluation
+    // points
+    request =
+        UpdateCustomSignatureRuleRequest.newBuilder()
+            .setRule(
+                CustomSignatureRule.newBuilder()
+                    .setId("rule-id")
+                    .setName("rule-name")
+                    .setDescription("rule-description")
+                    .setEffect(ruleEffect2)
+                    .setDefinition(
+                        RuleDefinition.newBuilder()
+                            .setClauseGroup(
+                                ClauseGroup.newBuilder()
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpTypeExpression(
+                                                IpTypeExpression.newBuilder()
+                                                    .addIpTypes(IpType.IP_TYPE_SCANNER)))
+                                    .addClauses(
+                                        Clause.newBuilder()
+                                            .setIpAddressExpression(
+                                                IpAddressExpression.newBuilder()
+                                                    .addIpAddresses("1.2.3.4")))
+                                    .setClauseOperator(ClauseOperator.CLAUSE_OPERATOR_OR)))
+                    .setRuleScope(ruleScope))
+            .build();
+    status = rulesValidator.validate(request);
+    assertEquals(Code.OK, status.getCode());
+  }
+
+  private RuleScope getRuleScope() {
+    return RuleScope.newBuilder()
+        .setEnvironmentScope(EnvironmentScope.newBuilder().addEnvironmentIds("env"))
+        .build();
+  }
+
+  private RuleEffect getRuleEffectWithInlineAgentRuleEvaluationPoint() {
+    return RuleEffect.newBuilder()
+        .setEventType(EventType.EVENT_TYPE_ALLOW)
+        .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+        .addAllRuleEvaluationPoints(
+            List.of(
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_INLINE_TRACING_AGENT,
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+        .build();
+  }
+
+  private RuleEffect getRuleEffectWithoutInlineAgentRuleEvaluationPoint() {
+    return RuleEffect.newBuilder()
+        .setEventType(EventType.EVENT_TYPE_ALLOW)
+        .setEventSeverity(EventSeverity.EVENT_SEVERITY_MEDIUM)
+        .addAllRuleEvaluationPoints(
+            List.of(
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_EDGE,
+                RuleEvaluationPoint.RULE_EVALUATION_POINT_PLATFORM))
+        .build();
   }
 
   private RuleDefinition getRuleDefinitionForAggregateConfigParams(

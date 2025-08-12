@@ -145,14 +145,12 @@ public class RateLimitingRulesValidator implements RulesValidator {
 
   private Optional<RateLimitingRule> getRuleOfSameNameAndCategory(
       Category category, String name, List<RateLimitingRule> existingRules) {
-    Optional<RateLimitingRule> sameNameRuleOfSameCategory =
-        existingRules.stream()
-            .filter(
-                rule ->
-                    rule.getData().getCategory().equals(category)
-                        && rule.getData().getName().equals(name))
-            .findFirst();
-    return sameNameRuleOfSameCategory;
+    return existingRules.stream()
+        .filter(
+            rule ->
+                rule.getData().getCategory().equals(category)
+                    && rule.getData().getName().equals(name))
+        .findFirst();
   }
 
   private void validateRuleCreationSource(RuleStatus.RuleSource ruleSource) {
