@@ -1146,6 +1146,8 @@ public class WafIntegrationConfigRequestValidator {
         cloudflareIntegrationParams, CloudflareIntegrationParams.ZONE_FIELD_NUMBER);
     validateNonDefaultPresenceOrThrow(
         cloudflareIntegrationParams, CloudflareIntegrationParams.EMAIL_FIELD_NUMBER);
+    validateNonDefaultPresenceOrThrow(
+        cloudflareIntegrationParams, CloudflareIntegrationParams.RULESET_ID_FIELD_NUMBER);
     this.validateEncryptedData(cloudflareIntegrationParams.getEncryptedApiToken());
     validateZoneDoesntExist(
         cloudflareIntegrationParams.getZone(), otherExistingCloudFlareWafIntegrations);
