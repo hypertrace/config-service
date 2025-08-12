@@ -13,10 +13,19 @@ service CloudEdgeDeploymentConfigService {
   rpc DeleteCloudEdgeDeploymentConfig(DeleteCloudEdgeDeploymentConfigRequest) returns (DeleteCloudEdgeDeploymentConfigResponse) {} // api to delete deployment config from UI
   rpc GetCloudEdgeDeploymentConfigs(GetCloudEdgeDeploymentConfigsRequest) returns (GetCloudEdgeDeploymentConfigsResponse) {} // api to fetch config, used for both UI and helm generation
   rpc GetSharedConfigMetadata(GetSharedConfigMetadataRequest) returns (GetSharedConfigMetadataResponse) {} // api to fetch generic key-value map info coming from yaml
-  rpc RemoveCloudEdgeDeploymentConfig(RemoveCloudEdgeDeploymentConfigRequest) returns (RemoveCloudEdgeDeploymentConfigResponse) {} // api to request config removal
-  rpc CancelCloudEdgeDeploymentConfigAction(CancelCloudEdgeDeploymentConfigActionRequest) returns (CancelCloudEdgeDeploymentConfigActionResponse) {} // api to cancel last config action
-  rpc HoldCloudEdgeDeploymentConfig(HoldCloudEdgeDeploymentConfigRequest) returns (HoldCloudEdgeDeploymentConfigResponse) {} // api to hold deployment request
-  rpc DeployCloudEdgeDeploymentConfig(DeployCloudEdgeDeploymentConfigRequest) returns (DeployCloudEdgeDeploymentConfigResponse) {} // api to request deployment for existing config
+  rpc RemoveCloudEdgeDeploymentConfig(RemoveCloudEdgeDeploymentConfigRequest) returns (RemoveCloudEdgeDeploymentConfigResponse) {
+    option deprecated = true;
+  } // api to request config removal
+  rpc CancelCloudEdgeDeploymentConfigAction(CancelCloudEdgeDeploymentConfigActionRequest) returns (CancelCloudEdgeDeploymentConfigActionResponse) {
+    option deprecated = true;
+  } // api to cancel last config action
+  rpc HoldCloudEdgeDeploymentConfig(HoldCloudEdgeDeploymentConfigRequest) returns (HoldCloudEdgeDeploymentConfigResponse) {
+    option deprecated = true;
+  } // api to hold deployment request
+  rpc DeployCloudEdgeDeploymentConfig(DeployCloudEdgeDeploymentConfigRequest) returns (DeployCloudEdgeDeploymentConfigResponse) {
+    option deprecated = true;
+  } // api to request deployment for existing config
+  rpc CloudEdgeDeploymentConfigAction(CloudEdgeDeploymentConfigActionRequest) returns (CloudEdgeDeploymentConfigActionResponse) {} // api to request cloud edge deployment config actions
 }
 
 message CreateCloudEdgeDeploymentConfigRequest {
@@ -97,3 +106,11 @@ message DeployCloudEdgeDeploymentConfigRequest {
 }
 
 message DeployCloudEdgeDeploymentConfigResponse {}
+
+message CloudEdgeDeploymentConfigActionRequest {
+  string id = 1;
+  ConfigAccessType access_type = 2;
+  Action action = 3;
+}
+
+message CloudEdgeDeploymentConfigActionResponse {}
